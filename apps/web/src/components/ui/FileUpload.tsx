@@ -15,7 +15,9 @@ interface FileUploadProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 't
   fullWidth?: boolean;
   accept?: string;
   multiple?: boolean;
+  maxSize?: number; // Max file size in MB
   onFileChange?: (files: FileList | null) => void;
+  onFileSelect?: (files: File[]) => void; // Alternative callback that receives File[]
 }
 
 const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
@@ -28,7 +30,9 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
       fullWidth = false,
       accept,
       multiple = false,
+      maxSize,
       onFileChange,
+      onFileSelect,
       id,
       onChange,
       ...props
@@ -41,10 +45,27 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (files && files.length > 0) {
+        // Validate file sizes if maxSize is provided
+        if (maxSize) {
+          const maxSizeBytes = maxSize * 1024 * 1024; // Convert MB to bytes
+          const fileArray = Array.from(files);
+          const oversizedFiles = fileArray.filter(file => file.size > maxSizeBytes);
+          
+          if (oversizedFiles.length > 0) {
+            setFileName(`Erreur: ${oversizedFiles.length} fichier(s) trop volumineux (>${maxSize}MB)`);
+            return;
+          }
+        }
+        
         if (multiple) {
           setFileName(`${files.length} fichier(s) sélectionné(s)`);
         } else {
           setFileName(files[0]?.name || '');
+        }
+        
+        // Call onFileSelect with File[] if provided
+        if (onFileSelect) {
+          onFileSelect(Array.from(files));
         }
       } else {
         setFileName('');
