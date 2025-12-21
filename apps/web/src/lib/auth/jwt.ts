@@ -112,7 +112,7 @@ export function isTokenExpired(token: string): boolean {
 function parseExpiration(expiration: string): string {
   // Support formats like "15m", "1h", "7d", "30d"
   const match = expiration.match(/^(\d+)([smhd])$/);
-  if (!match) {
+  if (!match || !match[2]) {
     return '15m'; // Default to 15 minutes
   }
 
