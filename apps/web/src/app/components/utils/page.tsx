@@ -8,9 +8,9 @@ export default function UtilsPage() {
   const [searchValue, setSearchValue] = useState('');
 
   const accordionItems = [
-    { title: 'Comment utiliser les composants ?', content: <p className="text-gray-600">Tous les composants sont disponibles via l'import depuis <code className="bg-gray-100 px-2 py-1 rounded">@/components/ui</code></p> },
-    { title: 'Personnalisation', content: <p className="text-gray-600">Chaque composant accepte une prop <code className="bg-gray-100 px-2 py-1 rounded">className</code> pour la personnalisation avec Tailwind CSS.</p> },
-    { title: 'Accessibilité', content: <p className="text-gray-600">Tous les composants incluent les attributs ARIA nécessaires pour une accessibilité optimale.</p> },
+    { id: 'usage', title: 'Comment utiliser les composants ?', content: <p className="text-gray-600">Tous les composants sont disponibles via l'import depuis <code className="bg-gray-100 px-2 py-1 rounded">@/components/ui</code></p> },
+    { id: 'customization', title: 'Personnalisation', content: <p className="text-gray-600">Chaque composant accepte une prop <code className="bg-gray-100 px-2 py-1 rounded">className</code> pour la personnalisation avec Tailwind CSS.</p> },
+    { id: 'accessibility', title: 'Accessibilité', content: <p className="text-gray-600">Tous les composants incluent les attributs ARIA nécessaires pour une accessibilité optimale.</p> },
   ];
 
   return (
