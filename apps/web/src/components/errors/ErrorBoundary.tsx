@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <ErrorDisplay
           error={this.state.error instanceof AppError ? this.state.error : undefined}
-          resetError={() => this.setState({ hasError: false, error: null })}
+          onReset={() => this.setState({ hasError: false, error: null })}
         />
       );
     }
