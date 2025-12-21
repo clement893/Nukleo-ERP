@@ -6,7 +6,6 @@ import { PageHeader, PageContainer, Section, PageNavigation } from '@/components
 
 export default function FormsPage() {
   const [formData, setFormData] = useState({ email: '', password: '', description: '', country: '', newsletter: false, plan: 'basic', notifications: true, birthdate: '' });
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   return (
     <PageContainer>
@@ -66,7 +65,7 @@ export default function FormsPage() {
         </Section>
 
         <Section title="FileUpload">
-          <FileUpload label="Téléverser des fichiers" accept="image/*" multiple maxSize={5} onFileSelect={(files) => setSelectedFiles(files)} helperText="Formats acceptés : JPG, PNG, GIF. Taille max : 5MB" />
+          <FileUpload label="Téléverser des fichiers" accept="image/*" multiple maxSize={5} onFileSelect={(files) => console.log('Files selected:', files)} helperText="Formats acceptés : JPG, PNG, GIF. Taille max : 5MB" />
         </Section>
 
         <Section title="Exemple de formulaire complet">
