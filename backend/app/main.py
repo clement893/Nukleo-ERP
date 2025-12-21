@@ -53,6 +53,7 @@ ALLOWED_ORIGINS = list(set([origin for origin in ALLOWED_ORIGINS if origin]))
 
 # Add CORS middleware with regex for Railway domains
 # The regex allows all Railway subdomains and localhost
+# IMPORTANT: CORS middleware must be added BEFORE routers to ensure headers are always sent
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https?://.*\.(railway\.app|up\.railway\.app)|http://localhost:\d+",
@@ -61,6 +62,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=3600,
 )
 
 
@@ -71,14 +73,15 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     origin = request.headers.get("origin")
     headers = {}
     
-    # Add CORS headers if origin is allowed
-    if origin and (origin in ALLOWED_ORIGINS or any(
-        origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"]
-    )):
-        headers["Access-Control-Allow-Origin"] = origin
-        headers["Access-Control-Allow-Credentials"] = "true"
-        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        headers["Access-Control-Allow-Headers"] = "*"
+    # Always add CORS headers for Railway domains or allowed origins
+    if origin:
+        # Check if it's a Railway domain or in allowed origins
+        is_railway = any(origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"])
+        if origin in ALLOWED_ORIGINS or is_railway:
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+            headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            headers["Access-Control-Allow-Headers"] = "*"
     
     return JSONResponse(
         status_code=exc.status_code,
@@ -112,21 +115,27 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle general exceptions with CORS headers."""
+    import traceback
+    
     origin = request.headers.get("origin")
     headers = {}
     
-    # Add CORS headers if origin is allowed
-    if origin and (origin in ALLOWED_ORIGINS or any(
-        origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"]
-    )):
-        headers["Access-Control-Allow-Origin"] = origin
-        headers["Access-Control-Allow-Credentials"] = "true"
-        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        headers["Access-Control-Allow-Headers"] = "*"
+    # Always add CORS headers for Railway domains or allowed origins
+    if origin:
+        # Check if it's a Railway domain or in allowed origins
+        is_railway = any(origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"])
+        if origin in ALLOWED_ORIGINS or is_railway:
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+            headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            headers["Access-Control-Allow-Headers"] = "*"
+    
+    # Log the error for debugging (in production, use proper logging)
+    error_detail = str(exc) if os.getenv("ENVIRONMENT") == "development" else "Internal server error"
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error"},
+        content={"detail": error_detail},
         headers=headers,
     )
 
