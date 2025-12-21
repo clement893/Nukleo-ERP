@@ -35,6 +35,8 @@
     "generate:types": "node scripts/generate/types/generate_types.js",
     "generate:types:fallback": "node scripts/generate/types/generate_types_fallback.js",
     "migrate": "node scripts/migrate-db.js",
+    "seed": "node scripts/seed-db.js",
+    "seed:extended": "node scripts/seed-db.js --extended",
     "workspace:upgrade": "pnpm up -r -L",
     "workspace:check": "pnpm list --depth=0 -r",
     "workspace:verify": "node scripts/check-workspace.js"

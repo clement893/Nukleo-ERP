@@ -22,7 +22,9 @@
     "clean": "rm -rf .next out .turbo",
     "env:validate": "node scripts/validate-env.js",
     "env:docs": "node scripts/validate-env.js docs",
-    "env:generate": "node scripts/validate-env.js generate"
+    "env:generate": "node scripts/validate-env.js generate",
+    "analyze": "node scripts/analyze-bundle.js",
+    "analyze:build": "ANALYZE=true next build"
   },
   "dependencies": {
     "next": "16.0.0",
