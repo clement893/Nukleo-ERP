@@ -25,6 +25,8 @@ from app.core.error_handler import (
     general_exception_handler,
 )
 from app.core.rate_limit import setup_rate_limiting
+from app.core.compression import CompressionMiddleware
+from app.core.cache_headers import CacheHeadersMiddleware
 from app.api.v1.router import api_router
 
 
@@ -54,6 +56,12 @@ def create_app() -> FastAPI:
 
     # Rate Limiting
     app = setup_rate_limiting(app)
+
+    # Compression Middleware (should be before CORS)
+    app.add_middleware(CompressionMiddleware)
+
+    # Cache Headers Middleware
+    app.add_middleware(CacheHeadersMiddleware, default_max_age=300)
 
     # CORS Middleware
     app.add_middleware(

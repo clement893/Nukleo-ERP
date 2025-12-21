@@ -11,6 +11,7 @@ from app.dependencies import get_current_user
 from app.models import User
 from app.schemas.user import UserResponse, UserUpdate
 from app.services.user_service import UserService
+from app.core.cache import cached
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -43,6 +44,7 @@ async def update_current_user(
 
 
 @router.get("/{user_id}", response_model=UserResponse)
+@cached(expire=300, key_prefix="user")
 async def get_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -61,6 +63,7 @@ async def get_user(
 
 
 @router.get("", response_model=List[UserResponse])
+@cached(expire=300, key_prefix="users")
 async def list_users(
     skip: int = 0,
     limit: int = 10,
