@@ -23,7 +23,7 @@ export { default as DataTable } from './DataTable';
 export { default as DataTableEnhanced } from './DataTableEnhanced';
 export type { Column, DataTableProps } from './DataTable';
 export type { BulkAction, ExportOption, DataTableEnhancedProps } from './DataTableEnhanced';
-export { default as Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
+export { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 export { default as Pagination } from './Pagination';
 
 // Overlay Components
