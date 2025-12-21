@@ -124,11 +124,15 @@ export function TableHeader({
 interface TableCellProps {
   children: ReactNode;
   className?: string;
+  colSpan?: number;
 }
 
-export function TableCell({ children, className }: TableCellProps) {
+export function TableCell({ children, className, colSpan }: TableCellProps) {
   return (
-    <td className={clsx('px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100', className)}>
+    <td
+      colSpan={colSpan}
+      className={clsx('px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100', className)}
+    >
       {children}
     </td>
   );
