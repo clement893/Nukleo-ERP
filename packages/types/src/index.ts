@@ -145,3 +145,5 @@ export interface StatusChange {
 
 // Re-export API types
 export * from './api';
+
+export * from './generated';
