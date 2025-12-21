@@ -1,6 +1,30 @@
 /**
  * useEmail Hook
- * Hook for sending transactional emails
+ * 
+ * React hook for sending transactional emails via SendGrid.
+ * Provides convenient methods for all email types with loading states
+ * and toast notifications.
+ * 
+ * @example
+ * ```typescript
+ * import { useEmail } from '@/hooks/useEmail';
+ * 
+ * function MyComponent() {
+ *   const { sendWelcomeEmail, loading } = useEmail();
+ * 
+ *   const handleWelcome = async () => {
+ *     await sendWelcomeEmail('user@example.com', 'John Doe');
+ *   };
+ * 
+ *   return (
+ *     <button onClick={handleWelcome} disabled={loading}>
+ *       Send Welcome Email
+ *     </button>
+ *   );
+ * }
+ * ```
+ * 
+ * @returns Object with email sending methods and loading state
  */
 
 import { useState } from 'react';

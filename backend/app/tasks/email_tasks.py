@@ -1,4 +1,31 @@
-"""Email tasks for Celery background processing."""
+"""
+Email Tasks for Celery Background Processing
+
+This module contains Celery tasks for sending transactional emails via SendGrid.
+All tasks are designed to run asynchronously in the background to avoid blocking
+API requests.
+
+Tasks include automatic retry with exponential backoff on failure.
+
+Usage:
+    from app.tasks.email_tasks import send_welcome_email_task
+    
+    # Send email asynchronously (recommended)
+    task = send_welcome_email_task.delay("user@example.com", "John Doe")
+    
+    # Send email synchronously (for testing)
+    result = send_welcome_email_task("user@example.com", "John Doe")
+
+Available Tasks:
+    - send_email_task: Generic email sending task
+    - send_welcome_email_task: Welcome email for new users
+    - send_password_reset_email_task: Password reset email
+    - send_verification_email_task: Email verification
+    - send_invoice_email_task: Invoice email
+    - send_subscription_created_email_task: Subscription confirmation
+    - send_subscription_cancelled_email_task: Subscription cancellation
+    - send_trial_ending_email_task: Trial ending reminder
+"""
 
 from app.celery_app import celery_app
 from app.services.email_service import EmailService

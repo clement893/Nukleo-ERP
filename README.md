@@ -23,6 +23,8 @@ A production-ready full-stack template with Next.js 16 frontend and FastAPI back
 - ✅ **Alembic** for database migrations
 - ✅ **PostgreSQL** with async support
 - ✅ **JWT Authentication** with refresh tokens
+- ✅ **SendGrid Email Service** with 7+ transaction templates
+- ✅ **Celery** for background task processing
 - ✅ **Tests** with pytest
 - ✅ **Logging** with loguru
 - ✅ **Standardized Error Handling**
@@ -140,11 +142,21 @@ MODELE-NEXTJS-FULLSTACK/
 - `POST /api/donateurs/import` - Import donors from file
 - `POST /api/donateurs/export` - Export donors to file
 
+### Email (SendGrid)
+- `POST /api/email/welcome` - Send welcome email
+- `POST /api/email/invoice` - Send invoice email
+- `POST /api/email/subscription/created` - Send subscription created email
+- `POST /api/email/subscription/cancelled` - Send subscription cancelled email
+- `POST /api/email/trial/ending` - Send trial ending email
+- `POST /api/email/test` - Send test email
+- `GET /api/email/health` - Email service health check
+
 ### Health
 - `GET /health` - Health check
 - `GET /api/health` - API health check
 
 > 📡 **Full API documentation**: http://localhost:8000/docs (Swagger) or http://localhost:8000/redoc (ReDoc)
+> 📧 **Email Setup Guide**: [docs/SENDGRID_SETUP.md](./docs/SENDGRID_SETUP.md)
 
 ## 🛠️ Development
 
@@ -219,6 +231,7 @@ docker-compose up --build
 
 - 📖 [Getting Started Guide](./GETTING_STARTED.md) - Complete setup guide
 - 🛠️ [Development Guide](./DEVELOPMENT.md) - Development tools and workflows
+- 📧 [SendGrid Email Setup](./docs/SENDGRID_SETUP.md) - Email service configuration
 - 🤝 [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 - 📝 [Changelog](./CHANGELOG.md) - Version history
 - 🎨 [Backend Documentation](./backend/README.md)
@@ -246,6 +259,11 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# SendGrid Email Configuration
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+SENDGRID_FROM_NAME=Your App Name
 ```
 
 ### Frontend (.env.local)

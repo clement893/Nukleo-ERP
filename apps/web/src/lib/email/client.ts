@@ -1,6 +1,28 @@
 /**
  * Email API Client
- * Client for sending transactional emails via SendGrid
+ * 
+ * Client for sending transactional emails via SendGrid backend API.
+ * Provides methods for all email types including welcome, invoices, subscriptions, etc.
+ * 
+ * All methods return promises and handle errors appropriately.
+ * 
+ * @example
+ * ```typescript
+ * import { emailAPI } from '@/lib/email/client';
+ * 
+ * // Send welcome email
+ * await emailAPI.sendWelcome('user@example.com');
+ * 
+ * // Send invoice
+ * await emailAPI.sendInvoice({
+ *   to_email: 'user@example.com',
+ *   name: 'John Doe',
+ *   invoice_number: 'INV-001',
+ *   invoice_date: '2025-01-27',
+ *   amount: 99.99,
+ *   currency: 'EUR'
+ * });
+ * ```
  */
 
 import { apiClient } from '@/lib/api/client';

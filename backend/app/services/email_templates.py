@@ -1,6 +1,32 @@
 """
 Email Templates
-Professional email templates for SaaS application
+
+Professional email templates for SaaS application using SendGrid.
+
+This module provides a collection of pre-designed email templates for common
+transactional emails including welcome, password reset, invoices, subscriptions, etc.
+
+All templates use a responsive design with both HTML and plain text versions.
+
+Usage:
+    from app.services.email_templates import EmailTemplates
+    
+    template = EmailTemplates.welcome("John Doe", "https://app.com/login")
+    email_service.send_email(
+        to_email="user@example.com",
+        subject=template["subject"],
+        html_content=template["html"],
+        text_content=template["text"]
+    )
+
+Available Templates:
+    - welcome: Welcome email for new users
+    - password_reset: Password reset email with token
+    - email_verification: Email verification link
+    - invoice: Invoice email with details and items
+    - subscription_created: Subscription confirmation email
+    - subscription_cancelled: Subscription cancellation confirmation
+    - trial_ending: Trial period ending reminder
 """
 
 from typing import Optional, Dict, Any
