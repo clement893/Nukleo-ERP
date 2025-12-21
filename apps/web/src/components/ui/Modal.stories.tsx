@@ -15,7 +15,7 @@ const meta: Meta<typeof Modal> = {
 export default meta;
 type Story = StoryObj<typeof Modal>;
 
-const ModalWrapper = ({ children, ...props }: React.ComponentProps<typeof Modal>) => {
+const ModalWrapper = ({ children, ...props }: Omit<React.ComponentProps<typeof Modal>, 'isOpen' | 'onClose'>) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
