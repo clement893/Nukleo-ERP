@@ -17,6 +17,3 @@ export type { UseFiltersOptions, UseFiltersReturn, FilterConfig, FilterOperator 
 export { usePermissions } from './permissions/usePermissions';
 export type { UsePermissionsOptions, UsePermissionsReturn, Permission, Role, PermissionConfig } from './permissions/usePermissions';
 
-// Logger hook
-export { useLogger } from './useLogger';
-
