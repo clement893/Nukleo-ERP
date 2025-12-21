@@ -105,5 +105,27 @@ export const aiAPI = {
   },
 };
 
+export const emailAPI = {
+  health: () => {
+    return apiClient.get('/email/health');
+  },
+  sendTest: (toEmail: string) => {
+    return apiClient.post('/email/test', { to_email: toEmail });
+  },
+  sendWelcome: (toEmail: string) => {
+    return apiClient.post('/email/welcome', { to_email: toEmail });
+  },
+  sendCustom: (data: {
+    to_email: string;
+    subject: string;
+    html_content: string;
+    text_content?: string;
+    from_email?: string;
+    from_name?: string;
+  }) => {
+    return apiClient.post('/email/send', data);
+  },
+};
+
 export default apiClient;
 
