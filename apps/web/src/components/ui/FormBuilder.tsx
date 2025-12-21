@@ -143,7 +143,7 @@ export default function FormBuilder({
         return (
           <Textarea
             {...commonProps}
-            value={formData[field.name] || ''}
+            value={String(formData[field.name] ?? '')}
             onChange={(e) => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}
           />
@@ -153,7 +153,7 @@ export default function FormBuilder({
         return (
           <Select
             {...commonProps}
-            value={formData[field.name] || ''}
+            value={String(formData[field.name] ?? '')}
             onChange={(e) => handleChange(field.name, e.target.value)}
             options={field.options || []}
           />
@@ -163,7 +163,7 @@ export default function FormBuilder({
         return (
           <Checkbox
             {...commonProps}
-            checked={formData[field.name] || false}
+            checked={Boolean(formData[field.name] ?? false)}
             onChange={(checked) => handleChange(field.name, checked)}
           />
         );
@@ -172,7 +172,7 @@ export default function FormBuilder({
         return (
           <Radio
             {...commonProps}
-            value={formData[field.name] || ''}
+            value={String(formData[field.name] ?? '')}
             onChange={(value) => handleChange(field.name, value)}
             options={field.options || []}
           />
@@ -182,7 +182,7 @@ export default function FormBuilder({
         return (
           <DatePicker
             {...commonProps}
-            value={formData[field.name] || ''}
+            value={String(formData[field.name] ?? '')}
             onChange={(value) => handleChange(field.name, value)}
           />
         );
@@ -192,7 +192,7 @@ export default function FormBuilder({
           <Input
             {...commonProps}
             type={field.type}
-            value={formData[field.name] || ''}
+            value={String(formData[field.name] ?? '')}
             onChange={(e) => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             min={field.validation?.min}
