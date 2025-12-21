@@ -14,7 +14,10 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "echo 'No linting for types package'",
+    "test": "echo 'No tests for types package'",
+    "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
@@ -25,5 +28,8 @@
   "files": [
     "dist",
     "src"
-  ]
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  }
 }

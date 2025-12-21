@@ -71,6 +71,15 @@ lerna-debug.log*
 .vercel/
 .railway/
 
+# Turborepo
+.turbo/
+turbo-*.log
+
+# pnpm
+.pnpm-store/
+.pnpm-debug.log
+pnpm-lock.yaml.bak
+
 # OS
 .DS_Store
 Thumbs.db
