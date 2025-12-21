@@ -24,6 +24,7 @@ export { default as Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs';
 export type { Tab, TabListProps, TabProps, TabPanelsProps, TabPanelProps } from './Tabs';
 export { default as Accordion } from './Accordion';
 export type { AccordionItem } from './Accordion';
+export { default as Sidebar } from './Sidebar';
 
 // Data Components
 export { default as DataTable } from './DataTable';
