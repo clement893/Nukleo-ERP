@@ -18,13 +18,11 @@ export default function LogsViewer() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<LogEntry['level'] | 'all'>('all');
-  const [serviceFilter, setServiceFilter] = useState<string>('');
 
   useEffect(() => {
     const updateLogs = () => {
       const filtered = logStore.getLogs({
         level: levelFilter !== 'all' ? levelFilter : undefined,
-        service: serviceFilter || undefined,
         search: search || undefined,
         limit: 100,
       });
@@ -35,7 +33,7 @@ export default function LogsViewer() {
     const interval = setInterval(updateLogs, 2000); // Update every 2s
 
     return () => clearInterval(interval);
-  }, [search, levelFilter, serviceFilter]);
+  }, [search, levelFilter]);
 
   const getLevelColor = (level: LogEntry['level']): 'error' | 'warning' | 'info' | 'default' => {
     switch (level) {
