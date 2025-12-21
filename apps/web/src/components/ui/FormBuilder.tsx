@@ -67,14 +67,14 @@ export default function FormBuilder({
       if (field.validation.max !== undefined && Number(value) > field.validation.max) {
         return `${field.label} doit être au plus ${field.validation.max}`;
       }
-      if (field.validation.pattern && !field.validation.pattern.test(value)) {
+      if (field.validation.pattern && !field.validation.pattern.test(String(value))) {
         return field.validation.message || `${field.label} n'est pas valide`;
       }
     }
 
     if (field.type === 'email' && value) {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(value)) {
+      if (!emailPattern.test(String(value))) {
         return 'Email invalide';
       }
     }
