@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { validateCSRF, getCSRFTokenFromHeader } from '../csrf';
+import { validateCSRF } from '../csrf';
 
 /**
  * CSRF protection middleware
