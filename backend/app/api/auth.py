@@ -134,8 +134,9 @@ async def google_auth():
     """Initiate Google OAuth flow."""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Google OAuth not configured",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google OAuth is not configured. Please contact the administrator.",
+            headers={"Access-Control-Allow-Origin": "*"},
         )
     
     # Google OAuth endpoints
