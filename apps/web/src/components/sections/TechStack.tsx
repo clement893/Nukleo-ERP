@@ -69,13 +69,13 @@ const categoryColors = {
 
 export default function TechStack() {
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Stack Technologique
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Une stack moderne et performante pour vos applications
           </p>
         </div>
@@ -84,12 +84,12 @@ export default function TechStack() {
           {technologies.map((tech, index) => (
             <Card key={index} hover className="flex flex-col">
               <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-bold text-gray-900">{tech.name}</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{tech.name}</h3>
                 <Badge variant={categoryColors[tech.category]}>
                   {tech.category}
                 </Badge>
               </div>
-              <p className="text-gray-600 text-sm flex-grow">{tech.description}</p>
+              <p className="text-gray-600 dark:text-gray-300 text-sm flex-grow">{tech.description}</p>
             </Card>
           ))}
         </div>
