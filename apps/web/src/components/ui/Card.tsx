@@ -14,6 +14,7 @@ export interface CardProps {
   subtitle?: string;
   header?: ReactNode;
   footer?: ReactNode;
+  actions?: ReactNode; // Alias for footer
   className?: string;
   hover?: boolean;
   onClick?: () => void;
@@ -26,11 +27,14 @@ export default function Card({
   subtitle,
   header,
   footer,
+  actions,
   className,
   hover = false,
   onClick,
   padding = true,
 }: CardProps) {
+  // Use actions as footer if footer is not provided
+  const cardFooter = footer || actions;
   return (
     <div
       className={clsx(
@@ -59,9 +63,9 @@ export default function Card({
 
       <div className={clsx(padding && 'p-6')}>{children}</div>
 
-      {footer && (
+      {cardFooter && (
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-          {footer}
+          {cardFooter}
         </div>
       )}
     </div>
