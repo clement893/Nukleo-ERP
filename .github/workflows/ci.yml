@@ -1,94 +1,139 @@
-name: CI/CD
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, INITIALComponentRICH]
   pull_request:
     branches: [main, develop]
 
 jobs:
-  test:
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: modele_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
+    defaults:
+      run:
+        working-directory: apps/web
+    
     steps:
-      - uses: actions/checkout@v3
-
+      - uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
+          node-version: '22'
+          cache: 'pnpm'
+      
       - name: Install dependencies
-        run: |
-          npm install
-          cd backend
-          pip install -r requirements.txt
-
-      - name: Lint
-        run: npm run lint
-
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run linter
+        run: pnpm --filter @modele/web lint
+      
       - name: Type check
-        run: npm run type-check
+        run: pnpm --filter @modele/web type-check
 
-      - name: Backend tests
-        run: |
-          cd backend
-          pytest
-        env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/modele_db
-          REDIS_URL: redis://localhost:6379/0
-
-      - name: Frontend tests
-        run: |
-          cd apps/web
-          npm run test
-
-      - name: Build
-        run: npm run build
-
-  deploy:
-    needs: test
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
+    defaults:
+      run:
+        working-directory: apps/web
+    
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run tests
+        run: pnpm --filter @modele/web test --run
 
-      - name: Deploy to Railway
-        run: |
-          npm install -g @railway/cli
-          railway up
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build application
+        run: pnpm --filter @modele/web build
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Install Playwright browsers
+        run: pnpm --filter @modele/web exec playwright install --with-deps
+      
+      - name: Build application
+        run: pnpm --filter @modele/web build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
+      
+      - name: Run E2E tests
+        run: pnpm --filter @modele/web test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30
