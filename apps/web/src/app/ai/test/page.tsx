@@ -102,8 +102,11 @@ export default function AITestPage() {
 
   const changeMessageRole = (index: number, role: 'system' | 'user' | 'assistant') => {
     const newMessages = [...messages];
-    newMessages[index].role = role;
-    setMessages(newMessages);
+    const message = newMessages[index];
+    if (message) {
+      message.role = role;
+      setMessages(newMessages);
+    }
   };
 
   return (
