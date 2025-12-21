@@ -34,7 +34,6 @@ export { default as Toast } from './Toast';
 export { ToastContainer, useToast } from './ToastContainer';
 export type { ToastData } from './ToastContainer';
 export type { ToastProps } from './Toast';
-export type { ToastProps } from './Toast';
 
 // Data Display
 export { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';

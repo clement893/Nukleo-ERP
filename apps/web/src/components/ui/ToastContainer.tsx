@@ -32,7 +32,7 @@ export function useToast() {
   return { toasts, showToast, removeToast };
 }
 
-export default function ToastContainer({ toasts }: { toasts: ToastProps[] }) {
+export function ToastContainer({ toasts }: { toasts: ToastProps[] }) {
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2">
       {toasts.map((toast) => (
@@ -41,4 +41,6 @@ export default function ToastContainer({ toasts }: { toasts: ToastProps[] }) {
     </div>
   );
 }
+
+export default ToastContainer;
 
