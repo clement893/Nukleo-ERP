@@ -1,8 +1,11 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
+
+// Force dynamic rendering to avoid static generation issues with useSearchParams
+export const dynamic = 'force-dynamic';
 
 function CallbackContent() {
   const router = useRouter();
@@ -24,9 +27,9 @@ function CallbackContent() {
 
       // Fetch user info
       const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
-      fetch(`${apiUrl}/api/users/me`, {
+      fetch(${apiUrl}/api/users/me, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: Bearer ,
         },
       })
         .then((res) => res.json())
@@ -68,4 +71,3 @@ export default function AuthCallbackPage() {
     </Suspense>
   );
 }
-

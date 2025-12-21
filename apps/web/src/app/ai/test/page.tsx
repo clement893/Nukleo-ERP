@@ -1,3 +1,8 @@
+﻿'use client';
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useState } from 'react';
@@ -128,9 +133,9 @@ export default function AITestPage() {
             </div>
             {healthStatus && (
               <div className="mt-2 text-sm">
-                <p>Configured: {healthStatus.configured ? '✅' : '❌'}</p>
+                <p>Configured: {healthStatus.configured ? 'âœ…' : 'âŒ'}</p>
                 <p>Model: {healthStatus.model || 'N/A'}</p>
-                <p>Available: {healthStatus.available ? '✅' : '❌'}</p>
+                <p>Available: {healthStatus.available ? 'âœ…' : 'âŒ'}</p>
                 {healthStatus.error && (
                   <p className="text-red-600">Error: {healthStatus.error}</p>
                 )}
