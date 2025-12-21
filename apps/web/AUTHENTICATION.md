@@ -69,7 +69,7 @@ const payload = await verifyToken(token);
 
 ### Middleware Next.js
 
-Le middleware `src/middleware.ts` protège automatiquement toutes les routes sauf :
+Le middleware `src/proxy.ts` protège automatiquement toutes les routes sauf :
 - `/auth/*` (pages d'authentification)
 - `/api/auth/*` (routes NextAuth)
 - `/api/public/*` (routes publiques)
