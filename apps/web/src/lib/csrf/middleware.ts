@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { validateCSRF } from '../csrf';
+import { validateCSRF, getCSRFTokenFromHeader } from '../csrf';
 
 /**
  * CSRF protection middleware
@@ -22,11 +22,19 @@ export async function withCSRFProtection(
   }
 
   // Validate CSRF token
-  const isValid = await validateCSRF(request);
-  
-  if (!isValid) {
+  try {
+    const isValid = await validateCSRF(request);
+    
+    if (!isValid) {
+      return NextResponse.json(
+        { error: 'Invalid CSRF token. Please refresh the page and try again.' },
+        { status: 403 }
+      );
+    }
+  } catch (error) {
+    // If validation fails, return error
     return NextResponse.json(
-      { error: 'Invalid CSRF token' },
+      { error: 'CSRF validation failed' },
       { status: 403 }
     );
   }

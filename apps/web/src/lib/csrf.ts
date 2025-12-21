@@ -26,17 +26,24 @@ export function generateCSRFToken(): string {
 
 /**
  * Get CSRF token from cookies (server-side)
+ * Note: This function must be called from a Server Component or Route Handler
  */
 export async function getCSRFToken(): Promise<string> {
-  const cookieStore = await cookies();
-  let token = cookieStore.get(CSRF_TOKEN_COOKIE)?.value;
-  
-  if (!token) {
-    token = generateCSRFToken();
-    // Note: In Next.js App Router, you need to set cookies in Server Actions or Route Handlers
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    let token = cookieStore.get(CSRF_TOKEN_COOKIE)?.value;
+    
+    if (!token) {
+      token = generateCSRFToken();
+      // Note: In Next.js App Router, you need to set cookies in Server Actions or Route Handlers
+    }
+    
+    return token;
+  } catch (error) {
+    // Fallback if cookies() is not available (e.g., in middleware)
+    return generateCSRFToken();
   }
-  
-  return token;
 }
 
 /**
@@ -85,16 +92,34 @@ export function getCSRFTokenFromHeader(headers: Headers): string | null {
 
 /**
  * CSRF middleware for API routes
+ * Note: This function must be called from a Route Handler
  */
 export async function validateCSRF(request: Request): Promise<boolean> {
   const token = getCSRFTokenFromHeader(request.headers);
-  const cookieStore = await cookies();
-  const expectedToken = cookieStore.get(CSRF_TOKEN_COOKIE)?.value;
   
-  if (!token || !expectedToken) {
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const expectedToken = cookieStore.get(CSRF_TOKEN_COOKIE)?.value;
+    
+    if (!token || !expectedToken) {
+      return false;
+    }
+    
+    return verifyCSRFToken(token, expectedToken);
+  } catch (error) {
+    // Fallback: try to get from request cookies directly
+    const cookieHeader = request.headers.get('cookie');
+    if (cookieHeader) {
+      const cookies = Object.fromEntries(
+        cookieHeader.split('; ').map(c => c.split('='))
+      );
+      const expectedToken = cookies[CSRF_TOKEN_COOKIE];
+      if (token && expectedToken) {
+        return verifyCSRFToken(token, expectedToken);
+      }
+    }
     return false;
   }
-  
-  return verifyCSRFToken(token, expectedToken);
 }
 
