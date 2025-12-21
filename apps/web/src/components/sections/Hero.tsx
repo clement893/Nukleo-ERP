@@ -35,6 +35,11 @@ export default function Hero() {
               Commencer maintenant
             </Button>
           </Link>
+          <Link href="/components">
+            <Button size="lg" variant="secondary">
+              Voir les composants
+            </Button>
+          </Link>
           <Link href="/auth/login">
             <Button size="lg" variant="outline">
               Se connecter

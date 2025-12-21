@@ -14,8 +14,13 @@ export default function CTA() {
             pour créer des applications modernes et performantes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register">
+            <Link href="/components">
               <Button size="lg" variant="primary">
+                Explorer les composants
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button size="lg" variant="secondary">
                 Créer un compte gratuit
               </Button>
             </Link>

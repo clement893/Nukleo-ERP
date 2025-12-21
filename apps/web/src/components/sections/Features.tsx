@@ -37,6 +37,11 @@ const features: Feature[] = [
     title: 'Docker Ready',
     description: 'Configuration Docker complète pour un déploiement facile et reproductible',
   },
+  {
+    icon: '🎨',
+    title: '30+ Composants UI',
+    description: 'Bibliothèque complète de composants réutilisables pour construire des SaaS modernes',
+  },
 ];
 
 export default function Features() {
