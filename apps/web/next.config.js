@@ -1,4 +1,4 @@
-﻿/** @type {import('next').NextConfig} */
+/** @type {import('next').NextConfig} */
 // Sentry is optional - only use if package is installed
 let withSentryConfig = null;
 try {
@@ -9,7 +9,7 @@ try {
 }
 
 const nextConfig = {
-  // Optimisations de performance
+  // Performance optimizations
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
@@ -25,21 +25,6 @@ const nextConfig = {
   },
   
   // Experimental features
-  
-  // Performance optimizations
-  
-  // Compression
-  compress: true,
-  
-  // Production optimizations
-  productionBrowserSourceMaps: false,
-  
-  // Output optimization
-  output: 'standalone',
-  
-  // Optimize fonts
-  
-  // Experimental performance features
   experimental: {
     optimizePackageImports: ['@modele/types', 'clsx', 'zod', '@brandbook/ui'],
     optimizeCss: true,
@@ -99,14 +84,14 @@ const nextConfig = {
     return config;
   },
   
-  // Headers de scurit
+  // Security headers
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';
     
     // CSP Policy - ajuster selon vos besoins
     const cspPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 'unsafe-eval' pour Next.js dev, retirer en prod
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
@@ -145,8 +130,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: cspPolicy
           },
-          // HSTS - seulement en production HTTPS
-          ...(isProduction  [{
+          ...(isProduction ? [{
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload'
           }] : []),
@@ -159,12 +143,12 @@ const nextConfig = {
     ];
   },
   
-  // Redirects si ncessaire
+  // Redirects si nÃ©cessaire
   async redirects() {
     return [];
   },
   
-  // Rewrites si ncessaire
+  // Rewrites si nÃ©cessaire
   async rewrites() {
     return [];
   },
