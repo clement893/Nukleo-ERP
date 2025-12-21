@@ -105,7 +105,7 @@ export function withAuth(
 /**
  * Create role-based API route handler wrapper
  */
-export function withRole<T = unknown>(
+export function withRole(
   roles: string[],
   handler: (request: NextRequest, context: { user: TokenPayload }) => Promise<Response>
 ) {
