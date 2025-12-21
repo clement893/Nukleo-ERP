@@ -57,7 +57,7 @@ export default function DataPage() {
         </Section>
 
         <Section title="Table avec styles alternés">
-          <Table striped hover>
+          <Table>
             <TableHead>
               <TableRow>
                 <TableHeader>Produit</TableHeader>
