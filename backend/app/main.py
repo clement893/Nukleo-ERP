@@ -63,10 +63,21 @@ class CORSHeaderMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
         except Exception as e:
             # If an error occurs, create a response with CORS headers
+            origin = request.headers.get("origin")
+            headers = {}
+            if origin:
+                is_railway = any(origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"])
+                if origin in ALLOWED_ORIGINS or is_railway:
+                    headers["Access-Control-Allow-Origin"] = origin
+                    headers["Access-Control-Allow-Credentials"] = "true"
+                    headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                    headers["Access-Control-Allow-Headers"] = "*"
             response = JSONResponse(
                 status_code=500,
                 content={"detail": "Internal server error"},
+                headers=headers,
             )
+            return response
         
         # Always add CORS headers if origin is Railway domain or in allowed list
         if origin:
