@@ -9,6 +9,7 @@ export type DropdownItem =
       onClick: () => void;
       icon?: ReactNode;
       disabled?: boolean;
+      variant?: 'default' | 'danger';
       divider?: false;
     }
   | {
@@ -112,8 +113,10 @@ export default function Dropdown({
                 disabled={dropdownItem.disabled}
                 className={clsx(
                   'w-full px-4 py-2 text-left text-sm flex items-center space-x-2',
-                  'hover:bg-gray-100 transition-colors',
-                  'focus:outline-none focus:bg-gray-100 focus:ring-2 focus:ring-blue-500',
+                  'transition-colors',
+                  dropdownItem.variant === 'danger'
+                    ? 'text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:ring-2 focus:ring-red-500'
+                    : 'hover:bg-gray-100 focus:bg-gray-100 focus:ring-2 focus:ring-blue-500',
                   dropdownItem.disabled && 'opacity-50 cursor-not-allowed',
                   className
                 )}
