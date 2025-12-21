@@ -6,7 +6,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { handleApiError, isNetworkError, isClientError, isServerError } from '@/lib/errors/api';
+import { handleApiError, isNetworkError, isServerError } from '@/lib/errors/api';
 import { ErrorDisplay } from './ErrorDisplay';
 import { logger } from '@/lib/logger';
 
