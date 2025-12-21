@@ -57,7 +57,7 @@ export default function AlertsPanel() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Active Alerts</h3>
-          <Badge variant={alerts.length > 0 ? 'danger' : 'success'}>
+          <Badge variant={alerts.length > 0 ? 'error' : 'success'}>
             {alerts.length} active
           </Badge>
         </div>
