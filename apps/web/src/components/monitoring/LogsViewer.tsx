@@ -111,7 +111,7 @@ export default function LogsViewer() {
                 <div className="flex items-center gap-2 mb-1">
                   <Badge variant={getLevelColor(log.level)}>{log.level}</Badge>
                   {log.service && (
-                    <Badge variant="secondary">{log.service}</Badge>
+                    <Badge variant="default">{log.service}</Badge>
                   )}
                   <span className="text-gray-500 dark:text-gray-400">
                     {new Date(log.timestamp).toLocaleTimeString()}
