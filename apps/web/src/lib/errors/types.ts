@@ -27,7 +27,7 @@ export enum ErrorCode {
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
-export interface AppError {
+export interface AppErrorType {
   code: ErrorCode;
   message: string;
   details?: Record<string, unknown>;

@@ -3,7 +3,7 @@
  * Standardized error class for the application
  */
 
-import { ErrorCode, type AppError as AppErrorType } from './types';
+import { ErrorCode, type AppErrorType } from './types';
 
 export class AppError extends Error implements AppErrorType {
   public readonly code: ErrorCode;
