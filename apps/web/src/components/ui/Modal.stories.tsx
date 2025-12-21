@@ -36,17 +36,29 @@ export const Default: Story = {
 };
 
 export const WithActions: Story = {
-  render: () => (
-    <ModalWrapper
-      title="Confirm Action"
-      actions={[
-        { label: 'Cancel', onClick: () => {}, variant: 'outline' },
-        { label: 'Confirm', onClick: () => {} },
-      ]}
-    >
-      <p>Are you sure you want to perform this action?</p>
-    </ModalWrapper>
-  ),
+  render: () => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setIsOpen(true)}>Open Modal</Button>
+        <Modal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          title="Confirm Action"
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setIsOpen(false)}>Confirm</Button>
+            </>
+          }
+        >
+          <p>Are you sure you want to perform this action?</p>
+        </Modal>
+      </>
+    );
+  },
 };
 
 export const Large: Story = {
