@@ -8,8 +8,7 @@
 import { useEffect } from 'react';
 import { ErrorDisplay } from '@/components/errors/ErrorDisplay';
 import { logger } from '@/lib/logger';
-import { InternalServerError } from '@/lib/errors';
-import type { AppError } from '@/lib/errors';
+import { AppError, InternalServerError } from '@/lib/errors';
 
 interface ErrorProps {
   error: Error & { digest?: string };
