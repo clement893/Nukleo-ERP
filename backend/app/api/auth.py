@@ -136,7 +136,6 @@ async def google_auth():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Google OAuth is not configured. Please contact the administrator.",
-            headers={"Access-Control-Allow-Origin": "*"},
         )
     
     # Google OAuth endpoints

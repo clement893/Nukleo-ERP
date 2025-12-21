@@ -3,8 +3,11 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.database import init_db, close_db
 from app.api import auth, users, resources, upload, health
@@ -59,6 +62,73 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+# Exception handlers to ensure CORS headers are always sent
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Handle HTTP exceptions with CORS headers."""
+    origin = request.headers.get("origin")
+    headers = {}
+    
+    # Add CORS headers if origin is allowed
+    if origin and (origin in ALLOWED_ORIGINS or any(
+        origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"]
+    )):
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors with CORS headers."""
+    origin = request.headers.get("origin")
+    headers = {}
+    
+    # Add CORS headers if origin is allowed
+    if origin and (origin in ALLOWED_ORIGINS or any(
+        origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"]
+    )):
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+    
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": exc.errors()},
+        headers=headers,
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle general exceptions with CORS headers."""
+    origin = request.headers.get("origin")
+    headers = {}
+    
+    # Add CORS headers if origin is allowed
+    if origin and (origin in ALLOWED_ORIGINS or any(
+        origin.endswith(domain) for domain in [".railway.app", ".up.railway.app"]
+    )):
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error"},
+        headers=headers,
+    )
 
 # Include routers
 app.include_router(health.router)
