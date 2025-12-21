@@ -22,8 +22,30 @@ const nextConfig = {
   },
   
   // Experimental features
+  
+  // Performance optimizations
+  swcMinify: true,
+  reactStrictMode: true,
+  
+  // Compression
+  compress: true,
+  
+  // Production optimizations
+  productionBrowserSourceMaps: false,
+  
+  // Output optimization
+  output: 'standalone',
+  
+  // Optimize fonts
+  optimizeFonts: true,
+  
+  // Experimental performance features
   experimental: {
-    optimizePackageImports: ['@modele/types', 'clsx', 'zod'],
+    optimizePackageImports: ['@modele/types', 'clsx', 'zod', '@brandbook/ui'],
+    optimizeCss: true,
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
   
   // Turbopack configuration (Next.js 16 default)
