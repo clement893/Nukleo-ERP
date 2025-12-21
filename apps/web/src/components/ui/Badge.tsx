@@ -1,10 +1,10 @@
 import { ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { ColorVariant, BaseComponentProps, ColorVariantProps } from './types';
 
-interface BadgeProps {
+interface BadgeProps extends BaseComponentProps, ColorVariantProps {
   children: ReactNode;
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'info';
-  className?: string;
+  variant?: ColorVariant;
 }
 
 export default function Badge({

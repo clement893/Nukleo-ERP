@@ -1,327 +1,159 @@
-# Composants UI Réutilisables
+# Bibliothèque de Composants UI
 
-Cette bibliothèque contient une collection complète de composants réutilisables pour construire des applications SaaS modernes avec Next.js 16 et React 19.
+Une bibliothèque de composants UI complète, typée et documentée pour Next.js 16 avec support du dark mode.
 
-## 📦 Installation
+## 📚 Documentation
 
-Les composants sont déjà disponibles dans le projet. Importez-les depuis `@/components/ui` :
+### Architecture
 
-```tsx
-import { Button, Input, Modal } from '@/components/ui';
+Cette bibliothèque suit les principes de **Atomic Design** et utilise TypeScript pour une meilleure sécurité de type.
+
+- **Types communs** : Tous les composants partagent des types de base dans `types.ts`
+- **Cohérence** : Props standardisées entre composants similaires
+- **Dark Mode** : Support complet du dark mode avec Tailwind CSS
+- **Accessibilité** : Composants accessibles avec ARIA labels
+
+### Types Communs
+
+Tous les composants utilisent des types de base définis dans `types.ts` :
+
+```typescript
+import { ColorVariant, Size, BaseComponentProps } from './types';
 ```
 
-## 🎨 Composants Disponibles
+#### Variants de Couleur
 
-### 📝 Composants de Formulaire
+Les composants `Alert`, `Badge` et autres utilisent le même système de variants :
 
-#### Input
-Composant d'input textuel avec support pour labels, erreurs, icônes et validation.
+- `default` - Gris neutre
+- `success` - Vert pour les succès
+- `warning` - Jaune pour les avertissements
+- `error` - Rouge pour les erreurs
+- `info` - Bleu pour les informations
+
+#### Tailles
+
+Les composants avec prop `size` utilisent :
+
+- `sm` - Petit
+- `md` - Moyen (par défaut)
+- `lg` - Grand
+
+## 📦 Composants
+
+### Alert
+
+Composant d'alerte pour afficher des messages importants.
 
 ```tsx
-import { Input } from '@/components/ui';
+import Alert from '@/components/ui/Alert';
+
+<Alert variant="success" title="Succès" onClose={() => {}}>
+  Votre action a été effectuée avec succès.
+</Alert>
+```
+
+**Props :**
+- `variant?: ColorVariant` - Variant de couleur (default: 'info')
+- `title?: string` - Titre de l'alerte
+- `onClose?: () => void` - Callback de fermeture
+- `icon?: ReactNode` - Icône personnalisée
+- `className?: string` - Classes CSS supplémentaires
+- `children: ReactNode` - Contenu de l'alerte
+
+### Badge
+
+Badge pour afficher des labels ou des statuts.
+
+```tsx
+import Badge from '@/components/ui/Badge';
+
+<Badge variant="success">Actif</Badge>
+<Badge variant="error">Inactif</Badge>
+```
+
+**Props :**
+- `variant?: ColorVariant` - Variant de couleur (default: 'default')
+- `className?: string` - Classes CSS supplémentaires
+- `children: ReactNode` - Contenu du badge
+
+### Button
+
+Bouton avec plusieurs variants et tailles.
+
+```tsx
+import Button from '@/components/ui/Button';
+
+<Button variant="primary" size="md" onClick={() => {}}>
+  Cliquer
+</Button>
+```
+
+**Props :**
+- `variant?: ButtonVariant` - Variant du bouton (default: 'primary')
+- `size?: Size` - Taille du bouton (default: 'md')
+- `disabled?: boolean` - État désactivé
+- `className?: string` - Classes CSS supplémentaires
+- `children: ReactNode` - Contenu du bouton
+- Toutes les props HTML standard de `<button>`
+
+**Variants :**
+- `primary` - Bouton principal (bleu)
+- `secondary` - Bouton secondaire (gris)
+- `outline` - Bouton avec bordure
+- `ghost` - Bouton transparent
+- `danger` - Bouton de danger (rouge)
+
+### Input
+
+Champ de saisie avec label, erreur et icônes.
+
+```tsx
+import Input from '@/components/ui/Input';
 
 <Input
   label="Email"
   type="email"
-  placeholder="votre@email.com"
-  error={errors.email}
-  helperText="Nous ne partagerons jamais votre email"
-  required
+  placeholder="exemple@email.com"
+  error="Email invalide"
+  helperText="Entrez votre adresse email"
+  leftIcon={<MailIcon />}
 />
 ```
 
-#### Textarea
-Zone de texte multiligne.
+**Props :**
+- `label?: string` - Label du champ
+- `error?: string` - Message d'erreur
+- `helperText?: string` - Texte d'aide
+- `leftIcon?: ReactNode` - Icône à gauche
+- `rightIcon?: ReactNode` - Icône à droite
+- `fullWidth?: boolean` - Largeur complète
+- `className?: string` - Classes CSS supplémentaires
+- Toutes les props HTML standard de `<input>`
+
+### Card
+
+Carte pour contenir du contenu.
 
 ```tsx
-import { Textarea } from '@/components/ui';
+import Card from '@/components/ui/Card';
 
-<Textarea
-  label="Description"
-  rows={4}
-  placeholder="Décrivez votre projet..."
-/>
+<Card className="p-6">
+  <h2>Titre</h2>
+  <p>Contenu de la carte</p>
+</Card>
 ```
 
-#### Select
-Menu déroulant avec options.
+**Props :**
+- `className?: string` - Classes CSS supplémentaires
+- `children: ReactNode` - Contenu de la carte
+
+### Table
+
+Tableau pour afficher des données structurées.
 
 ```tsx
-import { Select } from '@/components/ui';
-
-<Select
-  label="Pays"
-  options={[
-    { value: 'fr', label: 'France' },
-    { value: 'us', label: 'États-Unis' },
-  ]}
-  placeholder="Sélectionnez un pays"
-/>
-```
-
-#### Checkbox
-Case à cocher.
-
-```tsx
-import { Checkbox } from '@/components/ui';
-
-<Checkbox
-  label="J'accepte les conditions"
-  checked={accepted}
-  onChange={(e) => setAccepted(e.target.checked)}
-/>
-```
-
-#### Radio
-Bouton radio.
-
-```tsx
-import { Radio } from '@/components/ui';
-
-<Radio
-  label="Option 1"
-  name="option"
-  value="1"
-  checked={selected === '1'}
-/>
-```
-
-#### Switch
-Interrupteur toggle.
-
-```tsx
-import { Switch } from '@/components/ui';
-
-<Switch
-  label="Notifications activées"
-  checked={notifications}
-  onChange={(e) => setNotifications(e.target.checked)}
-/>
-```
-
-#### DatePicker
-Sélecteur de date.
-
-```tsx
-import { DatePicker } from '@/components/ui';
-
-<DatePicker
-  label="Date de naissance"
-  format="date"
-  value={date}
-  onChange={(e) => setDate(e.target.value)}
-/>
-```
-
-#### FileUpload
-Upload de fichiers avec drag & drop.
-
-```tsx
-import { FileUpload } from '@/components/ui';
-
-<FileUpload
-  label="Téléverser des fichiers"
-  accept="image/*"
-  multiple
-  maxSize={5}
-  onFileSelect={(files) => console.log(files)}
-/>
-```
-
-### 🎯 Boutons et Badges
-
-#### Button
-Bouton avec variantes et tailles.
-
-```tsx
-import { Button } from '@/components/ui';
-
-<Button variant="primary" size="lg" onClick={handleClick}>
-  Cliquer ici
-</Button>
-```
-
-Variantes : `primary`, `secondary`, `outline`, `ghost`
-Tailles : `sm`, `md`, `lg`
-
-#### Badge
-Badge pour afficher des statuts ou labels.
-
-```tsx
-import { Badge } from '@/components/ui';
-
-<Badge variant="success">Actif</Badge>
-```
-
-Variantes : `default`, `success`, `warning`, `error`, `info`
-
-### 🗂️ Navigation
-
-#### Breadcrumbs
-Fil d'Ariane pour la navigation.
-
-```tsx
-import { Breadcrumbs } from '@/components/ui';
-
-<Breadcrumbs
-  items={[
-    { label: 'Accueil', href: '/' },
-    { label: 'Produits', href: '/products' },
-    { label: 'Détails' },
-  ]}
-/>
-```
-
-#### Sidebar
-Barre latérale de navigation.
-
-```tsx
-import { Sidebar } from '@/components/ui';
-
-<Sidebar
-  items={[
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon /> },
-    { label: 'Utilisateurs', href: '/users', icon: <UsersIcon /> },
-  ]}
-  currentPath={pathname}
-/>
-```
-
-#### Tabs
-Onglets pour organiser le contenu.
-
-```tsx
-import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
-
-<Tabs defaultTab="tab1">
-  <TabList>
-    <Tab value="tab1">Onglet 1</Tab>
-    <Tab value="tab2">Onglet 2</Tab>
-  </TabList>
-  <TabPanels>
-    <TabPanel value="tab1">Contenu 1</TabPanel>
-    <TabPanel value="tab2">Contenu 2</TabPanel>
-  </TabPanels>
-</Tabs>
-```
-
-#### Pagination
-Pagination pour les listes.
-
-```tsx
-import { Pagination } from '@/components/ui';
-
-<Pagination
-  currentPage={page}
-  totalPages={10}
-  onPageChange={setPage}
-/>
-```
-
-### 💬 Feedback
-
-#### Alert
-Message d'alerte.
-
-```tsx
-import { Alert } from '@/components/ui';
-
-<Alert variant="success" title="Succès" onClose={() => {}}>
-  Opération réussie !
-</Alert>
-```
-
-Variantes : `success`, `error`, `warning`, `info`
-
-#### Modal
-Fenêtre modale.
-
-```tsx
-import { Modal } from '@/components/ui';
-
-<Modal
-  isOpen={isOpen}
-  onClose={() => setIsOpen(false)}
-  title="Confirmer"
-  size="md"
->
-  <p>Êtes-vous sûr ?</p>
-</Modal>
-```
-
-Tailles : `sm`, `md`, `lg`, `xl`, `full`
-
-#### Loading
-Indicateur de chargement.
-
-```tsx
-import { Loading } from '@/components/ui';
-
-<Loading size="lg" text="Chargement..." />
-```
-
-#### Skeleton
-Placeholder de chargement.
-
-```tsx
-import { Skeleton } from '@/components/ui';
-
-<Skeleton variant="rectangular" width="100%" height={200} />
-```
-
-#### Progress
-Barre de progression.
-
-```tsx
-import { Progress } from '@/components/ui';
-
-<Progress
-  value={75}
-  variant="success"
-  showLabel
-  label="Progression"
-/>
-```
-
-#### Spinner
-Spinner de chargement.
-
-```tsx
-import { Spinner } from '@/components/ui';
-
-<Spinner size="md" color="primary" />
-```
-
-#### Toast
-Notifications toast.
-
-```tsx
-import { ToastContainer, useToast } from '@/components/ui';
-
-function MyComponent() {
-  const { toasts, showToast } = useToast();
-
-  return (
-    <>
-      <button onClick={() => showToast({
-        message: 'Succès !',
-        type: 'success',
-      })}>
-        Afficher toast
-      </button>
-      <ToastContainer toasts={toasts} />
-    </>
-  );
-}
-```
-
-### 📊 Affichage de Données
-
-#### Table
-Tableau de données.
-
-```tsx
-import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui';
+import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui/Table';
 
 <Table>
   <TableHead>
@@ -330,7 +162,7 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@
       <TableHeader>Email</TableHeader>
     </TableRow>
   </TableHead>
-  <TableBody>
+  <TableBody striped hover>
     <TableRow>
       <TableCell>John Doe</TableCell>
       <TableCell>john@example.com</TableCell>
@@ -339,177 +171,173 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@
 </Table>
 ```
 
-#### EmptyState
-État vide pour les listes.
+**Props TableBody :**
+- `striped?: boolean` - Lignes alternées
+- `hover?: boolean` - Effet au survol
+
+### EmptyState
+
+État vide pour indiquer l'absence de données.
 
 ```tsx
-import { EmptyState } from '@/components/ui';
+import EmptyState from '@/components/ui/EmptyState';
 
 <EmptyState
-  title="Aucun résultat"
-  description="Essayez de modifier vos filtres"
+  title="Aucun élément"
+  description="Commencez par créer votre premier élément"
+  icon={<Icon />}
   action={{
-    label: 'Créer un élément',
-    onClick: () => {},
+    label: "Créer",
+    onClick: () => {}
   }}
 />
 ```
 
-#### StatsCard
-Carte de statistiques.
+**Props :**
+- `title: string` - Titre de l'état vide
+- `description?: string` - Description
+- `icon?: ReactNode` - Icône
+- `action?: { label: string; onClick: () => void }` - Action
+- `className?: string` - Classes CSS supplémentaires
+
+### StatsCard
+
+Carte de statistiques avec valeur et tendance.
 
 ```tsx
-import { StatsCard } from '@/components/ui';
+import StatsCard from '@/components/ui/StatsCard';
 
 <StatsCard
-  title="Utilisateurs actifs"
-  value="1,234"
+  title="Utilisateurs"
+  value={1234}
   change={{
     value: 12,
     type: 'increase',
-    period: 'ce mois',
+    period: 'ce mois'
   }}
+  icon={<UsersIcon />}
 />
 ```
 
-### 🛠️ Utilitaires
+**Props :**
+- `title: string` - Titre de la statistique
+- `value: string | number` - Valeur à afficher
+- `change?: { value: number; type: 'increase' | 'decrease'; period?: string }` - Changement
+- `icon?: ReactNode` - Icône
+- `trend?: ReactNode` - Graphique de tendance
+- `className?: string` - Classes CSS supplémentaires
 
-#### Avatar
-Avatar utilisateur.
+## 🎨 Dark Mode
 
-```tsx
-import { Avatar } from '@/components/ui';
-
-<Avatar
-  src="/avatar.jpg"
-  name="John Doe"
-  size="lg"
-  status="online"
-/>
-```
-
-#### Tooltip
-Info-bulle.
+Tous les composants supportent le dark mode automatiquement via Tailwind CSS. Le thème est géré par le `ThemeProvider` dans `contexts/ThemeContext.tsx`.
 
 ```tsx
-import { Tooltip } from '@/components/ui';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
-<Tooltip content="Information utile" position="top">
-  <button>Survolez-moi</button>
-</Tooltip>
+// Dans votre layout
+<ThemeProvider>
+  <App />
+</ThemeProvider>
 ```
 
-#### Dropdown
-Menu déroulant.
+## 🧪 Tests
+
+Les composants sont testés avec Vitest et React Testing Library.
+
+```bash
+# Lancer les tests
+pnpm test
+
+# Lancer les tests avec UI
+pnpm test:ui
+```
+
+## 📝 Exemples d'Usage
+
+### Formulaire avec validation
 
 ```tsx
-import { Dropdown } from '@/components/ui';
+import { useState } from 'react';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
 
-<Dropdown
-  trigger={<button>Menu</button>}
-  items={[
-    { label: 'Option 1', onClick: () => {} },
-    { label: 'Option 2', onClick: () => {} },
-  ]}
-/>
+function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = () => {
+    if (!email.includes('@')) {
+      setError('Email invalide');
+      return;
+    }
+    // Soumettre le formulaire
+  };
+
+  return (
+    <form>
+      <Input
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        error={error}
+      />
+      <Button onClick={handleSubmit}>Se connecter</Button>
+    </form>
+  );
+}
 ```
 
-#### SearchBar
-Barre de recherche.
+### Liste avec état vide
 
 ```tsx
-import { SearchBar } from '@/components/ui';
+import EmptyState from '@/components/ui/EmptyState';
+import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui/Table';
 
-<SearchBar
-  placeholder="Rechercher..."
-  onSearch={(value) => console.log(value)}
-/>
+function UserList({ users }) {
+  if (users.length === 0) {
+    return (
+      <EmptyState
+        title="Aucun utilisateur"
+        description="Créez votre premier utilisateur pour commencer"
+        action={{
+          label: "Créer un utilisateur",
+          onClick: () => {}
+        }}
+      />
+    );
+  }
+
+  return (
+    <Table>
+      {/* ... */}
+    </Table>
+  );
+}
 ```
-
-#### Accordion
-Accordéon pliable.
-
-```tsx
-import { Accordion } from '@/components/ui';
-
-<Accordion
-  items={[
-    {
-      title: 'Section 1',
-      content: <p>Contenu de la section 1</p>,
-    },
-    {
-      title: 'Section 2',
-      content: <p>Contenu de la section 2</p>,
-    },
-  ]}
-/>
-```
-
-### 📐 Layout
-
-#### Container
-Conteneur avec largeur maximale.
-
-```tsx
-import { Container } from '@/components/ui';
-
-<Container maxWidth="xl" padding>
-  <p>Contenu</p>
-</Container>
-```
-
-#### Divider
-Séparateur.
-
-```tsx
-import { Divider } from '@/components/ui';
-
-<Divider label="OU" />
-<Divider vertical />
-```
-
-#### Card
-Carte de contenu.
-
-```tsx
-import { Card } from '@/components/ui';
-
-<Card hover>
-  <h2>Titre</h2>
-  <p>Contenu</p>
-</Card>
-```
-
-## 🎨 Personnalisation
-
-Tous les composants utilisent Tailwind CSS et peuvent être personnalisés via les props `className`. Les composants suivent un système de design cohérent avec :
-
-- Couleurs primaires : Bleu (`blue-600`)
-- Espacements : Basés sur l'échelle Tailwind
-- Typographie : Système de polices par défaut
-- Animations : Transitions fluides
-
-## 📚 Bonnes Pratiques
-
-1. **Accessibilité** : Tous les composants incluent les attributs ARIA nécessaires
-2. **TypeScript** : Tous les composants sont typés avec TypeScript
-3. **Responsive** : Les composants sont responsives par défaut
-4. **Performance** : Utilisation de `forwardRef` pour les optimisations
-5. **Réutilisabilité** : Composants modulaires et configurables
 
 ## 🔧 Développement
 
-Pour ajouter un nouveau composant :
+### Ajouter un nouveau composant
 
-1. Créez le fichier dans `src/components/ui/`
-2. Exportez-le dans `src/components/ui/index.ts`
-3. Documentez-le dans ce README
-4. Ajoutez des tests si nécessaire
+1. Créer le fichier dans `components/ui/`
+2. Utiliser les types de base depuis `types.ts`
+3. Ajouter le support dark mode avec les classes Tailwind
+4. Exporter le composant dans `index.ts`
+5. Ajouter des tests dans `__tests__/`
+6. Documenter dans ce README
 
-## 📝 Notes
+### Standards de Code
 
-- Les composants utilisent `clsx` pour la gestion des classes CSS
-- Les composants client-side utilisent `'use client'`
-- Les composants sont optimisés pour Next.js 16 App Router
+- Utiliser TypeScript strict
+- Props cohérentes avec les autres composants
+- Support dark mode obligatoire
+- Accessibilité (ARIA labels, keyboard navigation)
+- Tests unitaires pour les fonctionnalités principales
 
+## 📚 Ressources
+
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/)
+- [Accessibility Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)

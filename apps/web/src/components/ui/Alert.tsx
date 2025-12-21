@@ -1,13 +1,10 @@
 import { ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { ColorVariant, BaseComponentProps, ColorVariantProps, TitleProps, ClosableProps, IconProps, colorVariantMap } from './types';
 
-interface AlertProps {
+interface AlertProps extends BaseComponentProps, ColorVariantProps, TitleProps, ClosableProps, IconProps {
   children: ReactNode;
-  variant?: 'success' | 'error' | 'warning' | 'info';
-  title?: string;
-  onClose?: () => void;
-  className?: string;
-  icon?: ReactNode;
+  variant?: ColorVariant;
 }
 
 export default function Alert({
@@ -18,62 +15,33 @@ export default function Alert({
   className,
   icon,
 }: AlertProps) {
-  const variants = {
-    success: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      text: 'text-green-800',
-      title: 'text-green-900',
-      icon: 'text-green-400',
-    },
-    error: {
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      text: 'text-red-800',
-      title: 'text-red-900',
-      icon: 'text-red-400',
-    },
-    warning: {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
-      text: 'text-yellow-800',
-      title: 'text-yellow-900',
-      icon: 'text-yellow-400',
-    },
-    info: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'text-blue-800',
-      title: 'text-blue-900',
-      icon: 'text-blue-400',
-    },
-  };
-
-  const styles = variants[variant];
+  const styles = colorVariantMap[variant];
 
   return (
     <div
       className={clsx(
         'rounded-lg border p-4',
         styles.bg,
+        styles.darkBg,
         styles.border,
+        styles.darkBorder,
         className
       )}
       role="alert"
     >
       <div className="flex items-start">
         {icon && (
-          <div className={clsx('flex-shrink-0 mr-3', styles.icon)}>
+          <div className={clsx('flex-shrink-0 mr-3', styles.text, styles.darkText)}>
             {icon}
           </div>
         )}
         <div className="flex-1">
           {title && (
-            <h3 className={clsx('font-semibold mb-1', styles.title)}>
+            <h3 className={clsx('font-semibold mb-1', styles.text, styles.darkText)}>
               {title}
             </h3>
           )}
-          <div className={clsx('text-sm', styles.text)}>{children}</div>
+          <div className={clsx('text-sm', styles.text, styles.darkText)}>{children}</div>
         </div>
         {onClose && (
           <button
@@ -81,7 +49,8 @@ export default function Alert({
             className={clsx(
               'ml-4 flex-shrink-0',
               'hover:opacity-75 transition-opacity',
-              styles.text
+              styles.text,
+              styles.darkText
             )}
             aria-label="Close"
           >
