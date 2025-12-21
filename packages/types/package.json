@@ -1,0 +1,15 @@
+{
+  "name": "@modele/types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for MODELE-NEXTJS-FULLSTACK",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
+
