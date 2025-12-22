@@ -4,15 +4,16 @@ Service for managing subscriptions
 """
 
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.models import Plan, Subscription, User
-from app.models.plan import PlanStatus
+from app.models.plan import PlanStatus, PlanInterval
 from app.models.subscription import SubscriptionStatus
 from app.services.stripe_service import StripeService
+from app.core.logging import logger
 
 
 class SubscriptionService:
@@ -68,12 +69,47 @@ class SubscriptionService:
         plan_id: int,
         stripe_subscription_id: str,
         stripe_customer_id: str,
-        trial_end: Optional[datetime] = None
+        trial_end: Optional[datetime] = None,
+        current_period_start: Optional[datetime] = None,
+        current_period_end: Optional[datetime] = None
     ) -> Subscription:
         """Create subscription from Stripe"""
+        # Check if user already has an active subscription
+        existing = await self.get_user_subscription(user_id, include_plan=False)
+        if existing:
+            logger.warning(f"User {user_id} already has an active subscription {existing.id}")
+            # Update existing instead of creating duplicate
+            existing.stripe_subscription_id = stripe_subscription_id
+            existing.stripe_customer_id = stripe_customer_id
+            existing.plan_id = plan_id
+            if trial_end:
+                existing.trial_end = trial_end
+                existing.status = SubscriptionStatus.TRIALING
+            if current_period_start:
+                existing.current_period_start = current_period_start
+            if current_period_end:
+                existing.current_period_end = current_period_end
+            await self.db.commit()
+            await self.db.refresh(existing)
+            return existing
+
         plan = await self.get_plan(plan_id)
         if not plan:
             raise ValueError(f"Plan {plan_id} not found")
+
+        now = datetime.now(timezone.utc)
+        
+        # Calculate period end based on plan interval if not provided
+        if not current_period_end and not trial_end:
+            if plan.interval == PlanInterval.MONTH:
+                period_days = 30 * plan.interval_count
+            elif plan.interval == PlanInterval.YEAR:
+                period_days = 365 * plan.interval_count
+            elif plan.interval == PlanInterval.WEEK:
+                period_days = 7 * plan.interval_count
+            else:  # DAY
+                period_days = plan.interval_count
+            current_period_end = now + timedelta(days=period_days)
 
         subscription = Subscription(
             user_id=user_id,
@@ -82,8 +118,8 @@ class SubscriptionService:
             stripe_customer_id=stripe_customer_id,
             status=SubscriptionStatus.TRIALING if trial_end else SubscriptionStatus.ACTIVE,
             trial_end=trial_end,
-            current_period_start=datetime.utcnow(),
-            current_period_end=trial_end if trial_end else datetime.utcnow() + timedelta(days=30),
+            current_period_start=current_period_start or now,
+            current_period_end=current_period_end or trial_end,
         )
 
         self.db.add(subscription)
@@ -127,11 +163,16 @@ class SubscriptionService:
         if not subscription:
             return False
 
+        # Check if already canceled
+        if subscription.cancel_at_period_end:
+            logger.info(f"Subscription {subscription_id} already scheduled for cancellation")
+            return True
+
         # Cancel in Stripe
         success = await self.stripe_service.cancel_subscription(subscription)
         if success:
             subscription.cancel_at_period_end = True
-            subscription.canceled_at = datetime.utcnow()
+            subscription.canceled_at = datetime.now(timezone.utc)
             await self.db.commit()
             await self.db.refresh(subscription)
 
@@ -154,6 +195,11 @@ class SubscriptionService:
         if not subscription:
             return None
 
+        # Check if already on this plan
+        if subscription.plan_id == new_plan_id:
+            logger.info(f"Subscription {subscription_id} already on plan {new_plan_id}")
+            return subscription
+
         new_plan = await self.get_plan(new_plan_id)
         if not new_plan:
             raise ValueError(f"Plan {new_plan_id} not found")
@@ -174,7 +220,7 @@ class SubscriptionService:
         if not subscription:
             return True
 
-        if subscription.current_period_end and subscription.current_period_end < datetime.utcnow():
+        if subscription.current_period_end and subscription.current_period_end < datetime.now(timezone.utc):
             return True
 
         return False

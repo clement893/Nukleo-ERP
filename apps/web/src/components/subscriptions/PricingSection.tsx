@@ -5,7 +5,7 @@ import { PricingCard, Plan } from './PricingCard';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Alert } from '@/components/ui';
+import { Alert } from '@/components/ui/Alert';
 
 export function PricingSection() {
   const { data: session } = useSession();
@@ -20,6 +20,7 @@ export function PricingSection() {
     if (session) {
       loadCurrentSubscription();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const loadPlans = async () => {

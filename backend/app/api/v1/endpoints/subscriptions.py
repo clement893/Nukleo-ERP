@@ -165,6 +165,21 @@ async def upgrade_subscription(
             detail="No active subscription found"
         )
     
+    # Check if trying to upgrade to same plan
+    if subscription.plan_id == plan_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Already subscribed to this plan"
+        )
+    
+    # Verify plan exists
+    plan = await subscription_service.get_plan(plan_id)
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plan not found"
+        )
+    
     updated_subscription = await subscription_service.upgrade_plan(
         subscription.id,
         plan_id
@@ -175,6 +190,12 @@ async def upgrade_subscription(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upgrade subscription"
         )
+    
+    # Reload with plan relationship
+    updated_subscription = await subscription_service.get_user_subscription(
+        current_user.id,
+        include_plan=True
+    )
     
     return SubscriptionResponse.model_validate(updated_subscription)
 

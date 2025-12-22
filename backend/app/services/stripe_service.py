@@ -13,6 +13,9 @@ from app.core.logging import logger
 from app.models import User, Plan, Subscription
 from app.models.subscription import SubscriptionStatus
 
+# Import stripe.error for proper exception handling
+import stripe.error
+
 
 class StripeService:
     """Service for Stripe operations"""
