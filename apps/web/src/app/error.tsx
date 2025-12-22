@@ -35,13 +35,13 @@ export default function Error({
         });
       } catch (e: unknown) {
         // Sentry not available, continue without it
-        let errorMessage: string;
-        if (e instanceof Error) {
-          errorMessage = e.message;
-        } else {
-          errorMessage = String(e);
-        }
-        logger.warn('Sentry not available', { error: errorMessage });
+        const getErrorMessage = (err: unknown): string => {
+          if (err instanceof Error) {
+            return err.message;
+          }
+          return String(err);
+        };
+        logger.warn('Sentry not available', { error: getErrorMessage(e) });
       }
     }
   }, [error]);
