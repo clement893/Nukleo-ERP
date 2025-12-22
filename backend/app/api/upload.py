@@ -193,7 +193,7 @@ async def delete_file(
             pass
 
     # Delete from database
-    await db.delete(file_record)
+    db.delete(file_record)
     await db.commit()
 
     return None

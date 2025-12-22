@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.database import get_db
+from app.core.database import get_db
 from app.models import User
 from app.core.security import decode_token
 
@@ -38,15 +38,15 @@ async def get_current_user(
         )
 
     # Fetch user from database
-    from uuid import UUID
+    # User.id is Integer, not UUID, so convert string to int
     try:
-        user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
-    except ValueError:
+        user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+    except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user ID format",
         )
-    result = await db.execute(select(User).where(User.id == user_uuid))
+    result = await db.execute(select(User).where(User.id == user_id_int))
     user = result.scalar_one_or_none()
 
     if not user:

@@ -75,7 +75,7 @@ class UserService:
         if not user:
             return False
 
-        await self.db.delete(user)
+        self.db.delete(user)
         await self.db.commit()
 
         return True
