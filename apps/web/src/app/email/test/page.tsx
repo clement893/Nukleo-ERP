@@ -227,9 +227,6 @@ export default function EmailTestPage() {
                 <p><strong>From Email:</strong> {healthStatus.from_email || 'N/A'}</p>
                 <p><strong>From Name:</strong> {healthStatus.from_name || 'N/A'}</p>
                 <p><strong>Status:</strong> {healthStatus.status || 'N/A'}</p>
-                {healthStatus.error && (
-                  <p className="text-red-600"><strong>Error:</strong> {healthStatus.error}</p>
-                )}
               </div>
             )}
           </div>
