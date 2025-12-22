@@ -55,7 +55,7 @@ export default function ExportButton({ data, filename = 'export', onExport }: Ex
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      logger.error('Error exporting CSV', error);
+      logger.error('Error exporting CSV', error instanceof Error ? error : new Error(String(error)));
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function ExportButton({ data, filename = 'export', onExport }: Ex
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      logger.error('Error exporting Excel', error);
+      logger.error('Error exporting Excel', error instanceof Error ? error : new Error(String(error)));
     } finally {
       setLoading(false);
     }

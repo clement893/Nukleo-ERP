@@ -48,7 +48,7 @@ async function checkService(
     }
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    logger.error(`Health check failed for ${name}`, error as Error, { service: name });
+    logger.error(`Health check failed for ${name}`, error instanceof Error ? error : new Error(String(error)), { service: name });
     
     return {
       name,
