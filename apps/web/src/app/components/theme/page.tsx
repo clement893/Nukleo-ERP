@@ -5,8 +5,9 @@ import { PageHeader, PageContainer, Section, ExampleCard } from '@/components/la
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeManager } from '@/components/theme/ThemeManager';
 
-// Force dynamic rendering to avoid SSR issues with useTheme
-export const dynamic = 'force-dynamic';
+// Note: Client Components are already dynamic by nature.
+// Route segment config (export const dynamic) only works in Server Components.
+// Client Components run on the client side, so they don't need this export.
 
 function ThemePageContent() {
   const { theme, resolvedTheme, setTheme } = useTheme();

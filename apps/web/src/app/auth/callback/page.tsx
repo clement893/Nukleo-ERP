@@ -4,8 +4,10 @@ import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 
-// Force dynamic rendering to avoid static generation issues with useSearchParams
-export const dynamic = 'force-dynamic';
+// Note: Client Components are already dynamic by nature.
+// Route segment config (export const dynamic) only works in Server Components.
+// Since this page uses useSearchParams (which requires dynamic rendering),
+// and it's a Client Component, it will be rendered dynamically automatically.
 
 function CallbackContent() {
   const router = useRouter();

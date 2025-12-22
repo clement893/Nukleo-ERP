@@ -1,7 +1,8 @@
 ﻿'use client';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+// Note: Client Components are already dynamic by nature.
+// Route segment config (export const dynamic) only works in Server Components.
+// Client Components run on the client side, so they don't need this export.
 
 import { useState } from 'react';
 import { aiAPI } from '@/lib/api';

@@ -1,6 +1,8 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
+// Note: Client Components are already dynamic by nature.
+// Route segment config (export const dynamic) only works in Server Components.
+// If you need to prevent static generation, create a Server Component wrapper.
 
 import Card from '@/components/ui/Card';
 
