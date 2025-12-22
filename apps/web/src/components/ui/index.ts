@@ -103,7 +103,7 @@ export type { FileUploadWithPreviewProps } from './FileUploadWithPreview';
 
 // Command Palette
 export { default as CommandPalette, useCommandPalette } from './CommandPalette';
-export type { CommandPaletteProps, Command } from './CommandPalette';
+export type { CommandPaletteProps, Command } from './CommandPalette.types';
 
 // MultiSelect
 export { default as MultiSelect } from './MultiSelect';

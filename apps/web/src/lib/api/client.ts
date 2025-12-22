@@ -60,49 +60,48 @@ class ApiClient {
     );
   }
 
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  /**
+   * Generic request method to reduce duplication
+   */
+  private async request<T>(
+    method: 'get' | 'post' | 'put' | 'patch' | 'delete',
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.get(url, config);
+      let response: AxiosResponse<ApiResponse<T>>;
+      
+      if (method === 'get' || method === 'delete') {
+        response = await this.client[method](url, config);
+      } else {
+        response = await this.client[method](url, data, config);
+      }
+      
       return response.data;
     } catch (error) {
       throw handleApiError(error);
     }
+  }
+
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    return this.request<T>('get', url, undefined, config);
   }
 
   async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.post(url, data, config);
-      return response.data;
-    } catch (error) {
-      throw handleApiError(error);
-    }
+    return this.request<T>('post', url, data, config);
   }
 
   async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.put(url, data, config);
-      return response.data;
-    } catch (error) {
-      throw handleApiError(error);
-    }
+    return this.request<T>('put', url, data, config);
   }
 
   async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.patch(url, data, config);
-      return response.data;
-    } catch (error) {
-      throw handleApiError(error);
-    }
+    return this.request<T>('patch', url, data, config);
   }
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.delete(url, config);
-      return response.data;
-    } catch (error) {
-      throw handleApiError(error);
-    }
+    return this.request<T>('delete', url, undefined, config);
   }
 
   setAuthToken(token: string): void {
@@ -115,4 +114,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-
