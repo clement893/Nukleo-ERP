@@ -109,7 +109,7 @@ export function ThemeManager() {
             Police principale (corps de texte)
           </label>
           <Select
-            options={FONT_OPTIONS as SelectOption[]}
+            options={FONT_OPTIONS as unknown as SelectOption[]}
             value={theme.fontFamily}
             onChange={(e) => updateColor('fontFamily', e.target.value)}
           />
@@ -117,7 +117,7 @@ export function ThemeManager() {
         <div>
           <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Police des titres</label>
           <Select
-            options={FONT_OPTIONS as SelectOption[]}
+            options={FONT_OPTIONS as unknown as SelectOption[]}
             value={theme.fontFamilyHeading}
             onChange={(e) => updateColor('fontFamilyHeading', e.target.value)}
           />
@@ -125,7 +125,7 @@ export function ThemeManager() {
         <div>
           <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Police des sous-titres</label>
           <Select
-            options={FONT_OPTIONS as SelectOption[]}
+            options={FONT_OPTIONS as unknown as SelectOption[]}
             value={theme.fontFamilySubheading}
             onChange={(e) => updateColor('fontFamilySubheading', e.target.value)}
           />
@@ -165,7 +165,7 @@ export function ThemeManager() {
         <div>
           <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Border Radius</label>
           <Select
-            options={BORDER_RADIUS_OPTIONS as SelectOption[]}
+            options={BORDER_RADIUS_OPTIONS as unknown as SelectOption[]}
             value={theme.borderRadius}
             onChange={(e) => updateColor('borderRadius', e.target.value)}
           />
