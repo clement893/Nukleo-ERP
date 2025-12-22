@@ -5,11 +5,11 @@
 
 import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
+import type { Locale } from './messages';
 
 // Supported locales
 export const locales = ['fr', 'en', 'es'] as const;
 export const supportedLocales = locales;
-export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'fr';
 
