@@ -48,6 +48,13 @@ export interface EmailResponse {
   task_id?: string;
 }
 
+export interface EmailHealthResponse {
+  configured: boolean;
+  from_email?: string;
+  from_name?: string;
+  status: string;
+}
+
 export interface InvoiceEmailRequest {
   to_email: string;
   name: string;
@@ -138,8 +145,8 @@ export const emailAPI = {
   /**
    * Check email service health
    */
-  health: async (): Promise<{ configured: boolean; from_email?: string; from_name?: string; status: string }> => {
-    return apiClient.get('/email/health');
+  health: async (): Promise<ApiResponse<EmailHealthResponse>> => {
+    return apiClient.get<EmailHealthResponse>('/email/health');
   },
 
   /**
