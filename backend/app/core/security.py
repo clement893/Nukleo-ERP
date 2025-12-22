@@ -78,12 +78,21 @@ def create_refresh_token(data: dict) -> str:
     return encoded_jwt
 
 
-def decode_token(token: str) -> Optional[dict]:
-    """Decode a JWT token with proper error handling."""
+def decode_token(token: str, token_type: str = "access") -> Optional[dict]:
+    """Decode a JWT token with proper error handling and type validation."""
     from app.core.logging import logger
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Vérifier le type de token
+        payload_token_type = payload.get("type")
+        if payload_token_type != token_type:
+            logger.warning(
+                f"Token type mismatch: expected {token_type}, got {payload_token_type}"
+            )
+            return None
+        
         return payload
     except ExpiredSignatureError:
         logger.debug("Token expired")

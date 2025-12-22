@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -13,7 +13,7 @@ from app.core.security import decode_token
 from app.services.subscription_service import SubscriptionService
 from app.services.stripe_service import StripeService
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 async def get_subscription_service(
@@ -37,7 +37,7 @@ async def get_current_user(
     """Get current authenticated user."""
     token = credentials.credentials
 
-    payload = decode_token(token)
+    payload = decode_token(token, token_type="access")
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -79,6 +79,8 @@ async def get_current_user(
         )
 
     return user
+
+
 
 
 async def get_optional_user(

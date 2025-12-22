@@ -39,6 +39,7 @@
     "jose": "^5.2.0",
     "zod": "^3.22.4",
     "lucide-react": "^0.344.0",
+    "isomorphic-dompurify": "^2.9.0",
     "@modele/types": "workspace:*"
   },
   "devDependencies": {

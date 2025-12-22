@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { handleApiError, isClientError, isNetworkError } from './errors/api';
+import { TokenStorage } from './auth/tokenStorage';
 
 // Remove trailing slash from API URL to avoid double slashes
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
@@ -15,7 +16,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined' && config.headers) {
-      const token = localStorage.getItem('token');
+      const token = TokenStorage.getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -43,7 +44,7 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - try to refresh token or logout
     if (error.response?.status === 401) {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = TokenStorage.getRefreshToken();
       
       // Try to refresh token if available
       if (refreshToken) {
@@ -53,15 +54,14 @@ apiClient.interceptors.response.use(
             refresh_token: refreshToken,
           }).then(response => {
             const { access_token, refresh_token: newRefreshToken } = response.data;
-            localStorage.setItem('token', access_token);
+            TokenStorage.setToken(access_token);
             if (newRefreshToken) {
-              localStorage.setItem('refreshToken', newRefreshToken);
+              TokenStorage.setRefreshToken(newRefreshToken);
             }
             return access_token;
           }).catch(refreshError => {
             // Refresh failed, clear tokens and redirect
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
+            TokenStorage.removeTokens();
             window.location.href = '/auth/login?error=session_expired';
             throw refreshError;
           }).finally(() => {
@@ -84,8 +84,7 @@ apiClient.interceptors.response.use(
         }
       } else {
         // No refresh token, clear tokens and redirect
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+        TokenStorage.removeTokens();
         window.location.href = '/auth/login?error=unauthorized';
       }
     }

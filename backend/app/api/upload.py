@@ -1,5 +1,7 @@
 """File upload endpoints."""
 
+import os
+import re
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Query
@@ -14,6 +16,60 @@ from app.services.s3_service import S3Service
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
 
+# Security constants
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.txt', '.csv'}
+ALLOWED_MIME_TYPES = {
+    'image/jpeg', 'image/png', 'image/gif',
+    'application/pdf',
+    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain', 'text/csv'
+}
+
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitize filename to prevent path traversal and injection."""
+    # Remove directory separators
+    filename = os.path.basename(filename)
+    # Remove dangerous characters, keep only alphanumeric, dots, dashes, underscores
+    filename = re.sub(r'[^a-zA-Z0-9._-]', '', filename)
+    # Limit length
+    filename = filename[:255]
+    return filename
+
+
+def validate_file(file: UploadFile) -> None:
+    """Validate file size, type, and name."""
+    # Check filename
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No filename provided",
+        )
+    
+    # Sanitize filename
+    sanitized_filename = sanitize_filename(file.filename)
+    if sanitized_filename != file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename",
+        )
+    
+    # Check extension
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}",
+        )
+    
+    # Check MIME type if provided
+    if file.content_type and file.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File MIME type not allowed",
+        )
+
 
 @router.post("/file", response_model=FileUploadResponse)
 async def upload_file(
@@ -22,12 +78,29 @@ async def upload_file(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a file to S3."""
-    if not file.filename:
+    """Upload a file to S3 with security validations."""
+    # Validate file
+    validate_file(file)
+    
+    # Read file content to check size
+    file_content = await file.read()
+    file_size = len(file_content)
+    
+    # Check file size
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE / (1024 * 1024):.0f}MB",
+        )
+    
+    if file_size == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No file provided",
+            detail="File is empty",
         )
+    
+    # Reset file pointer for upload
+    await file.seek(0)
 
     # Check if S3 is configured
     if not S3Service.is_configured():

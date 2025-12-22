@@ -28,9 +28,18 @@ def get_storage_uri() -> str:
             return "memory://"
     return "memory://"
 
-# Initialiser le rate limiter
+def get_rate_limit_key(request: Request) -> str:
+    """Get rate limit key (IP or user ID for authenticated users)"""
+    # Try to get user from request state (set by auth middleware)
+    user = getattr(request.state, 'user', None)
+    if user and hasattr(user, 'id'):
+        return f"user:{user.id}"
+    return get_remote_address(request)
+
+
+# Initialiser le rate limiter avec clé améliorée
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=get_rate_limit_key,
     default_limits=["1000/hour"],  # Limite par défaut
     storage_uri=get_storage_uri(),  # Redis si disponible, sinon mémoire
 )

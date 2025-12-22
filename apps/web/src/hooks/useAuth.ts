@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { authAPI, usersAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
+import { TokenStorage } from '@/lib/auth/tokenStorage';
 
 interface LoginCredentials {
   email: string;
@@ -34,12 +35,10 @@ export function useAuth() {
         const response = await authAPI.login(credentials.email, credentials.password);
         const { access_token, refresh_token, user: userData } = response.data;
 
-        // Store tokens
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', access_token);
-          if (refresh_token) {
-            localStorage.setItem('refreshToken', refresh_token);
-          }
+        // Store tokens securely
+        TokenStorage.setToken(access_token);
+        if (refresh_token) {
+          TokenStorage.setRefreshToken(refresh_token);
         }
 
         // Update store
@@ -69,11 +68,9 @@ export function useAuth() {
         const loginResponse = await authAPI.login(data.email, data.password);
         const { access_token, refresh_token } = loginResponse.data;
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', access_token);
-          if (refresh_token) {
-            localStorage.setItem('refreshToken', refresh_token);
-          }
+        TokenStorage.setToken(access_token);
+        if (refresh_token) {
+          TokenStorage.setRefreshToken(refresh_token);
         }
 
         login(userData, access_token);
@@ -97,11 +94,8 @@ export function useAuth() {
       // Ignore logout errors
       console.error('Logout error:', err);
     } finally {
-      // Clear tokens
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-      }
+      // Clear tokens securely
+      TokenStorage.removeTokens();
       logout();
       router.push('/auth/login');
     }
@@ -112,7 +106,7 @@ export function useAuth() {
    */
   const refreshToken = useCallback(async () => {
     try {
-      const refreshTokenValue = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      const refreshTokenValue = TokenStorage.getRefreshToken();
       if (!refreshTokenValue) {
         throw new Error('No refresh token available');
       }
@@ -120,11 +114,9 @@ export function useAuth() {
       const response = await authAPI.refresh(refreshTokenValue);
       const { access_token, refresh_token: newRefreshToken } = response.data;
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', access_token);
-        if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
-        }
+      TokenStorage.setToken(access_token);
+      if (newRefreshToken) {
+        TokenStorage.setRefreshToken(newRefreshToken);
       }
 
       useAuthStore.getState().setToken(access_token);
@@ -143,8 +135,8 @@ export function useAuth() {
     if (typeof window === 'undefined') return;
 
     const checkAuth = async () => {
-      const storedToken = localStorage.getItem('token');
-      const storedRefreshToken = localStorage.getItem('refreshToken');
+      const storedToken = TokenStorage.getToken();
+      const storedRefreshToken = TokenStorage.getRefreshToken();
 
       // If we have a refresh token but no access token, try to refresh
       if (!storedToken && storedRefreshToken) {
