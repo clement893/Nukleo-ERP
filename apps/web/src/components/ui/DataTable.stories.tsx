@@ -44,14 +44,14 @@ const columns: Column<SampleData>[] = [
 export const Default: Story = {
   args: {
     data: sampleData,
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
   },
 };
 
 export const WithSearch: Story = {
   args: {
     data: sampleData,
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
     searchable: true,
     searchPlaceholder: 'Search users...',
   },
@@ -66,7 +66,7 @@ export const WithPagination: Story = {
       role: ['Admin', 'User', 'Manager'][i % 3],
       status: ['Active', 'Inactive'][i % 2],
     })),
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
     pageSize: 5,
   },
 };
@@ -74,7 +74,7 @@ export const WithPagination: Story = {
 export const WithActions: Story = {
   args: {
     data: sampleData,
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
     actions: (row) => [
       { label: 'Edit', onClick: () => console.log('Edit', row) },
       { label: 'Delete', onClick: () => console.log('Delete', row), variant: 'danger' },
@@ -85,7 +85,7 @@ export const WithActions: Story = {
 export const Loading: Story = {
   args: {
     data: [],
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
     loading: true,
   },
 };
@@ -93,7 +93,7 @@ export const Loading: Story = {
 export const Empty: Story = {
   args: {
     data: [],
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
     emptyMessage: 'No users found',
   },
 };
@@ -101,7 +101,7 @@ export const Empty: Story = {
 export const KeyboardNavigation: Story = {
   args: {
     data: sampleData,
-    columns: columns as Column<Record<string, any>>[],
+    columns: columns as Column<Record<string, unknown>>[],
     onRowClick: (row) => console.log('Row clicked', row),
   },
   parameters: {

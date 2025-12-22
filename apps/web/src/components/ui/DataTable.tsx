@@ -117,7 +117,7 @@ export default function DataTable<T extends Record<string, unknown>>({
     }
   }, [sortColumn, sortDirection]);
 
-  const handleFilterChange = useCallback((columnKey: string, value: any) => {
+  const handleFilterChange = useCallback((columnKey: string, value: unknown) => {
     setFilters((prev) => ({
       ...prev,
       [columnKey]: value,

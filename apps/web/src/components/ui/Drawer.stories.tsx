@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import Drawer from './Drawer';
+import type { DrawerProps } from './Drawer';
 import Button from './Button';
 
 const meta: Meta<typeof Drawer> = {
@@ -25,7 +26,7 @@ const meta: Meta<typeof Drawer> = {
 export default meta;
 type Story = StoryObj<typeof Drawer>;
 
-const DrawerWrapper = (args: any) => {
+const DrawerWrapper = (args: Partial<DrawerProps>) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
