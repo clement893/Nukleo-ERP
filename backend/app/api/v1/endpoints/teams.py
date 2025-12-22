@@ -50,7 +50,16 @@ async def create_team(
         description=team_data.description,
         settings=team_data.settings,
     )
+    
+    # Invalidate cache after creation
+    await invalidate_cache_pattern("teams:*")
+    
     team = await team_service.get_team(created_team.id)
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Team was created but could not be retrieved",
+        )
     
     # Convert to response format
     team_dict = {
@@ -253,6 +262,10 @@ async def add_team_member(
         role_id=member_data.role_id,
     )
     
+    # Invalidate cache after adding member
+    await invalidate_cache_pattern(f"team:{team_id}:*")
+    await invalidate_cache_pattern("teams:*")
+    
     return TeamMemberResponse.model_validate(team_member)
 
 
@@ -276,6 +289,10 @@ async def update_team_member(
     
     if not team_member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team member not found")
+    
+    # Invalidate cache after updating member
+    await invalidate_cache_pattern(f"team:{team_id}:*")
+    await invalidate_cache_pattern("teams:*")
     
     return TeamMemberResponse.model_validate(team_member)
 
@@ -302,6 +319,10 @@ async def remove_team_member(
     
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team member not found")
+    
+    # Invalidate cache after removing member
+    await invalidate_cache_pattern(f"team:{team_id}:*")
+    await invalidate_cache_pattern("teams:*")
     
     return None
 

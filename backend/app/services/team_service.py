@@ -81,7 +81,7 @@ class TeamService:
         """Get all teams a user belongs to"""
         result = await self.db.execute(
             select(Team)
-            .join(TeamMember)
+            .join(TeamMember, Team.id == TeamMember.team_id)
             .where(TeamMember.user_id == user_id)
             .where(TeamMember.is_active == True)
             .where(Team.is_active == True)

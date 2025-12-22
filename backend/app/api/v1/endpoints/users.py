@@ -22,7 +22,7 @@ router = APIRouter()
 async def get_users(
     skip: int = 0,
     limit: int = 100,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> List[User]:
     """
     Get list of users
