@@ -4,13 +4,13 @@ FROM node:22-alpine AS base
 # Install pnpm
 RUN npm install -g pnpm@9.15.9
 
-# Install dependencies
+# Install dependencies (including devDependencies for build)
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build application
 FROM base AS builder
