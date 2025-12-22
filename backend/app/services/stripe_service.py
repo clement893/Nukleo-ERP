@@ -5,12 +5,16 @@ Service for handling Stripe payment operations
 
 from typing import Optional, Dict, Any
 import stripe
+from stripe import http_client
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.logging import logger
 from app.models import User, Plan, Subscription
+
+# Configure Stripe with timeout for security
+stripe.default_http_client = http_client.RequestsClient(timeout=10)  # 10 seconds timeout
 from app.models.subscription import SubscriptionStatus
 
 # Import stripe.error for proper exception handling

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { TokenStorage } from './auth/tokenStorage';
 
 interface User {
   id: string;
@@ -39,20 +40,15 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: (user: User, token: string, refreshToken?: string) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', token);
-          if (refreshToken) {
-            localStorage.setItem('refreshToken', refreshToken);
-          }
+        TokenStorage.setToken(token);
+        if (refreshToken) {
+          TokenStorage.setRefreshToken(refreshToken);
         }
         set({ user, token, refreshToken: refreshToken || null, error: null });
       },
 
       logout: () => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-        }
+        TokenStorage.removeTokens();
         set({ user: null, token: null, refreshToken: null, error: null });
       },
 
@@ -61,16 +57,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setToken: (token: string) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', token);
-        }
+        TokenStorage.setToken(token);
         set({ token });
       },
 
       setRefreshToken: (refreshToken: string) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('refreshToken', refreshToken);
-        }
+        TokenStorage.setRefreshToken(refreshToken);
         set({ refreshToken });
       },
 

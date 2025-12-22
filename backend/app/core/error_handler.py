@@ -12,18 +12,20 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.exceptions import AppException
 from app.core.logging import logger
+from app.core.logging_utils import sanitize_log_data
 
 
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
     """Handle application exceptions"""
+    context = sanitize_log_data({
+        "status_code": exc.status_code,
+        "details": exc.details,
+        "path": request.url.path,
+        "method": request.method,
+    })
     logger.error(
         f"Application error: {exc.message}",
-        context={
-            "status_code": exc.status_code,
-            "details": exc.details,
-            "path": request.url.path,
-            "method": request.method,
-        },
+        context=context,
         exc_info=exc,
     )
 
@@ -53,13 +55,14 @@ async def validation_exception_handler(
             "code": error["type"],
         })
 
+    context = sanitize_log_data({
+        "errors": errors,
+        "path": request.url.path,
+        "method": request.method,
+    })
     logger.warning(
         "Validation error",
-        context={
-            "errors": errors,
-            "path": request.url.path,
-            "method": request.method,
-        },
+        context=context,
     )
 
     return JSONResponse(
@@ -78,12 +81,13 @@ async def validation_exception_handler(
 
 async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     """Handle database errors"""
+    context = sanitize_log_data({
+        "path": request.url.path,
+        "method": request.method,
+    })
     logger.error(
         "Database error",
-        context={
-            "path": request.url.path,
-            "method": request.method,
-        },
+        context=context,
         exc_info=exc,
     )
 
@@ -103,12 +107,13 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle all other exceptions"""
+    context = sanitize_log_data({
+        "path": request.url.path,
+        "method": request.method,
+    })
     logger.error(
         "Unhandled exception",
-        context={
-            "path": request.url.path,
-            "method": request.method,
-        },
+        context=context,
         exc_info=exc,
     )
 

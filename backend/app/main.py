@@ -65,13 +65,14 @@ def create_app() -> FastAPI:
     # Cache Headers Middleware
     app.add_middleware(CacheHeadersMiddleware, default_max_age=300)
 
-    # CORS Middleware
+    # CORS Middleware - Restricted for security
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+        expose_headers=["X-Process-Time", "X-Timestamp", "X-Response-Time"],
     )
 
     # Include API router
@@ -89,18 +90,41 @@ def create_app() -> FastAPI:
     app.add_exception_handler(SQLAlchemyError, database_exception_handler)
     app.add_exception_handler(Exception, general_exception_handler)
 
-    # Add timestamp middleware (optimized - uses time.time() for better performance)
+    # Add security headers middleware
     @app.middleware("http")
-    async def add_timestamp_middleware(request: Request, call_next):
+    async def add_security_headers_middleware(request: Request, call_next):
         import time
         from datetime import datetime, timezone
+        
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
-        # Add both timestamp and process time
+        
+        # Add timestamp headers
         response.headers["X-Response-Time"] = f"{process_time:.4f}s"
         response.headers["X-Process-Time"] = str(process_time)
         response.headers["X-Timestamp"] = datetime.now(timezone.utc).isoformat()
+        
+        # Add security headers
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Content Security Policy (adjust based on your needs)
+        csp_policy = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Adjust for production
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https://api.stripe.com; "
+            "frame-ancestors 'none';"
+        )
+        response.headers["Content-Security-Policy"] = csp_policy
+        
         return response
 
     # Custom OpenAPI schema
