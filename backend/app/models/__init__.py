@@ -10,6 +10,7 @@ from app.models.invitation import Invitation
 from app.models.plan import Plan, PlanInterval, PlanStatus
 from app.models.subscription import Subscription, SubscriptionStatus
 from app.models.invoice import Invoice, InvoiceStatus
+from app.models.webhook_event import WebhookEvent
 
 __all__ = [
     "User",
@@ -27,4 +28,5 @@ __all__ = [
     "SubscriptionStatus",
     "Invoice",
     "InvoiceStatus",
+    "WebhookEvent",
 ]
