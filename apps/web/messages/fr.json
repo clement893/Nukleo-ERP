@@ -1,0 +1,40 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Avertissement",
+    "info": "Information"
+  },
+  "components": {
+    "button": {
+      "submit": "Soumettre",
+      "cancel": "Annuler",
+      "delete": "Supprimer"
+    },
+    "form": {
+      "required": "Ce champ est requis",
+      "invalid": "Valeur invalide",
+      "email": "Email invalide"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Tableau de bord",
+      "welcome": "Bienvenue"
+    },
+    "settings": {
+      "title": "Paramètres",
+      "profile": "Profil",
+      "security": "Sécurité"
+    }
+  }
+}
+

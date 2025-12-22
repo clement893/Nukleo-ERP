@@ -1,29 +1,21 @@
 /**
  * Sentry Server Configuration
- * Configuration pour le tracking d'erreurs côté serveur
+ * This file configures Sentry for the server-side
  */
 
-// Sentry is optional - only initialize if package is installed
-try {
-  const Sentry = require('@sentry/nextjs');
-  
-  Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  
-  // Ajuster la valeur de sample dans la production
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  
-  // Environnement
-  environment: process.env.NODE_ENV || 'development',
-  
-  // Ignorer certaines erreurs
-  ignoreErrors: [
-    'ValidationError',
-    'UnauthorizedError',
-  ],
-  });
-} catch (e) {
-  // Sentry not installed, skip initialization
-  console.log('Sentry not installed, skipping server configuration');
-}
+import * as Sentry from '@sentry/nextjs';
 
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV || 'development',
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  debug: process.env.NODE_ENV === 'development',
+  beforeSend(event, hint) {
+    // Filter out sensitive data
+    if (event.request) {
+      delete event.request.cookies;
+      delete event.request.headers?.authorization;
+    }
+    return event;
+  },
+});

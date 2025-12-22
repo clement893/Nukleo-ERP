@@ -20,10 +20,20 @@ export default function GlobalError({
     // Log error to error reporting service
     console.error('Global error caught:', error);
     
-    // TODO: Send to error tracking service (Sentry, etc.)
-    // if (process.env.NODE_ENV === 'production') {
-    //   Sentry.captureException(error);
-    // }
+    // Send to Sentry if configured
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      try {
+        const { captureException } = require('@/lib/sentry/client');
+        captureException(error, {
+          tags: {
+            errorBoundary: 'global-error',
+          },
+        });
+      } catch (e) {
+        // Sentry not available, continue without it
+        console.warn('Sentry not available:', e);
+      }
+    }
   }, [error]);
 
   return (

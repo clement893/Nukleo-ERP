@@ -1,19 +1,13 @@
 /**
  * Sentry Edge Configuration
- * Configuration pour le tracking d'erreurs sur Edge Runtime
+ * This file configures Sentry for Edge Runtime
  */
 
-// Sentry is optional - only initialize if package is installed
-try {
-  const Sentry = require('@sentry/nextjs');
-  
-  Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  tracesSampleRate: 0.1,
-  environment: process.env.NODE_ENV || 'development',
-  });
-} catch (e) {
-  // Sentry not installed, skip initialization
-  console.log('Sentry not installed, skipping edge configuration');
-}
+import * as Sentry from '@sentry/nextjs';
 
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV || 'development',
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  debug: process.env.NODE_ENV === 'development',
+});

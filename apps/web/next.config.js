@@ -85,22 +85,25 @@ const nextConfig = {
     return config;
   },
   
-  // Security headers
+  // Security headers - Enhanced
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';
     
-    // CSP Policy - ajuster selon vos besoins
+    // CSP Policy - Enhanced security
     const cspPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https://api.sentry.io",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.sentry-cdn.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self' https://api.sentry.io https://*.sentry.io",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
-      "upgrade-insecure-requests",
+      "object-src 'none'",
+      "media-src 'self'",
+      "worker-src 'self' blob:",
+      ...(isProduction ? ["upgrade-insecure-requests"] : []),
     ].join('; ');
 
     return [
@@ -120,25 +123,37 @@ const nextConfig = {
             value: 'nosniff'
           },
           {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin'
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()'
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
           },
           {
             key: 'Content-Security-Policy',
             value: cspPolicy
           },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp'
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin'
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin'
+          },
           ...(isProduction ? [{
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload'
           }] : []),
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          },
         ],
       },
     ];

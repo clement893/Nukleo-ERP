@@ -1,0 +1,40 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
+  },
+  "components": {
+    "button": {
+      "submit": "Submit",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "form": {
+      "required": "This field is required",
+      "invalid": "Invalid value",
+      "email": "Invalid email"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome"
+    },
+    "settings": {
+      "title": "Settings",
+      "profile": "Profile",
+      "security": "Security"
+    }
+  }
+}
+

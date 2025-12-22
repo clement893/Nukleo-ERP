@@ -1,57 +1,36 @@
 /**
  * Sentry Client Configuration
- * Configuration pour le tracking d'erreurs côté client
+ * This file configures Sentry for the client-side
  */
 
-// Sentry is optional - only initialize if package is installed
-try {
-  const Sentry = require('@sentry/nextjs');
-  
-  Sentry.init({
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  
-  // Ajuster la valeur de sample dans la production
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  
-  // Ajuster la valeur de sample pour profiling
-  profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  
-  // Environnement
   environment: process.env.NODE_ENV || 'development',
-  
-  // Activer les replays de session
-  replaysSessionSampleRate: 0.1,
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  debug: process.env.NODE_ENV === 'development',
   replaysOnErrorSampleRate: 1.0,
-  
-  // Ignorer certaines erreurs
-  ignoreErrors: [
-    // Erreurs de réseau
-    'NetworkError',
-    'Network request failed',
-    // Erreurs de résolution
-    'Resolving',
-    // Erreurs de navigateur
-    'Non-Error promise rejection captured',
-  ],
-  
-  // Filtres d'URL
-  denyUrls: [
-    // Extensions de navigateur
-    /extensions\//i,
-    /^chrome:\/\//i,
-    /^chrome-extension:\/\//i,
-  ],
-  
-  // Intégrations
+  replaysSessionSampleRate: 0.1,
   integrations: [
-    Sentry.replayIntegration({
+    new Sentry.BrowserTracing({
+      tracePropagationTargets: [
+        'localhost',
+        /^https:\/\/.*\.sentry\.io\/api/,
+        process.env.NEXT_PUBLIC_API_URL || '',
+      ],
+    }),
+    new Sentry.Replay({
       maskAllText: true,
       blockAllMedia: true,
     }),
   ],
-  });
-} catch (e) {
-  // Sentry not installed, skip initialization
-  console.log('Sentry not installed, skipping client configuration');
-}
-
+  beforeSend(event, hint) {
+    // Filter out sensitive data
+    if (event.request) {
+      delete event.request.cookies;
+      delete event.request.headers?.authorization;
+    }
+    return event;
+  },
+});

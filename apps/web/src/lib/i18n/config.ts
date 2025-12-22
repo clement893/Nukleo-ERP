@@ -1,22 +1,24 @@
 /**
- * Configuration i18n
- * Support multi-langue pour l'application
+ * Internationalization Configuration
+ * Using next-intl for i18n support
  */
 
-export const supportedLocales = ['fr', 'en', 'es'] as const;
-export type Locale = typeof supportedLocales[number];
+import { notFound } from 'next/navigation';
+import { getRequestConfig } from 'next-intl/server';
+
+// Supported locales
+export const locales = ['fr', 'en'] as const;
+export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'fr';
 
-export const localeNames: Record<Locale, string> = {
-  fr: 'Français',
-  en: 'English',
-  es: 'Español',
-};
+export default getRequestConfig(async ({ locale }) => {
+  // Validate that the incoming `locale` parameter is valid
+  if (!locales.includes(locale as Locale)) {
+    notFound();
+  }
 
-export const localeConfig = {
-  defaultLocale,
-  supportedLocales,
-  localeNames,
-} as const;
-
+  return {
+    messages: (await import(`../../messages/${locale}.json`)).default,
+  };
+});
