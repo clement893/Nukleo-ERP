@@ -41,13 +41,14 @@ export function useThemeManager() {
     setTheme(defaultTheme);
   };
 
-  const setTheme = (newTheme: ThemeConfig) => {
+  const updateTheme = (newTheme: Partial<ThemeConfig>) => {
     setTheme((prev) => ({ ...prev, ...newTheme }));
   };
 
   return {
     theme,
     setTheme,
+    updateTheme,
     updateColor,
     resetTheme,
     mounted,
