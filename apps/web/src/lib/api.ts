@@ -27,6 +27,9 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Queue pour éviter les refresh tokens multiples simultanés
+let refreshTokenPromise: Promise<string> | null = null;
+
 // Add response interceptor to handle errors
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
@@ -44,16 +47,30 @@ apiClient.interceptors.response.use(
       
       // Try to refresh token if available
       if (refreshToken) {
-        try {
-          const response = await axios.post(`${API_URL}/api/auth/refresh`, {
+        // Si un refresh est déjà en cours, attendre celui-ci
+        if (!refreshTokenPromise) {
+          refreshTokenPromise = axios.post(`${API_URL}/api/auth/refresh`, {
             refresh_token: refreshToken,
+          }).then(response => {
+            const { access_token, refresh_token: newRefreshToken } = response.data;
+            localStorage.setItem('token', access_token);
+            if (newRefreshToken) {
+              localStorage.setItem('refreshToken', newRefreshToken);
+            }
+            return access_token;
+          }).catch(refreshError => {
+            // Refresh failed, clear tokens and redirect
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/auth/login?error=session_expired';
+            throw refreshError;
+          }).finally(() => {
+            refreshTokenPromise = null; // Réinitialiser après
           });
-          
-          const { access_token, refresh_token: newRefreshToken } = response.data;
-          localStorage.setItem('token', access_token);
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
-          }
+        }
+        
+        try {
+          const access_token = await refreshTokenPromise;
           
           // Retry original request
           if (error.config) {
@@ -62,10 +79,7 @@ apiClient.interceptors.response.use(
             return apiClient.request(error.config);
           }
         } catch (refreshError) {
-          // Refresh failed, clear tokens and redirect
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/auth/login?error=session_expired';
+          // Erreur déjà gérée dans la promise
           return Promise.reject(refreshError);
         }
       } else {

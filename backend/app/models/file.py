@@ -1,7 +1,7 @@
 """File model."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, String, Integer, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
@@ -29,8 +29,8 @@ class File(Base):
     size = Column(Integer, nullable=False)  # File size in bytes
     url = Column(String(1000), nullable=False)  # Presigned URL or public URL
     folder = Column(String(100), nullable=True)  # Folder path in S3
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationship
     user = relationship("User", backref="files")

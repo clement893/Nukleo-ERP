@@ -5,6 +5,8 @@ Cache backend pour améliorer les performances
 
 from typing import Optional, Any
 import json
+import gzip
+import base64
 from functools import wraps
 import hashlib
 
@@ -39,29 +41,45 @@ class CacheBackend:
                 self.use_redis = False
     
     async def get(self, key: str) -> Optional[Any]:
-        """Récupérer une valeur du cache"""
+        """Récupérer une valeur du cache avec décompression automatique"""
         if not self.use_redis or not self.redis_client:
             return None
         
         try:
             value = await self.redis_client.get(key)
             if value:
-                return json.loads(value)
+                # Vérifier si compressé
+                if value.startswith("__compressed__"):
+                    encoded = value.replace("__compressed__", "")
+                    compressed = base64.b64decode(encoded)
+                    json_data = gzip.decompress(compressed).decode('utf-8')
+                else:
+                    json_data = value
+                
+                return json.loads(json_data)
         except Exception as e:
             logger.error(f"Cache get error: {e}")
         return None
     
-    async def set(self, key: str, value: Any, expire: int = 300) -> bool:
-        """Stocker une valeur dans le cache"""
+    async def set(self, key: str, value: Any, expire: int = 300, compress: bool = False) -> bool:
+        """Stocker une valeur dans le cache avec compression optionnelle"""
         if not self.use_redis or not self.redis_client:
             return False
         
         try:
-            await self.redis_client.setex(
-                key,
-                expire,
-                json.dumps(value, default=str)
-            )
+            # Sérialiser en JSON
+            json_data = json.dumps(value, default=str)
+            
+            # Compresser si activé et si la valeur est grande (>1KB)
+            if compress and len(json_data) > 1024:
+                compressed = gzip.compress(json_data.encode('utf-8'))
+                encoded = base64.b64encode(compressed).decode('utf-8')
+                # Ajouter un préfixe pour indiquer la compression
+                final_value = f"__compressed__{encoded}"
+            else:
+                final_value = json_data
+            
+            await self.redis_client.setex(key, expire, final_value)
             return True
         except Exception as e:
             logger.error(f"Cache set error: {e}")
@@ -80,14 +98,29 @@ class CacheBackend:
             return False
     
     async def clear_pattern(self, pattern: str) -> int:
-        """Supprimer toutes les clés correspondant à un pattern"""
+        """Supprimer toutes les clés correspondant à un pattern (non-bloquant avec SCAN)"""
         if not self.use_redis or not self.redis_client:
             return 0
         
         try:
-            keys = await self.redis_client.keys(pattern)
-            if keys:
-                return await self.redis_client.delete(*keys)
+            deleted_count = 0
+            cursor = 0
+            
+            # Utiliser SCAN au lieu de KEYS pour éviter de bloquer Redis
+            while True:
+                cursor, keys = await self.redis_client.scan(
+                    cursor=cursor,
+                    match=pattern,
+                    count=100  # Traiter par batch de 100
+                )
+                
+                if keys:
+                    deleted_count += await self.redis_client.delete(*keys)
+                
+                if cursor == 0:  # SCAN terminé
+                    break
+            
+            return deleted_count
         except Exception as e:
             logger.error(f"Cache clear_pattern error: {e}")
         return 0

@@ -3,7 +3,7 @@ Tests for SubscriptionService
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.subscription_service import SubscriptionService
@@ -47,8 +47,8 @@ def sample_subscription():
     subscription.user_id = 1
     subscription.plan_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.current_period_start = datetime.utcnow()
-    subscription.current_period_end = datetime.utcnow() + timedelta(days=30)
+    subscription.current_period_start = datetime.now(timezone.utc)
+    subscription.current_period_end = datetime.now(timezone.utc) + timedelta(days=30)
     subscription.plan = MagicMock()
     subscription.plan.id = 1
     subscription.plan.name = "Pro"
@@ -234,7 +234,7 @@ class TestCheckSubscriptionExpired:
     @pytest.mark.asyncio
     async def test_subscription_not_expired(self, subscription_service, mock_db, sample_subscription):
         """Test checking non-expired subscription"""
-        sample_subscription.current_period_end = datetime.utcnow() + timedelta(days=10)
+        sample_subscription.current_period_end = datetime.now(timezone.utc) + timedelta(days=10)
         
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_subscription
@@ -247,7 +247,7 @@ class TestCheckSubscriptionExpired:
     @pytest.mark.asyncio
     async def test_subscription_expired(self, subscription_service, mock_db, sample_subscription):
         """Test checking expired subscription"""
-        sample_subscription.current_period_end = datetime.utcnow() - timedelta(days=1)
+        sample_subscription.current_period_end = datetime.now(timezone.utc) - timedelta(days=1)
         
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_subscription

@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import hashlib
 import json
 from typing import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class CacheHeadersMiddleware(BaseHTTPMiddleware):
@@ -57,7 +57,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Vary"] = "Accept, Accept-Encoding"
         
         # Add Expires header
-        expires = datetime.utcnow() + timedelta(seconds=max_age)
+        expires = datetime.now(timezone.utc) + timedelta(seconds=max_age)
         response.headers["Expires"] = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         
         return response

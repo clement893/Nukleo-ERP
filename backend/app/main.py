@@ -89,13 +89,18 @@ def create_app() -> FastAPI:
     app.add_exception_handler(SQLAlchemyError, database_exception_handler)
     app.add_exception_handler(Exception, general_exception_handler)
 
-    # Add timestamp middleware (optimized - uses headers instead of body manipulation)
+    # Add timestamp middleware (optimized - uses time.time() for better performance)
     @app.middleware("http")
     async def add_timestamp_middleware(request: Request, call_next):
-        from datetime import datetime
+        import time
+        from datetime import datetime, timezone
+        start_time = time.time()
         response = await call_next(request)
-        # Add timestamp in header instead of manipulating JSON body
-        response.headers["X-Response-Time"] = datetime.utcnow().isoformat()
+        process_time = time.time() - start_time
+        # Add both timestamp and process time
+        response.headers["X-Response-Time"] = f"{process_time:.4f}s"
+        response.headers["X-Process-Time"] = str(process_time)
+        response.headers["X-Timestamp"] = datetime.now(timezone.utc).isoformat()
         return response
 
     # Custom OpenAPI schema

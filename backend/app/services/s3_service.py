@@ -3,7 +3,7 @@
 import os
 import uuid
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import boto3
 from botocore.exceptions import ClientError
@@ -74,7 +74,7 @@ class S3Service:
                 ContentType=file.content_type or "application/octet-stream",
                 Metadata={
                     "original_filename": file.filename or "",
-                    "uploaded_at": datetime.utcnow().isoformat(),
+                    "uploaded_at": datetime.now(timezone.utc).isoformat(),
                     "user_id": user_id or "",
                 },
             )

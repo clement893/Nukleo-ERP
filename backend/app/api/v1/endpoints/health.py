@@ -2,7 +2,7 @@
 Health Check Endpoint
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 from fastapi import APIRouter
@@ -20,7 +20,7 @@ async def health_check() -> Dict[str, str]:
     """
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -34,6 +34,6 @@ async def readiness_check() -> Dict[str, str]:
     """
     return {
         "status": "ready",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
