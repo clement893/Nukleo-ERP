@@ -47,8 +47,17 @@ class Logger {
 
     // Send to error tracking service in production (e.g., Sentry)
     if (level === LogLevel.ERROR && !this.isDevelopment) {
-      // TODO: Integrate with error tracking service
-      // Example: Sentry.captureException(new Error(message), { extra: context });
+      // Use dynamic import to avoid bundling Sentry if not installed
+      import('@/lib/sentry/client')
+        .then(({ captureException }) => {
+          const error = context?.error instanceof Error 
+            ? context.error 
+            : new Error(message);
+          captureException(error, context);
+        })
+        .catch(() => {
+          // Sentry not available or not configured, continue silently
+        });
     }
   }
 

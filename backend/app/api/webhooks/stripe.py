@@ -9,14 +9,17 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 import stripe
 import stripe.error
+import os
 
 from app.core.database import get_db
 from app.services.stripe_service import StripeService
 from app.services.subscription_service import SubscriptionService
 from app.services.invoice_service import InvoiceService
+from app.services.email_service import EmailService
+from app.services.email_templates import EmailTemplates
 from app.utils.stripe_helpers import map_stripe_status, parse_timestamp
 from app.core.logging import logger
-from app.models import Subscription, WebhookEvent
+from app.models import Subscription, WebhookEvent, User
 from app.models.invoice import InvoiceStatus
 
 router = APIRouter(prefix="/webhooks/stripe", tags=["webhooks"])
@@ -389,8 +392,40 @@ async def handle_invoice_paid(
         
         logger.info(f"Invoice {invoice.id} marked as paid (Stripe invoice: {stripe_invoice_id})")
         
-        # TODO: Send confirmation email to user
-        # This would require email service integration
+        # Send confirmation email to user
+        try:
+            # Get user information
+            user_result = await db.execute(
+                select(User).where(User.id == user_id)
+            )
+            user = user_result.scalar_one_or_none()
+            
+            if user and user.email:
+                email_service = EmailService()
+                if email_service.is_configured():
+                    # Format invoice number
+                    invoice_number = invoice.invoice_number or f"INV-{invoice.id}"
+                    invoice_date = invoice.paid_at.strftime("%Y-%m-%d") if invoice.paid_at else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    user_name = f"{user.first_name} {user.last_name}".strip() or user.email.split("@")[0]
+                    
+                    # Send invoice confirmation email
+                    email_service.send_invoice_email(
+                        to_email=user.email,
+                        name=user_name,
+                        invoice_number=invoice_number,
+                        invoice_date=invoice_date,
+                        amount=float(invoice.amount_paid),
+                        currency=invoice.currency.upper(),
+                        invoice_url=hosted_invoice_url or invoice_pdf_url,
+                    )
+                    logger.info(f"Confirmation email sent to {user.email} for invoice {invoice.id}")
+                else:
+                    logger.warning("Email service not configured, skipping confirmation email")
+            else:
+                logger.warning(f"User {user_id} not found or has no email, skipping confirmation email")
+        except Exception as email_error:
+            # Don't fail the webhook if email sending fails
+            logger.error(f"Failed to send confirmation email for invoice {invoice.id}: {email_error}", exc_info=True)
         
     except Exception as e:
         logger.error(f"Error handling invoice.paid event: {e}", exc_info=True)
@@ -483,6 +518,34 @@ async def handle_invoice_payment_failed(
             f"attempts: {attempt_count})"
         )
         
+        # Log to monitoring system for alerting (critical payment failures)
+        if attempt_count >= 3:
+            logger.error(
+                f"CRITICAL: Payment failed after {attempt_count} attempts for invoice {invoice.id}",
+                extra={
+                    "invoice_id": invoice.id,
+                    "stripe_invoice_id": stripe_invoice_id,
+                    "user_id": user_id,
+                    "amount_due": str(amount_due),
+                    "currency": currency,
+                    "attempt_count": attempt_count,
+                    "alert_level": "critical",
+                }
+            )
+        else:
+            logger.warning(
+                f"Payment failed for invoice {invoice.id} (attempt {attempt_count})",
+                extra={
+                    "invoice_id": invoice.id,
+                    "stripe_invoice_id": stripe_invoice_id,
+                    "user_id": user_id,
+                    "amount_due": str(amount_due),
+                    "currency": currency,
+                    "attempt_count": attempt_count,
+                    "alert_level": "warning",
+                }
+            )
+        
         # Update subscription status if this is the final attempt
         if subscription_db_id and attempt_count >= 3:
             result = await db.execute(
@@ -496,8 +559,87 @@ async def handle_invoice_payment_failed(
                     f"consider updating status"
                 )
         
-        # TODO: Send notification email to user about payment failure
-        # TODO: Log to monitoring system for alerting
+        # Send notification email to user about payment failure
+        try:
+            # Get user information
+            user_result = await db.execute(
+                select(User).where(User.id == user_id)
+            )
+            user = user_result.scalar_one_or_none()
+            
+            if user and user.email:
+                email_service = EmailService()
+                if email_service.is_configured():
+                    user_name = f"{user.first_name} {user.last_name}".strip() or user.email.split("@")[0]
+                    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+                    payment_url = f"{frontend_url}/subscriptions"
+                    
+                    # Create payment failure email content
+                    subject = f"Échec du paiement - Tentative {attempt_count}"
+                    html_content = f"""
+                        <h2 style="color: #dc2626; font-size: 24px; font-weight: 600; margin: 0 0 20px 0;">
+                            Échec du paiement
+                        </h2>
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                            Bonjour {user_name},
+                        </p>
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                            Nous n'avons pas pu traiter le paiement de votre facture.
+                        </p>
+                        <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+                            <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">
+                                Montant: {amount_due} {currency.upper()}
+                            </p>
+                            <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 14px;">
+                                Tentative: {attempt_count}
+                            </p>
+                        </div>
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                            Veuillez mettre à jour vos informations de paiement pour éviter l'interruption de service.
+                        </p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="{payment_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                                Mettre à jour le paiement
+                            </a>
+                        </div>
+                        <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                            Si vous avez des questions, n'hésitez pas à nous contacter.
+                        </p>
+                    """
+                    text_content = f"""
+Échec du paiement
+
+Bonjour {user_name},
+
+Nous n'avons pas pu traiter le paiement de votre facture.
+
+Montant: {amount_due} {currency.upper()}
+Tentative: {attempt_count}
+
+Veuillez mettre à jour vos informations de paiement pour éviter l'interruption de service.
+
+{payment_url}
+
+Si vous avez des questions, n'hésitez pas à nous contacter.
+
+Cordialement,
+L'équipe MODELE
+                    """
+                    
+                    email_service.send_email(
+                        to_email=user.email,
+                        subject=subject,
+                        html_content=EmailTemplates.get_base_template(html_content),
+                        text_content=text_content.strip(),
+                    )
+                    logger.info(f"Payment failure notification sent to {user.email} for invoice {invoice.id}")
+                else:
+                    logger.warning("Email service not configured, skipping payment failure notification")
+            else:
+                logger.warning(f"User {user_id} not found or has no email, skipping payment failure notification")
+        except Exception as email_error:
+            # Don't fail the webhook if email sending fails
+            logger.error(f"Failed to send payment failure notification for invoice {invoice.id}: {email_error}", exc_info=True)
         
     except Exception as e:
         logger.error(f"Error handling invoice.payment_failed event: {e}", exc_info=True)
