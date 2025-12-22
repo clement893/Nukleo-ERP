@@ -49,3 +49,6 @@ sendgrid==6.11.0
 
 # Celery for background tasks
 celery==5.3.4
+
+# Payment Processing
+stripe==7.0.0

@@ -41,6 +41,8 @@ class User(Base):
     team_memberships = relationship("TeamMember", back_populates="user", cascade="all, delete-orphan")
     owned_teams = relationship("Team", foreign_keys="Team.owner_id", back_populates="owner")
     sent_invitations = relationship("Invitation", foreign_keys="Invitation.invited_by_id", back_populates="invited_by")
+    subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
+    invoices = relationship("Invoice", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"

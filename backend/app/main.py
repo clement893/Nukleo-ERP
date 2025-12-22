@@ -29,6 +29,7 @@ from app.core.compression import CompressionMiddleware
 from app.core.cache_headers import CacheHeadersMiddleware
 from app.api.v1.router import api_router
 from app.api import email as email_router
+from app.api.webhooks import stripe as stripe_webhook_router
 
 
 @asynccontextmanager
@@ -78,6 +79,9 @@ def create_app() -> FastAPI:
     
     # Include email router (separate from v1)
     app.include_router(email_router.router)
+    
+    # Include webhooks (no prefix, no auth)
+    app.include_router(stripe_webhook_router.router)
 
     # Register exception handlers
     app.add_exception_handler(AppException, app_exception_handler)

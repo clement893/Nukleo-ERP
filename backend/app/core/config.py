@@ -108,6 +108,20 @@ class Settings(BaseSettings):
         description="Database connection pool max overflow",
     )
 
+    # Stripe Configuration
+    STRIPE_SECRET_KEY: str = Field(
+        default="",
+        description="Stripe secret key",
+    )
+    STRIPE_PUBLISHABLE_KEY: str = Field(
+        default="",
+        description="Stripe publishable key",
+    )
+    STRIPE_WEBHOOK_SECRET: str = Field(
+        default="",
+        description="Stripe webhook secret for signature verification",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

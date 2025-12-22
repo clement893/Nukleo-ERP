@@ -182,6 +182,43 @@ export const emailAPI = {
   },
 };
 
+export const subscriptionsAPI = {
+  getPlans: (activeOnly: boolean = true) => {
+    return apiClient.get('/v1/subscriptions/plans', {
+      params: { active_only: activeOnly },
+    });
+  },
+  getPlan: (planId: number) => {
+    return apiClient.get(`/v1/subscriptions/plans/${planId}`);
+  },
+  getMySubscription: () => {
+    return apiClient.get('/v1/subscriptions/me');
+  },
+  createCheckoutSession: (data: {
+    plan_id: number;
+    success_url: string;
+    cancel_url: string;
+    trial_days?: number;
+  }) => {
+    return apiClient.post('/v1/subscriptions/checkout', data);
+  },
+  createPortalSession: (returnUrl: string) => {
+    return apiClient.post('/v1/subscriptions/portal', null, {
+      params: { return_url: returnUrl },
+    });
+  },
+  cancelSubscription: () => {
+    return apiClient.post('/v1/subscriptions/cancel');
+  },
+  upgradePlan: (planId: number) => {
+    return apiClient.post(`/v1/subscriptions/upgrade/${planId}`);
+  },
+};
+
+// Export default for backward compatibility
 export default apiClient;
+
+// Named export for easier imports
+export const api = apiClient;
 
 

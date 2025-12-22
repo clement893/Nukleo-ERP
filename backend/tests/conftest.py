@@ -1,6 +1,5 @@
 """
-Pytest Configuration
-Fixtures and test setup
+Pytest configuration and fixtures
 """
 
 import pytest
@@ -9,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
+from app.core.config import settings
+from app.models import User
 from app.main import app
 
 
@@ -29,52 +30,66 @@ TestSessionLocal = async_sessionmaker(
 )
 
 
-async def override_get_db() -> AsyncSession:
-    """Override database dependency for testing"""
-    async with TestSessionLocal() as session:
-        yield session
-
-
 @pytest.fixture(scope="function")
-async def db_session() -> AsyncSession:
-    """Create database session for testing"""
+async def db():
+    """Create test database session"""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
+    
     async with TestSessionLocal() as session:
         yield session
-
+    
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture(scope="function")
-async def client(db_session: AsyncSession) -> AsyncClient:
+async def client(db: AsyncSession):
     """Create test client"""
+    async def override_get_db():
+        yield db
+    
     app.dependency_overrides[get_db] = override_get_db
+    
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+    
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-async def test_user(db_session: AsyncSession) -> dict:
+async def test_user(db: AsyncSession) -> User:
     """Create a test user"""
-    from app.models.user import User
-    from app.api.v1.endpoints.auth import get_password_hash
-
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
     user = User(
         email="test@example.com",
-        hashed_password=get_password_hash("TestPassword123"),
+        hashed_password=pwd_context.hash("testpassword123"),
         first_name="Test",
         last_name="User",
+        is_active=True,
     )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
-    return {
-        "id": user.id,
-        "email": user.email,
-        "password": "TestPassword123",
-    }
+
+@pytest.fixture
+async def authenticated_user(client: AsyncClient, test_user: User) -> User:
+    """Create authenticated user (login and get token)"""
+    # Login to get token
+    response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": test_user.email,
+            "password": "testpassword123",
+        }
+    )
+    
+    if response.status_code == 200:
+        token = response.json().get("access_token")
+        client.headers.update({"Authorization": f"Bearer {token}"})
+    
+    return test_user
