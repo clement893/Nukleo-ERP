@@ -92,7 +92,17 @@ export default function DataTable<T extends Record<string, unknown>>({
       result.sort((a, b) => {
         const aValue = a[sortColumn];
         const bValue = b[sortColumn];
-        const comparison = aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return 1;
+        if (bValue == null) return -1;
+        
+        // Convert to comparable values
+        const aComparable = typeof aValue === 'number' ? aValue : String(aValue);
+        const bComparable = typeof bValue === 'number' ? bValue : String(bValue);
+        
+        const comparison = aComparable > bComparable ? 1 : aComparable < bComparable ? -1 : 0;
         return sortDirection === 'asc' ? comparison : -comparison;
       });
     }
