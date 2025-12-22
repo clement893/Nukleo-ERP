@@ -93,7 +93,7 @@ export function useAuth() {
       await authAPI.logout();
     } catch (err) {
       // Ignore logout errors but log them
-      logger.error('Logout error', err);
+      logger.error('Logout error', err instanceof Error ? err : new Error(String(err)));
     } finally {
       // Clear tokens securely
       TokenStorage.removeTokens();
