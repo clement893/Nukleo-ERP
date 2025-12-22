@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PricingCard, Plan } from './PricingCard';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Alert } from '@/components/ui';
+import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/errors/api';
 
 export function PricingSection() {
   const { data: session } = useSession();
@@ -15,35 +17,35 @@ export function PricingSection() {
   const [error, setError] = useState<string | null>(null);
   const [currentPlanId, setCurrentPlanId] = useState<number | undefined>();
 
+  const loadPlans = useCallback(async () => {
+    try {
+      const response = await api.get('/v1/subscriptions/plans');
+      setPlans(response.data.plans || []);
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError('Failed to load plans');
+      logger.error('Failed to load subscription plans', appError);
+    }
+  }, []);
+
+  const loadCurrentSubscription = useCallback(async () => {
+    try {
+      const response = await api.get('/v1/subscriptions/me');
+      setCurrentPlanId(response.data.plan_id);
+    } catch (err) {
+      // User may not have a subscription - this is expected for new users
+      logger.debug('No subscription found', { error: err });
+    }
+  }, []);
+
   useEffect(() => {
     loadPlans();
     if (session) {
       loadCurrentSubscription();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  }, [session, loadPlans, loadCurrentSubscription]);
 
-  const loadPlans = async () => {
-    try {
-      const response = await api.get('/v1/subscriptions/plans');
-      setPlans(response.data.plans || []);
-    } catch (err) {
-      setError('Failed to load plans');
-      console.error(err);
-    }
-  };
-
-  const loadCurrentSubscription = async () => {
-    try {
-      const response = await api.get('/v1/subscriptions/me');
-      setCurrentPlanId(response.data.plan_id);
-    } catch (err) {
-      // User may not have a subscription
-      console.log('No subscription found');
-    }
-  };
-
-  const handleSelectPlan = async (planId: number) => {
+  const handleSelectPlan = useCallback(async (planId: number) => {
     if (!session) {
       router.push('/auth/signin?redirect=/pricing');
       return;
@@ -63,14 +65,19 @@ export function PricingSection() {
       });
 
       // Redirect to Stripe Checkout
-      if (response.data.url) {
+      if (response.data?.url) {
         window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create checkout session');
+    } catch (err) {
+      const appError = handleApiError(err);
+      const errorMessage = appError.message || 'Failed to create checkout session';
+      setError(errorMessage);
+      logger.error('Failed to create checkout session', appError, { planId });
       setIsLoading(false);
     }
-  };
+  }, [session, router]);
 
   return (
     <div className="container mx-auto px-4 py-16">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Alert } from '@/components/ui';
@@ -8,6 +8,8 @@ import { api } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { formatDate, formatPrice, formatInterval } from '@/utils/subscriptions';
+import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/errors/api';
 
 export default function SubscriptionsPage() {
   const { status: sessionStatus } = useSession();
@@ -21,7 +23,7 @@ export default function SubscriptionsPage() {
     return null;
   }
 
-  const handleManageBilling = async () => {
+  const handleManageBilling = useCallback(async () => {
     setActionError(null);
     try {
       const returnUrl = `${window.location.origin}/subscriptions`;
@@ -29,15 +31,20 @@ export default function SubscriptionsPage() {
         params: { return_url: returnUrl },
       });
 
-      if (response.data.url) {
+      if (response.data?.url) {
         window.location.href = response.data.url;
+      } else {
+        throw new Error('No portal URL received');
       }
-    } catch (err: any) {
-      setActionError(err.response?.data?.detail || 'Failed to open billing portal');
+    } catch (err) {
+      const appError = handleApiError(err);
+      const errorMessage = appError.message || 'Failed to open billing portal';
+      setActionError(errorMessage);
+      logger.error('Failed to open billing portal', appError);
     }
-  };
+  }, []);
 
-  const handleCancel = async () => {
+  const handleCancel = useCallback(async () => {
     if (!confirm('Are you sure you want to cancel your subscription? It will remain active until the end of the billing period.')) {
       return;
     }
@@ -47,12 +54,15 @@ export default function SubscriptionsPage() {
     try {
       await api.post('/v1/subscriptions/cancel');
       await refresh();
-    } catch (err: any) {
-      setActionError(err.response?.data?.detail || 'Failed to cancel subscription');
+    } catch (err) {
+      const appError = handleApiError(err);
+      const errorMessage = appError.message || 'Failed to cancel subscription';
+      setActionError(errorMessage);
+      logger.error('Failed to cancel subscription', appError);
     } finally {
       setIsCanceling(false);
     }
-  };
+  }, [refresh]);
 
   if (sessionStatus === 'loading' || isLoading) {
     return (

@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { handleApiError, isClientError, isNetworkError } from './errors/api';
 import { TokenStorage } from './auth/tokenStorage';
+import { logger } from '@/lib/logger';
 
 // Remove trailing slash from API URL to avoid double slashes
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
@@ -91,7 +92,7 @@ apiClient.interceptors.response.use(
 
     // Handle network errors
     if (isNetworkError(appError)) {
-      console.error('Network error:', appError.message);
+      logger.error('Network error', appError, { endpoint: error.config?.url });
       // Could show a toast notification here
     }
 
@@ -102,7 +103,7 @@ apiClient.interceptors.response.use(
     }
 
     // Handle server errors (5xx) - show generic error
-    console.error('Server error:', appError.message);
+    logger.error('Server error', appError, { endpoint: error.config?.url, status: error.response?.status });
     return Promise.reject(appError);
   }
 );

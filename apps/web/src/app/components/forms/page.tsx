@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Input, Textarea, Select, Checkbox, Radio, Switch, DatePicker, FileUpload, Button, Form, FormField, FormBuilder, RichTextEditor } from '@/components/ui';
 import type { FormField as FormBuilderField } from '@/components/ui/FormBuilder';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
+import { logger } from '@/lib/logger';
 
 export default function FormsPage() {
   const [formData, setFormData] = useState({ email: '', password: '', description: '', country: '', newsletter: false, plan: 'basic', notifications: true, birthdate: '', richText: '' });
@@ -66,7 +67,14 @@ export default function FormsPage() {
         </Section>
 
         <Section title="FileUpload">
-          <FileUpload label="Téléverser des fichiers" accept="image/*" multiple maxSize={5} onFileSelect={(files) => console.log('Files selected:', files)} helperText="Formats acceptés : JPG, PNG, GIF. Taille max : 5MB" />
+          <FileUpload 
+            label="Téléverser des fichiers" 
+            accept="image/*" 
+            multiple 
+            maxSize={5} 
+            onFileSelect={(files) => logger.debug('Files selected', { count: files.length })} 
+            helperText="Formats acceptés : JPG, PNG, GIF. Taille max : 5MB" 
+          />
         </Section>
 
         <Section title="Form & FormField">
@@ -75,7 +83,7 @@ export default function FormsPage() {
               <h4 className="text-sm font-semibold mb-4">Formulaire structuré avec Form</h4>
               <Form
                 onSubmit={(data) => {
-                  console.log('Données du formulaire:', data);
+                  logger.debug('Form submitted', { fields: Object.keys(data) });
                   alert('Formulaire soumis avec succès !');
                 }}
                 className="space-y-4"
@@ -152,7 +160,7 @@ export default function FormsPage() {
                 { name: 'birthdate', label: 'Date de naissance', type: 'date' as const },
               ] satisfies FormBuilderField[]}
               onSubmit={(data) => {
-                console.log('Données du formulaire:', data);
+                logger.debug('FormBuilder submitted', { fields: Object.keys(data) });
                 alert('Formulaire soumis avec succès !');
               }}
               submitLabel="Soumettre"

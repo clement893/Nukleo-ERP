@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Button from './Button';
 import Dropdown from './Dropdown';
 import type { DropdownItem } from './Dropdown';
+import { logger } from '@/lib/logger';
 
 export interface ExportButtonProps {
-  data: Record<string, any>[];
+  data: Record<string, unknown>[];
   filename?: string;
-  onExport?: (format: 'csv' | 'excel', data: Record<string, any>[]) => void;
+  onExport?: (format: 'csv' | 'excel', data: Record<string, unknown>[]) => void;
 }
 
 export default function ExportButton({ data, filename = 'export', onExport }: ExportButtonProps) {
   const [loading, setLoading] = useState(false);
 
-  const convertToCSV = (data: Record<string, any>[]): string => {
+  const convertToCSV = useCallback((data: Record<string, unknown>[]): string => {
     if (data.length === 0) return '';
     
     const firstRow = data[0];
@@ -32,9 +33,9 @@ export default function ExportButton({ data, filename = 'export', onExport }: Ex
     );
 
     return [csvHeaders, ...csvRows].join('\n');
-  };
+  }, []);
 
-  const downloadCSV = async () => {
+  const downloadCSV = useCallback(async () => {
     setLoading(true);
     try {
       if (onExport) {
@@ -50,15 +51,17 @@ export default function ExportButton({ data, filename = 'export', onExport }: Ex
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        // Clean up object URL to prevent memory leak
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      logger.error('Error exporting CSV', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [data, filename, onExport, convertToCSV]);
 
-  const downloadExcel = async () => {
+  const downloadExcel = useCallback(async () => {
     setLoading(true);
     try {
       if (onExport) {
@@ -76,13 +79,15 @@ export default function ExportButton({ data, filename = 'export', onExport }: Ex
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        // Clean up object URL to prevent memory leak
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Error exporting Excel:', error);
+      logger.error('Error exporting Excel', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [data, filename, onExport, convertToCSV]);
 
   const items: DropdownItem[] = [
     {

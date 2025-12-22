@@ -1,16 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, Button } from '@/components/ui';
 import { CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/errors/api';
 
 export default function SubscriptionSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const verifySubscription = useCallback(async () => {
+    try {
+      // Wait a bit for webhook to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const response = await api.get('/v1/subscriptions/me');
+      if (response.data) {
+        setIsLoading(false);
+      } else {
+        setError('Subscription not found. Please wait a moment and refresh.');
+        setIsLoading(false);
+      }
+    } catch (err) {
+      const appError = handleApiError(err);
+      if (appError.statusCode === 404) {
+        // Subscription might not be created yet, wait and retry
+        setTimeout(async () => {
+          try {
+            await api.get('/v1/subscriptions/me');
+            setIsLoading(false);
+          } catch (retryErr) {
+            const retryError = handleApiError(retryErr);
+            setError('Subscription verification failed. Please check your subscription status.');
+            logger.error('Subscription verification retry failed', retryError);
+            setIsLoading(false);
+          }
+        }, 3000);
+      } else {
+        setError('Failed to verify subscription');
+        logger.error('Failed to verify subscription', appError);
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
@@ -20,40 +57,8 @@ export default function SubscriptionSuccessPage() {
       return;
     }
 
-    // Verify subscription was created by checking user's subscription
-    const verifySubscription = async () => {
-      try {
-        // Wait a bit for webhook to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const response = await api.get('/v1/subscriptions/me');
-        if (response.data) {
-          setIsLoading(false);
-        } else {
-          setError('Subscription not found. Please wait a moment and refresh.');
-          setIsLoading(false);
-        }
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          // Subscription might not be created yet, wait and retry
-          setTimeout(async () => {
-            try {
-              await api.get('/v1/subscriptions/me');
-              setIsLoading(false);
-            } catch (retryErr) {
-              setError('Subscription verification failed. Please check your subscription status.');
-              setIsLoading(false);
-            }
-          }, 3000);
-        } else {
-          setError('Failed to verify subscription');
-          setIsLoading(false);
-        }
-      }
-    };
-
     verifySubscription();
-  }, [searchParams]);
+  }, [searchParams, verifySubscription]);
 
   if (isLoading) {
     return (

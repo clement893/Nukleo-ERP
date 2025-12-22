@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store';
 import { authAPI, usersAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
+import { logger } from '@/lib/logger';
 
 interface LoginCredentials {
   email: string;
@@ -91,8 +92,8 @@ export function useAuth() {
     try {
       await authAPI.logout();
     } catch (err) {
-      // Ignore logout errors
-      console.error('Logout error:', err);
+      // Ignore logout errors but log them
+      logger.error('Logout error', err);
     } finally {
       // Clear tokens securely
       TokenStorage.removeTokens();

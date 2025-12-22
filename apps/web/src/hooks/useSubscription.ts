@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { isSubscriptionActive } from '@/utils/subscriptions';
+import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/errors/api';
 
 interface Subscription {
   id: number;
@@ -47,13 +49,14 @@ export function useSubscription(): UseSubscriptionReturn {
     try {
       const response = await api.get('/v1/subscriptions/me');
       setSubscription(response.data);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err) {
+      const appError = handleApiError(err);
+      if (appError.statusCode === 404) {
         setSubscription(null);
         setError(null); // No subscription is not an error
       } else {
         setError('Failed to load subscription');
-        console.error(err);
+        logger.error('Failed to load subscription', appError);
       }
     } finally {
       setIsLoading(false);
