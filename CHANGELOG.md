@@ -100,3 +100,32 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Vérification d'email
 - Fonctionnalité de réinitialisation de mot de passe
 
+---
+
+## [1.2.0] - 2025-12-22
+
+### Changed
+- **Documentation consolidée** - Réorganisation complète de la documentation
+- **Nettoyage** - Suppression de 40+ fichiers d'analyse/tracking obsolètes
+- **Structure** - Documentation organisée dans `docs/` avec index clair
+- **README amélioré** - README principal optimisé pour un template
+
+### Added
+- **docs/README.md** - Index principal de la documentation
+- **docs/DEVELOPMENT.md** - Guide de développement consolidé
+- **docs/SECURITY.md** - Guide de sécurité
+- **docs/COMPONENTS.md** - Documentation des composants
+- **docs/TROUBLESHOOTING.md** - Guide de dépannage
+
+### Removed
+- Tous les fichiers d'analyse (`ANALYSE_*.md`)
+- Fichiers de tracking (`BUGS_CORRIGES*.md`, `IMPROVEMENT*.md`)
+- Rapports redondants (`CODE_REVIEW*.md`, `EVALUATION*.md`)
+- Fichiers de développement interne (`PAGES_A_CONSTRUIRE.md`, `LISTE_FONCTIONNALITES.md`)
+
+### Security
+- **X-Frame-Options** : Corrigé de SAMEORIGIN à DENY
+- **CSP** : Politique stricte en production (sans unsafe-eval)
+- **Refresh tokens** : Expiration réduite de 7 à 5 jours
+- **Logs** : Filtrage des informations sensibles amélioré
+

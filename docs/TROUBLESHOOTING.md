@@ -1,400 +1,183 @@
 # 🔧 Guide de Dépannage
 
-Guide complet pour résoudre les problèmes courants du projet.
+Guide pour résoudre les problèmes courants lors du développement avec le template.
+
+## 📋 Table des Matières
+
+- [Problèmes d'Installation](#problèmes-dinstallation)
+- [Problèmes de Base de Données](#problèmes-de-base-de-données)
+- [Problèmes Frontend](#problèmes-frontend)
+- [Problèmes Backend](#problèmes-backend)
+- [Problèmes de Build](#problèmes-de-build)
+- [Problèmes de Tests](#problèmes-de-tests)
 
 ---
 
-## 📚 Table des Matières
+## 🔧 Problèmes d'Installation
 
-- [Erreurs de Build](#erreurs-de-build)
-- [Erreurs TypeScript](#erreurs-typescript)
-- [Erreurs Runtime](#erreurs-runtime)
-- [Problèmes de Thème](#problèmes-de-thème)
-- [Problèmes de Performance](#problèmes-de-performance)
-- [Problèmes Git](#problèmes-git)
+### Erreur: pnpm non trouvé
 
----
-
-## 🔨 Erreurs de Build
-
-### Erreur : "Module not found"
-
-**Symptôme** :
-```
-Error: Cannot find module '@/components/ui/Button'
-```
-
-**Solutions** :
-
-1. **Vérifier les alias TypeScript** :
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
-}
-```
-
-2. **Vérifier les imports** :
-```tsx
-// ✅ Bon
-import Button from '@/components/ui/Button';
-
-// ❌ Mauvais
-import Button from './components/ui/Button';
-```
-
-3. **Redémarrer le serveur de développement** :
 ```bash
-pnpm dev
+# Installer pnpm globalement
+npm install -g pnpm
 ```
 
----
+### Erreur: Dépendances non installées
 
-### Erreur : "Cannot find module 'react'"
-
-**Symptôme** :
-```
-Error: Cannot find module 'react' or its corresponding type declarations
-```
-
-**Solutions** :
-
-1. **Réinstaller les dépendances** :
 ```bash
-rm -rf node_modules
+# Supprimer node_modules et réinstaller
+rm -rf node_modules apps/*/node_modules packages/*/node_modules
 pnpm install
 ```
 
-2. **Vérifier les versions** :
+### Erreur: Python non trouvé
+
 ```bash
-pnpm list react
+# Vérifier l'installation Python
+python --version  # Doit être 3.11+
+
+# Installer les dépendances Python
+cd backend
+pip install -r requirements.txt
 ```
 
 ---
 
-## 📝 Erreurs TypeScript
+## 🗄️ Problèmes de Base de Données
 
-### Erreur : "Property 'X' does not exist on type 'Y'"
+### Erreur: Connexion à la base de données échouée
 
-**Symptôme** :
-```
-Property 'primary' does not exist on type 'ThemeConfig'
-```
+1. Vérifier que PostgreSQL est démarré
+2. Vérifier la variable `DATABASE_URL` dans `.env`
+3. Vérifier les permissions de l'utilisateur
 
-**Solutions** :
-
-1. **Vérifier les types** :
-```tsx
-import type { ThemeConfig } from '@/components/theme/types';
-
-const theme: ThemeConfig = {
-  primary: '#3B82F6',
-  // ...
-};
-```
-
-2. **Vérifier les imports de types** :
-```tsx
-// ✅ Bon
-import type { ThemeConfig } from '@/components/theme/types';
-
-// ❌ Mauvais
-import { ThemeConfig } from '@/components/theme/types';
-```
-
----
-
-### Erreur : "Object is possibly 'undefined'"
-
-**Symptôme** :
-```
-Object is possibly 'undefined'
-```
-
-**Solutions** :
-
-1. **Utiliser l'opérateur de chaînage optionnel** :
-```tsx
-// ✅ Bon
-const value = obj?.property?.nested;
-
-// ❌ Mauvais
-const value = obj.property.nested;
-```
-
-2. **Ajouter une vérification** :
-```tsx
-if (obj && obj.property) {
-  const value = obj.property.nested;
-}
-```
-
----
-
-## ⚠️ Erreurs Runtime
-
-### Erreur : "useTheme must be used within ThemeProvider"
-
-**Symptôme** :
-```
-Error: useTheme must be used within a ThemeProvider
-```
-
-**Solutions** :
-
-1. **Envelopper l'application avec ThemeProvider** :
-```tsx
-// app/layout.tsx
-import { ThemeProvider } from '@/contexts/ThemeContext';
-
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
-```
-
----
-
-### Erreur : "localStorage is not defined"
-
-**Symptôme** :
-```
-ReferenceError: localStorage is not defined
-```
-
-**Solutions** :
-
-1. **Vérifier que le code s'exécute côté client** :
-```tsx
-'use client';
-
-export function Component() {
-  // Code utilisant localStorage
-}
-```
-
-2. **Ajouter une vérification** :
-```tsx
-if (typeof window !== 'undefined') {
-  localStorage.setItem('key', 'value');
-}
-```
-
----
-
-## 🎨 Problèmes de Thème
-
-### Le thème ne s'applique pas
-
-**Symptômes** :
-- Les couleurs ne changent pas
-- Les modifications ne sont pas visibles
-
-**Solutions** :
-
-1. **Vérifier que ThemeManager est monté** :
-```tsx
-const { mounted } = useThemeManager();
-
-if (!mounted) {
-  return null; // Évite les erreurs SSR
-}
-```
-
-2. **Vérifier les variables CSS** :
-```css
-/* globals.css */
-:root {
-  --color-primary-500: #3B82F6;
-}
-```
-
-3. **Vérifier la console pour les erreurs** :
 ```bash
-# Ouvrir la console du navigateur
-# Chercher les erreurs CSS
+# Tester la connexion
+psql $DATABASE_URL
 ```
 
----
+### Erreur: Migrations échouées
 
-### Les couleurs ne se génèrent pas
-
-**Symptômes** :
-- Les nuances de couleurs ne sont pas créées
-- Les variables CSS `--color-primary-*` sont manquantes
-
-**Solutions** :
-
-1. **Vérifier que `generateColorShades` est appelé** :
-```tsx
-import { generateColorShades } from '@/components/theme/utils';
-
-generateColorShades('#3B82F6', 'primary');
-```
-
-2. **Vérifier que le code s'exécute côté client** :
-```tsx
-'use client';
-```
-
----
-
-## ⚡ Problèmes de Performance
-
-### Le lazy loading ne fonctionne pas
-
-**Symptômes** :
-- Les composants ne se chargent pas à la demande
-- Erreurs de Suspense
-
-**Solutions** :
-
-1. **Vérifier l'export par défaut** :
-```tsx
-// ✅ Bon
-export default function Component() { }
-
-// ❌ Mauvais
-export function Component() { }
-```
-
-2. **Vérifier le chemin d'import** :
-```tsx
-// ✅ Bon
-const Component = createLazyComponent(() => import('./Component'));
-
-// ❌ Mauvais
-const Component = createLazyComponent(() => import('./component'));
-```
-
----
-
-## 🔀 Problèmes Git
-
-### Erreur : "Updates were rejected"
-
-**Symptôme** :
-```
-error: failed to push some refs to 'origin'
-hint: Updates were rejected because the remote contains work that you do not have locally
-```
-
-**Solutions** :
-
-1. **Faire un pull avec rebase** :
 ```bash
-git pull origin INITIALComponentRICH --rebase
-git push origin INITIALComponentRICH
+# Vérifier l'état des migrations
+cd backend
+alembic current
+
+# Appliquer les migrations
+alembic upgrade head
+
+# Si problème, créer une nouvelle migration
+alembic revision --autogenerate -m "Fix migration"
 ```
 
-2. **Faire un pull puis push** :
+---
+
+## ⚛️ Problèmes Frontend
+
+### Erreur: Module non trouvé
+
 ```bash
-git pull origin INITIALComponentRICH
-git push origin INITIALComponentRICH
+# Réinstaller les dépendances
+cd apps/web
+rm -rf node_modules .next
+pnpm install
+```
+
+### Erreur: TypeScript
+
+```bash
+# Vérifier les types
+pnpm type-check
+
+# Nettoyer le cache TypeScript
+rm -rf apps/web/.next
+```
+
+### Erreur: Build échoué
+
+```bash
+# Nettoyer et rebuilder
+cd apps/web
+rm -rf .next out
+pnpm build
 ```
 
 ---
 
-## 🐛 Erreurs Communes
+## 🐍 Problèmes Backend
 
-### Erreur : "Component is not exported"
+### Erreur: Import non trouvé
 
-**Symptôme** :
-```
-Type error: 'Component' is not exported from '@/components/ui/Component'
-```
-
-**Solutions** :
-
-1. **Vérifier le type d'export** :
-```tsx
-// Export par défaut
-export default function Component() { }
-
-// Import
-import Component from '@/components/ui/Component';
+```bash
+# Vérifier l'installation des dépendances Python
+cd backend
+pip install -r requirements.txt
 ```
 
-2. **Vérifier les exports nommés** :
-```tsx
-// Export nommé
-export function Component() { }
+### Erreur: Port déjà utilisé
 
-// Import
-import { Component } from '@/components/ui/Component';
+```bash
+# Changer le port dans .env
+PORT=8001
+```
+
+### Erreur: SECRET_KEY manquant
+
+```bash
+# Générer un SECRET_KEY
+python -c 'import secrets; print(secrets.token_urlsafe(32))'
+
+# Ajouter dans .env
+SECRET_KEY=votre-secret-key-genere
 ```
 
 ---
 
-### Erreur : "Event handlers cannot be passed to Client Component props"
+## 🏗️ Problèmes de Build
 
-**Symptôme** :
+### Erreur: Turborepo
+
+```bash
+# Nettoyer le cache Turborepo
+rm -rf .turbo
+pnpm build
 ```
-Error: Event handlers cannot be passed to Client Component props
-```
 
-**Solutions** :
+### Erreur: Docker
 
-1. **Ajouter 'use client'** :
-```tsx
-'use client';
-
-export default function Component() {
-  return <button onClick={() => {}}>Click</button>;
-}
+```bash
+# Rebuild les images
+docker-compose down
+docker-compose build --no-cache
+docker-compose up
 ```
 
 ---
 
-## 📞 Obtenir de l'Aide
+## 🧪 Problèmes de Tests
 
-### Vérifier la Documentation
+### Tests frontend échouent
 
-1. **README.md** : Vue d'ensemble du projet
-2. **docs/INDEX.md** : Index de toute la documentation
-3. **docs/API.md** : Documentation API complète
-
-### Rechercher les Issues
-
-1. Vérifier les issues GitHub existantes
-2. Créer une nouvelle issue si nécessaire
-
-### Debugging
-
-1. **Activer les logs** :
-```tsx
-console.log('Debug:', value);
+```bash
+# Nettoyer et réinstaller
+cd apps/web
+rm -rf node_modules .vitest
+pnpm install
+pnpm test
 ```
 
-2. **Utiliser React DevTools** :
-- Installer l'extension Chrome/Firefox
-- Inspecter les composants
+### Tests backend échouent
 
-3. **Vérifier la console du navigateur** :
-- Ouvrir les DevTools (F12)
-- Vérifier les erreurs et warnings
-
----
-
-## 📚 Ressources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Documentation](https://react.dev)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+```bash
+# Vérifier la base de données de test
+cd backend
+pytest --setup-show
+```
 
 ---
 
-**Dernière mise à jour** : 2025-01-22
+## 📞 Besoin d'Aide ?
 
+- Consulter la [documentation complète](./README.md)
+- Ouvrir une [issue GitHub](https://github.com/clement893/MODELE-NEXTJS-FULLSTACK/issues)
+- Vérifier les [guides de développement](./DEVELOPMENT.md)
