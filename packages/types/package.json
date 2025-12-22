@@ -11,9 +11,9 @@
     }
   },
   "scripts": {
-    "build": "node ../../node_modules/typescript/bin/tsc",
-    "dev": "node ../../node_modules/typescript/bin/tsc --watch",
-    "type-check": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "build": "npx tsc",
+    "dev": "npx tsc --watch",
+    "type-check": "npx tsc --noEmit",
     "clean": "rm -rf dist",
     "lint": "echo 'No linting for types package'",
     "test": "echo 'No tests for types package'",
