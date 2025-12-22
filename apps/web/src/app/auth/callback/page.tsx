@@ -39,7 +39,7 @@ function CallbackContent() {
       const user = response.data;
 
       if (user) {
-        login(user, accessToken, refreshToken || undefined);
+        login(user, accessToken, refreshToken ?? undefined);
         router.push('/dashboard');
       } else {
         throw new Error('No user data received');
