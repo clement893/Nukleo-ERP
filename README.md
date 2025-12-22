@@ -229,6 +229,8 @@ docker-compose up --build
 
 ## 📚 Documentation
 
+### Documentation Principale
+
 - 📖 [Getting Started Guide](./GETTING_STARTED.md) - Complete setup guide
 - 🛠️ [Development Guide](./DEVELOPMENT.md) - Development tools and workflows
 - 📧 [SendGrid Email Setup](./docs/SENDGRID_SETUP.md) - Email service configuration
@@ -236,6 +238,23 @@ docker-compose up --build
 - 📝 [Changelog](./CHANGELOG.md) - Version history
 - 🎨 [Backend Documentation](./backend/README.md)
 - ⚛️ [Frontend Documentation](./apps/web/README.md)
+
+### Documentation Composants UI
+
+- 📚 [Index Documentation](./docs/INDEX.md) - Index complet de toute la documentation
+- 🎨 [Composants UI README](./apps/web/src/components/ui/README.md) - Vue d'ensemble des composants
+- 📖 [Documentation API](./apps/web/src/app/components/docs/API.md) - Documentation complète de tous les composants
+- ♿ [Guide d'Accessibilité](./apps/web/src/components/ui/ACCESSIBILITY.md) - Standards WCAG 2.1
+- 🎨 [Système de Thème](./apps/web/src/components/theme/README.md) - Personnalisation du thème
+- 📚 [Storybook Guide](./apps/web/.storybook/README.md) - Guide Storybook
+- 🎯 [Exemples SaaS](./apps/web/src/app/examples/README.md) - Documentation des exemples
+
+### Documentation Template SaaS
+
+- 🚀 [Template SaaS README](./README_TEMPLATE_SAAS.md) - Documentation complète du template
+- 📋 [Guide de Démarrage](./GUIDE_DEMARRAGE.md) - Guide de démarrage rapide
+- ✅ [Vérification](./VERIFICATION.md) - Checklist de vérification
+- 📊 [Résumé Améliorations](./RESUME_AMELIORATIONS.md) - Résumé des améliorations
 
 ## 🔐 Security
 
