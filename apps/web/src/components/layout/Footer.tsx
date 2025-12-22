@@ -20,8 +20,13 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Ressources</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/" className="hover:text-blue-400 transition">
+                <Link href="/docs" className="hover:text-blue-400 transition">
                   Documentation
+                </Link>
+              </li>
+              <li>
+                <Link href="/sitemap" className="hover:text-blue-400 transition">
+                  Plan du Site
                 </Link>
               </li>
               <li>
