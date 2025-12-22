@@ -10,6 +10,8 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.models import User
 from app.core.security import decode_token
+from app.services.subscription_service import SubscriptionService
+from app.services.stripe_service import StripeService
 
 security = HTTPBearer()
 
@@ -28,7 +30,7 @@ def get_stripe_service(
     return StripeService(db)
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
