@@ -18,7 +18,7 @@ export function createLazyComponent<T extends ComponentType<Record<string, unkno
   return function LazyWrapper(props: React.ComponentProps<T>) {
     return (
       <Suspense fallback={fallback || <Spinner />}>
-        <LazyComponent {...props} />
+        <LazyComponent {...(props as any)} />
       </Suspense>
     );
   };
@@ -37,7 +37,7 @@ export function lazyLoad<T extends ComponentType<Record<string, unknown>>>(
     const fallback = LoadingComponent ? <LoadingComponent /> : <Spinner />;
     return (
       <Suspense fallback={fallback}>
-        <LazyComponent {...props} />
+        <LazyComponent {...(props as any)} />
       </Suspense>
     );
   };
