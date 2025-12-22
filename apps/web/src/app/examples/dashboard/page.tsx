@@ -24,19 +24,27 @@ const chartData: ChartDataPoint[] = [
   { label: 'Juin', value: 170 },
 ];
 
-const tableData = [
+type TableRow = {
+  id: number;
+  name: string;
+  email: string;
+  status: 'active' | 'inactive';
+  revenue: string;
+};
+
+const tableData: TableRow[] = [
   { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', revenue: '€1,234' },
   { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'active', revenue: '€2,345' },
   { id: 3, name: 'Bob Johnson', email: 'bob@example.com', status: 'inactive', revenue: '€567' },
 ];
 
-const tableColumns: Column[] = [
+const tableColumns: Column<TableRow>[] = [
   { key: 'name', label: 'Nom', sortable: true },
   { key: 'email', label: 'Email', sortable: true },
   { 
     key: 'status', 
     label: 'Statut', 
-    render: (row) => <Badge variant={row.status === 'active' ? 'success' : 'error'}>{row.status}</Badge>
+    render: (_value, row) => <Badge variant={row.status === 'active' ? 'success' : 'error'}>{row.status}</Badge>
   },
   { key: 'revenue', label: 'Revenus', sortable: true },
 ];
