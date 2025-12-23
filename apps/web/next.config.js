@@ -35,7 +35,11 @@ const nextConfig = {
   // Headers for security
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    // Use production backend URL as fallback if NEXT_PUBLIC_API_URL is not set
+    const defaultUrl = isProduction 
+      ? 'https://modelebackend-production-0590.up.railway.app'
+      : 'http://localhost:8000';
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || defaultUrl).trim();
     
     // Content Security Policy
     const cspDirectives = [

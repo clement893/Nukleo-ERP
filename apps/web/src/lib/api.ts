@@ -33,14 +33,16 @@ const getApiUrl = () => {
     ? 'https://modelebackend-production-0590.up.railway.app'
     : 'http://localhost:8000';
   
-  let url = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
+  // Get and trim the URL to remove any whitespace
+  let url = (process.env.NEXT_PUBLIC_API_URL || defaultUrl).trim();
   
   // Log to help debug (only in browser, not SSR)
   if (typeof window !== 'undefined') {
     console.log('[API Client] NODE_ENV:', process.env.NODE_ENV);
-    console.log('[API Client] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('[API Client] NEXT_PUBLIC_API_URL (raw):', process.env.NEXT_PUBLIC_API_URL);
+    console.log('[API Client] NEXT_PUBLIC_API_URL (trimmed):', url);
     console.log('[API Client] Default URL:', defaultUrl);
-    console.log('[API Client] Using API URL:', url);
+    console.log('[API Client] Final API URL:', url);
   }
   
   // If URL doesn't start with http:// or https://, add https://
