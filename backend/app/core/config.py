@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_db_connection(cls, v: str | PostgresDsn) -> str:
         if isinstance(v, str):
+            # Convert postgresql:// to postgresql+asyncpg:// for async support
+            if v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+                v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
             return v
         return str(v)
 
