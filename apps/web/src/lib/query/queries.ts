@@ -7,14 +7,10 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  authAPI, 
   usersAPI, 
   subscriptionsAPI, 
   teamsAPI, 
   invitationsAPI,
-  resourcesAPI,
-  aiAPI,
-  emailAPI,
 } from '@/lib/api';
 import type { AxiosResponse } from 'axios';
 
