@@ -3,7 +3,8 @@ API endpoints for theme management.
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.schemas.theme import (
     ThemeCreate,
     ThemeUpdate,
@@ -11,19 +12,21 @@ from app.schemas.theme import (
     ThemeListResponse,
     ThemeConfigResponse
 )
-from app.services.theme_service import ThemeService
-from app.dependencies import get_db, get_current_user, require_superadmin
+from app.models.theme import Theme
+from app.core.database import get_db
+from app.dependencies import get_current_user, require_superadmin
 
 router = APIRouter()
 
 
 @router.get("/active", response_model=ThemeConfigResponse, tags=["themes"])
-async def get_active_theme(db: Session = Depends(get_db)):
+async def get_active_theme(db: AsyncSession = Depends(get_db)):
     """
     Get the currently active theme configuration.
     Public endpoint - no authentication required.
     """
-    theme = ThemeService.get_active_theme(db)
+    result = await db.execute(select(Theme).where(Theme.is_active == True))
+    theme = result.scalar_one_or_none()
     if not theme:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -42,7 +45,7 @@ async def get_active_theme(db: Session = Depends(get_db)):
 async def list_themes(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
     _: None = Depends(require_superadmin)
 ):
@@ -50,11 +53,14 @@ async def list_themes(
     List all themes.
     Requires superadmin authentication.
     """
-    themes = ThemeService.get_all_themes(db, skip=skip, limit=limit)
-    active_theme = ThemeService.get_active_theme(db)
+    result = await db.execute(select(Theme).offset(skip).limit(limit))
+    themes = result.scalars().all()
+    
+    active_result = await db.execute(select(Theme).where(Theme.is_active == True))
+    active_theme = active_result.scalar_one_or_none()
     
     return ThemeListResponse(
-        themes=[ThemeResponse.from_orm(theme) for theme in themes],
+        themes=[ThemeResponse.model_validate(theme) for theme in themes],
         total=len(themes),
         active_theme_id=active_theme.id if active_theme else None
     )
@@ -63,7 +69,7 @@ async def list_themes(
 @router.get("/{theme_id}", response_model=ThemeResponse, tags=["themes"])
 async def get_theme(
     theme_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
     _: None = Depends(require_superadmin)
 ):
@@ -71,20 +77,21 @@ async def get_theme(
     Get a specific theme by ID.
     Requires superadmin authentication.
     """
-    theme = ThemeService.get_theme_by_id(db, theme_id)
+    result = await db.execute(select(Theme).where(Theme.id == theme_id))
+    theme = result.scalar_one_or_none()
     if not theme:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Theme with ID {theme_id} not found"
         )
     
-    return ThemeResponse.from_orm(theme)
+    return ThemeResponse.model_validate(theme)
 
 
 @router.post("", response_model=ThemeResponse, status_code=status.HTTP_201_CREATED, tags=["themes"])
 async def create_theme(
     theme_data: ThemeCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
     _: None = Depends(require_superadmin)
 ):
@@ -94,15 +101,30 @@ async def create_theme(
     If is_active=True, automatically deactivates all other themes.
     """
     # Check if theme name already exists
-    existing_theme = ThemeService.get_theme_by_name(db, theme_data.name)
+    result = await db.execute(select(Theme).where(Theme.name == theme_data.name))
+    existing_theme = result.scalar_one_or_none()
     if existing_theme:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Theme with name '{theme_data.name}' already exists"
         )
     
-    theme = ThemeService.create_theme(db, theme_data, created_by=current_user.id)
-    return ThemeResponse.from_orm(theme)
+    # If activating, deactivate all others
+    if theme_data.is_active:
+        await db.execute(select(Theme).where(Theme.is_active == True).update({"is_active": False}))
+    
+    theme = Theme(
+        name=theme_data.name,
+        display_name=theme_data.display_name,
+        description=theme_data.description,
+        config=theme_data.config,
+        is_active=theme_data.is_active or False,
+        created_by=current_user.id
+    )
+    db.add(theme)
+    await db.commit()
+    await db.refresh(theme)
+    return ThemeResponse.model_validate(theme)
 
 
 @router.put("/{theme_id}", response_model=ThemeResponse, tags=["themes"])

@@ -97,3 +97,22 @@ async def get_optional_user(
         return None
 
 
+async def require_superadmin(
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Dependency to require superadmin role."""
+    # Check if user has superadmin role
+    # Adjust based on your role/permission system
+    if not hasattr(current_user, 'is_superadmin') or not current_user.is_superadmin:
+        # Check roles if using role-based system
+        from app.models import Role
+        from sqlalchemy import select
+        
+        # This is a placeholder - adjust based on your actual role system
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superadmin access required"
+        )
+    return None
+
+
