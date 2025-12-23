@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = False
+    BASE_URL: str = Field(
+        default="",
+        description="Base URL of the backend (for OAuth callbacks). If empty, will be constructed from request.",
+    )
 
     # CORS - Accept string or list, will be converted to list
     # Use default_factory to detect environment at initialization time

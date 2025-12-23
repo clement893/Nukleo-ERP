@@ -213,8 +213,11 @@ async def get_google_auth_url(
         # Build redirect URI - use the configured one or construct from request
         callback_uri = settings.GOOGLE_REDIRECT_URI
         if not callback_uri:
-            # Construct callback URL from request
-            backend_base_url = str(request.base_url).rstrip("/")
+            # Use BASE_URL from settings if available, otherwise construct from request
+            if settings.BASE_URL:
+                backend_base_url = settings.BASE_URL.rstrip("/")
+            else:
+                backend_base_url = str(request.base_url).rstrip("/")
             callback_uri = f"{backend_base_url}{settings.API_V1_STR}/auth/google/callback"
         
         logger.info(f"Google OAuth callback URI: {callback_uri}")
@@ -278,9 +281,12 @@ async def google_oauth_callback(
     # Build redirect URI - must match the one used in /google endpoint
     redirect_uri = settings.GOOGLE_REDIRECT_URI
     if not redirect_uri:
-        # Construct callback URL from request (must match the one in /google)
-        base_url = str(request.base_url).rstrip("/")
-        redirect_uri = f"{base_url}{settings.API_V1_STR}/auth/google/callback"
+        # Use BASE_URL from settings if available, otherwise construct from request
+        if settings.BASE_URL:
+            backend_base_url = settings.BASE_URL.rstrip("/")
+        else:
+            backend_base_url = str(request.base_url).rstrip("/")
+        redirect_uri = f"{backend_base_url}{settings.API_V1_STR}/auth/google/callback"
     
     try:
         # Exchange authorization code for tokens
