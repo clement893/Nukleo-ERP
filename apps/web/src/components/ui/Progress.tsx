@@ -1,4 +1,5 @@
 import { clsx } from 'clsx';
+import { Size } from './types';
 
 interface ProgressProps {
   value: number; // 0-100
