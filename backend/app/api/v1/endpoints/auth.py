@@ -375,9 +375,10 @@ async def google_oauth_callback(
             else:
                 # Create new user
                 # Generate a random password since Google OAuth users don't have passwords
-                # Bcrypt has a 72-byte limit, so we use token_hex(36) which generates exactly 72 hex characters (72 bytes)
+                # Bcrypt has a 72-byte limit, so we use token_hex(35) which generates 70 hex characters (70 bytes)
+                # This is safely under the 72-byte limit to avoid any encoding issues
                 import secrets
-                random_password = secrets.token_hex(36)  # 36 bytes * 2 = 72 hex characters = 72 bytes
+                random_password = secrets.token_hex(35)  # 35 bytes * 2 = 70 hex characters = 70 bytes (safe)
                 hashed_password = get_password_hash(random_password)
                 
                 user = User(
