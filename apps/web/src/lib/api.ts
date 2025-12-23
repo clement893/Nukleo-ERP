@@ -76,6 +76,15 @@ apiClient.interceptors.request.use(
       const token = TokenStorage.getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        // Debug log to verify token is being sent
+        if (config.url?.includes('/auth/me')) {
+          console.log('[API Client] Sending request to /auth/me with token:', token.substring(0, 20) + '...');
+        }
+      } else {
+        // Debug log if no token found
+        if (config.url?.includes('/auth/me')) {
+          console.warn('[API Client] No token found when requesting /auth/me');
+        }
       }
     }
     return config;
