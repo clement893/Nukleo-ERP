@@ -38,16 +38,30 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Expires"] = "0"
             return response
         
-        # Generate ETag from response body
-        body = response.body
-        etag = hashlib.md5(body).hexdigest()
-        response.headers["ETag"] = f'"{etag}"'
+        # Skip ETag generation for responses without body attribute (e.g., StreamingResponse, RedirectResponse)
+        if not hasattr(response, 'body'):
+            # Still add cache headers but skip ETag
+            max_age = self._get_cache_max_age(request.path)
+            response.headers["Cache-Control"] = f"public, max-age={max_age}, must-revalidate"
+            response.headers["Vary"] = "Accept, Accept-Encoding"
+            expires = datetime.now(timezone.utc) + timedelta(seconds=max_age)
+            response.headers["Expires"] = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
+            return response
         
-        # Check if client sent If-None-Match header
-        if_none_match = request.headers.get("If-None-Match")
-        if if_none_match and if_none_match.strip() == f'"{etag}"':
-            # Response hasn't changed, return 304 Not Modified
-            return Response(status_code=304, headers=response.headers)
+        # Generate ETag from response body
+        try:
+            body = response.body
+            etag = hashlib.md5(body).hexdigest()
+            response.headers["ETag"] = f'"{etag}"'
+            
+            # Check if client sent If-None-Match header
+            if_none_match = request.headers.get("If-None-Match")
+            if if_none_match and if_none_match.strip() == f'"{etag}"':
+                # Response hasn't changed, return 304 Not Modified
+                return Response(status_code=304, headers=response.headers)
+        except AttributeError:
+            # Response doesn't have body attribute, skip ETag
+            pass
         
         # Determine cache max-age based on endpoint
         max_age = self._get_cache_max_age(request.path)
