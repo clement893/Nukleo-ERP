@@ -7,7 +7,6 @@ import { PageHeader, PageContainer, Section, PageNavigation } from '@/components
 
 // Force dynamic rendering to avoid CSS file issues during build
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export default function FeedbackPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);

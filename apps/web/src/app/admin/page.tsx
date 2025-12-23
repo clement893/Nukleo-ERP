@@ -6,7 +6,6 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 // Force dynamic rendering to avoid CSS file issues during build
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
-export const revalidate = 0;
 
 export default function AdminPage() {
   return (
