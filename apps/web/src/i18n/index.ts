@@ -39,7 +39,7 @@ export function getLocale(): Locale {
   
   // Check browser language
   const browserLang = navigator.language.split('-')[0];
-  if (['en', 'fr'].includes(browserLang)) {
+  if (browserLang && ['en', 'fr'].includes(browserLang)) {
     return browserLang as Locale;
   }
   
