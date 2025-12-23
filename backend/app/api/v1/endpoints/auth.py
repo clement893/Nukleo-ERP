@@ -202,38 +202,52 @@ async def get_google_auth_url(
     Returns:
         Authorization URL for Google OAuth
     """
-    if not settings.GOOGLE_CLIENT_ID:
+    try:
+        if not settings.GOOGLE_CLIENT_ID:
+            logger.warning("Google OAuth not configured: GOOGLE_CLIENT_ID missing")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Google OAuth is not configured"
+            )
+        
+        # Build redirect URI - use the configured one or construct from request
+        callback_uri = settings.GOOGLE_REDIRECT_URI
+        if not callback_uri:
+            # Construct callback URL from request
+            backend_base_url = str(request.base_url).rstrip("/")
+            callback_uri = f"{backend_base_url}{settings.API_V1_STR}/auth/google/callback"
+        
+        logger.info(f"Google OAuth callback URI: {callback_uri}")
+        
+        # Google OAuth 2.0 authorization endpoint
+        google_auth_base_url = "https://accounts.google.com/o/oauth2/v2/auth"
+        
+        params = {
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "redirect_uri": callback_uri,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "offline",
+            "prompt": "consent",
+        }
+        
+        # Add state parameter if frontend redirect URL is provided
+        if redirect:
+            params["state"] = redirect
+        
+        auth_url = f"{google_auth_base_url}?{urlencode(params)}"
+        
+        logger.info(f"Generated Google OAuth URL (length: {len(auth_url)})")
+        
+        return {"auth_url": auth_url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating Google OAuth URL: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Google OAuth is not configured"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate Google OAuth URL: {str(e)}"
         )
-    
-    # Build redirect URI - use the configured one or construct from request
-    callback_uri = settings.GOOGLE_REDIRECT_URI
-    if not callback_uri:
-        # Construct callback URL from request
-        base_url = str(request.base_url).rstrip("/")
-        callback_uri = f"{base_url}{settings.API_V1_STR}/auth/google/callback"
-    
-    # Google OAuth 2.0 authorization endpoint
-    base_url = "https://accounts.google.com/o/oauth2/v2/auth"
-    
-    params = {
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": callback_uri,
-        "response_type": "code",
-        "scope": "openid email profile",
-        "access_type": "offline",
-        "prompt": "consent",
-    }
-    
-    # Add state parameter if frontend redirect URL is provided
-    if redirect:
-        params["state"] = redirect
-    
-    auth_url = f"{base_url}?{urlencode(params)}"
-    
-    return {"auth_url": auth_url}
 
 
 @router.get("/google/callback")
