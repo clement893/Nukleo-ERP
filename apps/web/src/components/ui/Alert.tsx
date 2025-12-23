@@ -128,3 +128,5 @@ function Alert({
     </div>
   );
 }
+
+export default memo(Alert);
