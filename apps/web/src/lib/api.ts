@@ -21,8 +21,17 @@ import { logger } from '@/lib/logger';
 /**
  * API base URL with trailing slash removed to avoid double slashes
  * Falls back to localhost:8000 if NEXT_PUBLIC_API_URL is not set
+ * Automatically adds https:// if protocol is missing (for production)
  */
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  // If URL doesn't start with http:// or https://, add https://
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+const API_URL = getApiUrl().replace(/\/$/, '');
 
 /**
  * Axios client instance configured for API requests
