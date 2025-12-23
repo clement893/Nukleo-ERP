@@ -43,8 +43,17 @@ COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
 # Create entrypoint script for Railway compatibility (before USER switch)
+# Railway may try to run pnpm start, so we ensure the entrypoint handles it
 RUN echo '#!/bin/sh' > /entrypoint.sh && \
-    echo 'exec node server.js' >> /entrypoint.sh && \
+    echo 'set -e' >> /entrypoint.sh && \
+    echo 'cd /app' >> /entrypoint.sh && \
+    echo 'if [ -f server.js ]; then' >> /entrypoint.sh && \
+    echo '  exec node server.js "$@"' >> /entrypoint.sh && \
+    echo 'else' >> /entrypoint.sh && \
+    echo '  echo "Error: server.js not found in /app"' >> /entrypoint.sh && \
+    echo '  ls -la /app' >> /entrypoint.sh && \
+    echo '  exit 1' >> /entrypoint.sh && \
+    echo 'fi' >> /entrypoint.sh && \
     chmod +x /entrypoint.sh && \
     chown nextjs:nodejs /entrypoint.sh
 
@@ -56,4 +65,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 ENTRYPOINT ["/entrypoint.sh"]
+CMD []
 
