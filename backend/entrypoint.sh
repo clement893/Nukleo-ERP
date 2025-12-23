@@ -4,11 +4,15 @@ set -e
 # Use PORT environment variable if set, otherwise default to 8000
 PORT=${PORT:-8000}
 
-# Run database migrations
-echo "Running database migrations..."
-alembic upgrade head
+# Run database migrations (skip if DATABASE_URL is not set to avoid crashes)
+if [ -n "$DATABASE_URL" ]; then
+    echo "Running database migrations..."
+    alembic upgrade head || echo "Warning: Database migrations failed, continuing anyway..."
+else
+    echo "Warning: DATABASE_URL not set, skipping migrations..."
+fi
 
-# Start Gunicorn with Uvicorn workers (ASGI) for FastAPI
-echo "Starting Gunicorn with Uvicorn workers on port $PORT..."
-exec gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT --timeout 120 app.main:app
+# Start Uvicorn directly for FastAPI
+echo "Starting Uvicorn on port $PORT..."
+exec uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
 
