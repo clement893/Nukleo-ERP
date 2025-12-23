@@ -111,7 +111,9 @@ async def create_theme(
     
     # If activating, deactivate all others
     if theme_data.is_active:
-        await db.execute(select(Theme).where(Theme.is_active == True).update({"is_active": False}))
+        from sqlalchemy import update
+        await db.execute(update(Theme).where(Theme.is_active == True).values(is_active=False))
+        await db.commit()
     
     theme = Theme(
         name=theme_data.name,
@@ -131,7 +133,7 @@ async def create_theme(
 async def update_theme(
     theme_id: int,
     theme_data: ThemeUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
     _: None = Depends(require_superadmin)
 ):
@@ -140,20 +142,39 @@ async def update_theme(
     Requires superadmin authentication.
     If is_active=True, automatically deactivates all other themes.
     """
-    theme = ThemeService.update_theme(db, theme_id, theme_data)
+    result = await db.execute(select(Theme).where(Theme.id == theme_id))
+    theme = result.scalar_one_or_none()
     if not theme:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Theme with ID {theme_id} not found"
         )
     
-    return ThemeResponse.from_orm(theme)
+    # If activating, deactivate all others
+    if theme_data.is_active is True:
+        from sqlalchemy import update
+        await db.execute(update(Theme).where(Theme.is_active == True, Theme.id != theme_id).values(is_active=False))
+        await db.commit()
+    
+    # Update fields
+    if theme_data.display_name is not None:
+        theme.display_name = theme_data.display_name
+    if theme_data.description is not None:
+        theme.description = theme_data.description
+    if theme_data.config is not None:
+        theme.config = theme_data.config
+    if theme_data.is_active is not None:
+        theme.is_active = theme_data.is_active
+    
+    await db.commit()
+    await db.refresh(theme)
+    return ThemeResponse.model_validate(theme)
 
 
 @router.post("/{theme_id}/activate", response_model=ThemeResponse, tags=["themes"])
 async def activate_theme(
     theme_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
     _: None = Depends(require_superadmin)
 ):
@@ -161,20 +182,30 @@ async def activate_theme(
     Activate a theme (deactivates all others).
     Requires superadmin authentication.
     """
-    theme = ThemeService.activate_theme(db, theme_id)
+    result = await db.execute(select(Theme).where(Theme.id == theme_id))
+    theme = result.scalar_one_or_none()
     if not theme:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Theme with ID {theme_id} not found"
         )
     
-    return ThemeResponse.from_orm(theme)
+    # Deactivate all themes
+    from sqlalchemy import update
+    await db.execute(update(Theme).where(Theme.is_active == True, Theme.id != theme_id).values(is_active=False))
+    await db.commit()
+    
+    # Activate this theme
+    theme.is_active = True
+    await db.commit()
+    await db.refresh(theme)
+    return ThemeResponse.model_validate(theme)
 
 
 @router.delete("/{theme_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["themes"])
 async def delete_theme(
     theme_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
     _: None = Depends(require_superadmin)
 ):
@@ -183,16 +214,21 @@ async def delete_theme(
     Requires superadmin authentication.
     Cannot delete the active theme.
     """
-    try:
-        success = ThemeService.delete_theme(db, theme_id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Theme with ID {theme_id} not found"
-            )
-    except ValueError as e:
+    result = await db.execute(select(Theme).where(Theme.id == theme_id))
+    theme = result.scalar_one_or_none()
+    if not theme:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Theme with ID {theme_id} not found"
+        )
+    
+    # Prevent deletion of active theme
+    if theme.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="Cannot delete the active theme. Please activate another theme first."
         )
+    
+    await db.delete(theme)
+    await db.commit()
 
