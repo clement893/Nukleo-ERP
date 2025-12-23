@@ -11,13 +11,11 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// Helper to get auth token (adjust based on your auth implementation)
+// Helper to get auth token
+import { TokenStorage } from '@/lib/auth/tokenStorage';
+
 function getAuthToken(): string {
-  // This should be replaced with your actual auth token retrieval logic
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth_token') || '';
-  }
-  return '';
+  return TokenStorage.getToken() || '';
 }
 
 /**

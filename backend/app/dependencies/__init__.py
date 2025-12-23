@@ -99,16 +99,24 @@ async def get_optional_user(
 
 async def require_superadmin(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> None:
     """Dependency to require superadmin role."""
-    # Check if user has superadmin role
-    # Adjust based on your role/permission system
-    if not hasattr(current_user, 'is_superadmin') or not current_user.is_superadmin:
-        # Check roles if using role-based system
-        from app.models import Role
-        from sqlalchemy import select
-        
-        # This is a placeholder - adjust based on your actual role system
+    from app.models import Role, UserRole
+    
+    # Check if user has superadmin role via UserRole
+    result = await db.execute(
+        select(Role)
+        .join(UserRole, Role.id == UserRole.role_id)
+        .where(
+            UserRole.user_id == current_user.id,
+            Role.slug == "superadmin",
+            Role.is_active == True
+        )
+    )
+    superadmin_role = result.scalar_one_or_none()
+    
+    if not superadmin_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Superadmin access required"

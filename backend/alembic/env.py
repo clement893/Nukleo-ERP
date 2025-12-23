@@ -20,6 +20,7 @@ from app.models import user  # noqa: F401
 from app.models import role  # noqa: F401
 from app.models import team  # noqa: F401
 from app.models import invitation  # noqa: F401
+from app.models import theme  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

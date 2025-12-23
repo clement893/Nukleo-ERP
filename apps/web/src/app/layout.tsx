@@ -4,6 +4,7 @@ import './globals.css';
 import SessionProvider from '@/components/providers/SessionProvider';
 import QueryProvider from '@/components/providers/QueryProvider';
 import ThemeManagerProvider from '@/components/providers/ThemeManagerProvider';
+import { GlobalThemeProvider } from '@/lib/theme/global-theme-provider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { App } from './app';
 
@@ -35,17 +36,19 @@ export default function RootLayout({
   return (
     <html lang="fr" className={inter.variable}>
       <body className={inter.className}>
-        <ThemeProvider>
-          <ThemeManagerProvider>
-            <QueryProvider>
-              <SessionProvider>
-                <App>
-                  {children}
-                </App>
-              </SessionProvider>
-            </QueryProvider>
-          </ThemeManagerProvider>
-        </ThemeProvider>
+        <GlobalThemeProvider>
+          <ThemeProvider>
+            <ThemeManagerProvider>
+              <QueryProvider>
+                <SessionProvider>
+                  <App>
+                    {children}
+                  </App>
+                </SessionProvider>
+              </QueryProvider>
+            </ThemeManagerProvider>
+          </ThemeProvider>
+        </GlobalThemeProvider>
       </body>
     </html>
   );

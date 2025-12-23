@@ -46,6 +46,17 @@ export default function AdminContent() {
           </Button>
         </Card>
 
+        <Card title="Thèmes" className="flex flex-col">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Gérer les thèmes globaux de la plateforme.
+          </p>
+          <Link href="/admin/themes">
+            <Button variant="primary" className="w-full">
+              Gérer les thèmes
+            </Button>
+          </Link>
+        </Card>
+
         <Card title="Paramètres" className="flex flex-col">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Configuration générale du système.
