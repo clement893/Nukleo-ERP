@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import SessionProvider from '@/components/providers/SessionProvider';
+import QueryProvider from '@/components/providers/QueryProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { App } from './app';
 
@@ -34,11 +35,13 @@ export default function RootLayout({
     <html lang="fr" className={inter.variable}>
       <body className={inter.className}>
         <ThemeProvider>
-        <SessionProvider>
-          <App>
-            {children}
-          </App>
-        </SessionProvider>
+          <QueryProvider>
+            <SessionProvider>
+              <App>
+                {children}
+              </App>
+            </SessionProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

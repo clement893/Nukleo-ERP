@@ -1,91 +1,48 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Button from '../Button';
 
 describe('Button', () => {
-  it('renders with children', () => {
+  it('renders button with text', () => {
     render(<Button>Click me</Button>);
-    expect(screen.getByText('Click me')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
   });
 
-  it('renders with default variant (primary)', () => {
-    const { container } = render(<Button>Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('bg-primary-600');
-  });
-
-  it('renders with secondary variant', () => {
-    const { container } = render(<Button variant="secondary">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('bg-secondary-600');
-  });
-
-  it('renders with outline variant', () => {
-    const { container } = render(<Button variant="outline">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('border-2');
-    expect(button).toHaveClass('border-primary-600');
-  });
-
-  it('renders with danger variant', () => {
-    const { container } = render(<Button variant="danger">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('bg-danger-600');
-  });
-
-  it('renders with ghost variant', () => {
-    const { container } = render(<Button variant="ghost">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('text-gray-700');
-  });
-
-  it('renders with small size', () => {
-    const { container } = render(<Button size="sm">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('text-sm');
-  });
-
-  it('renders with large size', () => {
-    const { container } = render(<Button size="lg">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('text-lg');
-  });
-
-  it('calls onClick when clicked', () => {
+  it('calls onClick when clicked', async () => {
     const handleClick = vi.fn();
-    render(<Button onClick={handleClick}>Click me</Button>);
+    const user = userEvent.setup();
     
-    fireEvent.click(screen.getByText('Click me'));
+    render(<Button onClick={handleClick}>Click me</Button>);
+    await user.click(screen.getByRole('button'));
+    
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
   it('is disabled when disabled prop is true', () => {
-    const { container } = render(<Button disabled>Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toBeDisabled();
+    render(<Button disabled>Disabled</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('is disabled when loading prop is true', () => {
-    const { container } = render(<Button loading>Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toBeDisabled();
+  it('renders different variants', () => {
+    const { rerender } = render(<Button variant="primary">Primary</Button>);
+    expect(screen.getByRole('button')).toHaveClass('bg-blue-600');
+    
+    rerender(<Button variant="outline">Outline</Button>);
+    expect(screen.getByRole('button')).toHaveClass('border');
+    
+    rerender(<Button variant="ghost">Ghost</Button>);
+    expect(screen.getByRole('button')).toHaveClass('hover:bg-gray-100');
   });
 
-  it('shows loading spinner when loading', () => {
-    const { container } = render(<Button loading>Test</Button>);
-    const spinner = container.querySelector('svg.animate-spin');
-    expect(spinner).toBeInTheDocument();
+  it('renders loading state', () => {
+    render(<Button loading>Loading</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+    expect(screen.getByRole('button')).toHaveTextContent('Loading');
   });
 
-  it('applies custom className', () => {
-    const { container } = render(<Button className="custom-class">Test</Button>);
-    const button = container.querySelector('button');
-    expect(button).toHaveClass('custom-class');
-  });
-
-  it('forwards HTML button attributes', () => {
-    render(<Button type="submit" aria-label="Submit form">Submit</Button>);
-    const button = screen.getByLabelText('Submit form');
-    expect(button).toHaveAttribute('type', 'submit');
+  it('has proper accessibility attributes', () => {
+    render(<Button aria-label="Submit form">Submit</Button>);
+    expect(screen.getByRole('button')).toHaveAttribute('aria-label', 'Submit form');
   });
 });

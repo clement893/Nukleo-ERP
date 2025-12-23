@@ -1,0 +1,87 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "update": "Mettre à jour",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Envoyer",
+    "close": "Fermer"
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "register": "Inscription",
+    "forgotPassword": "Mot de passe oublié",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "name": "Nom",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "signOut": "Se déconnecter"
+  },
+  "subscriptions": {
+    "title": "Mes Abonnements",
+    "manage": "Gérez votre abonnement et vos paiements",
+    "currentPeriod": "Période actuelle",
+    "nextPayment": "Prochain paiement",
+    "cancelSubscription": "Annuler l'abonnement",
+    "resumeSubscription": "Reprendre l'abonnement",
+    "changePlan": "Changer de plan",
+    "noSubscription": "Vous n'avez pas d'abonnement actif",
+    "viewPlans": "Voir les plans",
+    "paymentHistory": "Historique des paiements",
+    "noPayments": "Aucun paiement pour le moment",
+    "status": {
+      "active": "Actif",
+      "cancelled": "Annulé",
+      "expired": "Expiré",
+      "trial": "Essai"
+    },
+    "paymentStatus": {
+      "paid": "Payé",
+      "pending": "En attente",
+      "failed": "Échoué"
+    }
+  },
+  "teams": {
+    "title": "Équipes",
+    "createTeam": "Créer une équipe",
+    "teamName": "Nom de l'équipe",
+    "description": "Description",
+    "members": "Membres",
+    "noTeams": "Aucune équipe trouvée",
+    "nameRequired": "Le nom de l'équipe est requis"
+  },
+  "invitations": {
+    "title": "Invitations",
+    "createInvitation": "Créer une invitation",
+    "email": "Email",
+    "role": "Rôle",
+    "status": "Statut",
+    "invitedBy": "Invité par",
+    "invitedAt": "Invité le",
+    "expiresAt": "Expire le",
+    "cancel": "Annuler l'invitation",
+    "resend": "Renvoyer l'invitation",
+    "emailRequired": "L'email est requis",
+    "cancelConfirm": "Êtes-vous sûr de vouloir annuler cette invitation ?"
+  },
+  "errors": {
+    "generic": "Une erreur s'est produite",
+    "network": "Erreur réseau. Veuillez vérifier votre connexion.",
+    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+    "notFound": "Ressource non trouvée",
+    "serverError": "Erreur serveur. Veuillez réessayer plus tard."
+  }
+}
+

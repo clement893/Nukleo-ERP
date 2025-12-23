@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
+import { useMySubscription, useSubscriptionPayments, useCreateCheckoutSession, useCancelSubscription } from '@/lib/query/queries';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -39,6 +40,13 @@ interface Payment {
 function SubscriptionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // Use React Query hooks for data fetching
+  const { data: subscriptionData, isLoading: subscriptionLoading, error: subscriptionError } = useMySubscription();
+  const { data: paymentsData, isLoading: paymentsLoading } = useSubscriptionPayments();
+  const createCheckoutMutation = useCreateCheckoutSession();
+  const cancelSubscriptionMutation = useCancelSubscription();
+  
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,11 +54,8 @@ function SubscriptionsContent() {
 
   const handleSubscribe = useCallback(async (planId: string, period: 'month' | 'year') => {
     try {
-      setLoading(true);
       setError('');
-      // Create checkout session via API
-      const { subscriptionsAPI } = await import('@/lib/api');
-      const response = await subscriptionsAPI.createCheckoutSession({
+      const response = await createCheckoutMutation.mutateAsync({
         plan_id: parseInt(planId, 10),
         success_url: `${window.location.origin}/subscriptions/success?plan=${planId}&period=${period}`,
         cancel_url: `${window.location.origin}/subscriptions`,
@@ -64,77 +69,64 @@ function SubscriptionsContent() {
       }
     } catch (err: unknown) {
       setError(getErrorDetail(err) || getErrorMessage(err, 'Error subscribing to plan'));
-      setLoading(false);
     }
-  }, [router]);
+  }, [router, createCheckoutMutation]);
 
-  const loadSubscription = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const { subscriptionsAPI } = await import('@/lib/api');
-      const response = await subscriptionsAPI.getMySubscription();
-      
-      if (response.data) {
-        const sub = response.data;
-        setSubscription({
-          id: String(sub.id),
-          plan_id: String(sub.plan_id),
-          plan_name: sub.plan?.name || 'Unknown Plan',
-          status: sub.status.toLowerCase() as 'active' | 'cancelled' | 'expired' | 'trial',
-          current_period_start: sub.current_period_start,
-          current_period_end: sub.current_period_end,
-          cancel_at_period_end: sub.cancel_at_period_end || false,
-          amount: sub.plan?.amount ? sub.plan.amount / 100 : 0, // Convert from cents
-          currency: sub.plan?.currency?.toUpperCase() || 'USD',
-          billing_period: (sub.plan?.interval?.toLowerCase() === 'year' ? 'year' : 'month') as 'month' | 'year',
-        });
-      }
-    } catch (err: unknown) {
-      // 404 means no subscription, which is fine
-      if (getErrorDetail(err)?.includes('404') || getErrorDetail(err)?.includes('not found')) {
-        setSubscription(null);
-      } else {
-        setError(getErrorDetail(err) || getErrorMessage(err, 'Error loading subscription'));
-      }
-    } finally {
-      setLoading(false);
+  // Transform subscription data from React Query
+  useEffect(() => {
+    if (subscriptionData?.data) {
+      const sub = subscriptionData.data;
+      setSubscription({
+        id: String(sub.id),
+        plan_id: String(sub.plan_id),
+        plan_name: sub.plan?.name || 'Unknown Plan',
+        status: sub.status.toLowerCase() as 'active' | 'cancelled' | 'expired' | 'trial',
+        current_period_start: sub.current_period_start,
+        current_period_end: sub.current_period_end,
+        cancel_at_period_end: sub.cancel_at_period_end || false,
+        amount: sub.plan?.amount ? sub.plan.amount / 100 : 0, // Convert from cents
+        currency: sub.plan?.currency?.toUpperCase() || 'USD',
+        billing_period: (sub.plan?.interval?.toLowerCase() === 'year' ? 'year' : 'month') as 'month' | 'year',
+      });
+    } else if (!subscriptionLoading && !subscriptionData) {
+      setSubscription(null);
     }
-  }, []);
+  }, [subscriptionData, subscriptionLoading]);
 
-  const loadPayments = useCallback(async () => {
-    try {
-      const { subscriptionsAPI } = await import('@/lib/api');
-      const response = await subscriptionsAPI.getPayments();
-      
-      if (response.data) {
-        setPayments(response.data.map((payment: {
-          id: string | number;
-          amount: number;
-          currency: string;
-          status: string;
-          created_at: string;
-          invoice_url?: string;
-        }) => ({
-          id: String(payment.id),
-          amount: payment.amount / 100, // Convert from cents
-          currency: payment.currency.toUpperCase(),
-          status: payment.status.toLowerCase() as 'paid' | 'pending' | 'failed',
-          date: payment.created_at,
-          invoice_url: payment.invoice_url,
-        })));
-      }
-    } catch (err: unknown) {
-      const { logger } = await import('@/lib/logger');
-      // If API returns 404 or endpoint doesn't exist yet, use empty array
-      if (getErrorDetail(err)?.includes('404') || getErrorDetail(err)?.includes('not found')) {
-        setPayments([]);
-        logger.debug('Payment history endpoint not available yet');
-      } else {
-        logger.error('Error loading payments', err as Error, { context: 'subscriptions' });
-      }
+  // Transform payments data from React Query
+  useEffect(() => {
+    if (paymentsData?.data) {
+      setPayments(paymentsData.data.map((payment: {
+        id: string | number;
+        amount: number;
+        currency: string;
+        status: string;
+        created_at: string;
+        invoice_url?: string;
+      }) => ({
+        id: String(payment.id),
+        amount: payment.amount / 100, // Convert from cents
+        currency: payment.currency.toUpperCase(),
+        status: payment.status.toLowerCase() as 'paid' | 'pending' | 'failed',
+        date: payment.created_at,
+        invoice_url: payment.invoice_url,
+      })));
+    } else if (!paymentsLoading && !paymentsData) {
+      setPayments([]);
     }
-  }, []);
+  }, [paymentsData, paymentsLoading]);
+
+  // Update loading state based on React Query
+  useEffect(() => {
+    setLoading(subscriptionLoading || paymentsLoading);
+  }, [subscriptionLoading, paymentsLoading]);
+
+  // Handle errors from React Query
+  useEffect(() => {
+    if (subscriptionError) {
+      setError(getErrorDetail(subscriptionError) || getErrorMessage(subscriptionError, 'Error loading subscription'));
+    }
+  }, [subscriptionError]);
 
   useEffect(() => {
     // Check if coming from pricing page
@@ -144,11 +136,8 @@ function SubscriptionsContent() {
     if (planId && period) {
       // Redirect to subscription creation flow
       handleSubscribe(planId, period);
-    } else {
-      loadSubscription();
-      loadPayments();
     }
-  }, [router, searchParams, handleSubscribe, loadSubscription, loadPayments]);
+  }, [router, searchParams, handleSubscribe]);
 
   const handleCancelSubscription = async () => {
     if (!confirm('Are you sure you want to cancel your subscription? It will remain active until the end of the current period.')) {
@@ -156,15 +145,11 @@ function SubscriptionsContent() {
     }
 
     try {
-      setLoading(true);
       setError('');
-      const { subscriptionsAPI } = await import('@/lib/api');
-      await subscriptionsAPI.cancelSubscription();
-      await loadSubscription();
+      await cancelSubscriptionMutation.mutateAsync();
+      // React Query will automatically refetch subscription data
     } catch (err: unknown) {
       setError(getErrorDetail(err) || getErrorMessage(err, 'Error canceling subscription'));
-    } finally {
-      setLoading(false);
     }
   };
 

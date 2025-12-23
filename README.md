@@ -1,265 +1,315 @@
 # MODELE-NEXTJS-FULLSTACK
 
-> 🚀 **Template Full-Stack Production-Ready** avec Next.js 16 et FastAPI
+A comprehensive, production-ready full-stack template for building modern SaaS applications and websites with Next.js 16, React 19, and TypeScript.
 
-Un template complet et moderne pour démarrer rapidement vos projets full-stack avec les meilleures pratiques de développement.
+## 🚀 Features
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+### Core Features
+- ✅ **Next.js 16** with App Router and React Server Components
+- ✅ **React 19** - Latest React features
+- ✅ **TypeScript** - Strict mode for maximum type safety
+- ✅ **Monorepo** - Turborepo for efficient builds
+- ✅ **Tailwind CSS** - Utility-first CSS framework
+- ✅ **Dark Mode** - Built-in theme support
 
----
+### Authentication & Security
+- ✅ **JWT Authentication** with httpOnly cookies (XSS protection)
+- ✅ **Token Refresh** - Automatic token refresh
+- ✅ **Route Protection** - Server-side and client-side
+- ✅ **RBAC** - Role-Based Access Control
+- ✅ **Security Headers** - CSP, HSTS, X-Frame-Options
 
-## ✨ Fonctionnalités
+### SaaS Features
+- ✅ **Subscription Management** - Stripe integration ready
+- ✅ **Team Management** - Multi-user teams
+- ✅ **Invitations System** - User invitations
+- ✅ **Payment History** - Transaction tracking
+- ✅ **Customer Portal** - Self-service portal
 
-### 🎨 Frontend (Next.js 16)
-- ⚡ **Next.js 16** avec App Router et Turbopack
-- ⚛️ **React 19** avec Server Components
-- 📘 **TypeScript 5** avec configuration stricte
-- 🎨 **Tailwind CSS 3** pour le styling
-- 🧩 **Bibliothèque UI complète** (20+ composants ERP)
-- 🪝 **Hooks réutilisables** (useForm, usePagination, useFilters, usePermissions)
-- 🔐 **NextAuth.js v5** avec OAuth Google
-- 🛡️ **Protection des routes** avec middleware
-- 📝 **Gestion d'erreurs centralisée**
-- 📊 **Logging structuré**
+### Developer Experience
+- ✅ **React Query** - API state management with caching
+- ✅ **Storybook** - Component documentation
+- ✅ **Vitest** - Unit testing
+- ✅ **Playwright** - E2E testing
+- ✅ **ESLint & Prettier** - Code quality
+- ✅ **Bundle Analyzer** - Performance monitoring
+- ✅ **Web Vitals** - Performance tracking
 
-### ⚙️ Backend (FastAPI)
-- 🚀 **FastAPI** avec documentation OpenAPI/Swagger auto-générée
-- ✅ **Pydantic v2** pour la validation des données
-- 🗄️ **SQLAlchemy async** ORM
-- 🔄 **Alembic** pour les migrations de base de données
-- 🐘 **PostgreSQL** avec support async
-- 🔑 **Authentification JWT** avec refresh tokens
-- 📧 **Service Email SendGrid** avec 7+ templates transactionnels
-- ⚡ **Celery** pour le traitement de tâches en arrière-plan
-- 🧪 **Tests** avec pytest
-- 📋 **Logging** structuré
-- 🛡️ **Gestion d'erreurs standardisée**
+### UI Components
+- ✅ **20+ UI Components** - DataTable, Kanban, Calendar, Forms, etc.
+- ✅ **Accessible** - WCAG compliant
+- ✅ **Responsive** - Mobile-first design
+- ✅ **Customizable** - Easy to theme
 
-### 🔗 Types Partagés
-- 📦 **Package `@modele/types`** pour les types TypeScript partagés
-- 🔄 **Génération automatique** depuis les schémas Pydantic
-- 🔗 **Synchronisation frontend/backend**
+## 📋 Prerequisites
 
-### 🛠️ DevOps & Outils
-- ⚡ **Turborepo** pour monorepo optimisé
-- 📦 **pnpm workspaces** pour la gestion des dépendances
-- 🔄 **GitHub Actions** CI/CD
-- 🪝 **Pre-commit hooks** avec Husky
-- 🐳 **Docker & Docker Compose**
-- 🚂 **Railway** prêt pour déploiement
-- 🎯 **Générateurs de code** (composants, pages, routes API)
-- 📊 **Scripts de migration** de base de données
+- **Node.js** 20.x or higher
+- **pnpm** 9.x or higher (recommended) or npm/yarn
+- **Git**
 
----
+## 🛠️ Installation
 
-## 🚀 Démarrage Rapide
-
-### Prérequis
-
-- **Node.js** 22+ ([télécharger](https://nodejs.org/))
-- **pnpm** 9+ (`npm install -g pnpm`)
-- **Python** 3.11+ ([télécharger](https://www.python.org/downloads/))
-- **PostgreSQL** 14+ ([télécharger](https://www.postgresql.org/download/))
-- **Redis** 7+ (optionnel, pour Celery)
-- **Git** ([télécharger](https://git-scm.com/))
-
-### Installation
+### 1. Clone the repository
 
 ```bash
-# 1. Cloner le projet
 git clone https://github.com/clement893/MODELE-NEXTJS-FULLSTACK.git
 cd MODELE-NEXTJS-FULLSTACK
-
-# 2. Installer les dépendances
-pnpm install
-
-# 3. Configurer les variables d'environnement
-cp backend/.env.example backend/.env
-cp apps/web/.env.example apps/web/.env.local
-# Éditer les fichiers .env avec vos valeurs
-
-# 4. Initialiser la base de données
-createdb modele_db
-cd backend && alembic upgrade head && cd ..
-
-# 5. Démarrer le projet
-pnpm dev:full
 ```
 
-**Accès :**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+### 2. Install dependencies
 
-> 📖 **Guide complet** : [GETTING_STARTED.md](./GETTING_STARTED.md)
+```bash
+pnpm install
+```
 
----
+### 3. Set up environment variables
 
-## 📁 Structure du Projet
+Create `.env.local` in `apps/web/`:
+
+```env
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Authentication
+JWT_SECRET=your-secret-key-change-in-production
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Stripe (for subscriptions)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your-stripe-key
+STRIPE_SECRET_KEY=your-stripe-secret
+
+# Sentry (optional)
+NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
+```
+
+### 4. Run development server
+
+```bash
+# Run frontend and backend in parallel
+pnpm dev
+
+# Or run separately
+pnpm dev:frontend  # Frontend only
+pnpm dev:backend   # Backend only
+```
+
+The application will be available at `http://localhost:3000`
+
+## 📁 Project Structure
 
 ```
 MODELE-NEXTJS-FULLSTACK/
 ├── apps/
-│   └── web/                    # Next.js 16 frontend
+│   └── web/                 # Next.js frontend application
 │       ├── src/
-│       │   ├── app/           # Pages et layouts
-│       │   ├── components/    # Composants React
-│       │   └── lib/           # Utilitaires
-│       └── package.json
-├── backend/                    # FastAPI backend
-│   ├── app/
-│   │   ├── api/               # Endpoints API
-│   │   ├── models/            # Modèles SQLAlchemy
-│   │   ├── schemas/           # Schémas Pydantic
-│   │   ├── services/          # Logique métier
-│   │   └── main.py
-│   ├── alembic/               # Migrations
-│   └── requirements.txt
-├── packages/                   # Code partagé
-│   └── types/                 # Types TypeScript partagés
-├── scripts/                    # Scripts utilitaires
-│   └── generate/              # Générateurs de code
-├── docs/                       # Documentation
-├── docker-compose.yml
-├── turbo.json                 # Configuration Turborepo
-└── package.json               # Package.json racine
+│       │   ├── app/         # Next.js App Router pages
+│       │   ├── components/ # React components
+│       │   ├── lib/         # Utilities and libraries
+│       │   └── hooks/       # Custom React hooks
+│       └── public/          # Static assets
+├── packages/
+│   └── types/               # Shared TypeScript types
+├── backend/                 # FastAPI backend (if present)
+└── scripts/                 # Automation scripts
 ```
 
----
+## 🎯 Available Scripts
+
+### Development
+```bash
+pnpm dev              # Start development servers
+pnpm dev:frontend     # Frontend only
+pnpm dev:backend      # Backend only
+```
+
+### Build
+```bash
+pnpm build            # Build all packages
+pnpm build:web        # Build frontend only
+pnpm build:optimized  # Optimized build
+```
+
+### Testing
+```bash
+pnpm test             # Run unit tests
+pnpm test:watch       # Watch mode
+pnpm test:e2e         # E2E tests
+pnpm test:coverage    # Coverage report
+```
+
+### Code Quality
+```bash
+pnpm lint             # Lint code
+pnpm lint:fix         # Auto-fix linting issues
+pnpm format           # Format with Prettier
+pnpm type-check       # TypeScript type checking
+```
+
+### Analysis
+```bash
+pnpm analyze         # Bundle size analysis
+pnpm audit:security  # Security audit
+```
+
+## 🔧 Configuration
+
+### TypeScript
+Strict mode is enabled with comprehensive type checking. See `apps/web/tsconfig.json` for details.
+
+### ESLint
+Configured with Next.js, TypeScript, and React rules. See `apps/web/.eslintrc.json`.
+
+### Tailwind CSS
+Utility-first CSS with custom configuration. See `apps/web/tailwind.config.js`.
+
+## 🧪 Testing
+
+### Unit Tests
+```bash
+pnpm test
+```
+
+Tests are written with Vitest and React Testing Library.
+
+### E2E Tests
+```bash
+pnpm test:e2e
+```
+
+E2E tests use Playwright.
+
+### Coverage
+Target: 70% coverage for lines, functions, branches, and statements.
 
 ## 📚 Documentation
 
-### ⚡ Démarrage Rapide
-- [🚀 Démarrage en 5 Minutes](./docs/QUICK_START.md) - Guide ultra-rapide
-- [📚 Utilisation du Template](./TEMPLATE_USAGE.md) - Comment utiliser ce template
-- [🔄 Guide de Migration](./docs/MIGRATION_GUIDE.md) - Transformer le template en votre projet
-
-### 📖 Guides Principaux
-- [🚀 Guide de Démarrage](./GETTING_STARTED.md) - Guide complet d'installation
-- [🛠️ Guide de Développement](./docs/DEVELOPMENT.md) - Outils et workflows de développement
-- [🎨 Guide de Personnalisation](./docs/CUSTOMIZATION.md) - Personnaliser le template
-- [🧪 Guide des Tests](./docs/TESTING.md) - Comment écrire et exécuter les tests
-- [🔒 Sécurité](./docs/SECURITY.md) - Bonnes pratiques de sécurité
-- [🚀 Déploiement](./docs/DEPLOYMENT.md) - Guide de déploiement en production
-
-### 🔧 Configuration
-- [📧 Configuration SendGrid](./docs/SENDGRID_SETUP.md) - Configuration du service email
-- [💳 Configuration Stripe](./docs/STRIPE_SETUP.md) - Configuration des paiements
-- [🔐 Variables d'Environnement](./docs/ENV_VARIABLES.md) - Documentation complète des variables
-
-### 🆘 Support
-- [❓ FAQ](./docs/FAQ.md) - Questions fréquentes
-- [🔧 Dépannage](./docs/TROUBLESHOOTING.md) - Résolution des problèmes
-- [🤝 Contribuer](./CONTRIBUTING.md) - Guide de contribution
-
-### 📋 Documentation Technique
-- [🎨 Composants UI](./docs/COMPONENTS.md) - Documentation des composants
-- [🪝 Hooks Personnalisés](./docs/HOOKS.md) - Documentation des hooks
-- [🛠️ Utilitaires](./docs/UTILS.md) - Documentation des utilitaires
-- [🔧 Dépannage](./docs/TROUBLESHOOTING.md) - Résolution des problèmes courants
-
----
-
-## 🛠️ Scripts Disponibles
-
+### Component Documentation
 ```bash
-# Développement
-pnpm dev:full          # Démarrer frontend + backend
-pnpm dev:frontend      # Frontend uniquement
-pnpm dev:backend       # Backend uniquement
-
-# Génération de code
-pnpm generate:component ComponentName
-pnpm generate:page page-name
-pnpm generate:api route-name
-pnpm generate:types    # Générer types TypeScript depuis Pydantic
-
-# Tests
-pnpm test              # Tous les tests
-pnpm test:web          # Tests frontend
-pnpm test:backend      # Tests backend
-pnpm test:coverage     # Avec couverture
-
-# Qualité de code
-pnpm lint              # Linter
-pnpm lint:fix          # Corriger les erreurs
-pnpm type-check        # Vérification TypeScript
-pnpm format            # Formater avec Prettier
-
-# Base de données
-pnpm migrate create MigrationName
-pnpm migrate upgrade
-pnpm migrate downgrade
+pnpm storybook
 ```
 
----
+View component documentation and examples in Storybook.
 
-## 🔐 Sécurité
+### API Documentation
+API endpoints are documented in `apps/web/src/lib/api.ts` with JSDoc comments.
 
-- ✅ Authentification JWT avec refresh tokens
-- ✅ Hachage de mots de passe avec bcrypt
-- ✅ Protection CORS
-- ✅ Rate limiting
-- ✅ Headers de sécurité (CSP, HSTS, X-Frame-Options)
-- ✅ Validation des entrées (Pydantic)
-- ✅ Protection contre les injections SQL (SQLAlchemy ORM)
-- ✅ Protection XSS (DOMPurify)
+## 🚀 Deployment
 
-> 🔒 **Audit de sécurité** : [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md)
+### Vercel (Recommended)
 
----
-
-## 📦 Déploiement
-
-### Railway
-
-1. Push vers GitHub
-2. Connecter Railway à votre dépôt GitHub
-3. Configurer les variables d'environnement dans Railway
-4. Déploiement automatique
+1. Push your code to GitHub
+2. Import project in Vercel
+3. Configure environment variables
+4. Deploy!
 
 ### Docker
 
 ```bash
-docker-compose up --build
+# Build
+docker build -t modele-nextjs-fullstack .
+
+# Run
+docker run -p 3000:3000 modele-nextjs-fullstack
 ```
 
+### Standalone Build
+
+The app is configured for standalone output:
+
+```bash
+pnpm build
+cd apps/web/.next/standalone
+node server.js
+```
+
+## 🔒 Security
+
+### Implemented Security Features
+- ✅ httpOnly cookies for tokens
+- ✅ JWT verification server-side
+- ✅ Content Security Policy (CSP)
+- ✅ Security headers (X-Frame-Options, etc.)
+- ✅ Input sanitization
+- ✅ Error handling without data leakage
+
+### Security Best Practices
+- Use strong JWT secrets
+- Enable HTTPS in production
+- Regularly update dependencies
+- Monitor security advisories
+- Use environment variables for secrets
+
+## 📊 Performance
+
+### Optimizations
+- ✅ Code splitting
+- ✅ Lazy loading
+- ✅ Image optimization
+- ✅ Bundle optimization
+- ✅ React Query caching
+- ✅ Web Vitals monitoring
+
+### Performance Targets
+- **LCP**: < 2.5s
+- **FID**: < 100ms
+- **CLS**: < 0.1
+- **TTFB**: < 600ms
+
+## 🌍 Internationalization
+
+i18n support is configured with `next-intl`. See `apps/web/src/i18n/` for configuration.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint and Prettier
+- Write tests for new features
+- Update documentation
+
+## 📝 License
+
+This project is private and proprietary.
+
+## 🆘 Support
+
+For issues and questions:
+- Open an issue on GitHub
+- Check the documentation
+- Review the code comments
+
+## 🎓 Learning Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+
+## 📈 Roadmap
+
+### Planned Features
+- [ ] Enhanced i18n support
+- [ ] More test coverage
+- [ ] CI/CD pipelines
+- [ ] Advanced analytics
+- [ ] Real-time features (WebSockets)
+
+## 🙏 Acknowledgments
+
+Built with:
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- And many other amazing open-source projects
+
 ---
 
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Veuillez lire [CONTRIBUTING.md](./CONTRIBUTING.md) pour les guidelines.
-
-1. Fork le projet
-2. Créer une branche (`git checkout -b feat/ma-fonctionnalite`)
-3. Commit vos changements (`git commit -m 'feat: ajouter ma fonctionnalité'`)
-4. Push vers la branche (`git push origin feat/ma-fonctionnalite`)
-5. Ouvrir une Pull Request
-
----
-
-## 📄 License
-
-MIT License - voir [LICENSE](./LICENSE) pour plus de détails.
-
----
-
-## 🙏 Remerciements
-
-- [Next.js](https://nextjs.org/)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Turborepo](https://turbo.build/)
-
----
-
-## 📞 Support
-
-Pour les questions et problèmes, veuillez ouvrir une [issue](https://github.com/clement893/MODELE-NEXTJS-FULLSTACK/issues).
-
----
-
-**Créé avec ❤️ par clement893**
+**Made with ❤️ for building amazing SaaS applications**

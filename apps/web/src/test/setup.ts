@@ -1,7 +1,11 @@
 import '@testing-library/jest-dom';
 import { afterEach, afterAll, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { toHaveNoViolations } from 'jest-axe';
 import React from 'react';
+
+// Extend Vitest matchers with jest-axe
+expect.extend(toHaveNoViolations);
 
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
