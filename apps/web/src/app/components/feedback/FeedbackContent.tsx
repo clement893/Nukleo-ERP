@@ -1,11 +1,11 @@
-import FeedbackContent from './FeedbackContent';
+'use client';
 
-// Force dynamic rendering to avoid CSS file issues during build
-export const dynamic = 'force-dynamic';
+import { useState } from 'react';
+import { Alert, Modal, Loading, Skeleton, Progress, Spinner, ToastContainer, useToast, Button, Drawer, Popover, Stepper, Input, Textarea } from '@/components/ui';
+import type { Step } from '@/components/ui';
+import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
 
-export default function FeedbackPage() {
-  return <FeedbackContent />;
-}
+export default function FeedbackContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -190,3 +190,4 @@ export default function FeedbackPage() {
     </PageContainer>
   );
 }
+
