@@ -15,7 +15,7 @@ export default function Skeleton({
   height,
   animation = 'pulse',
 }: SkeletonProps) {
-  const baseStyles = 'bg-gray-200';
+  const baseStyles = 'bg-gray-200 dark:bg-gray-700';
   
   const animations = {
     pulse: 'animate-pulse',

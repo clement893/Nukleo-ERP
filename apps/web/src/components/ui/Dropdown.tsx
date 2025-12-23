@@ -90,13 +90,13 @@ export default function Dropdown({
           role="menu"
           aria-orientation="vertical"
           className={clsx(
-            'absolute z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[200px]',
+            'absolute z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[200px]',
             positions[position]
           )}
         >
           {items.map((item, index) => {
             if ('divider' in item && item.divider) {
-              return <div key={index} className="border-t border-gray-200 my-1" />;
+              return <div key={index} className="border-t border-gray-200 dark:border-gray-700 my-1" />;
             }
 
             const dropdownItem = item as Exclude<DropdownItem, { divider: true }>;
@@ -115,8 +115,8 @@ export default function Dropdown({
                   'w-full px-4 py-2 text-left text-sm flex items-center space-x-2',
                   'transition-colors',
                   dropdownItem.variant === 'danger'
-                    ? 'text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:ring-2 focus:ring-red-500'
-                    : 'hover:bg-gray-100 focus:bg-gray-100 focus:ring-2 focus:ring-blue-500',
+                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 focus:bg-red-50 dark:focus:bg-red-900/20 focus:ring-2 focus:ring-red-500'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:ring-2 focus:ring-blue-500',
                   dropdownItem.disabled && 'opacity-50 cursor-not-allowed',
                   className
                 )}

@@ -69,8 +69,8 @@ export default function Pagination({
             'px-3 py-2 rounded-md text-sm font-medium',
             'focus:outline-none focus:ring-2 focus:ring-blue-500',
             currentPage === 1
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           )}
           aria-label="First page"
         >
@@ -97,7 +97,7 @@ export default function Pagination({
           return (
             <span
               key={`ellipsis-${index}`}
-              className="px-3 py-2 text-gray-500"
+              className="px-3 py-2 text-gray-500 dark:text-gray-400"
             >
               ...
             </span>
@@ -115,8 +115,8 @@ export default function Pagination({
               'px-4 py-2 rounded-md text-sm font-medium',
               'focus:outline-none focus:ring-2 focus:ring-blue-500',
               isActive
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+                ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             )}
             aria-label={`Page ${pageNum}`}
             aria-current={isActive ? 'page' : undefined}
