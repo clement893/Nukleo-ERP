@@ -8,7 +8,7 @@
 import { useSession } from 'next-auth/react';
 import SignOutButton from './SignOutButton';
 
-export function UserProfile() {
+export default function UserProfile() {
   const { data: session, status } = useSession();
 
   if (status === 'loading') {
