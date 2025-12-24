@@ -73,6 +73,7 @@ export default function ActivityFeed({
         }
       };
     }
+    return undefined;
   }, [autoRefresh, refreshInterval, onLoadMore]);
 
   const handleLoadMore = async () => {
