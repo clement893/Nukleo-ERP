@@ -162,10 +162,12 @@ def create_app() -> FastAPI:
         
         if environment == "production":
             # Strict CSP for production - no unsafe-inline or unsafe-eval
+            # ⚠️ SECURITY NOTE: Production CSP is strict (no unsafe-inline/unsafe-eval)
+            # Use nonces for inline scripts/styles in production
             csp_policy = (
                 "default-src 'self'; "
-                "script-src 'self'; "  # Strict: no unsafe-inline/eval
-                "style-src 'self'; "  # Strict: no unsafe-inline (use nonces in production)
+                "script-src 'self'; "  # Strict: no unsafe-inline/eval (use nonces)
+                "style-src 'self'; "  # Strict: no unsafe-inline (use nonces)
                 "img-src 'self' data: https:; "
                 "font-src 'self' data:; "
                 "connect-src 'self' https://api.stripe.com; "
@@ -175,6 +177,8 @@ def create_app() -> FastAPI:
             )
         else:
             # Relaxed CSP for development
+            # ⚠️ SECURITY NOTE: CSP is relaxed in development (unsafe-inline/unsafe-eval)
+            # This is acceptable for dev but should be tightened in production using nonces
             csp_policy = (
                 "default-src 'self'; "
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Development only
