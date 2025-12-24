@@ -3,7 +3,7 @@
  * Provides CSRF token for double-submit cookie pattern
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { randomBytes } from 'crypto';
 
@@ -13,7 +13,7 @@ const CSRF_TOKEN_COOKIE = 'csrf_token';
  * GET /api/csrf-token
  * Get or generate CSRF token
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     let csrfToken = cookieStore.get(CSRF_TOKEN_COOKIE)?.value;
