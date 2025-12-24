@@ -228,13 +228,13 @@ function UsersContent() {
     setShowEditModal(true);
   };
 
-  const getRoleBadge = (role: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'default'> = {
+  const getRoleBadge = (role: string): 'success' | 'warning' | 'default' | 'error' => {
+    const variants: Record<string, 'success' | 'warning' | 'default' | 'error'> = {
       admin: 'error',
       manager: 'warning',
       user: 'default',
     };
-    return variants[role] || 'default';
+    return (variants[role] || 'default') as 'success' | 'warning' | 'default' | 'error';
   };
 
   const getRoleLabel = (role: string) => {
