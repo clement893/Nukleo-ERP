@@ -14,7 +14,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 export const dynamic = 'force-dynamic';
 
 function ThemeSettingsContent() {
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const { token, user } = useAuthStore();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
