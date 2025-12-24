@@ -146,7 +146,7 @@ function ProjectsContent() {
     setSelectedProject(project);
     setFormData({
       name: project.name,
-      description: project.description,
+      description: project.description || '',
       status: project.status,
     });
     setShowEditModal(true);
