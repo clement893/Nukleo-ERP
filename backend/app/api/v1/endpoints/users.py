@@ -58,7 +58,12 @@ async def list_users(
         query = query.where(and_(*filters))
     
     # Optimize query with eager loading (prevent N+1 queries)
-    query = QueryOptimizer.add_eager_loading(query, ["roles"], strategy="selectin")
+    # Note: roles relationship may not exist, so we skip if it doesn't
+    try:
+        query = QueryOptimizer.add_eager_loading(query, ["roles"], strategy="selectin")
+    except AttributeError:
+        # roles relationship doesn't exist, skip eager loading
+        pass
     
     # Order by created_at (uses index)
     query = query.order_by(User.created_at.desc())
@@ -87,7 +92,12 @@ async def get_user(
     query = select(User).where(User.id == user_id)
     
     # Eager load relationships to prevent N+1 queries
-    query = QueryOptimizer.add_eager_loading(query, ["roles", "team_memberships"], strategy="selectin")
+    # Note: relationships may not exist, so we skip if they don't
+    try:
+        query = QueryOptimizer.add_eager_loading(query, ["roles", "team_memberships"], strategy="selectin")
+    except AttributeError:
+        # relationships don't exist, skip eager loading
+        pass
     
     result = await db.execute(query)
     user = result.scalar_one_or_none()
