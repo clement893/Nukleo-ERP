@@ -1,0 +1,108 @@
+'use client';
+
+import { InputHTMLAttributes, useCallback, useRef, useState } from 'react';
+import { clsx } from 'clsx';
+
+export interface SliderProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'> {
+  value?: number;
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange?: (value: number) => void;
+  label?: string;
+  showValue?: boolean;
+  marks?: { value: number; label: string }[];
+  disabled?: boolean;
+  fullWidth?: boolean;
+}
+
+export default function Slider({
+  value: controlledValue,
+  defaultValue = 0,
+  min = 0,
+  max = 100,
+  step = 1,
+  onChange,
+  label,
+  showValue = false,
+  marks,
+  disabled = false,
+  fullWidth = false,
+  className,
+  ...props
+}: SliderProps) {
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isControlled = controlledValue !== undefined;
+  const currentValue = isControlled ? controlledValue : internalValue;
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = Number(e.target.value);
+      if (!isControlled) {
+        setInternalValue(newValue);
+      }
+      onChange?.(newValue);
+    },
+    [isControlled, onChange]
+  );
+
+  const percentage = ((currentValue - min) / (max - min)) * 100;
+
+  return (
+    <div className={clsx('flex flex-col gap-2', fullWidth && 'w-full', className)}>
+      {label && (
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+          {showValue && (
+            <span className="text-sm text-gray-600 dark:text-gray-400">{currentValue}</span>
+          )}
+        </div>
+      )}
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={currentValue}
+          onChange={handleChange}
+          disabled={disabled}
+          className={clsx(
+            'w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer',
+            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+            disabled && 'opacity-50 cursor-not-allowed',
+            '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-primary-700',
+            '[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary-600 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:hover:bg-primary-700'
+          )}
+          aria-label={label}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={currentValue}
+          {...props}
+        />
+        {marks && marks.length > 0 && (
+          <div className="flex justify-between mt-2">
+            {marks.map((mark) => (
+              <div
+                key={mark.value}
+                className="flex flex-col items-center"
+                style={{ left: `${((mark.value - min) / (max - min)) * 100}%` }}
+              >
+                <div className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full mb-1" />
+                <span className="text-xs text-gray-500 dark:text-gray-400">{mark.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {showValue && !label && (
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-right">{currentValue}</div>
+      )}
+    </div>
+  );
+}
+

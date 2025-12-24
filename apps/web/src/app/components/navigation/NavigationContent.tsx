@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import dynamicImport from 'next/dynamic';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
+import { Divider, Breadcrumb } from '@/components/ui';
+import type { BreadcrumbItem } from '@/components/ui';
 
 // Dynamically import components to avoid CSS issues during build
 const Sidebar = dynamicImport(() => import('@/components/ui/Sidebar').then(mod => ({ default: mod.default })), { ssr: false, loading: () => <div>Loading...</div> });
@@ -30,10 +32,83 @@ export default function NavigationContent() {
       <PageHeader title="Composants de Navigation" description="Composants pour créer des interfaces de navigation intuitives" breadcrumbs={[{ label: 'Accueil', href: '/' }, { label: 'Composants', href: '/components' }, { label: 'Navigation' }]} />
 
       <div className="space-y-8">
-        <Section title="Breadcrumbs" description="Fil d'Ariane pour la navigation">
-          <div className="space-y-4">
-            <div className="text-sm text-gray-600 mb-2">Exemple 1 : Navigation produits</div>
-            <div className="text-sm text-gray-600 mb-2">Exemple 2 : Navigation dashboard</div>
+        <Section title="Breadcrumb" description="Fil d'Ariane pour la navigation">
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Navigation produits</h4>
+              <Breadcrumb
+                items={[
+                  { label: 'Produits', href: '/products' },
+                  { label: 'Électronique', href: '/products/electronics' },
+                  { label: 'Ordinateurs portables' },
+                ]}
+              />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Navigation dashboard</h4>
+              <Breadcrumb
+                items={[
+                  { label: 'Dashboard', href: '/dashboard' },
+                  { label: 'Paramètres', href: '/dashboard/settings' },
+                  { label: 'Profil' },
+                ]}
+                showHome={false}
+              />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Avec icônes</h4>
+              <Breadcrumb
+                items={[
+                  { label: 'Administration', href: '/admin', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg> },
+                  { label: 'Utilisateurs', href: '/admin/users' },
+                  { label: 'Détails' },
+                ]}
+              />
+            </div>
+          </div>
+        </Section>
+
+        <Section title="Divider" description="Séparateur visuel">
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Divider horizontal</h4>
+              <div className="space-y-4">
+                <p>Contenu au-dessus</p>
+                <Divider />
+                <p>Contenu en-dessous</p>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Divider avec label</h4>
+              <Divider label="OU" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Divider avec variantes</h4>
+              <div className="space-y-4">
+                <Divider variant="solid" />
+                <Divider variant="dashed" />
+                <Divider variant="dotted" />
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Divider vertical</h4>
+              <div className="flex items-center gap-4 h-20">
+                <span>Gauche</span>
+                <Divider orientation="vertical" />
+                <span>Droite</span>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Divider avec espacements</h4>
+              <div className="space-y-4">
+                <p>Espacement petit</p>
+                <Divider spacing="sm" />
+                <p>Espacement moyen (défaut)</p>
+                <Divider spacing="md" />
+                <p>Espacement grand</p>
+                <Divider spacing="lg" />
+              </div>
+            </div>
           </div>
         </Section>
 

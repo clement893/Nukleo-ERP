@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Alert, Modal, Loading, Skeleton, Progress, Spinner, ToastContainer, useToast, Button, Drawer, Popover, Stepper, Input, Textarea } from '@/components/ui';
+import { Alert, Modal, Loading, Skeleton, Progress, Spinner, ToastContainer, useToast, Button, Drawer, Popover, Stepper, Input, Textarea, Banner } from '@/components/ui';
 import type { Step } from '@/components/ui';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
 
@@ -42,6 +42,26 @@ export default function FeedbackContent() {
             <Alert variant="error" title="Erreur" onClose={() => {}}>Une erreur s'est produite. Veuillez réessayer.</Alert>
             <Alert variant="warning" title="Attention" onClose={() => {}}>Cette action est irréversible. Êtes-vous sûr ?</Alert>
             <Alert variant="info" title="Information" onClose={() => {}}>Nouvelle fonctionnalité disponible dans les paramètres.</Alert>
+          </div>
+        </Section>
+
+        <Section title="Banner">
+          <div className="space-y-4">
+            <Banner variant="info" title="Nouvelle fonctionnalité" dismissible onClose={() => {}}>
+              Une nouvelle fonctionnalité est maintenant disponible. Découvrez-la dans les paramètres.
+            </Banner>
+            <Banner variant="success" title="Mise à jour réussie">
+              Votre profil a été mis à jour avec succès.
+            </Banner>
+            <Banner variant="warning" title="Maintenance prévue" dismissible onClose={() => {}}>
+              Une maintenance est prévue le 25 décembre de 2h à 4h. Le service sera temporairement indisponible.
+            </Banner>
+            <Banner variant="error" title="Erreur de connexion" dismissible onClose={() => {}}>
+              Impossible de se connecter au serveur. Veuillez réessayer dans quelques instants.
+            </Banner>
+            <Banner variant="info" fullWidth>
+              Message d'information sans titre, pleine largeur.
+            </Banner>
           </div>
         </Section>
 

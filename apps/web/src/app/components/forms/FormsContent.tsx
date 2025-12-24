@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Input, Textarea, Select, Checkbox, Radio, Switch, DatePicker, FileUpload, Button, Form, FormField, FormBuilder, RichTextEditor } from '@/components/ui';
+import { Input, Textarea, Select, Checkbox, Radio, Switch, DatePicker, TimePicker, FileUpload, Button, Form, FormField, FormBuilder, RichTextEditor, Slider, Range, ColorPicker, TagInput } from '@/components/ui';
 import type { FormField as FormBuilderField } from '@/components/ui/FormBuilder';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
 import { logger } from '@/lib/logger';
 
 export default function FormsContent() {
-  const [formData, setFormData] = useState({ email: '', password: '', description: '', country: '', newsletter: false, plan: 'basic', notifications: true, birthdate: '', richText: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', description: '', country: '', newsletter: false, plan: 'basic', notifications: true, birthdate: '', richText: '', time: '', sliderValue: 50, rangeValue: [20, 80] as [number, number], color: '#3B82F6', tags: [] as string[] });
 
   return (
     <PageContainer>
@@ -63,6 +63,41 @@ export default function FormsContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <DatePicker label="Date de naissance" format="date" value={formData.birthdate} onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })} />
             <DatePicker label="Date et heure" format="datetime-local" />
+          </div>
+        </Section>
+
+        <Section title="TimePicker">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TimePicker label="Heure (24h)" value={formData.time} onChange={(time) => setFormData({ ...formData, time })} format="24h" />
+            <TimePicker label="Heure (12h)" value={formData.time} onChange={(time) => setFormData({ ...formData, time })} format="12h" />
+          </div>
+        </Section>
+
+        <Section title="Slider">
+          <div className="space-y-6">
+            <Slider label="Volume" value={formData.sliderValue} onChange={(value) => setFormData({ ...formData, sliderValue: value })} min={0} max={100} showValue />
+            <Slider label="Taille" value={formData.sliderValue} onChange={(value) => setFormData({ ...formData, sliderValue: value })} min={0} max={100} step={10} marks={[{ value: 0, label: 'Min' }, { value: 50, label: 'Moyen' }, { value: 100, label: 'Max' }]} />
+          </div>
+        </Section>
+
+        <Section title="Range">
+          <div className="space-y-6">
+            <Range label="Prix" value={formData.rangeValue} onChange={(value) => setFormData({ ...formData, rangeValue: value })} min={0} max={1000} showValues />
+            <Range label="Période" value={formData.rangeValue} onChange={(value) => setFormData({ ...formData, rangeValue: value })} min={0} max={100} step={5} />
+          </div>
+        </Section>
+
+        <Section title="ColorPicker">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ColorPicker label="Couleur principale" value={formData.color} onChange={(color) => setFormData({ ...formData, color })} showInput />
+            <ColorPicker label="Couleur secondaire" value={formData.color} onChange={(color) => setFormData({ ...formData, color })} showInput={false} />
+          </div>
+        </Section>
+
+        <Section title="TagInput">
+          <div className="space-y-4">
+            <TagInput label="Tags" value={formData.tags} onChange={(tags) => setFormData({ ...formData, tags })} placeholder="Ajouter un tag..." maxTags={5} />
+            <TagInput label="Catégories" value={formData.tags} onChange={(tags) => setFormData({ ...formData, tags })} placeholder="Appuyez sur Entrée ou virgule pour ajouter" allowDuplicates={false} />
           </div>
         </Section>
 

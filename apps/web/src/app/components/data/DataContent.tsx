@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell, EmptyState, StatsCard, Badge, Button, DataTable, DataTableEnhanced, KanbanBoard, Calendar, CRUDModal, ExportButton, Input } from '@/components/ui';
-import type { KanbanCard, KanbanColumn, CalendarEvent } from '@/components/ui';
+import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell, EmptyState, StatsCard, Badge, Button, DataTable, DataTableEnhanced, KanbanBoard, Calendar, CRUDModal, ExportButton, Input, Timeline, List } from '@/components/ui';
+import type { KanbanCard, KanbanColumn, CalendarEvent, TimelineItem, ListItem } from '@/components/ui';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
 import { logger } from '@/lib/logger';
 
@@ -227,6 +227,71 @@ export default function DataContent() {
                 alert(`Export ${format} déclenché !`);
               }}
             />
+          </div>
+        </Section>
+
+        <Section title="Timeline">
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Timeline verticale</h4>
+              <Timeline
+                items={[
+                  { id: '1', title: 'Commande créée', description: 'La commande #1234 a été créée', timestamp: '2024-12-20 10:00', status: 'completed', color: 'success' },
+                  { id: '2', title: 'Paiement reçu', description: 'Paiement de €99.99 confirmé', timestamp: '2024-12-20 10:15', status: 'completed', color: 'success' },
+                  { id: '3', title: 'En préparation', description: 'Votre commande est en cours de préparation', timestamp: '2024-12-20 11:00', status: 'current', color: 'primary' },
+                  { id: '4', title: 'Expédiée', description: 'En attente d\'expédition', timestamp: '', status: 'pending', color: 'default' },
+                ]}
+              />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Timeline horizontale</h4>
+              <Timeline
+                items={[
+                  { id: '1', title: 'Étape 1', description: 'Complétée', status: 'completed' },
+                  { id: '2', title: 'Étape 2', description: 'En cours', status: 'current' },
+                  { id: '3', title: 'Étape 3', description: 'À venir', status: 'pending' },
+                ]}
+                orientation="horizontal"
+              />
+            </div>
+          </div>
+        </Section>
+
+        <Section title="List">
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Liste simple</h4>
+              <List
+                items={[
+                  { id: '1', content: 'Premier élément', onClick: () => alert('Cliqué sur élément 1') },
+                  { id: '2', content: 'Deuxième élément', onClick: () => alert('Cliqué sur élément 2') },
+                  { id: '3', content: 'Troisième élément', onClick: () => alert('Cliqué sur élément 3') },
+                ]}
+                variant="default"
+              />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Liste avec bordures</h4>
+              <List
+                items={[
+                  { id: '1', content: 'Élément avec icône', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> },
+                  { id: '2', content: 'Élément avec action', action: <Button size="sm" variant="ghost">Action</Button> },
+                  { id: '3', content: 'Élément désactivé', disabled: true },
+                ]}
+                variant="bordered"
+              />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Liste divisée</h4>
+              <List
+                items={[
+                  { id: '1', content: 'Notification 1', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg> },
+                  { id: '2', content: 'Notification 2', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg> },
+                  { id: '3', content: 'Notification 3', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg> },
+                ]}
+                variant="divided"
+              />
+            </div>
           </div>
         </Section>
       </div>
