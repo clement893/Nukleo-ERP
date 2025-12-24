@@ -29,6 +29,7 @@ export default defineConfig({
         '**/*.stories.*',
         '**/.next/**',
         '**/coverage/**',
+        '**/__tests__/**',
       ],
       thresholds: {
         lines: 70,
@@ -36,6 +37,7 @@ export default defineConfig({
         branches: 70,
         statements: 70,
       },
+      reportsDirectory: './coverage',
     },
     testTimeout: 10000,
     hookTimeout: 10000,
