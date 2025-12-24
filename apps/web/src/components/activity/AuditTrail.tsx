@@ -185,7 +185,7 @@ export default function AuditTrail({
       key: 'status',
       label: 'Status',
       sortable: true,
-      render: (value, entry) => {
+      render: (value) => {
         const status = value as AuditTrailEntry['status'];
         const variants = {
           success: 'success' as const,
