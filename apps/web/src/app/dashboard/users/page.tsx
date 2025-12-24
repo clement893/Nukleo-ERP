@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // Force dynamic rendering to avoid prerendering issues
 export const dynamic = 'force-dynamic';
@@ -91,7 +91,7 @@ function UsersContent() {
     }
 
     if (!formData.password.trim()) {
-      setError('Le mot de passe est requis pour créer un utilisateur');
+      setError('Le mot de passe est requis pour crÃ©er un utilisateur');
       return;
     }
 
@@ -100,14 +100,14 @@ function UsersContent() {
       setError(null);
       // TODO: Implement user creation endpoint in backend
       // For now, show a message that this feature requires backend implementation
-      setError('La création d\'utilisateurs nécessite l\'implémentation de l\'endpoint backend. Veuillez utiliser l\'API directement.');
+      setError('La crÃ©ation d\'utilisateurs nÃ©cessite l\'implÃ©mentation de l\'endpoint backend. Veuillez utiliser l\'API directement.');
       // await usersAPI.create({ ... });
       // await loadUsers();
       // setShowCreateModal(false);
       // resetForm();
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la création de l\'utilisateur');
+      setError(appError.message || 'Erreur lors de la crÃ©ation de l\'utilisateur');
     } finally {
       setLoading(false);
     }
@@ -124,7 +124,7 @@ function UsersContent() {
       setError(null);
       // TODO: Implement user update endpoint in backend
       // For now, show a message that this feature requires backend implementation
-      setError('La modification d\'utilisateurs nécessite l\'implémentation de l\'endpoint backend. Veuillez utiliser l\'API directement.');
+      setError('La modification d\'utilisateurs nÃ©cessite l\'implÃ©mentation de l\'endpoint backend. Veuillez utiliser l\'API directement.');
       // Parse name into first_name and last_name
       // const nameParts = formData.name.split(' ');
       // await usersAPI.update(selectedUser.id, {
@@ -145,7 +145,7 @@ function UsersContent() {
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+    if (!confirm('ÃŠtes-vous sÃ»r de vouloir supprimer cet utilisateur ?')) {
       return;
     }
 
@@ -163,13 +163,13 @@ function UsersContent() {
     }
   };
 
-  const handleToggleActive = async (user: User) => {
+  const handleToggleActive = async (_user: User) => {
     try {
       setLoading(true);
       setError(null);
       // TODO: Implement user update endpoint in backend to toggle is_active
       // For now, show a message that this feature requires backend implementation
-      setError('La modification du statut nécessite l\'implémentation de l\'endpoint backend. Veuillez utiliser l\'API directement.');
+      setError('La modification du statut nÃ©cessite l\'implÃ©mentation de l\'endpoint backend. Veuillez utiliser l\'API directement.');
       // await usersAPI.update(user.id, { is_active: !user.is_active });
       // await loadUsers();
     } catch (err) {
@@ -245,7 +245,7 @@ function UsersContent() {
     },
     {
       key: 'role',
-      label: 'Rôle',
+      label: 'RÃ´le',
       sortable: true,
       render: (value) => (
         <Badge variant={getRoleBadge(String(value))}>
@@ -266,7 +266,7 @@ function UsersContent() {
     },
     {
       key: 'last_login',
-      label: 'Dernière connexion',
+      label: 'DerniÃ¨re connexion',
       sortable: true,
       render: (value) => (
         <span className="text-gray-600 dark:text-gray-400">
@@ -276,7 +276,7 @@ function UsersContent() {
     },
     {
       key: 'created_at',
-      label: 'Créé le',
+      label: 'CrÃ©Ã© le',
       sortable: true,
       render: (value) => (
         <span className="text-gray-600 dark:text-gray-400">
@@ -295,9 +295,9 @@ function UsersContent() {
             size="sm"
             onClick={() => handleToggleActive(row)}
             className="p-2"
-            title={row.is_active ? 'Désactiver' : 'Activer'}
+            title={row.is_active ? 'DÃ©sactiver' : 'Activer'}
           >
-            {row.is_active ? '✓' : '✗'}
+            {row.is_active ? 'âœ“' : 'âœ—'}
           </Button>
           <Button
             variant="ghost"
@@ -328,7 +328,7 @@ function UsersContent() {
         <div className="mb-8 flex justify-between items-center">
           <div>
             <p className="text-gray-700 dark:text-gray-300">
-              Gérez les utilisateurs et leurs permissions
+              GÃ©rez les utilisateurs et leurs permissions
             </p>
           </div>
           <Button
@@ -364,7 +364,7 @@ function UsersContent() {
                 pageSize={10}
                 searchable={true}
                 searchPlaceholder="Rechercher un utilisateur..."
-                emptyMessage="Aucun utilisateur trouvé"
+                emptyMessage="Aucun utilisateur trouvÃ©"
                 loading={loading}
               />
             </div>
@@ -377,7 +377,7 @@ function UsersContent() {
             <Card className="w-full max-w-md">
               <div className="p-6">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Créer un nouvel utilisateur
+                  CrÃ©er un nouvel utilisateur
                 </h2>
                 <div className="space-y-4">
                   <div>
@@ -405,13 +405,13 @@ function UsersContent() {
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="••••••••"
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                       fullWidth
                     />
                   </div>
                   <div>
                     <Select
-                      label="Rôle *"
+                      label="RÃ´le *"
                       value={formData.role}
                       onChange={(e) =>
                         setFormData({
@@ -438,7 +438,7 @@ function UsersContent() {
                       Annuler
                     </Button>
                     <Button onClick={handleCreateUser} loading={loading}>
-                      Créer
+                      CrÃ©er
                     </Button>
                   </div>
                 </div>
@@ -487,7 +487,7 @@ function UsersContent() {
                   </div>
                   <div>
                     <Select
-                      label="Rôle *"
+                      label="RÃ´le *"
                       value={formData.role}
                       onChange={(e) =>
                         setFormData({
