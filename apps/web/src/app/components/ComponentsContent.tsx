@@ -206,6 +206,17 @@ const componentCategories = [
     color: 'bg-green-600',
   },
   {
+    title: 'Avancés',
+    description: 'Gestionnaire de fichiers, éditeur d\'images, code et markdown',
+    href: '/components/advanced',
+    icon: (
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+      </svg>
+    ),
+    color: 'bg-teal-600',
+  },
+  {
     title: 'Exemples SaaS',
     description: 'Exemples complets de dashboards, paramètres et onboarding',
     href: '/examples',
