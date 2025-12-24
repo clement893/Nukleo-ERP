@@ -115,8 +115,8 @@ export default function Dropdown({
                   'w-full px-4 py-2 text-left text-sm flex items-center space-x-2',
                   'transition-colors',
                   dropdownItem.variant === 'danger'
-                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 focus:bg-red-50 dark:focus:bg-red-900/20 focus:ring-2 focus:ring-red-500'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:ring-2 focus:ring-blue-500',
+                    ? 'text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 hover:text-error-700 dark:hover:text-error-300 focus:bg-error-50 dark:focus:bg-error-900/20 focus:ring-2 focus:ring-error-500 dark:focus:ring-error-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400',
                   dropdownItem.disabled && 'opacity-50 cursor-not-allowed',
                   className
                 )}

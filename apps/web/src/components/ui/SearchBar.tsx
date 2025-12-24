@@ -55,7 +55,7 @@ export default function SearchBar({
         placeholder={placeholder}
         className={clsx(
           'w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent',
           className
         )}
         {...props}

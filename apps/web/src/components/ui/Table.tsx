@@ -107,7 +107,7 @@ export function TableHeader({
             <svg
               className={clsx(
                 'w-3 h-3',
-                sortDirection === 'asc' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+                sortDirection === 'asc' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'
               )}
               fill="currentColor"
               viewBox="0 0 20 20"

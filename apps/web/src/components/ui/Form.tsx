@@ -84,7 +84,7 @@ export default function Form({
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
+              {field.required && <span className="text-error-500 dark:text-error-400 ml-1">*</span>}
             </label>
 
             {field.type === 'textarea' ? (
@@ -101,8 +101,8 @@ export default function Form({
                   'bg-white dark:bg-gray-800',
                   'text-gray-900 dark:text-white',
                   'border-gray-300 dark:border-gray-600',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                  error && 'border-red-500',
+                  'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent',
+                  error && 'border-error-500 dark:border-error-400',
                   field.disabled && 'opacity-50 cursor-not-allowed'
                 )}
               />
@@ -118,8 +118,8 @@ export default function Form({
                   'bg-white dark:bg-gray-800',
                   'text-gray-900 dark:text-white',
                   'border-gray-300 dark:border-gray-600',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                  error && 'border-red-500',
+                  'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent',
+                  error && 'border-error-500 dark:border-error-400',
                   field.disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
@@ -139,9 +139,9 @@ export default function Form({
                   defaultChecked={Boolean(value)}
                   disabled={field.disabled}
                   className={clsx(
-                    'w-4 h-4 text-blue-600 rounded',
+                    'w-4 h-4 text-primary-600 dark:text-primary-400 rounded',
                     'border-gray-300 dark:border-gray-600',
-                    'focus:ring-blue-500',
+                    'focus:ring-primary-500 dark:focus:ring-primary-400',
                     field.disabled && 'opacity-50 cursor-not-allowed'
                   )}
                 />
@@ -166,15 +166,15 @@ export default function Form({
                   'bg-white dark:bg-gray-800',
                   'text-gray-900 dark:text-white',
                   'border-gray-300 dark:border-gray-600',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                  error && 'border-red-500',
+                  'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent',
+                  error && 'border-error-500 dark:border-error-400',
                   field.disabled && 'opacity-50 cursor-not-allowed'
                 )}
               />
             )}
 
             {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="text-sm text-error-600 dark:text-error-400">{error}</p>
             )}
             {field.helpText && !error && (
               <p className="text-sm text-gray-500 dark:text-gray-400">{field.helpText}</p>
@@ -192,9 +192,9 @@ export default function Form({
             disabled={loading}
             className={clsx(
               'px-4 py-2 rounded-md font-medium',
-              'bg-blue-600 text-white',
-              'hover:bg-blue-700',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500',
+              'bg-primary-600 dark:bg-primary-500 text-white',
+              'hover:bg-primary-700 dark:hover:bg-primary-600',
+              'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               'transition-colors'
             )}
@@ -230,7 +230,7 @@ export function FormField({ label, name, required, error, helpText, children }: 
         className="block text-sm font-medium text-gray-700 dark:text-gray-300"
       >
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-error-500 dark:text-error-400 ml-1">*</span>}
       </label>
       {firstChild && isValidElement(firstChild)
         ? cloneElement(firstChild as ReactElement<Record<string, unknown>>, {
@@ -242,7 +242,7 @@ export function FormField({ label, name, required, error, helpText, children }: 
         : firstChild}
       {restChildren.length > 0 && restChildren}
       {error && (
-        <p id={`${name}-error`} className="text-sm text-red-600 dark:text-red-400">
+        <p id={`${name}-error`} className="text-sm text-error-600 dark:text-error-400">
           {error}
         </p>
       )}

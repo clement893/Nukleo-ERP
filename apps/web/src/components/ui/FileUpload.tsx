@@ -103,7 +103,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
               'cursor-pointer bg-gray-100 dark:bg-gray-800',
               'hover:bg-gray-200 dark:hover:bg-gray-700',
               'transition-colors',
-              error && 'border-red-500 dark:border-red-400',
+              error && 'border-error-500 dark:border-error-400',
               className
             )}
           >
@@ -136,7 +136,7 @@ const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
           </label>
         </div>
         {error && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-1 text-sm text-error-600 dark:text-error-400" role="alert">
             {error}
           </p>
         )}

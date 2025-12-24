@@ -38,7 +38,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           >
             {label}
             {props.required && (
-              <span className="text-red-500 dark:text-red-400 ml-1" aria-label="required">*</span>
+              <span className="text-error-500 dark:text-error-400 ml-1" aria-label="required">*</span>
             )}
           </label>
         )}
@@ -61,7 +61,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               'disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed',
               'placeholder:text-gray-400 dark:placeholder:text-gray-500',
               error
-                ? 'border-danger-500 dark:border-danger-400 focus:ring-danger-500 dark:focus:ring-danger-400'
+                ? 'border-error-500 dark:border-error-400 focus:ring-error-500 dark:focus:ring-error-400'
                 : 'border-gray-300 dark:border-gray-600',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
@@ -84,7 +84,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p 
             id={errorId}
-            className="mt-1 text-sm text-red-600 dark:text-red-400" 
+            className="mt-1 text-sm text-error-600 dark:text-error-400" 
             role="alert"
             aria-live="polite"
           >

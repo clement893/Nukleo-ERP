@@ -43,8 +43,8 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           />
           <div
             className={clsx(
-              "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600",
-              error && 'ring-2 ring-red-500',
+              "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600 dark:peer-checked:bg-primary-500",
+              error && 'ring-2 ring-error-500 dark:ring-error-400',
               className
             )}
           />
@@ -52,7 +52,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             <span
               className={clsx(
                 'ml-3 text-sm font-medium text-gray-700 dark:text-gray-300',
-                error && 'text-red-600 dark:text-red-400',
+                error && 'text-error-600 dark:text-error-400',
                 props.disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -61,7 +61,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           )}
         </label>
         {error && (
-          <p className="ml-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="ml-2 text-sm text-error-600 dark:text-error-400" role="alert">
             {error}
           </p>
         )}

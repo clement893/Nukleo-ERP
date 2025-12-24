@@ -33,7 +33,7 @@ export default function Chart({
             <div
               className={clsx(
                 'w-full rounded-t transition-all hover:opacity-80',
-                point.color || 'bg-blue-500'
+                point.color || 'bg-primary-500 dark:bg-primary-400'
               )}
               style={{
                 height: `${(point.value / maxValue) * 100}%`,

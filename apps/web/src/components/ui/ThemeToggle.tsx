@@ -12,9 +12,9 @@ function ThemeToggleContent() {
       onClick={toggleTheme}
       className={clsx(
         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2',
         'dark:focus:ring-offset-gray-800',
-        resolvedTheme === 'dark' ? 'bg-blue-600' : 'bg-gray-300'
+        resolvedTheme === 'dark' ? 'bg-primary-600 dark:bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
       )}
       aria-label="Toggle theme"
       role="switch"
@@ -49,7 +49,7 @@ function ThemeToggleWithIconContent() {
         'p-2 rounded-lg transition-colors',
         'text-gray-700 dark:text-gray-300',
         'hover:bg-gray-100 dark:hover:bg-gray-800',
-        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2',
         'dark:focus:ring-offset-gray-800'
       )}
       aria-label="Toggle theme"

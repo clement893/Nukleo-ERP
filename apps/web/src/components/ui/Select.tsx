@@ -57,9 +57,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             'block w-full rounded-md border-gray-300 dark:border-gray-600',
             'bg-white dark:bg-gray-700',
             'text-gray-900 dark:text-gray-100',
-            'shadow-sm focus:border-blue-500 focus:ring-blue-500',
+            'shadow-sm focus:border-primary-500 dark:focus:border-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
+            error && 'border-error-500 dark:border-error-400 focus:border-error-500 dark:focus:border-error-400 focus:ring-error-500 dark:focus:ring-error-400',
             className
           )}
           {...props}
@@ -76,7 +76,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ))}
         </select>
         {error && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-1 text-sm text-error-600 dark:text-error-400" role="alert">
             {error}
           </p>
         )}

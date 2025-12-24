@@ -174,7 +174,7 @@ export default function FormBuilder({
             {field.label && (
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {field.label}
-                {field.required && <span className="text-red-500 ml-1">*</span>}
+                {field.required && <span className="text-error-500 dark:text-error-400 ml-1">*</span>}
               </label>
             )}
             {field.options?.map((option) => (
@@ -191,7 +191,7 @@ export default function FormBuilder({
               />
             ))}
             {errors[field.name] && (
-              <p className="text-sm text-red-600 dark:text-red-400">{errors[field.name]}</p>
+              <p className="text-sm text-error-600 dark:text-error-400">{errors[field.name]}</p>
             )}
             {field.helperText && !errors[field.name] && (
               <p className="text-sm text-gray-500 dark:text-gray-400">{field.helperText}</p>

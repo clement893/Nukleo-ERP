@@ -35,10 +35,10 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(
           type="radio"
           id={radioId}
           className={clsx(
-            'w-4 h-4 text-blue-600 border-gray-300',
-            'focus:ring-2 focus:ring-blue-500 focus:ring-offset-0',
+            'w-4 h-4 text-primary-600 dark:text-primary-400 border-gray-300 dark:border-gray-600',
+            'focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-0',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            error && 'border-red-500',
+            error && 'border-error-500 dark:border-error-400',
             className
           )}
           {...props}
@@ -48,7 +48,7 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(
             htmlFor={radioId}
             className={clsx(
               'ml-2 text-sm font-medium text-gray-700 dark:text-gray-300',
-              error && 'text-red-600 dark:text-red-400',
+              error && 'text-error-600 dark:text-error-400',
               props.disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
