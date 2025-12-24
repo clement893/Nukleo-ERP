@@ -32,17 +32,11 @@ class Settings(BaseSettings):
         description="Base URL of the backend (for OAuth callbacks). If empty, will be constructed from request.",
     )
 
-    # CORS - Accept string or list, will be converted to list
-    # Use default_factory to detect environment at initialization time
     # CORS - Must be set via environment variable in production
     CORS_ORIGINS: str = Field(
         default="",
         description="Comma-separated list of allowed CORS origins (required in production)"
     )
-            )
-            else "http://localhost:3000,http://localhost:3001"
-        ),
-        description="Allowed CORS origins (comma-separated string or JSON array)",
     )
 
     @field_validator("CORS_ORIGINS", mode="before")

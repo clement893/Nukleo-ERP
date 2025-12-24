@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useState, KeyboardEvent, ChangeEvent, useRef, useEffect } from 'react';
+import { useState, KeyboardEvent, ChangeEvent, useRef } from 'react';
 import { clsx } from 'clsx';
 import { X } from 'lucide-react';
 import Input from './Input';
