@@ -16,7 +16,7 @@ import Select from '@/components/ui/Select';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import { Plus, Edit, Trash2, Mail, Shield, User } from 'lucide-react';
 
-interface User {
+interface User extends Record<string, unknown> {
   id: string;
   email: string;
   name: string;

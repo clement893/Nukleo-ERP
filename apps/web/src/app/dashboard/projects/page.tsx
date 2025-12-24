@@ -17,7 +17,7 @@ import Select from '@/components/ui/Select';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
-interface Project {
+interface Project extends Record<string, unknown> {
   id: string;
   name: string;
   description: string;
