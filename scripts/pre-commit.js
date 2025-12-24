@@ -63,7 +63,17 @@ if (!runCommand('pnpm --filter @modele/types type-check')) {
   log('✅ Types package OK', 'green');
 }
 
-// 4. Tests unitaires (optionnel - peut être désactivé pour accélérer)
+// 4. Security Audit
+log('\n🔒 Audit de sécurité...', 'blue');
+if (!runCommand('node scripts/audit-security.js')) {
+  log('❌ Problèmes de sécurité détectés', 'red');
+  log('💡 Corrigez les problèmes critiques avant de commiter', 'yellow');
+  hasErrors = true;
+} else {
+  log('✅ Audit de sécurité OK', 'green');
+}
+
+// 5. Tests unitaires (optionnel - peut être désactivé pour accélérer)
 const skipTests = process.argv.includes('--skip-tests');
 if (!skipTests) {
   log('\n🧪 Exécution des tests unitaires...', 'blue');

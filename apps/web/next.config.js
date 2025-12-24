@@ -40,10 +40,13 @@ const nextConfig = {
     const isProduction = process.env.NODE_ENV === 'production';
     
     // Content Security Policy
+    // ⚠️ SECURITY NOTE: CSP is relaxed in development (unsafe-inline/unsafe-eval)
+    // This is acceptable for dev but should be tightened in production using nonces
+    // See: https://nextjs.org/docs/advanced-features/security-headers
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 'unsafe-eval' needed for Next.js in dev
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Required for Next.js dev mode
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Required for Tailwind CSS
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: https: blob:",
       "connect-src 'self' " + apiUrl + " https://*.sentry.io wss://*.sentry.io",

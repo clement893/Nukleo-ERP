@@ -55,10 +55,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             )
         
         # Content Security Policy
+        # ⚠️ SECURITY NOTE: CSP is relaxed in development (unsafe-inline/unsafe-eval)
+        # This is acceptable for dev but should be tightened in production using nonces
+        # In production, use strict CSP without unsafe-inline/unsafe-eval
         csp_policy = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Development only
+            "style-src 'self' 'unsafe-inline'; "  # Development only
             "img-src 'self' data: https:; "
             "font-src 'self' data:; "
             "connect-src 'self'; "
