@@ -150,9 +150,11 @@ export default function ImageEditor({
             <Button
               variant="primary"
               onClick={() => fileInputRef.current?.click()}
-              icon={<Upload className="w-4 h-4" />}
             >
-              Choose Image
+              <span className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Choose Image
+              </span>
             </Button>
           </div>
         )}
