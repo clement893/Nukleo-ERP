@@ -14,6 +14,7 @@ import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Checkbox from '@/components/ui/Checkbox';
 import Alert from '@/components/ui/Alert';
+import { logger } from '@/lib/logger';
 
 export interface ErrorReportingProps {
   onSubmit?: (data: ErrorReportData) => Promise<void>;
@@ -66,8 +67,8 @@ export default function ErrorReporting({
       if (onSubmit) {
         await onSubmit(formData);
       } else {
-        // Default: log to console and simulate API call
-        console.log('Error Report:', formData);
+        // Default: log to logger and simulate API call
+        logger.info('Error Report', { formData });
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 

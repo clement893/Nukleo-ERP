@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { logger } from '@/lib/logger';
 
 const ACCESS_TOKEN_COOKIE = 'access_token';
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[Token API] Error setting tokens:', error);
+    logger.error('Token API Error setting tokens', { error });
     return NextResponse.json(
       { error: 'Failed to set tokens' },
       { status: 500 }
@@ -81,7 +82,7 @@ export async function GET() {
       hasRefreshToken: hasRefreshToken,
     });
   } catch (error) {
-    console.error('[Token API] Error checking tokens:', error);
+    logger.error('Token API Error checking tokens', { error });
     return NextResponse.json(
       { error: 'Failed to check tokens' },
       { status: 500 }
@@ -104,7 +105,7 @@ export async function DELETE() {
 
     return response;
   } catch (error) {
-    console.error('[Token API] Error removing tokens:', error);
+    logger.error('Token API Error removing tokens', { error });
     return NextResponse.json(
       { error: 'Failed to remove tokens' },
       { status: 500 }

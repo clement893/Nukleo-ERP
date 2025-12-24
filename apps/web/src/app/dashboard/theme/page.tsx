@@ -12,6 +12,7 @@ import { checkSuperAdminStatus } from '@/lib/api/admin';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 import type { ThemeConfig } from '@modele/types';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,7 @@ function ThemeSettingsContent() {
           const status = await checkSuperAdminStatus(user.email, token);
           setIsSuperAdmin(status.is_superadmin);
         } catch (err) {
-          console.error('Failed to check superadmin status:', err);
+          logger.error('Failed to check superadmin status', { error: err });
           // Fallback to is_admin check if API fails
           setIsSuperAdmin(user?.is_admin || false);
         }

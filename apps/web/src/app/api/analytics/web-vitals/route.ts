@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Log Web Vitals (in production, send to analytics service)
     if (process.env.NODE_ENV === 'production') {
       // TODO: Send to analytics service (e.g., Google Analytics, Sentry, custom)
-      console.log('[Web Vitals]', {
+      logger.performance('Web Vitals', {
         name,
         value,
         rating,
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Return success
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Web Vitals API] Error:', error);
+    logger.error('Web Vitals API Error', { error });
     return NextResponse.json(
       { error: 'Failed to process Web Vitals' },
       { status: 500 }

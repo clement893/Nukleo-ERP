@@ -2,6 +2,7 @@
 
 import { VideoPlayer, AudioPlayer, Card } from '@/components/ui';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
+import { logger } from '@/lib/logger';
 
 export default function MediaContent() {
   return (
@@ -28,9 +29,9 @@ export default function MediaContent() {
                 poster="https://peach.blender.org/wp-content/uploads/title_anouncement.jpg?x11217"
                 title="Big Buck Bunny"
                 controls
-                onPlay={() => console.log('Video playing')}
-                onPause={() => console.log('Video paused')}
-                onEnded={() => console.log('Video ended')}
+                onPlay={() => logger.debug('Video playing')}
+                onPause={() => logger.debug('Video paused')}
+                onEnded={() => logger.debug('Video ended')}
                 className="max-w-4xl mx-auto"
               />
             </div>
@@ -66,9 +67,9 @@ export default function MediaContent() {
                 src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
                 title="Sample Audio Track"
                 artist="SoundHelix"
-                onPlay={() => console.log('Audio playing')}
-                onPause={() => console.log('Audio paused')}
-                onEnded={() => console.log('Audio ended')}
+                onPlay={() => logger.debug('Audio playing')}
+                onPause={() => logger.debug('Audio paused')}
+                onEnded={() => logger.debug('Audio ended')}
                 className="max-w-2xl mx-auto"
               />
             </div>
@@ -130,8 +131,8 @@ export default function MediaContent() {
   poster="/path/to/poster.jpg"
   title="Video Title"
   controls
-  onPlay={() => console.log('Playing')}
-  onPause={() => console.log('Paused')}
+  onPlay={() => logger.debug('Playing')}
+  onPause={() => logger.debug('Paused')}
 />
 
 // Audio Player
@@ -139,8 +140,8 @@ export default function MediaContent() {
   src="/path/to/audio.mp3"
   title="Track Title"
   artist="Artist Name"
-  onPlay={() => console.log('Playing')}
-  onPause={() => console.log('Paused')}
+  onPlay={() => logger.debug('Playing')}
+  onPause={() => logger.debug('Paused')}
 />`}
                 </pre>
               </div>

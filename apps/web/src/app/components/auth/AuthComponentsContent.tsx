@@ -5,17 +5,18 @@ import MFA from '@/components/auth/MFA';
 import SocialAuth from '@/components/auth/SocialAuth';
 import type { SocialProvider } from '@/components/auth/SocialAuth';
 import Card from '@/components/ui/Card';
+import { logger } from '@/lib/logger';
 
 export default function AuthComponentsContent() {
   const handleMFAVerify = async (code: string) => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('MFA Code verified:', code);
+    logger.info('MFA Code verified', { code });
     // In real app, this would call your API
   };
 
   const handleSocialSignIn = (provider: SocialProvider) => {
-    console.log(`Sign in with ${provider}`);
+    logger.info('Social sign in', { provider });
     // In real app, this would redirect to OAuth provider
   };
 

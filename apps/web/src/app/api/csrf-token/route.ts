@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { randomBytes } from 'crypto';
+import { logger } from '@/lib/logger';
 
 const CSRF_TOKEN_COOKIE = 'csrf_token';
 
@@ -37,7 +38,7 @@ export async function GET() {
 
     return response;
   } catch (error) {
-    console.error('[CSRF Token API] Error:', error);
+    logger.error('CSRF Token API Error', { error });
     return NextResponse.json(
       { error: 'Failed to generate CSRF token' },
       { status: 500 }

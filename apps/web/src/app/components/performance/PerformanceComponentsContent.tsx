@@ -5,6 +5,7 @@ import OfflineSupport from '@/components/performance/OfflineSupport';
 import OptimisticUpdates from '@/components/performance/OptimisticUpdates';
 import PerformanceDashboard from '@/components/performance/PerformanceDashboard';
 import ErrorReporting from '@/components/errors/ErrorReporting';
+import { logger } from '@/lib/logger';
 
 export default function PerformanceComponentsContent() {
   return (
@@ -35,7 +36,7 @@ export default function PerformanceComponentsContent() {
         <Section title="Error Reporting">
           <ErrorReporting
             onSubmit={async (data) => {
-              console.log('Error Report Submitted:', data);
+              logger.info('Error Report Submitted', { data });
               // In a real app, this would send to your error reporting service
               await new Promise(resolve => setTimeout(resolve, 1000));
             }}

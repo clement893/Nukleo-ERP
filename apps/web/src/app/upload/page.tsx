@@ -12,6 +12,7 @@ import FileUploadWithPreview from '@/components/ui/FileUploadWithPreview';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import { Upload, CheckCircle, XCircle, File, Image, FileText } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface UploadedFile {
   id: string;
@@ -31,14 +32,14 @@ function UploadContent() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleFileSelect = (files: File[]) => {
-    console.log('Files selected:', files.length, files.map(f => f.name));
+    logger.debug('Files selected', { count: files.length, names: files.map(f => f.name) });
     setSelectedFiles(files);
     setError(null);
     setSuccess(null);
   };
 
   const handleUpload = async () => {
-    console.log('handleUpload called', { selectedFilesCount: selectedFiles.length });
+    logger.debug('handleUpload called', { selectedFilesCount: selectedFiles.length });
     
     if (selectedFiles.length === 0) {
       setError('Veuillez sélectionner au moins un fichier');
@@ -50,11 +51,11 @@ function UploadContent() {
     setSuccess(null);
 
     try {
-      console.log('Starting upload for', selectedFiles.length, 'files');
+      logger.info('Starting upload', { fileCount: selectedFiles.length });
       
       // Simulate S3 upload - Replace with actual API call
       const uploadPromises = selectedFiles.map(async (file, index) => {
-        console.log(`Uploading file ${index + 1}/${selectedFiles.length}:`, file.name);
+        logger.debug('Uploading file', { index: index + 1, total: selectedFiles.length, fileName: file.name });
         
         // Simulate upload delay
         await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
@@ -72,12 +73,12 @@ function UploadContent() {
           status: success ? ('success' as const) : ('error' as const),
         };
         
-        console.log(`File ${file.name} upload ${success ? 'success' : 'failed'}`);
+        logger.debug('File upload result', { fileName: file.name, success });
         return result;
       });
 
       const results = await Promise.all(uploadPromises);
-      console.log('Upload completed:', results);
+      logger.info('Upload completed', { results });
       
       setUploadedFiles((prev) => [...prev, ...results]);
       setSelectedFiles([]);
