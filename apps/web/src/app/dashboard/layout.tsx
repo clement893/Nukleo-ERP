@@ -20,7 +20,8 @@ import {
   LogOut,
   Menu,
   X,
-  Palette
+  Palette,
+  Shield
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -62,6 +63,11 @@ function DashboardLayoutContent({
       icon: <Palette className="w-5 h-5" />,
     },
     {
+      label: 'Super Admin',
+      href: '/dashboard/become-superadmin',
+      icon: <Shield className="w-5 h-5" />,
+    },
+    {
       label: 'Paramètres',
       href: '/dashboard/settings',
       icon: <Settings className="w-5 h-5" />,
@@ -78,6 +84,7 @@ function DashboardLayoutContent({
             {pathname === '/dashboard/projects' && 'Projets'}
             {pathname === '/dashboard/users' && 'Utilisateurs'}
             {pathname === '/dashboard/theme' && 'Thème'}
+            {pathname === '/dashboard/become-superadmin' && 'Super Admin'}
             {pathname === '/dashboard/settings' && 'Paramètres'}
           </h1>
           <div className="flex items-center gap-2">
@@ -145,6 +152,7 @@ function DashboardLayoutContent({
                 {pathname === '/dashboard/projects' && 'Projets'}
                 {pathname === '/dashboard/users' && 'Utilisateurs'}
                 {pathname === '/dashboard/theme' && 'Thème'}
+                {pathname === '/dashboard/become-superadmin' && 'Super Admin'}
                 {pathname === '/dashboard/settings' && 'Paramètres'}
               </h1>
               <div className="flex items-center gap-3">
