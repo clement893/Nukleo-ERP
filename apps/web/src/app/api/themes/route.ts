@@ -84,7 +84,7 @@ export async function GET() {
       if (error.name === 'AbortError') {
         logger.warn('Theme fetch timeout. Using default theme.');
       } else {
-        logger.warn('Backend not available. Using default theme.', error.message);
+        logger.warn('Backend not available. Using default theme.', { message: error.message });
       }
     } else {
       logger.error('Error fetching active theme', error instanceof Error ? error : new Error(String(error)));
