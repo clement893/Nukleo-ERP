@@ -106,6 +106,17 @@ const componentCategories = [
     color: 'bg-blue-500',
   },
   {
+    title: 'Performance',
+    description: 'Monitoring, offline support, optimistic updates, error reporting',
+    href: '/components/performance',
+    icon: (
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    color: 'bg-emerald-500',
+  },
+  {
     title: 'Exemples SaaS',
     description: 'Exemples complets de dashboards, paramètres et onboarding',
     href: '/examples',
