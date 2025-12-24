@@ -99,9 +99,10 @@ async def explain_query(session: AsyncSession, query: Select) -> List[dict]:
         List of execution plan rows
     """
     # Convert to EXPLAIN query
+    from sqlalchemy import text as sql_text
     explain_query_str = f"EXPLAIN ANALYZE {str(query.compile(compile_kwargs={'literal_binds': True}))}"
     
-    result = await session.execute(select(text(explain_query_str)))
+    result = await session.execute(sql_text(explain_query_str))
     rows = result.fetchall()
     
     return [dict(row) for row in rows]

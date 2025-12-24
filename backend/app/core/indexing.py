@@ -3,6 +3,7 @@ Database Indexing Strategy
 Provides utilities for creating and managing database indexes
 """
 
+from typing import Optional
 from sqlalchemy import Index, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import logger
