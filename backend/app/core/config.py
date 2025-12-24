@@ -37,7 +37,6 @@ class Settings(BaseSettings):
         default="",
         description="Comma-separated list of allowed CORS origins (required in production)"
     )
-    )
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
