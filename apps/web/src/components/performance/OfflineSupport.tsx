@@ -12,7 +12,6 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Alert from '@/components/ui/Alert';
 import { registerServiceWorker, unregisterServiceWorker, isServiceWorkerSupported } from '@/lib/performance/serviceWorker';
-import { logger } from '@/lib/logger';
 
 export interface OfflineSupportProps {
   className?: string;
@@ -64,7 +63,7 @@ export default function OfflineSupport({
       try {
         setSyncQueue(JSON.parse(storedQueue));
       } catch (e) {
-        logger.error('Failed to parse sync queue', { error: e });
+        console.error('Failed to parse sync queue:', e);
       }
     }
 
