@@ -13,7 +13,6 @@ api_router.include_router(
     tags=["auth"]
 )
 
-<<<<<<< Updated upstream
 # Register 2FA endpoints
 api_router.include_router(
     two_factor.router,
@@ -61,6 +60,3 @@ api_router.include_router(
     prefix="/admin",
     tags=["admin"]
 )
-=======
-
->>>>>>> Stashed changes
