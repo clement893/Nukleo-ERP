@@ -47,6 +47,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await init_cache()
     # Ensure required columns exist (auto-migration)
     await ensure_theme_preference_column()
+    
+    # Create recommended indexes (non-blocking, runs concurrently)
+    try:
+        from app.core.database_indexes import create_recommended_indexes, analyze_tables
+        from app.core.database import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            index_results = await create_recommended_indexes(session)
+            if index_results["created"]:
+                logger.info(f"Created {len(index_results['created'])} indexes")
+            if index_results["errors"]:
+                logger.warning(f"Failed to create {len(index_results['errors'])} indexes")
+            
+            # Analyze tables to update statistics
+            await analyze_tables(session)
+    except Exception as e:
+        logger.warning(f"Index creation/analysis skipped: {e}")
+    
     from app.core.logging import logger
     import os
     logger.info(f"CORS Origins configured: {settings.CORS_ORIGINS}")
