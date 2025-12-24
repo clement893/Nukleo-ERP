@@ -7,6 +7,9 @@
 
 import { type ReactNode } from 'react';
 import Button from '@/components/ui/Button';
+import Container from '@/components/ui/Container';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import { AppError } from '@/lib/errors/AppError';
 import { type ErrorCode } from '@/lib/errors';
 import { logger } from '@/lib/logger';
@@ -56,56 +59,58 @@ export function ErrorDisplay({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="max-w-md w-full text-center">
-        <div className="mb-6">
-          <div className="text-6xl font-bold text-red-600 dark:text-red-400 mb-4">
-            {errorStatusCode ?? '!'}
+      <Container>
+        <Card className="max-w-md w-full mx-auto text-center">
+          <div className="p-8">
+            <div className="mb-6">
+              <div className="text-6xl font-bold text-red-600 dark:text-red-400 mb-4">
+                {errorStatusCode ?? '!'}
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                {errorTitle}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">{errorMessage}</p>
+            </div>
+
+            {errorCode && (
+              <div className="mb-4">
+                <Badge variant="error">Code: {errorCode}</Badge>
+              </div>
+            )}
+
+            {showDetails && errorDetails && Object.keys(errorDetails).length > 0 && (
+              <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-left">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Details:
+                </h3>
+                <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto">
+                  {JSON.stringify(errorDetails, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            {children}
+
+            <div className="flex gap-4 justify-center">
+              {onRetry && (
+                <Button onClick={onRetry} variant="primary">
+                  Try Again
+                </Button>
+              )}
+              {onReset && (
+                <Button onClick={onReset} variant="secondary">
+                  Go Back
+                </Button>
+              )}
+              {!onRetry && !onReset && (
+                <Button onClick={() => window.location.href = '/'} variant="primary">
+                  Go Home
+                </Button>
+              )}
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {errorTitle}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">{errorMessage}</p>
-        </div>
-
-        {errorCode && (
-          <div className="mb-4">
-            <span className="inline-block px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded">
-              Code: {errorCode}
-            </span>
-          </div>
-        )}
-
-        {showDetails && errorDetails && Object.keys(errorDetails).length > 0 && (
-          <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-left">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-              Details:
-            </h3>
-            <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto">
-              {JSON.stringify(errorDetails, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        {children}
-
-        <div className="flex gap-4 justify-center">
-          {onRetry && (
-            <Button onClick={onRetry} variant="primary">
-              Try Again
-            </Button>
-          )}
-          {onReset && (
-            <Button onClick={onReset} variant="secondary">
-              Go Back
-            </Button>
-          )}
-          {!onRetry && !onReset && (
-            <Button onClick={() => window.location.href = '/'} variant="primary">
-              Go Home
-            </Button>
-          )}
-        </div>
-      </div>
+        </Card>
+      </Container>
     </div>
   );
 }
