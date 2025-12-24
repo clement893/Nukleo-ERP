@@ -24,6 +24,11 @@ const config: Config = {
           900: '#1e3a8a',
           950: '#172554',
         },
+        // Custom blue light color (#B4D6FF) - darker in dark mode
+        blue: {
+          light: '#B4D6FF',
+          lightDark: '#1e3a8a', // Dark mode version
+        },
         // Secondary color palette (Green)
         secondary: {
           50: '#f0fdf4',

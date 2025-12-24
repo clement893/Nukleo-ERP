@@ -64,6 +64,9 @@
   --color-info-900: #164e63;
   --color-info-rgb: 6, 182, 212;
   
+  /* Custom blue color for light backgrounds - will be darker in dark mode */
+  --color-blue-light: #B4D6FF;
+  
   --font-family: Inter, sans-serif;
   --font-family-heading: Inter, sans-serif;
   --font-family-subheading: Inter, sans-serif;
@@ -107,6 +110,9 @@
   /* Error & Validation Colors - Dark Mode */
   --color-error-bg: #7f1d1d;
   --color-success-bg: #14532d;
+  
+  /* Custom blue color - darker version for dark mode */
+  --color-blue-light: #1e3a8a;
 }
 
 /* Apply theme variables to Tailwind classes using CSS custom properties */
@@ -198,6 +204,16 @@
   .text-error-600 { color: var(--color-danger-600) !important; }
   .text-error-700 { color: var(--color-danger-700) !important; }
   .text-error-800 { color: var(--color-danger-800) !important; }
+  
+  /* Custom blue light color - adapts to dark mode */
+  .bg-blue-light { 
+    background-color: var(--color-blue-light) !important; 
+  }
+  .dark .bg-blue-light {
+    background-color: var(--color-blue-light) !important;
+  }
+  .text-blue-light { color: var(--color-blue-light) !important; }
+  .border-blue-light { border-color: var(--color-blue-light) !important; }
   
   .border-primary-500 { border-color: var(--color-primary-500) !important; }
   .border-primary-600 { border-color: var(--color-primary-600) !important; }
