@@ -103,8 +103,6 @@ export default function MetricsChart({ metricName, title, height = 200 }: Metric
   );
 }
 
-import { getChartColorByStatus } from '@/lib/theme/colors';
-
 function getMetricColor(metric: PerformanceMetric): string {
   return getChartColorByStatus(metric.value, metric.threshold);
 }
