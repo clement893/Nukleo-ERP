@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
 import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
@@ -28,7 +27,6 @@ interface Invitation {
 }
 
 export default function InvitationsPage() {
-  const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
