@@ -14,6 +14,20 @@ class Token(BaseModel):
     token_type: str = Field(default="bearer", description="Token type")
 
 
+class RefreshTokenRequest(BaseModel):
+    """Refresh token request schema"""
+    token: Optional[str] = Field(None, description="Expired access token to refresh")
+    refresh_token: Optional[str] = Field(None, description="Refresh token (if implemented)")
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            }
+        }
+    }
+
+
 class TokenData(BaseModel):
     """Token data schema"""
     username: Optional[str] = None

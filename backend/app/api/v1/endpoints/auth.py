@@ -21,7 +21,7 @@ from app.core.database import get_db
 from app.core.rate_limit import rate_limit_decorator
 from app.core.logging import logger
 from app.models.user import User
-from app.schemas.auth import Token, TokenData, UserCreate, UserResponse
+from app.schemas.auth import Token, TokenData, UserCreate, UserResponse, RefreshTokenRequest
 
 router = APIRouter()
 
@@ -224,7 +224,7 @@ async def login(
 @rate_limit_decorator("10/minute")
 async def refresh_token(
     request: Request,
-    refresh_data: dict,
+    refresh_data: RefreshTokenRequest,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Token:
     """
@@ -235,14 +235,14 @@ async def refresh_token(
     - A refresh token (if refresh tokens are implemented)
     
     Args:
-        refresh_data: Dict with either "token" (expired access token) or "refresh_token"
+        refresh_data: Request with either "token" (expired access token) or "refresh_token"
         db: Database session
         
     Returns:
         New access token
     """
     # Try to get token from refresh_data
-    token = refresh_data.get("token") or refresh_data.get("refresh_token") or refresh_data.get("access_token")
+    token = refresh_data.token or refresh_data.refresh_token
     
     if not token:
         raise HTTPException(
