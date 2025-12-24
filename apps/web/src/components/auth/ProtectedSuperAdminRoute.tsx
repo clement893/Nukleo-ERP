@@ -45,13 +45,29 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
       try {
         if (user?.email) {
           const authToken = token || tokenFromStorage;
-          const status = await checkSuperAdminStatus(user.email, authToken || undefined);
+          
+          if (!authToken) {
+            logger.warn('No token available for superadmin check', { email: user.email });
+            router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+            return;
+          }
+          
+          logger.debug('Checking superadmin status', { email: user.email, pathname });
+          const status = await checkSuperAdminStatus(user.email, authToken);
+          
+          logger.debug('Superadmin status check result', { 
+            email: user.email, 
+            is_superadmin: status.is_superadmin,
+            pathname 
+          });
+          
           setIsSuperAdmin(status.is_superadmin);
           
           if (!status.is_superadmin) {
-            logger.debug('User is not superadmin, redirecting', { 
+            logger.warn('User is not superadmin, redirecting', { 
               email: user.email, 
-              pathname 
+              pathname,
+              user_is_admin: user.is_admin
             });
             router.replace('/dashboard?error=unauthorized_superadmin');
             return;
@@ -59,6 +75,11 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
         } else {
           // Fallback: check is_admin if email is not available
           // This is a temporary fallback - ideally all users should have email
+          logger.warn('No email available, using is_admin fallback', { 
+            user_id: user?.id,
+            is_admin: user?.is_admin,
+            pathname 
+          });
           if (!user?.is_admin) {
             logger.debug('User is not admin, redirecting', { pathname });
             router.replace('/dashboard?error=unauthorized_superadmin');
@@ -68,8 +89,25 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
         }
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to check superadmin status');
-        logger.error('Failed to check superadmin status', error);
-        // On error, fallback to is_admin check
+        logger.error('Failed to check superadmin status', error, {
+          email: user?.email,
+          has_token: !!(token || tokenFromStorage),
+          pathname,
+          error_message: error.message
+        });
+        
+        // Check if error is about token expiration/refresh failure
+        if (error.message.includes('expired') || error.message.includes('refresh') || error.message.includes('log in')) {
+          logger.warn('Token expired during superadmin check, redirecting to login', { pathname });
+          router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}&error=session_expired`);
+          return;
+        }
+        
+        // On other errors, fallback to is_admin check (but log warning)
+        logger.warn('Using is_admin fallback due to API error', { 
+          is_admin: user?.is_admin,
+          pathname 
+        });
         if (!user?.is_admin) {
           router.replace('/dashboard?error=unauthorized_superadmin');
           return;

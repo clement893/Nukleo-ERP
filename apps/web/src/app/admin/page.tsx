@@ -1,5 +1,5 @@
 import AdminContent from './AdminContent';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 
 // Force dynamic rendering to avoid CSS file issues during build
 export const dynamic = 'force-dynamic';
@@ -7,8 +7,8 @@ export const dynamicParams = true;
 
 export default function AdminPage() {
   return (
-    <ProtectedRoute requireAdmin={true}>
+    <ProtectedSuperAdminRoute>
       <AdminContent />
-    </ProtectedRoute>
+    </ProtectedSuperAdminRoute>
   );
 }

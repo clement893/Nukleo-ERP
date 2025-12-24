@@ -1,7 +1,7 @@
 'use client';
 
 import { ThemeManager } from '@/components/admin/themes/ThemeManager';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 import Container from '@/components/ui/Container';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import { useState, useEffect } from 'react';
@@ -22,11 +22,11 @@ export default function AdminThemesPage() {
   }, []);
 
   return (
-    <ProtectedRoute requireAdmin={true}>
+    <ProtectedSuperAdminRoute>
       <Container className="py-8">
         <ThemeManager authToken={token} />
       </Container>
-    </ProtectedRoute>
+    </ProtectedSuperAdminRoute>
   );
 }
 

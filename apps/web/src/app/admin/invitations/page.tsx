@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
+import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -38,18 +39,12 @@ export default function InvitationsPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'accepted' | 'expired' | 'cancelled'>('all');
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/auth/login');
-      return;
+    // ProtectedSuperAdminRoute handles authentication and superadmin check
+    // Just load invitations if authenticated
+    if (isAuthenticated() && user) {
+      loadInvitations();
     }
-
-    if (!user?.is_admin) {
-      router.push('/dashboard');
-      return;
-    }
-
-    loadInvitations();
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]);
 
   const loadInvitations = async () => {
     try {
@@ -147,10 +142,6 @@ export default function InvitationsPage() {
     }
   };
 
-  if (!isAuthenticated() || !user?.is_admin) {
-    return null;
-  }
-
   const filteredInvitations = filterStatus === 'all'
     ? invitations
     : invitations.filter(inv => inv.status === filterStatus);
@@ -184,8 +175,9 @@ export default function InvitationsPage() {
   };
 
   return (
-    <div className="py-12">
-      <Container>
+    <ProtectedSuperAdminRoute>
+      <div className="py-12">
+        <Container>
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des Invitations</h1>
@@ -373,7 +365,8 @@ export default function InvitationsPage() {
           </div>
         </div>
       </Modal>
-      </Container>
-    </div>
+        </Container>
+      </div>
+    </ProtectedSuperAdminRoute>
   );
 }
