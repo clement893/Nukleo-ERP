@@ -149,7 +149,7 @@ function SettingsContent() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Paramètres
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-700 dark:text-gray-300">
             Gérez vos préférences et paramètres de compte
           </p>
         </div>
@@ -177,7 +177,7 @@ function SettingsContent() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Profil
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Gérez vos informations personnelles
                 </p>
               </div>
@@ -224,7 +224,7 @@ function SettingsContent() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Sécurité
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Modifiez votre mot de passe
                 </p>
               </div>
@@ -282,19 +282,19 @@ function SettingsContent() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Notifications
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Gérez vos préférences de notification
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">
                     Notifications par email
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Recevoir des notifications importantes par email
                   </p>
                 </div>
@@ -307,12 +307,12 @@ function SettingsContent() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">
                     Notifications push
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Recevoir des notifications push dans le navigateur
                   </p>
                 </div>
@@ -325,12 +325,12 @@ function SettingsContent() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">
                     Emails marketing
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Recevoir des emails promotionnels et des offres spéciales
                   </p>
                 </div>
@@ -343,12 +343,12 @@ function SettingsContent() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">
                     Alertes de sécurité
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Recevoir des alertes pour les activités de sécurité importantes
                   </p>
                 </div>
@@ -375,7 +375,7 @@ function SettingsContent() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Confidentialité
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Contrôlez qui peut voir vos informations
                 </p>
               </div>
@@ -402,12 +402,12 @@ function SettingsContent() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">
                     Afficher l'email
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Permettre aux autres utilisateurs de voir votre email
                   </p>
                 </div>
@@ -420,12 +420,12 @@ function SettingsContent() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">
                     Afficher l'activité
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Permettre aux autres utilisateurs de voir votre activité récente
                   </p>
                 </div>
