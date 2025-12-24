@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
         navigationType,
         timestamp: new Date().toISOString(),
       };
-      logger.performance('Web Vitals', webVitalsContext);
+      // Use logger.info instead of logger.performance to avoid TypeScript conflicts with global performance API
+      logger.info('Web Vitals', webVitalsContext);
     }
 
     // Return success
