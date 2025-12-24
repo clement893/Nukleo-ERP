@@ -3,48 +3,26 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   
+  // Bundle analyzer configuration
+  ...(process.env.ANALYZE === 'true' && {
+    webpack: (config, { isServer }) => {
+      if (!isServer) {
+        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+        config.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: process.env.BUNDLE_ANALYZE === 'server' ? 'server' : 'static',
+            openAnalyzer: true,
+            reportFilename: `../.next/bundle-analyzer-${isServer ? 'server' : 'client'}.html`,
+          })
+        );
+      }
+      return config;
+    },
+  }),
+
   // Experimental features
   experimental: {
     optimizePackageImports: ['lucide-react'],
-  },
-
-  // Webpack configuration
-  webpack: (config, { isServer, webpack }) => {
-    // Handle missing CSS files during build
-    if (!isServer) {
-      // Add alias for default-stylesheet.css
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'default-stylesheet.css': require.resolve('./src/lib/empty-css.js'),
-      };
-      
-      // Ignore missing CSS files during build - multiple patterns
-      config.plugins.push(
-        new webpack.IgnorePlugin({
-          resourceRegExp: /default-stylesheet\.css$/,
-        })
-      );
-      
-      // Also add a fallback for the CSS file
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        'default-stylesheet.css': require.resolve('./src/lib/empty-css.js'),
-      };
-    }
-
-    // Bundle analyzer configuration
-    if (process.env.ANALYZE === 'true' && !isServer) {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-      config.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: process.env.BUNDLE_ANALYZE === 'server' ? 'server' : 'static',
-          openAnalyzer: true,
-          reportFilename: `../.next/bundle-analyzer-${isServer ? 'server' : 'client'}.html`,
-        })
-      );
-    }
-
-    return config;
   },
 
   // Image optimization
@@ -59,6 +37,7 @@ const nextConfig = {
     // Use NEXT_PUBLIC_API_URL environment variable, fallback to localhost for development
     // In production, NEXT_PUBLIC_API_URL must be set via environment variables
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').trim();
+    const isProduction = process.env.NODE_ENV === 'production';
     
     // Content Security Policy
     const cspDirectives = [
