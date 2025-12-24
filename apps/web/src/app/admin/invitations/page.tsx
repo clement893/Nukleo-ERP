@@ -14,6 +14,10 @@ import Select from '@/components/ui/Select';
 import Loading from '@/components/ui/Loading';
 import Modal from '@/components/ui/Modal';
 
+// Force dynamic rendering to avoid static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 interface Invitation {
   id: string;
   email: string;
