@@ -87,9 +87,9 @@ class Logger {
     this.log(LogLevel.ERROR, fullMessage, errorContext);
   }
 
-  performance(message: string, context?: LogContext): void {
+  performance(message: string, context?: LogContext | Record<string, unknown>): void {
     // Performance logs are treated as INFO level
-    this.log(LogLevel.INFO, message, context);
+    this.log(LogLevel.INFO, message, context as LogContext | undefined);
   }
 }
 

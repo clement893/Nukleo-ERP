@@ -594,7 +594,18 @@ async def google_oauth_callback(
             # If state is already a full URL (starts with http), use it directly
             # Otherwise, construct the URL from state or use FRONTEND_URL from settings
             import os
-            frontend_base = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            # Get frontend URL from settings (CORS_ORIGINS first item) or environment variable
+            frontend_base = None
+            if settings.CORS_ORIGINS and isinstance(settings.CORS_ORIGINS, list) and len(settings.CORS_ORIGINS) > 0:
+                frontend_base = settings.CORS_ORIGINS[0].rstrip("/")
+            elif isinstance(settings.CORS_ORIGINS, str) and settings.CORS_ORIGINS.strip():
+                frontend_base = settings.CORS_ORIGINS.strip().rstrip("/")
+            
+            if not frontend_base:
+                frontend_base = os.getenv("FRONTEND_URL") or os.getenv("NEXT_PUBLIC_APP_URL") or "http://localhost:3000"
+                frontend_base = frontend_base.rstrip("/")
+            
+            logger.info(f"Using frontend base URL: {frontend_base}")
             
             if state and state.startswith(("http://", "https://")):
                 # State is already a full URL, use it directly
