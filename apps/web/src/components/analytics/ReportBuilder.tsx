@@ -234,7 +234,6 @@ export default function ReportBuilder({
           onChange={(e) =>
             setConfig({ ...config, format: e.target.value as 'table' | 'chart' | 'both' })
           }
-          leftIcon={<BarChart3 className="w-5 h-5" />}
         />
 
         {/* Actions */}
