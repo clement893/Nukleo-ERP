@@ -13,7 +13,7 @@ interface SignOutButtonProps {
   variant?: 'primary' | 'secondary' | 'danger';
 }
 
-export function SignOutButton({ className, variant = 'secondary' }: SignOutButtonProps) {
+export default function SignOutButton({ className, variant = 'secondary' }: SignOutButtonProps) {
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/auth/signin' });
   };
