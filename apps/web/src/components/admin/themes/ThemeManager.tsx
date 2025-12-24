@@ -11,7 +11,7 @@ import {
   activateTheme,
   deleteTheme,
 } from '@/lib/api/theme';
-import type { Theme, ThemeCreate, ThemeUpdate } from '@modele/types/theme';
+import type { Theme, ThemeCreate, ThemeUpdate } from '@modele/types';
 
 interface ThemeManagerProps {
   authToken: string;

@@ -7,7 +7,7 @@ import type {
   ThemeUpdate,
   ThemeListResponse,
   ThemeConfigResponse,
-} from '@modele/types/theme';
+} from '@modele/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 

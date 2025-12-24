@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getActiveTheme } from '@/lib/api/theme';
-import type { ThemeConfigResponse, ThemeConfig } from '@modele/types/theme';
+import type { ThemeConfigResponse, ThemeConfig } from '@modele/types';
 
 interface GlobalThemeContextType {
   theme: ThemeConfigResponse | null;
