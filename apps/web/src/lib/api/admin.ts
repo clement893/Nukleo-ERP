@@ -153,6 +153,20 @@ export async function checkSuperAdminStatus(
             // Update token storage
             await TokenStorage.setToken(newToken, newRefreshToken);
             
+            // Update Zustand store if available
+            try {
+              const { useAuthStore } = await import('@/lib/store');
+              const store = useAuthStore.getState();
+              if (store.setRefreshToken && newRefreshToken) {
+                await store.setRefreshToken(newRefreshToken);
+              }
+              // Update token in store
+              useAuthStore.setState({ token: newToken });
+            } catch (storeError) {
+              // Store update failed, but continue with token refresh
+              console.warn('Failed to update auth store after token refresh:', storeError);
+            }
+            
             // Retry the original request with new token
             authToken = newToken;
             response = await makeRequest(authToken);
