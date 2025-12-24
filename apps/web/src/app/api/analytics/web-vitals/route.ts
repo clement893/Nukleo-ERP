@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { logger, type LogContext } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Log Web Vitals (in production, send to analytics service)
     if (process.env.NODE_ENV === 'production') {
       // TODO: Send to analytics service (e.g., Google Analytics, Sentry, custom)
-      const webVitalsContext: Record<string, unknown> = {
+      const webVitalsContext: LogContext = {
         name,
         value,
         rating,
