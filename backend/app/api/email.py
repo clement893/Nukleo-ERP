@@ -251,7 +251,7 @@ class InvoiceEmailRequest(BaseModel):
     amount: float
     currency: str = "EUR"
     invoice_url: Optional[str] = None
-    items: Optional[List[Dict[str, Any]]] = None
+    items: Optional[List[Dict[str, Union[str, int, float]]]] = None
 
 
 @router.post("/invoice")

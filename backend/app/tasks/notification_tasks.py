@@ -1,6 +1,6 @@
 """Notification tasks."""
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Union
 from app.celery_app import celery_app
 from app.core.logging import logger
 from app.services.email_service import EmailService
@@ -41,7 +41,7 @@ def send_notification_task(
             # For now, we'll log and try to send email if email service is available
             logger.info(f"Notification task: user_id={user_id}, title={title}, type={notification_type}")
         
-        result: Dict[str, Any] = {
+        result: Dict[str, Union[str, bool, None]] = {
             "status": "sent",
             "user_id": user_id,
             "title": title,

@@ -1,7 +1,7 @@
 ﻿"""
 Redis Cache Configuration
-Cache backend pour amÃ©liorer les performances
-Utilise MessagePack pour sÃ©rialisation binaire rapide
+Cache backend pour améliorer les performances
+Utilise MessagePack pour sérialisation binaire rapide
 """
 
 from typing import Optional, Any
@@ -50,7 +50,7 @@ class CacheBackend:
                 self.use_redis = False
     
     async def get(self, key: str) -> Optional[Any]:
-        """RÃ©cupÃ©rer une valeur du cache avec dÃ©compression automatique"""
+        """Récupérer une valeur du cache avec décompression automatique"""
         if not self.use_redis or not self.redis_client:
             return None
         
@@ -59,18 +59,18 @@ class CacheBackend:
             if not value:
                 return None
             
-            # VÃ©rifier si compressÃ© (prÃ©fixe binaire)
+            # Vérifier si compressé (préfixe binaire)
             if value.startswith(b"zlib:"):
                 # DÃ©compresser
                 compressed = value[len(b"zlib:"):]
                 decompressed = zlib.decompress(compressed)
-                # DÃ©sÃ©rialiser avec MessagePack ou JSON
+                # Désérialiser avec MessagePack ou JSON
                 if self.use_msgpack:
                     return msgpack.unpackb(decompressed, raw=False)
                 else:
                     return json.loads(decompressed.decode('utf-8'))
             else:
-                # Non compressÃ©, dÃ©sÃ©rialiser directement
+                # Non compressé, désérialiser directement
                 if self.use_msgpack:
                     return msgpack.unpackb(value, raw=False)
                 else:
@@ -85,16 +85,16 @@ class CacheBackend:
             return False
         
         try:
-            # SÃ©rialiser avec MessagePack (plus rapide) ou JSON (fallback)
+            # Sérialiser avec MessagePack (plus rapide) ou JSON (fallback)
             if self.use_msgpack:
                 serialized = msgpack.packb(value, default=str, use_bin_type=True)
             else:
                 serialized = json.dumps(value, default=str).encode('utf-8')
             
-            # Compresser si activÃ© et si la valeur est grande (>1KB)
+            # Compresser si activé et si la valeur est grande (>1KB)
             if compress and len(serialized) > 1024:
                 compressed = zlib.compress(serialized)
-                # Ajouter un prÃ©fixe binaire pour indiquer la compression
+                # Ajouter un préfixe binaire pour indiquer la compression
                 final_value = b"zlib:" + compressed
                 logger.debug(f"Cache compressed: {key}, original: {len(serialized)}, compressed: {len(compressed)}")
             else:
@@ -107,7 +107,7 @@ class CacheBackend:
             return False
     
     async def delete(self, key: str) -> bool:
-        """Supprimer une clÃ© du cache"""
+        """Supprimer une clé du cache"""
         if not self.use_redis or not self.redis_client:
             return False
         
@@ -119,7 +119,7 @@ class CacheBackend:
             return False
     
     async def clear_pattern(self, pattern: str) -> int:
-        """Supprimer toutes les clÃ©s correspondant Ã  un pattern (non-bloquant avec SCAN)"""
+        """Supprimer toutes les clés correspondant à un pattern (non-bloquant avec SCAN)"""
         if not self.use_redis or not self.redis_client:
             return 0
         
@@ -138,7 +138,7 @@ class CacheBackend:
                 if keys:
                     deleted_count += await self.redis_client.delete(*keys)
                 
-                if cursor == 0:  # SCAN terminÃ©
+                if cursor == 0:  # SCAN terminé
                     break
             
             return deleted_count
@@ -152,14 +152,14 @@ cache_backend = CacheBackend()
 
 
 def cache_key(*args, **kwargs) -> str:
-    """GÃ©nÃ©rer une clÃ© de cache Ã  partir d'arguments"""
+    """Générer une clé de cache à partir d'arguments"""
     key_data = f"{args}:{sorted(kwargs.items())}"
     return hashlib.md5(key_data.encode()).hexdigest()
 
 
 def cached(expire: int = 300, key_prefix: str = ""):
     """
-    DÃ©corateur pour mettre en cache le rÃ©sultat d'une fonction
+    Décorateur pour mettre en cache le résultat d'une fonction
     
     Usage:
         @cached(expire=600, key_prefix="users")
@@ -169,7 +169,7 @@ def cached(expire: int = 300, key_prefix: str = ""):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # GÃ©nÃ©rer la clÃ© de cache
+            # Générer la clé de cache
             cache_key_str = f"{key_prefix}:{func.__name__}:{cache_key(*args, **kwargs)}"
             
             # VÃ©rifier le cache
@@ -178,7 +178,7 @@ def cached(expire: int = 300, key_prefix: str = ""):
                 logger.debug(f"Cache hit: {cache_key_str}")
                 return cached_value
             
-            # ExÃ©cuter la fonction
+            # Exécuter la fonction
             logger.debug(f"Cache miss: {cache_key_str}")
             result = await func(*args, **kwargs)
             
@@ -194,7 +194,7 @@ def cached(expire: int = 300, key_prefix: str = ""):
             await cache_backend.delete(cache_key_str)
         
         async def invalidate_all():
-            """Invalider tout le cache pour ce prÃ©fixe"""
+            """Invalider tout le cache pour ce préfixe"""
             pattern = f"{key_prefix}:{func.__name__}:*"
             await cache_backend.clear_pattern(pattern)
         
@@ -206,7 +206,7 @@ def cached(expire: int = 300, key_prefix: str = ""):
 
 def invalidate_cache_pattern(pattern: str):
     """
-    DÃ©corateur pour invalider le cache par pattern aprÃ¨s l'exÃ©cution d'une fonction
+    Décorateur pour invalider le cache par pattern après l'exécution d'une fonction
     
     Usage:
         @invalidate_cache_pattern("projects:*")

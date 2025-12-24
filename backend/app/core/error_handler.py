@@ -3,7 +3,7 @@ Centralized Error Handler
 Handles all exceptions and returns standardized error responses
 """
 
-from typing import Any, Dict
+from typing import Dict, Union
 
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
@@ -31,7 +31,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         exc_info=exc,
     )
 
-    # En production, masquer les dÃ©tails pour Ã©viter la fuite d'information
+    # En production, masquer les détails pour éviter la fuite d'information
     if settings.ENVIRONMENT == "production":
         error_response = {
             "success": False,
@@ -42,7 +42,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
             "timestamp": None,
         }
     else:
-        # En dÃ©veloppement, permettre plus de dÃ©tails
+        # En développement, permettre plus de détails
         error_response = {
             "success": False,
             "error": {
@@ -135,7 +135,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         exc_info=exc,
     )
 
-    # En production, ne pas exposer les dÃ©tails de l'exception
+    # En production, ne pas exposer les détails de l'exception
     if settings.ENVIRONMENT == "production":
         error_response = {
             "success": False,
@@ -146,7 +146,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
             "timestamp": None,
         }
     else:
-        # En dÃ©veloppement, permettre plus de dÃ©tails pour le dÃ©bogage
+        # En développement, permettre plus de détails pour le débogage
         error_response = {
             "success": False,
             "error": {
