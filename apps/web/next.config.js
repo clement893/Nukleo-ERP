@@ -3,26 +3,15 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   
-  // Bundle analyzer configuration
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: (config, { isServer }) => {
-      if (!isServer) {
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: process.env.BUNDLE_ANALYZE === 'server' ? 'server' : 'static',
-            openAnalyzer: true,
-            reportFilename: `../.next/bundle-analyzer-${isServer ? 'server' : 'client'}.html`,
-          })
-        );
-      }
-      return config;
-    },
-  }),
-
   // Experimental features
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@tanstack/react-query',
+      '@tanstack/react-query-devtools',
+      'zod',
+      'clsx',
+    ],
   },
 
   // Image optimization
@@ -30,6 +19,81 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+
+  // Webpack configuration for better code splitting
+  webpack: (config, { isServer, dev, webpack }) => {
+    // Enhanced code splitting configuration
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          minSize: 20000, // Minimum chunk size (20KB)
+          maxSize: 244000, // Maximum chunk size (244KB)
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Framework chunks - React, Next.js core
+            framework: {
+              name: 'framework',
+              chunks: 'all',
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|next)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            // Large libraries - separate into individual chunks
+            lib: {
+              test: /[\\/]node_modules[\\/]/,
+              name(module) {
+                const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
+                // Only create separate chunks for large libraries
+                const largeLibs = ['axios', '@tanstack/react-query', 'zod', 'zustand'];
+                if (largeLibs.some(lib => packageName?.includes(lib))) {
+                  return `lib-${packageName?.replace('@', '').replace('/', '-')}`;
+                }
+                return null;
+              },
+              priority: 30,
+              minChunks: 1,
+              reuseExistingChunk: true,
+            },
+            // UI component libraries
+            ui: {
+              test: /[\\/]node_modules[\\/](@tanstack|lucide-react|clsx|isomorphic-dompurify)[\\/]/,
+              name: 'ui-libs',
+              priority: 20,
+              reuseExistingChunk: true,
+            },
+            // Common chunks - shared code
+            common: {
+              name: 'common',
+              minChunks: 2,
+              priority: 10,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      };
+
+      // Tree shaking optimization
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
+    }
+
+    // Bundle analyzer (if enabled)
+    if (process.env.ANALYZE === 'true' && !isServer) {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: process.env.BUNDLE_ANALYZE === 'server' ? 'server' : 'static',
+          openAnalyzer: true,
+          reportFilename: `../.next/bundle-analyzer-${isServer ? 'server' : 'client'}.html`,
+        })
+      );
+    }
+
+    return config;
   },
 
   // Headers for security

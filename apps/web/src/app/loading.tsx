@@ -1,15 +1,15 @@
 /**
- * Global Loading State for Next.js App Router
- * Shows loading UI while pages are loading
+ * Global Loading Component
+ * Shown during route transitions for better UX
  */
 
-import Loading from '@/components/ui/Loading';
-
-export default function GlobalLoading() {
+export default function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <Loading size="lg" />
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
     </div>
   );
 }
-

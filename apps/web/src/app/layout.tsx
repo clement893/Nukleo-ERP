@@ -7,6 +7,8 @@ import ThemeManagerProvider from '@/components/providers/ThemeManagerProvider';
 import { GlobalThemeProvider } from '@/lib/theme/global-theme-provider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { App } from './app';
+import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter';
+import { PerformanceScripts } from '@/components/performance/PerformanceScripts';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -38,6 +40,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={inter.variable}>
+      <head>
+        <PerformanceScripts />
+      </head>
       <body className={inter.className}>
         <GlobalThemeProvider>
           <ThemeProvider>
@@ -52,6 +57,7 @@ export default function RootLayout({
             </ThemeManagerProvider>
           </ThemeProvider>
         </GlobalThemeProvider>
+        <WebVitalsReporter />
       </body>
     </html>
   );

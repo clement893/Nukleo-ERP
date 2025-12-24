@@ -1,0 +1,36 @@
+/**
+ * Performance Scripts Component
+ * Adds performance-related scripts and service worker registration
+ */
+
+'use client';
+
+import { useEffect } from 'react';
+import { registerServiceWorker } from '@/lib/performance/serviceWorker';
+
+export function PerformanceScripts() {
+  useEffect(() => {
+    // Register service worker
+    registerServiceWorker();
+
+    // Preconnect to external domains for faster loading
+    const preconnectDomains = [
+      process.env.NEXT_PUBLIC_API_URL,
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com',
+    ].filter(Boolean);
+
+    preconnectDomains.forEach((domain) => {
+      if (domain && typeof document !== 'undefined') {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = domain;
+        link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+      }
+    });
+  }, []);
+
+  return null;
+}
+

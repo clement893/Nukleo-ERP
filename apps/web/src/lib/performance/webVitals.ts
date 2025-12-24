@@ -1,57 +1,121 @@
 /**
- * Web Vitals Reporting
- * 
- * Reports Core Web Vitals metrics for performance monitoring
+ * Web Vitals Performance Monitoring
+ * Tracks Core Web Vitals and other performance metrics
  */
 
-import { logger } from '@/lib/logger';
+import { onCLS, onFID, onFCP, onLCP, onTTFB, onINP, Metric } from 'web-vitals';
 
-export interface WebVitalMetric {
-  id: string;
+export interface WebVitalsReport {
   name: string;
   value: number;
-  label: string;
-  delta?: number;
-  rating?: 'good' | 'needs-improvement' | 'poor';
+  rating: 'good' | 'needs-improvement' | 'poor';
+  delta: number;
+  id: string;
+  navigationType: string;
 }
 
 /**
- * Report Web Vitals metric
- * 
- * Can be extended to send to analytics services (Google Analytics, Vercel Analytics, etc.)
+ * Send Web Vitals to analytics endpoint
  */
-export function reportWebVitals(metric: WebVitalMetric) {
-  // Log performance metrics (development only)
-  if (process.env.NODE_ENV === 'development') {
-    logger.performance(metric.name, metric.value, metric.label);
+function sendToAnalytics(metric: Metric) {
+  const body = JSON.stringify({
+    name: metric.name,
+    value: metric.value,
+    rating: metric.rating,
+    delta: metric.delta,
+    id: metric.id,
+    navigationType: metric.navigationType,
+  });
+
+  // Send to analytics endpoint (defaults to internal endpoint)
+  const analyticsEndpoint = 
+    process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || 
+    '/api/analytics/web-vitals';
+
+  if (typeof window !== 'undefined') {
+    fetch(analyticsEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true, // Keep request alive even after page unload
+    }).catch((error) => {
+      // Silently fail - don't break the app if analytics fails
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Web Vitals] Failed to send:', error);
+      }
+    });
   }
 
-  // Send to analytics service (e.g., Vercel Analytics, Google Analytics)
-  if (typeof window !== 'undefined') {
-    // Example: Send to Vercel Analytics
-    // if (window.va) {
-    //   window.va('track', metric.name, metric.value);
-    // }
-
-    // Example: Send to Google Analytics
-    // if (window.gtag) {
-    //   window.gtag('event', metric.name, {
-    //     value: Math.round(metric.value),
-    //     metric_id: metric.id,
-    //     metric_value: metric.value,
-    //     metric_delta: metric.delta,
-    //   });
-    // }
-
-    // Send to custom analytics endpoint
-    // fetch('/api/analytics/web-vitals', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(metric),
-    // }).catch(() => {
-    //   // Ignore errors
-    // });
+  // Also log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Web Vitals]', metric.name, metric.value, metric.rating);
   }
 }
 
+/**
+ * Initialize Web Vitals tracking
+ */
+export function reportWebVitals() {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
+  // Core Web Vitals
+  onCLS(sendToAnalytics); // Cumulative Layout Shift
+  onFID(sendToAnalytics); // First Input Delay (deprecated, use INP)
+  onFCP(sendToAnalytics); // First Contentful Paint
+  onLCP(sendToAnalytics); // Largest Contentful Paint
+  onTTFB(sendToAnalytics); // Time to First Byte
+  onINP(sendToAnalytics); // Interaction to Next Paint (replaces FID)
+}
+
+/**
+ * Get performance metrics summary
+ */
+export function getPerformanceSummary(): Promise<{
+  lcp: number | null;
+  fid: number | null;
+  cls: number | null;
+  fcp: number | null;
+  ttfb: number | null;
+  inp: number | null;
+}> {
+  return new Promise((resolve) => {
+    const metrics: Record<string, number> = {};
+
+    const handleMetric = (metric: Metric) => {
+      metrics[metric.name.toLowerCase()] = metric.value;
+      
+      // Resolve when we have all core metrics
+      if (metrics.lcp && metrics.fcp && metrics.ttfb) {
+        resolve({
+          lcp: metrics.lcp || null,
+          fid: metrics.fid || null,
+          cls: metrics.cls || null,
+          fcp: metrics.fcp || null,
+          ttfb: metrics.ttfb || null,
+          inp: metrics.inp || null,
+        });
+      }
+    };
+
+    // Set timeout to resolve even if not all metrics are available
+    setTimeout(() => {
+      resolve({
+        lcp: metrics.lcp || null,
+        fid: metrics.fid || null,
+        cls: metrics.cls || null,
+        fcp: metrics.fcp || null,
+        ttfb: metrics.ttfb || null,
+        inp: metrics.inp || null,
+      });
+    }, 10000); // 10 second timeout
+
+    onCLS(handleMetric);
+    onFID(handleMetric);
+    onFCP(handleMetric);
+    onLCP(handleMetric);
+    onTTFB(handleMetric);
+    onINP(handleMetric);
+  });
+}
