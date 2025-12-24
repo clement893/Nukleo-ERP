@@ -73,7 +73,7 @@ export default function TimePicker({
     }
 
     const match = timeStr.match(/(\d{1,2}):(\d{2})/);
-    if (!match) return null;
+      if (!match || !match[1] || !match[2]) return null;
     return {
       hours: parseInt(match[1], 10),
       minutes: parseInt(match[2], 10),
