@@ -13,7 +13,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import type { SelectOption } from '@/components/ui/Select';
 import Checkbox from '@/components/ui/Checkbox';
-import { Plus, Trash2, Save, FileText, BarChart3, Calendar } from 'lucide-react';
+import { Trash2, Save, FileText, BarChart3, Calendar } from 'lucide-react';
 
 export interface ReportField {
   id: string;
