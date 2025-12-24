@@ -90,7 +90,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme, mounted]);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = (_newTheme: Theme) => {
     // Note: Regular users cannot change the global theme
     // This function is kept for compatibility but does nothing for non-admins
     // Superadmins will use the admin interface to change the theme
