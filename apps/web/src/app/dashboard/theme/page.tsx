@@ -9,7 +9,9 @@ import { ThemeToggle, ThemeToggleWithIcon } from '@/components/ui';
 import { Palette, Moon, Sun, Monitor, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getActiveTheme, updateActiveThemeMode } from '@/lib/api/theme';
+import { checkSuperAdminStatus } from '@/lib/api/admin';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,9 +28,24 @@ function ThemeSettingsContent() {
   useEffect(() => {
     setMounted(true);
     
-    // Check if user is superadmin (you'll need to implement this check)
-    // For now, we'll check if user has is_admin flag
-    setIsSuperAdmin(user?.is_admin || false);
+    // Check if user is superadmin via API
+    const checkSuperAdmin = async () => {
+      if (user?.email && token) {
+        try {
+          const status = await checkSuperAdminStatus(user.email, token);
+          setIsSuperAdmin(status.is_superadmin);
+        } catch (err) {
+          console.error('Failed to check superadmin status:', err);
+          // Fallback to is_admin check if API fails
+          setIsSuperAdmin(user?.is_admin || false);
+        }
+      } else {
+        // Fallback to is_admin check if no email/token
+        setIsSuperAdmin(user?.is_admin || false);
+      }
+    };
+    
+    checkSuperAdmin();
     
     // Load current theme mode
     const loadThemeMode = async () => {
@@ -42,7 +59,7 @@ function ThemeSettingsContent() {
     };
     
     loadThemeMode();
-  }, [user]);
+  }, [user, token]);
 
   const handleThemeChange = async (newMode: 'light' | 'dark' | 'system') => {
     if (!isSuperAdmin || !token) {
@@ -334,7 +351,9 @@ function ThemeSettingsContent() {
 export default function ThemeSettingsPage() {
   return (
     <ProtectedRoute>
-      <ThemeSettingsContent />
+      <ProtectedSuperAdminRoute>
+        <ThemeSettingsContent />
+      </ProtectedSuperAdminRoute>
     </ProtectedRoute>
   );
 }
