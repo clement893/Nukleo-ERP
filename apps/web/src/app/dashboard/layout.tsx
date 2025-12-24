@@ -21,7 +21,8 @@ import {
   Menu,
   X,
   Palette,
-  Shield
+  Shield,
+  Home
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -88,6 +89,15 @@ function DashboardLayoutContent({
             {pathname === '/dashboard/settings' && 'Paramètres'}
           </h1>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/')}
+              aria-label="Retour à l'accueil"
+              title="Retour à l'accueil"
+            >
+              <Home className="w-5 h-5" />
+            </Button>
             <ThemeToggleWithIcon />
             <Button
               variant="ghost"
@@ -156,6 +166,15 @@ function DashboardLayoutContent({
                 {pathname === '/dashboard/settings' && 'Paramètres'}
               </h1>
               <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push('/')}
+                  aria-label="Retour à l'accueil"
+                  title="Retour à l'accueil"
+                >
+                  <Home className="w-5 h-5 mr-2" />
+                  Accueil
+                </Button>
                 <ThemeToggleWithIcon />
                 <Button variant="danger" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
