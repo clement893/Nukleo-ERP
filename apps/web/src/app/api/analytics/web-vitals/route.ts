@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Log Web Vitals (in production, send to analytics service)
     if (process.env.NODE_ENV === 'production') {
       // TODO: Send to analytics service (e.g., Google Analytics, Sentry, custom)
-      logger.performance('Web Vitals', {
+      const webVitalsContext: Record<string, unknown> = {
         name,
         value,
         rating,
@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
         id,
         navigationType,
         timestamp: new Date().toISOString(),
-      });
+      };
+      logger.performance('Web Vitals', webVitalsContext);
     }
 
     // Return success
