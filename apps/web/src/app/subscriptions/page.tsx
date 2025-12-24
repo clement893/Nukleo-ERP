@@ -8,6 +8,9 @@ import { useMySubscription, useSubscriptionPayments, useCreateCheckoutSession, u
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import Alert from '@/components/ui/Alert';
+import Container from '@/components/ui/Container';
+import Loading from '@/components/ui/Loading';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Note: Client Components are already dynamic by nature.
@@ -193,20 +196,22 @@ function SubscriptionsContent() {
 
   return (
     <div className="py-12">
-      <div className="container mx-auto px-4">
+      <Container>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">My Subscriptions</h1>
-        <p className="text-gray-600">Manage your subscription and payments</p>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">My Subscriptions</h1>
+        <p className="text-gray-600 dark:text-gray-400">Manage your subscription and payments</p>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
       )}
 
       {loading ? (
         <Card>
           <div className="py-12 text-center">
-            <div className="text-gray-500">Loading...</div>
+            <Loading />
           </div>
         </Card>
       ) : subscription ? (
@@ -216,16 +221,16 @@ function SubscriptionsContent() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{subscription.plan_name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{subscription.plan_name}</h2>
                   <Badge variant={getStatusBadge(subscription.status)}>
                     {getStatusLabel(subscription.status)}
                   </Badge>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {subscription.amount}€
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     /{subscription.billing_period === 'month' ? 'month' : 'year'}
                   </div>
                 </div>
@@ -233,25 +238,23 @@ function SubscriptionsContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <div className="text-sm text-gray-600">Current Period</div>
-                  <div className="text-lg font-semibold text-gray-900">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Current Period</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {new Date(subscription.current_period_start).toLocaleDateString()} - {new Date(subscription.current_period_end).toLocaleDateString()}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Next Payment</div>
-                  <div className="text-lg font-semibold text-gray-900">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Next Payment</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {new Date(subscription.current_period_end).toLocaleDateString()}
                   </div>
                 </div>
               </div>
 
               {subscription.cancel_at_period_end && (
-                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-yellow-800">
-                    Your subscription will be canceled on {new Date(subscription.current_period_end).toLocaleDateString()}.
-                  </p>
-                </div>
+                <Alert variant="warning" className="mb-6">
+                  Your subscription will be canceled on {new Date(subscription.current_period_end).toLocaleDateString()}.
+                </Alert>
               )}
 
               <div className="flex gap-3">
@@ -277,27 +280,27 @@ function SubscriptionsContent() {
           {/* Payment History */}
           <Card>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment History</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Payment History</h2>
               {payments.length === 0 ? (
-                <p className="text-gray-600">No payments yet</p>
+                <p className="text-gray-600 dark:text-gray-400">No payments yet</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Amount</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Date</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {payments.map((payment) => (
-                        <tr key={payment.id}>
-                          <td className="px-4 py-3 text-sm text-gray-900">
+                        <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                             {new Date(payment.date).toLocaleDateString('fr-FR')}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                             {payment.amount}€
                           </td>
                           <td className="px-4 py-3">
@@ -311,7 +314,7 @@ function SubscriptionsContent() {
                                 href={payment.invoice_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-sm"
+                                className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
                               >
                                 Download Invoice
                               </a>
@@ -329,14 +332,14 @@ function SubscriptionsContent() {
       ) : (
         <Card>
           <div className="py-12 text-center">
-            <p className="text-gray-600 mb-6">You don't have an active subscription</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">You don't have an active subscription</p>
             <Link href="/pricing">
               <Button>View Plans</Button>
             </Link>
           </div>
         </Card>
       )}
-      </div>
+      </Container>
     </div>
   );
 }
@@ -345,12 +348,14 @@ function SubscriptionsPageContent() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-12">
-          <Card>
-            <div className="py-12 text-center">
-              <div className="text-gray-500">Loading...</div>
-            </div>
-          </Card>
+        <div className="py-12">
+          <Container>
+            <Card>
+              <div className="py-12 text-center">
+                <Loading />
+              </div>
+            </Card>
+          </Container>
         </div>
       }
     >

@@ -7,6 +7,11 @@ import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import Alert from '@/components/ui/Alert';
+import Container from '@/components/ui/Container';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Loading from '@/components/ui/Loading';
 
 interface Team {
   id: string;
@@ -156,11 +161,12 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="py-12">
+      <Container>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gestion des Équipes</h1>
-          <p className="text-gray-600">Administration des équipes</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des Équipes</h1>
+          <p className="text-gray-600 dark:text-gray-400">Administration des équipes</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           Créer une équipe
@@ -168,13 +174,15 @@ export default function TeamsPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
       )}
 
       {loading ? (
         <Card>
           <div className="py-12 text-center">
-            <div className="text-gray-500">Chargement...</div>
+            <Loading />
           </div>
         </Card>
       ) : (
@@ -183,26 +191,25 @@ export default function TeamsPage() {
           <div className="lg:col-span-1">
             <Card>
               <div className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Équipes</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Équipes</h2>
                 <div className="space-y-2">
                   {teams.map((team) => (
-                    <button
+                    <Button
                       key={team.id}
                       onClick={() => setSelectedTeam(team)}
-                      className={`w-full text-left p-4 rounded-lg transition-colors ${
-                        selectedTeam?.id === team.id
-                          ? 'bg-blue-50 border-2 border-blue-500'
-                          : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                      }`}
+                      variant={selectedTeam?.id === team.id ? 'primary' : 'ghost'}
+                      className="w-full text-left justify-start h-auto p-4"
                     >
-                      <div className="font-medium text-gray-900">{team.name}</div>
-                      {team.description && (
-                        <div className="text-sm text-gray-600 mt-1">{team.description}</div>
-                      )}
-                      <div className="text-xs text-gray-500 mt-2">
-                        {team.member_count} membre{team.member_count > 1 ? 's' : ''}
+                      <div className="w-full">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{team.name}</div>
+                        {team.description && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{team.description}</div>
+                        )}
+                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                          {team.member_count} membre{team.member_count > 1 ? 's' : ''}
+                        </div>
                       </div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -216,9 +223,9 @@ export default function TeamsPage() {
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">{selectedTeam.name}</h2>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedTeam.name}</h2>
                       {selectedTeam.description && (
-                        <p className="text-gray-600 mt-2">{selectedTeam.description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 mt-2">{selectedTeam.description}</p>
                       )}
                     </div>
                     <div className="flex gap-2">
@@ -233,18 +240,18 @@ export default function TeamsPage() {
 
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Membres</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Membres</h3>
                       <Button size="sm">Ajouter un membre</Button>
                     </div>
                     <div className="space-y-2">
                       {teamMembers.map((member) => (
                         <div
                           key={member.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                         >
                           <div>
-                            <div className="font-medium text-gray-900">{member.user_name}</div>
-                            <div className="text-sm text-gray-600">{member.user_email}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{member.user_name}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{member.user_email}</div>
                           </div>
                           <div className="flex items-center gap-3">
                             <Badge variant={member.role === 'Manager' ? 'success' : 'default'}>
@@ -263,7 +270,7 @@ export default function TeamsPage() {
             ) : (
               <Card>
                 <div className="py-12 text-center">
-                  <p className="text-gray-600">Sélectionnez une équipe pour voir ses détails</p>
+                  <p className="text-gray-600 dark:text-gray-400">Sélectionnez une équipe pour voir ses détails</p>
                 </div>
               </Card>
             )}
@@ -276,30 +283,30 @@ export default function TeamsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md m-4">
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Créer une nouvelle équipe</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Créer une nouvelle équipe</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nom de l'équipe *
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={newTeamName}
                     onChange={(e) => setNewTeamName(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     placeholder="Ex: Équipe Marketing"
+                    fullWidth
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description
                   </label>
-                  <textarea
+                  <Textarea
                     value={newTeamDescription}
                     onChange={(e) => setNewTeamDescription(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     rows={3}
                     placeholder="Description de l'équipe..."
+                    fullWidth
                   />
                 </div>
                 <div className="flex gap-3 justify-end">
@@ -319,6 +326,7 @@ export default function TeamsPage() {
           </Card>
         </div>
       )}
+      </Container>
     </div>
   );
 }

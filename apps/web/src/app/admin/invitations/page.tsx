@@ -7,6 +7,11 @@ import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import Alert from '@/components/ui/Alert';
+import Container from '@/components/ui/Container';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Loading from '@/components/ui/Loading';
 
 interface Invitation {
   id: string;
@@ -178,11 +183,12 @@ export default function InvitationsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="py-12">
+      <Container>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gestion des Invitations</h1>
-          <p className="text-gray-600">Gérer les invitations envoyées aux utilisateurs</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des Invitations</h1>
+          <p className="text-gray-600 dark:text-gray-400">Gérer les invitations envoyées aux utilisateurs</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           Inviter un utilisateur
@@ -194,8 +200,8 @@ export default function InvitationsPage() {
         {Object.entries(statusCounts).map(([status, count]) => (
           <Card key={status}>
             <div className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">{count}</div>
-              <div className="text-sm text-gray-600 capitalize">{status === 'all' ? 'Total' : getStatusLabel(status)}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{count}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">{status === 'all' ? 'Total' : getStatusLabel(status)}</div>
             </div>
           </Card>
         ))}
@@ -204,87 +210,86 @@ export default function InvitationsPage() {
       {/* Filters */}
       <div className="mb-6 flex gap-2">
         {(['all', 'pending', 'accepted', 'expired', 'cancelled'] as const).map((status) => (
-          <button
+          <Button
             key={status}
             onClick={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              filterStatus === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            variant={filterStatus === status ? 'primary' : 'ghost'}
+            size="sm"
           >
             {status === 'all' ? 'Tous' : getStatusLabel(status)}
-          </button>
+          </Button>
         ))}
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
       )}
 
       {loading ? (
         <Card>
           <div className="py-12 text-center">
-            <div className="text-gray-500">Chargement...</div>
+            <Loading />
           </div>
         </Card>
       ) : filteredInvitations.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {filterStatus === 'all' ? 'Aucune invitation' : `Aucune invitation ${getStatusLabel(filterStatus).toLowerCase()}`}
             </p>
           </div>
         </Card>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse bg-white rounded-lg shadow">
+          <table className="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg shadow">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Rôle
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Organisation
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Invitée le
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Expire le
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredInvitations.map((invitation) => (
-                <tr key={invitation.id} className="hover:bg-gray-50">
+                <tr key={invitation.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{invitation.email}</div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{invitation.email}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{invitation.role}</Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{invitation.organization_name}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{invitation.organization_name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant={getStatusBadge(invitation.status)}>
                       {getStatusLabel(invitation.status)}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     {new Date(invitation.invited_at).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -318,33 +323,33 @@ export default function InvitationsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md m-4">
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Inviter un utilisateur</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Inviter un utilisateur</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email *
                   </label>
-                  <input
+                  <Input
                     type="email"
                     value={newInvitationEmail}
                     onChange={(e) => setNewInvitationEmail(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     placeholder="user@example.com"
+                    fullWidth
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Rôle *
                   </label>
-                  <select
+                  <Select
                     value={newInvitationRole}
                     onChange={(e) => setNewInvitationRole(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    fullWidth
                   >
                     <option value="user">Utilisateur</option>
                     <option value="manager">Manager</option>
                     <option value="admin">Administrateur</option>
-                  </select>
+                  </Select>
                 </div>
                 <div className="flex gap-3 justify-end">
                   <Button variant="outline" onClick={() => {
@@ -363,6 +368,7 @@ export default function InvitationsPage() {
           </Card>
         </div>
       )}
+      </Container>
     </div>
   );
 }

@@ -7,6 +7,11 @@ import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import Alert from '@/components/ui/Alert';
+import Container from '@/components/ui/Container';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Loading from '@/components/ui/Loading';
 
 interface Role {
   id: string;
@@ -125,11 +130,12 @@ export default function RBACPage() {
   }, {} as Record<string, Permission[]>);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="py-12">
+      <Container>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gestion RBAC</h1>
-          <p className="text-gray-600">Gestion des rôles et permissions</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion RBAC</h1>
+          <p className="text-gray-600 dark:text-gray-400">Gestion des rôles et permissions</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           Créer un rôle
@@ -137,7 +143,9 @@ export default function RBACPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -145,29 +153,30 @@ export default function RBACPage() {
         <div className="lg:col-span-1">
           <Card>
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Rôles</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Rôles</h2>
               {loading ? (
-                <div className="text-gray-500">Chargement...</div>
+                <div className="text-center py-8">
+                  <Loading />
+                </div>
               ) : (
                 <div className="space-y-2">
                   {roles.map((role) => (
-                    <button
+                    <Button
                       key={role.id}
                       onClick={() => setSelectedRole(role)}
-                      className={`w-full text-left p-3 rounded-lg transition-colors ${
-                        selectedRole?.id === role.id
-                          ? 'bg-blue-50 border-2 border-blue-500'
-                          : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                      }`}
+                      variant={selectedRole?.id === role.id ? 'primary' : 'ghost'}
+                      className="w-full text-left justify-start h-auto p-3"
                     >
-                      <div className="font-medium text-gray-900">{role.name}</div>
-                      {role.description && (
-                        <div className="text-sm text-gray-600 mt-1">{role.description}</div>
-                      )}
-                      <div className="text-xs text-gray-500 mt-1">
-                        {role.permissions.length} permission{role.permissions.length > 1 ? 's' : ''}
+                      <div className="w-full">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{role.name}</div>
+                        {role.description && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{role.description}</div>
+                        )}
+                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {role.permissions.length} permission{role.permissions.length > 1 ? 's' : ''}
+                        </div>
                       </div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -182,9 +191,9 @@ export default function RBACPage() {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedRole.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedRole.name}</h2>
                     {selectedRole.description && (
-                      <p className="text-gray-600 mt-2">{selectedRole.description}</p>
+                      <p className="text-gray-600 dark:text-gray-400 mt-2">{selectedRole.description}</p>
                     )}
                   </div>
                   <Button variant="outline" size="sm">
@@ -193,11 +202,11 @@ export default function RBACPage() {
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Permissions</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Permissions</h3>
                   <div className="space-y-4">
                     {Object.entries(permissionsByCategory).map(([category, perms]) => (
                       <div key={category}>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">{category}</h4>
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{category}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {perms.map((perm) => {
                             const hasPermission = selectedRole.permissions.includes('*') || selectedRole.permissions.includes(perm.id);
@@ -206,15 +215,15 @@ export default function RBACPage() {
                                 key={perm.id}
                                 className={`p-3 rounded-lg border-2 ${
                                   hasPermission
-                                    ? 'bg-green-50 border-green-200'
-                                    : 'bg-gray-50 border-gray-200'
+                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <div className="font-medium text-gray-900">{perm.name}</div>
+                                    <div className="font-medium text-gray-900 dark:text-gray-100">{perm.name}</div>
                                     {perm.description && (
-                                      <div className="text-xs text-gray-600 mt-1">{perm.description}</div>
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{perm.description}</div>
                                     )}
                                   </div>
                                   {hasPermission && (
@@ -234,7 +243,7 @@ export default function RBACPage() {
           ) : (
             <Card>
               <div className="py-12 text-center">
-                <p className="text-gray-600">Sélectionnez un rôle pour voir ses permissions</p>
+                <p className="text-gray-600 dark:text-gray-400">Sélectionnez un rôle pour voir ses permissions</p>
               </div>
             </Card>
           )}
@@ -246,30 +255,30 @@ export default function RBACPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md m-4">
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Créer un nouveau rôle</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Créer un nouveau rôle</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nom du rôle *
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={newRoleName}
                     onChange={(e) => setNewRoleName(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     placeholder="Ex: Éditeur"
+                    fullWidth
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description
                   </label>
-                  <textarea
+                  <Textarea
                     value={newRoleDescription}
                     onChange={(e) => setNewRoleDescription(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     rows={3}
                     placeholder="Description du rôle..."
+                    fullWidth
                   />
                 </div>
                 <div className="flex gap-3 justify-end">
@@ -289,6 +298,7 @@ export default function RBACPage() {
           </Card>
         </div>
       )}
+      </Container>
     </div>
   );
 }
