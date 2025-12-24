@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell, EmptyState, StatsCard, Badge, Button, DataTable, DataTableEnhanced, KanbanBoard, Calendar, CRUDModal, ExportButton, Input, Timeline, List } from '@/components/ui';
-import type { KanbanCard, KanbanColumn, CalendarEvent, TimelineItem, ListItem } from '@/components/ui';
+import type { KanbanCard, KanbanColumn, CalendarEvent, ListItem } from '@/components/ui';
 import { PageHeader, PageContainer, Section, PageNavigation } from '@/components/layout';
 import { logger } from '@/lib/logger';
 
