@@ -243,6 +243,7 @@ async def get_current_user_info(
             first_name=current_user.first_name,
             last_name=current_user.last_name,
             is_active=current_user.is_active,
+            # theme_preference is deprecated but kept for API compatibility
             theme_preference=current_user.theme_preference or 'system',
             created_at=current_user.created_at.isoformat() if current_user.created_at else "",
             updated_at=current_user.updated_at.isoformat() if current_user.updated_at else "",

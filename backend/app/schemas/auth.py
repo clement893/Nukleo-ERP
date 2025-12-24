@@ -59,7 +59,8 @@ class UserResponse(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool
-    theme_preference: str = Field(default='system', description="Theme preference: 'light', 'dark', or 'system'")
+    # Note: theme_preference is deprecated - theme is now global, but kept for API compatibility
+    theme_preference: str = Field(default='system', description="Deprecated: Theme is now global. This field is kept for compatibility.")
     created_at: str
     updated_at: str
 

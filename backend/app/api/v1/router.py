@@ -2,7 +2,7 @@
 API v1 router registration.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import themes, projects, websocket, admin, user_settings
+from app.api.v1.endpoints import themes, projects, websocket, admin
 
 api_router = APIRouter()
 
@@ -31,11 +31,4 @@ api_router.include_router(
     admin.router,
     prefix="/admin",
     tags=["admin"]
-)
-
-# Register user settings endpoints
-api_router.include_router(
-    user_settings.router,
-    prefix="/user-settings",
-    tags=["user-settings"]
 )
