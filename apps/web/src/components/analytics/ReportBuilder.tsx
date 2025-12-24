@@ -187,7 +187,6 @@ export default function ReportBuilder({
                 </div>
                 <Badge
                   variant={field.type === 'metric' ? 'info' : field.type === 'date' ? 'warning' : 'default'}
-                  size="sm"
                 >
                   {field.type}
                 </Badge>
