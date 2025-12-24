@@ -10,7 +10,6 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Alert from '@/components/ui/Alert';
-import Loading from '@/components/ui/Loading';
 import Switch from '@/components/ui/Switch';
 import { useAuthStore } from '@/lib/store';
 import { Save, User, Lock, Bell, Shield } from 'lucide-react';
