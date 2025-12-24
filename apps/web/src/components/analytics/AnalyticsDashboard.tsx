@@ -8,7 +8,6 @@
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Chart, AdvancedCharts } from '@/components/ui';
 import type { ChartDataPoint } from '@/components/ui';
