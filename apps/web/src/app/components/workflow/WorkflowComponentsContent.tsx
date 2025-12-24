@@ -10,6 +10,7 @@ import {
   AutomationRules,
   TriggerManager,
   type AutomationRule,
+  type Trigger,
 } from '@/components/workflow';
 import { logger } from '@/lib/logger';
 import { useState } from 'react';
@@ -47,7 +48,7 @@ export default function WorkflowComponentsContent() {
     },
   ]);
 
-  const [triggers, setTriggers] = useState([
+  const [triggers, setTriggers] = useState<Trigger[]>([
     {
       id: '1',
       name: 'User Created Event',
