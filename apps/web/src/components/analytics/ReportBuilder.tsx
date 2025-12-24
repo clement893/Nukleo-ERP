@@ -68,8 +68,8 @@ export default function ReportBuilder({
     name: '',
     description: '',
     dateRange: {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      end: new Date().toISOString().split('T')[0],
+      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
+      end: new Date().toISOString().split('T')[0]!,
     },
     fields: availableFields.map((f) => ({ ...f, selected: false })),
     format: 'both',
