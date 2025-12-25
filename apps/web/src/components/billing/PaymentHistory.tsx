@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { clsx } from 'clsx';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -67,7 +67,7 @@ export default function PaymentHistory({
     return filtered;
   }, [payments, statusFilter, dateRange]);
 
-  const getStatusBadge = (status: Payment['status']) => {
+  const getStatusBadge = useCallback((status: Payment['status']) => {
     const config = {
       completed: {
         variant: 'success' as const,
@@ -100,7 +100,7 @@ export default function PaymentHistory({
         </span>
       </Badge>
     );
-  };
+  }, []);
 
   const columns = useMemo<Column<Payment>[]>(() => [
     {
