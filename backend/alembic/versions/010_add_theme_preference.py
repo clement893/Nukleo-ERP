@@ -1,7 +1,7 @@
 """Add theme_preference to users table
 
 Revision ID: 010
-Revises: 009
+Revises: 009_add_webhook_events
 Create Date: 2025-01-27 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '010'
-down_revision: Union[str, None] = '009'
+down_revision: Union[str, None] = '009_add_webhook_events'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
