@@ -11,7 +11,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
-import { Save, X, CheckCircle, AlertCircle, Key, Link as LinkIcon } from 'lucide-react';
+import { Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 
 export interface IntegrationConfigField {
@@ -98,17 +98,6 @@ export default function IntegrationConfig({
       setErrors({ submit: 'Failed to save configuration. Please try again.' });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getFieldIcon = (type: IntegrationConfigField['type']) => {
-    switch (type) {
-      case 'password':
-        return <Key className="w-5 h-5" />;
-      case 'url':
-        return <LinkIcon className="w-5 h-5" />;
-      default:
-        return null;
     }
   };
 
