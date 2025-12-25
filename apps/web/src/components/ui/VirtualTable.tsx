@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 
