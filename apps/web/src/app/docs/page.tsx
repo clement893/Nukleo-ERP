@@ -1,10 +1,43 @@
+'use client';
+
+import { useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Button, Container, Badge } from '@/components/ui';
 
 // Force dynamic rendering to avoid CSS file issues during build
 export const dynamic = 'force-dynamic';
 
-export default function DocsPage() {
+function DocsContent() {
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    // Handle hash navigation on page load and when hash changes
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const element = document.querySelector(hash);
+        if (element) {
+          // Small delay to ensure page is rendered
+          setTimeout(() => {
+            const yOffset = -80; // Offset for fixed header if any
+            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }, 150);
+        }
+      }
+    };
+
+    // Handle initial load
+    handleHash();
+
+    // Handle hash changes (when clicking links on the same page)
+    window.addEventListener('hashchange', handleHash);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHash);
+    };
+  }, [searchParams]);
   const sections = [
     {
       title: 'Démarrage Rapide',
@@ -76,7 +109,7 @@ export default function DocsPage() {
       </div>
 
       {/* API Documentation */}
-      <Card className="mb-8">
+      <Card id="api-auth" className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Documentation API</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           La documentation complète de l'API est disponible via Swagger UI. Vous pouvez explorer
@@ -100,17 +133,109 @@ export default function DocsPage() {
         </div>
       </Card>
 
+      {/* API Endpoints */}
+      <Card id="api-endpoints" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Endpoints API</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          L'API REST fournit des endpoints pour l'authentification, la gestion des utilisateurs, des projets et bien plus encore.
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Consultez la documentation Swagger pour la liste complète des endpoints disponibles.
+        </p>
+      </Card>
+
+      {/* API Examples */}
+      <Card id="api-examples" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Exemples API</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Exemples d'utilisation de l'API REST avec différents langages de programmation.
+        </p>
+        <div className="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto border border-gray-700">
+          <code>
+{`// Exemple avec fetch
+const response = await fetch('/api/v1/users', {
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+const data = await response.json();`}
+          </code>
+        </div>
+      </Card>
+
+      {/* Components Section */}
+      <Card id="components-buttons" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Composants UI</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          La bibliothèque de composants inclut des boutons, formulaires, cartes et bien plus encore.
+        </p>
+        <Link href="/components">
+          <Button variant="primary">Explorer les composants</Button>
+        </Link>
+      </Card>
+
+      <Card id="components-forms" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Formulaires</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Composants de formulaire réutilisables avec validation intégrée.
+        </p>
+        <Link href="/components/forms">
+          <Button variant="primary">Voir les formulaires</Button>
+        </Link>
+      </Card>
+
+      <Card id="components-cards" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Cartes</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Composants de carte pour afficher du contenu de manière structurée.
+        </p>
+        <Link href="/components/layout">
+          <Button variant="primary">Voir les cartes</Button>
+        </Link>
+      </Card>
+
+      {/* Guides Section */}
+      <Card id="guides-utilisateurs" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Gestion des utilisateurs</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Guide pour gérer les utilisateurs, les rôles et les permissions dans l'application.
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Accédez au tableau de bord d'administration pour gérer les utilisateurs.
+        </p>
+      </Card>
+
+      <Card id="guides-campagnes" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Création de projets</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Guide pour créer et gérer des projets dans l'application.
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Utilisez le tableau de bord pour créer et organiser vos projets.
+        </p>
+      </Card>
+
+      <Card id="guides-rapports" className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Rapports</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Guide pour générer et consulter les rapports dans l'application.
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Les rapports sont disponibles dans le tableau de bord et peuvent être exportés.
+        </p>
+      </Card>
+
       {/* Getting Started */}
       <Card className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Démarrage Rapide</h2>
         <div className="space-y-6">
-          <div>
+          <div id="installation">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">1. Installation</h3>
             <div className="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto border border-gray-700">
               <code>npm install</code>
             </div>
           </div>
-          <div>
+          <div id="configuration">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">2. Configuration</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-3">
               Créez un fichier <Badge variant="default" className="mx-1">.env.local</Badge> avec vos variables d'environnement :
@@ -123,7 +248,7 @@ export default function DocsPage() {
               </code>
             </div>
           </div>
-          <div>
+          <div id="premiers-pas">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">3. Lancer le serveur</h3>
             <div className="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto border border-gray-700">
               <code>npm run dev</code>
@@ -189,5 +314,20 @@ export default function DocsPage() {
         </div>
       </Card>
     </Container>
+  );
+}
+
+export default function DocsPage() {
+  return (
+    <Suspense fallback={
+      <Container className="py-12">
+        <div className="text-center">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">Documentation</h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400">Chargement...</p>
+        </div>
+      </Container>
+    }>
+      <DocsContent />
+    </Suspense>
   );
 }
