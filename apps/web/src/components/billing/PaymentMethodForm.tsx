@@ -198,9 +198,11 @@ export default function PaymentMethodForm({
             type="submit"
             variant="primary"
             loading={loading}
-            icon={<CheckCircle className="w-4 h-4" />}
           >
-            Save Payment Method
+            <span className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Save Payment Method
+            </span>
           </Button>
         </div>
       </form>
