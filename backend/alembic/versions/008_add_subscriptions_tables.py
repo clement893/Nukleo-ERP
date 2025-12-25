@@ -17,8 +17,61 @@ depends_on = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+
+    # Check if enum types exist, create them if they don't
+    # PostgreSQL enum types are created automatically by SQLAlchemy when creating tables,
+    # but we need to check if they exist first to avoid errors
+    with conn.connection.cursor() as cursor:
+        # Check if planinterval enum exists
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_type WHERE typname = 'planinterval'
+            )
+        """)
+        planinterval_exists = cursor.fetchone()[0]
+        
+        if not planinterval_exists:
+            op.execute("CREATE TYPE planinterval AS ENUM ('MONTH', 'YEAR', 'WEEK', 'DAY')")
+        
+        # Check if planstatus enum exists
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_type WHERE typname = 'planstatus'
+            )
+        """)
+        planstatus_exists = cursor.fetchone()[0]
+        
+        if not planstatus_exists:
+            op.execute("CREATE TYPE planstatus AS ENUM ('ACTIVE', 'INACTIVE', 'ARCHIVED')")
+        
+        # Check if subscriptionstatus enum exists
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_type WHERE typname = 'subscriptionstatus'
+            )
+        """)
+        subscriptionstatus_exists = cursor.fetchone()[0]
+        
+        if not subscriptionstatus_exists:
+            op.execute("CREATE TYPE subscriptionstatus AS ENUM ('ACTIVE', 'CANCELED', 'PAST_DUE', 'UNPAID', 'TRIALING', 'INCOMPLETE', 'INCOMPLETE_EXPIRED')")
+        
+        # Check if invoicestatus enum exists
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_type WHERE typname = 'invoicestatus'
+            )
+        """)
+        invoicestatus_exists = cursor.fetchone()[0]
+        
+        if not invoicestatus_exists:
+            op.execute("CREATE TYPE invoicestatus AS ENUM ('DRAFT', 'OPEN', 'PAID', 'VOID', 'UNCOLLECTIBLE')")
+
     # Create plans table
-    op.create_table(
+    if 'plans' not in tables:
+        op.create_table(
         'plans',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(length=200), nullable=False),
@@ -35,14 +88,27 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_plans_stripe_id', 'plans', ['stripe_price_id'], unique=False)
-    op.create_index('idx_plans_status', 'plans', ['status'], unique=False)
-    op.create_index('idx_plans_interval', 'plans', ['interval'], unique=False)
-    op.create_unique_constraint('uq_plans_stripe_price_id', 'plans', ['stripe_price_id'])
+        )
+        op.create_index('idx_plans_stripe_id', 'plans', ['stripe_price_id'], unique=False)
+        op.create_index('idx_plans_status', 'plans', ['status'], unique=False)
+        op.create_index('idx_plans_interval', 'plans', ['interval'], unique=False)
+        op.create_unique_constraint('uq_plans_stripe_price_id', 'plans', ['stripe_price_id'])
+    else:
+        # Table already exists, ensure indexes and constraints are present
+        indexes = {idx['name'] for idx in inspector.get_indexes('plans')}
+        if 'idx_plans_stripe_id' not in indexes:
+            op.create_index('idx_plans_stripe_id', 'plans', ['stripe_price_id'], unique=False)
+        if 'idx_plans_status' not in indexes:
+            op.create_index('idx_plans_status', 'plans', ['status'], unique=False)
+        if 'idx_plans_interval' not in indexes:
+            op.create_index('idx_plans_interval', 'plans', ['interval'], unique=False)
+        constraints = {c['name'] for c in inspector.get_unique_constraints('plans')}
+        if 'uq_plans_stripe_price_id' not in constraints:
+            op.create_unique_constraint('uq_plans_stripe_price_id', 'plans', ['stripe_price_id'])
 
     # Create subscriptions table
-    op.create_table(
+    if 'subscriptions' not in tables:
+        op.create_table(
         'subscriptions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
@@ -63,16 +129,33 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['plan_id'], ['plans.id'], ),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_subscriptions_user_id', 'subscriptions', ['user_id'], unique=False)
-    op.create_index('idx_subscriptions_status', 'subscriptions', ['status'], unique=False)
-    op.create_index('idx_subscriptions_stripe_id', 'subscriptions', ['stripe_subscription_id'], unique=False)
-    op.create_index('idx_subscriptions_current_period_end', 'subscriptions', ['current_period_end'], unique=False)
-    op.create_index('idx_subscriptions_stripe_customer_id', 'subscriptions', ['stripe_customer_id'], unique=False)
-    op.create_unique_constraint('uq_subscriptions_stripe_subscription_id', 'subscriptions', ['stripe_subscription_id'])
+        )
+        op.create_index('idx_subscriptions_user_id', 'subscriptions', ['user_id'], unique=False)
+        op.create_index('idx_subscriptions_status', 'subscriptions', ['status'], unique=False)
+        op.create_index('idx_subscriptions_stripe_id', 'subscriptions', ['stripe_subscription_id'], unique=False)
+        op.create_index('idx_subscriptions_current_period_end', 'subscriptions', ['current_period_end'], unique=False)
+        op.create_index('idx_subscriptions_stripe_customer_id', 'subscriptions', ['stripe_customer_id'], unique=False)
+        op.create_unique_constraint('uq_subscriptions_stripe_subscription_id', 'subscriptions', ['stripe_subscription_id'])
+    else:
+        # Table already exists, ensure indexes and constraints are present
+        indexes = {idx['name'] for idx in inspector.get_indexes('subscriptions')}
+        if 'idx_subscriptions_user_id' not in indexes:
+            op.create_index('idx_subscriptions_user_id', 'subscriptions', ['user_id'], unique=False)
+        if 'idx_subscriptions_status' not in indexes:
+            op.create_index('idx_subscriptions_status', 'subscriptions', ['status'], unique=False)
+        if 'idx_subscriptions_stripe_id' not in indexes:
+            op.create_index('idx_subscriptions_stripe_id', 'subscriptions', ['stripe_subscription_id'], unique=False)
+        if 'idx_subscriptions_current_period_end' not in indexes:
+            op.create_index('idx_subscriptions_current_period_end', 'subscriptions', ['current_period_end'], unique=False)
+        if 'idx_subscriptions_stripe_customer_id' not in indexes:
+            op.create_index('idx_subscriptions_stripe_customer_id', 'subscriptions', ['stripe_customer_id'], unique=False)
+        constraints = {c['name'] for c in inspector.get_unique_constraints('subscriptions')}
+        if 'uq_subscriptions_stripe_subscription_id' not in constraints:
+            op.create_unique_constraint('uq_subscriptions_stripe_subscription_id', 'subscriptions', ['stripe_subscription_id'])
 
     # Create invoices table
-    op.create_table(
+    if 'invoices' not in tables:
+        op.create_table(
         'invoices',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
@@ -94,14 +177,32 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['subscription_id'], ['subscriptions.id'], ),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_invoices_user_id', 'invoices', ['user_id'], unique=False)
-    op.create_index('idx_invoices_subscription_id', 'invoices', ['subscription_id'], unique=False)
-    op.create_index('idx_invoices_status', 'invoices', ['status'], unique=False)
-    op.create_index('idx_invoices_stripe_id', 'invoices', ['stripe_invoice_id'], unique=False)
-    op.create_index('idx_invoices_due_date', 'invoices', ['due_date'], unique=False)
-    op.create_unique_constraint('uq_invoices_stripe_invoice_id', 'invoices', ['stripe_invoice_id'])
-    op.create_unique_constraint('uq_invoices_invoice_number', 'invoices', ['invoice_number'])
+        )
+        op.create_index('idx_invoices_user_id', 'invoices', ['user_id'], unique=False)
+        op.create_index('idx_invoices_subscription_id', 'invoices', ['subscription_id'], unique=False)
+        op.create_index('idx_invoices_status', 'invoices', ['status'], unique=False)
+        op.create_index('idx_invoices_stripe_id', 'invoices', ['stripe_invoice_id'], unique=False)
+        op.create_index('idx_invoices_due_date', 'invoices', ['due_date'], unique=False)
+        op.create_unique_constraint('uq_invoices_stripe_invoice_id', 'invoices', ['stripe_invoice_id'])
+        op.create_unique_constraint('uq_invoices_invoice_number', 'invoices', ['invoice_number'])
+    else:
+        # Table already exists, ensure indexes and constraints are present
+        indexes = {idx['name'] for idx in inspector.get_indexes('invoices')}
+        if 'idx_invoices_user_id' not in indexes:
+            op.create_index('idx_invoices_user_id', 'invoices', ['user_id'], unique=False)
+        if 'idx_invoices_subscription_id' not in indexes:
+            op.create_index('idx_invoices_subscription_id', 'invoices', ['subscription_id'], unique=False)
+        if 'idx_invoices_status' not in indexes:
+            op.create_index('idx_invoices_status', 'invoices', ['status'], unique=False)
+        if 'idx_invoices_stripe_id' not in indexes:
+            op.create_index('idx_invoices_stripe_id', 'invoices', ['stripe_invoice_id'], unique=False)
+        if 'idx_invoices_due_date' not in indexes:
+            op.create_index('idx_invoices_due_date', 'invoices', ['due_date'], unique=False)
+        constraints = {c['name'] for c in inspector.get_unique_constraints('invoices')}
+        if 'uq_invoices_stripe_invoice_id' not in constraints:
+            op.create_unique_constraint('uq_invoices_stripe_invoice_id', 'invoices', ['stripe_invoice_id'])
+        if 'uq_invoices_invoice_number' not in constraints:
+            op.create_unique_constraint('uq_invoices_invoice_number', 'invoices', ['invoice_number'])
 
 
 def downgrade() -> None:
