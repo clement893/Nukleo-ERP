@@ -102,7 +102,7 @@ export default function PaymentHistory({
     );
   };
 
-  const columns: Column<Payment>[] = [
+  const columns: Column<Payment>[] = useMemo(() => [
     {
       key: 'date',
       label: 'Date',
@@ -176,7 +176,7 @@ export default function PaymentHistory({
         </div>
       ),
     },
-  ];
+  ], [getStatusBadge, onDownloadReceipt]);
 
   const totalAmount = filteredPayments
     .filter((p) => p.status === 'completed')
