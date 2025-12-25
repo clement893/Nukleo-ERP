@@ -188,6 +188,14 @@ export const sitePages: Record<string, SitemapPage[]> = {
       requiresAuth: false, // Page publique
     },
     { 
+      path: '/db/test', 
+      title: 'Database Health Check', 
+      description: 'Page de vérification de la santé de la base de données',
+      priority: 0.5,
+      changefreq: 'monthly',
+      requiresAuth: true, // Protected page
+    },
+    { 
       path: '/monitoring', 
       title: 'Monitoring', 
       description: 'Page de monitoring',

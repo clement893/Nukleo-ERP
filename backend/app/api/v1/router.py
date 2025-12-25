@@ -2,7 +2,7 @@
 API v1 router registration.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health
+from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health
 
 api_router = APIRouter()
 
@@ -66,4 +66,11 @@ api_router.include_router(
     health.router,
     prefix="/health",
     tags=["health"]
+)
+
+# Register database health check endpoints
+api_router.include_router(
+    db_health.router,
+    prefix="/db-health",
+    tags=["database-health"]
 )
