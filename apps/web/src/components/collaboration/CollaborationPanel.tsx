@@ -81,7 +81,7 @@ export default function CollaborationPanel({
               Collaboration
             </h3>
             {onlineCount > 0 && (
-              <Badge variant="success" size="sm">
+              <Badge variant="success">
                 {onlineCount} online
               </Badge>
             )}
