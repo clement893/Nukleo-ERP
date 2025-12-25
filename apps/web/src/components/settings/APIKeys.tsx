@@ -77,7 +77,7 @@ export default function APIKeys({
       await navigator.clipboard.writeText(text);
       logger.info('API key copied to clipboard');
     } catch (error) {
-      logger.error('Failed to copy to clipboard', error);
+      logger.error('Failed to copy to clipboard', error instanceof Error ? error : new Error(String(error)));
     }
   };
 
@@ -95,7 +95,7 @@ export default function APIKeys({
         setSelectedScopes(['read']);
       }
     } catch (error) {
-      logger.error('Failed to create API key', error);
+      logger.error('Failed to create API key', error instanceof Error ? error : new Error(String(error)));
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export default function APIKeys({
     try {
       await onDelete?.(id);
     } catch (error) {
-      logger.error('Failed to delete API key', error);
+      logger.error('Failed to delete API key', error instanceof Error ? error : new Error(String(error)));
     }
   };
 
