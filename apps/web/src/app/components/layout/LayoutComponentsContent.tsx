@@ -61,7 +61,7 @@ export default function LayoutComponentsContent() {
         </Section>
 
         <Section title="Loading State">
-          <LoadingState message="Loading content..." />
+          <LoadingState text="Loading content..." />
         </Section>
 
         <Section title="Error State">
