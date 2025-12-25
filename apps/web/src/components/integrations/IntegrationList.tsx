@@ -244,10 +244,12 @@ export default function IntegrationList({
                       variant="primary"
                       size="sm"
                       onClick={() => onConnect(integration)}
-                      icon={<Plus className="w-4 h-4" />}
                       fullWidth
                     >
-                      Connect
+                      <span className="flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        Connect
+                      </span>
                     </Button>
                   )
                 ) : null}
