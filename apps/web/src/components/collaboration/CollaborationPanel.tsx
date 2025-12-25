@@ -67,7 +67,7 @@ export default function CollaborationPanel({
       editor: 'primary' as const,
       viewer: 'default' as const,
     };
-    return <Badge variant={variants[role]} size="sm">{role}</Badge>;
+    return <Badge variant={variants[role]}>{role}</Badge>;
   };
 
   return (
