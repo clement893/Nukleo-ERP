@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Card from '@/components/ui/Card';
 import { apiClient } from '@/lib/api/client';
-import { Loader2, Send, Bot, User, Settings } from 'lucide-react';
+import { Loader2, Send, Bot, User } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -66,12 +66,30 @@ export function AIChat({
         content: msg.content,
       }));
 
-      const response = await apiClient.post('/api/v1/ai/chat', {
+      interface ChatResponse {
+        content: string;
+        model: string;
+        provider: string;
+        usage: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+          input_tokens?: number;
+          output_tokens?: number;
+        };
+        finish_reason: string;
+      }
+
+      const response = await apiClient.post<ChatResponse>('/api/v1/ai/chat', {
         messages: apiMessages,
         provider: currentProvider,
         model,
         system_prompt: systemPrompt,
       });
+
+      if (!response.data) {
+        throw new Error('No data received from AI service');
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
@@ -218,7 +236,7 @@ export function AIChat({
           <Input
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             disabled={isLoading}
@@ -227,7 +245,6 @@ export function AIChat({
           <Button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
-            size="default"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

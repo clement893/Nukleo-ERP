@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '@/components/ui';
-import { apiClient } from '@/lib/api/client';
 
 interface PerformanceMetrics {
   lcp: number | null;

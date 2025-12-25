@@ -116,7 +116,7 @@ export function preloadImage(src: string) {
 /**
  * Preload fonts
  */
-export function preloadFont(href: string, type: 'woff2' | 'woff' | 'ttf' = 'woff2') {
+export function preloadFont(href: string) {
   preloadResource(href, 'font');
 }
 
