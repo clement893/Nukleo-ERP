@@ -48,11 +48,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Import logger dynamically to avoid SSR issues
     if (typeof window !== 'undefined') {
-      import('@/lib/logger').then(({ logger }) => {
-        logger.error('ErrorBoundary caught an error', error, {
-          componentStack: errorInfo.componentStack,
+      import('@/lib/logger')
+        .then(({ logger }) => {
+          logger.error('ErrorBoundary caught an error', error, {
+            componentStack: errorInfo.componentStack,
+          });
+        })
+        .catch((importError) => {
+          // Fallback to console if logger import fails
+          console.error('ErrorBoundary caught an error (logger unavailable):', error, {
+            componentStack: errorInfo.componentStack,
+            importError,
+          });
         });
-      });
     }
 
     // Call optional error handler

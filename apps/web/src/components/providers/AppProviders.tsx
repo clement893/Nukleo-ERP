@@ -14,6 +14,7 @@ import { getQueryClient } from '@/lib/query/queryClient';
 import { GlobalThemeProvider } from '@/lib/theme/global-theme-provider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useThemeManager } from '@/components/theme/hooks';
+import { GlobalErrorHandler } from './GlobalErrorHandler';
 import { useState, type ReactNode } from 'react';
 
 /**
@@ -37,6 +38,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     <GlobalThemeProvider>
       <ThemeProvider>
         <ThemeManagerInitializer>
+          <GlobalErrorHandler />
           <QueryClientProvider client={queryClient}>
             <NextAuthSessionProvider>
               {children}
