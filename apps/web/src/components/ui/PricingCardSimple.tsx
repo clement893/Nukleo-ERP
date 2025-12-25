@@ -25,7 +25,7 @@ interface PricingCardSimpleProps {
 export default function PricingCardSimple({
   plan,
   billingPeriod,
-  onSelect,
+  onSelect: _onSelect,
 }: PricingCardSimpleProps) {
   const calculatePrice = () => {
     if (billingPeriod === 'year') {
