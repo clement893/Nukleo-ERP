@@ -140,11 +140,12 @@ export default function AnalyticsDashboard({
           <select
             value={selectedPeriod}
             onChange={(e) => {
-              setSelectedPeriod(e.target.value as any);
-              if (e.target.value !== 'custom' && onDateRangeChange) {
+              const value = e.target.value as '7d' | '30d' | '90d' | '1y' | 'custom';
+              setSelectedPeriod(value);
+              if (value !== 'custom' && onDateRangeChange) {
                 const end = new Date();
                 const start = new Date();
-                switch (e.target.value) {
+                switch (value) {
                   case '7d':
                     start.setDate(end.getDate() - 7);
                     break;

@@ -10,6 +10,7 @@ import { clsx } from 'clsx';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import type { ColorVariant } from '@/components/ui/types';
 import { Search, Plus, CheckCircle, XCircle, Settings, ExternalLink } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 
@@ -33,14 +34,14 @@ export interface IntegrationListProps {
   className?: string;
 }
 
-const categoryColors = {
+const categoryColors: Record<Integration['category'], ColorVariant> = {
   payment: 'success',
   communication: 'info',
   storage: 'warning',
-  analytics: 'primary',
+  analytics: 'info', // Changed from 'primary' to 'info' since Badge doesn't support 'primary'
   marketing: 'error',
   other: 'default',
-} as const;
+};
 
 export default function IntegrationList({
   integrations,
@@ -191,7 +192,7 @@ export default function IntegrationList({
                       {integration.name}
                     </h4>
                     <Badge
-                      variant={categoryColors[integration.category] as any}
+                      variant={categoryColors[integration.category]}
                       className="mt-1"
                     >
                       {integration.category}

@@ -10,6 +10,7 @@ import { clsx } from 'clsx';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import type { ColorVariant } from '@/components/ui/types';
 import { Book, Code, Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
@@ -42,13 +43,13 @@ export interface APIDocumentationProps {
   className?: string;
 }
 
-const methodColors = {
+const methodColors: Record<APIEndpoint['method'], ColorVariant> = {
   GET: 'success',
-  POST: 'primary',
+  POST: 'info', // Changed from 'primary' to 'info' since Badge doesn't support 'primary'
   PUT: 'warning',
   DELETE: 'error',
   PATCH: 'info',
-} as const;
+};
 
 const defaultEndpoints: APIEndpoint[] = [
   {
@@ -211,7 +212,7 @@ export default function APIDocumentation({
                   ) : (
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                   )}
-                  <Badge variant={methodColors[endpoint.method] as any}>
+                  <Badge variant={methodColors[endpoint.method]}>
                     {endpoint.method}
                   </Badge>
                   <code className="text-sm font-mono text-gray-900 dark:text-gray-100">

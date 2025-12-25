@@ -120,3 +120,4 @@ if __name__ == "__main__":
         print("\n❌ Failed to make user superadmin.")
         sys.exit(1)
 
+

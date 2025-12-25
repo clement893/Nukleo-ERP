@@ -9,6 +9,7 @@ import { useState, useMemo } from 'react';
 import { clsx } from 'clsx';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import type { ColorVariant } from '@/components/ui/types';
 import DataTable from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { Shield, Filter } from 'lucide-react';
@@ -56,7 +57,7 @@ export interface AuditFilters {
   };
 }
 
-const actionColors = {
+const actionColors: Record<AuditTrailEntry['action'], ColorVariant> = {
   create: 'success',
   update: 'info',
   delete: 'error',
@@ -64,7 +65,7 @@ const actionColors = {
   export: 'info',
   login: 'success',
   logout: 'default',
-} as const;
+};
 
 export default function AuditTrail({
   entries,
@@ -159,7 +160,7 @@ export default function AuditTrail({
       render: (value) => {
         const action = value as AuditTrailEntry['action'];
         const color = actionColors[action] || 'default';
-        return <Badge variant={color as any}>{action}</Badge>;
+        return <Badge variant={color}>{action}</Badge>;
       },
     },
     {

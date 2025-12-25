@@ -130,7 +130,7 @@ export default function DataExport({
             {formatOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => setConfig({ ...config, format: option.value as any })}
+                onClick={() => setConfig({ ...config, format: option.value as ExportConfig['format'] })}
                 className={clsx(
                   'p-4 border-2 rounded-lg transition-all',
                   'flex flex-col items-center gap-2',

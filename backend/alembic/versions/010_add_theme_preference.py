@@ -42,3 +42,4 @@ def downgrade() -> None:
     # Remove theme_preference column
     op.drop_column('users', 'theme_preference')
 
+

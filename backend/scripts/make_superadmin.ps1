@@ -52,3 +52,4 @@ if (Get-Command psql -ErrorAction SilentlyContinue) {
     Write-Host "`nOr use the SQL file: backend/scripts/make_superadmin_simple.sql" -ForegroundColor Cyan
 }
 
+
