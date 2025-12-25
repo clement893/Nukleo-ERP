@@ -158,7 +158,7 @@ export default function InvoiceList({
           </select>
         </div>
       </div>
-      <DataTable
+      <DataTable<Invoice>
         data={filteredInvoices}
         columns={columns}
         pageSize={10}
