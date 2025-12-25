@@ -176,13 +176,19 @@ export default function IntegrationConfig({
             </div>
             <div className="flex items-center gap-3">
               {testResult === 'success' && (
-                <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>
-                  Connection Successful
+                <Badge variant="success">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Connection Successful
+                  </span>
                 </Badge>
               )}
               {testResult === 'error' && (
-                <Badge variant="error" icon={<AlertCircle className="w-3 h-3" />}>
-                  Connection Failed
+                <Badge variant="error">
+                  <span className="flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Connection Failed
+                  </span>
                 </Badge>
               )}
               <Button variant="outline" size="sm" onClick={handleTest}>
