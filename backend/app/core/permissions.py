@@ -26,8 +26,10 @@ from typing import List, Optional, Callable, Any
 from functools import wraps
 from fastapi import HTTPException, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.models.user import User
+from app.models.role import Role, UserRole
 from app.core.database import get_db
 from app.core.auth import get_current_user
 
@@ -83,15 +85,29 @@ def get_user_permissions(user: User, db: AsyncSession) -> List[str]:
     """
     permissions = []
     
-    # Superuser has all permissions
-    if user.is_superuser:
-        permissions.append(Permission.ADMIN_ALL)
-        return permissions
-    
-    # Get role-based permissions
+    # Check if user has SuperAdmin role (has all permissions)
+    # SuperAdmin role grants admin:* permission
+    # Note: Roles must be loaded via relationship (e.g., selectinload(User.roles))
     if hasattr(user, 'roles') and user.roles:
-        for role in user.roles:
-            permissions.extend(get_role_permissions(role.name))
+        for user_role in user.roles:
+            # UserRole has a 'role' relationship to Role
+            if hasattr(user_role, 'role') and user_role.role:
+                role = user_role.role
+                if hasattr(role, 'slug') and role.slug == "superadmin":
+                    if hasattr(role, 'is_active') and role.is_active:
+                        permissions.append(Permission.ADMIN_ALL)
+                        return permissions
+    
+    # Get role-based permissions from user's roles
+    if hasattr(user, 'roles') and user.roles:
+        for user_role in user.roles:
+            if hasattr(user_role, 'role') and user_role.role:
+                role = user_role.role
+                # Check by slug first (more reliable), then by name
+                if hasattr(role, 'slug'):
+                    permissions.extend(get_role_permissions(role.slug))
+                elif hasattr(role, 'name'):
+                    permissions.extend(get_role_permissions(role.name))
     
     # Default user permissions
     permissions.extend([
@@ -116,7 +132,7 @@ def get_role_permissions(role_name: str) -> List[str]:
     """
     Get permissions for a role.
     
-    @param role_name - Name of the role
+    @param role_name - Name of the role (or slug)
     @returns List of permission strings
     
     @example
@@ -126,6 +142,9 @@ def get_role_permissions(role_name: str) -> List[str]:
     ```
     """
     role_permissions = {
+        "superadmin": [
+            Permission.ADMIN_ALL,  # SuperAdmin has all permissions
+        ],
         "admin": [
             Permission.ADMIN_ALL,
             Permission.LIST_USERS,
