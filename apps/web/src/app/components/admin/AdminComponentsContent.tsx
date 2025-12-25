@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 import InvitationManagement from '@/components/admin/InvitationManagement';
 import RoleManagement from '@/components/admin/RoleManagement';
 import TeamManagement from '@/components/admin/TeamManagement';
-import ThemeManager from '@/components/admin/themes/ThemeManager';
+import { AdminThemeManager } from '@/components/admin/themes/AdminThemeManager';
 import { Card } from '@/components/ui';
 
 export default function AdminComponentsContent() {
@@ -161,9 +161,9 @@ export default function AdminComponentsContent() {
         <Section title="Theme Manager (Super Admin)">
           <Card className="p-6">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              ThemeManager allows super admins to manage global themes that apply to all users.
+              AdminThemeManager allows super admins to manage global themes that apply to all users.
             </p>
-            <ThemeManager />
+            <AdminThemeManager authToken="" />
           </Card>
         </Section>
       </div>
