@@ -15,7 +15,9 @@ from app.models.subscription import SubscriptionStatus
 
 # Configure Stripe timeout (handled automatically in recent versions)
 # Stripe SDK handles timeouts internally
-# Note: In recent Stripe versions, exceptions are directly in stripe module, not stripe.error
+# 
+# IMPORTANT: In recent Stripe versions, exceptions are directly in stripe module, not stripe.error
+# Always import exceptions from 'stripe' module, e.g., from stripe import StripeError
 
 
 class StripeService:

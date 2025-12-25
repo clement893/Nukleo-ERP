@@ -213,8 +213,10 @@ def create_app() -> FastAPI:
         
         if environment == "production":
             # Strict CSP for production - no unsafe-inline or unsafe-eval
-            # ⚠️ SECURITY NOTE: Production CSP is strict (no unsafe-inline/unsafe-eval)
+            # 
+            # SECURITY: Production CSP is strict (no unsafe-inline/unsafe-eval)
             # Use nonces for inline scripts/styles in production
+            # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
             csp_policy = (
                 "default-src 'self'; "
                 "script-src 'self'; "  # Strict: no unsafe-inline/eval (use nonces)
@@ -228,8 +230,10 @@ def create_app() -> FastAPI:
             )
         else:
             # Relaxed CSP for development
-            # ⚠️ SECURITY NOTE: CSP is relaxed in development (unsafe-inline/unsafe-eval)
-            # This is acceptable for dev but should be tightened in production using nonces
+            # 
+            # SECURITY: CSP is relaxed in development (unsafe-inline/unsafe-eval)
+            # This is acceptable for dev but MUST be tightened in production using nonces
+            # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
             csp_policy = (
                 "default-src 'self'; "
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Development only

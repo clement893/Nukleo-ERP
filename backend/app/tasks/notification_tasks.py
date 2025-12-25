@@ -37,7 +37,7 @@ def send_notification_task(
         
         # Get user email if not provided
         if email_notification and not user_email:
-            # Note: In a real implementation, you'd use async database session
+            # TODO: Consider using async database session for better performance
             # For now, we'll log and try to send email if email service is available
             logger.info(f"Notification task: user_id={user_id}, title={title}, type={notification_type}")
         
@@ -82,7 +82,8 @@ def send_notification_task(
                 # Don't fail the whole task if email fails
         
         # Send WebSocket notification if user is connected
-        # Note: This is a best-effort attempt, WebSocket may not be available in Celery context
+        # NOTE: This is a best-effort attempt, WebSocket may not be available in Celery context
+        # WebSocket connections are managed in the main application context
         try:
             from app.api.v1.endpoints.websocket import manager
             # Try to send via WebSocket (non-blocking)

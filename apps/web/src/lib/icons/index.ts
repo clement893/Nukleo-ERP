@@ -41,6 +41,7 @@ export {
   AlertTriangle,
   Info,
   Loader,
+  RefreshCw,
   
   // Files
   File,
@@ -62,6 +63,14 @@ export {
   Clock,
   Star,
   Heart,
+  Globe,
+  Settings,
+  Edit,
+  Database,
+  Zap,
+  Workflow,
+  CreditCard,
+  DollarSign,
   
   // Charts & Data
   BarChart3,
@@ -75,6 +84,10 @@ export {
   Pause,
   Volume2,
   VolumeX,
+  Maximize,
+  Minimize,
+  SkipBack,
+  SkipForward,
 } from 'lucide-react';
 
 // Type exports for TypeScript

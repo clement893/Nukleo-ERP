@@ -14,7 +14,7 @@ import Select from '@/components/ui/Select';
 import type { SelectOption } from '@/components/ui/Select';
 import Switch from '@/components/ui/Switch';
 import Badge from '@/components/ui/Badge';
-import { Plus, Trash2, Zap, Settings } from 'lucide-react';
+import { Plus, Trash2, Zap, Settings } from '@/lib/icons';
 import { logger } from '@/lib/logger';
 
 export interface AutomationRule {

@@ -17,7 +17,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { locales, localeNames, localeNativeNames, isRTL, type Locale } from '@/i18n/routing';
 import { useState } from 'react';
-import { Globe, Check } from 'lucide-react';
+import { Globe, Check } from '@/lib/icons';
 import Button from '@/components/ui/Button';
 import { clsx } from 'clsx';
 

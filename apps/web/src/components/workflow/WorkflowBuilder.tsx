@@ -13,7 +13,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import type { SelectOption } from '@/components/ui/Select';
 import Badge from '@/components/ui/Badge';
-import { Save, Play, Plus, Trash2, Workflow, Zap, CheckCircle } from 'lucide-react';
+import { Save, Play, Plus, Trash2, Workflow, Zap, CheckCircle } from '@/lib/icons';
 
 export interface WorkflowNode {
   id: string;

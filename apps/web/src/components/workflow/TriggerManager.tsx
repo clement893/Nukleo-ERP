@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Switch from '@/components/ui/Switch';
 import type { ColorVariant } from '@/components/ui/types';
-import { Zap, Plus, Trash2, Edit, CheckCircle, Calendar, Database } from 'lucide-react';
+import { Zap, Plus, Trash2, Edit, CheckCircle, Calendar, Database } from '@/lib/icons';
 import { logger } from '@/lib/logger';
 
 export interface Trigger {

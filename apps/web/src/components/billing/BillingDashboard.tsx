@@ -32,7 +32,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Chart } from '@/components/ui';
 import type { ChartDataPoint } from '@/components/ui';
-import { CreditCard, TrendingUp, DollarSign, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
+import { CreditCard, TrendingUp, DollarSign, Calendar, AlertCircle, CheckCircle } from '@/lib/icons';
 
 export interface BillingDashboardProps {
   /** Additional CSS classes */

@@ -55,8 +55,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             )
         
         # Content Security Policy
-        # ⚠️ SECURITY NOTE: CSP is relaxed in development (unsafe-inline/unsafe-eval)
-        # This is acceptable for dev but should be tightened in production using nonces
+        # 
+        # SECURITY: CSP is relaxed in development (unsafe-inline/unsafe-eval)
+        # This is acceptable for dev but MUST be tightened in production using nonces
+        # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
         # In production, use strict CSP without unsafe-inline/unsafe-eval
         csp_policy = (
             "default-src 'self'; "

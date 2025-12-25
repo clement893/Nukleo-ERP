@@ -68,7 +68,9 @@ class QueryOptimizer:
         """
         # PostgreSQL index hints via text()
         from sqlalchemy import text
-        # Note: This is a simplified example - actual implementation depends on use case
+        # 
+        # NOTE: This is a simplified example - actual implementation depends on use case
+        # Override this method in your specific query optimization classes for production use
         return query
     
     @staticmethod

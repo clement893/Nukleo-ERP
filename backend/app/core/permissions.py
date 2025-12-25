@@ -87,7 +87,9 @@ def get_user_permissions(user: User, db: AsyncSession) -> List[str]:
     
     # Check if user has SuperAdmin role (has all permissions)
     # SuperAdmin role grants admin:* permission
-    # Note: Roles must be loaded via relationship (e.g., selectinload(User.roles))
+    # 
+    # IMPORTANT: Roles must be loaded via relationship (e.g., selectinload(User.roles))
+    # when querying users to ensure proper permission checking.
     if hasattr(user, 'roles') and user.roles:
         for user_role in user.roles:
             # UserRole has a 'role' relationship to Role

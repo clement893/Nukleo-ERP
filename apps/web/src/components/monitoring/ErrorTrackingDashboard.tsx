@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { AlertCircle, TrendingUp, RefreshCw, XCircle, AlertTriangle } from 'lucide-react';
+import { AlertCircle, TrendingUp, RefreshCw, XCircle, AlertTriangle } from '@/lib/icons';
 import { useErrorTracking } from '@/hooks/monitoring/useErrorTracking';
 import { ErrorStatisticsService } from '@/services/errorStatisticsService';
 import { getErrorLevelConfig } from '@/utils/errorLevelUtils';

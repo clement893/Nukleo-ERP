@@ -55,7 +55,8 @@ class RequestSigningMiddleware(BaseHTTPMiddleware):
         # Compute expected signature
         body = b""
         if request.method in ["POST", "PUT", "PATCH"]:
-            # Note: Reading body here consumes it, so we need to handle this carefully
+            # IMPORTANT: Reading body here consumes it, so we need to handle this carefully
+            # The body is cached by FastAPI middleware, but be aware of this limitation
             # In practice, you might want to cache the body or use a different approach
             pass
         

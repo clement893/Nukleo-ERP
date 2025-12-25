@@ -73,8 +73,12 @@ class UserResponse(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool
-    # Note: theme_preference is deprecated - theme is now global, but kept for API compatibility
-    theme_preference: str = Field(default='system', description="Deprecated: Theme is now global. This field is kept for compatibility.")
+    # DEPRECATED: theme_preference is kept for API compatibility only
+    # Theme management is now handled globally via the theme system
+    theme_preference: str = Field(
+        default='system', 
+        description="DEPRECATED: Theme is now global. This field is kept for backward compatibility only."
+    )
     created_at: str
     updated_at: str
 
