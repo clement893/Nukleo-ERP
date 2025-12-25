@@ -1,49 +1,88 @@
-// @ts-nocheck - Sentry is optional and may not be installed
 /**
  * Sentry Client Configuration
- * This file configures Sentry for the client-side
- * Sentry is optional - this file will no-op if @sentry/nextjs is not installed
+ * This file configures Sentry for the browser/client-side
  */
 
-let Sentry: any = null;
+import * as Sentry from '@sentry/nextjs';
 
-try {
-  // Construct module name dynamically to prevent webpack static analysis
-  const moduleParts = ['@sentry', '/', 'nextjs'];
-  const moduleName = moduleParts.join('');
-  Sentry = typeof require !== 'undefined' ? require(moduleName) : null;
-} catch {
-  // Sentry not installed, continue without it
-}
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const SENTRY_ENVIRONMENT = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development';
+const SENTRY_RELEASE = process.env.NEXT_PUBLIC_SENTRY_RELEASE || process.env.NEXT_PUBLIC_APP_VERSION || 'unknown';
 
-if (Sentry && process.env.NEXT_PUBLIC_SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    debug: process.env.NODE_ENV === 'development',
-    replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    integrations: [
-      new Sentry.BrowserTracing({
-        tracePropagationTargets: [
-          'localhost',
-          /^https:\/\/.*\.sentry\.io\/api/,
-          process.env.NEXT_PUBLIC_API_URL || '',
-        ],
-      }),
-      new Sentry.Replay({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-    ],
-    beforeSend(event, hint) {
-      // Filter out sensitive data
-      if (event.request) {
-        delete event.request.cookies;
-        delete event.request.headers?.authorization;
+Sentry.init({
+  dsn: SENTRY_DSN,
+  environment: SENTRY_ENVIRONMENT,
+  release: SENTRY_RELEASE,
+  
+  // Performance Monitoring
+  tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0, // 10% in prod, 100% in dev
+  
+  // Session Replay (optional - can be expensive)
+  replaysSessionSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0,
+  replaysOnErrorSampleRate: 1.0, // Always record sessions with errors
+  
+  // Integrations
+  integrations: [
+    Sentry.replayIntegration({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+    Sentry.browserTracingIntegration(),
+  ],
+  
+  // Error filtering
+  beforeSend(event, hint) {
+    // Don't send errors in development unless explicitly enabled
+    if (SENTRY_ENVIRONMENT === 'development' && process.env.NEXT_PUBLIC_SENTRY_ENABLE_DEV !== 'true') {
+      return null;
+    }
+    
+    // Filter out known non-critical errors
+    const error = hint.originalException;
+    if (error instanceof Error) {
+      // Ignore network errors that are likely user-related (offline, etc.)
+      if (
+        error.message.includes('NetworkError') ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('Network request failed')
+      ) {
+        return null;
       }
-      return event;
+      
+      // Ignore ResizeObserver errors (common browser quirk)
+      if (error.message.includes('ResizeObserver loop')) {
+        return null;
+      }
+    }
+    
+    return event;
+  },
+  
+  // Ignore specific URLs
+  ignoreErrors: [
+    // Browser extensions
+    'top.GLOBALS',
+    'originalCreateNotification',
+    'canvas.contentDocument',
+    'MyApp_RemoveAllHighlights',
+    'atomicFindClose',
+    'fb_xd_fragment',
+    'bmi_SafeAddOnload',
+    'EBCallBackMessageReceived',
+    'conduitPage',
+    
+    // Network errors
+    'NetworkError',
+    'Failed to fetch',
+    
+    // ResizeObserver
+    'ResizeObserver loop',
+  ],
+  
+  // Set user context
+  initialScope: {
+    tags: {
+      component: 'client',
     },
-  });
-}
+  },
+});

@@ -15,7 +15,7 @@ export interface WebVitalsReport {
 }
 
 /**
- * Send Web Vitals to analytics endpoint
+ * Send Web Vitals to analytics endpoint and Sentry
  */
 function sendToAnalytics(metric: Metric) {
   const body = JSON.stringify({
@@ -26,6 +26,45 @@ function sendToAnalytics(metric: Metric) {
     id: metric.id,
     navigationType: metric.navigationType,
   });
+
+  // Send to Sentry for performance monitoring
+  if (typeof window !== 'undefined') {
+    // Use dynamic import to avoid bundling issues
+    import('@sentry/nextjs')
+      .then((Sentry) => {
+        // Track performance metric in Sentry
+        Sentry.metrics.distribution(`web_vital.${metric.name.toLowerCase()}`, metric.value, {
+          unit: 'millisecond',
+          tags: {
+            rating: metric.rating,
+            navigationType: metric.navigationType,
+          },
+        });
+
+        // If metric is poor, capture as an issue
+        if (metric.rating === 'poor') {
+          Sentry.captureMessage(`Poor ${metric.name} performance`, {
+            level: 'warning',
+            tags: {
+              metric: metric.name,
+              rating: metric.rating,
+              value: metric.value.toString(),
+            },
+            extra: {
+              delta: metric.delta,
+              id: metric.id,
+              navigationType: metric.navigationType,
+            },
+          });
+        }
+      })
+      .catch(() => {
+        // Sentry not available or not configured - silently fail
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[Web Vitals] Sentry not configured');
+        }
+      });
+  }
 
   // Send to analytics endpoint (defaults to internal endpoint)
   const analyticsEndpoint = 

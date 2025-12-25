@@ -31,6 +31,7 @@
   "dependencies": {
     "@axe-core/react": "^4.11.0",
     "@modele/types": "workspace:*",
+    "@sentry/nextjs": "^10.32.1",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-query-devtools": "^5.91.1",
     "axios": "^1.6.2",

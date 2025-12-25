@@ -10,6 +10,14 @@ export async function register() {
     // Server-side only
     const { validateAndLogEnvironmentVariables } = await import('@/lib/utils/envValidation');
     
+    // Initialize Sentry server-side
+    // Note: Sentry is automatically initialized via sentry.server.config.ts
+    // This is just a placeholder for any additional server-side initialization
+    if (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      // Sentry will be initialized automatically by @sentry/nextjs
+      // No manual initialization needed here
+    }
+    
     // Validate environment variables on server startup
     validateAndLogEnvironmentVariables();
   }

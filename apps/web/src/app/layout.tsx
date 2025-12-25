@@ -5,6 +5,7 @@ import AppProviders from '@/components/providers/AppProviders';
 import { App } from './app';
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter';
 import { PerformanceScripts } from '@/components/performance/PerformanceScripts';
+import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -57,11 +58,13 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <PerformanceScripts />
-        <AppProviders>
-          <App>
-            {children}
-          </App>
-        </AppProviders>
+        <ErrorBoundary>
+          <AppProviders>
+            <App>
+              {children}
+            </App>
+          </AppProviders>
+        </ErrorBoundary>
         <WebVitalsReporter />
       </body>
     </html>

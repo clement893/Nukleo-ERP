@@ -1,34 +1,50 @@
-// @ts-nocheck - Sentry is optional and may not be installed
 /**
  * Sentry Server Configuration
- * This file configures Sentry for the server-side
- * Sentry is optional - this file will no-op if @sentry/nextjs is not installed
+ * This file configures Sentry for the Node.js server-side
  */
 
-let Sentry: any = null;
+import * as Sentry from '@sentry/nextjs';
 
-try {
-  // Construct module name dynamically to prevent webpack static analysis
-  const moduleParts = ['@sentry', '/', 'nextjs'];
-  const moduleName = moduleParts.join('');
-  Sentry = typeof require !== 'undefined' ? require(moduleName) : null;
-} catch {
-  // Sentry not installed, continue without it
-}
+const SENTRY_DSN = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development';
+const SENTRY_RELEASE = process.env.SENTRY_RELEASE || process.env.NEXT_PUBLIC_APP_VERSION || 'unknown';
 
-if (Sentry && (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    debug: process.env.NODE_ENV === 'development',
-    beforeSend(event, hint) {
-      // Filter out sensitive data
-      if (event.request) {
-        delete event.request.cookies;
-        delete event.request.headers?.authorization;
+Sentry.init({
+  dsn: SENTRY_DSN,
+  environment: SENTRY_ENVIRONMENT,
+  release: SENTRY_RELEASE,
+  
+  // Performance Monitoring
+  tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0,
+  
+  // Integrations
+  integrations: [
+    Sentry.nodeProfilingIntegration(),
+  ],
+  
+  // Error filtering
+  beforeSend(event, hint) {
+    // Don't send errors in development unless explicitly enabled
+    if (SENTRY_ENVIRONMENT === 'development' && process.env.SENTRY_ENABLE_DEV !== 'true') {
+      return null;
+    }
+    
+    // Filter out known non-critical errors
+    const error = hint.originalException;
+    if (error instanceof Error) {
+      // Ignore validation errors (these are expected)
+      if (error.name === 'ValidationError' || error.message.includes('validation')) {
+        return null;
       }
-      return event;
+    }
+    
+    return event;
+  },
+  
+  // Set server context
+  initialScope: {
+    tags: {
+      component: 'server',
     },
-  });
-}
+  },
+});

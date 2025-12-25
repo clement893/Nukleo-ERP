@@ -15,6 +15,7 @@ import Select from '@/components/ui/Select';
 import Checkbox from '@/components/ui/Checkbox';
 import Alert from '@/components/ui/Alert';
 import { logger } from '@/lib/logger';
+import { captureMessage, addBreadcrumb } from '@/lib/monitoring/sentry';
 
 export interface ErrorReportingProps {
   onSubmit?: (data: ErrorReportData) => Promise<void>;
@@ -64,11 +65,35 @@ export default function ErrorReporting({
     setSubmitSuccess(false);
 
     try {
+      // Add breadcrumb for Sentry
+      addBreadcrumb('Error report submitted', 'user-action', 'info', {
+        title: formData.title,
+        severity: formData.severity,
+        category: formData.category,
+      });
+
       if (onSubmit) {
         await onSubmit(formData);
       } else {
-        // Default: log to logger and simulate API call
+        // Default: log to logger and Sentry
         logger.info('Error Report', { formData });
+        
+        // Send to Sentry as a message
+        captureMessage(`User Error Report: ${formData.title}`, 'info', {
+          tags: {
+            severity: formData.severity,
+            category: formData.category,
+          },
+          extra: {
+            description: formData.description,
+            stepsToReproduce: formData.stepsToReproduce,
+            expectedBehavior: formData.expectedBehavior,
+            actualBehavior: formData.actualBehavior,
+            url: formData.url,
+            userAgent: formData.userAgent,
+          },
+        });
+        
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 

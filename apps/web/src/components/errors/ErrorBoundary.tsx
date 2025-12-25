@@ -1,57 +1,142 @@
 /**
- * Error Boundary Component
- * Catches React errors and displays error UI
+ * Error Boundary Component with Sentry Integration
+ * Catches React errors and reports them to Sentry
  */
 
 'use client';
 
-import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { logger } from '@/lib/logger';
-import { AppError } from '@/lib/errors/AppError';
-import { ErrorDisplay } from './ErrorDisplay';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  showDetails?: boolean;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null;
+  eventId: string | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      eventId: null,
+    };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
-  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    logger.error('Error caught by boundary', error, {
-      componentStack: errorInfo.componentStack,
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Log error to Sentry
+    const eventId = Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+      tags: {
+        errorBoundary: true,
+      },
     });
 
+    this.setState({
+      error,
+      errorInfo,
+      eventId,
+    });
+
+    // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
+
+    // Log to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    }
   }
 
-  override render(): ReactNode {
-    if (this.state.hasError && this.state.error) {
+  handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      eventId: null,
+    });
+  };
+
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      // Use custom fallback if provided
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
+      // Default error UI
       return (
-        <ErrorDisplay
-          error={this.state.error instanceof AppError ? this.state.error : undefined}
-          onReset={() => this.setState({ hasError: false, error: null })}
-        />
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
+          <Card className="max-w-2xl w-full">
+            <div className="space-y-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Something went wrong
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                  We're sorry, but something unexpected happened. Our team has been notified.
+                </p>
+              </div>
+
+              {this.state.eventId && (
+                <Alert variant="info">
+                  Error ID: {this.state.eventId}
+                </Alert>
+              )}
+
+              {this.props.showDetails && this.state.error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">
+                    Error Details
+                  </h3>
+                  <pre className="text-xs text-red-800 dark:text-red-200 overflow-auto">
+                    {this.state.error.toString()}
+                    {this.state.errorInfo?.componentStack && (
+                      <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800">
+                        {this.state.errorInfo.componentStack}
+                      </div>
+                    )}
+                  </pre>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <Button variant="primary" onClick={this.handleReset}>
+                  Try Again
+                </Button>
+                <Button variant="secondary" onClick={this.handleReload}>
+                  Reload Page
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
       );
     }
 
@@ -59,3 +144,19 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
+/**
+ * Hook to manually trigger error boundary
+ */
+export function useErrorHandler() {
+  return (error: Error, errorInfo?: ErrorInfo) => {
+    Sentry.captureException(error, {
+      contexts: {
+        react: errorInfo
+          ? {
+              componentStack: errorInfo.componentStack,
+            }
+          : undefined,
+      },
+    });
+  };
+}
