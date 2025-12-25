@@ -64,7 +64,7 @@ export default function CollaborationPanel({
   const getRoleBadge = (role: Collaborator['role']) => {
     const variants = {
       owner: 'error' as const,
-      editor: 'primary' as const,
+      editor: 'info' as const,
       viewer: 'default' as const,
     };
     return <Badge variant={variants[role]}>{role}</Badge>;
