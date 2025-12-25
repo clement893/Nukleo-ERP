@@ -10,7 +10,7 @@ import { clsx } from 'clsx';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Switch from '@/components/ui/Switch';
-import { Save, Eye, EyeOff, Database, Trash2, Download, Shield } from 'lucide-react';
+import { Save, Eye, Database, Trash2, Download, Shield } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 
 export interface PrivacySettingsProps {
