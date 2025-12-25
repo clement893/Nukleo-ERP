@@ -161,7 +161,6 @@ export default function WebhookManager({
                       {webhook.lastStatus && (
                         <Badge
                           variant={webhook.lastStatus === 'success' ? 'success' : 'error'}
-                          size="sm"
                         >
                           {webhook.lastStatus === 'success' ? 'Last: Success' : 'Last: Failed'}
                         </Badge>
