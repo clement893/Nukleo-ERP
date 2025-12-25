@@ -1,7 +1,7 @@
 """Create themes table
 
-Revision ID: 001
-Revises: 
+Revision ID: 002_create_themes_table
+Revises: 001
 Create Date: 2025-01-01 00:00:00.000000
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '001'
-down_revision = None
+revision = '002_create_themes_table'
+down_revision = '001'
 branch_labels = None
 depends_on = None
 

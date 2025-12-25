@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '007_add_indexes'
-down_revision = '003'
+down_revision = '005_create_files_table'
 branch_labels = None
 depends_on = None
 
@@ -45,6 +45,28 @@ def upgrade() -> None:
     except Exception:
         pass  # Table might not exist yet
     
+    # Add indexes to donateurs table if it exists
+    try:
+        op.create_index('idx_donateurs_email', 'donateurs', ['email'], unique=False)
+        op.create_index('idx_donateurs_org_id', 'donateurs', ['organization_id'], unique=False)
+        op.create_index('idx_donateurs_is_active', 'donateurs', ['is_active'], unique=False)
+        op.create_index('idx_donateurs_created_at', 'donateurs', ['created_at'], unique=False)
+        op.create_index('idx_donateurs_segment', 'donateurs', ['segment'], unique=False)
+        # Composite index for common query: active donateurs by organization
+        op.create_index('idx_donateurs_org_active', 'donateurs', ['organization_id', 'is_active'], unique=False)
+    except Exception:
+        pass  # Table might not exist yet
+    
+    # Add indexes to donations table if it exists
+    try:
+        op.create_index('idx_donations_donateur_id', 'donations', ['donateur_id'], unique=False)
+        op.create_index('idx_donations_org_id', 'donations', ['organization_id'], unique=False)
+        op.create_index('idx_donations_status', 'donations', ['payment_status'], unique=False)
+        op.create_index('idx_donations_date', 'donations', ['donation_date'], unique=False)
+        # Composite index for common query: completed donations by date
+        op.create_index('idx_donations_status_date', 'donations', ['payment_status', 'donation_date'], unique=False)
+    except Exception:
+        pass  # Table might not exist yet
 
 
 def downgrade() -> None:
@@ -74,4 +96,22 @@ def downgrade() -> None:
     except Exception:
         pass
     
+    try:
+        op.drop_index('idx_donateurs_org_active', table_name='donateurs')
+        op.drop_index('idx_donateurs_segment', table_name='donateurs')
+        op.drop_index('idx_donateurs_created_at', table_name='donateurs')
+        op.drop_index('idx_donateurs_is_active', table_name='donateurs')
+        op.drop_index('idx_donateurs_org_id', table_name='donateurs')
+        op.drop_index('idx_donateurs_email', table_name='donateurs')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_index('idx_donations_status_date', table_name='donations')
+        op.drop_index('idx_donations_date', table_name='donations')
+        op.drop_index('idx_donations_status', table_name='donations')
+        op.drop_index('idx_donations_org_id', table_name='donations')
+        op.drop_index('idx_donations_donateur_id', table_name='donations')
+    except Exception:
+        pass
 

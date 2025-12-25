@@ -1,7 +1,7 @@
 """Create files table
 
-Revision ID: 003
-Revises: 002
+Revision ID: 005_create_files_table
+Revises: 004_add_oauth_fields
 Create Date: 2025-12-21 13:00:00.000000
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '003'
-down_revision: Union[str, None] = '002'
+revision: str = '005_create_files_table'
+down_revision: Union[str, None] = '004_add_oauth_fields'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

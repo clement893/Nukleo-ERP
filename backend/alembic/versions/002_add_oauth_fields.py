@@ -1,7 +1,7 @@
 """Add OAuth fields to users table
 
-Revision ID: 002
-Revises: 001
+Revision ID: 004_add_oauth_fields
+Revises: 003_add_rbac_teams_invitations
 Create Date: 2025-12-21 12:30:00.000000
 
 """
@@ -11,8 +11,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = '002'
-down_revision: Union[str, None] = '001'
+revision: str = '004_add_oauth_fields'
+down_revision: Union[str, None] = '003_add_rbac_teams_invitations'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

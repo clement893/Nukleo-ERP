@@ -1,7 +1,7 @@
 """Add RBAC, Teams, and Invitations
 
-Revision ID: 001_add_rbac_teams_invitations
-Revises: 
+Revision ID: 003_add_rbac_teams_invitations
+Revises: 002_create_themes_table
 Create Date: 2025-01-27 12:00:00.000000
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '001_add_rbac_teams_invitations'
-down_revision: Union[str, None] = None
+revision: str = '003_add_rbac_teams_invitations'
+down_revision: Union[str, None] = '002_create_themes_table'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
