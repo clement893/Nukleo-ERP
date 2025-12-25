@@ -11,14 +11,33 @@ import { jwtVerify, type JWTPayload } from 'jose';
 /**
  * JWT secret key from environment variables
  * In production, this should be stored securely and rotated regularly
- */
-const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production';
-
-/**
- * Get the JWT secret as a Uint8Array for jose library
+ * 
+ * Security: Fails fast in production if secret is not set
  */
 function getJwtSecret(): Uint8Array {
-  return new TextEncoder().encode(JWT_SECRET);
+  const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+  
+  // In production, fail fast if secret is not set
+  if (process.env.NODE_ENV === 'production') {
+    if (!secret) {
+      throw new Error(
+        'JWT_SECRET or NEXTAUTH_SECRET environment variable is required in production. ' +
+        'Please set one of these variables before starting the application.'
+      );
+    }
+    // Ensure production secret is not the fallback
+    if (secret === 'fallback-secret-change-in-production') {
+      throw new Error(
+        'JWT_SECRET cannot be the fallback value in production. ' +
+        'Please set a secure secret before deploying.'
+      );
+    }
+  }
+  
+  // In development/test, use fallback if not set
+  const finalSecret = secret || 'fallback-secret-change-in-production';
+  
+  return new TextEncoder().encode(finalSecret);
 }
 
 /**
