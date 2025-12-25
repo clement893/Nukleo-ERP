@@ -9,28 +9,72 @@ import Pagination from './Pagination';
 import Dropdown from './Dropdown';
 import type { DropdownItem } from './Dropdown';
 
+/**
+ * Column definition for DataTable
+ */
 export interface Column<T> {
+  /** Column key (must match data property) */
   key: string;
+  /** Column header label */
   label: string;
+  /** Enable column sorting */
   sortable?: boolean;
+  /** Custom render function for cell content */
   render?: (value: unknown, row: T) => ReactNode;
+  /** Enable column filtering */
   filterable?: boolean;
+  /** Filter type */
   filterType?: 'text' | 'select' | 'date' | 'number';
+  /** Filter options (for select type) */
   filterOptions?: { label: string; value: string }[];
 }
 
+/**
+ * DataTable Component
+ * 
+ * Advanced data table with sorting, filtering, pagination, and search.
+ * Supports custom cell rendering, row actions, and click handlers.
+ * 
+ * @example
+ * ```tsx
+ * const columns: Column<User>[] = [
+ *   { key: 'name', label: 'Name', sortable: true },
+ *   { key: 'email', label: 'Email', sortable: true },
+ * ];
+ * 
+ * <DataTable
+ *   data={users}
+ *   columns={columns}
+ *   onRowClick={(user) => handleUserClick(user)}
+ *   searchable
+ *   pagination
+ * />
+ * ```
+ */
 export interface DataTableProps<T> {
+  /** Table data array */
   data: T[];
+  /** Column definitions */
   columns: Column<T>[];
+  /** Number of items per page */
   pageSize?: number;
+  /** Enable search functionality */
   searchable?: boolean;
+  /** Search input placeholder */
   searchPlaceholder?: string;
+  /** Enable filtering */
   filterable?: boolean;
+  /** Enable sorting */
   sortable?: boolean;
+  /** Row click handler */
   onRowClick?: (row: T) => void;
+  /** Row actions dropdown items */
   actions?: (row: T) => DropdownItem[];
+  /** Additional CSS classes */
   className?: string;
+  /** Message to display when table is empty */
   emptyMessage?: string;
+  /** Show loading state */
   loading?: boolean;
 }
 

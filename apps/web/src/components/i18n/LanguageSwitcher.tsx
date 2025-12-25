@@ -1,7 +1,15 @@
 /**
  * Language Switcher Component
- * Allows users to switch between available languages
- * Supports RTL languages (Arabic, Hebrew)
+ * 
+ * Allows users to switch between available languages.
+ * Supports RTL languages (Arabic, Hebrew) and uses window.location for navigation.
+ * 
+ * @example
+ * ```tsx
+ * <LanguageSwitcher />
+ * ```
+ * 
+ * @see LocaleSwitcher - Alternative implementation using Next.js router
  */
 
 'use client';

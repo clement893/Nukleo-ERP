@@ -1,6 +1,30 @@
 /**
  * Error Boundary Component with Sentry Integration
- * Catches React errors and reports them to Sentry
+ * 
+ * Catches React component errors and displays a fallback UI.
+ * Automatically reports errors to Sentry for monitoring.
+ * 
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <ErrorBoundary>
+ *   <MyComponent />
+ * </ErrorBoundary>
+ * 
+ * // With custom fallback
+ * <ErrorBoundary fallback={<CustomError />}>
+ *   <MyComponent />
+ * </ErrorBoundary>
+ * 
+ * // With error handler
+ * <ErrorBoundary
+ *   onError={(error, errorInfo) => {
+ *     console.error('Caught error:', error);
+ *   }}
+ * >
+ *   <MyComponent />
+ * </ErrorBoundary>
+ * ```
  */
 
 'use client';
@@ -12,9 +36,13 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 
 interface Props {
+  /** Child components to wrap */
   children: ReactNode;
+  /** Custom fallback UI to display on error */
   fallback?: ReactNode;
+  /** Error handler callback */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  /** Show error details in UI */
   showDetails?: boolean;
 }
 

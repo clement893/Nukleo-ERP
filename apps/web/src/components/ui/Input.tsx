@@ -1,12 +1,40 @@
 import { InputHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
 
+/**
+ * Input Component
+ * 
+ * Text input component with label, error handling, helper text, and icon support.
+ * Fully accessible with ARIA attributes and keyboard navigation.
+ * 
+ * @example
+ * ```tsx
+ * // Basic input
+ * <Input label="Email" type="email" placeholder="your@email.com" />
+ * 
+ * // With error
+ * <Input label="Email" error="Invalid email address" />
+ * 
+ * // With icons
+ * <Input 
+ *   label="Search" 
+ *   leftIcon={<SearchIcon />} 
+ *   rightIcon={<ClearIcon />} 
+ * />
+ * ```
+ */
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  /** Input label text */
   label?: string;
+  /** Error message to display */
   error?: string;
+  /** Helper text displayed below input */
   helperText?: string;
+  /** Icon displayed on the left side */
   leftIcon?: React.ReactNode;
+  /** Icon displayed on the right side */
   rightIcon?: React.ReactNode;
+  /** Make input full width */
   fullWidth?: boolean;
 }
 

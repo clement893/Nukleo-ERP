@@ -1,343 +1,165 @@
-# Bibliothèque de Composants UI
+# UI Components
 
-Une bibliothèque de composants UI complète, typée et documentée pour Next.js 16 avec support du dark mode.
+Core reusable UI component library - Foundation components used throughout the application.
 
-## 📚 Documentation
+## 📦 Components
 
-### Architecture
+### Form Components
 
-Cette bibliothèque suit les principes de **Atomic Design** et utilise TypeScript pour une meilleure sécurité de type.
+- **Button** - Versatile button with multiple variants and sizes
+- **Input** - Text input with validation and icons
+- **Textarea** - Multi-line text input
+- **Select** - Dropdown select with search
+- **Checkbox** - Checkbox input
+- **Radio** - Radio button group
+- **Switch** - Toggle switch
+- **DatePicker** - Date selection picker
+- **TimePicker** - Time selection picker
+- **FileUpload** - File upload component
+- **FileUploadWithPreview** - File upload with preview
+- **Slider** - Range slider input
+- **Range** - Dual-handle range slider
+- **ColorPicker** - Color selection picker
+- **TagInput** - Tag input with autocomplete
+- **Autocomplete** - Autocomplete input
+- **MultiSelect** - Multi-select dropdown
+- **RichTextEditor** - WYSIWYG rich text editor
+- **Form** & **FormField** - Form wrapper and field components
+- **FormBuilder** - Dynamic form builder
 
-- **Types communs** : Tous les composants partagent des types de base dans `types.ts`
-- **Cohérence** : Props standardisées entre composants similaires
-- **Dark Mode** : Support complet du dark mode avec Tailwind CSS
-- **Accessibilité** : Composants accessibles avec ARIA labels
+### Layout Components
 
-### Types Communs
+- **Card** - Card container component
+- **Container** - Page container wrapper
+- **Tabs** - Tab navigation (TabList, Tab, TabPanels, TabPanel)
+- **Accordion** - Collapsible accordion
+- **Sidebar** - Sidebar navigation
+- **Divider** - Visual divider
+- **Breadcrumb** - Breadcrumb navigation
+- **Drawer** - Slide-out drawer panel
+- **Popover** - Popover overlay
+- **Stepper** - Step-by-step wizard
+- **TreeView** - Hierarchical tree view
 
-Tous les composants utilisent des types de base définis dans `types.ts` :
+### Data Display Components
 
-```typescript
-import { ColorVariant, Size, BaseComponentProps } from './types';
-```
+- **DataTable** - Advanced data table with sorting/filtering
+- **DataTableEnhanced** - Enhanced data table with bulk actions
+- **Table** - Table primitives (TableHead, TableBody, TableRow, TableHeader, TableCell)
+- **VirtualTable** - Virtualized table for large datasets
+- **Pagination** - Pagination controls
+- **EmptyState** - Empty state placeholder
+- **StatsCard** - Statistics card display
+- **Timeline** - Timeline component
+- **List** - List component
+- **KanbanBoard** - Kanban board for task management
+- **Calendar** - Calendar component with events
+- **Chart** - Basic chart component
+- **AdvancedCharts** - Advanced chart types (scatter, radar, etc.)
 
-#### Variants de Couleur
+### Feedback Components
 
-Les composants `Alert`, `Badge` et autres utilisent le même système de variants :
+- **Alert** - Alert/notification component
+- **Toast** & **ToastContainer** - Toast notifications
+- **Loading** - Loading spinner
+- **Skeleton** - Skeleton loading state
+- **Progress** - Progress bar
+- **Spinner** - Spinner component
+- **Modal** & **ConfirmModal** - Modal dialogs
+- **Tooltip** - Tooltip component
+- **Banner** - Banner notification
 
-- `default` - Gris neutre
-- `success` - Vert pour les succès
-- `warning` - Jaune pour les avertissements
-- `error` - Rouge pour les erreurs
-- `info` - Bleu pour les informations
+### Utility Components
 
-#### Tailles
+- **Badge** - Badge component
+- **Dropdown** - Dropdown menu
+- **Avatar** - Avatar component (AvatarImage, AvatarFallback)
+- **ThemeToggle** - Theme switcher
+- **ClientOnly** - Client-side only wrapper
+- **SearchBar** - Search input component
+- **CommandPalette** - Command palette (Cmd+K)
+- **CRUDModal** - CRUD operation modal
+- **ExportButton** - Data export button
+- **ErrorBoundary** - Error boundary wrapper
 
-Les composants avec prop `size` utilisent :
-
-- `sm` - Petit
-- `md` - Moyen (par défaut)
-- `lg` - Grand
-
-## 📦 Composants
-
-### Alert
-
-Composant d'alerte pour afficher des messages importants.
-
-```tsx
-import Alert from '@/components/ui/Alert';
-
-<Alert variant="success" title="Succès" onClose={() => {}}>
-  Votre action a été effectuée avec succès.
-</Alert>
-```
-
-**Props :**
-- `variant?: ColorVariant` - Variant de couleur (default: 'info')
-- `title?: string` - Titre de l'alerte
-- `onClose?: () => void` - Callback de fermeture
-- `icon?: ReactNode` - Icône personnalisée
-- `className?: string` - Classes CSS supplémentaires
-- `children: ReactNode` - Contenu de l'alerte
-
-### Badge
-
-Badge pour afficher des labels ou des statuts.
-
-```tsx
-import Badge from '@/components/ui/Badge';
-
-<Badge variant="success">Actif</Badge>
-<Badge variant="error">Inactif</Badge>
-```
-
-**Props :**
-- `variant?: ColorVariant` - Variant de couleur (default: 'default')
-- `className?: string` - Classes CSS supplémentaires
-- `children: ReactNode` - Contenu du badge
+## 📖 Usage Examples
 
 ### Button
 
-Bouton avec plusieurs variants et tailles.
-
 ```tsx
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui';
 
-<Button variant="primary" size="md" onClick={() => {}}>
-  Cliquer
+<Button variant="primary" size="md" onClick={handleClick}>
+  Click me
 </Button>
 ```
 
-**Props :**
-- `variant?: ButtonVariant` - Variant du bouton (default: 'primary')
-- `size?: Size` - Taille du bouton (default: 'md')
-- `disabled?: boolean` - État désactivé
-- `className?: string` - Classes CSS supplémentaires
-- `children: ReactNode` - Contenu du bouton
-- Toutes les props HTML standard de `<button>`
-
-**Variants :**
-- `primary` - Bouton principal (bleu)
-- `secondary` - Bouton secondaire (gris)
-- `outline` - Bouton avec bordure
-- `ghost` - Bouton transparent
-- `danger` - Bouton de danger (rouge)
-
 ### Input
 
-Champ de saisie avec label, erreur et icônes.
-
 ```tsx
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui';
 
 <Input
   label="Email"
   type="email"
-  placeholder="exemple@email.com"
-  error="Email invalide"
-  helperText="Entrez votre adresse email"
-  leftIcon={<MailIcon />}
+  placeholder="your@email.com"
+  required
+  error="Invalid email"
 />
 ```
 
-**Props :**
-- `label?: string` - Label du champ
-- `error?: string` - Message d'erreur
-- `helperText?: string` - Texte d'aide
-- `leftIcon?: ReactNode` - Icône à gauche
-- `rightIcon?: ReactNode` - Icône à droite
-- `fullWidth?: boolean` - Largeur complète
-- `className?: string` - Classes CSS supplémentaires
-- Toutes les props HTML standard de `<input>`
-
-### Card
-
-Carte pour contenir du contenu.
+### DataTable
 
 ```tsx
-import Card from '@/components/ui/Card';
+import { DataTable } from '@/components/ui';
 
-<Card className="p-6">
-  <h2>Titre</h2>
-  <p>Contenu de la carte</p>
-</Card>
-```
-
-**Props :**
-- `className?: string` - Classes CSS supplémentaires
-- `children: ReactNode` - Contenu de la carte
-
-### Table
-
-Tableau pour afficher des données structurées.
-
-```tsx
-import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui/Table';
-
-<Table>
-  <TableHead>
-    <TableRow>
-      <TableHeader>Nom</TableHeader>
-      <TableHeader>Email</TableHeader>
-    </TableRow>
-  </TableHead>
-  <TableBody striped hover>
-    <TableRow>
-      <TableCell>John Doe</TableCell>
-      <TableCell>john@example.com</TableCell>
-    </TableRow>
-  </TableBody>
-</Table>
-```
-
-**Props TableBody :**
-- `striped?: boolean` - Lignes alternées
-- `hover?: boolean` - Effet au survol
-
-### EmptyState
-
-État vide pour indiquer l'absence de données.
-
-```tsx
-import EmptyState from '@/components/ui/EmptyState';
-
-<EmptyState
-  title="Aucun élément"
-  description="Commencez par créer votre premier élément"
-  icon={<Icon />}
-  action={{
-    label: "Créer",
-    onClick: () => {}
-  }}
+<DataTable
+  data={users}
+  columns={columns}
+  onRowClick={handleRowClick}
+  pagination
+  searchable
 />
 ```
 
-**Props :**
-- `title: string` - Titre de l'état vide
-- `description?: string` - Description
-- `icon?: ReactNode` - Icône
-- `action?: { label: string; onClick: () => void }` - Action
-- `className?: string` - Classes CSS supplémentaires
-
-### StatsCard
-
-Carte de statistiques avec valeur et tendance.
+### Modal
 
 ```tsx
-import StatsCard from '@/components/ui/StatsCard';
+import { Modal } from '@/components/ui';
 
-<StatsCard
-  title="Utilisateurs"
-  value={1234}
-  change={{
-    value: 12,
-    type: 'increase',
-    period: 'ce mois'
-  }}
-  icon={<UsersIcon />}
-/>
+<Modal isOpen={isOpen} onClose={handleClose} title="Confirm">
+  <p>Are you sure?</p>
+</Modal>
 ```
 
-**Props :**
-- `title: string` - Titre de la statistique
-- `value: string | number` - Valeur à afficher
-- `change?: { value: number; type: 'increase' | 'decrease'; period?: string }` - Changement
-- `icon?: ReactNode` - Icône
-- `trend?: ReactNode` - Graphique de tendance
-- `className?: string` - Classes CSS supplémentaires
+## 🎨 Theming
 
-## 🎨 Dark Mode
-
-Tous les composants supportent le dark mode automatiquement via Tailwind CSS. Le thème est géré par le `ThemeProvider` dans `contexts/ThemeContext.tsx`.
+All UI components support theming via CSS variables:
 
 ```tsx
-import { ThemeProvider } from '@/contexts/ThemeContext';
-
-// Dans votre layout
-<ThemeProvider>
-  <App />
-</ThemeProvider>
+// Components automatically use theme variables
+<Button variant="primary">Themed Button</Button>
 ```
 
-## 🧪 Tests
+## ♿ Accessibility
 
-Les composants sont testés avec Vitest et React Testing Library.
+All components include:
+- ARIA labels and roles
+- Keyboard navigation
+- Focus management
+- Screen reader support
+
+## 📚 Storybook
+
+View interactive component documentation:
 
 ```bash
-# Lancer les tests
-pnpm test
-
-# Lancer les tests avec UI
-pnpm test:ui
+pnpm storybook
 ```
 
-## 📝 Exemples d'Usage
+## 🔗 Related
 
-### Formulaire avec validation
-
-```tsx
-import { useState } from 'react';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import Alert from '@/components/ui/Alert';
-
-function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = () => {
-    if (!email.includes('@')) {
-      setError('Email invalide');
-      return;
-    }
-    // Soumettre le formulaire
-  };
-
-  return (
-    <form>
-      <Input
-        label="Email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        error={error}
-      />
-      <Button onClick={handleSubmit}>Se connecter</Button>
-    </form>
-  );
-}
-```
-
-### Liste avec état vide
-
-```tsx
-import EmptyState from '@/components/ui/EmptyState';
-import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui/Table';
-
-function UserList({ users }) {
-  if (users.length === 0) {
-    return (
-      <EmptyState
-        title="Aucun utilisateur"
-        description="Créez votre premier utilisateur pour commencer"
-        action={{
-          label: "Créer un utilisateur",
-          onClick: () => {}
-        }}
-      />
-    );
-  }
-
-  return (
-    <Table>
-      {/* ... */}
-    </Table>
-  );
-}
-```
-
-## 🔧 Développement
-
-### Ajouter un nouveau composant
-
-1. Créer le fichier dans `components/ui/`
-2. Utiliser les types de base depuis `types.ts`
-3. Ajouter le support dark mode avec les classes Tailwind
-4. Exporter le composant dans `index.ts`
-5. Ajouter des tests dans `__tests__/`
-6. Documenter dans ce README
-
-### Standards de Code
-
-- Utiliser TypeScript strict
-- Props cohérentes avec les autres composants
-- Support dark mode obligatoire
-- Accessibilité (ARIA labels, keyboard navigation)
-- Tests unitaires pour les fonctionnalités principales
-
-## 📚 Ressources
-
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/)
-- [Accessibility Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [Component Showcase](/components)
+- [Form Components Showcase](/components/forms)
+- [Data Components Showcase](/components/data)
+- [Feedback Components Showcase](/components/feedback)

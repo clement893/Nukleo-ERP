@@ -1,6 +1,20 @@
 /**
  * Select Component
- * Dropdown select component
+ * 
+ * Dropdown select component with label, error handling, and helper text.
+ * Supports options array and placeholder text.
+ * 
+ * @example
+ * ```tsx
+ * <Select
+ *   label="Country"
+ *   options={[
+ *     { label: 'France', value: 'fr' },
+ *     { label: 'United States', value: 'us' },
+ *   ]}
+ *   placeholder="Select a country"
+ * />
+ * ```
  */
 
 'use client';
@@ -8,18 +22,30 @@
 import { forwardRef, type SelectHTMLAttributes } from 'react';
 import { clsx } from 'clsx';
 
+/**
+ * Select option definition
+ */
 export interface SelectOption {
+  /** Option display label */
   label: string;
+  /** Option value */
   value: string;
+  /** Disable this option */
   disabled?: boolean;
 }
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+  /** Select label text */
   label?: string;
+  /** Error message to display */
   error?: string;
+  /** Helper text displayed below select */
   helperText?: string;
+  /** Make select full width */
   fullWidth?: boolean;
+  /** Select options array */
   options: SelectOption[];
+  /** Placeholder text */
   placeholder?: string;
 }
 

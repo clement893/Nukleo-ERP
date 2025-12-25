@@ -1,6 +1,29 @@
 /**
  * Card Component
- * Versatile card component for displaying content
+ * 
+ * Versatile card component for displaying content with optional header, footer, and actions.
+ * Supports hover effects and click handlers.
+ * 
+ * @example
+ * ```tsx
+ * // Basic card
+ * <Card>
+ *   <p>Card content</p>
+ * </Card>
+ * 
+ * // Card with title
+ * <Card title="Card Title" subtitle="Subtitle">
+ *   <p>Card content</p>
+ * </Card>
+ * 
+ * // Card with actions
+ * <Card 
+ *   title="Card Title"
+ *   footer={<Button>Action</Button>}
+ * >
+ *   <p>Card content</p>
+ * </Card>
+ * ```
  */
 
 'use client';
@@ -9,14 +32,23 @@ import { type ReactNode, type HTMLAttributes } from 'react';
 import { clsx } from 'clsx';
 
 export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> {
+  /** Card content */
   children: ReactNode;
+  /** Card title */
   title?: string;
+  /** Card subtitle */
   subtitle?: string;
+  /** Custom header content */
   header?: ReactNode;
+  /** Footer content */
   footer?: ReactNode;
-  actions?: ReactNode; // Alias for footer
+  /** Actions (alias for footer) */
+  actions?: ReactNode;
+  /** Enable hover effect */
   hover?: boolean;
+  /** Click handler */
   onClick?: () => void;
+  /** Add padding to card content */
   padding?: boolean;
 }
 

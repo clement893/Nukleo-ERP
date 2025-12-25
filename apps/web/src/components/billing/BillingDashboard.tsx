@@ -1,6 +1,26 @@
 /**
  * Billing Dashboard Component
- * Overview of subscription, usage, and billing information
+ * 
+ * Overview dashboard displaying subscription information, usage metrics,
+ * upcoming invoices, and payment method details.
+ * 
+ * @example
+ * ```tsx
+ * <BillingDashboard
+ *   subscription={{
+ *     plan: 'Pro',
+ *     status: 'active',
+ *     currentPeriodEnd: '2024-04-15',
+ *     amount: 29,
+ *     currency: 'USD',
+ *   }}
+ *   usage={{
+ *     current: 750,
+ *     limit: 1000,
+ *     unit: 'API calls',
+ *   }}
+ * />
+ * ```
  */
 
 'use client';
@@ -15,27 +35,46 @@ import type { ChartDataPoint } from '@/components/ui';
 import { CreditCard, TrendingUp, DollarSign, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 
 export interface BillingDashboardProps {
+  /** Additional CSS classes */
   className?: string;
+  /** Subscription information */
   subscription?: {
+    /** Subscription plan name */
     plan: string;
+    /** Subscription status */
     status: 'active' | 'cancelled' | 'past_due' | 'trialing';
+    /** Current period end date */
     currentPeriodEnd: string;
+    /** Subscription amount */
     amount: number;
+    /** Currency code */
     currency: string;
   };
+  /** Usage metrics */
   usage?: {
+    /** Current usage value */
     current: number;
+    /** Usage limit */
     limit: number;
+    /** Unit of measurement */
     unit: string;
   };
+  /** Upcoming invoice information */
   upcomingInvoice?: {
+    /** Invoice amount */
     amount: number;
+    /** Currency code */
     currency: string;
+    /** Invoice date */
     date: string;
   };
+  /** Payment method information */
   paymentMethod?: {
+    /** Payment method type */
     type: string;
+    /** Last 4 digits of card */
     last4: string;
+    /** Card brand */
     brand: string;
   };
 }

@@ -2,11 +2,40 @@ import { ButtonHTMLAttributes, ReactNode, memo } from 'react';
 import { clsx } from 'clsx';
 import { ButtonVariant, Size } from './types';
 
+/**
+ * Button Component
+ * 
+ * A versatile button component with multiple variants, sizes, and states.
+ * Supports loading state, full width, and all standard button HTML attributes.
+ * 
+ * @example
+ * ```tsx
+ * // Primary button
+ * <Button variant="primary" onClick={handleClick}>
+ *   Click me
+ * </Button>
+ * 
+ * // Loading state
+ * <Button variant="primary" loading>
+ *   Processing...
+ * </Button>
+ * 
+ * // Full width button
+ * <Button variant="primary" fullWidth>
+ *   Submit
+ * </Button>
+ * ```
+ */
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Button style variant */
   variant?: ButtonVariant;
+  /** Button size */
   size?: Size;
+  /** Show loading spinner and disable button */
   loading?: boolean;
+  /** Make button full width */
   fullWidth?: boolean;
+  /** Button content */
   children: ReactNode;
 }
 

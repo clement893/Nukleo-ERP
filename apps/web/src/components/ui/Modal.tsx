@@ -1,6 +1,31 @@
 /**
  * Modal Component
- * Full-featured modal dialog for ERP applications
+ * 
+ * Full-featured modal dialog component with overlay, keyboard support, and accessibility features.
+ * Supports multiple sizes and custom footer content.
+ * 
+ * @example
+ * ```tsx
+ * // Basic modal
+ * <Modal isOpen={isOpen} onClose={handleClose} title="Confirm">
+ *   <p>Are you sure?</p>
+ * </Modal>
+ * 
+ * // Modal with footer
+ * <Modal
+ *   isOpen={isOpen}
+ *   onClose={handleClose}
+ *   title="Delete Item"
+ *   footer={
+ *     <>
+ *       <Button onClick={handleClose}>Cancel</Button>
+ *       <Button variant="danger" onClick={handleDelete}>Delete</Button>
+ *     </>
+ *   }
+ * >
+ *   <p>This action cannot be undone.</p>
+ * </Modal>
+ * ```
  */
 
 'use client';
@@ -10,18 +35,31 @@ import { clsx } from 'clsx';
 import Button from './Button';
 
 export interface ModalProps {
+  /** Control modal visibility */
   isOpen: boolean;
+  /** Close handler */
   onClose: () => void;
+  /** Modal title */
   title?: string;
+  /** Modal content */
   children: ReactNode;
+  /** Footer content (buttons, actions, etc.) */
   footer?: ReactNode;
+  /** Modal size */
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  /** Close modal when clicking overlay */
   closeOnOverlayClick?: boolean;
+  /** Close modal on Escape key */
   closeOnEscape?: boolean;
+  /** Show close button in header */
   showCloseButton?: boolean;
+  /** Additional CSS classes */
   className?: string;
+  /** Overlay CSS classes */
   overlayClassName?: string;
+  /** ARIA label ID */
   'aria-labelledby'?: string;
+  /** ARIA description ID */
   'aria-describedby'?: string;
 }
 
