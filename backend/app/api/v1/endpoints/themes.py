@@ -16,6 +16,7 @@ from app.schemas.theme import (
 )
 from app.models.theme import Theme
 from app.core.database import get_db
+from app.core.cache import cached, invalidate_cache_pattern
 from app.dependencies import get_current_user, require_superadmin
 
 router = APIRouter()
@@ -32,6 +33,7 @@ class ThemeModeUpdate(BaseModel):
 
 
 @router.get("/active", response_model=ThemeConfigResponse, tags=["themes"])
+@cached(expire=3600, key_prefix="theme")  # Cache 1h - themes change rarely
 async def get_active_theme(db: AsyncSession = Depends(get_db)):
     """
     Get the currently active theme configuration.
@@ -71,6 +73,7 @@ async def get_active_theme(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("", response_model=ThemeListResponse, tags=["themes"])
+@cached(expire=600, key_prefix="themes")  # Cache 10min - themes list
 async def list_themes(
     skip: int = 0,
     limit: int = 100,
@@ -96,6 +99,7 @@ async def list_themes(
 
 
 @router.get("/{theme_id}", response_model=ThemeResponse, tags=["themes"])
+@cached(expire=600, key_prefix="theme")  # Cache 10min
 async def get_theme(
     theme_id: int,
     db: AsyncSession = Depends(get_db),
@@ -118,6 +122,8 @@ async def get_theme(
 
 
 @router.post("", response_model=ThemeResponse, status_code=status.HTTP_201_CREATED, tags=["themes"])
+@invalidate_cache_pattern("themes:*")
+@invalidate_cache_pattern("theme:*")
 async def create_theme(
     theme_data: ThemeCreate,
     db: AsyncSession = Depends(get_db),
@@ -159,6 +165,8 @@ async def create_theme(
 
 
 @router.put("/{theme_id}", response_model=ThemeResponse, tags=["themes"])
+@invalidate_cache_pattern("themes:*")
+@invalidate_cache_pattern("theme:*")
 async def update_theme(
     theme_id: int,
     theme_data: ThemeUpdate,
@@ -201,6 +209,8 @@ async def update_theme(
 
 
 @router.post("/{theme_id}/activate", response_model=ThemeResponse, tags=["themes"])
+@invalidate_cache_pattern("themes:*")
+@invalidate_cache_pattern("theme:*")
 async def activate_theme(
     theme_id: int,
     db: AsyncSession = Depends(get_db),
@@ -232,6 +242,7 @@ async def activate_theme(
 
 
 @router.put("/active/mode", response_model=ThemeConfigResponse, tags=["themes"])
+@invalidate_cache_pattern("theme:*")
 async def update_active_theme_mode(
     mode_update: ThemeModeUpdate,
     db: AsyncSession = Depends(get_db),
@@ -269,6 +280,8 @@ async def update_active_theme_mode(
 
 
 @router.delete("/{theme_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["themes"])
+@invalidate_cache_pattern("themes:*")
+@invalidate_cache_pattern("theme:*")
 async def delete_theme(
     theme_id: int,
     db: AsyncSession = Depends(get_db),

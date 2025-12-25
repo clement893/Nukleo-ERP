@@ -1,84 +1,162 @@
 #!/usr/bin/env node
 
 /**
- * Bundle Size Checker Script
- * Checks bundle sizes against performance budgets
- * 
- * Usage: node scripts/check-bundle-size.js
- * Or: pnpm check:bundle-size
+ * Bundle Size Check Script
+ * Checks bundle size against configured budgets and reports results
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Performance budgets (in bytes)
-const BUDGETS = {
-  firstLoadJS: 200 * 1024, // 200KB
-  firstLoadCSS: 50 * 1024, // 50KB
-  totalJS: 500 * 1024, // 500KB
-  totalCSS: 100 * 1024, // 100KB
+// Bundle size budgets (in bytes)
+const BUNDLE_BUDGETS = {
+  maxTotal: 300 * 1024,      // 300KB max total bundle
+  warningTotal: 250 * 1024,  // 250KB warning threshold
+  maxInitial: 200 * 1024,   // 200KB max initial JS
+  warningInitial: 150 * 1024, // 150KB warning threshold
 };
 
 // Colors for console output
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
-  green: '\x1b[32m',
   yellow: '\x1b[33m',
+  green: '\x1b[32m',
   blue: '\x1b[34m',
 };
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return '0 B';
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB'];
+  const sizes = ['B', 'KB', 'MB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+}
+
+function getBuildStats() {
+  const buildDir = path.join(process.cwd(), '.next');
+  
+  if (!fs.existsSync(buildDir)) {
+    console.error(`${colors.red}Error: Build directory not found. Run 'pnpm build' first.${colors.reset}`);
+    process.exit(1);
+  }
+
+  const staticDir = path.join(buildDir, 'static');
+  let totalSize = 0;
+  let initialSize = 0;
+  const chunks = {};
+
+  if (fs.existsSync(staticDir)) {
+    // Calculate total static assets size
+    function calculateDirSize(dir) {
+      let size = 0;
+      const files = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const file of files) {
+        const filePath = path.join(dir, file.name);
+        if (file.isDirectory()) {
+          size += calculateDirSize(filePath);
+        } else {
+          const stats = fs.statSync(filePath);
+          size += stats.size;
+          
+          // Track JS chunks
+          if (file.name.endsWith('.js')) {
+            const chunkName = file.name;
+            chunks[chunkName] = stats.size;
+            
+            // Estimate initial chunk (framework + main)
+            if (chunkName.includes('framework') || chunkName.includes('main') || chunkName.includes('webpack')) {
+              initialSize += stats.size;
+            }
+          }
+        }
+      }
+      return size;
+    }
+
+    totalSize = calculateDirSize(staticDir);
+  }
+
+  return {
+    totalSize,
+    initialSize,
+    chunks,
+  };
 }
 
 function checkBundleSize() {
-  const buildManifestPath = path.join(process.cwd(), '.next', 'build-manifest.json');
-  
-  if (!fs.existsSync(buildManifestPath)) {
-    console.log(`${colors.yellow}⚠️  Build manifest not found. Run 'pnpm build' first.${colors.reset}`);
-    process.exit(0);
+  console.log(`${colors.blue}📦 Checking bundle sizes...${colors.reset}\n`);
+
+  const stats = getBuildStats();
+  const { totalSize, initialSize, chunks } = stats;
+
+  // Check total bundle size
+  const totalStatus = 
+    totalSize > BUNDLE_BUDGETS.maxTotal ? 'error' :
+    totalSize > BUNDLE_BUDGETS.warningTotal ? 'warning' :
+    'success';
+
+  // Check initial bundle size
+  const initialStatus = 
+    initialSize > BUNDLE_BUDGETS.maxInitial ? 'error' :
+    initialSize > BUNDLE_BUDGETS.warningInitial ? 'warning' :
+    'success';
+
+  // Display results
+  console.log('Bundle Size Report:');
+  console.log('─'.repeat(50));
+  console.log(`Total Bundle:     ${formatBytes(totalSize)} / ${formatBytes(BUNDLE_BUDGETS.maxTotal)}`);
+  console.log(`Initial JS:       ${formatBytes(initialSize)} / ${formatBytes(BUNDLE_BUDGETS.maxInitial)}`);
+  console.log(`Chunks:           ${Object.keys(chunks).length} files`);
+  console.log('─'.repeat(50));
+
+  // Display status
+  const totalIcon = totalStatus === 'error' ? '❌' : totalStatus === 'warning' ? '⚠️' : '✅';
+  const initialIcon = initialStatus === 'error' ? '❌' : initialStatus === 'warning' ? '⚠️' : '✅';
+
+  console.log(`\n${totalIcon} Total Bundle: ${totalStatus.toUpperCase()}`);
+  console.log(`${initialIcon} Initial JS: ${initialStatus.toUpperCase()}`);
+
+  // Display largest chunks
+  if (Object.keys(chunks).length > 0) {
+    console.log('\n📊 Largest Chunks:');
+    const sortedChunks = Object.entries(chunks)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+    
+    sortedChunks.forEach(([name, size]) => {
+      const percentage = ((size / totalSize) * 100).toFixed(1);
+      console.log(`  ${name.padEnd(40)} ${formatBytes(size).padStart(10)} (${percentage}%)`);
+    });
   }
 
-  try {
-    const manifest = JSON.parse(fs.readFileSync(buildManifestPath, 'utf8'));
-    const pages = manifest.pages || {};
-    
-    console.log(`${colors.blue}📦 Bundle Size Analysis${colors.reset}\n`);
-    
-    let totalJS = 0;
-    let totalCSS = 0;
-    let hasErrors = false;
-    
-    // Check main page
-    const mainPage = pages['/'] || [];
-    const jsFiles = mainPage.filter(file => file.endsWith('.js'));
-    const cssFiles = mainPage.filter(file => file.endsWith('.css'));
-    
-    // Calculate sizes (simplified - actual sizes would need file system access)
-    console.log(`${colors.blue}Main Page (/)${colors.reset}`);
-    console.log(`  JS files: ${jsFiles.length}`);
-    console.log(`  CSS files: ${cssFiles.length}`);
-    
-    // Check budgets
-    console.log(`\n${colors.blue}Performance Budgets:${colors.reset}`);
-    console.log(`  First Load JS: ${formatBytes(BUDGETS.firstLoadJS)}`);
-    console.log(`  First Load CSS: ${formatBytes(BUDGETS.firstLoadCSS)}`);
-    console.log(`  Total JS: ${formatBytes(BUDGETS.totalJS)}`);
-    console.log(`  Total CSS: ${formatBytes(BUDGETS.totalCSS)}`);
-    
-    console.log(`\n${colors.green}✅ Bundle size check complete${colors.reset}`);
-    console.log(`${colors.yellow}💡 Tip: Run 'pnpm analyze' for detailed bundle analysis${colors.reset}`);
-    
-  } catch (error) {
-    console.error(`${colors.red}❌ Error checking bundle size:${colors.reset}`, error.message);
+  // Exit with error if budgets exceeded
+  if (totalStatus === 'error' || initialStatus === 'error') {
+    console.log(`\n${colors.red}❌ Bundle size exceeds maximum budget!${colors.reset}`);
+    console.log(`${colors.yellow}💡 Consider:${colors.reset}`);
+    console.log('  - Code splitting');
+    console.log('  - Tree shaking');
+    console.log('  - Removing unused dependencies');
+    console.log('  - Lazy loading components');
     process.exit(1);
   }
+
+  if (totalStatus === 'warning' || initialStatus === 'warning') {
+    console.log(`\n${colors.yellow}⚠️  Bundle size exceeds warning threshold${colors.reset}`);
+    console.log(`${colors.yellow}💡 Consider optimizing bundle size${colors.reset}`);
+  }
+
+  if (totalStatus === 'success' && initialStatus === 'success') {
+    console.log(`\n${colors.green}✅ Bundle size is within limits!${colors.reset}`);
+  }
+
+  return { totalStatus, initialStatus };
 }
 
-checkBundleSize();
+// Run if called directly
+if (require.main === module) {
+  checkBundleSize();
+}
 
+module.exports = { checkBundleSize, BUNDLE_BUDGETS };

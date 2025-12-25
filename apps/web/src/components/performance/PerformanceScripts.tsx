@@ -7,11 +7,15 @@
 
 import { useEffect } from 'react';
 import { registerServiceWorker } from '@/lib/performance/serviceWorker';
+import { initializePreloading } from '@/lib/performance/preloading';
 
 export function PerformanceScripts() {
   useEffect(() => {
     // Register service worker
     registerServiceWorker();
+
+    // Initialize preloading for critical resources
+    initializePreloading();
 
     // Preconnect to external domains for faster loading
     const preconnectDomains = [

@@ -11,6 +11,7 @@ from pydantic import BaseModel, EmailStr
 import os
 
 from app.core.database import get_db
+from app.core.cache import cached, invalidate_cache_pattern
 from app.dependencies import get_current_user, require_superadmin
 from app.models.user import User
 from app.models.role import Role, UserRole

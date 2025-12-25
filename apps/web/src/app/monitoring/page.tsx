@@ -12,6 +12,7 @@ import AlertsPanel from '@/components/monitoring/AlertsPanel';
 import LogsViewer from '@/components/monitoring/LogsViewer';
 import SystemMetrics from '@/components/monitoring/SystemMetrics';
 import PerformanceProfiler from '@/components/monitoring/PerformanceProfiler';
+import { PerformanceDashboard } from '@/components/performance/PerformanceDashboard';
 import { trackWebVital } from '@/lib/monitoring/metrics';
 import { profiler } from '@/lib/monitoring/profiler';
 import { createLog } from '@/lib/monitoring/logs';
@@ -71,6 +72,11 @@ export default function MonitoringPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <AlertsPanel />
         <LogsViewer />
+      </div>
+
+      {/* Performance Dashboard */}
+      <div className="mb-6">
+        <PerformanceDashboard />
       </div>
 
       {/* Performance Profiler */}
