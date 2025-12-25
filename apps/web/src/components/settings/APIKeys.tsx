@@ -131,8 +131,8 @@ export default function APIKeys({
           <Button
             variant="primary"
             onClick={() => setShowCreateModal(true)}
-            icon={<Plus className="w-4 h-4" />}
           >
+            <Plus className="w-4 h-4 mr-2" />
             Create API Key
           </Button>
         </div>
@@ -205,8 +205,8 @@ export default function APIKeys({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(key.id)}
-                    icon={<Trash2 className="w-4 h-4" />}
                   >
+                    <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </Button>
                 </div>
@@ -313,8 +313,8 @@ export default function APIKeys({
                 <Button
                   variant="outline"
                   onClick={() => copyToClipboard(createdKey.key)}
-                  icon={<Copy className="w-4 h-4" />}
                 >
+                  <Copy className="w-4 h-4 mr-2" />
                   Copy
                 </Button>
               </div>
