@@ -101,7 +101,7 @@ export default function ErrorComponentsContent() {
                   setApiError(null);
                   logger.info('Retrying API call');
                 }}
-                onDismiss={() => {
+                onReset={() => {
                   setApiError(null);
                 }}
               />
