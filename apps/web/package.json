@@ -7,7 +7,6 @@
     "dev": "next dev",
     "prebuild": "node scripts/ensure-css-file.js",
     "build": "next build --webpack",
-    "start": "node /app/server.js",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
