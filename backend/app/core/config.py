@@ -308,6 +308,12 @@ class Settings(BaseSettings):
         description="Temperature for Anthropic responses",
     )
 
+    # SendGrid Marketing Lists
+    SENDGRID_NEWSLETTER_LIST_ID: str = Field(
+        default="",
+        description="SendGrid Marketing Contacts list ID for newsletter subscriptions",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
