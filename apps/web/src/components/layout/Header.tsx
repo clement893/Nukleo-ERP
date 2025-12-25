@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
 import Button from '../ui/Button';
 import { ThemeToggleWithIcon } from '../ui/ThemeToggle';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -29,6 +30,7 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <ThemeToggleWithIcon />
             {isAuthenticated() ? (
               <>
