@@ -215,13 +215,13 @@ export const usersAPI = {
     return apiClient.get('/v1/auth/me');
   },
   updateMe: (data: { name?: string; email?: string }) => {
-    return apiClient.put('/users/me', data);
+    return apiClient.put('/v1/users/me', data);
   },
   getUser: (userId: string) => {
-    return apiClient.get(`/users/${userId}`);
+    return apiClient.get(`/v1/users/${userId}`);
   },
   getUsers: () => {
-    return apiClient.get('/users');
+    return apiClient.get('/v1/users');
   },
   createUser: (data: {
     email: string;
@@ -230,7 +230,7 @@ export const usersAPI = {
     password: string;
     is_active?: boolean;
   }) => {
-    return apiClient.post('/users', data);
+    return apiClient.post('/v1/users', data);
   },
   updateUser: (userId: string, data: {
     email?: string;
@@ -239,10 +239,10 @@ export const usersAPI = {
     password?: string;
     is_active?: boolean;
   }) => {
-    return apiClient.put(`/users/${userId}`, data);
+    return apiClient.put(`/v1/users/${userId}`, data);
   },
   deleteUser: (userId: string) => {
-    return apiClient.delete(`/users/${userId}`);
+    return apiClient.delete(`/v1/users/${userId}`);
   },
 };
 
