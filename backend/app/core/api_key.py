@@ -63,19 +63,43 @@ async def get_user_from_api_key(
     # Hash the provided API key
     hashed_key = hash_api_key(api_key)
     
-    # Query user by API key hash
-    # Note: This assumes you add an api_key_hash field to the User model
+    # Query API key by hash
+    from app.models.api_key import APIKey
+    from app.services.api_key_service import APIKeyService
+    
     try:
+        api_key_model = await APIKeyService.find_api_key_by_hash(db, hashed_key)
+        
+        if not api_key_model:
+            return None
+        
+        # Check if key is valid
+        if not api_key_model.is_valid():
+            return None
+        
+        # Update usage tracking
+        await APIKeyService.update_usage(db, api_key_model)
+        
+        # Get user
         result = await db.execute(
-            select(User).where(User.api_key_hash == hashed_key)
+            select(User).where(User.id == api_key_model.user_id)
         )
         user = result.scalar_one_or_none()
         
         if user and user.is_active:
+            # Log API key usage
+            from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+            await SecurityAuditLogger.log_api_key_event(
+                db=db,
+                event_type=SecurityEventType.API_KEY_USED,
+                api_key_id=api_key_model.id,
+                description=f"API key '{api_key_model.name}' used",
+                user_id=user.id,
+                user_email=user.email,
+            )
             return user
-    except AttributeError:
-        # api_key_hash field doesn't exist yet
-        logger.warning("API key authentication not fully configured - api_key_hash field missing")
+    except Exception as e:
+        logger.warning(f"Error validating API key: {e}")
         return None
     
     return None
