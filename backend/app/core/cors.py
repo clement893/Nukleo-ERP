@@ -120,13 +120,31 @@ def setup_cors(app: FastAPI) -> None:
     )
     
     # Add a middleware to ensure CORS headers are always present
-    # This is a safety net in case CORSMiddleware doesn't add headers for some routes
-    # Note: In FastAPI, middlewares are executed in reverse order, so this will run AFTER CORSMiddleware
+    # This middleware runs BEFORE routes to catch errors and add CORS headers
+    # Note: In FastAPI, middlewares are executed in reverse order of addition
+    # So this middleware (added after CORSMiddleware) runs BEFORE CORSMiddleware
+    # This ensures we can add CORS headers even if CORSMiddleware doesn't
     @app.middleware("http")
     async def add_cors_headers_middleware(request: Request, call_next):
-        """Ensure CORS headers are always present"""
+        """Ensure CORS headers are always present, even on errors"""
         # Get origin from request
         origin = request.headers.get("Origin", "")
+        
+        # Determine allowed origin
+        def get_allowed_origin():
+            if origin and cors_origins and validate_origin(origin, cors_origins):
+                return origin
+            elif "*" in cors_origins:
+                return "*"
+            elif cors_origins:
+                return cors_origins[0]
+            elif not is_production:
+                return origin or "*"
+            else:
+                logger.warning(f"CORS: Origin {origin} not in allowed list {cors_origins}")
+                return None
+        
+        allowed_origin = get_allowed_origin()
         
         # Process the request
         try:
@@ -134,50 +152,30 @@ def setup_cors(app: FastAPI) -> None:
         except Exception as e:
             # If there's an error, create a response with CORS headers
             from fastapi.responses import JSONResponse
-            logger.error(f"Error in request: {e}", exc_info=True)
+            logger.error(f"Error in request {request.method} {request.url.path}: {e}", exc_info=True)
             error_response = JSONResponse(
                 status_code=500,
                 content={"detail": "Internal server error"}
             )
-            # Add CORS headers to error response
-            if origin and cors_origins and validate_origin(origin, cors_origins):
-                error_response.headers["Access-Control-Allow-Origin"] = origin
-            elif "*" in cors_origins:
-                error_response.headers["Access-Control-Allow-Origin"] = "*"
-            elif cors_origins:
-                error_response.headers["Access-Control-Allow-Origin"] = cors_origins[0]
-            error_response.headers["Access-Control-Allow-Credentials"] = "true"
+            # Always add CORS headers to error response
+            if allowed_origin:
+                error_response.headers["Access-Control-Allow-Origin"] = allowed_origin
+                error_response.headers["Access-Control-Allow-Credentials"] = "true"
+                error_response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                error_response.headers["Access-Control-Allow-Headers"] = ", ".join(allowed_headers)
             return error_response
         
         # If response doesn't have CORS headers, add them
-        # Check both the headers dict and the response object
-        has_cors_origin = (
-            "Access-Control-Allow-Origin" in response.headers or
-            hasattr(response, "headers") and "Access-Control-Allow-Origin" in getattr(response, "headers", {})
-        )
-        
-        if not has_cors_origin:
-            # Validate origin
-            if origin and cors_origins and validate_origin(origin, cors_origins):
-                response.headers["Access-Control-Allow-Origin"] = origin
-            elif "*" in cors_origins:
-                response.headers["Access-Control-Allow-Origin"] = "*"
-            elif cors_origins:
-                response.headers["Access-Control-Allow-Origin"] = cors_origins[0]
-            elif not is_production:
-                # Development fallback
-                response.headers["Access-Control-Allow-Origin"] = origin or "*"
-            else:
-                # Production: deny if no valid origin
-                logger.warning(f"CORS: Origin {origin} not in allowed list {cors_origins}")
-            
-            # Add other CORS headers if not present
-            if "Access-Control-Allow-Credentials" not in response.headers:
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-            if "Access-Control-Allow-Methods" not in response.headers:
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-            if "Access-Control-Allow-Headers" not in response.headers:
-                response.headers["Access-Control-Allow-Headers"] = ", ".join(allowed_headers)
+        if "Access-Control-Allow-Origin" not in response.headers:
+            if allowed_origin:
+                response.headers["Access-Control-Allow-Origin"] = allowed_origin
+                # Add other CORS headers if not present
+                if "Access-Control-Allow-Credentials" not in response.headers:
+                    response.headers["Access-Control-Allow-Credentials"] = "true"
+                if "Access-Control-Allow-Methods" not in response.headers:
+                    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                if "Access-Control-Allow-Headers" not in response.headers:
+                    response.headers["Access-Control-Allow-Headers"] = ", ".join(allowed_headers)
         
         return response
     

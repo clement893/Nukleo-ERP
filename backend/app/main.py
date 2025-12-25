@@ -92,7 +92,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Request logging middleware (before CORS to log all requests)
+    # CORS Middleware - MUST be added FIRST to handle preflight requests
+    # Using enhanced CORS configuration with tightened security
+    setup_cors(app)
+
+    # Request logging middleware (after CORS to log all requests)
     @app.middleware("http")
     async def log_requests_middleware(request: Request, call_next):
         from app.core.logging import logger
@@ -108,10 +112,6 @@ def create_app() -> FastAPI:
             process_time = time.time() - start_time
             logger.error(f"Request failed: {request.method} {request.url.path} - {str(e)} ({process_time:.4f}s)", exc_info=True)
             raise
-
-    # CORS Middleware - MUST be added first to handle preflight requests
-    # Using enhanced CORS configuration with tightened security
-    setup_cors(app)
 
     # Compression Middleware (after CORS)
     # Enhanced compression with Brotli support
