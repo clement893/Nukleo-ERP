@@ -203,9 +203,11 @@ export default function WebhookManager({
                         variant="ghost"
                         size="sm"
                         onClick={() => onTest(webhook.id)}
-                        icon={<Activity className="w-4 h-4" />}
                       >
-                        Test
+                        <span className="flex items-center gap-2">
+                          <Activity className="w-4 h-4" />
+                          Test
+                        </span>
                       </Button>
                     )}
                     <Button
