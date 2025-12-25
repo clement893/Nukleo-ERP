@@ -99,6 +99,19 @@ COPY --from=builder /app/apps/web/.next/standalone ./
 # Copy static files to the expected location relative to server.js
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 
+# Verify server.js exists and show directory structure for debugging
+RUN ls -la /app/ | head -20 && \
+    if [ -f /app/server.js ]; then \
+      echo "✓ server.js found at /app/server.js"; \
+    else \
+      echo "✗ server.js NOT found at /app/server.js"; \
+      echo "Contents of /app:"; \
+      ls -la /app/; \
+      echo "Looking for server.js:"; \
+      find /app -name "server.js" 2>/dev/null || echo "No server.js found anywhere"; \
+      exit 1; \
+    fi
+
 USER nextjs
 
 # Railway provides PORT via environment variable, default to 3000 for local development
