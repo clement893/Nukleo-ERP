@@ -7,7 +7,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Button, Card, Container, Badge, StatsCard } from '@/components/ui';
+import { Button, Card, Container, StatsCard } from '@/components/ui';
 import { Hero, Features, TechStack, Stats, CTA } from '@/components/sections';
 import { 
   CheckCircle, 
