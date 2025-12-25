@@ -10,6 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import inspect, text
 
 # revision identifiers, used by Alembic.
 revision: str = '005_create_files_table'
@@ -19,11 +20,35 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Check if files table already exists
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if 'files' in tables:
+        return  # Table already exists, skip migration
+    
+    # Check the type of users.id to match the foreign key type
+    users_columns = inspector.get_columns('users')
+    users_id_type = None
+    for col in users_columns:
+        if col['name'] == 'id':
+            users_id_type = str(col['type'])
+            break
+    
+    # Determine user_id type based on users.id type
+    if users_id_type and 'INTEGER' in users_id_type.upper():
+        # Users table has INTEGER id, use INTEGER for user_id
+        user_id_column = sa.Column('user_id', sa.Integer(), nullable=False)
+    else:
+        # Users table has UUID id (or unknown), use UUID for user_id
+        user_id_column = sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False)
+    
     # Create files table
     op.create_table(
         'files',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
+        user_id_column,
         sa.Column('file_key', sa.String(500), nullable=False, unique=True),
         sa.Column('filename', sa.String(255), nullable=False),
         sa.Column('original_filename', sa.String(255), nullable=False),
