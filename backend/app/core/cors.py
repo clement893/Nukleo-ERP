@@ -125,14 +125,38 @@ def setup_cors(app: FastAPI) -> None:
     @app.middleware("http")
     async def add_cors_headers_middleware(request: Request, call_next):
         """Ensure CORS headers are always present"""
-        # Process the request
-        response = await call_next(request)
-        
         # Get origin from request
         origin = request.headers.get("Origin", "")
         
+        # Process the request
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            # If there's an error, create a response with CORS headers
+            from fastapi.responses import JSONResponse
+            logger.error(f"Error in request: {e}", exc_info=True)
+            error_response = JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
+            # Add CORS headers to error response
+            if origin and cors_origins and validate_origin(origin, cors_origins):
+                error_response.headers["Access-Control-Allow-Origin"] = origin
+            elif "*" in cors_origins:
+                error_response.headers["Access-Control-Allow-Origin"] = "*"
+            elif cors_origins:
+                error_response.headers["Access-Control-Allow-Origin"] = cors_origins[0]
+            error_response.headers["Access-Control-Allow-Credentials"] = "true"
+            return error_response
+        
         # If response doesn't have CORS headers, add them
-        if "Access-Control-Allow-Origin" not in response.headers:
+        # Check both the headers dict and the response object
+        has_cors_origin = (
+            "Access-Control-Allow-Origin" in response.headers or
+            hasattr(response, "headers") and "Access-Control-Allow-Origin" in getattr(response, "headers", {})
+        )
+        
+        if not has_cors_origin:
             # Validate origin
             if origin and cors_origins and validate_origin(origin, cors_origins):
                 response.headers["Access-Control-Allow-Origin"] = origin
@@ -143,6 +167,9 @@ def setup_cors(app: FastAPI) -> None:
             elif not is_production:
                 # Development fallback
                 response.headers["Access-Control-Allow-Origin"] = origin or "*"
+            else:
+                # Production: deny if no valid origin
+                logger.warning(f"CORS: Origin {origin} not in allowed list {cors_origins}")
             
             # Add other CORS headers if not present
             if "Access-Control-Allow-Credentials" not in response.headers:
