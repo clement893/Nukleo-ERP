@@ -22,8 +22,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Load global theme from database (public endpoint)
-    const loadGlobalTheme = async () => {
+    // Load theme preference: localStorage takes precedence over global theme
+    const loadTheme = async () => {
+      // First check localStorage for user's local preference
+      const savedTheme = localStorage.getItem('theme') as Theme | null;
+      if (savedTheme) {
+        setThemeState(savedTheme);
+        return;
+      }
+      
+      // If no local preference, try to load global theme from database
       try {
         const response = await getActiveTheme();
         // Extract mode from config, default to 'system' if not present
@@ -31,18 +39,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setThemeState(mode);
       } catch (error) {
         console.error('Failed to load global theme from database:', error);
-        // Fallback to localStorage if DB fails
-        const savedTheme = localStorage.getItem('theme') as Theme | null;
-        if (savedTheme) {
-          setThemeState(savedTheme);
-        }
+        // Fallback to system if both fail
+        setThemeState('system');
       }
     };
 
-    loadGlobalTheme();
+    loadTheme();
     
-    // Poll for theme changes every 30 seconds
-    const interval = setInterval(loadGlobalTheme, 30000);
+    // Poll for global theme changes every 30 seconds (only if no local preference)
+    const interval = setInterval(() => {
+      const savedTheme = localStorage.getItem('theme') as Theme | null;
+      if (!savedTheme) {
+        loadTheme();
+      }
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -90,16 +100,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme, mounted]);
 
-  const setTheme = (_newTheme: Theme) => {
-    // Note: Regular users cannot change the global theme
-    // This function is kept for compatibility but does nothing for non-admins
-    // Superadmins will use the admin interface to change the theme
-    console.warn('Theme changes are restricted to superadmins. Use the admin panel to change the global theme.');
+  const setTheme = (newTheme: Theme) => {
+    // Allow users to override the global theme with their local preference
+    // This preference is stored in localStorage and takes precedence
+    setThemeState(newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // Apply immediately
+    const root = window.document.documentElement;
+    let resolved: 'light' | 'dark' = 'light';
+    
+    if (newTheme === 'system') {
+      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+      resolved = newTheme;
+    }
+    
+    setResolvedTheme(resolved);
+    root.classList.remove('light', 'dark');
+    root.classList.add(resolved);
   };
 
   const toggleTheme = () => {
-    // Note: Regular users cannot toggle the global theme
-    console.warn('Theme changes are restricted to superadmins. Use the admin panel to change the global theme.');
+    // Toggle between light and dark (skip system for toggle)
+    const currentResolved = resolvedTheme;
+    const newTheme: Theme = currentResolved === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
   };
 
   if (!mounted) {
