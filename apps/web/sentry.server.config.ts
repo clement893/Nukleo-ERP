@@ -17,11 +17,6 @@ Sentry.init({
   // Performance Monitoring
   tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0,
   
-  // Integrations
-  integrations: [
-    Sentry.nodeProfilingIntegration(),
-  ],
-  
   // Error filtering
   beforeSend(event, hint) {
     // Don't send errors in development unless explicitly enabled
