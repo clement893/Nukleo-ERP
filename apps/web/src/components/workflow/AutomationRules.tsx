@@ -56,6 +56,24 @@ const eventOptions: SelectOption[] = [
   { label: 'File Uploaded', value: 'file.uploaded' },
 ];
 
+// Template placeholders - These will be used when implementing conditions and actions UI
+// TODO: Implement UI for adding/editing conditions and actions
+export const operatorOptions: SelectOption[] = [
+  { label: 'Equals', value: 'equals' },
+  { label: 'Not Equals', value: 'not_equals' },
+  { label: 'Contains', value: 'contains' },
+  { label: 'Greater Than', value: 'greater_than' },
+  { label: 'Less Than', value: 'less_than' },
+];
+
+export const actionTypeOptions: SelectOption[] = [
+  { label: 'Send Email', value: 'email.send' },
+  { label: 'Send Notification', value: 'notification.send' },
+  { label: 'Create Record', value: 'record.create' },
+  { label: 'Update Record', value: 'record.update' },
+  { label: 'Call Webhook', value: 'webhook.call' },
+];
+
 export default function AutomationRules({
   rules = [],
   onCreate,
