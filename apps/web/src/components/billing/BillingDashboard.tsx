@@ -65,11 +65,25 @@ export default function BillingDashboard({
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'active':
-        return <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>Active</Badge>;
+        return (
+          <Badge variant="success">
+            <span className="flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" />
+              Active
+            </span>
+          </Badge>
+        );
       case 'trialing':
         return <Badge variant="info">Trial</Badge>;
       case 'past_due':
-        return <Badge variant="warning" icon={<AlertCircle className="w-3 h-3" />}>Past Due</Badge>;
+        return (
+          <Badge variant="warning">
+            <span className="flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              Past Due
+            </span>
+          </Badge>
+        );
       case 'cancelled':
         return <Badge variant="error">Cancelled</Badge>;
       default:
