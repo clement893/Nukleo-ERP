@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { clsx } from 'clsx';
+import DOMPurify from 'dompurify';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { FileText, Save, Download } from 'lucide-react';
@@ -71,6 +72,7 @@ export default function MarkdownEditor({
   };
 
   // Simple markdown to HTML converter (basic implementation)
+  // SECURITY: HTML is sanitized with DOMPurify to prevent XSS attacks
   const markdownToHtml = (md: string) => {
     let html = md;
     
@@ -89,13 +91,22 @@ export default function MarkdownEditor({
     html = html.replace(/```(\w+)?\n([\s\S]*?)```/gim, '<pre><code>$2</code></pre>');
     html = html.replace(/`([^`]+)`/gim, '<code>$1</code>');
     
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>');
+    // Links - sanitize URLs to prevent javascript: and data: XSS
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, (match, text, url) => {
+      // Only allow http://, https://, and mailto: protocols
+      const safeUrl = /^(https?|mailto):/i.test(url) ? url : '#';
+      return `<a href="${safeUrl}">${text}</a>`;
+    });
     
     // Line breaks
     html = html.replace(/\n/gim, '<br>');
     
-    return html;
+    // Sanitize HTML to prevent XSS attacks
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'p', 'br', 'code', 'pre', 'a', 'ul', 'ol', 'li'],
+      ALLOWED_ATTR: ['href'],
+      ALLOWED_URI_REGEXP: /^(https?|mailto):/i,
+    });
   };
 
   return (

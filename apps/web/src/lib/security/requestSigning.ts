@@ -56,20 +56,35 @@ export async function signedFetch(
   options: RequestInit = {},
   config: SigningConfig
 ): Promise<Response> {
-  const method = options.method || 'GET';
-  const path = new URL(url).pathname;
-  const body = options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : '';
-  
-  const signedHeaders = createSignedHeaders(method, path, body, config);
-  
-  const headers = {
-    ...options.headers,
-    ...signedHeaders,
-  };
-  
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const method = options.method || 'GET';
+    const path = new URL(url).pathname;
+    const body = options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : '';
+    
+    const signedHeaders = createSignedHeaders(method, path, body, config);
+    
+    const headers = {
+      ...options.headers,
+      ...signedHeaders,
+    };
+    
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+    
+    // Check if response is ok, throw error if not
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response;
+  } catch (error) {
+    // Re-throw with context for better error handling upstream
+    if (error instanceof Error) {
+      throw new Error(`Signed fetch failed for ${url}: ${error.message}`);
+    }
+    throw error;
+  }
 }
 

@@ -77,9 +77,16 @@ export function preloadRoute(route: string) {
  * Preload critical API endpoints
  */
 export function preloadAPIEndpoint(endpoint: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_DEFAULT_API_URL || 'http://localhost:8000';
-  const fullUrl = `${apiUrl}${endpoint}`;
-  preloadResource(fullUrl, 'fetch');
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_DEFAULT_API_URL || 'http://localhost:8000';
+    const fullUrl = `${apiUrl}${endpoint}`;
+    preloadResource(fullUrl, 'fetch');
+  } catch (error) {
+    // Silently fail preloading - it's a performance optimization, not critical
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to preload API endpoint:', endpoint, error);
+    }
+  }
 }
 
 /**
@@ -88,22 +95,29 @@ export function preloadAPIEndpoint(endpoint: string) {
 export function initializePreloading() {
   if (typeof window === 'undefined') return;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_DEFAULT_API_URL || 'http://localhost:8000';
-  const apiHost = apiUrl.replace(/^https?:\/\//, '').split('/')[0];
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_DEFAULT_API_URL || 'http://localhost:8000';
+    const apiHost = apiUrl.replace(/^https?:\/\//, '').split('/')[0];
 
-  // Preconnect to API
-  if (apiHost) {
-    preconnectOrigin(`https://${apiHost}`, true);
-    dnsPrefetch(`//${apiHost}`);
+    // Preconnect to API
+    if (apiHost) {
+      preconnectOrigin(`https://${apiHost}`, true);
+      dnsPrefetch(`//${apiHost}`);
+    }
+
+    // Preconnect to common CDNs
+    preconnectOrigin('https://fonts.googleapis.com');
+    preconnectOrigin('https://fonts.gstatic.com', true);
+
+    // Preload critical API endpoints
+    preloadAPIEndpoint('/api/v1/health/');
+    preloadAPIEndpoint('/api/v1/users/me');
+  } catch (error) {
+    // Silently fail preloading - it's a performance optimization, not critical
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to initialize preloading:', error);
+    }
   }
-
-  // Preconnect to common CDNs
-  preconnectOrigin('https://fonts.googleapis.com');
-  preconnectOrigin('https://fonts.gstatic.com', true);
-
-  // Preload critical API endpoints
-  preloadAPIEndpoint('/api/v1/health/');
-  preloadAPIEndpoint('/api/v1/users/me');
 }
 
 /**

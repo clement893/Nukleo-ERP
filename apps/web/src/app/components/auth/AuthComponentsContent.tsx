@@ -54,9 +54,9 @@ export default function AuthComponentsContent() {
               <div className="max-w-md">
                 <MFA
                   onVerify={handleMFAVerify}
-                  qrCodeUrl="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
-                  secret="JBSWY3DPEHPK3PXP"
                   email="user@example.com"
+                  // Note: In production, qrCodeUrl and secret should come from your API
+                  // Never hardcode secrets in production code
                 />
               </div>
             </div>

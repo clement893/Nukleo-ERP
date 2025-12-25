@@ -97,6 +97,8 @@ export const SetupMode: Story = {
           await new Promise(resolve => setTimeout(resolve, 1000));
           alert(`Setup code: ${code}`);
         }}
+        // NOTE: This is an example secret for Storybook demo only
+        // In production, secrets should NEVER be hardcoded - use environment variables or API
         qrCodeUrl="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
         secret="JBSWY3DPEHPK3PXP"
         email="user@example.com"
