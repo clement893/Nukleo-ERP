@@ -204,7 +204,7 @@ export default function Mentions({
                 </div>
               </div>
               {user.role && (
-                <Badge variant="default" size="sm">
+                <Badge variant="default">
                   {user.role}
                 </Badge>
               )}
