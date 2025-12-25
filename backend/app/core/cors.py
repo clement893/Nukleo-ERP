@@ -121,16 +121,15 @@ def setup_cors(app: FastAPI) -> None:
     
     # Add a middleware to ensure CORS headers are always present
     # This is a safety net in case CORSMiddleware doesn't add headers for some routes
+    # Note: In FastAPI, middlewares are executed in reverse order, so this will run AFTER CORSMiddleware
     @app.middleware("http")
     async def add_cors_headers_middleware(request: Request, call_next):
         """Ensure CORS headers are always present"""
-        from fastapi.responses import Response
+        # Process the request
+        response = await call_next(request)
         
         # Get origin from request
         origin = request.headers.get("Origin", "")
-        
-        # Process the request
-        response = await call_next(request)
         
         # If response doesn't have CORS headers, add them
         if "Access-Control-Allow-Origin" not in response.headers:
