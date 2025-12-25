@@ -32,14 +32,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
       
       // If no local preference, try to load global theme from database
+      // Silently fail if backend is unavailable (CORS issues, 502, etc.)
       try {
         const response = await getActiveTheme();
         // Extract mode from config, default to 'system' if not present
         const mode = (response.config?.mode as Theme) || 'system';
         setThemeState(mode);
       } catch (error) {
-        console.error('Failed to load global theme from database:', error);
-        // Fallback to system if both fail
+        // Silently fallback to system theme if backend is unavailable
+        // This prevents CORS errors from cluttering the console
         setThemeState('system');
       }
     };
