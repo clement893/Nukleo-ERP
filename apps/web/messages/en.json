@@ -1,40 +1,62 @@
 {
   "common": {
+    "welcome": "Welcome",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
     "search": "Search",
-    "filter": "Filter",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "warning": "Warning",
-    "info": "Information"
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK"
   },
-  "components": {
-    "button": {
-      "submit": "Submit",
-      "cancel": "Cancel",
-      "delete": "Delete"
-    },
-    "form": {
-      "required": "This field is required",
-      "invalid": "Invalid value",
-      "email": "Invalid email"
-    }
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signUp": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "createAccount": "Create account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "resetPassword": "Reset password",
+    "confirmPassword": "Confirm password"
   },
-  "pages": {
-    "dashboard": {
-      "title": "Dashboard",
-      "welcome": "Welcome"
-    },
-    "settings": {
-      "title": "Settings",
-      "profile": "Profile",
-      "security": "Security"
-    }
+  "navigation": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "settings": "Settings",
+    "profile": "Profile",
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "pricing": "Pricing",
+    "features": "Features"
+  },
+  "language": {
+    "switchLanguage": "Switch language",
+    "currentLanguage": "Current language",
+    "selectLanguage": "Select language"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try again",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "serverError": "Server error"
   }
 }
-

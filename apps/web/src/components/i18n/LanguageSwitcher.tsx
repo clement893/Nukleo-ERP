@@ -1,12 +1,12 @@
 /**
- * Locale Switcher Component (Updated for next-intl)
+ * Language Switcher Component
  * Allows users to switch between available languages
  * Supports RTL languages (Arabic, Hebrew)
  */
 
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { locales, localeNames, localeNativeNames, isRTL, type Locale } from '@/i18n/routing';
 import { useState } from 'react';
@@ -14,8 +14,9 @@ import { Globe, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { clsx } from 'clsx';
 
-export default function LocaleSwitcher() {
+export default function LanguageSwitcher() {
   const locale = useLocale() as Locale;
+  const t = useTranslations('language');
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -23,8 +24,9 @@ export default function LocaleSwitcher() {
   const handleLocaleChange = (newLocale: Locale) => {
     setIsOpen(false);
     
-    // Get current pathname without locale
-    const pathWithoutLocale = pathname.replace(/^\/(en|fr|ar|he)/, '') || '/';
+    // Use next-intl's navigation helper
+    const { pathname: currentPath } = window.location;
+    const pathWithoutLocale = currentPath.replace(/^\/(en|fr|ar|he)/, '') || '/';
     
     // Build new path with locale
     const newPath = newLocale === 'en' 
@@ -32,12 +34,7 @@ export default function LocaleSwitcher() {
       : `/${newLocale}${pathWithoutLocale}`;
     
     // Navigate to new locale
-    router.push(newPath);
-    
-    // Small delay before reload to ensure navigation
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+    window.location.href = newPath;
   };
 
   return (
@@ -46,7 +43,7 @@ export default function LocaleSwitcher() {
         variant="secondary"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2"
-        aria-label="Switch language"
+        aria-label={t('switchLanguage')}
       >
         <Globe className="w-4 h-4" />
         <span className="hidden sm:inline">{localeNames[locale]}</span>
@@ -92,3 +89,4 @@ export default function LocaleSwitcher() {
     </div>
   );
 }
+

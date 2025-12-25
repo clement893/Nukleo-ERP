@@ -1,40 +1,62 @@
 {
   "common": {
+    "welcome": "Bienvenue",
     "save": "Enregistrer",
     "cancel": "Annuler",
     "delete": "Supprimer",
     "edit": "Modifier",
     "create": "Créer",
     "search": "Rechercher",
-    "filter": "Filtrer",
     "loading": "Chargement...",
     "error": "Erreur",
     "success": "Succès",
-    "warning": "Avertissement",
-    "info": "Information"
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "reset": "Réinitialiser",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK"
   },
-  "components": {
-    "button": {
-      "submit": "Soumettre",
-      "cancel": "Annuler",
-      "delete": "Supprimer"
-    },
-    "form": {
-      "required": "Ce champ est requis",
-      "invalid": "Valeur invalide",
-      "email": "Email invalide"
-    }
+  "auth": {
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "signUp": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "rememberMe": "Se souvenir de moi",
+    "createAccount": "Créer un compte",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "dontHaveAccount": "Vous n'avez pas de compte ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "confirmPassword": "Confirmer le mot de passe"
   },
-  "pages": {
-    "dashboard": {
-      "title": "Tableau de bord",
-      "welcome": "Bienvenue"
-    },
-    "settings": {
-      "title": "Paramètres",
-      "profile": "Profil",
-      "security": "Sécurité"
-    }
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "users": "Utilisateurs",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "home": "Accueil",
+    "about": "À propos",
+    "contact": "Contact",
+    "pricing": "Tarification",
+    "features": "Fonctionnalités"
+  },
+  "language": {
+    "switchLanguage": "Changer de langue",
+    "currentLanguage": "Langue actuelle",
+    "selectLanguage": "Sélectionner une langue"
+  },
+  "errors": {
+    "somethingWentWrong": "Quelque chose s'est mal passé",
+    "tryAgain": "Réessayer",
+    "notFound": "Non trouvé",
+    "unauthorized": "Non autorisé",
+    "forbidden": "Interdit",
+    "serverError": "Erreur serveur"
   }
 }
-

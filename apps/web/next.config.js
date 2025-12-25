@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
@@ -21,6 +25,7 @@ const nextConfig = {
       '@tanstack/react-query-devtools',
       'zod',
       'clsx',
+      'next-intl',
     ],
   },
 
@@ -58,7 +63,7 @@ const nextConfig = {
               name(module) {
                 const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
                 // Only create separate chunks for large libraries
-                const largeLibs = ['axios', '@tanstack/react-query', 'zod', 'zustand'];
+                const largeLibs = ['axios', '@tanstack/react-query', 'zod', 'zustand', 'next-intl'];
                 if (largeLibs.some(lib => packageName?.includes(lib))) {
                   return `lib-${packageName?.replace('@', '').replace('/', '-')}`;
                 }
@@ -198,4 +203,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

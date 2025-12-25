@@ -90,25 +90,26 @@ export function captureMessage(
 
 /**
  * Start a transaction for performance monitoring
+ * Note: startSpan executes the callback and doesn't return a transaction object
  */
 export function startTransaction(
   name: string,
   op: string,
+  callback: () => void,
   description?: string
-): Sentry.Transaction | undefined {
+): void {
   if (typeof window === 'undefined') {
-    return undefined;
+    callback();
+    return;
   }
 
-  return Sentry.startSpan(
+  Sentry.startSpan(
     {
       name,
       op,
       description,
     },
-    () => {
-      // Transaction will be automatically finished when span ends
-    }
+    callback
   );
 }
 
