@@ -61,7 +61,6 @@ export default function WebhookManager({
   className,
 }: WebhookManagerProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     url: '',
