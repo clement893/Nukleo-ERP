@@ -21,7 +21,7 @@ export async function register() {
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     try {
-      await import('../sentry.server.config');
+      await import('../../sentry.server.config');
     } catch {
       // Config file not found, skip silently
       // This is expected when Sentry config files don't exist
@@ -30,7 +30,7 @@ export async function register() {
 
   if (process.env.NEXT_RUNTIME === 'edge') {
     try {
-      await import('../sentry.edge.config');
+      await import('../../sentry.edge.config');
     } catch {
       // Config file not found, skip silently
       // This is expected when Sentry config files don't exist
