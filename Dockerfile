@@ -101,6 +101,10 @@ COPY --from=builder /app/apps/web/public ./apps/web/public
 # Static files should be at apps/web/.next/static (same level as server.js)
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
+# Set working directory to where server.js is located BEFORE switching user
+# This ensures Next.js can find static files and other resources correctly
+WORKDIR /app/apps/web
+
 USER nextjs
 
 # Railway provides PORT via environment variable, default to 3000 for local development
@@ -109,10 +113,6 @@ EXPOSE 3000
 # Use PORT from Railway environment, fallback to 3000
 ENV PORT=${PORT:-3000}
 ENV HOSTNAME="0.0.0.0"
-
-# Set working directory to where server.js is located
-# This ensures Next.js can find static files and other resources correctly
-WORKDIR /app/apps/web
 
 # Use ENTRYPOINT to prevent Railway from overriding the command
 # This ensures Railway executes node directly without shell parsing
