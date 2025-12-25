@@ -33,6 +33,7 @@ function sendToAnalytics(metric: Metric) {
     import('@sentry/nextjs')
       .then((Sentry) => {
         // Track performance metric in Sentry
+        // Note: MetricOptions only supports 'unit', not 'tags'
         Sentry.metrics.distribution(`web_vital.${metric.name.toLowerCase()}`, metric.value, {
           unit: 'millisecond',
         });
