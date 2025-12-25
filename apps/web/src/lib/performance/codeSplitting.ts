@@ -47,7 +47,7 @@ export function withSuspense<T extends ComponentType<ComponentProps>>(
  */
 export function routeSplit<T extends ComponentType<ComponentProps>>(
   importFn: () => Promise<{ default: T }>,
-  routeName: string
+  _routeName: string
 ) {
   const LoadingComponent = () =>
     React.createElement(
