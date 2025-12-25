@@ -6,7 +6,7 @@ Tightened CORS settings for better security
 import os
 from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from app.core.config import settings
 from app.core.logging import logger
