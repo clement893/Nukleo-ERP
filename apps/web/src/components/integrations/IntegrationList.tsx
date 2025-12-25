@@ -219,10 +219,12 @@ export default function IntegrationList({
                         variant="outline"
                         size="sm"
                         onClick={() => onConfigure(integration)}
-                        icon={<Settings className="w-4 h-4" />}
                         fullWidth
                       >
-                        Configure
+                        <span className="flex items-center gap-2">
+                          <Settings className="w-4 h-4" />
+                          Configure
+                        </span>
                       </Button>
                     )}
                     {onDisconnect && (
