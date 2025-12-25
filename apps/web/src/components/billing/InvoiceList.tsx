@@ -101,7 +101,7 @@ export default function InvoiceList({
       key: 'status',
       label: 'Status',
       sortable: true,
-      render: (value, invoice) => getStatusBadge(invoice.status),
+      render: (_value, invoice) => getStatusBadge(invoice.status),
     },
     {
       key: 'actions',
