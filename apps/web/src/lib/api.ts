@@ -292,13 +292,13 @@ export const projectsAPI = {
 
 export const aiAPI = {
   health: () => {
-    return apiClient.get('/ai/health');
+    return apiClient.get('/v1/ai/health');
   },
   simpleChat: (message: string, systemPrompt?: string, model?: string) => {
-    return apiClient.post('/ai/chat/simple', { message, system_prompt: systemPrompt, model });
+    return apiClient.post('/v1/ai/chat/simple', { message, system_prompt: systemPrompt, model });
   },
   chat: (messages: Array<{ role: string; content: string }>, model?: string, temperature?: number, maxTokens?: number) => {
-    return apiClient.post('/ai/chat', { messages, model, temperature, max_tokens: maxTokens });
+    return apiClient.post('/v1/ai/chat', { messages, model, temperature, max_tokens: maxTokens });
   },
 };
 
