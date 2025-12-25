@@ -3,7 +3,7 @@
  * Provides utilities for dynamic imports and lazy loading
  */
 
-import { ComponentType, lazy, Suspense } from 'react';
+import { ComponentType, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 type ComponentProps = Record<string, unknown>;
@@ -18,8 +18,9 @@ export function createLazyComponent<T extends ComponentType<ComponentProps>>(
     ssr?: boolean;
   }
 ) {
+  const LoadingComponent = options?.loading || (() => <div>Loading...</div>);
   return dynamic(importFn, {
-    loading: options?.loading || (() => <div>Loading...</div>) as ComponentType<ComponentProps>,
+    loading: LoadingComponent as ComponentType<ComponentProps>,
     ssr: options?.ssr !== false,
   });
 }
@@ -48,12 +49,13 @@ export function routeSplit<T extends ComponentType<ComponentProps>>(
   importFn: () => Promise<{ default: T }>,
   routeName: string
 ) {
+  const LoadingComponent = () => (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+    </div>
+  );
   return dynamic(importFn, {
-    loading: () => (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-      </div>
-    ),
+    loading: LoadingComponent as ComponentType<ComponentProps>,
     ssr: true,
   });
 }
