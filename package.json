@@ -57,7 +57,8 @@
                     "audit:security":  "node scripts/audit-security.js",
                     "audit:security:full":  "node scripts/audit-security-comprehensive.js",
                     "audit:performance":  "node scripts/audit-performance.js",
-                    "audit:all":  "npm run audit:security \u0026\u0026 npm run audit:performance",
+                    "audit:architecture":  "node scripts/audit-architecture.js",
+                    "audit:all":  "npm run audit:security \u0026\u0026 npm run audit:performance \u0026\u0026 npm run audit:architecture",
                     "validate:env":  "node scripts/validate-env.js",
                     "validate:env:backend":  "node scripts/validate-env.js backend",
                     "validate:env:frontend":  "node scripts/validate-env.js frontend"
