@@ -3,8 +3,8 @@
  * Provides utilities for dynamic imports and lazy loading
  */
 
-import React, { ComponentType } from 'react';
-import dynamic from 'next/dynamic';
+import React, { ComponentType, ReactNode } from 'react';
+import dynamic, { DynamicOptionsLoadingProps } from 'next/dynamic';
 
 type ComponentProps = Record<string, unknown>;
 
@@ -14,13 +14,13 @@ type ComponentProps = Record<string, unknown>;
 export function createLazyComponent<T extends ComponentType<ComponentProps>>(
   importFn: () => Promise<{ default: T }>,
   options?: {
-    loading?: ComponentType<ComponentProps>;
+    loading?: (loadingProps: DynamicOptionsLoadingProps) => ReactNode;
     ssr?: boolean;
   }
 ) {
   const LoadingComponent = options?.loading || (() => React.createElement('div', null, 'Loading...'));
   return dynamic(importFn, {
-    loading: LoadingComponent as ComponentType<ComponentProps>,
+    loading: LoadingComponent,
     ssr: options?.ssr !== false,
   });
 }
@@ -58,7 +58,7 @@ export function routeSplit<T extends ComponentType<ComponentProps>>(
       })
     );
   return dynamic(importFn, {
-    loading: LoadingComponent as ComponentType<ComponentProps>,
+    loading: LoadingComponent,
     ssr: true,
   });
 }
