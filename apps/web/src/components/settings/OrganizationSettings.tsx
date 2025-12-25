@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import type { SelectOption } from '@/components/ui/Select';
-import { Save, Building2, Users, Globe, MapPin, Mail } from 'lucide-react';
+import { Save, Building2, Globe, MapPin, Mail } from 'lucide-react';
 
 export interface OrganizationSettingsProps {
   organization?: {
