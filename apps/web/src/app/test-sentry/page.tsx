@@ -47,7 +47,7 @@ export default function TestSentryPage() {
   const testAsyncError = async () => {
     try {
       addBreadcrumb('User clicked async error button', 'user-action', 'info');
-      await new Promise((resolve, reject) => {
+      await new Promise((_resolve, reject) => {
         setTimeout(() => {
           reject(new Error(`Async Sentry Test Error - ${new Date().toISOString()}`));
         }, 100);
