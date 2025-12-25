@@ -38,11 +38,9 @@ const nextConfig = {
 
   // Webpack configuration for better code splitting
   webpack: (config, { isServer, dev, webpack }) => {
-    // Resolve missing CSS files to empty module during build
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '.next/browser/default-stylesheet.css': require.resolve('./src/lib/empty-css.js'),
-    };
+    // Add plugin to create missing CSS file during build
+    const CreateMissingCssPlugin = require('./webpack-plugins/create-missing-css-plugin');
+    config.plugins.push(new CreateMissingCssPlugin());
 
     // Enhanced code splitting configuration
     if (!isServer) {
