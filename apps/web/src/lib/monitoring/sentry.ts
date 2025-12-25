@@ -107,9 +107,14 @@ export function startTransaction(
     {
       name,
       op,
-      description,
     },
-    callback
+    (span) => {
+      // Set description as an attribute if provided
+      if (description) {
+        span.setAttribute('description', description);
+      }
+      callback();
+    }
   );
 }
 
