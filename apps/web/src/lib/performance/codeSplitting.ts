@@ -3,7 +3,7 @@
  * Provides utilities for dynamic imports and lazy loading
  */
 
-import React, { ComponentType, Suspense } from 'react';
+import React, { ComponentType } from 'react';
 import dynamic from 'next/dynamic';
 
 type ComponentProps = Record<string, unknown>;
@@ -34,9 +34,9 @@ export function withSuspense<T extends ComponentType<ComponentProps>>(
 ) {
   return function SuspenseWrapper(props: React.ComponentProps<T>) {
     return (
-      <Suspense fallback={fallback || <div>Loading...</div>}>
+      <React.Suspense fallback={fallback || <div>Loading...</div>}>
         <Component {...props} />
-      </Suspense>
+      </React.Suspense>
     );
   };
 }
