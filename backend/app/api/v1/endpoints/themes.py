@@ -193,6 +193,10 @@ async def list_themes(
     
     # If no active theme, activate TemplateTheme (ID 32) if it exists
     if not active_theme:
+        # Check if TemplateTheme (ID 32) exists
+        template_result = await db.execute(select(Theme).where(Theme.id == 32))
+        template_theme = template_result.scalar_one_or_none()
+        
         if template_theme:
             template_theme.is_active = True
             await db.commit()
@@ -211,8 +215,24 @@ async def list_themes(
         invalidate_cache_pattern("themes:*")
         invalidate_cache_pattern("theme:*")
     
+    # Convert themes to response format with error handling
+    try:
+        theme_responses = [ThemeResponse.model_validate(theme) for theme in themes_list]
+    except Exception as e:
+        from app.core.logging import logger
+        logger.error(f"Error validating theme responses: {e}", exc_info=True)
+        # Fallback: create minimal responses
+        theme_responses = []
+        for theme in themes_list:
+            try:
+                theme_responses.append(ThemeResponse.model_validate(theme))
+            except Exception as theme_error:
+                logger.error(f"Error validating theme {theme.id}: {theme_error}", exc_info=True)
+                # Skip this theme if validation fails
+                continue
+    
     return ThemeListResponse(
-        themes=[ThemeResponse.model_validate(theme) for theme in themes_list],
+        themes=theme_responses,
         total=total_count,
         active_theme_id=active_theme.id if active_theme else None
     )
