@@ -31,6 +31,7 @@ class EmailResponse(BaseModel):
     status_code: Optional[int] = Field(None, description="HTTP status code from SendGrid")
     message_id: Optional[str] = Field(None, description="Message ID from SendGrid")
     to: str = Field(..., description="Recipient email address")
+    task_id: Optional[str] = Field(None, description="Celery task ID if queued")
 
 
 class TestEmailRequest(BaseModel):
@@ -237,30 +238,64 @@ async def send_test_email(
         )
 
 
-@router.post("/welcome")
+@router.post("/welcome", response_model=EmailResponse)
 async def send_welcome_email_endpoint(
     request_data: TestEmailRequest,
     current_user: User = Depends(get_current_user),
 ):
     """Send a welcome email."""
-    from app.tasks.email_tasks import send_welcome_email_task
-    
-    email_service = EmailService()
-    
-    # Extract name from email or use a default
-    name = request_data.to_email.split("@")[0].replace(".", " ").title()
+    from app.core.logging import logger
     
     try:
-        # Use Celery task for async processing
-        task = send_welcome_email_task.delay(request_data.to_email, name)
-        return {
-            "status": "queued",
-            "task_id": task.id,
-            "to": request_data.to_email,
-            "message": "Welcome email queued for sending",
-        }
+        email_service = EmailService()
+        
+        # Get user info safely - User model has first_name, last_name, and email
+        user_first_name = getattr(current_user, 'first_name', None) or ''
+        user_last_name = getattr(current_user, 'last_name', None) or ''
+        user_email = getattr(current_user, 'email', 'unknown@example.com')
+        
+        # Build full name or use email if no name available
+        if user_first_name or user_last_name:
+            name = f"{user_first_name} {user_last_name}".strip()
+        else:
+            # Extract name from email or use a default
+            name = request_data.to_email.split("@")[0].replace(".", " ").title()
+        
+        # Try to use Celery task for async processing, fallback to direct send if Celery unavailable
+        try:
+            from app.tasks.email_tasks import send_welcome_email_task
+            
+            # Check if Celery is available
+            try:
+                task = send_welcome_email_task.delay(request_data.to_email, name)
+                return EmailResponse(
+                    status="queued",
+                    task_id=task.id,
+                    to=request_data.to_email,
+                )
+            except Exception as celery_error:
+                logger.warning(f"Celery task failed, falling back to direct send: {celery_error}")
+                # Fall through to direct send
+        except ImportError:
+            logger.info("Celery tasks not available, using direct email send")
+            # Fall through to direct send
+        
+        # Direct send (fallback or primary method)
+        result = email_service.send_welcome_email(request_data.to_email, name)
+        return EmailResponse(**result)
+        
+    except ValueError as e:
+        logger.error(f"Email validation error: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except RuntimeError as e:
+        logger.error(f"Email service error: {e}")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        logger.error(f"Unexpected error sending welcome email: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send welcome email: {str(e)}"
+        )
 
 
 class InvoiceEmailRequest(BaseModel):
