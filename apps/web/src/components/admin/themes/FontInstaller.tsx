@@ -145,19 +145,112 @@ export function FontInstaller({ onFontSelect, currentFont }: FontInstallerProps)
             <Input
               type="file"
               accept=".woff,.woff2,.ttf,.otf"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  // Handle custom font upload
-                  const fontName = file.name.replace(/\.[^/.]+$/, '');
-                  const fontUrl = URL.createObjectURL(file);
+                if (!file) return;
+
+                setUploadError(null);
+                setUploadingFont(true);
+                setUploadedFontUrl(null);
+
+                try {
+                  // Validate file size (max 5MB for fonts)
+                  const maxSize = 5 * 1024 * 1024; // 5MB
+                  if (file.size > maxSize) {
+                    throw new Error(`Le fichier est trop volumineux. Taille maximale: ${(maxSize / 1024 / 1024).toFixed(0)}MB`);
+                  }
+
+                  // Extract font name from filename
+                  const fontName = file.name.replace(/\.[^/.]+$/, '').trim() || 'Custom Font';
+
+                  // Try to upload to backend first (if API supports font files)
+                  let fontUrl: string;
+                  try {
+                    const { apiClient } = await import('@/lib/api');
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('folder', 'fonts');
+
+                    const response = await apiClient.post<{
+                      id: string;
+                      filename: string;
+                      url: string;
+                      size: number;
+                      content_type: string;
+                    }>('/upload/file', formData, {
+                      headers: {
+                        'Content-Type': 'multipart/form-data',
+                      },
+                    });
+
+                    if (response.data?.url) {
+                      fontUrl = response.data.url;
+                      setUploadedFontUrl(fontUrl);
+                    } else {
+                      throw new Error('URL non reçue du serveur');
+                    }
+                  } catch (uploadError) {
+                    // If backend upload fails, use blob URL as fallback
+                    console.warn('Backend upload failed, using blob URL:', uploadError);
+                    const blobUrl = URL.createObjectURL(file);
+                    fontUrl = blobUrl;
+                    setUploadedFontUrl(blobUrl);
+                  }
+
+                  // Create @font-face CSS
+                  const fontFaceCSS = `
+@font-face {
+  font-family: '${fontName}';
+  src: url('${fontUrl}') format('${getFontFormat(file.name)}');
+  font-display: swap;
+}`;
+
+                  // Inject @font-face into document
+                  const styleId = `font-face-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+                  let styleElement = document.getElementById(styleId);
+                  if (!styleElement) {
+                    styleElement = document.createElement('style');
+                    styleElement.id = styleId;
+                    document.head.appendChild(styleElement);
+                  }
+                  styleElement.textContent = fontFaceCSS;
+
+                  // Notify parent component
                   onFontSelect(fontName, fontUrl);
                   setSelectedFont(fontName);
+                } catch (error) {
+                  const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'upload de la police';
+                  setUploadError(errorMessage);
+                  console.error('Font upload error:', error);
+                } finally {
+                  setUploadingFont(false);
                 }
               }}
+              disabled={uploadingFont}
             />
+            {uploadingFont && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                <span>Upload en cours...</span>
+              </div>
+            )}
+            {uploadError && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">{uploadError}</p>
+              </div>
+            )}
+            {uploadedFontUrl && selectedFont && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  Police "{selectedFont}" uploadée avec succès
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1" style={{ fontFamily: selectedFont }}>
+                  Aperçu: {selectedFont}
+                </p>
+              </div>
+            )}
             <p className="text-xs text-gray-500">
-              Formats supportés: WOFF, WOFF2, TTF, OTF
+              Formats supportés: WOFF, WOFF2, TTF, OTF (max 5MB)
             </p>
           </div>
         </Card>
