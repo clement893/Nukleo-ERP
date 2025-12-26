@@ -35,69 +35,59 @@ class ThemeModeUpdate(BaseModel):
 
 async def ensure_default_theme(db: AsyncSession, created_by: int = 1) -> Theme:
     """
-    Ensure TemplateTheme exists. Creates one if none exists.
-    Returns the active theme (or newly created TemplateTheme with ID 32).
+    Ensure TemplateTheme (ID 32) exists. Creates one if none exists.
+    Always creates TemplateTheme if it doesn't exist, regardless of other themes.
+    Returns the TemplateTheme (or newly created one).
     """
     # Check if TemplateTheme exists (ID 32)
     result = await db.execute(select(Theme).where(Theme.id == 32))
     template_theme = result.scalar_one_or_none()
     
     if template_theme:
-        # If TemplateTheme exists but is not active, check if we should activate it
-        if not template_theme.is_active:
-            # Check if any theme is active
-            active_result = await db.execute(select(Theme).where(Theme.is_active == True))
-            active_theme = active_result.scalar_one_or_none()
-            if not active_theme:
-                template_theme.is_active = True
-                await db.commit()
-                await db.refresh(template_theme)
+        # TemplateTheme exists - ensure it's visible and return it
+        # If no theme is active, activate TemplateTheme
+        active_result = await db.execute(select(Theme).where(Theme.is_active == True))
+        active_theme = active_result.scalar_one_or_none()
+        if not active_theme:
+            template_theme.is_active = True
+            await db.commit()
+            await db.refresh(template_theme)
         return template_theme
     
-    # Check if any theme exists
-    result = await db.execute(select(Theme))
-    themes = result.scalars().all()
+    # TemplateTheme doesn't exist - create it with ID 32
+    # This should always happen regardless of other themes existing
+    default_config = {
+        "mode": "system",
+        "primary": "#3b82f6",
+        "secondary": "#8b5cf6",
+        "danger": "#ef4444",
+        "warning": "#f59e0b",
+        "info": "#06b6d4",
+    }
     
-    if not themes:
-        # Create TemplateTheme with ID 32
-        default_config = {
-            "mode": "system",
-            "primary": "#3b82f6",
-            "secondary": "#8b5cf6",
-            "danger": "#ef4444",
-            "warning": "#f59e0b",
-            "info": "#06b6d4",
-        }
-        
-        # Use raw SQL to insert with specific ID 32
-        await db.execute(text("""
-            INSERT INTO themes (id, name, display_name, description, config, is_active, created_by, created_at, updated_at)
-            VALUES (32, 'TemplateTheme', 'Template Theme', 'Master theme that controls all components', 
-                    :config::jsonb, true, :created_by, NOW(), NOW())
-        """), {
-            "config": json.dumps(default_config),
-            "created_by": created_by
-        })
-        await db.commit()
-        
-        # Refresh to get the created theme
-        result = await db.execute(select(Theme).where(Theme.id == 32))
-        template_theme = result.scalar_one()
-        return template_theme
-    
-    # Check if any theme is active
+    # Check if any theme is currently active
     active_result = await db.execute(select(Theme).where(Theme.is_active == True))
     active_theme = active_result.scalar_one_or_none()
     
-    if not active_theme:
-        # Activate the first theme
-        first_theme = themes[0]
-        first_theme.is_active = True
-        await db.commit()
-        await db.refresh(first_theme)
-        return first_theme
+    # Create TemplateTheme - activate it only if no other theme is active
+    is_active = active_theme is None
     
-    return active_theme
+    # Use raw SQL to insert with specific ID 32
+    await db.execute(text("""
+        INSERT INTO themes (id, name, display_name, description, config, is_active, created_by, created_at, updated_at)
+        VALUES (32, 'TemplateTheme', 'Template Theme', 'Master theme that controls all components', 
+                :config::jsonb, :is_active, :created_by, NOW(), NOW())
+    """), {
+        "config": json.dumps(default_config),
+        "is_active": is_active,
+        "created_by": created_by
+    })
+    await db.commit()
+    
+    # Refresh to get the created theme
+    result = await db.execute(select(Theme).where(Theme.id == 32))
+    template_theme = result.scalar_one()
+    return template_theme
 
 
 @router.get("/active", response_model=ThemeConfigResponse, tags=["themes"])
@@ -166,42 +156,44 @@ async def list_themes(
     """
     List all themes.
     Requires superadmin authentication.
-    Ensures TemplateTheme (ID 32) exists.
+    TemplateTheme (ID 32) is ALWAYS included in the list, regardless of pagination.
     Note: Cache disabled to ensure fresh data when themes are created/updated.
     """
-    # Ensure TemplateTheme (ID 32) exists
-    try:
-        await ensure_default_theme(db, created_by=current_user.id)
-    except Exception as e:
-        # Log error but continue - TemplateTheme might already exist
-        pass
+    # First, get TemplateTheme (ID 32) - it should always exist
+    template_result = await db.execute(select(Theme).where(Theme.id == 32))
+    template_theme = template_result.scalar_one_or_none()
     
-    # Get all themes with pagination
-    result = await db.execute(select(Theme).order_by(Theme.id).offset(skip).limit(limit))
-    themes = result.scalars().all()
+    # Get all other themes (excluding ID 32 to avoid duplicates) with pagination
+    other_themes_result = await db.execute(
+        select(Theme).where(Theme.id != 32).order_by(Theme.id).offset(skip).limit(limit)
+    )
+    other_themes = other_themes_result.scalars().all()
     
-    # Get total count for pagination
+    # Combine: TemplateTheme first (if it exists), then other themes
+    themes_list = []
+    if template_theme:
+        themes_list.append(template_theme)
+    themes_list.extend(other_themes)
+    
+    # Get total count for pagination (all themes including TemplateTheme)
     total_result = await db.execute(select(Theme))
     all_themes = total_result.scalars().all()
     total_count = len(all_themes)
     
+    # Get active theme
     active_result = await db.execute(select(Theme).where(Theme.is_active == True))
     active_theme = active_result.scalar_one_or_none()
     
-    # If no active theme but themes exist, activate TemplateTheme (ID 32) or first theme
-    if not active_theme and themes:
-        # Try to activate TemplateTheme (ID 32) first
-        template_theme_result = await db.execute(select(Theme).where(Theme.id == 32))
-        template_theme = template_theme_result.scalar_one_or_none()
-        
+    # If no active theme, activate TemplateTheme (ID 32) if it exists
+    if not active_theme:
         if template_theme:
             template_theme.is_active = True
             await db.commit()
             await db.refresh(template_theme)
             active_theme = template_theme
-        else:
-            # Fallback to first theme
-            first_theme = themes[0]
+        elif themes_list:
+            # Fallback to first theme if TemplateTheme doesn't exist (shouldn't happen)
+            first_theme = themes_list[0]
             first_theme.is_active = True
             await db.commit()
             await db.refresh(first_theme)
@@ -213,7 +205,7 @@ async def list_themes(
         invalidate_cache_pattern("theme:*")
     
     return ThemeListResponse(
-        themes=[ThemeResponse.model_validate(theme) for theme in themes],
+        themes=[ThemeResponse.model_validate(theme) for theme in themes_list],
         total=total_count,
         active_theme_id=active_theme.id if active_theme else None
     )
