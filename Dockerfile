@@ -104,6 +104,11 @@ COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 # Also ensure static files are accessible from root for Next.js routing
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 
+# Create .next/browser directory and default-stylesheet.css if it doesn't exist
+# This file is created during build but may not be included in standalone mode
+RUN mkdir -p /app/apps/web/.next/browser && \
+    echo '/* Empty stylesheet - created by Dockerfile */' > /app/apps/web/.next/browser/default-stylesheet.css
+
 # Set working directory to where server.js is located BEFORE switching user
 # This ensures Next.js can find static files and other resources correctly
 WORKDIR /app/apps/web
@@ -121,6 +126,7 @@ ENV HOSTNAME="0.0.0.0"
 # This ensures Railway executes node directly without shell parsing
 # Use exec form to avoid shell interpretation
 # Run server.js from the apps/web directory
-ENTRYPOINT ["/usr/bin/env", "node"]
-CMD ["server.js"]
+# Also ensure CSS file exists at runtime
+ENTRYPOINT ["/usr/bin/env", "sh", "-c"]
+CMD ["node scripts/ensure-css-at-runtime.js && node server.js"]
 
