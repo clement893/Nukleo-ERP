@@ -3,12 +3,13 @@ ERP Portal - Dashboard Endpoints
 """
 
 from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.permissions import Permission, require_permission
 from app.core.cache import cached
+from app.core.logging import logger
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.erp import ERPDashboardStats
@@ -41,11 +42,18 @@ async def get_erp_dashboard_stats(
     
     Results are cached for 5 minutes to improve performance.
     """
-    service = ERPService(db)
-    stats = await service.get_erp_dashboard_stats(
-        user_id=current_user.id,
-        department=department,
-    )
-    
-    return ERPDashboardStats(**stats)
+    try:
+        service = ERPService(db)
+        stats = await service.get_erp_dashboard_stats(
+            user_id=current_user.id,
+            department=department,
+        )
+        
+        return ERPDashboardStats(**stats)
+    except Exception as e:
+        logger.error(f"Error getting ERP dashboard stats: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve ERP dashboard statistics"
+        )
 

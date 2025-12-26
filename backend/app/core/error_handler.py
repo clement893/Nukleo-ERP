@@ -13,6 +13,47 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.exceptions import AppException
 from app.core.logging import logger
 from app.core.logging_utils import sanitize_log_data
+from app.core.cors import get_cors_origins, validate_origin
+
+
+def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
+    """Add CORS headers to error response"""
+    try:
+        origin = request.headers.get("Origin", "")
+        cors_origins = get_cors_origins()
+        
+        # Determine allowed origin
+        allowed_origin = None
+        
+        if origin:
+            # Check if origin is in allowed list
+            if cors_origins and validate_origin(origin, cors_origins):
+                allowed_origin = origin
+            # Check if wildcard is allowed
+            elif "*" in cors_origins:
+                allowed_origin = "*"
+            # Check Railway domain pattern (production fallback)
+            elif origin and (".up.railway.app" in origin or ".railway.app" in origin):
+                # Allow Railway domains even if not explicitly configured
+                allowed_origin = origin
+            # Use first allowed origin if available
+            elif cors_origins:
+                allowed_origin = cors_origins[0]
+        
+        # If still no origin, try Railway fallback
+        if not allowed_origin and origin and (".up.railway.app" in origin or ".railway.app" in origin):
+            allowed_origin = origin
+        
+        if allowed_origin:
+            response.headers["Access-Control-Allow-Origin"] = allowed_origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Key, X-Signature, X-Timestamp, X-CSRF-Token, X-Bootstrap-Key"
+    except Exception as e:
+        # If CORS header addition fails, log but don't break the error response
+        logger.warning(f"Failed to add CORS headers to error response: {e}")
+    
+    return response
 
 
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
@@ -53,10 +94,11 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
             "timestamp": None,
         }
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content=error_response,
     )
+    return _add_cors_headers(response, request)
 
 
 async def validation_exception_handler(
@@ -81,7 +123,7 @@ async def validation_exception_handler(
         context=context,
     )
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "success": False,
@@ -93,6 +135,7 @@ async def validation_exception_handler(
             "timestamp": None,
         },
     )
+    return _add_cors_headers(response, request)
 
 
 async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
@@ -107,7 +150,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
         exc_info=exc,
     )
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "success": False,
@@ -119,6 +162,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
             "timestamp": None,
         },
     )
+    return _add_cors_headers(response, request)
 
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -162,8 +206,9 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
             "timestamp": None,
         }
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=error_response,
     )
+    return _add_cors_headers(response, request)
 
