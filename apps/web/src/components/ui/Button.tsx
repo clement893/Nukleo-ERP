@@ -51,12 +51,13 @@ const baseStyles = [
 ].join(' ');
 
 // Variant styles - Split into arrays for better readability
+// Use string concatenation instead of template literals to avoid Turbopack parsing issues
 const createVariantStyles = (base: string[], hover: string[], focus: string[], cssVar: string) =>
   [
     ...base,
     ...hover,
     ...focus,
-    `[background-color:var(--${cssVar})]`,
+    '[background-color:var(--' + cssVar + ')]',
   ].join(' ');
 
 const variants = {

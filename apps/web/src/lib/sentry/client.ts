@@ -52,15 +52,14 @@ type SentryType = {
 let Sentry: SentryType | null = null;
 
 // Lazy load Sentry to avoid webpack static analysis
+// Use static import with try-catch for Turbopack compatibility
 function loadSentry(): SentryType | null {
   if (Sentry !== null) return Sentry;
   
   try {
-    // Construct module name dynamically to prevent webpack static analysis
-    const moduleParts = ['@sentry', '/', 'nextjs'];
-    const moduleName = moduleParts.join('');
+    // Use static import instead of dynamic require for Turbopack compatibility
     // @ts-ignore - Sentry is optional, module may not exist
-    Sentry = typeof require !== 'undefined' ? require(moduleName) : null;
+    Sentry = require('@sentry/nextjs');
   } catch {
     // Sentry not installed, continue without it
     Sentry = null;

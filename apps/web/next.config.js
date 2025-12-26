@@ -44,12 +44,6 @@ const nextConfig = {
     // Enable faster refresh for better dev experience
     optimizeCss: true,
   },
-  
-  // Turbopack configuration - set root to fix workspace detection
-  // This should point to the monorepo root where node_modules and Next.js are located
-  turbopack: {
-    root: require('path').resolve(__dirname, '../..'),
-  },
 
   // Image optimization
   images: {
