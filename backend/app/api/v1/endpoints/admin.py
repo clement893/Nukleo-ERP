@@ -23,6 +23,7 @@ from app.core.tenancy import (
     get_user_tenant_id,
     get_user_tenants,
 )
+from app.core.tenant_database_manager import TenantDatabaseManager
 
 router = APIRouter()
 
@@ -436,4 +437,111 @@ async def get_current_tenant_endpoint(
         "tenancy_enabled": TenancyConfig.is_enabled(),
         "tenancy_mode": TenancyConfig.get_mode().value
     }
+
+
+class CreateTenantDatabaseRequest(BaseModel):
+    """Request model for creating tenant database"""
+    tenant_id: int
+
+
+class CreateTenantDatabaseResponse(BaseModel):
+    """Response model for creating tenant database"""
+    success: bool
+    message: str
+    tenant_id: int
+    database_name: Optional[str] = None
+
+
+@router.post(
+    "/tenancy/tenant/{tenant_id}/database",
+    response_model=CreateTenantDatabaseResponse,
+    tags=["admin", "tenancy"]
+)
+async def create_tenant_database(
+    tenant_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: None = Depends(require_superadmin)
+):
+    """
+    Create a separate database for a tenant.
+    Only available when TENANCY_MODE=separate_db.
+    Requires superadmin authentication.
+    """
+    if not TenantDatabaseManager.is_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tenant database creation only available when TENANCY_MODE=separate_db"
+        )
+    
+    try:
+        created = await TenantDatabaseManager.create_tenant_database(tenant_id)
+        db_name = TenantDatabaseManager.get_tenant_db_name(tenant_id)
+        
+        if created:
+            return CreateTenantDatabaseResponse(
+                success=True,
+                message=f"Tenant database created successfully",
+                tenant_id=tenant_id,
+                database_name=db_name
+            )
+        else:
+            return CreateTenantDatabaseResponse(
+                success=True,
+                message=f"Tenant database already exists",
+                tenant_id=tenant_id,
+                database_name=db_name
+            )
+    except Exception as e:
+        logger.error(f"Failed to create tenant database: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create tenant database: {str(e)}"
+        )
+
+
+@router.delete(
+    "/tenancy/tenant/{tenant_id}/database",
+    response_model=dict,
+    tags=["admin", "tenancy"]
+)
+async def delete_tenant_database(
+    tenant_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: None = Depends(require_superadmin)
+):
+    """
+    Delete a tenant database.
+    WARNING: This is a destructive operation!
+    Only available when TENANCY_MODE=separate_db.
+    Requires superadmin authentication.
+    """
+    if not TenantDatabaseManager.is_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tenant database deletion only available when TENANCY_MODE=separate_db"
+        )
+    
+    try:
+        deleted = await TenantDatabaseManager.delete_tenant_database(tenant_id)
+        
+        if deleted:
+            return {
+                "success": True,
+                "message": f"Tenant database deleted successfully",
+                "tenant_id": tenant_id
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Tenant database does not exist",
+                "tenant_id": tenant_id
+            }
+    except Exception as e:
+        logger.error(f"Failed to delete tenant database: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete tenant database: {str(e)}"
+        )
 

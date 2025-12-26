@@ -11,6 +11,7 @@ from sqlalchemy import select, and_
 from app.core.database import get_db
 from app.core.cache import cached, invalidate_cache_pattern
 from app.core.rate_limit import rate_limit_decorator
+from app.core.tenancy_helpers import apply_tenant_scope
 from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
@@ -47,6 +48,9 @@ async def get_projects(
     
     if status:
         query = query.where(Project.status == status)
+    
+    # Apply tenant scoping if tenancy is enabled
+    query = apply_tenant_scope(query, Project)
     
     query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
     
