@@ -82,6 +82,24 @@
     "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
     "notFound": "Ressource non trouvée",
     "serverError": "Erreur serveur. Veuillez réessayer plus tard."
+  },
+  "settings": {
+    "api": {
+      "title": "Paramètres API",
+      "description": "Gérez la configuration et les paramètres de l'API",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "settings": "Paramètres",
+        "api": "API"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des paramètres API. Veuillez réessayer.",
+        "saveFailed": "Échec de l'enregistrement des paramètres API. Veuillez réessayer."
+      },
+      "success": {
+        "saved": "Paramètres API enregistrés avec succès"
+      }
+    }
   }
 }
 
