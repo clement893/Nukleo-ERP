@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.services.import_service import ImportService
 from app.models.user import User
-from app.api.v1.dependencies import get_current_user
+from app.dependencies import get_current_user
 from app.core.logging import logger
 
 router = APIRouter()

@@ -2,7 +2,7 @@
 API v1 router registration.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search
+from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags
 from app.api import ai as ai_router
 
 api_router = APIRouter()
@@ -108,4 +108,11 @@ api_router.include_router(
     search.router,
     prefix="/search",
     tags=["search"]
+)
+
+# Register tags and categories endpoints
+api_router.include_router(
+    tags.router,
+    prefix="/tags",
+    tags=["tags", "categories"]
 )
