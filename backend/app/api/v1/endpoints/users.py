@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 
 from app.core.database import get_db
-from app.core.pagination import PaginationParams, paginate_query, PaginatedResponse
+from app.core.pagination import PaginationParams, paginate_query, PaginatedResponse, get_pagination_params
 from app.core.query_optimization import QueryOptimizer
 from app.core.cache_enhanced import cache_query
 from app.core.rate_limit import rate_limit_decorator
@@ -29,7 +29,7 @@ router = APIRouter()
 @cache_query(expire=300, tags=["users"])
 async def list_users(
     request: Request,
-    pagination: Annotated[PaginationParams, Depends()],
+    pagination: Annotated[PaginationParams, Depends(get_pagination_params)],
     db: Annotated[AsyncSession, Depends(get_db)],
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     search: Optional[str] = Query(None, description="Search by name or email"),
@@ -64,7 +64,8 @@ async def list_users(
         query = query.where(and_(*filters))
     
     # Create base query for counting (without eager loading)
-    count_query = select(User)
+    from sqlalchemy import func
+    count_query = select(func.count(User.id))
     if filters:
         count_query = count_query.where(and_(*filters))
     

@@ -3,8 +3,9 @@ Pagination Utilities
 Provides pagination support for database queries
 """
 
-from typing import Generic, TypeVar, Optional, List
+from typing import Generic, TypeVar, Optional, List, Annotated
 from pydantic import BaseModel, Field
+from fastapi import Query, Depends
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +26,21 @@ class PaginationParams(BaseModel):
     def limit(self) -> int:
         """Get limit (same as page_size)"""
         return self.page_size
+
+
+def get_pagination_params(
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page (max 100)"),
+) -> PaginationParams:
+    """
+    FastAPI dependency to extract pagination parameters from query string.
+    
+    Usage:
+        @router.get("/items")
+        async def list_items(pagination: PaginationParams = Depends(get_pagination_params)):
+            ...
+    """
+    return PaginationParams(page=page, page_size=page_size)
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
@@ -79,11 +95,34 @@ async def paginate_query(
     """
     # Get total count
     if count_query is None:
-        # Use a subquery for counting
-        count_query = select(func.count()).select_from(query.subquery())
+        # Use a subquery for counting - create a simple count query
+        # Remove any eager loading or joins that might cause issues
+        from sqlalchemy import func
+        # Create a simple count query from the base model
+        # Extract the base model from the query
+        try:
+            # Try to get the entity from the query
+            if hasattr(query, 'column_descriptions') and query.column_descriptions:
+                entity = query.column_descriptions[0]['entity']
+                count_query = select(func.count()).select_from(entity)
+            else:
+                # Fallback: use subquery
+                count_query = select(func.count()).select_from(query.subquery())
+        except Exception:
+            # Last resort: use subquery
+            count_query = select(func.count()).select_from(query.subquery())
     
-    total_result = await session.execute(count_query)
-    total = total_result.scalar_one()
+    try:
+        total_result = await session.execute(count_query)
+        total = total_result.scalar_one() or 0
+    except Exception as e:
+        # If count query fails, try a simpler approach
+        from app.core.logging import logger
+        logger.warning(f"Count query failed, using fallback: {e}")
+        # Fallback: execute the main query and count results (less efficient but works)
+        all_results = await session.execute(query)
+        all_items = all_results.scalars().all()
+        total = len(all_items)
     
     # Apply pagination to query
     paginated_query = query.offset(pagination.offset).limit(pagination.limit)
