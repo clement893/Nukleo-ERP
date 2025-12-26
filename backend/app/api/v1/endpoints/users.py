@@ -65,7 +65,8 @@ async def list_users(
     
     # Create base query for counting (without eager loading)
     from sqlalchemy import func
-    count_query = select(func.count(User.id))
+    # Build count query from scratch to ensure it's clean
+    count_query = select(func.count()).select_from(User)
     if filters:
         count_query = count_query.where(and_(*filters))
     
@@ -83,8 +84,18 @@ async def list_users(
     
     # Paginate query with separate count query to avoid issues with eager loading
     try:
-        result = await paginate_query(db, query, pagination, count_query=count_query)
-        return result
+        paginated_result = await paginate_query(db, query, pagination, count_query=count_query)
+        # Convert SQLAlchemy User objects to UserResponse schemas
+        # This ensures proper serialization and excludes any relationships that shouldn't be exposed
+        user_responses = [
+            UserResponse.model_validate(user) for user in paginated_result.items
+        ]
+        return PaginatedResponse.create(
+            items=user_responses,
+            total=paginated_result.total,
+            page=paginated_result.page,
+            page_size=paginated_result.page_size,
+        )
     except Exception as e:
         logger.error(f"Error paginating users query: {e}", exc_info=True)
         # Try without eager loading as fallback
@@ -92,13 +103,21 @@ async def list_users(
             query_fallback = select(User).order_by(User.created_at.desc())
             if filters:
                 query_fallback = query_fallback.where(and_(*filters))
-            result = await paginate_query(db, query_fallback, pagination, count_query=count_query)
-            return result
+            paginated_result = await paginate_query(db, query_fallback, pagination, count_query=count_query)
+            # Convert to UserResponse
+            user_responses = [
+                UserResponse.model_validate(user) for user in paginated_result.items
+            ]
+            return PaginatedResponse.create(
+                items=user_responses,
+                total=paginated_result.total,
+                page=paginated_result.page,
+                page_size=paginated_result.page_size,
+            )
         except Exception as fallback_error:
             logger.error(f"Error in fallback query: {fallback_error}", exc_info=True)
             # Last resort: return empty result instead of crashing
             try:
-                from app.core.pagination import PaginatedResponse
                 return PaginatedResponse.create(
                     items=[],
                     total=0,
