@@ -23,7 +23,7 @@ export default function BlogPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPost = useCallback(async (postSlug: string) => {
+  const loadPost = useCallback(async (_postSlug: string) => {
     try {
       setIsLoading(true);
       setError(null);
