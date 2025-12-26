@@ -5,6 +5,9 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+// Disable static generation to avoid hydration issues
+export const revalidate = 0;
+
 export default function AdminPage() {
   return (
     <ProtectedRoute requireAdmin>

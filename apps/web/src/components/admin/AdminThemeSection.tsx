@@ -7,8 +7,9 @@ import { listThemes, getActiveTheme, updateActiveThemeMode, activateTheme } from
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import { checkMySuperAdminStatus } from '@/lib/api/admin';
 import type { Theme, ThemeConfigResponse } from '@modele/types';
+import ClientOnly from '@/components/ui/ClientOnly';
 
-export function AdminThemeSection() {
+function AdminThemeSectionContent() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [activeTheme, setActiveTheme] = useState<ThemeConfigResponse | null>(null);
   const [themes, setThemes] = useState<Theme[]>([]);
@@ -292,6 +293,14 @@ export function AdminThemeSection() {
         </div>
       </div>
     </Card>
+  );
+}
+
+export function AdminThemeSection() {
+  return (
+    <ClientOnly>
+      <AdminThemeSectionContent />
+    </ClientOnly>
   );
 }
 
