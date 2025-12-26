@@ -160,6 +160,10 @@ def setup_cors(app: FastAPI) -> None:
         
         # Helper function to add CORS headers to any response
         def add_cors_to_response(resp):
+            from starlette.responses import Response
+            # Ensure resp is a Response instance before accessing headers
+            if not isinstance(resp, Response):
+                return resp
             if allowed_origin and "Access-Control-Allow-Origin" not in resp.headers:
                 resp.headers["Access-Control-Allow-Origin"] = allowed_origin
                 resp.headers["Access-Control-Allow-Credentials"] = "true"
@@ -173,15 +177,10 @@ def setup_cors(app: FastAPI) -> None:
             # Ensure CORS headers are present on successful response
             return add_cors_to_response(response)
         except Exception as e:
-            # If there's an error, create a response with CORS headers
-            from fastapi.responses import JSONResponse
-            logger.error(f"Error in request {request.method} {request.url.path}: {e}", exc_info=True)
-            error_response = JSONResponse(
-                status_code=500,
-                content={"detail": f"Internal server error: {str(e)}"}
-            )
-            # Always add CORS headers to error response
-            return add_cors_to_response(error_response)
+            # Don't intercept exceptions - let them propagate to error handlers
+            # The error handlers will create proper responses, and CORSMiddleware
+            # will add CORS headers automatically
+            raise
     
     logger.info("✅ CORS middleware configured with tightened security")
 
