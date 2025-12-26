@@ -47,6 +47,8 @@ export { default as DataTable } from './DataTable';
 export { default as DataTableEnhanced } from './DataTableEnhanced';
 export type { Column, DataTableProps } from './DataTable';
 export type { BulkAction, ExportOption, DataTableEnhancedProps } from './DataTableEnhanced';
+// Column is also re-exported from DataTableEnhanced for convenience
+export type { Column } from './DataTableEnhanced';
 export { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 export { default as Pagination } from './Pagination';
 export { default as EmptyState } from './EmptyState';

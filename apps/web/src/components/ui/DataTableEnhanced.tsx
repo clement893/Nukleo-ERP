@@ -14,6 +14,9 @@ import Checkbox from './Checkbox';
 import Dropdown from './Dropdown';
 import type { DropdownItem } from './Dropdown';
 
+// Re-export Column type for convenience
+export type { Column };
+
 export interface BulkAction<T> {
   label: string;
   icon?: ReactNode;
