@@ -247,6 +247,14 @@ export const sitePages: Record<string, SitemapPage[]> = {
       requiresAuth: true,
     },
     {
+      path: '/surveys',
+      title: 'Surveys',
+      description: 'Création et gestion de sondages et questionnaires',
+      priority: 0.8,
+      changefreq: 'weekly',
+      requiresAuth: true,
+    },
+    {
       path: '/seo',
       title: 'SEO Management',
       description: 'Gestion des paramètres SEO',

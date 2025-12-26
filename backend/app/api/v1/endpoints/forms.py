@@ -318,3 +318,163 @@ async def delete_submission(
     await db.delete(submission)
     await db.commit()
 
+
+@router.get("/forms/{form_id}/statistics", tags=["forms"])
+async def get_form_statistics(
+    form_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get statistics for a form/survey"""
+    # Get form
+    form_result = await db.execute(select(Form).where(Form.id == form_id))
+    form = form_result.scalar_one_or_none()
+    
+    if not form:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Form not found"
+        )
+    
+    # Get submission count
+    count_result = await db.execute(
+        select(func.count(FormSubmission.id)).where(FormSubmission.form_id == form_id)
+    )
+    total_submissions = count_result.scalar_one() or 0
+    
+    # Get submissions
+    submissions_result = await db.execute(
+        select(FormSubmission).where(FormSubmission.form_id == form_id)
+    )
+    submissions = submissions_result.scalars().all()
+    
+    # Calculate statistics per field
+    field_stats = {}
+    for field in form.fields:
+        field_name = field.get('name', '')
+        if not field_name:
+            continue
+        
+        field_type = field.get('type', '')
+        values = [sub.data.get(field_name) for sub in submissions if sub.data.get(field_name) is not None]
+        
+        if field_type in ['scale', 'rating', 'nps', 'number']:
+            # Numeric statistics
+            numeric_values = [float(v) for v in values if v is not None and str(v).replace('.', '').isdigit()]
+            if numeric_values:
+                field_stats[field_name] = {
+                    'type': 'numeric',
+                    'average': sum(numeric_values) / len(numeric_values),
+                    'min': min(numeric_values),
+                    'max': max(numeric_values),
+                    'count': len(numeric_values),
+                    'distribution': {},
+                }
+                # Distribution
+                for val in numeric_values:
+                    rounded = round(val)
+                    field_stats[field_name]['distribution'][rounded] = field_stats[field_name]['distribution'].get(rounded, 0) + 1
+        else:
+            # Categorical statistics
+            distribution = {}
+            for val in values:
+                str_val = str(val)
+                distribution[str_val] = distribution.get(str_val, 0) + 1
+            
+            field_stats[field_name] = {
+                'type': 'categorical',
+                'count': len(values),
+                'distribution': distribution,
+            }
+    
+    return {
+        'form_id': form_id,
+        'form_name': form.name,
+        'total_submissions': total_submissions,
+        'field_statistics': field_stats,
+    }
+
+
+@router.get("/forms/{form_id}/export", tags=["forms"])
+async def export_form_results(
+    form_id: int,
+    format: str = Query('csv', regex='^(csv|excel|json)$'),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export form submissions"""
+    from fastapi.responses import StreamingResponse
+    import csv
+    import io
+    import json
+    
+    # Get form
+    form_result = await db.execute(select(Form).where(Form.id == form_id))
+    form = form_result.scalar_one_or_none()
+    
+    if not form:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Form not found"
+        )
+    
+    # Get submissions
+    submissions_result = await db.execute(
+        select(FormSubmission).where(FormSubmission.form_id == form_id).order_by(FormSubmission.submitted_at.desc())
+    )
+    submissions = submissions_result.scalars().all()
+    
+    if format == 'json':
+        data = [FormSubmissionResponse.model_validate(sub).model_dump() for sub in submissions]
+        json_str = json.dumps(data, indent=2, default=str)
+        return StreamingResponse(
+            io.BytesIO(json_str.encode()),
+            media_type='application/json',
+            headers={'Content-Disposition': f'attachment; filename="form_{form_id}_results.json"'}
+        )
+    
+    # CSV/Excel export
+    if not submissions:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No submissions to export"
+        )
+    
+    # Get all field names
+    field_names = set()
+    for sub in submissions:
+        field_names.update(sub.data.keys())
+    
+    # Create CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    header = ['ID', 'Submitted At', 'User ID'] + sorted(field_names)
+    writer.writerow(header)
+    
+    # Rows
+    for sub in submissions:
+        row = [sub.id, sub.submitted_at.isoformat(), sub.user_id or '']
+        for field_name in sorted(field_names):
+            value = sub.data.get(field_name, '')
+            if isinstance(value, (list, dict)):
+                value = json.dumps(value)
+            row.append(str(value))
+        writer.writerow(row)
+    
+    output.seek(0)
+    
+    if format == 'excel':
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode()),
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': f'attachment; filename="form_{form_id}_results.xlsx"'}
+        )
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="form_{form_id}_results.csv"'}
+    )
+

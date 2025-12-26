@@ -675,6 +675,51 @@ export const seoAPI = {
   },
 };
 
+// Surveys API - Uses Forms API but with survey-specific endpoints
+export const surveysAPI = {
+  list: (params?: { skip?: number; limit?: number; status?: string }) => {
+    return apiClient.get('/v1/forms', { params });
+  },
+  get: (surveyId: number) => {
+    return apiClient.get(`/v1/forms/${surveyId}`);
+  },
+  create: (data: {
+    name: string;
+    description?: string;
+    fields: Array<Record<string, unknown>>;
+    submit_button_text?: string;
+    success_message?: string;
+    settings?: Record<string, unknown>;
+  }) => {
+    return apiClient.post('/v1/forms', data);
+  },
+  update: (surveyId: number, data: {
+    name?: string;
+    description?: string;
+    fields?: Array<Record<string, unknown>>;
+    submit_button_text?: string;
+    success_message?: string;
+    settings?: Record<string, unknown>;
+  }) => {
+    return apiClient.put(`/v1/forms/${surveyId}`, data);
+  },
+  delete: (surveyId: number) => {
+    return apiClient.delete(`/v1/forms/${surveyId}`);
+  },
+  submit: (surveyId: number, data: Record<string, unknown>) => {
+    return apiClient.post(`/v1/forms/${surveyId}/submissions`, { data });
+  },
+  getSubmissions: (surveyId: number, params?: { skip?: number; limit?: number }) => {
+    return apiClient.get(`/v1/forms/${surveyId}/submissions`, { params });
+  },
+  getStatistics: (surveyId: number) => {
+    return apiClient.get(`/v1/forms/${surveyId}/statistics`);
+  },
+  exportResults: (surveyId: number, format: 'csv' | 'excel' | 'json') => {
+    return apiClient.get(`/v1/forms/${surveyId}/export`, { params: { format } });
+  },
+};
+
 // Export default for backward compatibility
 export default apiClient;
 
