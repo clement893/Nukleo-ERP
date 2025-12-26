@@ -19,6 +19,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=Dict[str, Any])
+@router.get("", response_model=Dict[str, Any])  # Handle both with and without trailing slash
 async def health_check() -> Dict[str, Any]:
     """
     Basic health check endpoint

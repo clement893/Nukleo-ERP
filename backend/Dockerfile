@@ -37,14 +37,9 @@ COPY . .
 # Change ownership
 RUN chown -R appuser:appuser /app
 
-# Create entrypoint script for Railway compatibility (before USER switch)
-# Railway provides PORT via environment variable, use it or default to 8000
-RUN echo '#!/bin/sh' > /entrypoint.sh && \
-    echo 'PORT=${PORT:-8000}' >> /entrypoint.sh && \
-    echo 'echo "Starting Uvicorn on 0.0.0.0:$PORT..."' >> /entrypoint.sh && \
-    echo 'exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"' >> /entrypoint.sh && \
-    chmod +x /entrypoint.sh && \
-    chown appuser:appuser /entrypoint.sh
+# Ensure entrypoint.sh is executable
+RUN chmod +x entrypoint.sh && \
+    chown appuser:appuser entrypoint.sh
 
 USER appuser
 
@@ -52,8 +47,10 @@ EXPOSE 8000
 
 # Health check - uses PORT env var or defaults to 8000
 # Note: HEALTHCHECK runs inside container, so it uses the same PORT as the app
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD sh -c 'PORT=${PORT:-8000}; python -c "import requests; requests.get(f\"http://localhost:{PORT}/health\")"' || exit 1
+# Railway healthcheck uses /api/v1/health/ but internal healthcheck uses /api/v1/health
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD sh -c 'PORT=${PORT:-8000}; python -c "import requests; r=requests.get(f\"http://localhost:{PORT}/api/v1/health\"); exit(0 if r.status_code==200 else 1)"' || exit 1
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Use entrypoint.sh from the repo
+ENTRYPOINT ["./entrypoint.sh"]
 
