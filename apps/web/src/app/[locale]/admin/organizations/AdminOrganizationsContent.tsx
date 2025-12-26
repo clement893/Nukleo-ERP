@@ -14,7 +14,7 @@ import Modal from '@/components/ui/Modal';
 import DataTable from '@/components/ui/DataTable';
 import { Column } from '@/components/ui/DataTable';
 
-interface Team {
+interface Team extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -163,7 +163,7 @@ export default function AdminOrganizationsContent() {
         </Card>
       ) : (
         <Card>
-          <DataTable
+          <DataTable<Team>
             data={filteredTeams}
             columns={columns}
             emptyMessage="Aucune organisation trouvée"
