@@ -10,7 +10,6 @@ export const lazyLoadHeavyLibraries = {
   // Chart libraries - only load when charts are needed
   chart: async () => {
     try {
-      // @ts-expect-error - recharts types may not be available
       return await import('recharts');
     } catch {
       return null;
