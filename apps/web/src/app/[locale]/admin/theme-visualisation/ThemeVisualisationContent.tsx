@@ -131,7 +131,7 @@ export function ThemeVisualisationContent() {
 
       {/* Colors Section */}
       <Card
-        title={
+        header={
           <div className="flex items-center gap-2">
             <Palette className="w-5 h-5" />
             <span>Couleurs</span>
@@ -177,7 +177,7 @@ export function ThemeVisualisationContent() {
 
       {/* Typography Section */}
       <Card
-        title={
+        header={
           <div className="flex items-center gap-2">
             <Type className="w-5 h-5" />
             <span>Typographie</span>
@@ -239,7 +239,7 @@ export function ThemeVisualisationContent() {
 
       {/* Border Radius Section */}
       <Card
-        title={
+        header={
           <div className="flex items-center gap-2">
             <Layout className="w-5 h-5" />
             <span>Border Radius</span>
@@ -270,7 +270,7 @@ export function ThemeVisualisationContent() {
       {/* Effects Section */}
       {(effects.glassmorphism || effects.shadows || effects.gradients) && (
         <Card
-          title={
+          header={
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
               <span>Effets</span>
