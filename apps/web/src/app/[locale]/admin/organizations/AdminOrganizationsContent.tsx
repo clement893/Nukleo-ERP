@@ -97,9 +97,8 @@ export default function AdminOrganizationsContent() {
       }
 
       const { teamsAPI } = await import('@/lib/api');
-      await teamsAPI.createTeam({
+      await teamsAPI.create({
         name: newTeamName.trim(),
-        slug: slug,
         description: newTeamDescription.trim() || undefined,
       });
       await loadTeams();
