@@ -162,11 +162,22 @@ async def verify_two_factor_login(
     
     if not is_valid:
         # Check backup codes
-        # TODO: Implement backup code verification
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid 2FA token",
+        backup_valid, updated_codes = TwoFactorAuth.verify_backup_code(
+            current_user.two_factor_backup_codes,
+            data.token
         )
+        
+        if backup_valid:
+            # Update backup codes list (remove used code)
+            import json
+            current_user.two_factor_backup_codes = json.dumps(updated_codes) if updated_codes else None
+            await db.commit()
+            logger.info(f"User {current_user.email} used backup code for 2FA login")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid 2FA token or backup code",
+            )
     
     return {"verified": True}
 

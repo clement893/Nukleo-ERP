@@ -56,6 +56,40 @@ class TwoFactorAuth:
         """Generate backup codes for 2FA"""
         import secrets
         return [secrets.token_urlsafe(16) for _ in range(count)]
+    
+    @staticmethod
+    def verify_backup_code(backup_codes_json: Optional[str], code: str) -> tuple[bool, Optional[list[str]]]:
+        """
+        Verify a backup code and return updated list if valid.
+        
+        Args:
+            backup_codes_json: JSON string of backup codes list
+            code: Backup code to verify
+            
+        Returns:
+            Tuple of (is_valid, updated_codes_list)
+            - is_valid: True if code is valid
+            - updated_codes_list: List with used code removed, or None if invalid
+        """
+        import json
+        
+        if not backup_codes_json:
+            return False, None
+        
+        try:
+            backup_codes = json.loads(backup_codes_json)
+            if not isinstance(backup_codes, list):
+                return False, None
+            
+            # Check if code exists in list
+            if code in backup_codes:
+                # Remove used code
+                backup_codes.remove(code)
+                return True, backup_codes
+            else:
+                return False, None
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            return False, None
 
 
 # Database model for 2FA (add to User model)

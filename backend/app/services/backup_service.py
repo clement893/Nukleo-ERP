@@ -8,9 +8,12 @@ from datetime import datetime, timedelta
 from sqlalchemy import select, and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 import json
+import os
+from pathlib import Path
 
 from app.models.backup import Backup, RestoreOperation, BackupType, BackupStatus
 from app.core.logging import logger
+from app.core.config import settings
 
 
 class BackupService:
@@ -159,12 +162,29 @@ class BackupService:
         return restore
 
     async def delete_backup(self, backup_id: int) -> bool:
-        """Delete a backup"""
+        """Delete a backup and its associated file"""
         backup = await self.get_backup(backup_id)
         if not backup:
             return False
         
-        # TODO: Delete actual backup file from storage
+        # Delete actual backup file from storage if it exists
+        if backup.file_path:
+            try:
+                file_path = Path(backup.file_path)
+                # If it's an absolute path, use it directly
+                # Otherwise, assume it's relative to backup storage directory
+                if not file_path.is_absolute():
+                    backup_storage = getattr(settings, 'BACKUP_STORAGE_PATH', 'backups')
+                    file_path = Path(backup_storage) / file_path
+                
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info(f"Deleted backup file: {file_path}")
+                else:
+                    logger.warning(f"Backup file not found: {file_path}")
+            except Exception as e:
+                logger.error(f"Error deleting backup file {backup.file_path}: {e}", exc_info=True)
+                # Continue with database deletion even if file deletion fails
         
         await self.db.delete(backup)
         await self.db.commit()
