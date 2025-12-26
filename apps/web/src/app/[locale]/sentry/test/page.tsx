@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { captureException, captureMessage, setUser, clearUser } from '@/lib/sentry/client';
-import { Button, Card, Textarea, Alert, Badge, Container, Loading } from '@/components/ui';
+import { Button, Card, Textarea, Alert, Badge, Container } from '@/components/ui';
 
 function SentryTestContent() {
   const { user } = useAuthStore();
@@ -23,8 +23,9 @@ function SentryTestContent() {
       setError('');
       setSuccess('');
       
-      const testError = new Error(testError || 'Test exception from Sentry test page');
-      captureException(testError, {
+      const errorMessage = testError || 'Test exception from Sentry test page';
+      const error = new Error(errorMessage);
+      captureException(error, {
         test: true,
         source: 'sentry-test-page',
         timestamp: new Date().toISOString(),
@@ -225,7 +226,7 @@ function SentryTestContent() {
             <Button
               onClick={handleTestMessage}
               disabled={loading || !isConfigured()}
-              variant="info"
+              variant="secondary"
               fullWidth
             >
               Send Info Message
@@ -233,7 +234,7 @@ function SentryTestContent() {
             <Button
               onClick={handleTestWarning}
               disabled={loading || !isConfigured()}
-              variant="warning"
+              variant="outline"
               fullWidth
             >
               Send Warning
@@ -241,7 +242,7 @@ function SentryTestContent() {
             <Button
               onClick={handleTestError}
               disabled={loading || !isConfigured()}
-              variant="error"
+              variant="danger"
               fullWidth
             >
               Send Error Message
@@ -293,7 +294,7 @@ function SentryTestContent() {
           <Button
             onClick={handleThrowError}
             disabled={loading || !isConfigured()}
-            variant="error"
+            variant="danger"
             fullWidth
           >
             Throw Unhandled Error
