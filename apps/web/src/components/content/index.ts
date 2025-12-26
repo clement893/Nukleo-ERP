@@ -27,3 +27,6 @@ export type { ContentTemplate, TemplatesManagerProps } from './TemplatesManager'
 export { default as ScheduledContentManager } from './ScheduledContentManager';
 export type { ScheduledContent, ScheduledContentManagerProps } from './ScheduledContentManager';
 
+export { default as ContentPreview } from './ContentPreview';
+export type { ContentPreviewProps } from './ContentPreview';
+
