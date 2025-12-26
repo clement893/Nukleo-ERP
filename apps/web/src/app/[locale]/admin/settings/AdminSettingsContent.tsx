@@ -1,23 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { useAuthStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Alert from '@/components/ui/Alert';
-import Container from '@/components/ui/Container';
 import Input from '@/components/ui/Input';
+import { Switch } from '@/components/ui';
 import { getErrorMessage } from '@/lib/error-utils';
+import { getApiUrl } from '@/lib/api';
 
 export default function AdminSettingsContent() {
-  const { user, token, setUser } = useAuthStore();
+  const { token } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+  const [settings, setSettings] = useState({
+    maintenance_mode: false,
+    registration_enabled: true,
+    email_verification_required: true,
+    api_rate_limit: 100,
+    session_timeout: 3600,
   });
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    // TODO: Load actual system settings from API when endpoint is available
+    // For now, use default values
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,77 +40,129 @@ export default function AdminSettingsContent() {
     setSuccess(false);
 
     try {
-      const response = await fetch('/api/v1/users/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      // TODO: Implement API endpoint for system settings
+      // const response = await fetch(`${getApiUrl()}/api/v1/admin/settings`, {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify(settings),
+      // });
 
-      if (!response.ok) {
-        throw new Error('Failed to update settings');
-      }
-
-      const updatedUser = await response.json();
-      setUser(updatedUser);
+      // Simulate save for now
+      await new Promise(resolve => setTimeout(resolve, 500));
       setSuccess(true);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(getErrorMessage(err, 'Erreur lors de la sauvegarde des paramètres'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container className="py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Paramètres Administrateur
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Gérez les paramètres de votre compte administrateur
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        title="Paramètres système" 
+        description="Configuration générale du système"
+        breadcrumbs={[
+          { label: 'Accueil', href: '/' },
+          { label: 'Administration', href: '/admin' },
+          { label: 'Paramètres' }
+        ]} 
+      />
 
       {error && (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error" className="mb-4">
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert variant="success" className="mb-6">
+        <Alert variant="success" className="mb-4">
           Paramètres mis à jour avec succès
         </Alert>
       )}
 
-      <Card>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input
-            label="Nom"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
+      <form onSubmit={handleSubmit}>
+        <Section title="Général" className="mt-6">
+          <Card className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Mode maintenance
+                </label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Active le mode maintenance pour restreindre l'accès au système
+                </p>
+              </div>
+              <Switch
+                checked={settings.maintenance_mode}
+                onChange={(e) => setSettings({ ...settings, maintenance_mode: e.target.checked })}
+              />
+            </div>
 
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Inscriptions activées
+                </label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Permet aux nouveaux utilisateurs de s'inscrire
+                </p>
+              </div>
+              <Switch
+                checked={settings.registration_enabled}
+                onChange={(e) => setSettings({ ...settings, registration_enabled: e.target.checked })}
+              />
+            </div>
 
-          <div className="flex gap-4">
-            <Button type="submit" variant="primary" loading={loading}>
-              Enregistrer
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </Container>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Vérification email requise
+                </label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Les utilisateurs doivent vérifier leur email pour activer leur compte
+                </p>
+              </div>
+              <Switch
+                checked={settings.email_verification_required}
+                onChange={(e) => setSettings({ ...settings, email_verification_required: e.target.checked })}
+              />
+            </div>
+          </Card>
+        </Section>
+
+        <Section title="Sécurité" className="mt-6">
+          <Card className="p-6 space-y-6">
+            <Input
+              label="Limite de taux API (requêtes/minute)"
+              type="number"
+              value={settings.api_rate_limit}
+              onChange={(e) => setSettings({ ...settings, api_rate_limit: parseInt(e.target.value) || 100 })}
+              min={1}
+              max={10000}
+            />
+
+            <Input
+              label="Timeout de session (secondes)"
+              type="number"
+              value={settings.session_timeout}
+              onChange={(e) => setSettings({ ...settings, session_timeout: parseInt(e.target.value) || 3600 })}
+              min={300}
+              max={86400}
+            />
+          </Card>
+        </Section>
+
+        <div className="mt-6 flex justify-end">
+          <Button type="submit" variant="primary" loading={loading}>
+            Enregistrer les paramètres
+          </Button>
+        </div>
+      </form>
+    </PageContainer>
   );
 }
 

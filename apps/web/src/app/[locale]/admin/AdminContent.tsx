@@ -32,18 +32,22 @@ export default function AdminContent() {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Consulter et gérer les utilisateurs du système.
           </p>
-          <Button variant="outline" className="w-full" disabled>
-            Bientôt disponible
-          </Button>
+          <Link href="/admin/users">
+            <Button variant="primary" className="w-full">
+              Gérer les utilisateurs
+            </Button>
+          </Link>
         </Card>
 
         <Card title="Organisations" className="flex flex-col">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Gérer les organisations et leurs paramètres.
           </p>
-          <Button variant="outline" className="w-full" disabled>
-            Bientôt disponible
-          </Button>
+          <Link href="/admin/organizations">
+            <Button variant="primary" className="w-full">
+              Gérer les organisations
+            </Button>
+          </Link>
         </Card>
 
         <Card title="Thèmes" className="flex flex-col">
@@ -61,27 +65,33 @@ export default function AdminContent() {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Configuration générale du système.
           </p>
-          <Button variant="outline" className="w-full" disabled>
-            Bientôt disponible
-          </Button>
+          <Link href="/admin/settings">
+            <Button variant="primary" className="w-full">
+              Configurer
+            </Button>
+          </Link>
         </Card>
 
         <Card title="Logs" className="flex flex-col">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Consulter les logs système et les activités.
           </p>
-          <Button variant="outline" className="w-full" disabled>
-            Bientôt disponible
-          </Button>
+          <Link href="/admin/logs">
+            <Button variant="primary" className="w-full">
+              Voir les logs
+            </Button>
+          </Link>
         </Card>
 
         <Card title="Statistiques" className="flex flex-col">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Visualiser les statistiques et métriques du système.
           </p>
-          <Button variant="outline" className="w-full" disabled>
-            Bientôt disponible
-          </Button>
+          <Link href="/admin/statistics">
+            <Button variant="primary" className="w-full">
+              Voir les statistiques
+            </Button>
+          </Link>
         </Card>
       </div>
 
