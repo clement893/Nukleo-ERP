@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { captureException, captureMessage, setUser, clearUser } from '@/lib/sentry/client';
-import { Button, Card, Input, Textarea, Alert, Badge, Container, Loading } from '@/components/ui';
+import { Button, Card, Textarea, Alert, Badge, Container, Loading } from '@/components/ui';
 
 function SentryTestContent() {
   const { user } = useAuthStore();
