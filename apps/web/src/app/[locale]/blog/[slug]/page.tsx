@@ -29,13 +29,13 @@ export default function BlogPostPage() {
     }
   }, [slug]);
 
-  const loadPost = async (postSlug: string) => {
+  const loadPost = async (_postSlug: string) => {
     try {
       setIsLoading(true);
       setError(null);
       
       // TODO: Replace with actual blog post API endpoint when available
-      // Example: const response = await apiClient.get(`/v1/blog/posts/${postSlug}`);
+      // Example: const response = await apiClient.get(`/v1/blog/posts/${_postSlug}`);
       
       // Placeholder: null for now
       setPost(null);
