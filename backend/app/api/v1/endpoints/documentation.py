@@ -85,7 +85,21 @@ async def create_article(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new documentation article"""
+    """
+    Create a new documentation article.
+    
+    Args:
+        article_data: Article creation data including slug, title, content, etc.
+        current_user: Authenticated user (will be set as author)
+        db: Database session
+        
+    Returns:
+        ArticleResponse: Created article with all fields
+        
+    Raises:
+        HTTPException: 400 if slug already exists or validation fails
+        HTTPException: 401 if user is not authenticated
+    """
     service = DocumentationService(db)
     article = await service.create_article(
         slug=article_data.slug,
@@ -112,7 +126,20 @@ async def get_articles(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get published documentation articles"""
+    """
+    Get published documentation articles with optional filtering.
+    
+    Args:
+        category_id: Filter by category ID (optional)
+        featured_only: Return only featured articles (default: False)
+        search: Search query to filter articles (optional)
+        limit: Maximum number of results (default: 50, max: 100)
+        offset: Pagination offset (default: 0)
+        db: Database session
+        
+    Returns:
+        List[ArticleResponse]: List of published articles matching criteria
+    """
     service = DocumentationService(db)
     articles = await service.get_published_articles(
         category_id=category_id,
@@ -129,7 +156,19 @@ async def get_article(
     slug: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a documentation article by slug"""
+    """
+    Get a published documentation article by slug.
+    
+    Args:
+        slug: Article slug (URL-friendly identifier)
+        db: Database session
+        
+    Returns:
+        ArticleResponse: Article data with incremented view count
+        
+    Raises:
+        HTTPException: 404 if article not found or not published
+    """
     service = DocumentationService(db)
     article = await service.get_article(slug)
     if not article or not article.is_published:
@@ -151,7 +190,21 @@ async def submit_feedback(
     current_user: Optional[User] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Submit feedback on an article"""
+    """
+    Submit feedback on a documentation article.
+    
+    Args:
+        article_id: ID of the article to provide feedback on
+        feedback_data: Feedback data (helpful/not helpful, optional comment)
+        current_user: Authenticated user (optional, feedback can be anonymous)
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: 404 if article not found
+    """
     service = DocumentationService(db)
     feedback = await service.submit_feedback(
         article_id=article_id,
@@ -167,7 +220,16 @@ async def get_categories(
     parent_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get documentation categories"""
+    """
+    Get documentation categories, optionally filtered by parent.
+    
+    Args:
+        parent_id: Filter categories by parent ID (None returns root categories)
+        db: Database session
+        
+    Returns:
+        List[CategoryResponse]: List of categories matching criteria
+    """
     service = DocumentationService(db)
     categories = await service.get_categories(parent_id=parent_id)
     return [CategoryResponse.model_validate(c) for c in categories]
@@ -180,7 +242,22 @@ async def update_article(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a documentation article"""
+    """
+    Update an existing documentation article.
+    
+    Args:
+        article_id: ID of the article to update
+        article_data: Article update data (only provided fields will be updated)
+        current_user: Authenticated user (must be author or admin)
+        db: Database session
+        
+    Returns:
+        ArticleResponse: Updated article
+        
+    Raises:
+        HTTPException: 404 if article not found
+        HTTPException: 403 if user is not authorized to update
+    """
     service = DocumentationService(db)
     updates = article_data.model_dump(exclude_unset=True)
     article = await service.update_article(article_id, updates)
@@ -198,7 +275,21 @@ async def delete_article(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a documentation article"""
+    """
+    Delete a documentation article.
+    
+    Args:
+        article_id: ID of the article to delete
+        current_user: Authenticated user (must be author or admin)
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: 404 if article not found
+        HTTPException: 403 if user is not authorized to delete
+    """
     service = DocumentationService(db)
     success = await service.delete_article(article_id)
     if success:

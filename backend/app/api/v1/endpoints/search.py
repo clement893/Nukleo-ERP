@@ -43,7 +43,22 @@ async def search(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Perform advanced search across different entity types
+    Perform advanced search across different entity types.
+    
+    Supports searching users, projects, and other entities with filtering,
+    pagination, and custom ordering.
+    
+    Args:
+        request: Search request with query, entity_type, filters, pagination
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        SearchResponse: Search results with pagination metadata
+        
+    Raises:
+        HTTPException: 400 if entity_type is unsupported
+        HTTPException: 500 if search operation fails
     """
     try:
         service = SearchService(db)
@@ -95,7 +110,23 @@ async def autocomplete(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Get search autocomplete suggestions
+    Get search autocomplete suggestions for quick search.
+    
+    Returns simplified results optimized for autocomplete UI components.
+    
+    Args:
+        q: Search query (minimum 1 character)
+        entity_type: Entity type to search (users, projects, etc.)
+        limit: Maximum number of suggestions (default: 10, max: 20)
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Suggestions with id, label, and value for each result
+        
+    Raises:
+        HTTPException: 400 if entity_type is unsupported
+        HTTPException: 500 if autocomplete operation fails
     """
     try:
         service = SearchService(db)

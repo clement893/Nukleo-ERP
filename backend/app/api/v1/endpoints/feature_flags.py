@@ -63,7 +63,21 @@ async def create_feature_flag(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new feature flag"""
+    """
+    Create a new feature flag for gradual rollout or A/B testing.
+    
+    Args:
+        flag_data: Feature flag creation data (key, name, enabled, rollout_percentage, etc.)
+        current_user: Authenticated user (will be set as creator)
+        db: Database session
+        
+    Returns:
+        FeatureFlagResponse: Created feature flag
+        
+    Raises:
+        HTTPException: 400 if flag key already exists or validation fails
+        HTTPException: 401 if user is not authenticated
+    """
     try:
         service = FeatureFlagService(db)
         flag = await service.create_flag(
@@ -92,7 +106,17 @@ async def get_feature_flags(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all feature flags"""
+    """
+    Get all feature flags with optional filtering.
+    
+    Args:
+        enabled_only: Return only enabled flags (default: False)
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        List[FeatureFlagResponse]: List of feature flags matching criteria
+    """
     service = FeatureFlagService(db)
     flags = await service.get_all_flags(enabled_only=enabled_only)
     return [FeatureFlagResponse.model_validate(f) for f in flags]
@@ -104,7 +128,20 @@ async def get_feature_flag(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a feature flag by key"""
+    """
+    Get a feature flag by its unique key.
+    
+    Args:
+        key: Feature flag key (unique identifier)
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        FeatureFlagResponse: Feature flag data
+        
+    Raises:
+        HTTPException: 404 if feature flag not found
+    """
     service = FeatureFlagService(db)
     flag = await service.get_flag(key)
     if not flag:
@@ -122,7 +159,23 @@ async def check_feature_flag(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Check if a feature flag is enabled for current user"""
+    """
+    Check if a feature flag is enabled for the current user/team.
+    
+    Considers rollout percentage, target users/teams, and A/B test variants.
+    
+    Args:
+        key: Feature flag key to check
+        team_id: Optional team ID for team-based targeting
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Enabled status and variant (if A/B test)
+        
+    Raises:
+        HTTPException: 404 if feature flag not found
+    """
     service = FeatureFlagService(db)
     is_enabled = await service.is_enabled(key, user_id=current_user.id, team_id=team_id)
     variant = None
@@ -142,7 +195,23 @@ async def update_feature_flag(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a feature flag"""
+    """
+    Update an existing feature flag.
+    
+    Only provided fields will be updated (partial update).
+    
+    Args:
+        flag_id: ID of the feature flag to update
+        flag_data: Update data (only provided fields will be updated)
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        FeatureFlagResponse: Updated feature flag
+        
+    Raises:
+        HTTPException: 404 if feature flag not found
+    """
     service = FeatureFlagService(db)
     updates = flag_data.model_dump(exclude_unset=True)
     flag = await service.update_flag(flag_id, updates)
@@ -160,7 +229,20 @@ async def delete_feature_flag(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a feature flag"""
+    """
+    Delete a feature flag.
+    
+    Args:
+        flag_id: ID of the feature flag to delete
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: 404 if feature flag not found
+    """
     service = FeatureFlagService(db)
     success = await service.delete_flag(flag_id)
     if success:
@@ -177,7 +259,22 @@ async def get_feature_flag_stats(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get statistics for a feature flag"""
+    """
+    Get usage statistics for a feature flag.
+    
+    Returns metrics such as enabled count, variant distribution, etc.
+    
+    Args:
+        flag_id: ID of the feature flag
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Statistics including enabled count, variant distribution, etc.
+        
+    Raises:
+        HTTPException: 404 if feature flag not found
+    """
     service = FeatureFlagService(db)
     stats = await service.get_flag_stats(flag_id)
     return stats

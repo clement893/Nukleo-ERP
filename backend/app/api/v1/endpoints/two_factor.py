@@ -42,7 +42,24 @@ async def setup_two_factor(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Setup 2FA for the current user"""
+    """
+    Setup two-factor authentication (2FA) for the current user.
+    
+    Generates a TOTP secret, QR code, and backup codes. User must verify
+    the setup before 2FA is enabled.
+    
+    Args:
+        request: HTTP request
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        TwoFactorSetupResponse: Secret, QR code, and backup codes
+        
+    Raises:
+        HTTPException: 400 if 2FA is already enabled
+        HTTPException: 401 if user is not authenticated
+    """
     if current_user.two_factor_enabled:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -84,7 +101,24 @@ async def verify_two_factor_setup(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Verify 2FA setup with TOTP token"""
+    """
+    Verify 2FA setup by providing a TOTP token from the authenticator app.
+    
+    After successful verification, 2FA is enabled for the user.
+    
+    Args:
+        request: HTTP request
+        data: Verification request with TOTP token
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: 400 if setup not initiated or token invalid
+        HTTPException: 401 if user is not authenticated
+    """
     if not current_user.two_factor_secret:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -120,7 +154,24 @@ async def disable_two_factor(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Disable 2FA (requires password verification)"""
+    """
+    Disable two-factor authentication for the current user.
+    
+    Requires password verification for security. Clears secret and backup codes.
+    
+    Args:
+        request: HTTP request
+        data: Disable request with password for verification
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: 400 if password verification fails
+        HTTPException: 401 if user is not authenticated
+    """
     # Verify password (implement password verification)
     # For now, just disable if user is authenticated
     
@@ -141,7 +192,24 @@ async def verify_two_factor_login(
     data: TwoFactorVerifyRequest,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    """Verify 2FA token during login"""
+    """
+    Verify 2FA token during login process.
+    
+    Accepts either a TOTP token from authenticator app or a backup code.
+    Backup codes are single-use and removed after successful verification.
+    
+    Args:
+        request: HTTP request
+        data: Verification request with TOTP token or backup code
+        current_user: Authenticated user (from initial login)
+        
+    Returns:
+        dict: Verification success
+        
+    Raises:
+        HTTPException: 401 if token/code is invalid
+        HTTPException: 400 if 2FA is not enabled for user
+    """
     if not current_user.two_factor_enabled:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

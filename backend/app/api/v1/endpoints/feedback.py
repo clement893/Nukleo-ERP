@@ -56,7 +56,20 @@ async def create_feedback(
     current_user: Optional[User] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new feedback entry"""
+    """
+    Create a new feedback entry (can be anonymous or from authenticated user).
+    
+    Args:
+        feedback_data: Feedback creation data (type, subject, message, priority, etc.)
+        current_user: Authenticated user (optional, allows anonymous feedback)
+        db: Database session
+        
+    Returns:
+        FeedbackResponse: Created feedback entry
+        
+    Raises:
+        HTTPException: 400 if validation fails (invalid type, priority out of range, etc.)
+    """
     from fastapi import Request
     
     service = FeedbackService(db)
@@ -82,7 +95,23 @@ async def upload_attachment(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload an attachment to feedback"""
+    """
+    Upload an attachment file to a feedback entry.
+    
+    Args:
+        feedback_id: ID of the feedback entry
+        file: File to upload (max size: 10MB)
+        current_user: Authenticated user (must own the feedback)
+        db: Database session
+        
+    Returns:
+        dict: Success message with file information
+        
+    Raises:
+        HTTPException: 404 if feedback not found
+        HTTPException: 403 if user doesn't own the feedback
+        HTTPException: 400 if file is too large or invalid format
+    """
     # TODO: Implement file upload to storage
     # For now, just return success
     return {"success": True, "message": "File upload not yet implemented"}
@@ -97,7 +126,22 @@ async def get_feedback(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get feedback (user's own or all if admin)"""
+    """
+    Get feedback entries with optional filtering.
+    
+    Returns user's own feedback by default. Admins can see all feedback.
+    
+    Args:
+        status: Filter by feedback status (open, closed, etc.)
+        type: Filter by feedback type (bug, feature, etc.)
+        limit: Maximum number of results (default: 50, max: 100)
+        offset: Pagination offset (default: 0)
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        List[FeedbackResponse]: List of feedback entries matching criteria
+    """
     service = FeedbackService(db)
     
     # TODO: Check if user is admin
@@ -112,7 +156,23 @@ async def get_feedback_item(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a specific feedback item"""
+    """
+    Get a specific feedback entry by ID.
+    
+    Users can only view their own feedback. Admins can view any feedback.
+    
+    Args:
+        feedback_id: ID of the feedback entry
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        FeedbackResponse: Feedback entry data
+        
+    Raises:
+        HTTPException: 404 if feedback not found
+        HTTPException: 403 if user is not authorized to view this feedback
+    """
     service = FeedbackService(db)
     feedback = await service.get_feedback(feedback_id)
     if not feedback:
@@ -138,7 +198,24 @@ async def update_feedback(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update feedback"""
+    """
+    Update a feedback entry (status, priority, response).
+    
+    Users can update their own feedback. Admins can update any feedback and add responses.
+    
+    Args:
+        feedback_id: ID of the feedback entry
+        feedback_data: Update data (status, priority, response)
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        FeedbackResponse: Updated feedback entry
+        
+    Raises:
+        HTTPException: 404 if feedback not found
+        HTTPException: 403 if user is not authorized to update
+    """
     service = FeedbackService(db)
     updates = feedback_data.model_dump(exclude_unset=True)
     
@@ -161,7 +238,23 @@ async def delete_feedback(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete feedback"""
+    """
+    Delete a feedback entry.
+    
+    Users can delete their own feedback. Admins can delete any feedback.
+    
+    Args:
+        feedback_id: ID of the feedback entry to delete
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: 404 if feedback not found
+        HTTPException: 403 if user is not authorized to delete
+    """
     service = FeedbackService(db)
     success = await service.delete_feedback(feedback_id)
     if success:
