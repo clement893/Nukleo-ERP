@@ -3,6 +3,7 @@ API v1 router registration.
 """
 from fastapi import APIRouter
 from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings, pages, forms, menus, support_tickets, seo, teams
+from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
 from app.api import ai as ai_router
 
 api_router = APIRouter()
@@ -277,4 +278,25 @@ api_router.include_router(
 api_router.include_router(
     seo.router,
     tags=["seo"]
+)
+
+# Register client portal endpoints
+api_router.include_router(
+    invoices_router,
+    tags=["client-portal"]
+)
+
+api_router.include_router(
+    projects_router,
+    tags=["client-portal"]
+)
+
+api_router.include_router(
+    tickets_router,
+    tags=["client-portal"]
+)
+
+api_router.include_router(
+    dashboard_router,
+    tags=["client-portal"]
 )
