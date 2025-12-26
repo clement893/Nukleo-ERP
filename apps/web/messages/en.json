@@ -61,6 +61,27 @@
       "errors": {
         "loadFailed": "Failed to load analytics. Please try again."
       }
+    },
+    "reports": {
+      "title": "Reports",
+      "description": "Create and view custom reports",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "reports": "Reports"
+      },
+      "tabs": {
+        "builder": "Report Builder",
+        "viewer": "View Reports"
+      },
+      "sections": {
+        "builder": "Create New Report",
+        "viewer": "Saved Reports"
+      },
+      "empty": "No reports found. Create your first report using the Report Builder.",
+      "errors": {
+        "loadFailed": "Failed to load reports. Please try again.",
+        "saveFailed": "Failed to save report. Please try again."
+      }
     }
   },
   "language": {
