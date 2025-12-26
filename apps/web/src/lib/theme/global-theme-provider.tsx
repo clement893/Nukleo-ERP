@@ -119,7 +119,7 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     }
     
     // Load font URL if configured (for Google Fonts or custom fonts)
-    if (config.font_url && typeof document !== 'undefined') {
+    if (config.font_url && typeof config.font_url === 'string' && typeof document !== 'undefined') {
       // Check if font is already loaded
       const existingLink = document.querySelector(`link[data-theme-font]`);
       if (existingLink) {
