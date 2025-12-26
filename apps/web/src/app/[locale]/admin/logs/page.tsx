@@ -1,4 +1,4 @@
-import AdminLogsContent from './AdminLogsContent';
+import AdminLogsContent from './AdminLogsContent.tsx';
 import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 
 // Force dynamic rendering
