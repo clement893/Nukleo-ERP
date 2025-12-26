@@ -22,6 +22,14 @@ const nextConfig = {
     // Number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 2,
   },
+
+  // Compiler optimizations
+  compiler: {
+    // Remove console.log in production (smaller bundles)
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
   
   // Experimental features
   experimental: {
@@ -33,6 +41,8 @@ const nextConfig = {
       'clsx',
       'next-intl',
     ],
+    // Enable faster refresh for better dev experience
+    optimizeCss: true,
   },
 
   // Image optimization
@@ -42,8 +52,22 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
+  // Enable SWC minification (faster than Terser)
+  swcMinify: true,
+
   // Webpack configuration for better code splitting
   webpack: (config, { isServer, dev, webpack }) => {
+    // Optimize webpack cache for faster builds
+    if (!dev) {
+      config.cache = {
+        type: 'filesystem',
+        buildDependencies: {
+          config: [__filename],
+        },
+        cacheDirectory: '.next/cache/webpack',
+      };
+    }
+
     // Add plugin to create missing CSS file during build
     const CreateMissingCssPlugin = require('./webpack-plugins/create-missing-css-plugin');
     config.plugins.push(new CreateMissingCssPlugin());

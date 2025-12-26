@@ -31,7 +31,15 @@
         "NODE_ENV",
         "NEXT_PUBLIC_*"
       ],
-      "cache": true
+      "cache": true,
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "public/**",
+        "*.{js,ts,json}",
+        "next.config.js",
+        "tailwind.config.ts",
+        "postcss.config.js"
+      ]
     },
     "dev": {
       "cache": false,
@@ -42,7 +50,7 @@
       ]
     },
     "lint": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "outputs": [],
       "cache": true,
       "env": [
@@ -50,8 +58,10 @@
       ]
     },
     "type-check": {
-      "dependsOn": ["^build"],
-      "outputs": [],
+      "dependsOn": [],
+      "outputs": [
+        ".next/cache/tsconfig.tsbuildinfo"
+      ],
       "cache": true,
       "env": [
         "NODE_ENV"

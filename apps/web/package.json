@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/ensure-css-file.js",
-    "build": "next build --webpack",
+    "build": "next build",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --incremental",
+    "type-check:ci": "tsc --noEmit --incremental --pretty false",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",

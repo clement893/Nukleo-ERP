@@ -51,7 +51,7 @@ export default function AdminOrganizationsContent() {
           id: String(team.id),
           name: team.name,
           description: team.description,
-          member_count: team.members?.length || 0,
+          member_count: team.member_count || 0,
           organization_id: team.organization_id || '',
           created_at: team.created_at,
         })));

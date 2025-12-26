@@ -9,6 +9,7 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "incremental": true,
+    "tsBuildInfoFile": ".next/cache/tsconfig.tsbuildinfo",
     
     // Interop
     "esModuleInterop": true,

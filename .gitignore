@@ -43,6 +43,10 @@ playwright-report/
 
 # Production
 .next/
+# But keep cache for incremental builds
+!.next/cache/
+.next/cache/*
+!.next/cache/tsconfig.tsbuildinfo
 out/
 build/
 dist/
