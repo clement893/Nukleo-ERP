@@ -405,7 +405,7 @@ export default function SurveyBuilder({
       />
 
       {error && (
-        <Alert variant="error" title={t('error') || 'Error'} description={error} className="mb-4" />
+        <Alert variant="error" title={t('error') || 'Error'} className="mb-4">{error}</Alert>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
@@ -649,7 +649,7 @@ export default function SurveyBuilder({
               <Switch
                 label={t('required') || 'Required'}
                 checked={editingQuestion.required || false}
-                onChange={(checked: boolean) => setEditingQuestion({ ...editingQuestion, required: checked })}
+                onChange={(e) => setEditingQuestion({ ...editingQuestion, required: e.target.checked })}
               />
             </div>
 
@@ -663,9 +663,9 @@ export default function SurveyBuilder({
                     value={editingQuestion.showIf?.questionId || ''}
                     onChange={(e) => setEditingQuestion({
                       ...editingQuestion,
-                      showIf: e.target.value ? {
+                        showIf: e.target.value ? {
                         questionId: e.target.value,
-                        operator: editingQuestion.showIf?.operator || 'equals',
+                        operator: (editingQuestion.showIf?.operator || 'equals') as 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than',
                         value: editingQuestion.showIf?.value || '',
                       } : undefined,
                     })}
@@ -685,7 +685,7 @@ export default function SurveyBuilder({
                             ...editingQuestion,
                             showIf: editingQuestion.showIf ? {
                               ...editingQuestion.showIf,
-                              operator: e.target.value as SurveyQuestion['showIf']['operator'],
+                              operator: e.target.value as 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than',
                             } : undefined,
                           })}
                           options={[
@@ -741,33 +741,33 @@ export default function SurveyBuilder({
             <Switch
               label={t('allow_anonymous') || 'Allow Anonymous Responses'}
               checked={currentSurvey.settings.allowAnonymous}
-              onChange={(checked: boolean) => setCurrentSurvey({
+              onChange={(e) => setCurrentSurvey({
                 ...currentSurvey,
-                settings: { ...currentSurvey.settings, allowAnonymous: checked },
+                settings: { ...currentSurvey.settings, allowAnonymous: e.target.checked },
               })}
             />
             <Switch
               label={t('require_auth') || 'Require Authentication'}
               checked={currentSurvey.settings.requireAuth}
-              onChange={(checked: boolean) => setCurrentSurvey({
+              onChange={(e) => setCurrentSurvey({
                 ...currentSurvey,
-                settings: { ...currentSurvey.settings, requireAuth: checked },
+                settings: { ...currentSurvey.settings, requireAuth: e.target.checked },
               })}
             />
             <Switch
               label={t('limit_one_response') || 'Limit to One Response Total'}
               checked={currentSurvey.settings.limitOneResponse}
-              onChange={(checked: boolean) => setCurrentSurvey({
+              onChange={(e) => setCurrentSurvey({
                 ...currentSurvey,
-                settings: { ...currentSurvey.settings, limitOneResponse: checked },
+                settings: { ...currentSurvey.settings, limitOneResponse: e.target.checked },
               })}
             />
             <Switch
               label={t('limit_one_per_user') || 'Limit to One Response Per User'}
               checked={currentSurvey.settings.limitOneResponsePerUser}
-              onChange={(checked: boolean) => setCurrentSurvey({
+              onChange={(e) => setCurrentSurvey({
                 ...currentSurvey,
-                settings: { ...currentSurvey.settings, limitOneResponsePerUser: checked },
+                settings: { ...currentSurvey.settings, limitOneResponsePerUser: e.target.checked },
               })}
             />
           </div>
@@ -777,7 +777,8 @@ export default function SurveyBuilder({
             <Switch
               label={t('enable_public_link') || 'Enable Public Link'}
               checked={currentSurvey.settings.publicLinkEnabled}
-              onChange={(checked: boolean) => {
+              onChange={(e) => {
+                const checked = e.target.checked;
                 if (checked && !currentSurvey.settings.publicLink) {
                   generatePublicLink();
                 } else {
@@ -843,17 +844,17 @@ export default function SurveyBuilder({
             <Switch
               label={t('show_progress_bar') || 'Show Progress Bar'}
               checked={currentSurvey.settings.showProgressBar}
-              onChange={(checked: boolean) => setCurrentSurvey({
+              onChange={(e) => setCurrentSurvey({
                 ...currentSurvey,
-                settings: { ...currentSurvey.settings, showProgressBar: checked },
+                settings: { ...currentSurvey.settings, showProgressBar: e.target.checked },
               })}
             />
             <Switch
               label={t('randomize_questions') || 'Randomize Questions'}
               checked={currentSurvey.settings.randomizeQuestions}
-              onChange={(checked: boolean) => setCurrentSurvey({
+              onChange={(e) => setCurrentSurvey({
                 ...currentSurvey,
-                settings: { ...currentSurvey.settings, randomizeQuestions: checked },
+                settings: { ...currentSurvey.settings, randomizeQuestions: e.target.checked },
               })}
             />
           </div>

@@ -95,7 +95,7 @@ export default function SurveyResultsPage() {
     return (
       <ProtectedRoute>
         <PageContainer>
-          <Alert variant="error" title={t('error') || 'Error'} description={t('errors.notFound') || 'Survey not found'} />
+          <Alert variant="error" title={t('error') || 'Error'}>{t('errors.notFound') || 'Survey not found'}</Alert>
         </PageContainer>
       </ProtectedRoute>
     );

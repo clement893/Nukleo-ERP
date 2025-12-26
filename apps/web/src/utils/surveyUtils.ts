@@ -49,10 +49,10 @@ export function surveyToForm(survey: Survey): {
   return {
     name: survey.name,
     description: survey.description,
-    fields: survey.questions as Array<Record<string, unknown>>,
+    fields: survey.questions as unknown as Array<Record<string, unknown>>,
     submit_button_text: survey.submitButtonText,
     success_message: survey.successMessage,
-    settings: survey.settings as Record<string, unknown>,
+    settings: survey.settings as unknown as Record<string, unknown>,
   };
 }
 

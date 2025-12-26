@@ -137,7 +137,7 @@ export default function SurveyResults({
           value: value,
           percentage: filteredSubmissions.length > 0 ? (value / filteredSubmissions.length) * 100 : 0,
         })),
-        average: responses.reduce((acc, val) => acc + (Number(val) || 0), 0) / (responses.length || 1),
+        average: responses.reduce((acc: number, val: unknown) => acc + (Number(val) || 0), 0) / (responses.length || 1),
       };
     } else if (question.type === 'nps') {
       // NPS specific: 0-10 scale with NPS score calculation
@@ -171,7 +171,7 @@ export default function SurveyResults({
           percentage: total > 0 ? (value / total) * 100 : 0,
           category: Number(key) <= 6 ? 'detractor' : Number(key) >= 9 ? 'promoter' : 'passive',
         })),
-        average: responses.reduce((acc, val) => acc + (Number(val) || 0), 0) / (responses.length || 1),
+        average: responses.reduce((acc: number, val: unknown) => acc + (Number(val) || 0), 0) / (responses.length || 1),
         npsScore,
         promoters,
         detractors,
@@ -226,10 +226,14 @@ export default function SurveyResults({
 
       // Initialize matrix
       rows.forEach((row) => {
-        matrixData[row] = {};
-        columns.forEach((col) => {
-          matrixData[row][col] = 0;
-        });
+        if (row) {
+          matrixData[row] = {};
+          columns.forEach((col) => {
+            if (col) {
+              matrixData[row][col] = 0;
+            }
+          });
+        }
       });
 
       // Count responses
@@ -245,13 +249,18 @@ export default function SurveyResults({
 
       // Convert to chart data format
       const chartData = rows.flatMap((row) =>
-        columns.map((col) => ({
-          name: `${row} - ${col}`,
-          value: matrixData[row][col] || 0,
-          percentage: filteredSubmissions.length > 0 ? ((matrixData[row][col] || 0) / filteredSubmissions.length) * 100 : 0,
-          row,
-          col,
-        }))
+        columns.map((col) => {
+          const rowKey = row || '';
+          const colKey = col || '';
+          const value = matrixData[rowKey]?.[colKey] || 0;
+          return {
+            name: `${rowKey} - ${colKey}`,
+            value,
+            percentage: filteredSubmissions.length > 0 ? (value / filteredSubmissions.length) * 100 : 0,
+            row: rowKey,
+            col: colKey,
+          };
+        })
       );
 
       return {
@@ -286,6 +295,14 @@ export default function SurveyResults({
       // Calculate averages
       const chartData = options.map((opt) => {
         const data = rankingData[opt.value];
+        if (!data) {
+          return {
+            name: opt.label,
+            value: 0,
+            count: 0,
+            percentage: 0,
+          };
+        }
         const avgRank = data.count > 0 ? data.sum / data.count : 0;
         return {
           name: opt.label,
@@ -369,7 +386,7 @@ export default function SurveyResults({
       />
 
       {error && (
-        <Alert variant="error" title={t('error') || 'Error'} description={error} className="mb-4" />
+        <Alert variant="error" title={t('error') || 'Error'} className="mb-4">{error}</Alert>
       )}
 
       {/* Statistics Cards */}
@@ -419,7 +436,7 @@ export default function SurveyResults({
       <div className="space-y-6 mt-8">
         {survey.questions.map((question) => {
           const chartData = getQuestionChartData(question);
-          if (!chartData || chartData.data.length === 0) return null;
+          if (!chartData || !chartData.data || chartData.data.length === 0) return null;
 
           return (
             <Card key={question.id} title={question.label}>
@@ -436,7 +453,7 @@ export default function SurveyResults({
                       </p>
                     </div>
                   )}
-                  {chartData.npsScore !== undefined && (
+                  {'npsScore' in chartData && chartData.npsScore !== undefined && (
                     <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                         NPS Score: {chartData.npsScore}

@@ -343,8 +343,6 @@ export default function SurveyTaker({
 
       case 'nps':
         // NPS is always 0-10 scale
-        const npsMin = 0;
-        const npsMax = 10;
         return (
           <div key={question.id} className="space-y-2">
             <label className="block text-sm font-medium">
@@ -448,19 +446,23 @@ export default function SurveyTaker({
                       <td className="border border-gray-300 dark:border-gray-600 p-2 text-sm font-medium">
                         {row}
                       </td>
-                      {question.matrixColumns?.map((col) => (
-                        <td key={col} className="border border-gray-300 dark:border-gray-600 p-2 text-center">
-                          <Radio
-                            checked={matrixValue[row] === col}
-                            onChange={() => {
-                              setResponses({
-                                ...responses,
-                                [question.name]: { ...matrixValue, [row]: col },
-                              });
-                            }}
-                          />
-                        </td>
-                      ))}
+                      {question.matrixColumns?.map((col) => {
+                        const colKey = col || '';
+                        const rowKey = row || '';
+                        return (
+                          <td key={colKey} className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                            <Radio
+                              checked={matrixValue[rowKey] === colKey}
+                              onChange={() => {
+                                setResponses({
+                                  ...responses,
+                                  [question.name]: { ...matrixValue, [rowKey]: colKey },
+                                });
+                              }}
+                            />
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -482,7 +484,7 @@ export default function SurveyTaker({
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{question.description}</p>
             )}
             <div className="space-y-2">
-              {rankingOptions.map((option, index) => {
+              {rankingOptions.map((option) => {
                 const currentRank = rankingValue.indexOf(option.value) + 1;
                 return (
                   <div key={option.value} className="flex items-center gap-2 p-2 border border-gray-200 dark:border-gray-700 rounded">
@@ -495,11 +497,10 @@ export default function SurveyTaker({
                         onClick={() => {
                           const newRanking = [...rankingValue];
                           const currentIndex = newRanking.indexOf(option.value);
-                          if (currentIndex > 0) {
-                            [newRanking[currentIndex], newRanking[currentIndex - 1]] = [
-                              newRanking[currentIndex - 1],
-                              newRanking[currentIndex],
-                            ];
+                          if (currentIndex > 0 && newRanking[currentIndex] !== undefined && newRanking[currentIndex - 1] !== undefined) {
+                            const temp = newRanking[currentIndex];
+                            newRanking[currentIndex] = newRanking[currentIndex - 1];
+                            newRanking[currentIndex - 1] = temp;
                             setResponses({ ...responses, [question.name]: newRanking });
                           }
                         }}
@@ -513,11 +514,11 @@ export default function SurveyTaker({
                         onClick={() => {
                           const newRanking = [...rankingValue];
                           const currentIndex = newRanking.indexOf(option.value);
-                          if (currentIndex >= 0 && currentIndex < newRanking.length - 1) {
-                            [newRanking[currentIndex], newRanking[currentIndex + 1]] = [
-                              newRanking[currentIndex + 1],
-                              newRanking[currentIndex],
-                            ];
+                          if (currentIndex >= 0 && currentIndex < newRanking.length - 1 && 
+                              newRanking[currentIndex] !== undefined && newRanking[currentIndex + 1] !== undefined) {
+                            const temp = newRanking[currentIndex];
+                            newRanking[currentIndex] = newRanking[currentIndex + 1];
+                            newRanking[currentIndex + 1] = temp;
                             setResponses({ ...responses, [question.name]: newRanking });
                           } else if (currentIndex === -1) {
                             newRanking.push(option.value);
@@ -563,7 +564,7 @@ export default function SurveyTaker({
         )}
 
       {error && (
-        <Alert variant="error" title={t('error') || 'Error'} description={error} className="mb-4" />
+        <Alert variant="error" title={t('error') || 'Error'} className="mb-4">{error}</Alert>
       )}
 
         <div className="space-y-6">
