@@ -115,7 +115,7 @@ export default function Sidebar({
     <aside
       className={clsx(
         'bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full transition-all duration-300 flex flex-col',
-        collapsed ? 'w-16' : 'w-64',
+        collapsed ? 'w-16' : 'w-64 md:w-72',
         className
       )}
     >
