@@ -58,5 +58,17 @@
     "unauthorized": "Unauthorized",
     "forbidden": "Forbidden",
     "serverError": "Server error"
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Manage your profile information and account settings",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "profile": "Profile"
+    },
+    "errors": {
+      "loadFailed": "Failed to load profile. Please try again.",
+      "updateFailed": "Failed to update profile. Please try again."
+    }
   }
 }

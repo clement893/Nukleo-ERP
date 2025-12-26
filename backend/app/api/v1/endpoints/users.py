@@ -14,8 +14,12 @@ from app.core.pagination import PaginationParams, paginate_query, PaginatedRespo
 from app.core.query_optimization import QueryOptimizer
 from app.core.cache_enhanced import cache_query
 from app.core.rate_limit import rate_limit_decorator
+from app.core.logging import logger
 from app.models.user import User
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, UserUpdate
+from app.dependencies import get_current_user
+from fastapi import HTTPException, status
+from typing import Annotated
 
 router = APIRouter()
 
@@ -110,3 +114,67 @@ async def get_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
     return user
+
+
+@router.put("/me", response_model=UserResponse)
+@rate_limit_decorator("10/minute")
+async def update_current_user(
+    request: Request,
+    user_data: UserUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> UserResponse:
+    """
+    Update current user profile
+    
+    Allows authenticated users to update their own profile information.
+    Only updates fields that are provided (partial update).
+    
+    Args:
+        user_data: User update data (email, first_name, last_name)
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Updated user information
+        
+    Raises:
+        HTTPException: If email is already taken by another user
+    """
+    try:
+        logger.info(f"Updating user profile for: {current_user.email}")
+        
+        # Check if email is being updated and if it's already taken
+        if user_data.email and user_data.email != current_user.email:
+            result = await db.execute(
+                select(User).where(User.email == user_data.email)
+            )
+            existing_user = result.scalar_one_or_none()
+            if existing_user and existing_user.id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email is already taken"
+                )
+        
+        # Update only provided fields
+        update_data = user_data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(current_user, field, value)
+        
+        # Save changes
+        await db.commit()
+        await db.refresh(current_user)
+        
+        logger.info(f"User profile updated successfully for: {current_user.email}")
+        
+        return current_user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user profile: {e}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user profile"
+        )

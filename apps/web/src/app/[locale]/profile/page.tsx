@@ -9,12 +9,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/lib/store';
 import { usersAPI } from '@/lib/api';
 import { ProfileCard, ProfileForm } from '@/components/profile';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading } from '@/components/ui';
+import { Loading, Alert } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { sanitizeInput } from '@/utils/edgeCaseHandlers';
+import { logger } from '@/lib/logger';
 
 interface UserData {
   id: string | number;
@@ -31,10 +34,12 @@ interface UserData {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const t = useTranslations('profile');
   const { user: authUser, isAuthenticated } = useAuthStore();
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -48,6 +53,7 @@ export default function ProfilePage() {
   const loadUser = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await usersAPI.getMe();
       if (response.data) {
         setUser({
@@ -58,7 +64,8 @@ export default function ProfilePage() {
         });
       }
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      logger.error('Failed to load user profile', error instanceof Error ? error : new Error(String(error)));
+      setError(t('errors.loadFailed') || 'Failed to load profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -72,24 +79,48 @@ export default function ProfilePage() {
   }) => {
     try {
       setIsSaving(true);
-      // Backend expects first_name and last_name separately
+      setError(null);
+      
+      // Sanitize input data
       const updateData: { first_name?: string; last_name?: string; email?: string } = {};
-      if (data.first_name !== undefined) updateData.first_name = data.first_name;
-      if (data.last_name !== undefined) updateData.last_name = data.last_name;
-      if (data.email !== undefined) updateData.email = data.email;
+      
+      if (data.first_name !== undefined) {
+        updateData.first_name = sanitizeInput(data.first_name, { maxLength: 100, trim: true });
+      }
+      if (data.last_name !== undefined) {
+        updateData.last_name = sanitizeInput(data.last_name, { maxLength: 100, trim: true });
+      }
+      if (data.email !== undefined) {
+        updateData.email = sanitizeInput(data.email, { maxLength: 255, trim: true }).toLowerCase();
+      }
+      
+      logger.debug('Updating user profile', { fields: Object.keys(updateData) });
       
       const response = await usersAPI.updateMe(updateData);
 
       if (response.data) {
-        setUser((prev) => (prev ? { ...prev, ...response.data } : null));
+        const updatedUser = {
+          ...response.data,
+          name: [response.data.first_name, response.data.last_name]
+            .filter(Boolean)
+            .join(' ') || response.data.email?.split('@')[0] || '',
+        };
+        
+        setUser(updatedUser);
+        
         // Update auth store
         useAuthStore.getState().setUser({
           ...authUser!,
           ...response.data,
-          name: [data.first_name, data.last_name].filter(Boolean).join(' ') || response.data.email?.split('@')[0] || '',
+          name: updatedUser.name,
         });
+        
+        logger.info('Profile updated successfully', { email: response.data.email });
       }
-    } catch (error) {
+    } catch (error: any) {
+      logger.error('Failed to update profile', error instanceof Error ? error : new Error(String(error)));
+      const errorMessage = error?.response?.data?.detail || error?.message || t('errors.updateFailed') || 'Failed to update profile. Please try again.';
+      setError(errorMessage);
       throw error;
     } finally {
       setIsSaving(false);
@@ -125,13 +156,21 @@ export default function ProfilePage() {
     <ProtectedRoute>
       <PageContainer>
         <PageHeader
-          title="Profile"
-          description="Manage your profile information and account settings"
+          title={t('title') || 'Profile'}
+          description={t('description') || 'Manage your profile information and account settings'}
           breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Profile' },
+            { label: t('breadcrumbs.dashboard') || 'Dashboard', href: '/dashboard' },
+            { label: t('breadcrumbs.profile') || 'Profile' },
           ]}
         />
+
+        {error && (
+          <div className="mt-6">
+            <Alert variant="error" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          </div>
+        )}
 
         <div className="mt-8 space-y-6">
           {/* Profile Card */}
