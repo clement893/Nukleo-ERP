@@ -439,6 +439,54 @@ export const invitationsAPI = {
   },
 };
 
+export const integrationsAPI = {
+  list: () => {
+    return apiClient.get('/v1/integrations/');
+  },
+  get: (integrationId: number) => {
+    return apiClient.get(`/v1/integrations/${integrationId}`);
+  },
+  create: (data: {
+    type: string;
+    name: string;
+    description?: string;
+    config?: Record<string, unknown>;
+    credentials?: Record<string, unknown>;
+  }) => {
+    return apiClient.post('/v1/integrations/', data);
+  },
+  update: (integrationId: number, data: {
+    name?: string;
+    description?: string;
+    enabled?: boolean;
+    config?: Record<string, unknown>;
+    credentials?: Record<string, unknown>;
+  }) => {
+    return apiClient.put(`/v1/integrations/${integrationId}`, data);
+  },
+  toggle: (integrationId: number) => {
+    return apiClient.patch(`/v1/integrations/${integrationId}/toggle`);
+  },
+  delete: (integrationId: number) => {
+    return apiClient.delete(`/v1/integrations/${integrationId}`);
+  },
+};
+
+export const apiSettingsAPI = {
+  get: () => {
+    return apiClient.get('/v1/api-settings/');
+  },
+  update: (data: {
+    base_url?: string;
+    rate_limit?: number;
+    enable_webhooks?: boolean;
+    webhook_url?: string;
+    enable_logging?: boolean;
+  }) => {
+    return apiClient.put('/v1/api-settings/', data);
+  },
+};
+
 // Export default for backward compatibility
 export default apiClient;
 
