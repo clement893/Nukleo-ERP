@@ -1,0 +1,2 @@
+export { PreferencesManager } from './PreferencesManager';
+
