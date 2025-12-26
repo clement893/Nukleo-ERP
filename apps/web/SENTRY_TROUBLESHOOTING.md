@@ -89,7 +89,7 @@ Les source maps permettent de voir le code source original dans Sentry au lieu d
 Certaines erreurs réseau sont automatiquement filtrées pour éviter le bruit.
 
 **Solution :**
-Si vous voulez capturer toutes les erreurs réseau, modifiez `sentry.client.config.ts` et commentez les filtres dans `beforeSend`.
+Si vous voulez capturer toutes les erreurs réseau, modifiez `instrumentation-client.ts` et commentez les filtres dans `beforeSend`.
 
 ## 🧪 Tester Sentry
 
@@ -141,7 +141,7 @@ Cherchez les messages :
 
 ### Modifier les filtres d'erreurs
 
-Éditez `sentry.client.config.ts` ou `sentry.server.config.ts` pour modifier `beforeSend` :
+Éditez `instrumentation-client.ts` ou `sentry.server.config.ts` pour modifier `beforeSend` :
 
 ```typescript
 beforeSend(event, hint) {

@@ -7,7 +7,7 @@ This document summarizes the monitoring and error tracking setup for the applica
 ### 1. Sentry Error Tracking
 - ✅ Sentry package installed (`@sentry/nextjs`)
 - ✅ Configuration files created:
-  - `sentry.client.config.ts` - Client-side error tracking
+  - `instrumentation-client.ts` - Client-side error tracking
   - `sentry.server.config.ts` - Server-side error tracking
   - `sentry.edge.config.ts` - Edge runtime error tracking
 - ✅ Automatic error capture via Error Boundary

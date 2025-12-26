@@ -45,7 +45,7 @@ SENTRY_DEBUG=false
 
 The Sentry package (`@sentry/nextjs`) is already installed. The configuration files are located at:
 
-- `sentry.client.config.ts` - Client-side configuration
+- `instrumentation-client.ts` - Client-side configuration
 - `sentry.server.config.ts` - Server-side configuration  
 - `sentry.edge.config.ts` - Edge runtime configuration
 
@@ -89,7 +89,7 @@ These dashboards provide:
 
 ### ✅ Session Replay (Optional)
 - Session replay is configured but uses minimal sampling by default
-- Adjust `replaysSessionSampleRate` in `sentry.client.config.ts` if needed
+- Adjust `replaysSessionSampleRate` in `instrumentation-client.ts` if needed
 
 ## Usage Examples
 
