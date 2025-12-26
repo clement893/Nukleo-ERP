@@ -4,7 +4,7 @@ Track revisions and version history for entities
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, func, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, func, JSON, Boolean
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
