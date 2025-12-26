@@ -8,7 +8,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useApi } from '@/hooks/useApi';
 import { clientPortalAPI, ClientProjectListResponse } from '@/lib/api/client-portal';
 import { DataTable } from '@/components/ui';
