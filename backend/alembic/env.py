@@ -28,6 +28,10 @@ from app.models import invoice  # noqa: F401
 from app.models import api_key  # noqa: F401
 from app.models import webhook_event  # noqa: F401
 from app.models import integration  # noqa: F401
+from app.models import page  # noqa: F401
+from app.models import form  # noqa: F401
+from app.models import menu  # noqa: F401
+from app.models import support_ticket  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

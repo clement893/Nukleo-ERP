@@ -11,8 +11,10 @@ import { useTranslations } from 'next-intl';
 import { SEOManager } from '@/components/cms';
 import type { SEOSettings } from '@/components/cms';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
+import { Loading, Alert, useToast } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { seoAPI } from '@/lib/api';
+import { handleApiError } from '@/lib/errors/api';
 import { logger } from '@/lib/logger';
 
 export default function SEOPage() {
@@ -25,33 +27,73 @@ export default function SEOPage() {
     loadSettings();
   }, []);
 
+  const { showToast } = useToast();
+
   const loadSettings = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual SEO API endpoint when available
-      // const response = await apiClient.get('/v1/seo/settings');
-      // setSettings(response.data);
+      const response = await seoAPI.getSettings();
+      const apiSettings = response.data.settings || {};
       
-      setSettings({});
+      setSettings({
+        title: apiSettings.title,
+        description: apiSettings.description,
+        keywords: apiSettings.keywords,
+        canonicalUrl: apiSettings.canonical_url,
+        robots: apiSettings.robots,
+        ogTitle: apiSettings.og_title,
+        ogDescription: apiSettings.og_description,
+        ogImage: apiSettings.og_image,
+        ogType: apiSettings.og_type,
+        twitterCard: apiSettings.twitter_card,
+        twitterTitle: apiSettings.twitter_title,
+        twitterDescription: apiSettings.twitter_description,
+        twitterImage: apiSettings.twitter_image,
+        schema: apiSettings.schema,
+      });
       setIsLoading(false);
     } catch (error) {
-      logger.error('Failed to load SEO settings', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load SEO settings. Please try again.');
+      const appError = handleApiError(error);
+      logger.error('Failed to load SEO settings', appError);
+      setError(appError.message || t('errors.loadFailed') || 'Failed to load SEO settings. Please try again.');
       setIsLoading(false);
     }
   };
 
   const handleSave = async (updatedSettings: SEOSettings) => {
     try {
-      // TODO: Replace with actual SEO API endpoint when available
-      // await apiClient.put('/v1/seo/settings', updatedSettings);
-      logger.info('Saving SEO settings', { settings: updatedSettings });
+      setIsLoading(true);
+      setError(null);
+      
+      await seoAPI.updateSettings({
+        title: updatedSettings.title,
+        description: updatedSettings.description,
+        keywords: updatedSettings.keywords,
+        canonical_url: updatedSettings.canonicalUrl,
+        robots: updatedSettings.robots,
+        og_title: updatedSettings.ogTitle,
+        og_description: updatedSettings.ogDescription,
+        og_image: updatedSettings.ogImage,
+        og_type: updatedSettings.ogType,
+        twitter_card: updatedSettings.twitterCard,
+        twitter_title: updatedSettings.twitterTitle,
+        twitter_description: updatedSettings.twitterDescription,
+        twitter_image: updatedSettings.twitterImage,
+        schema: updatedSettings.schema,
+      });
+      
+      showToast({ message: 'SEO settings saved successfully', type: 'success' });
       setSettings(updatedSettings);
+      await loadSettings();
     } catch (error) {
-      logger.error('Failed to save SEO settings', error instanceof Error ? error : new Error(String(error)));
+      const appError = handleApiError(error);
+      logger.error('Failed to save SEO settings', appError);
+      setError(appError.message || 'Failed to save SEO settings. Please try again.');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

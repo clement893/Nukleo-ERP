@@ -2,7 +2,7 @@
 API v1 router registration.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings
+from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings, pages, forms, menus, support_tickets, seo
 from app.api import ai as ai_router
 
 api_router = APIRouter()
@@ -241,4 +241,34 @@ api_router.include_router(
     api_settings.router,
     prefix="/api-settings",
     tags=["api-settings"]
+)
+
+# Register pages endpoints
+api_router.include_router(
+    pages.router,
+    tags=["pages"]
+)
+
+# Register forms endpoints
+api_router.include_router(
+    forms.router,
+    tags=["forms"]
+)
+
+# Register menus endpoints
+api_router.include_router(
+    menus.router,
+    tags=["menus"]
+)
+
+# Register support tickets endpoints
+api_router.include_router(
+    support_tickets.router,
+    tags=["support"]
+)
+
+# Register SEO endpoints
+api_router.include_router(
+    seo.router,
+    tags=["seo"]
 )

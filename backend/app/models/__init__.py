@@ -28,6 +28,10 @@ from app.models.documentation import DocumentationArticle, DocumentationCategory
 from app.models.scheduled_task import ScheduledTask, TaskExecutionLog, TaskStatus, TaskType
 from app.models.backup import Backup, RestoreOperation, BackupType, BackupStatus
 from app.models.email_template import EmailTemplate, EmailTemplateVersion
+from app.models.page import Page
+from app.models.form import Form, FormSubmission
+from app.models.menu import Menu
+from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority
 from app.core.security_audit import SecurityAuditLog
 
 __all__ = [
@@ -87,6 +91,14 @@ __all__ = [
     "BackupStatus",
     "EmailTemplate",
     "EmailTemplateVersion",
+    "Page",
+    "Form",
+    "FormSubmission",
+    "Menu",
+    "SupportTicket",
+    "TicketMessage",
+    "TicketStatus",
+    "TicketPriority",
     "SecurityAuditLog",
 ]
 

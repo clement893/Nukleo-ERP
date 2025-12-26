@@ -3,6 +3,7 @@
 import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { Card, Button, Badge } from '@/components/ui';
 import Link from 'next/link';
+import { AdminThemeSection } from '@/components/admin/AdminThemeSection';
 
 export default function AdminContent() {
   return (
@@ -94,6 +95,9 @@ export default function AdminContent() {
           </Link>
         </Card>
       </div>
+
+      {/* Theme Management Section */}
+      <AdminThemeSection />
 
       <Section title="Statut du système" className="mt-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

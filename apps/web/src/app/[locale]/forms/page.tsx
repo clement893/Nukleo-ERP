@@ -11,8 +11,10 @@ import { useTranslations } from 'next-intl';
 import { CMSFormBuilder } from '@/components/cms';
 import type { CMSForm } from '@/components/cms';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
+import { Loading, Alert, useToast } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { formsAPI } from '@/lib/api';
+import { handleApiError } from '@/lib/errors/api';
 import { logger } from '@/lib/logger';
 
 export default function FormsPage() {
@@ -25,33 +27,82 @@ export default function FormsPage() {
     loadForm();
   }, []);
 
+  const { showToast } = useToast();
+
   const loadForm = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual form API endpoint when available
-      // const response = await apiClient.get('/v1/forms');
-      // setForm(response.data);
+      const response = await formsAPI.list();
+      const forms = response.data || [];
       
-      setForm(null);
+      if (forms.length > 0) {
+        const firstForm = forms[0];
+        setForm({
+          id: String(firstForm.id),
+          name: firstForm.name,
+          description: firstForm.description || '',
+          fields: firstForm.fields || [],
+          submitButtonText: firstForm.submit_button_text || 'Submit',
+          successMessage: firstForm.success_message || '',
+        });
+      } else {
+        setForm(null);
+      }
       setIsLoading(false);
     } catch (error) {
-      logger.error('Failed to load form', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load form. Please try again.');
+      const appError = handleApiError(error);
+      logger.error('Failed to load form', appError);
+      setError(appError.message || t('errors.loadFailed') || 'Failed to load form. Please try again.');
       setIsLoading(false);
     }
   };
 
   const handleSave = async (updatedForm: CMSForm) => {
     try {
-      // TODO: Replace with actual form API endpoint when available
-      // await apiClient.put(`/v1/forms/${updatedForm.id}`, updatedForm);
-      logger.info('Saving form', { formId: updatedForm.id, formName: updatedForm.name });
-      setForm(updatedForm);
+      setIsLoading(true);
+      setError(null);
+      
+      if (updatedForm.id && updatedForm.id !== '') {
+        // Update existing form
+        const formId = parseInt(updatedForm.id, 10);
+        await formsAPI.update(formId, {
+          name: updatedForm.name,
+          description: updatedForm.description,
+          fields: updatedForm.fields,
+          submit_button_text: updatedForm.submitButtonText,
+          success_message: updatedForm.successMessage,
+        });
+        showToast({ message: 'Form updated successfully', type: 'success' });
+      } else {
+        // Create new form
+        const response = await formsAPI.create({
+          name: updatedForm.name,
+          description: updatedForm.description,
+          fields: updatedForm.fields,
+          submit_button_text: updatedForm.submitButtonText,
+          success_message: updatedForm.successMessage,
+        });
+        setForm({
+          id: String(response.data.id),
+          name: response.data.name,
+          description: response.data.description || '',
+          fields: response.data.fields || [],
+          submitButtonText: response.data.submit_button_text || 'Submit',
+          successMessage: response.data.success_message || '',
+        });
+        showToast({ message: 'Form created successfully', type: 'success' });
+      }
+      
+      await loadForm();
     } catch (error) {
-      logger.error('Failed to save form', error instanceof Error ? error : new Error(String(error)));
+      const appError = handleApiError(error);
+      logger.error('Failed to save form', appError);
+      setError(appError.message || 'Failed to save form. Please try again.');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

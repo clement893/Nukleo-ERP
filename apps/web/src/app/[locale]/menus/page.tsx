@@ -11,8 +11,10 @@ import { useTranslations } from 'next-intl';
 import { MenuBuilder } from '@/components/cms';
 import type { Menu } from '@/components/cms';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
+import { Loading, Alert, useToast } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { menusAPI } from '@/lib/api';
+import { handleApiError } from '@/lib/errors/api';
 import { logger } from '@/lib/logger';
 
 export default function MenusPage() {
@@ -25,33 +27,74 @@ export default function MenusPage() {
     loadMenu();
   }, []);
 
+  const { showToast } = useToast();
+
   const loadMenu = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual menu API endpoint when available
-      // const response = await apiClient.get('/v1/menus');
-      // setMenu(response.data);
+      const response = await menusAPI.list();
+      const menus = response.data || [];
       
-      setMenu(null);
+      if (menus.length > 0) {
+        const firstMenu = menus[0];
+        setMenu({
+          id: String(firstMenu.id),
+          name: firstMenu.name,
+          location: firstMenu.location,
+          items: firstMenu.items || [],
+        });
+      } else {
+        setMenu(null);
+      }
       setIsLoading(false);
     } catch (error) {
-      logger.error('Failed to load menu', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load menu. Please try again.');
+      const appError = handleApiError(error);
+      logger.error('Failed to load menu', appError);
+      setError(appError.message || t('errors.loadFailed') || 'Failed to load menu. Please try again.');
       setIsLoading(false);
     }
   };
 
   const handleSave = async (updatedMenu: Menu) => {
     try {
-      // TODO: Replace with actual menu API endpoint when available
-      // await apiClient.put(`/v1/menus/${updatedMenu.id}`, updatedMenu);
-      logger.info('Saving menu', { menuId: updatedMenu.id, menuName: updatedMenu.name });
-      setMenu(updatedMenu);
+      setIsLoading(true);
+      setError(null);
+      
+      if (updatedMenu.id && updatedMenu.id !== '') {
+        // Update existing menu
+        const menuId = parseInt(updatedMenu.id, 10);
+        await menusAPI.update(menuId, {
+          name: updatedMenu.name,
+          location: updatedMenu.location,
+          items: updatedMenu.items,
+        });
+        showToast({ message: 'Menu updated successfully', type: 'success' });
+      } else {
+        // Create new menu
+        const response = await menusAPI.create({
+          name: updatedMenu.name,
+          location: updatedMenu.location,
+          items: updatedMenu.items,
+        });
+        setMenu({
+          id: String(response.data.id),
+          name: response.data.name,
+          location: response.data.location,
+          items: response.data.items || [],
+        });
+        showToast({ message: 'Menu created successfully', type: 'success' });
+      }
+      
+      await loadMenu();
     } catch (error) {
-      logger.error('Failed to save menu', error instanceof Error ? error : new Error(String(error)));
+      const appError = handleApiError(error);
+      logger.error('Failed to save menu', appError);
+      setError(appError.message || 'Failed to save menu. Please try again.');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

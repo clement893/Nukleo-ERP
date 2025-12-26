@@ -487,6 +487,194 @@ export const apiSettingsAPI = {
   },
 };
 
+export const pagesAPI = {
+  list: (params?: { skip?: number; limit?: number; status?: string }) => {
+    return apiClient.get('/v1/pages', { params });
+  },
+  get: (slug: string) => {
+    return apiClient.get(`/v1/pages/${slug}`);
+  },
+  create: (data: {
+    title: string;
+    slug: string;
+    content?: string;
+    content_html?: string;
+    sections?: Array<{ id: string; type: string; [key: string]: unknown }>;
+    status?: 'draft' | 'published' | 'archived';
+    meta_title?: string;
+    meta_description?: string;
+    meta_keywords?: string;
+  }) => {
+    return apiClient.post('/v1/pages', data);
+  },
+  update: (slug: string, data: {
+    title?: string;
+    slug?: string;
+    content?: string;
+    content_html?: string;
+    sections?: Array<{ id: string; type: string; [key: string]: unknown }>;
+    status?: 'draft' | 'published' | 'archived';
+    meta_title?: string;
+    meta_description?: string;
+    meta_keywords?: string;
+  }) => {
+    return apiClient.put(`/v1/pages/${slug}`, data);
+  },
+  delete: (slug: string) => {
+    return apiClient.delete(`/v1/pages/${slug}`);
+  },
+};
+
+export const formsAPI = {
+  list: () => {
+    return apiClient.get('/v1/forms');
+  },
+  get: (formId: number) => {
+    return apiClient.get(`/v1/forms/${formId}`);
+  },
+  create: (data: {
+    name: string;
+    description?: string;
+    fields: Array<{
+      id: string;
+      type: string;
+      label: string;
+      name: string;
+      placeholder?: string;
+      required?: boolean;
+      options?: Array<{ label: string; value: string }>;
+      validation?: Record<string, unknown>;
+    }>;
+    submit_button_text?: string;
+    success_message?: string;
+  }) => {
+    return apiClient.post('/v1/forms', data);
+  },
+  update: (formId: number, data: {
+    name?: string;
+    description?: string;
+    fields?: Array<{
+      id: string;
+      type: string;
+      label: string;
+      name: string;
+      placeholder?: string;
+      required?: boolean;
+      options?: Array<{ label: string; value: string }>;
+      validation?: Record<string, unknown>;
+    }>;
+    submit_button_text?: string;
+    success_message?: string;
+  }) => {
+    return apiClient.put(`/v1/forms/${formId}`, data);
+  },
+  delete: (formId: number) => {
+    return apiClient.delete(`/v1/forms/${formId}`);
+  },
+  submit: (formId: number, data: Record<string, unknown>) => {
+    return apiClient.post(`/v1/forms/${formId}/submissions`, { form_id: formId, data });
+  },
+  getSubmissions: (formId: number, params?: { skip?: number; limit?: number }) => {
+    return apiClient.get(`/v1/forms/${formId}/submissions`, { params });
+  },
+  deleteSubmission: (submissionId: number) => {
+    return apiClient.delete(`/v1/forms/submissions/${submissionId}`);
+  },
+};
+
+export const menusAPI = {
+  list: (params?: { location?: string }) => {
+    return apiClient.get('/v1/menus', { params });
+  },
+  get: (menuId: number) => {
+    return apiClient.get(`/v1/menus/${menuId}`);
+  },
+  create: (data: {
+    name: string;
+    location: 'header' | 'footer' | 'sidebar';
+    items: Array<{
+      id: string;
+      label: string;
+      url: string;
+      target?: '_self' | '_blank';
+      children?: Array<unknown>;
+    }>;
+  }) => {
+    return apiClient.post('/v1/menus', data);
+  },
+  update: (menuId: number, data: {
+    name?: string;
+    location?: 'header' | 'footer' | 'sidebar';
+    items?: Array<{
+      id: string;
+      label: string;
+      url: string;
+      target?: '_self' | '_blank';
+      children?: Array<unknown>;
+    }>;
+  }) => {
+    return apiClient.put(`/v1/menus/${menuId}`, data);
+  },
+  delete: (menuId: number) => {
+    return apiClient.delete(`/v1/menus/${menuId}`);
+  },
+};
+
+export const supportTicketsAPI = {
+  list: (params?: { status?: string; category?: string }) => {
+    return apiClient.get('/v1/support/tickets', { params });
+  },
+  get: (ticketId: number) => {
+    return apiClient.get(`/v1/support/tickets/${ticketId}`);
+  },
+  create: (data: {
+    subject: string;
+    category: 'technical' | 'billing' | 'feature' | 'general' | 'bug';
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    message: string;
+  }) => {
+    return apiClient.post('/v1/support/tickets', data);
+  },
+  update: (ticketId: number, data: {
+    subject?: string;
+    category?: 'technical' | 'billing' | 'feature' | 'general' | 'bug';
+    status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+  }) => {
+    return apiClient.put(`/v1/support/tickets/${ticketId}`, data);
+  },
+  getMessages: (ticketId: number) => {
+    return apiClient.get(`/v1/support/tickets/${ticketId}/messages`);
+  },
+  addMessage: (ticketId: number, message: string) => {
+    return apiClient.post(`/v1/support/tickets/${ticketId}/messages`, { message });
+  },
+};
+
+export const seoAPI = {
+  getSettings: () => {
+    return apiClient.get('/v1/seo/settings');
+  },
+  updateSettings: (data: {
+    title?: string;
+    description?: string;
+    keywords?: string;
+    canonical_url?: string;
+    robots?: string;
+    og_title?: string;
+    og_description?: string;
+    og_image?: string;
+    og_type?: string;
+    twitter_card?: string;
+    twitter_title?: string;
+    twitter_description?: string;
+    twitter_image?: string;
+    schema?: string;
+  }) => {
+    return apiClient.put('/v1/seo/settings', data);
+  },
+};
+
 // Export default for backward compatibility
 export default apiClient;
 

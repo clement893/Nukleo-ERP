@@ -15,6 +15,8 @@ import type { SupportTicket } from '@/components/help';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { Loading, Alert } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { supportTicketsAPI } from '@/lib/api';
+import { handleApiError } from '@/lib/errors/api';
 import { logger } from '@/lib/logger';
 
 export default function SupportTicketsPage() {
@@ -39,15 +41,13 @@ export default function SupportTicketsPage() {
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual support tickets API endpoint when available
-      // const response = await apiClient.get('/v1/support/tickets');
-      // setTickets(response.data);
-      
-      setTickets([]);
+      const response = await supportTicketsAPI.list();
+      setTickets(response.data || []);
       setIsLoading(false);
     } catch (error) {
-      logger.error('Failed to load support tickets', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load support tickets. Please try again.');
+      const appError = handleApiError(error);
+      logger.error('Failed to load support tickets', appError);
+      setError(appError.message || t('errors.loadFailed') || 'Failed to load support tickets. Please try again.');
       setIsLoading(false);
     }
   }, [t]);
