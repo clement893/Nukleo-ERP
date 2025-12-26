@@ -81,23 +81,27 @@ async def ensure_default_theme(db: AsyncSession, created_by: int = 1) -> Theme:
 
 
 @router.get("/active", response_model=ThemeConfigResponse, tags=["themes"])
-@cached(expire=3600, key_prefix="theme")  # Cache 1h - themes change rarely
 async def get_active_theme(db: AsyncSession = Depends(get_db)):
     """
     Get the currently active theme configuration.
     Public endpoint - no authentication required.
     Returns the global theme that applies to all users.
     Creates a default theme if none exists.
+    Note: Cache disabled to ensure theme is always created in DB when needed.
     """
     result = await db.execute(select(Theme).where(Theme.is_active == True))
     theme = result.scalar_one_or_none()
     
     if not theme:
-        # Try to ensure a default theme exists
+        # Try to ensure a default theme exists in the database
         try:
             theme = await ensure_default_theme(db, created_by=1)
-        except Exception:
+            # Invalidate cache to ensure fresh data
+            invalidate_cache_pattern("theme:*")
+            invalidate_cache_pattern("themes:*")
+        except Exception as e:
             # If we can't create a theme, return a default response
+            # This should rarely happen, but handle gracefully
             default_config = {
                 "mode": "system",
                 "primary": "#3b82f6",
@@ -107,6 +111,7 @@ async def get_active_theme(db: AsyncSession = Depends(get_db)):
                 "info": "#06b6d4",
             }
             return ThemeConfigResponse(
+                id=0,  # Virtual theme ID
                 name="default",
                 display_name="Default Theme",
                 config=default_config,
@@ -117,8 +122,12 @@ async def get_active_theme(db: AsyncSession = Depends(get_db)):
     config = theme.config or {}
     if "mode" not in config:
         config["mode"] = "system"
+        theme.config = config
+        await db.commit()
+        await db.refresh(theme)
     
     return ThemeConfigResponse(
+        id=theme.id,
         name=theme.name,
         display_name=theme.display_name,
         config=config,
@@ -127,7 +136,6 @@ async def get_active_theme(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("", response_model=ThemeListResponse, tags=["themes"])
-@cached(expire=600, key_prefix="themes")  # Cache 10min - themes list
 async def list_themes(
     skip: int = 0,
     limit: int = 100,
@@ -139,6 +147,7 @@ async def list_themes(
     List all themes.
     Requires superadmin authentication.
     Creates a default theme if none exists.
+    Note: Cache disabled to ensure fresh data when themes are created/updated.
     """
     # Check if any themes exist, if not create default theme
     result = await db.execute(select(Theme))
@@ -148,6 +157,10 @@ async def list_themes(
         # Create default theme if none exists
         try:
             await ensure_default_theme(db, created_by=current_user.id)
+            # Invalidate cache to ensure fresh data
+            from app.core.cache import invalidate_cache_pattern
+            invalidate_cache_pattern("themes:*")
+            invalidate_cache_pattern("theme:*")
             # Refresh the query to get the newly created theme
             result = await db.execute(select(Theme).offset(skip).limit(limit))
             themes = result.scalars().all()
@@ -170,6 +183,10 @@ async def list_themes(
         await db.commit()
         await db.refresh(first_theme)
         active_theme = first_theme
+        # Invalidate cache after activating theme
+        from app.core.cache import invalidate_cache_pattern
+        invalidate_cache_pattern("themes:*")
+        invalidate_cache_pattern("theme:*")
     
     return ThemeListResponse(
         themes=[ThemeResponse.model_validate(theme) for theme in themes],

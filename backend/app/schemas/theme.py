@@ -55,6 +55,7 @@ class ThemeListResponse(BaseModel):
 
 class ThemeConfigResponse(BaseModel):
     """Schema for active theme configuration (public endpoint)."""
+    id: int = Field(..., description="Theme ID")
     name: str
     display_name: str
     config: Dict[str, Any]
