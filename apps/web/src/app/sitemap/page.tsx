@@ -1,14 +1,39 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { sitePages, BASE_URL } from '@/config/sitemap';
 import Badge from '@/components/ui/Badge';
 import Container from '@/components/ui/Container';
 import Card from '@/components/ui/Card';
 import { useAuthStore } from '@/lib/store';
+import { checkMySuperAdminStatus } from '@/lib/api/admin';
 
 function SitemapPageContent() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, token } = useAuthStore();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isCheckingSuperAdmin, setIsCheckingSuperAdmin] = useState(true);
+
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      if (!isAuthenticated() || !token) {
+        setIsCheckingSuperAdmin(false);
+        return;
+      }
+
+      try {
+        const status = await checkMySuperAdminStatus(token);
+        setIsSuperAdmin(status.is_superadmin === true);
+      } catch (error) {
+        // If check fails, assume not superadmin
+        setIsSuperAdmin(false);
+      } finally {
+        setIsCheckingSuperAdmin(false);
+      }
+    };
+
+    checkSuperAdmin();
+  }, [isAuthenticated, token]);
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
       <Container className="max-w-6xl">
@@ -30,9 +55,10 @@ function SitemapPageContent() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pages.map((page) => {
+                    // Check if user can access: no auth required, or authenticated and (no admin required or is admin/superadmin)
                     const canAccess = 
                       !page.requiresAuth || 
-                      (page.requiresAuth && isAuthenticated() && (!page.requiresAdmin || user?.is_admin));
+                      (page.requiresAuth && isAuthenticated() && (!page.requiresAdmin || user?.is_admin || isSuperAdmin));
                     
                     return (
                       <div
