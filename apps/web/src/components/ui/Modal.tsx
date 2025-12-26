@@ -64,11 +64,11 @@ export interface ModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-md',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
-  full: 'max-w-full mx-4',
+  sm: 'md:max-w-md',
+  md: 'md:max-w-lg',
+  lg: 'md:max-w-2xl',
+  xl: 'md:max-w-4xl',
+  full: 'md:max-w-full md:mx-4',
 };
 
 function Modal({
@@ -115,7 +115,8 @@ function Modal({
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-50 flex items-center justify-center p-4',
+        'fixed inset-0 z-50 flex items-center justify-center',
+        'p-0 md:p-4',
         'bg-black/50 dark:bg-black/70',
         overlayClassName
       )}
@@ -123,10 +124,11 @@ function Modal({
     >
       <div
         className={clsx(
-          'bg-white dark:bg-gray-800 rounded-lg shadow-xl',
-          'w-full',
+          'bg-white dark:bg-gray-800 shadow-xl',
+          'w-full h-full',
+          'md:w-auto md:h-auto md:rounded-lg',
           sizeClasses[size],
-          'max-h-[90vh] flex flex-col',
+          'md:max-h-[90vh] flex flex-col',
           className
         )}
         onClick={(e) => e.stopPropagation()}
@@ -137,18 +139,18 @@ function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             {title && (
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white pr-2">{title}</h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center p-2 -mr-2"
                 aria-label="Close"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-6 h-6 md:w-6 md:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -166,11 +168,11 @@ function Modal({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             {footer}
           </div>
         )}
