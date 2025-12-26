@@ -68,8 +68,8 @@ async def get_api_settings(
 @router.put("/", response_model=APISettingsResponse, tags=["api-settings"])
 @rate_limit_decorator("20/minute")
 async def update_api_settings(
-    settings: APISettingsData = Body(...),
     request: Request,
+    settings: APISettingsData = Body(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
