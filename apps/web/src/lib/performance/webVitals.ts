@@ -69,14 +69,29 @@ function sendToAnalytics(metric: Metric) {
     '/api/analytics/web-vitals';
 
   if (typeof window !== 'undefined') {
+    // Use navigator.sendBeacon for more reliable delivery, fallback to fetch
+    if (navigator.sendBeacon && navigator.sendBeacon(analyticsEndpoint, body)) {
+      // Successfully sent via sendBeacon
+      return;
+    }
+    
+    // Fallback to fetch if sendBeacon is not available or failed
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     fetch(analyticsEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
       keepalive: true, // Keep request alive even after page unload
-    }).catch((error) => {
+      signal: controller.signal,
+    })
+    .finally(() => clearTimeout(timeoutId))
+    .catch((error) => {
       // Silently fail - don't break the app if analytics fails
-      if (process.env.NODE_ENV === 'development') {
+      // Only log in development or if it's not a network error
+      if (process.env.NODE_ENV === 'development' || 
+          (error.name !== 'AbortError' && !error.message.includes('Failed to fetch'))) {
         console.error('[Web Vitals] Failed to send:', error);
       }
     });
