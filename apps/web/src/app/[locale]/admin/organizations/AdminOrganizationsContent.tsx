@@ -32,7 +32,7 @@ export default function AdminOrganizationsContent() {
     try {
       setLoading(true);
       setError(null);
-      const { teamsAPI } = await import('@/lib/api');
+      const { teamsAPI } = await import('@/lib/api/teams');
       const response = await teamsAPI.list();
       
       if (response.data) {
@@ -96,7 +96,7 @@ export default function AdminOrganizationsContent() {
         return;
       }
 
-      const { teamsAPI } = await import('@/lib/api');
+      const { teamsAPI } = await import('@/lib/api/teams');
       await teamsAPI.create({
         name: newTeamName.trim(),
         slug: slug,
