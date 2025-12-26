@@ -8,7 +8,8 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import Input from '@/components/ui/Input';
 import ColorPicker from '@/components/ui/ColorPicker';
-import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2 } from 'lucide-react';
+import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Upload, Download } from 'lucide-react';
+import Select from '@/components/ui/Select';
 
 export function ThemeVisualisationContent() {
   const [theme, setTheme] = useState<ThemeConfigResponse | null>(null);
@@ -18,6 +19,8 @@ export function ThemeVisualisationContent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [jsonInput, setJsonInput] = useState<string>('');
+  const [showJsonImport, setShowJsonImport] = useState(false);
 
   const fetchTheme = async () => {
     try {
@@ -263,8 +266,61 @@ export function ThemeVisualisationContent() {
                 Typographie
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Police principale</label>
+                  <Select
+                    options={[
+                      { label: 'Inter', value: 'Inter, sans-serif' },
+                      { label: 'Roboto', value: 'Roboto, sans-serif' },
+                      { label: 'Poppins', value: 'Poppins, sans-serif' },
+                      { label: 'Open Sans', value: '"Open Sans", sans-serif' },
+                      { label: 'Lato', value: 'Lato, sans-serif' },
+                      { label: 'Montserrat', value: 'Montserrat, sans-serif' },
+                      { label: 'Raleway', value: 'Raleway, sans-serif' },
+                      { label: 'Nunito', value: 'Nunito, sans-serif' },
+                      { label: 'Source Sans Pro', value: '"Source Sans Pro", sans-serif' },
+                      { label: 'Ubuntu', value: 'Ubuntu, sans-serif' },
+                      { label: 'Oswald', value: 'Oswald, sans-serif' },
+                      { label: 'Noto Sans', value: '"Noto Sans", sans-serif' },
+                      { label: 'Playfair Display', value: '"Playfair Display", serif' },
+                      { label: 'Merriweather', value: 'Merriweather, serif' },
+                      { label: 'Lora', value: 'Lora, serif' },
+                      { label: 'Roboto Mono', value: '"Roboto Mono", monospace' },
+                      { label: 'Source Code Pro', value: '"Source Code Pro", monospace' },
+                      { label: 'Fira Code', value: '"Fira Code", monospace' },
+                      { label: 'Personnalisée', value: 'custom' },
+                    ]}
+                    value={config.font_family || typography.fontFamily || 'Inter, sans-serif'}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === 'custom') {
+                        // Keep current value, user can type custom font
+                        return;
+                      }
+                      // Try to update typography.fontFamily first, fallback to font_family
+                      if (typography.fontFamily !== undefined || (config as any).typography) {
+                        updateConfigField(['typography', 'fontFamily'], value);
+                        // Also update font_family for compatibility
+                        if (!config.font_family) {
+                          updateConfigField(['font_family'], value);
+                        }
+                      } else {
+                        updateConfigField(['font_family'], value);
+                      }
+                      // Auto-generate Google Fonts URL if it's a Google Font
+                      const fontName = value.split(',')[0].replace(/['"]/g, '').trim();
+                      if (fontName && !typography.fontUrl) {
+                        const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;500;600;700&display=swap`;
+                        if (!(config as any).typography) {
+                          updateConfigField(['typography'], {});
+                        }
+                        updateConfigField(['typography', 'fontUrl'], fontUrl);
+                      }
+                    }}
+                  />
+                </div>
                 <Input
-                  label="Police principale"
+                  label="Police personnalisée (si sélectionnée)"
                   value={config.font_family || typography.fontFamily || ''}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -308,6 +364,92 @@ export function ThemeVisualisationContent() {
                 onChange={(e) => updateConfigField(['border_radius'], e.target.value)}
                 placeholder="8px"
               />
+            </div>
+
+            {/* JSON Import/Export Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                Import / Export JSON
+              </h3>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (editedConfig) {
+                        setJsonInput(JSON.stringify(editedConfig, null, 2));
+                      }
+                      setShowJsonImport(!showJsonImport);
+                    }}
+                  >
+                    {showJsonImport ? 'Masquer' : 'Afficher'} JSON
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (editedConfig) {
+                        const jsonStr = JSON.stringify(editedConfig, null, 2);
+                        const blob = new Blob([jsonStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `theme-${theme?.id || 'config'}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        setSuccessMessage('Configuration exportée avec succès !');
+                        setTimeout(() => setSuccessMessage(null), 3000);
+                      }
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter JSON
+                  </Button>
+                </div>
+                {showJsonImport && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Importer depuis JSON</label>
+                    <textarea
+                      value={jsonInput}
+                      onChange={(e) => setJsonInput(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 font-mono text-sm"
+                      rows={10}
+                      placeholder='{"primary_color": "#3b82f6", "secondary_color": "#8b5cf6", ...}'
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        onClick={() => {
+                          try {
+                            const parsed = JSON.parse(jsonInput);
+                            setEditedConfig(parsed as ThemeConfig);
+                            setSuccessMessage('Configuration JSON importée avec succès !');
+                            setTimeout(() => setSuccessMessage(null), 3000);
+                            setError(null);
+                          } catch (err) {
+                            setError('JSON invalide. Veuillez vérifier la syntaxe.');
+                          }
+                        }}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Importer JSON
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setJsonInput('');
+                          setShowJsonImport(false);
+                          setError(null);
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
