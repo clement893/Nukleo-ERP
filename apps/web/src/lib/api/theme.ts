@@ -9,7 +9,6 @@ import type {
   ThemeListResponse,
   ThemeConfigResponse,
 } from '@modele/types';
-import { logger } from '@/lib/logger';
 import { apiClient } from './client';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 
