@@ -96,10 +96,21 @@ async def list_users(
             return result
         except Exception as fallback_error:
             logger.error(f"Error in fallback query: {fallback_error}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to retrieve users"
-            )
+            # Last resort: return empty result instead of crashing
+            try:
+                from app.core.pagination import PaginatedResponse
+                return PaginatedResponse.create(
+                    items=[],
+                    total=0,
+                    page=pagination.page,
+                    page_size=pagination.page_size,
+                )
+            except Exception as final_error:
+                logger.error(f"Error creating empty response: {final_error}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to retrieve users: {str(fallback_error)}"
+                )
 
 
 @router.get("/{user_id}", response_model=UserResponse)
