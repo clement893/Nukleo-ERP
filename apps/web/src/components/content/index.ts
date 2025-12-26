@@ -15,3 +15,6 @@ export type { BlogPost, PostsManagerProps } from './PostsManager';
 export { default as MediaLibrary } from './MediaLibrary';
 export type { MediaItem, ViewMode, MediaLibraryProps } from './MediaLibrary';
 
+export { default as CategoriesManager } from './CategoriesManager';
+export type { Category, CategoriesManagerProps } from './CategoriesManager';
+
