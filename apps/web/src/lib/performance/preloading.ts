@@ -13,7 +13,7 @@ export function preloadResource(href: string, as: 'script' | 'style' | 'image' |
   link.rel = 'preload';
   link.href = href;
   link.as = as;
-  if (as === 'font') {
+  if (as === 'font' || as === 'fetch') {
     link.crossOrigin = 'anonymous';
   }
   document.head.appendChild(link);

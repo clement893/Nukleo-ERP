@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, Link } from '@/i18n/routing';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, Link, useSearchParams } from '@/i18n/routing';
 import { AxiosError } from 'axios';
 import { authAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
@@ -12,13 +12,24 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, setError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setLocalError] = useState('');
+
+  // Read error from URL query parameter
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      const decodedError = decodeURIComponent(errorParam);
+      setLocalError(decodedError);
+      setError(decodedError);
+    }
+  }, [searchParams, setError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,5 +185,24 @@ export default function LoginPage() {
         </Card>
       </Container>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-gray-900 dark:to-gray-800">
+        <Container className="w-full max-w-md">
+          <Card>
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+            </div>
+          </Card>
+        </Container>
+      </main>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
