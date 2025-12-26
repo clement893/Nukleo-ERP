@@ -138,12 +138,38 @@ async def list_themes(
     """
     List all themes.
     Requires superadmin authentication.
+    Creates a default theme if none exists.
     """
-    result = await db.execute(select(Theme).offset(skip).limit(limit))
+    # Check if any themes exist, if not create default theme
+    result = await db.execute(select(Theme))
     themes = result.scalars().all()
+    
+    if not themes:
+        # Create default theme if none exists
+        try:
+            await ensure_default_theme(db, created_by=current_user.id)
+            # Refresh the query to get the newly created theme
+            result = await db.execute(select(Theme).offset(skip).limit(limit))
+            themes = result.scalars().all()
+        except Exception as e:
+            # If we can't create a theme, return empty list
+            # This shouldn't happen but handle gracefully
+            return ThemeListResponse(
+                themes=[],
+                total=0,
+                active_theme_id=None
+            )
     
     active_result = await db.execute(select(Theme).where(Theme.is_active == True))
     active_theme = active_result.scalar_one_or_none()
+    
+    # If no active theme but themes exist, activate the first one
+    if not active_theme and themes:
+        first_theme = themes[0]
+        first_theme.is_active = True
+        await db.commit()
+        await db.refresh(first_theme)
+        active_theme = first_theme
     
     return ThemeListResponse(
         themes=[ThemeResponse.model_validate(theme) for theme in themes],
