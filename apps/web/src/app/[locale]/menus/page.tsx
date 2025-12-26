@@ -7,7 +7,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { MenuBuilder } from '@/components/cms';
 import type { Menu } from '@/components/cms';
@@ -18,7 +17,6 @@ import { logger } from '@/lib/logger';
 
 export default function MenusPage() {
   const t = useTranslations('menus');
-  const router = useRouter();
   const [menu, setMenu] = useState<Menu | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +47,7 @@ export default function MenusPage() {
     try {
       // TODO: Replace with actual menu API endpoint when available
       // await apiClient.put(`/v1/menus/${updatedMenu.id}`, updatedMenu);
-      logger.info('Saving menu', updatedMenu);
+      logger.info('Saving menu', { menuId: updatedMenu.id, menuName: updatedMenu.name });
       setMenu(updatedMenu);
     } catch (error) {
       logger.error('Failed to save menu', error instanceof Error ? error : new Error(String(error)));

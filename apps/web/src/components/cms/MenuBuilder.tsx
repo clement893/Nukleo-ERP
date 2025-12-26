@@ -54,7 +54,6 @@ export default function MenuBuilder({
     }
   );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [newItem, setNewItem] = useState<Omit<MenuItem, 'id'>>({
     label: '',
     url: '',
@@ -123,7 +122,10 @@ export default function MenuBuilder({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setEditingItem(item)}
+            onClick={() => {
+              // TODO: Implement edit functionality
+              console.log('Edit item', item);
+            }}
           >
             <Edit className="w-4 h-4" />
           </Button>
