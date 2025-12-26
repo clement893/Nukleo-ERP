@@ -27,7 +27,6 @@ function StripeTestContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [mySubscription, setMySubscription] = useState<any>(null);
