@@ -9,10 +9,8 @@ import Alert from '@/components/ui/Alert';
 import Input from '@/components/ui/Input';
 import { Switch } from '@/components/ui';
 import { getErrorMessage } from '@/lib/error-utils';
-import { getApiUrl } from '@/lib/api';
 
 export default function AdminSettingsContent() {
-  const { token } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

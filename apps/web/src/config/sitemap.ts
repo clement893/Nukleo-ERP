@@ -71,6 +71,14 @@ export const sitePages: Record<string, SitemapPage[]> = {
       changefreq: 'daily',
       requiresAuth: true,
     },
+    { 
+      path: '/profile', 
+      title: 'Profile', 
+      description: 'Gérer votre profil utilisateur',
+      priority: 0.8,
+      changefreq: 'weekly',
+      requiresAuth: true,
+    },
   ],
   'Abonnements': [
     { 

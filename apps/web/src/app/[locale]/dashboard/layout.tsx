@@ -19,7 +19,8 @@ import {
   Menu,
   X,
   Shield,
-  Home
+  Home,
+  User
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -47,6 +48,11 @@ function DashboardLayoutContent({
       label: 'Dashboard',
       href: '/dashboard',
       icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    {
+      label: 'Profile',
+      href: '/profile',
+      icon: <User className="w-5 h-5" />,
     },
     {
       label: 'Projets',

@@ -242,7 +242,7 @@ export const usersAPI = {
   getMe: () => {
     return apiClient.get('/v1/auth/me');
   },
-  updateMe: (data: { name?: string; email?: string }) => {
+  updateMe: (data: { name?: string; email?: string; first_name?: string; last_name?: string }) => {
     return apiClient.put('/v1/users/me', data);
   },
   getUser: (userId: string) => {

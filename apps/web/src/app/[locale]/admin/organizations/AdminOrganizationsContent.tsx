@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { useAuthStore } from '@/lib/store';
 import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -97,8 +96,8 @@ export default function AdminOrganizationsContent() {
   const columns: Column<Team>[] = [
     {
       key: 'name',
-      header: 'Nom',
-      render: (team) => (
+      label: 'Nom',
+      render: (_value, team) => (
         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100">{team.name}</div>
           {team.description && (
@@ -109,15 +108,15 @@ export default function AdminOrganizationsContent() {
     },
     {
       key: 'member_count',
-      header: 'Membres',
-      render: (team) => (
+      label: 'Membres',
+      render: (_value, team) => (
         <Badge variant="default">{team.member_count}</Badge>
       ),
     },
     {
       key: 'created_at',
-      header: 'Créé le',
-      render: (team) => (
+      label: 'Créé le',
+      render: (_value, team) => (
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {new Date(team.created_at).toLocaleDateString('fr-FR')}
         </span>

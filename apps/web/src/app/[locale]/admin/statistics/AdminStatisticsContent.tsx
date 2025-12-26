@@ -19,7 +19,6 @@ interface Statistics {
 }
 
 export default function AdminStatisticsContent() {
-  const { token } = useAuthStore();
   const [stats, setStats] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
