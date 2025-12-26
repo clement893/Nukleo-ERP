@@ -4,8 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AxiosError } from 'axios';
 import { apiClient } from '@/lib/api/client';
-import { Button, Card, Alert, Badge, Container } from '@/components/ui';
-import Loading from '@/components/ui/Loading';
+import { Button, Card, Alert, Badge, Container, Loading } from '@/components/ui';
 
 interface ApiErrorResponse {
   detail?: string;

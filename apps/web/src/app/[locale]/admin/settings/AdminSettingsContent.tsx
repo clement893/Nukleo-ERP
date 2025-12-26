@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PageHeader, PageContainer, Section } from '@/components/layout';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Alert from '@/components/ui/Alert';
-import Input from '@/components/ui/Input';
-import { Switch } from '@/components/ui';
+import { Button, Card, Alert, Input, Switch } from '@/components/ui';
 import { getErrorMessage } from '@/lib/error-utils';
 
 export default function AdminSettingsContent() {

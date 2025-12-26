@@ -3,16 +3,8 @@
 import { useEffect, useState } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
-import Alert from '@/components/ui/Alert';
-import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
-import Loading from '@/components/ui/Loading';
-import Modal from '@/components/ui/Modal';
-import DataTable from '@/components/ui/DataTable';
-import { Column } from '@/components/ui/DataTable';
+import { Button, Card, Badge, Alert, Input, Textarea, Loading, Modal, DataTable } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 
 interface Team extends Record<string, unknown> {
   id: string;

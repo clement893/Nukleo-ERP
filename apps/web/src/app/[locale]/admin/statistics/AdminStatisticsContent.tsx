@@ -4,10 +4,7 @@ import { useEffect, useState } from 'react';
 import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/error-utils';
-import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
-import Alert from '@/components/ui/Alert';
-import Loading from '@/components/ui/Loading';
+import { Card, Badge, Alert, Loading } from '@/components/ui';
 
 interface Statistics {
   total_users: number;
@@ -86,31 +83,31 @@ export default function AdminStatisticsContent() {
       title: 'Utilisateurs totaux',
       value: stats?.total_users || 0,
       description: 'Nombre total d\'utilisateurs',
-      color: 'blue',
+      variant: 'default' as const,
     },
     {
       title: 'Utilisateurs actifs',
       value: stats?.active_users || 0,
       description: 'Utilisateurs actifs',
-      color: 'green',
+      variant: 'success' as const,
     },
     {
       title: 'Organisations',
       value: stats?.total_organizations || 0,
       description: 'Nombre d\'organisations',
-      color: 'purple',
+      variant: 'default' as const,
     },
     {
       title: 'Logs système',
       value: stats?.total_logs || 0,
       description: 'Total des logs',
-      color: 'orange',
+      variant: 'warning' as const,
     },
     {
       title: 'Activités récentes',
       value: stats?.recent_activities || 0,
       description: 'Activités des 7 derniers jours',
-      color: 'indigo',
+      variant: 'default' as const,
     },
   ];
 
@@ -148,7 +145,7 @@ export default function AdminStatisticsContent() {
                     <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       {stat.title}
                     </h3>
-                    <Badge variant="default">{stat.color}</Badge>
+                    <Badge variant={stat.variant}>{stat.value.toLocaleString('fr-FR')}</Badge>
                   </div>
                   <div className="mt-2">
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
