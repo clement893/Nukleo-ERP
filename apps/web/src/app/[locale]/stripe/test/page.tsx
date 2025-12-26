@@ -22,6 +22,7 @@ interface Plan {
 }
 
 function StripeTestContent() {
+  // Component state
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
