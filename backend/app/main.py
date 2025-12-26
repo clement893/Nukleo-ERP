@@ -24,6 +24,7 @@ from app.core.error_handler import (
     validation_exception_handler,
     database_exception_handler,
     general_exception_handler,
+    http_exception_handler,
 )
 from app.core.rate_limit import setup_rate_limiting
 from app.core.compression import CompressionMiddleware

@@ -233,6 +233,8 @@ class ERPDashboardStats(BaseModel):
     paid_invoices: int = 0
     total_clients: int = 0
     active_clients: int = 0
+    total_projects: int = 0
+    active_projects: int = 0
     total_products: int = 0
     low_stock_products: int = 0
     total_revenue: Decimal = Field(default=Decimal("0.00"))

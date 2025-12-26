@@ -7,6 +7,7 @@ from typing import Dict, Union
 
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
