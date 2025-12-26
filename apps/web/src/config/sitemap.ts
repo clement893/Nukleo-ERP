@@ -210,6 +210,15 @@ export const sitePages: Record<string, SitemapPage[]> = {
       requiresAuth: true,
     },
   ],
+  'Blog': [
+    {
+      path: '/blog',
+      title: 'Blog',
+      description: 'Liste des articles de blog',
+      priority: 0.9,
+      changefreq: 'daily',
+    },
+  ],
   'Paramètres': [
     { 
       path: '/settings', 

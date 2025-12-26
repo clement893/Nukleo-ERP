@@ -13,7 +13,6 @@ import { BlogListing } from '@/components/blog';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { Alert } from '@/components/ui';
 import { logger } from '@/lib/logger';
-import { apiClient } from '@/lib/api';
 import type { BlogPost } from '@/components/content';
 
 export default function BlogPage() {
@@ -25,29 +24,25 @@ export default function BlogPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalPosts, setTotalPosts] = useState(0);
-
-  const pageSize = 12;
 
   useEffect(() => {
     const page = parseInt(searchParams.get('page') || '1', 10);
     setCurrentPage(page);
-    loadPosts(page);
+    loadPosts();
   }, [searchParams]);
 
-  const loadPosts = async (page: number = 1) => {
+  const loadPosts = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
       // TODO: Replace with actual blog posts API endpoint when available
       // For now, we'll use a placeholder that can be replaced later
-      // Example: const response = await apiClient.get('/v1/blog/posts', { params: { page, pageSize, status: 'published' } });
+      // Example: const response = await apiClient.get('/v1/blog/posts', { params: { page: currentPage, pageSize: 12, status: 'published' } });
       
       // Placeholder: Empty array for now
       setPosts([]);
       setTotalPages(1);
-      setTotalPosts(0);
       
       setIsLoading(false);
     } catch (error) {

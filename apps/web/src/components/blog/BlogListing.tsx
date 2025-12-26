@@ -8,7 +8,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { Card, Pagination, Badge, Loading } from '@/components/ui';
 import { Link } from '@/i18n/routing';
 import { Calendar, User, ArrowRight } from 'lucide-react';
