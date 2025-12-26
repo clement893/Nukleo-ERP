@@ -38,6 +38,17 @@ export function AdminThemeManager({ authToken }: ThemeManagerProps) {
       setIsLoading(true);
       setError(null);
       const response = await listThemes(authToken);
+      
+      // Debug: log the response
+      console.log('[AdminThemeManager] listThemes response:', {
+        hasResponse: !!response,
+        hasThemes: !!(response?.themes),
+        themesCount: response?.themes?.length || 0,
+        total: response?.total,
+        activeThemeId: response?.active_theme_id,
+        themes: response?.themes?.map(t => ({ id: t.id, name: t.name, display_name: t.display_name, is_active: t.is_active })),
+      });
+      
       // Ensure we have themes - if empty, the backend should create a default one
       if (response.themes && response.themes.length > 0) {
         setThemes(response.themes);

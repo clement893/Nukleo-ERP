@@ -16,18 +16,41 @@ import { TokenStorage } from '@/lib/auth/tokenStorage';
 /**
  * Helper function to extract data from FastAPI response.
  * FastAPI returns data directly, not wrapped in ApiResponse.
+ * apiClient.get returns response.data from axios, which is already the FastAPI response.
  * This function handles both cases for compatibility.
  */
 function extractFastApiData<T>(response: unknown): T {
-  // FastAPI returns data directly, so if response has the expected structure, return it
-  if (response && typeof response === 'object') {
-    // If response has 'data' property and it's the expected type, use it
-    if ('data' in response && (response as { data?: T }).data) {
-      return (response as { data: T }).data;
-    }
-    // Otherwise, FastAPI returned the data directly
+  // FastAPI returns data directly, and apiClient.get already returns response.data from axios
+  // So response is already the FastAPI data, not wrapped in ApiResponse
+  if (!response) {
     return response as T;
   }
+  
+  if (typeof response === 'object') {
+    // Check if response has 'data' property (ApiResponse wrapper case)
+    // This happens if apiClient wraps the response in ApiResponse format
+    if ('data' in response && (response as { data?: unknown }).data !== undefined) {
+      const data = (response as { data: unknown }).data;
+      // If data exists, return it
+      if (data !== null && data !== undefined) {
+        return data as T;
+      }
+    }
+    
+    // Check if response has 'success' property (ApiResponse format)
+    // If it does, it's wrapped in ApiResponse, so extract data
+    if ('success' in response && 'data' in response) {
+      const apiResponse = response as { success: boolean; data?: T };
+      if (apiResponse.data !== undefined) {
+        return apiResponse.data;
+      }
+    }
+    
+    // Otherwise, FastAPI returned the data directly (most common case)
+    // response is already ThemeListResponse, Theme, etc.
+    return response as T;
+  }
+  
   return response as T;
 }
 
@@ -113,7 +136,32 @@ export async function listThemes(
     `/v1/themes?skip=${skip}&limit=${limit}`
   );
   
-  return extractFastApiData<ThemeListResponse>(response);
+  // Debug: log the response structure
+  if (process.env.NODE_ENV === 'development') {
+    logger.debug('listThemes response', {
+      responseType: typeof response,
+      hasData: response && typeof response === 'object' && 'data' in response,
+      hasThemes: response && typeof response === 'object' && 'themes' in response,
+      responseKeys: response && typeof response === 'object' ? Object.keys(response) : [],
+    });
+  }
+  
+  const extracted = extractFastApiData<ThemeListResponse>(response);
+  
+  // Debug: log the extracted data
+  if (process.env.NODE_ENV === 'development') {
+    logger.debug('listThemes extracted', {
+      hasThemes: extracted && typeof extracted === 'object' && 'themes' in extracted,
+      themesCount: extracted && typeof extracted === 'object' && 'themes' in extracted 
+        ? (extracted as ThemeListResponse).themes?.length || 0 
+        : 0,
+      total: extracted && typeof extracted === 'object' && 'total' in extracted
+        ? (extracted as ThemeListResponse).total
+        : undefined,
+    });
+  }
+  
+  return extracted;
 }
 
 /**
