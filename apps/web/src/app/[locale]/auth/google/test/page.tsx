@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AxiosError } from 'axios';
 import { apiClient } from '@/lib/api/client';
 import { Button, Card, Alert, Badge, Container } from '@/components/ui';
@@ -20,7 +20,6 @@ interface GoogleAuthStatus {
 }
 
 function GoogleAuthTestContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
