@@ -59,7 +59,7 @@ class Backup(Base):
     is_automatic = Column(Boolean, default=False, nullable=False)  # Auto-generated backup
     
     # Metadata
-    metadata = Column(Text, nullable=True)  # JSON string for additional backup info
+    backup_metadata = Column(Text, nullable=True)  # JSON string for additional backup info (renamed from metadata to avoid SQLAlchemy conflict)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
