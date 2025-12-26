@@ -53,7 +53,7 @@ class Feedback(Base):
     # Additional context
     url = Column(String(500), nullable=True)  # Page/feature URL where feedback was submitted
     user_agent = Column(String(500), nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON string for additional data
+    feedback_metadata = Column(Text, nullable=True)  # JSON string for additional data (renamed from metadata to avoid SQLAlchemy conflict)
     
     # Response
     response = Column(Text, nullable=True)
