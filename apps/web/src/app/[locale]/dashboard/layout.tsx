@@ -20,7 +20,8 @@ import {
   X,
   Shield,
   Home,
-  User
+  User,
+  Settings
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -58,6 +59,11 @@ function DashboardLayoutContent({
       label: 'Profile',
       href: '/profile',
       icon: <User className="w-5 h-5" />,
+    },
+    {
+      label: 'Settings',
+      href: '/settings',
+      icon: <Settings className="w-5 h-5" />,
     },
     {
       label: 'Projets',

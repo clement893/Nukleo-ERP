@@ -217,5 +217,153 @@
         "loadFailed": "Failed to load activity log. Please try again."
       }
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your application settings and preferences",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "settings": "Settings"
+    },
+    "navigation": {
+      "general": "General",
+      "generalDescription": "Basic application settings and preferences",
+      "organization": "Organization",
+      "organizationDescription": "Organization name, logo, and domain settings",
+      "team": "Team",
+      "teamDescription": "Manage team members and permissions",
+      "billing": "Billing",
+      "billingDescription": "Billing and subscription management",
+      "integrations": "Integrations",
+      "integrationsDescription": "Third-party integrations and connections",
+      "api": "API",
+      "apiDescription": "API configuration and settings",
+      "security": "Security",
+      "securityDescription": "Security settings, 2FA, and sessions",
+      "notifications": "Notifications",
+      "notificationsDescription": "Notification preferences and settings",
+      "preferences": "Preferences",
+      "preferencesDescription": "User preferences and personalization"
+    },
+    "errors": {
+      "loadFailed": "Failed to load settings. Please try again.",
+      "updateFailed": "Failed to update settings. Please try again."
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "Manage general application settings and preferences",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "general": "General"
+      },
+      "errors": {
+        "loadFailed": "Failed to load general settings. Please try again.",
+        "saveFailed": "Failed to save general settings. Please try again."
+      }
+    },
+    "organization": {
+      "title": "Organization Settings",
+      "description": "Manage your organization settings and configuration",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "organization": "Organization"
+      },
+      "errors": {
+        "loadFailed": "Failed to load organization settings. Please try again.",
+        "saveFailed": "Failed to save organization settings. Please try again."
+      }
+    },
+    "team": {
+      "title": "Team Settings",
+      "description": "Manage your team members and permissions",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "team": "Team"
+      }
+    },
+    "billing": {
+      "title": "Billing Settings",
+      "description": "Manage your billing settings and preferences",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "billing": "Billing"
+      },
+      "errors": {
+        "loadFailed": "Failed to load billing settings. Please try again.",
+        "saveFailed": "Failed to save billing settings. Please try again."
+      }
+    },
+    "integrations": {
+      "title": "Integrations Settings",
+      "description": "Manage third-party integrations and connections",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "integrations": "Integrations"
+      },
+      "errors": {
+        "loadFailed": "Failed to load integrations. Please try again."
+      }
+    },
+    "api": {
+      "title": "API Settings",
+      "description": "Manage API configuration and settings",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "api": "API"
+      },
+      "errors": {
+        "loadFailed": "Failed to load API settings. Please try again.",
+        "saveFailed": "Failed to save API settings. Please try again."
+      }
+    },
+    "security": {
+      "title": "Security Settings",
+      "description": "Manage your security settings, 2FA, and API keys",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "security": "Security"
+      },
+      "tabs": {
+        "security": "Security",
+        "apiKeys": "API Keys"
+      },
+      "sections": {
+        "security": "Security Settings",
+        "apiKeys": "API Keys"
+      },
+      "errors": {
+        "loadFailed": "Failed to load security settings. Please try again.",
+        "saveFailed": "Failed to save security settings. Please try again."
+      }
+    },
+    "notifications": {
+      "title": "Notification Settings",
+      "description": "Manage your notification preferences",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "notifications": "Notifications"
+      },
+      "errors": {
+        "loadFailed": "Failed to load notification settings. Please try again.",
+        "saveFailed": "Failed to save notification settings. Please try again."
+      }
+    },
+    "preferences": {
+      "title": "Preferences Settings",
+      "description": "Manage your user preferences and personalization",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "preferences": "Preferences"
+      }
+    }
   }
 }
