@@ -11,7 +11,7 @@ from app.core.two_factor import TwoFactorAuth
 from app.core.rate_limit import rate_limit_decorator
 from app.core.logging import logger
 from app.models.user import User
-from app.api.v1.endpoints.auth import get_current_user
+from app.dependencies import get_current_user
 from pydantic import BaseModel
 
 router = APIRouter()
