@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/ensure-css-file.js",
+    "prebuild": "node scripts/ensure-css-file.js && pnpm type-check",
     "build": "node scripts/build-with-fallback.js",
     "build:turbopack": "USE_TURBOPACK=true node scripts/build-with-fallback.js",
     "build:webpack": "USE_WEBPACK=true node scripts/build-with-fallback.js",
