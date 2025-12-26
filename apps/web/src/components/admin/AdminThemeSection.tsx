@@ -156,24 +156,29 @@ function AdminThemeSectionContent() {
           </Alert>
         )}
 
-        {/* Current Theme Info */}
-        {activeTheme && (() => {
-          const config = activeTheme.config || {};
-          const mode = config.mode ? String(config.mode) : null;
-          const primary = config.primary ? String(config.primary) : null;
-          const secondary = config.secondary ? String(config.secondary) : null;
-          
-          return (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg">{activeTheme.display_name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Nom: {activeTheme.name}
-                  </p>
-                </div>
-                <Badge variant="success">Actif</Badge>
-              </div>
+               {/* Current Theme Info */}
+               {activeTheme && (() => {
+                 const config = activeTheme.config || {};
+                 const mode = config.mode ? String(config.mode) : null;
+                 const primary = config.primary ? String(config.primary) : null;
+                 const secondary = config.secondary ? String(config.secondary) : null;
+                 
+                 return (
+                   <div className="space-y-2">
+                     <div className="flex items-center justify-between">
+                       <div>
+                         <h3 className="font-semibold text-lg">{activeTheme.display_name}</h3>
+                         <p className="text-sm text-gray-600 dark:text-gray-400">
+                           Nom: {activeTheme.name} | ID: {activeTheme.id ?? 'N/A'}
+                           {activeTheme.id === 0 && (
+                             <span className="ml-2 text-yellow-600 dark:text-yellow-400">
+                               ⚠️ Thème virtuel (non stocké en DB)
+                             </span>
+                           )}
+                         </p>
+                       </div>
+                       <Badge variant="success">Actif</Badge>
+                     </div>
               
               {(mode || primary || secondary) && (
                 <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
