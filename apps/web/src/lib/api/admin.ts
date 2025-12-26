@@ -115,16 +115,47 @@ export async function checkMySuperAdminStatus(
       const originalToken = TokenStorage.getToken();
       await TokenStorage.setToken(token); // Set token for this request
       try {
-        const response = await apiClient.get(`/v1/admin/check-my-superadmin-status`);
-        // Backend returns data directly: { email, user_id, is_superadmin, is_active }
-        // apiClient wraps it in ApiResponse, so we need to check response.data.data or response.data
-        const data = (response as any).data?.data || (response as any).data || response.data;
-        return {
-          is_superadmin: data.is_superadmin === true,
-          email: data.email,
-          user_id: data.user_id,
-          is_active: data.is_active
-        };
+        const response = await apiClient.get<{ email: string; user_id: number; is_superadmin: boolean; is_active: boolean }>(`/v1/admin/check-my-superadmin-status`);
+        
+        // Backend FastAPI returns data directly: { email, user_id, is_superadmin, is_active }
+        // apiClient.get returns ApiResponse<T> which wraps the data in { success, data, ... }
+        // But FastAPI doesn't wrap it, so axios response.data is the dict directly
+        // apiClient.get returns response.data, which should be ApiResponse<T>, but FastAPI returns dict directly
+        // So we need to handle both cases: response.data (if ApiResponse) or response (if dict)
+        let data: any;
+        
+        // Check if response has the expected structure
+        if (response && typeof response === 'object') {
+          // If response has 'data' property and 'is_superadmin' is in data.data, it's ApiResponse format
+          if ('data' in response && response.data && typeof response.data === 'object' && 'is_superadmin' in response.data) {
+            data = response.data;
+          }
+          // If response has 'is_superadmin' directly, it's the dict format
+          else if ('is_superadmin' in response) {
+            data = response;
+          }
+          // If response.data exists and has is_superadmin, use it
+          else if ((response as any).data && typeof (response as any).data === 'object' && 'is_superadmin' in (response as any).data) {
+            data = (response as any).data;
+          }
+          // Last resort: try response directly
+          else {
+            data = response;
+          }
+        } else {
+          data = response;
+        }
+        
+        if (data && typeof data === 'object' && 'is_superadmin' in data) {
+          return {
+            is_superadmin: data.is_superadmin === true,
+            email: data.email,
+            user_id: data.user_id,
+            is_active: data.is_active
+          };
+        }
+        
+        throw new Error(`Unexpected response format: ${JSON.stringify(response)}`);
       } finally {
         // Restore original token if it was different
         if (originalToken) {
@@ -134,21 +165,41 @@ export async function checkMySuperAdminStatus(
     }
     
     // Use apiClient which automatically handles token refresh on 401
-    const response = await apiClient.get(`/v1/admin/check-my-superadmin-status`);
-    // Backend returns data directly: { email, user_id, is_superadmin, is_active }
-    // apiClient wraps it in ApiResponse, so we need to check response.data.data or response.data
-    const data = (response as any).data?.data || (response as any).data || response.data;
-    return {
-      is_superadmin: data.is_superadmin === true,
-      email: data.email,
-      user_id: data.user_id,
-      is_active: data.is_active
-    };
+    const response = await apiClient.get<{ email: string; user_id: number; is_superadmin: boolean; is_active: boolean }>(`/v1/admin/check-my-superadmin-status`);
+    
+    // Same logic as above
+    let data: any;
+    
+    if (response && typeof response === 'object') {
+      if ('data' in response && response.data && typeof response.data === 'object' && 'is_superadmin' in response.data) {
+        data = response.data;
+      } else if ('is_superadmin' in response) {
+        data = response;
+      } else if ((response as any).data && typeof (response as any).data === 'object' && 'is_superadmin' in (response as any).data) {
+        data = (response as any).data;
+      } else {
+        data = response;
+      }
+    } else {
+      data = response;
+    }
+    
+    if (data && typeof data === 'object' && 'is_superadmin' in data) {
+      return {
+        is_superadmin: data.is_superadmin === true,
+        email: data.email,
+        user_id: data.user_id,
+        is_active: data.is_active
+      };
+    }
+    
+    throw new Error(`Unexpected response format: ${JSON.stringify(response)}`);
   } catch (error: any) {
     // Handle network errors
     if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('Failed to fetch'))) {
       throw new Error(`Le backend n'est pas accessible. Assurez-vous que le serveur backend est démarré sur ${API_URL}`);
     }
+    
     // Re-throw API errors (they're already formatted by apiClient)
     throw error;
   }
