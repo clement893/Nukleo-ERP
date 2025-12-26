@@ -3,31 +3,41 @@
  * Centralized API client with automatic error handling
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { handleApiError } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import type { ApiResponse } from '@modele/types';
 import { getApiUrl } from '../api';
+import { TokenStorage } from '../auth/tokenStorage';
 
 class ApiClient {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = getApiUrl().replace(/\/$/, '')) {
+  constructor(baseURL: string = `${getApiUrl().replace(/\/$/, '')}/api`) {
     this.client = axios.create({
       baseURL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true, // Important: Include cookies in requests
     });
 
     this.setupInterceptors();
   }
 
   private setupInterceptors(): void {
-    // Request interceptor
+    // Request interceptor - Add authentication token
     this.client.interceptors.request.use(
-      (config) => {
+      (config: InternalAxiosRequestConfig) => {
+        // Add authentication token if available
+        if (typeof window !== 'undefined' && config.headers) {
+          const token = TokenStorage.getToken();
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        }
+        
         logger.debug('API request', {
           method: config.method,
           url: config.url,
