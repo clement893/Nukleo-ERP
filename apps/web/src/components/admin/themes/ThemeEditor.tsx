@@ -428,38 +428,38 @@ export function ThemeEditor({ theme, onSubmit, onCancel, isLoading = false }: Th
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Couleurs de texte</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <ColorPicker
-                    label="Couleur des titres"
-                    value={getConfigValue('typography.textHeading', '#111827')}
-                    onChange={(color) => updateConfig('typography.textHeading', color)}
-                    fullWidth
-                  />
-                  <ColorPicker
-                    label="Couleur des sous-titres"
-                    value={getConfigValue('typography.textSubheading', '#374151')}
-                    onChange={(color) => updateConfig('typography.textSubheading', color)}
-                    fullWidth
-                  />
-                  <ColorPicker
-                    label="Couleur du texte principal"
-                    value={getConfigValue('typography.textBody', '#1f2937')}
-                    onChange={(color) => updateConfig('typography.textBody', color)}
-                    fullWidth
-                  />
-                  <ColorPicker
-                    label="Couleur du texte secondaire"
-                    value={getConfigValue('typography.textSecondary', '#6b7280')}
-                    onChange={(color) => updateConfig('typography.textSecondary', color)}
-                    fullWidth
-                  />
-                  <ColorPicker
-                    label="Couleur des liens"
-                    value={getConfigValue('typography.textLink', config.primary)}
-                    onChange={(color) => updateConfig('typography.textLink', color)}
-                    fullWidth
-                  />
-                </div>
-              </div>
+                      <ColorPicker
+                        label="Couleur des titres"
+                        value={getConfigValue('typography.textHeading', '#111827')}
+                        onChange={(color) => updateConfig('typography.textHeading', color)}
+                        fullWidth
+                      />
+                      <ColorPicker
+                        label="Couleur des sous-titres"
+                        value={getConfigValue('typography.textSubheading', '#374151')}
+                        onChange={(color) => updateConfig('typography.textSubheading', color)}
+                        fullWidth
+                      />
+                      <ColorPicker
+                        label="Couleur du texte principal"
+                        value={getConfigValue('typography.textBody', '#1f2937')}
+                        onChange={(color) => updateConfig('typography.textBody', color)}
+                        fullWidth
+                      />
+                      <ColorPicker
+                        label="Couleur du texte secondaire"
+                        value={getConfigValue('typography.textSecondary', '#6b7280')}
+                        onChange={(color) => updateConfig('typography.textSecondary', color)}
+                        fullWidth
+                      />
+                      <ColorPicker
+                        label="Couleur des liens"
+                        value={getConfigValue('typography.textLink', config.primary)}
+                        onChange={(color) => updateConfig('typography.textLink', color)}
+                        fullWidth
+                      />
+                    </div>
+                  </div>
                 </div>
               </TabPanel>
 
