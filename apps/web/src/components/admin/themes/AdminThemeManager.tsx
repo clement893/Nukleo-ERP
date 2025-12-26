@@ -237,31 +237,31 @@ export function AdminThemeManager({ authToken }: ThemeManagerProps) {
                           style={{ backgroundColor: typeof primaryColor === 'string' ? primaryColor : '#3b82f6' }}
                           title="Couleur principale"
                         />
-                        {config.secondary && typeof config.secondary === 'string' && (
+                        {typeof config.secondary === 'string' && config.secondary && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.secondary as string }}
+                            style={{ backgroundColor: config.secondary }}
                             title="Couleur secondaire"
                           />
                         )}
-                        {config.danger && typeof config.danger === 'string' && (
+                        {typeof config.danger === 'string' && config.danger && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.danger as string }}
+                            style={{ backgroundColor: config.danger }}
                             title="Couleur danger"
                           />
                         )}
-                        {config.warning && typeof config.warning === 'string' && (
+                        {typeof config.warning === 'string' && config.warning && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.warning as string }}
+                            style={{ backgroundColor: config.warning }}
                             title="Couleur avertissement"
                           />
                         )}
-                        {config.info && typeof config.info === 'string' && (
+                        {typeof config.info === 'string' && config.info && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.info as string }}
+                            style={{ backgroundColor: config.info }}
                             title="Couleur information"
                           />
                         )}
