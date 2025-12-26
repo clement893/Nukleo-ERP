@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const createNextIntlPlugin = require('next-intl/plugin');
+const { withSentryConfig } = require('@sentry/nextjs');
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -222,4 +223,32 @@ const nextConfig = {
   },
 };
 
-module.exports = withNextIntl(nextConfig);
+// Wrap Next.js config with Sentry
+const sentryWebpackPluginOptions = {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+
+  // Suppresses source map uploading logs during build
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  
+  // Only upload source maps in production
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableClientWebpackPlugin: false,
+  disableServerWebpackPlugin: false,
+};
+
+// Check if Sentry is configured before wrapping
+const isSentryConfigured = 
+  process.env.SENTRY_DSN || 
+  process.env.NEXT_PUBLIC_SENTRY_DSN ||
+  (process.env.SENTRY_ORG && process.env.SENTRY_PROJECT);
+
+// Apply Sentry config only if DSN is configured
+const configWithSentry = isSentryConfigured
+  ? withSentryConfig(withNextIntl(nextConfig), sentryWebpackPluginOptions)
+  : withNextIntl(nextConfig);
+
+module.exports = configWithSentry;
