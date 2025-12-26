@@ -1,20 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getActiveTheme, listThemes, activateTheme } from '@/lib/api/theme';
-import type { ThemeConfigResponse, ThemeListResponse, Theme } from '@modele/types';
+import { getActiveTheme, updateTheme } from '@/lib/api/theme';
+import type { ThemeConfigResponse, ThemeConfig, ThemeUpdate } from '@modele/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
-import Select from '@/components/ui/Select';
-import { RefreshCw, Palette, Type, Layout, Sparkles } from 'lucide-react';
+import Input from '@/components/ui/Input';
+import ColorPicker from '@/components/ui/ColorPicker';
+import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2 } from 'lucide-react';
 
 export function ThemeVisualisationContent() {
   const [theme, setTheme] = useState<ThemeConfigResponse | null>(null);
-  const [themesList, setThemesList] = useState<Theme[]>([]);
+  const [editedConfig, setEditedConfig] = useState<ThemeConfig | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadingThemes, setLoadingThemes] = useState(false);
-  const [activating, setActivating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -25,6 +26,7 @@ export function ThemeVisualisationContent() {
       setSuccessMessage(null);
       const activeTheme = await getActiveTheme();
       setTheme(activeTheme);
+      setEditedConfig(activeTheme.config);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load theme');
     } finally {
@@ -32,46 +34,67 @@ export function ThemeVisualisationContent() {
     }
   };
 
-  const fetchThemesList = async () => {
-    try {
-      setLoadingThemes(true);
-      const response: ThemeListResponse = await listThemes();
-      setThemesList(response.themes || []);
-    } catch (err) {
-      console.error('Failed to load themes list:', err);
-    } finally {
-      setLoadingThemes(false);
+  const handleSave = async () => {
+    if (!theme || !editedConfig || theme.id !== 32) {
+      setError('Seul le TemplateTheme (ID: 32) peut être modifié depuis cette page.');
+      return;
     }
-  };
-
-  const handleThemeChange = async (themeId: string) => {
-    const selectedThemeId = parseInt(themeId, 10);
-    if (isNaN(selectedThemeId)) return;
 
     try {
-      setActivating(true);
+      setSaving(true);
       setError(null);
       setSuccessMessage(null);
+
+      const updateData: ThemeUpdate = {
+        config: editedConfig as Partial<ThemeConfig>,
+      };
+
+      await updateTheme(32, updateData);
       
-      await activateTheme(selectedThemeId);
+      setSuccessMessage('Thème TemplateTheme mis à jour avec succès !');
+      setIsEditing(false);
       
-      setSuccessMessage(`Thème "${themesList.find(t => t.id === selectedThemeId)?.display_name || 'inconnu'}" activé avec succès !`);
-      
-      // Refresh both theme and themes list
-      await Promise.all([fetchTheme(), fetchThemesList()]);
+      // Refresh theme
+      await fetchTheme();
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to activate theme');
+      setError(err instanceof Error ? err.message : 'Failed to update theme');
     } finally {
-      setActivating(false);
+      setSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    if (theme) {
+      setEditedConfig(theme.config);
+    }
+    setIsEditing(false);
+    setError(null);
+  };
+
+  const updateConfigField = (path: string[], value: any) => {
+    if (!editedConfig) return;
+
+    const newConfig = { ...editedConfig };
+    let current: any = newConfig;
+
+    // Navigate to the nested path
+    for (let i = 0; i < path.length - 1; i++) {
+      if (!current[path[i]]) {
+        current[path[i]] = {};
+      }
+      current = current[path[i]];
+    }
+
+    // Set the final value
+    current[path[path.length - 1]] = value;
+    setEditedConfig(newConfig);
   };
 
   useEffect(() => {
     fetchTheme();
-    fetchThemesList();
   }, []);
 
   if (loading) {
@@ -107,7 +130,9 @@ export function ThemeVisualisationContent() {
     );
   }
 
-  const config = theme.config;
+  // Only allow editing TemplateTheme (ID: 32)
+  const canEdit = theme.id === 32;
+  const config = isEditing && editedConfig ? editedConfig : theme.config;
   const typography = (config as any).typography || {};
   const effects = (config as any).effects || {};
 
@@ -137,11 +162,6 @@ export function ThemeVisualisationContent() {
     return value.trim() || fallback;
   };
 
-  const selectOptions = themesList.map((t) => ({
-    label: `${t.display_name}${t.is_active ? ' (Actif)' : ''}`,
-    value: t.id.toString(),
-  }));
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -152,12 +172,25 @@ export function ThemeVisualisationContent() {
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Thème: <span className="font-semibold">{theme.display_name}</span> (ID: {theme.id})
+            {canEdit && (
+              <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                Thème éditable
+              </span>
+            )}
           </p>
         </div>
-        <Button onClick={() => { fetchTheme(); fetchThemesList(); }} variant="secondary" size="sm">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Actualiser
-        </Button>
+        <div className="flex gap-2">
+          {canEdit && !isEditing && (
+            <Button onClick={() => setIsEditing(true)} variant="primary" size="sm">
+              <Edit2 className="w-4 h-4 mr-2" />
+              Modifier le thème
+            </Button>
+          )}
+          <Button onClick={fetchTheme} variant="secondary" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
       </div>
 
       {/* Success Message */}
@@ -174,48 +207,132 @@ export function ThemeVisualisationContent() {
         </Alert>
       )}
 
-      {/* Theme Selector */}
-      <Card title="Changer le Thème Actif">
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Sélectionnez un thème pour l'activer. Le thème actif sera appliqué à toute l'application.
-          </p>
-          <div className="flex items-end gap-4">
-            <div className="flex-1">
-              <Select
-                label="Thème"
-                options={selectOptions}
-                value={theme.id.toString()}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  if (selectedId !== theme.id.toString()) {
-                    handleThemeChange(selectedId);
-                  }
-                }}
-                disabled={activating || loadingThemes}
-                placeholder="Sélectionner un thème..."
+      {/* Theme Editor */}
+      {canEdit && isEditing && editedConfig && (
+        <Card title="Éditer le TemplateTheme">
+          <div className="space-y-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Modifiez les propriétés du TemplateTheme (ID: 32). Les changements seront appliqués à toute l'application.
+            </p>
+
+            {/* Colors Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Palette className="w-5 h-5" />
+                Couleurs
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(['primary', 'secondary', 'danger', 'warning', 'info', 'success'] as const).map((colorName) => {
+                  const colorKey = `${colorName}_color` as keyof ThemeConfig;
+                  const colorValue = config[colorKey] as string || '#3b82f6';
+                  return (
+                    <div key={colorName} className="space-y-2">
+                      <label className="block text-sm font-medium capitalize">
+                        {colorName}
+                      </label>
+                      <div className="flex gap-2">
+                        <ColorPicker
+                          value={colorValue}
+                          onChange={(color) => updateConfigField([colorKey], color)}
+                          showInput={true}
+                          fullWidth
+                        />
+                        <Input
+                          value={colorValue}
+                          onChange={(e) => updateConfigField([colorKey], e.target.value)}
+                          className="w-32"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Typography Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Type className="w-5 h-5" />
+                Typographie
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Police principale"
+                  value={config.font_family || typography.fontFamily || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Try to update typography.fontFamily first, fallback to font_family
+                    if (typography.fontFamily !== undefined || (config as any).typography) {
+                      updateConfigField(['typography', 'fontFamily'], value);
+                      // Also update font_family for compatibility
+                      if (!config.font_family) {
+                        updateConfigField(['font_family'], value);
+                      }
+                    } else {
+                      updateConfigField(['font_family'], value);
+                    }
+                  }}
+                  placeholder="Inter, sans-serif"
+                />
+                <Input
+                  label="URL de la police (Google Fonts)"
+                  value={typography.fontUrl || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!(config as any).typography) {
+                      updateConfigField(['typography'], {});
+                    }
+                    updateConfigField(['typography', 'fontUrl'], value);
+                  }}
+                  placeholder="https://fonts.googleapis.com/css2?family=..."
+                />
+              </div>
+            </div>
+
+            {/* Border Radius */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Layout className="w-5 h-5" />
+                Border Radius
+              </h3>
+              <Input
+                label="Border Radius"
+                value={config.border_radius || '8px'}
+                onChange={(e) => updateConfigField(['border_radius'], e.target.value)}
+                placeholder="8px"
               />
             </div>
-            <Button
-              onClick={() => {
-                if (theme) {
-                  handleThemeChange(theme.id.toString());
-                }
-              }}
-              variant="primary"
-              disabled={activating || loadingThemes}
-              loading={activating}
-            >
-              {activating ? 'Activation...' : 'Activer le thème sélectionné'}
-            </Button>
+
+            {/* Actions */}
+            <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                onClick={handleSave}
+                variant="primary"
+                disabled={saving}
+                loading={saving}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+              </Button>
+              <Button
+                onClick={handleCancel}
+                variant="secondary"
+                disabled={saving}
+              >
+                Annuler
+              </Button>
+            </div>
           </div>
-          {loadingThemes && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Chargement de la liste des thèmes...
-            </p>
-          )}
-        </div>
-      </Card>
+        </Card>
+      )}
+
+      {!canEdit && (
+        <Alert variant="info" title="Information">
+          Seul le TemplateTheme (ID: 32) peut être modifié depuis cette page. 
+          Le thème actuel est "{theme.display_name}" (ID: {theme.id}).
+        </Alert>
+      )}
 
       {/* Theme Info Card */}
       <Card title="Informations du Thème">
