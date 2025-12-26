@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ShareDialogProps {
   entityType: string;

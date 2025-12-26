@@ -7,6 +7,7 @@ import Card from '@/components/ui/Card';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
 import { formatDistanceToNow } from '@/lib/utils/dateUtils';
+import { getErrorMessage } from '@/lib/errors';
 
 interface Version {
   id: number;

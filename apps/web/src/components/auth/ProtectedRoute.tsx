@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/store';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import { checkMySuperAdminStatus } from '@/lib/api/admin';
 import { logger } from '@/lib/logger';
+import { getErrorStatus } from '@/lib/errors';
 
 /**
  * Protected Route Component

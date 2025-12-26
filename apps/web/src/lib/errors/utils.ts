@@ -4,6 +4,7 @@
  */
 
 import { AxiosError, AxiosRequestConfig } from 'axios';
+import { AppError } from './AppError';
 
 /**
  * API Error with proper typing
@@ -52,6 +53,9 @@ export function isAxiosErrorType(error: unknown): error is AxiosError {
  * Supports both English and French fallback messages
  */
 export function getErrorMessage(error: unknown, fallback?: string): string {
+  if (error instanceof AppError) {
+    return error.message || fallback || 'An error occurred';
+  }
   if (isApiError(error)) {
     return (
       error.response?.data?.detail ||
@@ -75,6 +79,9 @@ export function getErrorMessage(error: unknown, fallback?: string): string {
  * Safe way to access error.response.data.detail
  */
 export function getErrorDetail(error: unknown): string | undefined {
+  if (error instanceof AppError) {
+    return error.details?.detail ? String(error.details.detail) : undefined;
+  }
   if (
     error &&
     typeof error === 'object' &&
@@ -95,6 +102,9 @@ export function getErrorDetail(error: unknown): string | undefined {
  * Extract status code from error
  */
 export function getErrorStatus(error: unknown): number | undefined {
+  if (error instanceof AppError) {
+    return error.statusCode;
+  }
   if (isApiError(error)) {
     return error.response?.status || error.statusCode;
   }

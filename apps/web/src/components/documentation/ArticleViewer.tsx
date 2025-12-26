@@ -7,6 +7,7 @@ import Card from '@/components/ui/Card';
 import { SafeHTML } from '@/components/ui/SafeHTML';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 interface Article {
   id: number;

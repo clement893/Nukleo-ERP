@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { Button, Card, Alert, Input, Switch } from '@/components/ui';
-import { getErrorMessage } from '@/lib/error-utils';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminSettingsContent() {
   const [loading, setLoading] = useState(false);

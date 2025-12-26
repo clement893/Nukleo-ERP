@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { apiClient } from '@/lib/api/client';
-import { getErrorMessage } from '@/lib/error-utils';
+import { getErrorMessage } from '@/lib/errors';
 import { Card, Badge, Alert, Loading } from '@/components/ui';
 
 interface Statistics {

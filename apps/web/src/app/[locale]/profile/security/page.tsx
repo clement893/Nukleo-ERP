@@ -17,7 +17,7 @@ import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { Loading, Alert, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
-import { getErrorMessage } from '@/lib/types/common';
+import { getErrorMessage } from '@/lib/errors';
 
 interface UserData {
   id: string | number;

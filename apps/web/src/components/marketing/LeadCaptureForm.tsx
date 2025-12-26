@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { apiClient } from '@/lib/api/client';
 import { User, Mail, Phone, MessageSquare, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errors';
 
 interface LeadCaptureFormProps {
   title?: string;

@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface OnboardingStep {
   id: number;

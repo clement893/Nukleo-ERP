@@ -8,6 +8,7 @@ import { checkMySuperAdminStatus } from '@/lib/api/admin';
 import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui';
 import { AlertCircle } from 'lucide-react';
+import { getErrorStatus } from '@/lib/errors';
 
 interface ProtectedSuperAdminRouteProps {
   children: ReactNode;

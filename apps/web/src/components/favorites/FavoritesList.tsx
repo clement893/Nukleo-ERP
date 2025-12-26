@@ -5,7 +5,7 @@ import { Heart, Tag, FileText, Folder, User, X } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
-import { getErrorMessage } from '@/lib/types/common';
+import { getErrorMessage } from '@/lib/errors';
 import { formatDistanceToNow } from '@/lib/utils/dateUtils';
 
 interface Favorite {

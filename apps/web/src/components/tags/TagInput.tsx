@@ -5,6 +5,7 @@ import { X, Plus, Tag as TagIcon } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface Tag {
   id: number;

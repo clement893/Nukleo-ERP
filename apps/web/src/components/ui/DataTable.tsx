@@ -135,25 +135,31 @@ function DataTable<T extends Record<string, unknown>>({
         </div>
       )}
 
-      {/* Table */}
+      {/* Table - Responsive wrapper for horizontal scroll on mobile */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((column) => (
-                <TableHeader
-                  key={column.key}
-                  sortable={sortable && column.sortable !== false}
-                  sortDirection={sortColumn === column.key ? sortDirection : null}
-                  onSort={sortable && column.sortable !== false ? () => handleSort(column.key) : undefined}
-                >
-                  {column.label}
-                </TableHeader>
-              ))}
-              {actions && <TableHeader>Actions</TableHeader>}
-            </TableRow>
-          </TableHead>
-          <TableBody striped hover>
+        {/* Table component already has overflow-x-auto, but we add an extra wrapper for better mobile UX */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHead>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableHeader
+                    key={column.key}
+                    sortable={sortable && column.sortable !== false}
+                    sortDirection={sortColumn === column.key ? sortDirection : null}
+                    onSort={sortable && column.sortable !== false ? () => handleSort(column.key) : undefined}
+                  >
+                    {column.label}
+                  </TableHeader>
+                ))}
+                {actions && (
+                  <TableHeader className="sticky right-0 bg-gray-50 dark:bg-gray-800 z-10 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]">
+                    Actions
+                  </TableHeader>
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody striped hover>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (actions ? 1 : 0)} className="text-center py-8">
@@ -183,15 +189,31 @@ function DataTable<T extends Record<string, unknown>>({
                     </TableCell>
                   ))}
                   {actions && (
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Dropdown trigger={<Button variant="ghost" size="sm">⋯</Button>} items={actions(row)} />
+                    <TableCell 
+                      onClick={(e) => e.stopPropagation()} 
+                      className="sticky right-0 bg-white dark:bg-gray-900 z-10 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+                    >
+                      <Dropdown 
+                        trigger={
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="min-w-[44px] min-h-[44px] p-2"
+                            aria-label="Row actions"
+                          >
+                            ⋯
+                          </Button>
+                        } 
+                        items={actions(row)} 
+                      />
                     </TableCell>
                   )}
                 </TableRow>
               ))
             )}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination */}

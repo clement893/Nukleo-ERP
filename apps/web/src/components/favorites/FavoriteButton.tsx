@@ -5,7 +5,7 @@ import { Heart } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
-import { getErrorMessage } from '@/lib/types/common';
+import { getErrorMessage } from '@/lib/errors';
 
 interface FavoriteButtonProps {
   entityType: string;

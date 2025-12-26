@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button, Input, Card } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { Loader2, Send, Bot, User } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errors';
 
 interface Message {
   role: 'user' | 'assistant';

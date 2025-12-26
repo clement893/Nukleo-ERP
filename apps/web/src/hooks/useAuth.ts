@@ -10,6 +10,7 @@ import { authAPI, usersAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import { logger } from '@/lib/logger';
+import { getErrorStatus } from '@/lib/errors';
 
 interface LoginCredentials {
   email: string;

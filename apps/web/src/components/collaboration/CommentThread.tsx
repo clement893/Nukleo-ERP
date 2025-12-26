@@ -7,7 +7,7 @@ import Avatar from '@/components/ui/Avatar';
 import { SafeHTML } from '@/components/ui/SafeHTML';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
-import { getErrorMessage } from '@/lib/types/common';
+import { getErrorMessage } from '@/lib/errors';
 import { formatDistanceToNow } from '@/lib/utils/dateUtils';
 
 interface Comment {

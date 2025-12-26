@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
+import { getErrorMessage, getErrorDetail } from '@/lib/errors';
 import { Button, Card, Badge, Alert, Input, Textarea, Loading, Modal, DataTable } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 

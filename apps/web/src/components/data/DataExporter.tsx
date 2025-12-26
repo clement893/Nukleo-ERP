@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { FileSpreadsheet, FileText, FileJson, FileType } from 'lucide-react';
 import { useToast } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface DataExporterProps {
   data: Record<string, unknown>[];

@@ -7,7 +7,7 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
-import { getErrorMessage } from '@/lib/types/common';
+import { getErrorMessage } from '@/lib/errors';
 
 interface FeedbackFormProps {
   className?: string;

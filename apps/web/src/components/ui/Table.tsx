@@ -9,7 +9,7 @@ interface TableProps {
 
 export function Table({ children, className, style }: TableProps) {
   return (
-    <div className="overflow-x-auto" style={style}>
+    <div className="overflow-x-auto -mx-1 px-1" style={style}>
       <table
         className={clsx(
           'min-w-full divide-y divide-gray-200 dark:divide-gray-700',

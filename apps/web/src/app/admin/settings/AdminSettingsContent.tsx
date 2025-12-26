@@ -7,7 +7,7 @@ import Card from '@/components/ui/Card';
 import Alert from '@/components/ui/Alert';
 import Container from '@/components/ui/Container';
 import Input from '@/components/ui/Input';
-import { getErrorMessage } from '@/lib/error-utils';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminSettingsContent() {
   const { user, token, setUser } = useAuthStore();

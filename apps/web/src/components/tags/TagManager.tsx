@@ -6,6 +6,7 @@ import Input from '@/components/ui/Input';
 import { Tag as TagIcon, Trash2, Edit2, TrendingUp } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { useToast } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface Tag {
   id: number;

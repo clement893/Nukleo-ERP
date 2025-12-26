@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api/client';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button, Card, Alert, Badge, Container } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface DatabaseHealthCheck {
   status: 'healthy' | 'warning' | 'error';

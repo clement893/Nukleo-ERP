@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
+import { getErrorMessage, getErrorDetail } from '@/lib/errors';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';

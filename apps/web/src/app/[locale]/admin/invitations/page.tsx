@@ -8,7 +8,7 @@ export const dynamicParams = true;
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/lib/store';
-import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
+import { getErrorMessage, getErrorDetail } from '@/lib/errors';
 import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';

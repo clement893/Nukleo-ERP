@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/lib/store';
-import { getErrorMessage } from '@/lib/error-utils';
+import { getErrorMessage } from '@/lib/errors';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';

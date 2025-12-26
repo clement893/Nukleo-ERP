@@ -19,7 +19,7 @@ import { Loading, Alert, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/compo
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
 import { usersAPI } from '@/lib/api';
-import { getErrorMessage } from '@/lib/types/common';
+import { getErrorMessage } from '@/lib/errors';
 
 interface UserData {
   id: string | number;

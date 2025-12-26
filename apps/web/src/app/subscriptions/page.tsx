@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { getErrorMessage, getErrorDetail } from '@/lib/error-utils';
+import { getErrorMessage, getErrorDetail } from '@/lib/errors';
 import { useMySubscription, useSubscriptionPayments, useCreateCheckoutSession, useCancelSubscription } from '@/lib/query/queries';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';

@@ -18,7 +18,7 @@ import { Loading, Alert } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
 import { apiClient } from '@/lib/api';
-import { getErrorMessage, getErrorStatus } from '@/lib/types/common';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export default function ProfileNotificationsPage() {
   const router = useRouter();
