@@ -12,10 +12,13 @@ export default function InternalLayout({ children }: InternalLayoutProps) {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden ml-64">
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-6">
+      <div className="flex-1 flex flex-col overflow-hidden md:ml-64 lg:ml-72 xl:ml-80">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -29,11 +32,12 @@ export default function InternalLayout({ children }: InternalLayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </main>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <>
           <div
