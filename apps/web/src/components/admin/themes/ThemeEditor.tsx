@@ -16,7 +16,6 @@ import Tabs, { TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
 import type { Theme, ThemeCreate, ThemeUpdate } from '@modele/types';
 import { Palette, Type, Layout, Eye, Save, X } from 'lucide-react';
 import { FontInstaller } from './FontInstaller';
-import { FontInstaller } from './FontInstaller';
 
 // Font options with preview
 const FONT_OPTIONS = [
@@ -114,13 +113,18 @@ export function ThemeEditor({ theme, onSubmit, onCancel, isLoading = false }: Th
       let current: any = newConfig;
       
       for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) {
-          current[keys[i]] = {};
+        const key = keys[i];
+        if (key === undefined) break;
+        if (!current[key]) {
+          current[key] = {};
         }
-        current = current[keys[i]];
+        current = current[key];
       }
       
-      current[keys[keys.length - 1]] = value;
+      const lastKey = keys[keys.length - 1];
+      if (lastKey !== undefined) {
+        current[lastKey] = value;
+      }
       return newConfig;
     });
   };

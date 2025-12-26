@@ -8,7 +8,14 @@
  */
 export const lazyLoadHeavyLibraries = {
   // Chart libraries - only load when charts are needed
-  chart: () => import('recharts').catch(() => null),
+  chart: async () => {
+    try {
+      // @ts-expect-error - recharts types may not be available
+      return await import('recharts');
+    } catch {
+      return null;
+    }
+  },
   
   // Rich text editor - only load when editor is needed
   editor: () => import('@/components/ui/RichTextEditor'),

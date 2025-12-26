@@ -12,12 +12,10 @@ import { checkMySuperAdminStatus } from '@/lib/api/admin';
 function SitemapPageContent() {
   const { isAuthenticated, user, token } = useAuthStore();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isCheckingSuperAdmin, setIsCheckingSuperAdmin] = useState(true);
 
   useEffect(() => {
     const checkSuperAdmin = async () => {
       if (!isAuthenticated() || !token) {
-        setIsCheckingSuperAdmin(false);
         return;
       }
 
@@ -27,8 +25,6 @@ function SitemapPageContent() {
       } catch (error) {
         // If check fails, assume not superadmin
         setIsSuperAdmin(false);
-      } finally {
-        setIsCheckingSuperAdmin(false);
       }
     };
 

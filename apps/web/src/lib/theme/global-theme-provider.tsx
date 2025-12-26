@@ -118,6 +118,22 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       });
     }
     
+    // Load font URL if configured (for Google Fonts or custom fonts)
+    if (config.font_url && typeof document !== 'undefined') {
+      // Check if font is already loaded
+      const existingLink = document.querySelector(`link[data-theme-font]`);
+      if (existingLink) {
+        existingLink.remove();
+      }
+
+      // Load font dynamically
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = config.font_url;
+      link.setAttribute('data-theme-font', 'true');
+      document.head.appendChild(link);
+    }
+
     // Apply fonts
     if (config.font_family) {
       const fontFamily = config.font_family.trim();
@@ -125,6 +141,37 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       root.style.setProperty('--font-family-heading', `${fontFamily}, sans-serif`);
       root.style.setProperty('--font-family-subheading', `${fontFamily}, sans-serif`);
       // Apply to body and html
+      if (typeof document !== 'undefined') {
+        document.body.style.fontFamily = `var(--font-family), sans-serif`;
+        root.style.fontFamily = `var(--font-family), sans-serif`;
+      }
+    }
+    
+    // Also check typography.fontUrl for new format
+    if ((config as any).typography?.fontUrl && typeof document !== 'undefined') {
+      const fontUrl = (config as any).typography.fontUrl;
+      const existingLink = document.querySelector(`link[data-theme-font]`);
+      if (existingLink) {
+        existingLink.remove();
+      }
+
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = fontUrl;
+      link.setAttribute('data-theme-font', 'true');
+      document.head.appendChild(link);
+    }
+    
+    // Apply fonts from typography config if available
+    if ((config as any).typography?.fontFamily) {
+      const fontFamily = (config as any).typography.fontFamily.trim();
+      root.style.setProperty('--font-family', fontFamily);
+      if ((config as any).typography.fontFamilyHeading) {
+        root.style.setProperty('--font-family-heading', (config as any).typography.fontFamilyHeading);
+      }
+      if ((config as any).typography.fontFamilySubheading) {
+        root.style.setProperty('--font-family-subheading', (config as any).typography.fontFamilySubheading);
+      }
       if (typeof document !== 'undefined') {
         document.body.style.fontFamily = `var(--font-family), sans-serif`;
         root.style.fontFamily = `var(--font-family), sans-serif`;

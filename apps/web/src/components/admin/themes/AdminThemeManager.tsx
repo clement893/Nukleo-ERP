@@ -234,34 +234,34 @@ export function AdminThemeManager({ authToken }: ThemeManagerProps) {
                       <div className="flex gap-2">
                         <div
                           className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                          style={{ backgroundColor: primaryColor }}
+                          style={{ backgroundColor: typeof primaryColor === 'string' ? primaryColor : '#3b82f6' }}
                           title="Couleur principale"
                         />
-                        {config.secondary && (
+                        {config.secondary && typeof config.secondary === 'string' && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.secondary }}
+                            style={{ backgroundColor: config.secondary as string }}
                             title="Couleur secondaire"
                           />
                         )}
-                        {config.danger && (
+                        {config.danger && typeof config.danger === 'string' && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.danger }}
+                            style={{ backgroundColor: config.danger as string }}
                             title="Couleur danger"
                           />
                         )}
-                        {config.warning && (
+                        {config.warning && typeof config.warning === 'string' && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.warning }}
+                            style={{ backgroundColor: config.warning as string }}
                             title="Couleur avertissement"
                           />
                         )}
-                        {config.info && (
+                        {config.info && typeof config.info === 'string' && (
                           <div
                             className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600"
-                            style={{ backgroundColor: config.info }}
+                            style={{ backgroundColor: config.info as string }}
                             title="Couleur information"
                           />
                         )}
@@ -269,8 +269,8 @@ export function AdminThemeManager({ authToken }: ThemeManagerProps) {
 
                       {/* Metadata */}
                       <div className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <div>Mode: {config.mode || 'system'}</div>
-                        {config.typography?.fontFamily && (
+                        <div>Mode: {typeof config.mode === 'string' ? config.mode : 'system'}</div>
+                        {config.typography && typeof config.typography === 'object' && 'fontFamily' in config.typography && typeof config.typography.fontFamily === 'string' && (
                           <div>Police: {config.typography.fontFamily.split(',')[0]}</div>
                         )}
                         <div className="mt-1">

@@ -94,26 +94,34 @@ export default function Dropdown({
           ? currentEnabledIndex + 1 
           : 0;
         const nextIndex = enabledIndices[nextEnabledIndex];
-        setFocusedIndex(nextIndex);
-        itemRefs.current[nextEnabledIndex]?.focus();
+        if (nextIndex !== undefined) {
+          setFocusedIndex(nextIndex);
+          itemRefs.current[nextEnabledIndex]?.focus();
+        }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         const prevEnabledIndex = currentEnabledIndex > 0 
           ? currentEnabledIndex - 1 
           : enabledIndices.length - 1;
         const prevIndex = enabledIndices[prevEnabledIndex];
-        setFocusedIndex(prevIndex);
-        itemRefs.current[prevEnabledIndex]?.focus();
+        if (prevIndex !== undefined) {
+          setFocusedIndex(prevIndex);
+          itemRefs.current[prevEnabledIndex]?.focus();
+        }
       } else if (e.key === 'Home') {
         e.preventDefault();
         const firstIndex = enabledIndices[0];
-        setFocusedIndex(firstIndex);
-        itemRefs.current[0]?.focus();
+        if (firstIndex !== undefined) {
+          setFocusedIndex(firstIndex);
+          itemRefs.current[0]?.focus();
+        }
       } else if (e.key === 'End') {
         e.preventDefault();
         const lastIndex = enabledIndices[enabledIndices.length - 1];
-        setFocusedIndex(lastIndex);
-        itemRefs.current[enabledIndices.length - 1]?.focus();
+        if (lastIndex !== undefined) {
+          setFocusedIndex(lastIndex);
+          itemRefs.current[enabledIndices.length - 1]?.focus();
+        }
       }
     };
 
@@ -128,8 +136,10 @@ export default function Dropdown({
     if (isOpen && menuRef.current && enabledIndices.length > 0) {
       setTimeout(() => {
         const firstIndex = enabledIndices[0];
-        setFocusedIndex(firstIndex);
-        itemRefs.current[0]?.focus();
+        if (firstIndex !== undefined) {
+          setFocusedIndex(firstIndex);
+          itemRefs.current[0]?.focus();
+        }
       }, 0);
     } else {
       setFocusedIndex(-1);
