@@ -7,13 +7,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { TeamSetup } from '@/components/onboarding';
 import { PageContainer } from '@/components/layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function OnboardingTeamPage() {
-  const t = useTranslations('onboarding.team');
   const router = useRouter();
 
   return (

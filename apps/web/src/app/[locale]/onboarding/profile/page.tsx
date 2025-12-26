@@ -7,13 +7,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { ProfileSetup } from '@/components/onboarding';
 import { PageContainer } from '@/components/layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function OnboardingProfilePage() {
-  const t = useTranslations('onboarding.profile');
   const router = useRouter();
 
   return (

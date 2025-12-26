@@ -7,13 +7,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { WelcomeScreen } from '@/components/onboarding';
 import { PageContainer } from '@/components/layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function OnboardingWelcomePage() {
-  const t = useTranslations('onboarding.welcome');
   const router = useRouter();
 
   return (

@@ -127,7 +127,7 @@ export default function PreferencesSetup({
             </div>
             <Switch
               checked={formData.emailNotifications}
-              onChange={(checked: boolean) => setFormData({ ...formData, emailNotifications: checked })}
+              onChange={(checked) => setFormData({ ...formData, emailNotifications: checked })}
             />
           </div>
 
@@ -141,7 +141,7 @@ export default function PreferencesSetup({
             </div>
             <Switch
               checked={formData.marketingEmails}
-              onChange={(checked: boolean) => setFormData({ ...formData, marketingEmails: checked })}
+              onChange={(checked) => setFormData({ ...formData, marketingEmails: checked })}
             />
           </div>
 
@@ -155,7 +155,7 @@ export default function PreferencesSetup({
             </div>
             <Switch
               checked={formData.weeklyDigest}
-              onChange={(checked: boolean) => setFormData({ ...formData, weeklyDigest: checked })}
+              onChange={(checked) => setFormData({ ...formData, weeklyDigest: checked })}
             />
           </div>
 

@@ -8,14 +8,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { WelcomeScreen, ProfileSetup, PreferencesSetup, TeamSetup, OnboardingComplete } from '@/components/onboarding';
 import type { ProfileData, PreferencesData, TeamMember } from '@/components/onboarding';
 import { PageContainer } from '@/components/layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function OnboardingPage() {
-  const t = useTranslations('onboarding');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<{
