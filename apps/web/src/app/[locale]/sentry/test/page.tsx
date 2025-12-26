@@ -171,6 +171,12 @@ function SentryTestContent() {
               {process.env.NODE_ENV || 'development'}
             </Badge>
           </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 dark:text-gray-400">Sentry Enabled in Dev:</span>
+            <Badge variant={process.env.NEXT_PUBLIC_SENTRY_ENABLE_DEV === 'true' ? 'success' : 'warning'}>
+              {process.env.NEXT_PUBLIC_SENTRY_ENABLE_DEV === 'true' ? 'Yes' : 'No (required for dev testing)'}
+            </Badge>
+          </div>
           {isConfigured() && (
             <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -335,6 +341,59 @@ function SentryTestContent() {
             In development mode, Sentry may be disabled unless SENTRY_ENABLE_DEV=true is set.
             Check your Sentry dashboard at <a href="https://sentry.io" target="_blank" rel="noopener noreferrer" className="underline">sentry.io</a> to view captured events.
           </Alert>
+        </div>
+      </Card>
+
+      {/* Where to Find Errors */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <h2 className="text-xl font-semibold mb-4 text-blue-900 dark:text-blue-100">
+          📊 Où trouver vos erreurs dans Sentry
+        </h2>
+        <div className="space-y-4 text-sm text-blue-800 dark:text-blue-200">
+          <div>
+            <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
+              Section principale : <strong>Issues</strong>
+            </h3>
+            <ol className="list-decimal list-inside ml-2 space-y-1">
+              <li>Connectez-vous à <a href="https://sentry.io" target="_blank" rel="noopener noreferrer" className="underline font-semibold">sentry.io</a></li>
+              <li>Sélectionnez votre <strong>organisation</strong> (en haut à gauche)</li>
+              <li>Sélectionnez votre <strong>projet</strong> (menu de gauche ou en haut)</li>
+              <li>Cliquez sur <strong>"Issues"</strong> dans le menu de gauche ⭐</li>
+            </ol>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
+              Filtres utiles :
+            </h3>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li><strong>Environment</strong> : Filtrez par "development" ou "production"</li>
+              <li><strong>Tags</strong> : Recherchez "test:true" pour trouver vos erreurs de test</li>
+              <li><strong>Status</strong> : "Unresolved" pour voir les nouvelles erreurs</li>
+              <li><strong>Search</strong> : Recherchez par texte (ex: "Test exception")</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
+              ⚠️ Important en développement :
+            </h3>
+            <p className="ml-2">
+              Ajoutez <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">NEXT_PUBLIC_SENTRY_ENABLE_DEV=true</code> dans votre <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">.env.local</code> et <strong>redémarrez le serveur</strong>.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
+              🔍 Vérifier l'envoi :
+            </h3>
+            <p className="ml-2">
+              Ouvrez les DevTools (F12) → Onglet <strong>Network</strong> → Filtrez par "sentry" → Vous devriez voir une requête POST vers <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">*.ingest.sentry.io</code> avec un status 200.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+            <p className="text-xs">
+              💡 <strong>Astuce</strong> : Les erreurs peuvent prendre 5-10 secondes à apparaître dans Sentry. 
+              Consultez <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">SENTRY_DASHBOARD_GUIDE.md</code> pour plus de détails.
+            </p>
+          </div>
         </div>
       </Card>
     </Container>
