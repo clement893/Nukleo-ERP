@@ -75,39 +75,58 @@ View all components in action at `/components`:
 - `/components/admin` - Admin management components
 - `/components/layout` - Layout components
 
-**Component Categories (32 total):**
-- `ui/` - Core UI components (96 components)
-- `auth/` - Authentication components
-- `billing/` - Billing and subscription components
-- `analytics/` - Analytics and reporting components
-- `monitoring/` - Monitoring and performance components
-- `errors/` - Error handling components
-- `i18n/` - Internationalization components
-- `admin/` - Admin management components
-- `layout/` - Layout components
-- `settings/` - Settings components
-- `activity/` - Activity tracking components
-- `notifications/` - Notification components
-- `performance/` - Performance optimization components
-- `rbac/` - Role-based access control components
-- `theme/` - Theme management components
-- `workflow/` - Workflow components
-- `collaboration/` - Collaboration components
-- `subscriptions/` - Subscription management components
-- `integrations/` - Integration components
-- `advanced/` - Advanced feature components
-- `sections/` - Section components
-- `providers/` - Provider components
-- `feature-flags/` - Feature flag management components
-- `preferences/` - User preferences components
-- `announcements/` - Announcements and banners components
-- `feedback/` - Feedback and support components
-- `onboarding/` - Onboarding wizard components
-- `documentation/` - Documentation and help components
-- `scheduled-tasks/` - Scheduled tasks management components
-- `backups/` - Backup and restore components
-- `email-templates/` - Email template management components
-- `audit-trail/` - Audit trail viewer components
+**Component Categories (50+ total):**
+- `ui/` - Core UI components (79 components)
+- `auth/` - Authentication components (6 components)
+- `billing/` - Billing and subscription components (8 components)
+- `analytics/` - Analytics and reporting components (5 components)
+- `monitoring/` - Monitoring and performance components (8 components)
+- `errors/` - Error handling components (4 components)
+- `i18n/` - Internationalization components (3 components)
+- `admin/` - Admin management components (4 components)
+- `layout/` - Layout components (11 components)
+- `settings/` - Settings components (11 components)
+- `activity/` - Activity tracking components (5 components)
+- `notifications/` - Notification components (2 components)
+- `performance/` - Performance optimization components (6 components)
+- `rbac/` - Role-based access control components (1 component)
+- `theme/` - Theme management components (2 components)
+- `workflow/` - Workflow components (3 components)
+- `collaboration/` - Collaboration components (4 components)
+- `subscriptions/` - Subscription management components (4 components)
+- `integrations/` - Integration components (4 components)
+- `advanced/` - Advanced feature components (4 components)
+- `sections/` - Section components (5 components)
+- `providers/` - Provider components (5 components)
+- `feature-flags/` - Feature flag management components (1 component)
+- `preferences/` - User preferences components (1 component)
+- `announcements/` - Announcements and banners components (1 component)
+- `feedback/` - Feedback and support components (2 components)
+- `onboarding/` - Onboarding wizard components (6 components)
+- `documentation/` - Documentation and help components (2 components)
+- `scheduled-tasks/` - Scheduled tasks management components (1 component)
+- `backups/` - Backup and restore components (1 component)
+- `email-templates/` - Email template management components (1 component)
+- `audit-trail/` - Audit trail viewer components (1 component)
+- `ai/` - AI and chat components (1 component)
+- `blog/` - Blog components (2 components)
+- `client/` - Client portal components (2 components)
+- `cms/` - CMS components (4 components)
+- `content/` - Content management components (9 components)
+- `data/` - Data import/export components (2 components)
+- `erp/` - ERP portal components (2 components)
+- `favorites/` - Favorites components (2 components)
+- `help/` - Help center components (7 components)
+- `marketing/` - Marketing components (3 components)
+- `page-builder/` - Page builder components (3 components)
+- `profile/` - Profile components (2 components)
+- `search/` - Search components (2 components)
+- `seo/` - SEO components (1 component)
+- `sharing/` - Sharing components (2 components)
+- `surveys/` - Survey components (3 components)
+- `tags/` - Tag components (2 components)
+- `templates/` - Template components (2 components)
+- `versions/` - Version components (2 components)
 
 ## 📖 Documentation
 

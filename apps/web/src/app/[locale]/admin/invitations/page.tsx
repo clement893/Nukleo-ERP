@@ -203,7 +203,7 @@ export default function InvitationsPage() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {Object.entries(statusCounts).map(([status, count]) => (
           <Card key={status}>
             <div className="p-4 text-center">
@@ -215,7 +215,7 @@ export default function InvitationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex gap-2">
+      <div className="mb-6 flex flex-wrap gap-2">
         {(['all', 'pending', 'accepted', 'expired', 'cancelled'] as const).map((status) => (
           <Button
             key={status}
@@ -336,7 +336,7 @@ export default function InvitationsPage() {
         title="Inviter un utilisateur"
         size="md"
         footer={
-          <>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
             <Button
               variant="outline"
               onClick={() => {
@@ -344,13 +344,17 @@ export default function InvitationsPage() {
                 setNewInvitationEmail('');
                 setNewInvitationRole('user');
               }}
+              className="flex-1 sm:flex-initial"
             >
               Annuler
             </Button>
-            <Button onClick={handleCreateInvitation}>
+            <Button 
+              onClick={handleCreateInvitation}
+              className="flex-1 sm:flex-initial"
+            >
               Envoyer l'invitation
             </Button>
-          </>
+          </div>
         }
       >
         <div className="space-y-4">
