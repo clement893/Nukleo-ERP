@@ -91,7 +91,8 @@ RUN echo "=== .env.local contents ===" && \
 
 # Build Next.js application
 # Next.js will read variables from .env.local (created above) or ENV
-RUN cd apps/web && pnpm build
+# Disable Turbopack for production builds to avoid issues with next-auth and vendored modules
+RUN cd apps/web && NEXT_PRIVATE_SKIP_TURBO=1 pnpm build
 
 # Production image
 FROM base AS runner

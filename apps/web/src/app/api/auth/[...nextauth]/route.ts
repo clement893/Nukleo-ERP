@@ -13,3 +13,7 @@ export const { GET, POST } = handlers;
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+// Exclude from static generation - prevents Turbopack from trying to parse this route
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
