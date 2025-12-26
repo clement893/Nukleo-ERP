@@ -156,3 +156,5 @@ class FavoriteService:
         )
         return result.scalar() or 0
 
+
+

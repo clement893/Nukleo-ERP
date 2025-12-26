@@ -126,3 +126,5 @@ class UserPreferenceService:
         preference = await self.get_preference(user_id, key)
         return preference.value if preference else default
 
+
+

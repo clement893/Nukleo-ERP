@@ -111,3 +111,5 @@ async def delete_all_preferences(
     count = await service.delete_all_preferences(current_user.id)
     return {"success": True, "message": f"Deleted {count} preferences"}
 
+
+

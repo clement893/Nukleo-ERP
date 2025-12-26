@@ -39,3 +39,5 @@ class UserPreference(Base):
     def __repr__(self) -> str:
         return f"<UserPreference(id={self.id}, user_id={self.user_id}, key={self.key}, value={self.value})>"
 
+
+

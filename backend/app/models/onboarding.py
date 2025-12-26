@@ -83,3 +83,5 @@ class UserOnboarding(Base):
     def __repr__(self) -> str:
         return f"<UserOnboarding(id={self.id}, user_id={self.user_id}, is_completed={self.is_completed})>"
 
+
+

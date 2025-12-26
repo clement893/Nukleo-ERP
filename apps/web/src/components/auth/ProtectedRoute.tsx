@@ -72,8 +72,8 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
         
         // If not admin, check if user is superadmin
         if (!isAdmin) {
+          const authToken = tokenFromStorage || token;
           try {
-            const authToken = tokenFromStorage || token;
             if (authToken) {
               logger.debug('Checking superadmin status', {
                 hasToken: !!authToken,

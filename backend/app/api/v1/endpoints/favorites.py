@@ -159,3 +159,5 @@ async def get_favorites_count(
     count = await service.get_favorites_count(entity_type, entity_id)
     return {"count": count}
 
+
+

@@ -220,3 +220,5 @@ class EmailTemplateService:
         )
         return list(result.scalars().all())
 
+
+

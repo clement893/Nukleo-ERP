@@ -183,3 +183,5 @@ class OnboardingService:
             'progress_percentage': (completed_count / total_count * 100) if total_count > 0 else 0
         }
 
+
+

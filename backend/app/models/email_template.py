@@ -87,3 +87,5 @@ class EmailTemplateVersion(Base):
     def __repr__(self) -> str:
         return f"<EmailTemplateVersion(id={self.id}, template_id={self.template_id}, version_number={self.version_number})>"
 
+
+

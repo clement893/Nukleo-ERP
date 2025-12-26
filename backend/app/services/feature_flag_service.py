@@ -223,3 +223,5 @@ class FeatureFlagService:
             'enabled_percentage': (enabled_count / total * 100) if total > 0 else 0
         }
 
+
+

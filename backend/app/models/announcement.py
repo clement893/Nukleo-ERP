@@ -102,3 +102,5 @@ class AnnouncementDismissal(Base):
     def __repr__(self) -> str:
         return f"<AnnouncementDismissal(id={self.id}, announcement_id={self.announcement_id}, user_id={self.user_id})>"
 
+
+

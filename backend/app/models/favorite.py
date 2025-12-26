@@ -48,3 +48,5 @@ class Favorite(Base):
     def __repr__(self) -> str:
         return f"<Favorite(id={self.id}, user_id={self.user_id}, entity_type={self.entity_type}, entity_id={self.entity_id})>"
 
+
+

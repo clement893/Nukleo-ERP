@@ -12,3 +12,5 @@ export default function OnboardingPage() {
   return <OnboardingComponentsContent />;
 }
 
+
+

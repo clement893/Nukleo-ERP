@@ -124,3 +124,5 @@ class EntityTag(Base):
     def __repr__(self) -> str:
         return f"<EntityTag(entity_type={self.entity_type}, entity_id={self.entity_id}, tag_id={self.tag_id})>"
 
+
+
