@@ -18,6 +18,7 @@ from app.models.favorite import Favorite
 from app.models.template import Template, TemplateVariable
 from app.models.version import Version
 from app.models.share import Share, ShareAccessLog, PermissionLevel
+from app.models.feature_flag import FeatureFlag, FeatureFlagLog
 from app.core.security_audit import SecurityAuditLog
 
 __all__ = [
@@ -50,6 +51,8 @@ __all__ = [
     "Share",
     "ShareAccessLog",
     "PermissionLevel",
+    "FeatureFlag",
+    "FeatureFlagLog",
     "SecurityAuditLog",
 ]
 

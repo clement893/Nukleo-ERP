@@ -49,7 +49,7 @@ export function EnhancedReportBuilder({
       aggregations: [],
     }
   );
-  const [reportData, setReportData] = useState<Record<string, unknown>[]>([]);
+  const [reportData] = useState<Record<string, unknown>[]>([]);
   const { showToast } = useToast();
 
   const addFilter = () => {

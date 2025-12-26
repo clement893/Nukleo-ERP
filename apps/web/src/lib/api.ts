@@ -92,14 +92,21 @@ apiClient.interceptors.request.use(
       const token = TokenStorage.getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        // Debug log to verify token is being sent (development only)
-        if (process.env.NODE_ENV === 'development' && config.url?.includes('/auth/me')) {
-          logger.debug('Sending request to /auth/me', { tokenPrefix: token.substring(0, 20) + '...' });
+        // Debug log to verify token is being sent
+        if (config.url?.includes('/users/me') || config.url?.includes('/auth/me')) {
+          logger.debug('Sending authenticated request', { 
+            url: config.url,
+            hasToken: !!token,
+            tokenPrefix: token.substring(0, 20) + '...'
+          });
         }
       } else {
-        // Debug log if no token found (development only)
-        if (process.env.NODE_ENV === 'development' && config.url?.includes('/auth/me')) {
-          logger.warn('No token found when requesting /auth/me');
+        // Log warning if no token found for authenticated endpoints
+        if (config.url?.includes('/users/me') || config.url?.includes('/auth/me') || config.url?.includes('/admin/')) {
+          logger.warn('No token found for authenticated request', { 
+            url: config.url,
+            sessionStorageAvailable: typeof sessionStorage !== 'undefined'
+          });
         }
       }
     }

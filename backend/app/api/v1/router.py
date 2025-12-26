@@ -2,7 +2,7 @@
 API v1 router registration.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares
+from app.api.v1.endpoints import themes, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags
 from app.api import ai as ai_router
 
 api_router = APIRouter()
@@ -157,4 +157,11 @@ api_router.include_router(
     shares.router,
     prefix="/shares",
     tags=["shares"]
+)
+
+# Register feature flags endpoints
+api_router.include_router(
+    feature_flags.router,
+    prefix="/feature-flags",
+    tags=["feature-flags"]
 )
