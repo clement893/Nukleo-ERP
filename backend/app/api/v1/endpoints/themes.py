@@ -159,32 +159,50 @@ async def list_themes(
     TemplateTheme (ID 32) is ALWAYS included in the list, regardless of pagination.
     Note: Cache disabled to ensure fresh data when themes are created/updated.
     """
+    # Delete any "default" theme that might still exist (cleanup)
+    # This ensures the theme is removed even if migration hasn't run yet
+    try:
+        await db.execute(text("DELETE FROM themes WHERE id = 0 OR name = 'default' OR display_name = 'Default Theme'"))
+        await db.commit()
+    except Exception:
+        # Ignore errors - migration should handle this, but we try anyway
+        await db.rollback()
+    
     # First, get TemplateTheme (ID 32) - it should always exist
     template_result = await db.execute(select(Theme).where(Theme.id == 32))
     template_theme = template_result.scalar_one_or_none()
     
     # Get all other themes (excluding ID 32 and "default" theme to avoid duplicates) with pagination
-    # Filter out TemplateTheme (ID 32) and any theme with name="default" or id=0
+    # Filter out TemplateTheme (ID 32) and any theme with name="default", id=0, or display_name="Default Theme"
     other_themes_result = await db.execute(
         select(Theme).where(
             (Theme.id != 32) & 
             (Theme.id != 0) & 
-            (Theme.name != 'default')
+            (Theme.name != 'default') &
+            (Theme.display_name != 'Default Theme')
         ).order_by(Theme.id).offset(skip).limit(limit)
     )
     other_themes = other_themes_result.scalars().all()
     
     # Combine: TemplateTheme first (if it exists), then other themes
+    # Also filter out any "default" theme that might have slipped through
     themes_list = []
     if template_theme:
         themes_list.append(template_theme)
-    themes_list.extend(other_themes)
+    # Filter out any remaining "default" themes (double-check)
+    themes_list.extend([
+        t for t in other_themes 
+        if t.id != 0 
+        and t.name != 'default' 
+        and t.display_name != 'Default Theme'
+    ])
     
     # Get total count for pagination (all themes including TemplateTheme, excluding "default" theme)
     total_result = await db.execute(
         select(Theme).where(
             (Theme.id != 0) & 
-            (Theme.name != 'default')
+            (Theme.name != 'default') &
+            (Theme.display_name != 'Default Theme')
         )
     )
     all_themes = total_result.scalars().all()
