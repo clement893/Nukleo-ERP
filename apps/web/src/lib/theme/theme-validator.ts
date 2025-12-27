@@ -4,7 +4,173 @@
  */
 
 import { getContrastIssues, ContrastIssue } from './contrast-utils';
-import { validateThemeColors, type ColorValidationResult } from './color-validation';
+
+/**
+ * Color validation result
+ */
+export interface ColorValidationResult {
+  valid: boolean;
+  errors: Array<{
+    field: string;
+    value: string;
+    message: string;
+  }>;
+}
+
+/**
+ * Validate hex color format
+ */
+function isValidHexColor(color: string): boolean {
+  if (!color || typeof color !== 'string') {
+    return false;
+  }
+  
+  const cleanColor = color.trim();
+  const hex = cleanColor.startsWith('#') ? cleanColor.slice(1) : cleanColor;
+  
+  if (hex.length === 3) {
+    return /^[0-9a-f]{3}$/i.test(hex);
+  }
+  
+  if (hex.length === 6) {
+    return /^[0-9a-f]{6}$/i.test(hex);
+  }
+  
+  return false;
+}
+
+/**
+ * Validate RGB color format
+ */
+function isValidRgbColor(color: string): boolean {
+  if (!color || typeof color !== 'string') {
+    return false;
+  }
+  
+  const cleanColor = color.trim();
+  const rgbMatch = cleanColor.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d.]+)?\s*\)$/i);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10);
+    const g = parseInt(rgbMatch[2], 10);
+    const b = parseInt(rgbMatch[3], 10);
+    return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+  }
+  
+  const commaMatch = cleanColor.match(/^(\d+),\s*(\d+),\s*(\d+)$/);
+  if (commaMatch) {
+    const r = parseInt(commaMatch[1], 10);
+    const g = parseInt(commaMatch[2], 10);
+    const b = parseInt(commaMatch[3], 10);
+    return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+  }
+  
+  return false;
+}
+
+/**
+ * Validate HSL color format
+ */
+function isValidHslColor(color: string): boolean {
+  if (!color || typeof color !== 'string') {
+    return false;
+  }
+  
+  const cleanColor = color.trim();
+  const hslMatch = cleanColor.match(/^hsla?\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%(?:\s*,\s*[\d.]+)?\s*\)$/i);
+  if (hslMatch) {
+    const h = parseInt(hslMatch[1], 10);
+    const s = parseInt(hslMatch[2], 10);
+    const l = parseInt(hslMatch[3], 10);
+    return h >= 0 && h <= 360 && s >= 0 && s <= 100 && l >= 0 && l <= 100;
+  }
+  
+  return false;
+}
+
+/**
+ * Check if color is in any valid format (hex, rgb, hsl)
+ */
+function isValidColor(color: string): boolean {
+  return isValidHexColor(color) || isValidRgbColor(color) || isValidHslColor(color);
+}
+
+/**
+ * Validate theme configuration colors
+ */
+function validateThemeColors(config: {
+  colors?: Record<string, any>;
+  primary_color?: string;
+  secondary_color?: string;
+  danger_color?: string;
+  warning_color?: string;
+  info_color?: string;
+  success_color?: string;
+  typography?: {
+    textHeading?: string;
+    textSubheading?: string;
+    textBody?: string;
+    textSecondary?: string;
+    textLink?: string;
+  };
+}): ColorValidationResult {
+  const errors: ColorValidationResult['errors'] = [];
+  
+  const flatColors = [
+    { key: 'primary_color', value: config.primary_color },
+    { key: 'secondary_color', value: config.secondary_color },
+    { key: 'danger_color', value: config.danger_color },
+    { key: 'warning_color', value: config.warning_color },
+    { key: 'info_color', value: config.info_color },
+    { key: 'success_color', value: config.success_color },
+  ];
+  
+  flatColors.forEach(({ key, value }) => {
+    if (value && !isValidColor(value)) {
+      errors.push({
+        field: key,
+        value: String(value),
+        message: `Invalid color format: ${value}. Expected hex (#RRGGBB), rgb(), or hsl()`,
+      });
+    }
+  });
+  
+  if (config.colors) {
+    Object.entries(config.colors).forEach(([key, value]) => {
+      if (typeof value === 'string' && !isValidColor(value)) {
+        errors.push({
+          field: `colors.${key}`,
+          value: String(value),
+          message: `Invalid color format: ${value}. Expected hex (#RRGGBB), rgb(), or hsl()`,
+        });
+      }
+    });
+  }
+  
+  if (config.typography) {
+    const typographyColors = [
+      { key: 'textHeading', value: config.typography.textHeading },
+      { key: 'textSubheading', value: config.typography.textSubheading },
+      { key: 'textBody', value: config.typography.textBody },
+      { key: 'textSecondary', value: config.typography.textSecondary },
+      { key: 'textLink', value: config.typography.textLink },
+    ];
+    
+    typographyColors.forEach(({ key, value }) => {
+      if (value && !isValidColor(value)) {
+        errors.push({
+          field: `typography.${key}`,
+          value: String(value),
+          message: `Invalid color format: ${value}. Expected hex (#RRGGBB), rgb(), or hsl()`,
+        });
+      }
+    });
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
 
 /**
  * Theme validation result
