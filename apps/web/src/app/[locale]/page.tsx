@@ -124,7 +124,7 @@ export default function HomePage() {
       </div>
 
       {/* Features Section - Custom features using Card component */}
-      <div className="bg-background dark:bg-gray-800 py-20">
+      <div className="bg-background py-20">
         <Container>
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
@@ -157,7 +157,7 @@ export default function HomePage() {
       <TechStack />
 
       {/* Use Cases Section - Custom section using Card component */}
-      <div className="bg-background dark:bg-gray-800 py-20">
+      <div className="bg-background py-20">
         <Container>
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
@@ -195,7 +195,7 @@ export default function HomePage() {
         <Container>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <Card className="p-8">
-              <h2 className="text-3xl font-bold text-foreground dark:text-white mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-6">
                 Fonctionnalités SaaS
               </h2>
               <ul className="space-y-4">
@@ -225,7 +225,7 @@ export default function HomePage() {
               </ul>
             </Card>
             <Card className="p-8">
-              <h2 className="text-3xl font-bold text-foreground dark:text-white mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-6">
                 Expérience Développeur
               </h2>
               <ul className="space-y-4">
