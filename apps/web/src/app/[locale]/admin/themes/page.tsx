@@ -12,10 +12,11 @@ import { ThemeEditor } from './components/ThemeEditor';
 import { createTheme, updateTheme } from '@/lib/api/theme';
 import { clearThemeCache } from '@/lib/theme/theme-cache';
 import { useGlobalTheme } from '@/lib/theme/global-theme-provider';
+import ProtectedSuperAdminRoute from '@/components/auth/ProtectedSuperAdminRoute';
 import type { Theme, ThemeConfig } from '@modele/types';
 import type { ThemeFormData } from './types';
 
-export default function ThemesPage() {
+function ThemesPageContent() {
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { refreshTheme } = useGlobalTheme();
@@ -119,6 +120,18 @@ export default function ThemesPage() {
         )}
       </div>
     </PageContainer>
+  );
+}
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
+export default function ThemesPage() {
+  return (
+    <ProtectedSuperAdminRoute>
+      <ThemesPageContent />
+    </ProtectedSuperAdminRoute>
   );
 }
 
