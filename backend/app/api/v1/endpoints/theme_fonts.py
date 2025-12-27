@@ -28,6 +28,7 @@ ALLOWED_FONT_MIME_TYPES = {
     'font/otf',
     'application/x-font-ttf',
     'application/x-font-opentype',
+    'application/octet-stream',  # Fallback MIME type used by some browsers
 }
 
 
