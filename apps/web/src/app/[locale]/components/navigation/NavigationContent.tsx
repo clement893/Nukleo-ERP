@@ -113,11 +113,11 @@ export default function NavigationContent() {
 
         <Section title="Sidebar" description="Barre latÃ©rale avec sous-menus">
           <div className="flex gap-4">
-            <div className="border border-gray-200 rounded-lg overflow-hidden" style={{ height: '500px' }}>
+            <div className="border border-border rounded-lg overflow-hidden" style={{ height: '500px' }}>
               <Sidebar items={sidebarItems} currentPath="/users" collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
             </div>
             <div className="flex-1">
-              <p className="text-gray-600 mb-4">La sidebar peut Ãªtre rÃ©duite et contient des sous-menus. Cliquez sur le bouton pour rÃ©duire/Ã©tendre.</p>
+              <p className="text-muted-foreground mb-4">La sidebar peut Ãªtre rÃ©duite et contient des sous-menus. Cliquez sur le bouton pour rÃ©duire/Ã©tendre.</p>
               <Button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>{sidebarCollapsed ? 'Ã‰tendre' : 'RÃ©duire'} la sidebar</Button>
             </div>
           </div>
@@ -132,9 +132,9 @@ export default function NavigationContent() {
               <Tab value="disabled" disabled>DÃ©sactivÃ©</Tab>
             </TabList>
             <TabPanels>
-              <TabPanel value="overview"><div className="p-4 bg-gray-50 rounded-lg"><h3 className="font-semibold mb-2">Vue d'ensemble</h3><p className="text-gray-600">Contenu de la vue d'ensemble. Ici vous pouvez afficher des statistiques gÃ©nÃ©rales.</p></div></TabPanel>
-              <TabPanel value="analytics"><div className="p-4 bg-gray-50 rounded-lg"><h3 className="font-semibold mb-2">Analytiques</h3><p className="text-gray-600">Contenu des analytiques. Graphiques et mÃ©triques dÃ©taillÃ©es.</p></div></TabPanel>
-              <TabPanel value="settings"><div className="p-4 bg-gray-50 rounded-lg"><h3 className="font-semibold mb-2">ParamÃ¨tres</h3><p className="text-gray-600">Contenu des paramÃ¨tres. Configuration et prÃ©fÃ©rences.</p></div></TabPanel>
+              <TabPanel value="overview"><div className="p-4 bg-muted rounded-lg"><h3 className="font-semibold mb-2">Vue d'ensemble</h3><p className="text-muted-foreground">Contenu de la vue d'ensemble. Ici vous pouvez afficher des statistiques gÃ©nÃ©rales.</p></div></TabPanel>
+              <TabPanel value="analytics"><div className="p-4 bg-muted rounded-lg"><h3 className="font-semibold mb-2">Analytiques</h3><p className="text-muted-foreground">Contenu des analytiques. Graphiques et mÃ©triques dÃ©taillÃ©es.</p></div></TabPanel>
+              <TabPanel value="settings"><div className="p-4 bg-muted rounded-lg"><h3 className="font-semibold mb-2">ParamÃ¨tres</h3><p className="text-muted-foreground">Contenu des paramÃ¨tres. Configuration et prÃ©fÃ©rences.</p></div></TabPanel>
             </TabPanels>
           </Tabs>
         </Section>

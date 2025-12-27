@@ -36,7 +36,7 @@ export default function AuthComponentsContent() {
         <Section title="Multi-Factor Authentication (MFA)">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Vérification MFA
               </h3>
               <div className="max-w-md">
@@ -48,7 +48,7 @@ export default function AuthComponentsContent() {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Configuration MFA avec QR Code
               </h3>
               <div className="max-w-md">
@@ -66,7 +66,7 @@ export default function AuthComponentsContent() {
         <Section title="Authentification Sociale">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Tous les fournisseurs
               </h3>
               <div className="max-w-md">
@@ -81,7 +81,7 @@ export default function AuthComponentsContent() {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Google uniquement
               </h3>
               <div className="max-w-md">
@@ -96,7 +96,7 @@ export default function AuthComponentsContent() {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 GitHub uniquement
               </h3>
               <div className="max-w-md">
@@ -111,7 +111,7 @@ export default function AuthComponentsContent() {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Microsoft uniquement
               </h3>
               <div className="max-w-md">
@@ -126,7 +126,7 @@ export default function AuthComponentsContent() {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Google et GitHub
               </h3>
               <div className="max-w-md">
@@ -145,10 +145,10 @@ export default function AuthComponentsContent() {
         <Section title="Exemple d'intégration complète">
           <div className="max-w-md">
             <Card className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-xl font-semibold text-foreground mb-4">
                 Connexion à votre compte
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Utilisez votre compte social ou votre email pour vous connecter
               </p>
               <SocialAuth

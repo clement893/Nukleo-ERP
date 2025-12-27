@@ -75,7 +75,7 @@ export default function FeedbackContent() {
                 <Button variant="primary" onClick={() => setIsModalOpen(false)}>Confirmer</Button>
               </div>
             </Modal>
-            <p className="text-sm text-gray-600">Cliquez sur le bouton pour ouvrir une modale de confirmation.</p>
+            <p className="text-sm text-muted-foreground">Cliquez sur le bouton pour ouvrir une modale de confirmation.</p>
           </div>
         </Section>
 
@@ -126,7 +126,7 @@ export default function FeedbackContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center"><Spinner size="sm" color="primary" /><p className="mt-2 text-sm text-gray-600">Petit - Primary</p></div>
             <div className="text-center"><Spinner size="md" color="secondary" /><p className="mt-2 text-sm text-gray-600">Moyen - Secondary</p></div>
-            <div className="text-center bg-gray-900 p-4 rounded-lg"><Spinner size="lg" color="white" /><p className="mt-2 text-sm text-white">Grand - White</p></div>
+            <div className="text-center bg-foreground p-4 rounded-lg"><Spinner size="lg" color="white" /><p className="mt-2 text-sm text-background">Grand - White</p></div>
           </div>
         </Section>
 
@@ -138,7 +138,7 @@ export default function FeedbackContent() {
               <Button onClick={() => showToast({ message: 'Attention requise', type: 'warning' })} variant="primary" size="sm">Toast Warning</Button>
               <Button onClick={() => showToast({ message: 'Information importante', type: 'info' })} variant="primary" size="sm">Toast Info</Button>
             </div>
-            <p className="text-sm text-gray-600">Cliquez sur les boutons pour afficher des notifications toast.</p>
+            <p className="text-sm text-muted-foreground">Cliquez sur les boutons pour afficher des notifications toast.</p>
           </div>
         </Section>
 
@@ -180,7 +180,7 @@ export default function FeedbackContent() {
                 </div>
               </div>
             </Drawer>
-            <p className="text-sm text-gray-600">Le drawer s'ouvre depuis le côté droit de l'écran.</p>
+            <p className="text-sm text-muted-foreground">Le drawer s'ouvre depuis le côté droit de l'écran.</p>
           </div>
         </Section>
 
@@ -192,7 +192,7 @@ export default function FeedbackContent() {
                 content={
                   <div className="p-4 space-y-2">
                     <h4 className="font-semibold">Titre du Popover</h4>
-                    <p className="text-sm text-gray-600">Ceci est le contenu du popover.</p>
+                    <p className="text-sm text-muted-foreground">Ceci est le contenu du popover.</p>
                     <Button size="sm" variant="primary">Action</Button>
                   </div>
                 }
@@ -200,7 +200,7 @@ export default function FeedbackContent() {
                 onOpenChange={setIsPopoverOpen}
               />
             </div>
-            <p className="text-sm text-gray-600">Le popover s'affiche près de l'élément déclencheur.</p>
+            <p className="text-sm text-muted-foreground">Le popover s'affiche près de l'élément déclencheur.</p>
           </div>
         </Section>
       </div>

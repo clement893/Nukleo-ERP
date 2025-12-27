@@ -29,7 +29,7 @@ function ThemePageContent() {
             <ExampleCard title="Toggle Simple">
               <div className="flex items-center gap-4">
                 <ThemeToggle />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground">
                   Toggle avec icône animée
                 </span>
               </div>
@@ -38,7 +38,7 @@ function ThemePageContent() {
             <ExampleCard title="Toggle avec Icône">
               <div className="flex items-center gap-4">
                 <ThemeToggleWithIcon />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground">
                   Toggle avec icône soleil/lune
                 </span>
               </div>
@@ -50,11 +50,11 @@ function ThemePageContent() {
           <Card>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">Thème sélectionné:</span>
+                <span className="text-foreground font-medium">Thème sélectionné:</span>
                 <Badge variant="info">{theme}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">Thème actif:</span>
+                <span className="text-foreground font-medium">Thème actif:</span>
                 <Badge variant={resolvedTheme === 'dark' ? 'default' : 'info'}>
                   {resolvedTheme}
                 </Badge>
@@ -76,10 +76,10 @@ function ThemePageContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ExampleCard title="Card">
               <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   Exemple de Card
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-muted-foreground">
                   Cette card s'adapte automatiquement au thème actif.
                 </p>
               </Card>
@@ -116,7 +116,7 @@ function ThemePageContent() {
 
         <Section title="Informations">
           <Card>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+            <div className="space-y-4 text-foreground">
               <div>
                 <h4 className="font-semibold mb-2">Fonctionnalités:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
@@ -129,7 +129,7 @@ function ThemePageContent() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Utilisation:</h4>
-                <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-sm overflow-x-auto">
+                <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
 {`import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeToggle } from '@/components/ui';
 
@@ -147,7 +147,7 @@ function MyComponent() {
         {/* Information about Theme Management */}
         <Section title="Gestion du Thème">
           <Card>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+            <div className="space-y-4 text-foreground">
               <div>
                 <h4 className="font-semibold mb-2">Gestion du Thème:</h4>
                 <p className="text-sm mb-4">

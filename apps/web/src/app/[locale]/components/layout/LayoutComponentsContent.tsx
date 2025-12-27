@@ -94,7 +94,7 @@ export default function LayoutComponentsContent() {
             <p className="text-sm text-muted-foreground mb-4">
               InternalLayout provides a consistent layout structure for internal pages with header, sidebar, and content area.
             </p>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8">
+            <div className="border-2 border-dashed border-border rounded-lg p-8">
               <InternalLayout>
                 <div className="p-4 bg-muted rounded">
                   <p className="text-sm">Content area</p>

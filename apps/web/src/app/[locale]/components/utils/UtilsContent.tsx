@@ -96,9 +96,9 @@ export default function UtilsContent() {
   ];
 
   const accordionItems = [
-    { id: 'usage', title: 'Comment utiliser les composants ?', content: <p className="text-gray-600">Tous les composants sont disponibles via l'import depuis <code className="bg-gray-100 px-2 py-1 rounded">@/components/ui</code></p> },
-    { id: 'customization', title: 'Personnalisation', content: <p className="text-gray-600">Chaque composant accepte une prop <code className="bg-gray-100 px-2 py-1 rounded">className</code> pour la personnalisation avec Tailwind CSS.</p> },
-    { id: 'accessibility', title: 'Accessibilité', content: <p className="text-gray-600">Tous les composants incluent les attributs ARIA nécessaires pour une accessibilité optimale.</p> },
+    { id: 'usage', title: 'Comment utiliser les composants ?', content: <p className="text-muted-foreground">Tous les composants sont disponibles via l'import depuis <code className="bg-muted px-2 py-1 rounded">@/components/ui</code></p> },
+    { id: 'customization', title: 'Personnalisation', content: <p className="text-muted-foreground">Chaque composant accepte une prop <code className="bg-muted px-2 py-1 rounded">className</code> pour la personnalisation avec Tailwind CSS.</p> },
+    { id: 'accessibility', title: 'Accessibilité', content: <p className="text-muted-foreground">Tous les composants incluent les attributs ARIA nécessaires pour une accessibilité optimale.</p> },
   ];
 
   return (
@@ -139,7 +139,7 @@ export default function UtilsContent() {
         <Section title="SearchBar">
           <div className="space-y-4">
             <SearchBar placeholder="Rechercher des utilisateurs..." onSearch={(value) => setSearchValue(value)} />
-            {searchValue && <p className="text-sm text-gray-600">Recherche : <strong>{searchValue}</strong></p>}
+            {searchValue && <p className="text-sm text-muted-foreground">Recherche : <strong>{searchValue}</strong></p>}
             <SearchBar placeholder="Recherche sans bouton clear" showClearButton={false} />
           </div>
         </Section>
@@ -197,25 +197,25 @@ export default function UtilsContent() {
           <div className="space-y-4">
             <div>
               <h4 className="text-sm font-semibold mb-2">Container avec différentes largeurs</h4>
-              <Container maxWidth="sm" className="bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
+              <Container maxWidth="sm" className="bg-muted p-4 rounded mb-4">
                 <p className="text-sm">Container sm (max-w-screen-sm)</p>
               </Container>
-              <Container maxWidth="md" className="bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
+              <Container maxWidth="md" className="bg-muted p-4 rounded mb-4">
                 <p className="text-sm">Container md (max-w-screen-md)</p>
               </Container>
-              <Container maxWidth="lg" className="bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
+              <Container maxWidth="lg" className="bg-muted p-4 rounded mb-4">
                 <p className="text-sm">Container lg (max-w-screen-lg)</p>
               </Container>
-              <Container maxWidth="xl" className="bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
+              <Container maxWidth="xl" className="bg-muted p-4 rounded mb-4">
                 <p className="text-sm">Container xl (max-w-screen-xl) - Par défaut</p>
               </Container>
-              <Container maxWidth="full" className="bg-gray-100 dark:bg-gray-800 p-4 rounded">
+              <Container maxWidth="full" className="bg-muted p-4 rounded">
                 <p className="text-sm">Container full (max-w-full)</p>
               </Container>
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-2">Container sans padding</h4>
-              <Container maxWidth="md" padding={false} className="bg-gray-100 dark:bg-gray-800 p-4 rounded">
+              <Container maxWidth="md" padding={false} className="bg-muted p-4 rounded">
                 <p className="text-sm">Container sans padding automatique</p>
               </Container>
             </div>
@@ -233,7 +233,7 @@ export default function UtilsContent() {
                 <Button onClick={() => showToast({ message: 'Information importante', type: 'info' })} variant="primary" size="sm">Toast Info</Button>
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Les toasts s'affichent en haut à droite de l'écran.</p>
+            <p className="text-sm text-muted-foreground">Les toasts s'affichent en haut à droite de l'écran.</p>
           </div>
         </Section>
 
@@ -248,7 +248,7 @@ export default function UtilsContent() {
                 Ouvrir Command Palette
               </Button>
             </div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <div className="p-4 bg-muted rounded-lg">
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 <strong>Fonctionnalités :</strong> Recherche instantanée, navigation au clavier, catégorisation, raccourcis clavier affichés.
               </p>

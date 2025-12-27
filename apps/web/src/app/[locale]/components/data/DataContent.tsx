@@ -151,7 +151,7 @@ export default function DataContent() {
 
         <Section title="KanbanBoard">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Tableau Kanban avec drag & drop pour gérer les tâches par statut.</p>
+            <p className="text-sm text-muted-foreground">Tableau Kanban avec drag & drop pour gérer les tâches par statut.</p>
             <KanbanBoard
               columns={kanbanColumns}
               cards={kanbanCards}
@@ -173,7 +173,7 @@ export default function DataContent() {
 
         <Section title="Calendar">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Calendrier mensuel avec événements.</p>
+            <p className="text-sm text-muted-foreground">Calendrier mensuel avec événements.</p>
             <Calendar
               events={calendarEvents}
               onDateClick={(date) => {
@@ -190,7 +190,7 @@ export default function DataContent() {
 
         <Section title="CRUDModal">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Modal pour les opérations CRUD (Create, Read, Update, Delete).</p>
+            <p className="text-sm text-muted-foreground">Modal pour les opérations CRUD (Create, Read, Update, Delete).</p>
             <div className="flex gap-2 flex-wrap">
               <Button onClick={() => { setCrudMode('create'); setIsCRUDModalOpen(true); }} variant="primary">Créer</Button>
               <Button onClick={() => { setCrudMode('edit'); setIsCRUDModalOpen(true); }} variant="outline">Modifier</Button>
@@ -206,7 +206,7 @@ export default function DataContent() {
               onDelete={crudMode === 'delete' ? () => { alert('Suppression réussie !'); setIsCRUDModalOpen(false); } : undefined}
             >
               {crudMode === 'delete' ? (
-                <p className="text-gray-700 dark:text-gray-300">Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.</p>
+                <p className="text-foreground">Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.</p>
               ) : (
                 <div className="space-y-4">
                   <Input label="Nom" placeholder="Entrez le nom" />
@@ -219,7 +219,7 @@ export default function DataContent() {
 
         <Section title="ExportButton">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Bouton pour exporter des données en CSV ou Excel.</p>
+            <p className="text-sm text-muted-foreground">Bouton pour exporter des données en CSV ou Excel.</p>
             <ExportButton
               data={sampleData}
               filename="utilisateurs"
@@ -298,7 +298,7 @@ export default function DataContent() {
 
         <Section title="Virtual Table - Large Datasets">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Table avec défilement virtuel pour gérer efficacement de grands ensembles de données (10,000+ lignes).
             </p>
             <VirtualTable
@@ -334,7 +334,7 @@ export default function DataContent() {
 
         <Section title="Drag & Drop List">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Liste avec fonctionnalité de glisser-déposer pour réorganiser les éléments.
             </p>
             <DragDropList
@@ -352,7 +352,7 @@ export default function DataContent() {
               renderItem={(item, index) => (
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                    <span className="text-sm text-muted-foreground">#{index + 1}</span>
                     {item.content}
                   </div>
                 </div>
