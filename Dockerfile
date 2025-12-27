@@ -19,7 +19,7 @@ COPY packages/types/package.json ./packages/types/
 # Railway automatically caches .pnpm-store via railway.json configuration
 # Configure pnpm to use a cache directory that Railway can cache (relative to workdir)
 RUN pnpm config set store-dir .pnpm-store
-RUN --mount=type=cache,target=/app/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store,target=/app/.pnpm-store \
     pnpm install --frozen-lockfile || \
     (echo "Retrying installation with relaxed lockfile..." && sleep 5 && pnpm install --no-frozen-lockfile) || \
     (echo "Final retry..." && pnpm install --no-frozen-lockfile)
@@ -39,7 +39,7 @@ COPY --from=deps /app/packages/types/package.json ./packages/types/package.json
 # Reinstall to recreate symlinks for binaries
 # Use BuildKit cache mount to reuse pnpm store from deps stage
 # Use --prefer-offline to use cache if available, but don't fail if not
-RUN --mount=type=cache,target=/app/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store,target=/app/.pnpm-store \
     pnpm install --prefer-offline --no-frozen-lockfile
 
 # Copy and build types package first (required for web app build)
@@ -57,7 +57,7 @@ COPY packages ./packages
 # Reinstall to ensure workspace links are correct after types package build
 # Use BuildKit cache mount to reuse pnpm store
 # Use --prefer-offline to use cache if available, but don't fail if not
-RUN --mount=type=cache,target=/app/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store,target=/app/.pnpm-store \
     pnpm install --prefer-offline --no-frozen-lockfile
 
 # Railway passes environment variables, but they need to be available during build
