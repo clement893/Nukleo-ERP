@@ -62,10 +62,23 @@ class ApiClient {
       },
       (error) => {
         const appError = handleApiError(error);
-        logger.error('API response error', appError, {
-          status: error.response?.status,
-          url: error.config?.url,
-        });
+        const status = error.response?.status;
+        const url = error.config?.url;
+        
+        // Don't log 401 errors as critical - they're expected for unauthorized users
+        // Log them as warnings instead
+        if (status === 401) {
+          logger.warn('API unauthorized access', {
+            status,
+            url,
+            message: appError.message,
+          });
+        } else {
+          logger.error('API response error', appError, {
+            status,
+            url,
+          });
+        }
         return Promise.reject(appError);
       }
     );

@@ -52,24 +52,39 @@ export function ThemeVisualisationContent() {
         if (isNaN(themeId)) {
           throw new Error('Invalid theme ID');
         }
-        const themeResponse = await getTheme(themeId);
-        // Convert Theme to ThemeConfigResponse format
-        themeData = {
-          id: themeResponse.id,
-          name: themeResponse.name,
-          display_name: themeResponse.display_name,
-          config: themeResponse.config,
-          is_active: themeResponse.is_active,
-        };
+        try {
+          const themeResponse = await getTheme(themeId);
+          // Convert Theme to ThemeConfigResponse format
+          themeData = {
+            id: themeResponse.id,
+            name: themeResponse.name,
+            display_name: themeResponse.display_name,
+            config: themeResponse.config,
+            is_active: themeResponse.is_active,
+          };
+        } catch (err) {
+          // If 401/403, fallback to active theme (public endpoint)
+          if (err instanceof Error && (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
+            logger.warn('Unauthorized to fetch specific theme, falling back to active theme');
+            themeData = await getActiveTheme();
+          } else {
+            throw err;
+          }
+        }
       } else {
-        // Otherwise, fetch the active theme
+        // Otherwise, fetch the active theme (public endpoint)
         themeData = await getActiveTheme();
       }
       
       setTheme(themeData);
       setEditedConfig(themeData.config);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load theme');
+      // Handle 401 errors gracefully - user might not be superadmin
+      if (err instanceof Error && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
+        setError('Vous n\'avez pas les permissions nécessaires pour accéder à cette page. Cette fonctionnalité nécessite un compte superadmin.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to load theme');
+      }
     } finally {
       setLoading(false);
     }
@@ -231,7 +246,10 @@ export function ThemeVisualisationContent() {
       setUploadedFonts(response.fonts);
     } catch (err) {
       // Silently fail - fonts are optional
-      console.error('Failed to fetch fonts:', err);
+      // Don't log 401 errors as they're expected for non-superadmin users
+      if (err instanceof Error && !err.message.includes('401') && !err.message.includes('Unauthorized')) {
+        console.error('Failed to fetch fonts:', err);
+      }
     }
   };
 

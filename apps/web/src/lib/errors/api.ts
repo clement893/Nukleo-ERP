@@ -171,7 +171,8 @@ export function handleApiError(error: unknown): AppError {
     const appError = createErrorFromStatusCode(statusCode, message, details);
     
     // Send to Sentry for server errors (5xx) and unexpected client errors
-    if (statusCode >= 500 || (statusCode >= 400 && !responseData?.error?.message)) {
+    // Don't send 401 errors to Sentry - they're expected for unauthorized users
+    if (statusCode >= 500 || (statusCode >= 400 && statusCode !== 401 && !responseData?.error?.message)) {
       captureException(new Error(message), {
         tags: {
           errorType: 'api_error',

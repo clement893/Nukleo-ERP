@@ -66,9 +66,15 @@ export function ThemeManagementContent() {
       const response: ThemeListResponse = await listThemes();
       setThemes(response.themes || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load themes';
-      setError(errorMessage);
-      logger.error('Failed to fetch themes', err instanceof Error ? err : new Error(String(err)));
+      // Handle 401/403 errors gracefully - user might not be superadmin
+      if (err instanceof Error && (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
+        setError('Vous n\'avez pas les permissions nécessaires pour accéder à cette page. Cette fonctionnalité nécessite un compte superadmin.');
+        logger.warn('Unauthorized access attempt to themes management');
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load themes';
+        setError(errorMessage);
+        logger.error('Failed to fetch themes', err instanceof Error ? err : new Error(String(err)));
+      }
     } finally {
       setLoading(false);
     }
