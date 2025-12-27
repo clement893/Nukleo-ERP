@@ -121,7 +121,7 @@ export default function ExampleDataTablePage() {
           className={`px-2 py-1 text-xs rounded ${
             value === 'active'
               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+              : 'bg-muted text-foreground'
           }`}
         >
           {value as string}
@@ -218,10 +218,10 @@ export default function ExampleDataTablePage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Exemple Tableau de Données Avancé
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Tableau avec tri, filtres, recherche, export et actions batch
         </p>
       </div>
@@ -248,10 +248,10 @@ export default function ExampleDataTablePage() {
       {/* Code Example */}
       <Card className="mt-6">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Points clés de cet exemple :
           </h3>
-          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>✅ Tri par colonnes</li>
             <li>✅ Filtres avancés</li>
             <li>✅ Recherche en temps réel</li>

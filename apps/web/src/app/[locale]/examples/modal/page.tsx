@@ -45,10 +45,10 @@ export default function ExampleModalPage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Exemple Modal / Dialog
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Modals simples, confirmations et formulaires dans modals
         </p>
       </div>
@@ -57,10 +57,10 @@ export default function ExampleModalPage() {
         {/* Simple Modal */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Modal Simple
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Modal basique avec titre et contenu
             </p>
             <Button onClick={() => setIsSimpleModalOpen(true)} variant="primary">
@@ -72,10 +72,10 @@ export default function ExampleModalPage() {
         {/* Form Modal */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Modal avec Formulaire
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Modal contenant un formulaire avec validation
             </p>
             <Button onClick={() => setIsFormModalOpen(true)} variant="primary">
@@ -87,10 +87,10 @@ export default function ExampleModalPage() {
         {/* Confirm Modal */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Modal de Confirmation
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Modal de confirmation pour actions critiques
             </p>
             <Button onClick={() => setIsConfirmModalOpen(true)} variant="danger">
@@ -102,10 +102,10 @@ export default function ExampleModalPage() {
         {/* Info Modal */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Modal d'Information
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Modal pour afficher des informations
             </p>
             <Button onClick={() => setIsInfoModalOpen(true)} variant="outline">
@@ -127,7 +127,7 @@ export default function ExampleModalPage() {
           </Button>
         }
       >
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Ceci est un exemple de modal simple. Vous pouvez ajouter n'importe quel contenu ici.
         </p>
       </Modal>
@@ -200,7 +200,7 @@ export default function ExampleModalPage() {
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
           <div>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Ceci est une modal d'information. Elle peut être utilisée pour afficher
               des messages importants ou des instructions à l'utilisateur.
             </p>
@@ -211,10 +211,10 @@ export default function ExampleModalPage() {
       {/* Code Example */}
       <Card className="mt-6">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Points clés de cet exemple :
           </h3>
-          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>✅ Modal simple avec contenu personnalisé</li>
             <li>✅ Modal avec formulaire et validation</li>
             <li>✅ Modal de confirmation pour actions critiques</li>

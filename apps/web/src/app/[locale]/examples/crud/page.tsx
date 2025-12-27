@@ -166,10 +166,10 @@ export default function ExampleCRUDPage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Exemple CRUD Complet
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Exemple complet de gestion CRUD avec modals, validation et gestion d'états
         </p>
       </div>
@@ -177,7 +177,7 @@ export default function ExampleCRUDPage() {
       {/* Actions Bar */}
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {items.length} item{items.length > 1 ? 's' : ''}
           </p>
         </div>
@@ -194,7 +194,7 @@ export default function ExampleCRUDPage() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {item.name}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -205,7 +205,7 @@ export default function ExampleCRUDPage() {
                   className={`px-2 py-1 text-xs rounded ${
                     item.status === 'active'
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                      : 'bg-muted text-foreground'
                   }`}
                 >
                   {item.status}
@@ -239,7 +239,7 @@ export default function ExampleCRUDPage() {
       {items.length === 0 && (
         <Card>
           <div className="p-12 text-center">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Aucun item pour le moment
             </p>
             <Button onClick={handleCreate} variant="primary">
@@ -294,7 +294,7 @@ export default function ExampleCRUDPage() {
             fullWidth
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Statut
             </label>
             <select
@@ -302,7 +302,7 @@ export default function ExampleCRUDPage() {
               onChange={(e) =>
                 setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background"
             >
               <option value="active">Actif</option>
               <option value="inactive">Inactif</option>
@@ -355,7 +355,7 @@ export default function ExampleCRUDPage() {
             fullWidth
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Statut
             </label>
             <select
@@ -363,7 +363,7 @@ export default function ExampleCRUDPage() {
               onChange={(e) =>
                 setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background"
             >
               <option value="active">Actif</option>
               <option value="inactive">Inactif</option>
@@ -388,10 +388,10 @@ export default function ExampleCRUDPage() {
       {/* Code Example */}
       <Card className="mt-6">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Points clés de cet exemple :
           </h3>
-          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>✅ CRUD complet (Create, Read, Update, Delete)</li>
             <li>✅ Modals pour création/édition</li>
             <li>✅ Modal de confirmation pour suppression</li>

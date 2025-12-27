@@ -129,10 +129,10 @@ export default function ExampleAuthPage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Exemple Authentification
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Exemples de formulaires d'authentification avec validation et gestion d'erreurs
         </p>
       </div>
@@ -167,7 +167,7 @@ export default function ExampleAuthPage() {
         {activeTab === 'login' && (
           <Card>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-6">
                 Connexion
               </h2>
               
@@ -196,7 +196,7 @@ export default function ExampleAuthPage() {
                   required
                   fullWidth
                 />
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   <p className="mb-2">Compte de démonstration :</p>
                   <p>Email: demo@example.com</p>
                   <p>Mot de passe: password123</p>
@@ -227,7 +227,7 @@ export default function ExampleAuthPage() {
         {activeTab === 'register' && (
           <Card>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-6">
                 Inscription
               </h2>
 
@@ -290,7 +290,7 @@ export default function ExampleAuthPage() {
         {activeTab === 'forgot' && (
           <Card>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-6">
                 Réinitialiser le mot de passe
               </h2>
 
@@ -329,10 +329,10 @@ export default function ExampleAuthPage() {
         {/* Code Example */}
         <Card className="mt-6">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Points clés de cet exemple :
             </h3>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>✅ Validation des formulaires côté client</li>
               <li>✅ Gestion des erreurs avec handleApiError</li>
               <li>✅ États de chargement (loading states)</li>

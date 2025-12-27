@@ -103,10 +103,10 @@ export default function ExampleSearchPage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Exemple Recherche Avancée
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Barre de recherche avec autocomplete, filtres avancés et résultats en temps réel
         </p>
       </div>
@@ -115,7 +115,7 @@ export default function ExampleSearchPage() {
         {/* Search Bar */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Recherche avec Autocomplete
             </h2>
             <SearchBar
@@ -138,13 +138,13 @@ export default function ExampleSearchPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Type
                 </label>
                 <select
                   value={filters.type}
                   onChange={(e) => handleFilterChange('type', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 >
                   <option value="">Tous les types</option>
                   <option value="user">Utilisateurs</option>
@@ -153,7 +153,7 @@ export default function ExampleSearchPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Plage de dates
                 </label>
                 <Input
@@ -175,7 +175,7 @@ export default function ExampleSearchPage() {
                 Résultats de Recherche
               </h2>
               {isSearching && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   Recherche en cours...
                 </div>
               )}
@@ -183,8 +183,8 @@ export default function ExampleSearchPage() {
 
             {results.length === 0 && searchQuery && !isSearching ? (
               <div className="text-center py-8">
-                <Search className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">
+                <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
                   Aucun résultat trouvé pour "{searchQuery}"
                 </p>
               </div>
@@ -199,14 +199,14 @@ export default function ExampleSearchPage() {
                 {results.map((result) => (
                   <div
                     key={result.id}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    className="p-4 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="font-semibold text-foreground">
                           {result.title}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           {result.description}
                         </p>
                       </div>
@@ -225,10 +225,10 @@ export default function ExampleSearchPage() {
       {/* Code Example */}
       <Card className="mt-6">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Points clés de cet exemple :
           </h3>
-          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>✅ Recherche avec autocomplete</li>
             <li>✅ Filtres avancés</li>
             <li>✅ Résultats en temps réel</li>

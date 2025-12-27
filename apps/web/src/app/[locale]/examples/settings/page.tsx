@@ -41,8 +41,8 @@ export default function ExampleSettingsPage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Exemple Paramètres</h1>
-        <p className="text-gray-600 dark:text-gray-400">Une page de paramètres complète avec différents types de configurations</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Exemple Paramètres</h1>
+        <p className="text-muted-foreground">Une page de paramètres complète avec différents types de configurations</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -72,7 +72,7 @@ export default function ExampleSettingsPage() {
             <div className="p-6">
               {activeTab === 'general' && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Paramètres Généraux</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">Paramètres Généraux</h2>
                   <div className="space-y-6">
                     <div>
                       <Select
@@ -111,7 +111,7 @@ export default function ExampleSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Thème
                       </label>
                       <div className="flex gap-4">
@@ -137,13 +137,13 @@ export default function ExampleSettingsPage() {
 
               {activeTab === 'notifications' && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Notifications</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">Notifications</h2>
                   <div className="space-y-4">
                     {Object.entries(settings.notifications).map(([key, value]) => (
                       <div key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div>
                           <div className="font-medium text-gray-900 dark:text-gray-100 capitalize">{key}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="text-sm text-muted-foreground">
                             {key === 'email' && 'Recevoir des notifications par email'}
                             {key === 'push' && 'Recevoir des notifications push'}
                             {key === 'sms' && 'Recevoir des notifications par SMS'}
@@ -166,7 +166,7 @@ export default function ExampleSettingsPage() {
 
               {activeTab === 'privacy' && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Confidentialité</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">Confidentialité</h2>
                   <div className="space-y-4">
                     {Object.entries(settings.privacy).map(([key, value]) => (
                       <div key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -176,7 +176,7 @@ export default function ExampleSettingsPage() {
                             {key === 'showEmail' && 'Afficher l\'email'}
                             {key === 'showPhone' && 'Afficher le téléphone'}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="text-sm text-muted-foreground">
                             {key === 'profileVisible' && 'Permettre aux autres utilisateurs de voir votre profil'}
                             {key === 'showEmail' && 'Afficher votre adresse email publiquement'}
                             {key === 'showPhone' && 'Afficher votre numéro de téléphone publiquement'}
@@ -199,10 +199,10 @@ export default function ExampleSettingsPage() {
 
               {activeTab === 'security' && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Sécurité</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">Sécurité</h2>
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Changer le mot de passe</h3>
+                      <h3 className="text-lg font-semibold text-foreground mb-4">Changer le mot de passe</h3>
                       <div className="space-y-4">
                         <div>
                           <Input
@@ -231,12 +231,12 @@ export default function ExampleSettingsPage() {
                         <Button>Changer le mot de passe</Button>
                       </div>
                     </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Authentification à deux facteurs</h3>
+                    <div className="border-t border-border pt-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-4">Authentification à deux facteurs</h3>
                       <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div>
                           <div className="font-medium text-gray-900 dark:text-gray-100">2FA activée</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Protégez votre compte avec une authentification à deux facteurs</div>
+                          <div className="text-sm text-muted-foreground">Protégez votre compte avec une authentification à deux facteurs</div>
                         </div>
                         <Badge variant="success">Activé</Badge>
                       </div>
@@ -245,7 +245,7 @@ export default function ExampleSettingsPage() {
                 </div>
               )}
 
-              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <div className="mt-8 pt-6 border-t border-border flex justify-end">
                 <Button>Enregistrer les modifications</Button>
               </div>
             </div>

@@ -71,10 +71,10 @@ export default function ExampleToastPage() {
   return (
     <Container className="py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Exemple Notifications / Toast
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Système de notifications toast avec différents types et durées
         </p>
       </div>
@@ -83,7 +83,7 @@ export default function ExampleToastPage() {
         {/* Toast Types */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Types de Notifications
             </h2>
             <div className="space-y-3">
@@ -126,7 +126,7 @@ export default function ExampleToastPage() {
         {/* Toast Options */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Options Avancées
             </h2>
             <div className="space-y-3">
@@ -153,11 +153,11 @@ export default function ExampleToastPage() {
         {/* Toast History */}
         <Card className="md:col-span-2">
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Historique des Notifications
             </h2>
             {toastHistory.length === 0 ? (
-              <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+              <p className="text-muted-foreground text-center py-8">
                 Aucune notification envoyée
               </p>
             ) : (
@@ -165,7 +165,7 @@ export default function ExampleToastPage() {
                 {toastHistory.map((toast, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       {toast.type === 'success' && (
@@ -180,11 +180,11 @@ export default function ExampleToastPage() {
                       {(toast.type === 'info' || toast.type === 'persistent' || toast.type === 'custom') && (
                         <Info className="w-4 h-4 text-blue-600" />
                       )}
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="text-sm text-foreground">
                         {toast.message}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-muted-foreground">
                       {toast.time}
                     </span>
                   </div>
@@ -198,10 +198,10 @@ export default function ExampleToastPage() {
       {/* Code Example */}
       <Card className="mt-6">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Points clés de cet exemple :
           </h3>
-          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>✅ 4 types de notifications (success, error, warning, info)</li>
             <li>✅ Durée personnalisable</li>
             <li>✅ Notifications persistantes (duration: 0)</li>
