@@ -163,18 +163,39 @@ export default async function LocaleLayout({
                 --font-family-heading: Inter, system-ui, -apple-system, sans-serif;
                 --font-family-subheading: Inter, system-ui, -apple-system, sans-serif;
                 --border-radius: 8px;
+                
+                /* Theme color variables - Default values to prevent flash */
+                --color-background: #ffffff;
+                --color-foreground: #0f172a;
+                --color-muted: #f1f5f9;
+                --color-muted-foreground: #64748b;
+                --color-border: #e2e8f0;
+                --color-input: #ffffff;
+                --color-ring: #2563eb;
+              }
+              
+              @media (prefers-color-scheme: dark) {
+                :root {
+                  --color-background: #0f172a;
+                  --color-foreground: #f1f5f9;
+                  --color-muted: #1e293b;
+                  --color-muted-foreground: #94a3b8;
+                  --color-border: #334155;
+                  --color-input: #1e293b;
+                }
               }
               
               /* Apply background colors immediately to prevent flash */
+              /* Use CSS variables to avoid conflicts with React hydration */
               body {
-                background-color: #ffffff;
-                color: #0f172a;
+                background-color: var(--color-background, #ffffff);
+                color: var(--color-foreground, #0f172a);
               }
               
               @media (prefers-color-scheme: dark) {
                 body {
-                  background-color: #0f172a;
-                  color: #f1f5f9;
+                  background-color: var(--color-background, #0f172a);
+                  color: var(--color-foreground, #f1f5f9);
                 }
               }
             `,
@@ -210,8 +231,12 @@ export default async function LocaleLayout({
         <meta name="twitter:card" content="summary_large_image" />
       </head>
       <body 
-        className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`} 
-        style={{ fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)' }}
+        className={inter.className}
+        style={{ 
+          fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
+          backgroundColor: 'var(--color-background, #ffffff)',
+          color: 'var(--color-foreground, #0f172a)'
+        }}
         suppressHydrationWarning
       >
         <SkipLink />

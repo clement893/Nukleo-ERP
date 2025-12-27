@@ -226,9 +226,17 @@ export const themeInlineScript = `
     // Apply other colors from nested colors object
     if (colorsConfig.background) {
       root.style.setProperty('--color-background', colorsConfig.background);
+      // Also update body background to use CSS variable to prevent overlay issues
+      if (document.body) {
+        document.body.style.backgroundColor = 'var(--color-background)';
+      }
     }
     if (colorsConfig.foreground) {
       root.style.setProperty('--color-foreground', colorsConfig.foreground);
+      // Also update body color to use CSS variable
+      if (document.body) {
+        document.body.style.color = 'var(--color-foreground)';
+      }
     }
     if (colorsConfig.muted) {
       root.style.setProperty('--color-muted', colorsConfig.muted);
@@ -327,6 +335,13 @@ export const themeInlineScript = `
       
       // Apply default theme immediately (synchronously)
       applyThemeConfig(defaultConfig);
+      
+      // Ensure body background uses CSS variable to prevent overlay issues
+      // This must happen after applyThemeConfig sets the CSS variables
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.backgroundColor = 'var(--color-background, #ffffff)';
+        document.body.style.color = 'var(--color-foreground, #0f172a)';
+      }
     } catch (e) {
       // Silently fail
     }

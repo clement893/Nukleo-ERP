@@ -50,13 +50,19 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       
       // Fetch fresh theme from backend
       const activeTheme = await getActiveTheme();
-      setTheme(activeTheme);
       
-      // Apply theme config from backend (TemplateTheme or active theme)
-      applyThemeConfig(activeTheme.config);
-      
-      // Cache the theme for next time
-      saveThemeToCache(activeTheme.config, activeTheme.id);
+      // Only update if theme actually changed to prevent unnecessary re-renders
+      const currentThemeId = theme?.id;
+      if (currentThemeId !== activeTheme.id) {
+        setTheme(activeTheme);
+        // Apply theme config from backend (TemplateTheme or active theme)
+        applyThemeConfig(activeTheme.config);
+        // Cache the theme for next time
+        saveThemeToCache(activeTheme.config, activeTheme.id);
+      } else if (cachedTheme) {
+        // If theme ID matches but we have cached theme, still update state for consistency
+        setTheme(activeTheme);
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load theme');
       setError(error);
@@ -183,9 +189,17 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     // Also apply colors from nested colors object if available
     if (colorsConfig.background && typeof colorsConfig.background === 'string') {
       root.style.setProperty('--color-background', colorsConfig.background);
+      // Update body background to use CSS variable to prevent overlay issues
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.backgroundColor = 'var(--color-background)';
+      }
     }
     if (colorsConfig.foreground && typeof colorsConfig.foreground === 'string') {
       root.style.setProperty('--color-foreground', colorsConfig.foreground);
+      // Update body color to use CSS variable
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.color = 'var(--color-foreground)';
+      }
     }
     if (colorsConfig.muted) {
       root.style.setProperty('--color-muted', colorsConfig.muted);
@@ -348,7 +362,8 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       clearInterval(interval);
       cleanup();
     };
-  }, [theme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount to prevent re-render loops
 
   const refreshTheme = async () => {
     await fetchTheme();
