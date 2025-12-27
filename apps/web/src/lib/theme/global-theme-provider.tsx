@@ -55,9 +55,18 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     // Apply CSS variables to document root
     const root = document.documentElement;
     
+    // Support both flat format (primary_color) and nested format (colors.primary)
+    const colorsConfig = (config as any).colors || {};
+    const primaryColor = config.primary_color || colorsConfig.primary_color || colorsConfig.primary;
+    const secondaryColor = config.secondary_color || colorsConfig.secondary_color || colorsConfig.secondary;
+    const dangerColor = config.danger_color || colorsConfig.danger_color || colorsConfig.destructive || colorsConfig.danger;
+    const warningColor = config.warning_color || colorsConfig.warning_color || colorsConfig.warning;
+    const infoColor = config.info_color || colorsConfig.info_color || colorsConfig.info;
+    const successColor = config.success_color || colorsConfig.success_color || colorsConfig.success;
+    
     // Generate color shades from base colors
-    if (config.primary_color) {
-      const primaryShades = generateColorShades(config.primary_color);
+    if (primaryColor) {
+      const primaryShades = generateColorShades(primaryColor);
       Object.entries(primaryShades).forEach(([shade, color]) => {
         root.style.setProperty(`--color-primary-${shade}`, color);
         if (shade === '500') {
@@ -66,25 +75,25 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       });
     }
     
-    if (config.secondary_color) {
-      const secondaryShades = generateColorShades(config.secondary_color);
+    if (secondaryColor) {
+      const secondaryShades = generateColorShades(secondaryColor);
       Object.entries(secondaryShades).forEach(([shade, color]) => {
         root.style.setProperty(`--color-secondary-${shade}`, color);
         // Also set success colors as aliases to secondary (unless success_color is explicitly set)
-        if (!config.success_color) {
+        if (!successColor) {
           root.style.setProperty(`--color-success-${shade}`, color);
         }
         if (shade === '500') {
           root.style.setProperty(`--color-secondary-rgb`, generateRgb(color));
-          if (!config.success_color) {
+          if (!successColor) {
             root.style.setProperty(`--color-success-rgb`, generateRgb(color));
           }
         }
       });
     }
     
-    if (config.danger_color) {
-      const dangerShades = generateColorShades(config.danger_color);
+    if (dangerColor) {
+      const dangerShades = generateColorShades(dangerColor);
       Object.entries(dangerShades).forEach(([shade, color]) => {
         root.style.setProperty(`--color-danger-${shade}`, color);
         // Also set error colors as aliases to danger
@@ -96,8 +105,8 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       });
     }
     
-    if (config.warning_color) {
-      const warningShades = generateColorShades(config.warning_color);
+    if (warningColor) {
+      const warningShades = generateColorShades(warningColor);
       Object.entries(warningShades).forEach(([shade, color]) => {
         root.style.setProperty(`--color-warning-${shade}`, color);
         if (shade === '500') {
@@ -106,22 +115,45 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       });
     }
     
-    if (config.info_color) {
-      const infoShades = generateColorShades(config.info_color);
+    if (infoColor) {
+      const infoShades = generateColorShades(infoColor);
       Object.entries(infoShades).forEach(([shade, color]) => {
         root.style.setProperty(`--color-info-${shade}`, color);
       });
     }
     
-    if (config.success_color) {
+    if (successColor) {
       // Success colors can be explicitly set, overriding secondary defaults
-      const successShades = generateColorShades(config.success_color);
+      const successShades = generateColorShades(successColor);
       Object.entries(successShades).forEach(([shade, color]) => {
         root.style.setProperty(`--color-success-${shade}`, color);
         if (shade === '500') {
           root.style.setProperty(`--color-success-rgb`, generateRgb(color));
         }
       });
+    }
+    
+    // Also apply colors from nested colors object if available
+    if (colorsConfig.background) {
+      root.style.setProperty('--color-background', colorsConfig.background);
+    }
+    if (colorsConfig.foreground) {
+      root.style.setProperty('--color-foreground', colorsConfig.foreground);
+    }
+    if (colorsConfig.muted) {
+      root.style.setProperty('--color-muted', colorsConfig.muted);
+    }
+    if (colorsConfig.mutedForeground) {
+      root.style.setProperty('--color-muted-foreground', colorsConfig.mutedForeground);
+    }
+    if (colorsConfig.border) {
+      root.style.setProperty('--color-border', colorsConfig.border);
+    }
+    if (colorsConfig.input) {
+      root.style.setProperty('--color-input', colorsConfig.input);
+    }
+    if (colorsConfig.ring) {
+      root.style.setProperty('--color-ring', colorsConfig.ring);
     }
     
     // Load font URL if configured (for Google Fonts or custom fonts)
