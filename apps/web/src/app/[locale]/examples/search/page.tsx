@@ -132,7 +132,7 @@ export default function ExampleSearchPage() {
         {/* Advanced Filters */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Filter className="w-5 h-5" />
               Filtres Avancés
             </h2>
@@ -171,7 +171,7 @@ export default function ExampleSearchPage() {
         <Card>
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              <h2 className="text-xl font-bold text-foreground">
                 Résultats de Recherche
               </h2>
               {isSearching && (
@@ -190,7 +190,7 @@ export default function ExampleSearchPage() {
               </div>
             ) : results.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-muted-foreground">
                   Entrez une recherche pour voir les résultats
                 </p>
               </div>

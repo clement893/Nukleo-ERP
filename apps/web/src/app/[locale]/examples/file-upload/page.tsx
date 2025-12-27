@@ -240,7 +240,7 @@ export default function ExampleFileUploadPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-muted-foreground mb-2">
                   Cliquez pour uploader un document
                 </p>
                 <p className="text-sm text-muted-foreground">

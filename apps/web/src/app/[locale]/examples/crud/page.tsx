@@ -197,7 +197,7 @@ export default function ExampleCRUDPage() {
                   <h3 className="text-lg font-semibold text-foreground">
                     {item.name}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {item.description}
                   </p>
                 </div>

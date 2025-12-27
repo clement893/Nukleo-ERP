@@ -140,9 +140,9 @@ export default function ExampleSettingsPage() {
                   <h2 className="text-2xl font-bold text-foreground mb-6">Notifications</h2>
                   <div className="space-y-4">
                     {Object.entries(settings.notifications).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div key={key} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100 capitalize">{key}</div>
+                          <div className="font-medium text-foreground capitalize">{key}</div>
                           <div className="text-sm text-muted-foreground">
                             {key === 'email' && 'Recevoir des notifications par email'}
                             {key === 'push' && 'Recevoir des notifications push'}
@@ -169,9 +169,9 @@ export default function ExampleSettingsPage() {
                   <h2 className="text-2xl font-bold text-foreground mb-6">Confidentialité</h2>
                   <div className="space-y-4">
                     {Object.entries(settings.privacy).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div key={key} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100">
+                          <div className="font-medium text-foreground">
                             {key === 'profileVisible' && 'Profil visible'}
                             {key === 'showEmail' && 'Afficher l\'email'}
                             {key === 'showPhone' && 'Afficher le téléphone'}
@@ -233,9 +233,9 @@ export default function ExampleSettingsPage() {
                     </div>
                     <div className="border-t border-border pt-6">
                       <h3 className="text-lg font-semibold text-foreground mb-4">Authentification à deux facteurs</h3>
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100">2FA activée</div>
+                          <div className="font-medium text-foreground">2FA activée</div>
                           <div className="text-sm text-muted-foreground">Protégez votre compte avec une authentification à deux facteurs</div>
                         </div>
                         <Badge variant="success">Activé</Badge>

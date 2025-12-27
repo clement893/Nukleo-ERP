@@ -276,7 +276,7 @@ export default function ExampleAPIFetchingPage() {
                   Chargement...
                 </div>
               ) : cachedData ? (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   {cachedData.length} posts en cache
                 </div>
               ) : (
