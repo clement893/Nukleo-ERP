@@ -57,10 +57,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(initialResolvedTheme);
   
   // Apply theme to document immediately on mount (synchronous)
+  // BUT: Don't override if script inline already applied the correct class
   useLayoutEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(initialResolvedTheme);
+    const currentClass = root.classList.contains('dark') ? 'dark' : root.classList.contains('light') ? 'light' : null;
+    
+    // Only update if the current class doesn't match what we want
+    // This prevents removing 'dark' that was set by the inline script
+    if (currentClass !== initialResolvedTheme) {
+      root.classList.remove('light', 'dark');
+      root.classList.add(initialResolvedTheme);
+    }
   }, []); // Only run once on mount
 
   // Load theme preference asynchronously (non-blocking)
@@ -115,9 +122,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setResolvedTheme(resolved);
     }
 
-    // Appliquer le thème au document
-    root.classList.remove('light', 'dark');
-    root.classList.add(resolved);
+    // Check current class to avoid unnecessary DOM manipulation
+    const currentClass = root.classList.contains('dark') ? 'dark' : root.classList.contains('light') ? 'light' : null;
+    
+    // Only update if the resolved theme is different from current
+    if (currentClass !== resolved) {
+      root.classList.remove('light', 'dark');
+      root.classList.add(resolved);
+    }
 
     // Note: Theme is now global and managed by superadmins only
     // Users cannot change it, so we don't save to DB here
