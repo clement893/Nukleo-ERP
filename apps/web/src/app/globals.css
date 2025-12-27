@@ -99,6 +99,26 @@
   --color-error-900: var(--color-danger-900);
   --color-error-950: var(--color-danger-950);
   --color-error-rgb: var(--color-danger-rgb);
+
+  /* Theme color variables - Default values */
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+  --color-border: #e5e7eb;
+  --color-input: #ffffff;
+  --color-ring: #2563eb;
+}
+
+/* Dark mode default values */
+.dark {
+  --color-background: #1f2937;
+  --color-foreground: #ffffff;
+  --color-muted: #111827;
+  --color-muted-foreground: #d1d5db;
+  --color-border: #374151;
+  --color-input: #1f2937;
+  --color-ring: #3b82f6;
 }
 
 /* RTL Support */
