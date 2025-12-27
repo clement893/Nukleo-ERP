@@ -14,7 +14,7 @@
 | 2 | Core UI | ✅ Complete | 7 | 2025-12-27 | See BATCH_2_THEME_FIX_REPORT.md |
 | 3 | Dashboard/Admin Layouts | ✅ Complete | 5 | 2025-12-27 | See BATCH_3_THEME_FIX_REPORT.md |
 | 4 | Auth Pages | ✅ Complete | 6 | 2025-12-27 | See BATCH_4_THEME_FIX_REPORT.md |
-| 5 | Public Pages | ⏳ Pending | 8-12 | - | - |
+| 5 | Public Pages | ✅ Complete | 8 | 2025-12-27 | See BATCH_5_THEME_FIX_REPORT.md |
 | 6 | Profile/Settings | ⏳ Pending | 15-20 | - | - |
 | 7 | Client/ERP Portals | ⏳ Pending | 8-10 | - | - |
 | 8 | Content/Forms | ⏳ Pending | 15-20 | - | - |
@@ -93,12 +93,12 @@
 ## Statistics
 
 - **Total Batches**: 13 (including Batch 0)
-- **Completed**: 5 (Batch 0 + Batch 1 + Batch 2 + Batch 3 + Batch 4)
+- **Completed**: 6 (Batch 0 + Batch 1 + Batch 2 + Batch 3 + Batch 4 + Batch 5)
 - **In Progress**: 0
-- **Pending**: 8
+- **Pending**: 7
 - **Total Files Estimated**: ~391 files
-- **Files Fixed**: 24 (1 config + 23 components/layouts/pages)
-- **Remaining**: ~367 files
+- **Files Fixed**: 32 (1 config + 31 components/layouts/pages/sections)
+- **Remaining**: ~359 files
 
 ---
 
