@@ -11,6 +11,47 @@ import { apiClient } from './client';
 import { logger } from '@/lib/logger';
 
 /**
+ * Helper function to extract data from FastAPI response.
+ * FastAPI returns data directly, not wrapped in ApiResponse.
+ * apiClient.get returns response.data from axios, which is already the FastAPI response.
+ * This function handles both cases for compatibility.
+ */
+function extractFastApiData<T>(response: unknown): T {
+  // FastAPI returns data directly, and apiClient.get already returns response.data from axios
+  // So response is already the FastAPI data, not wrapped in ApiResponse
+  if (!response) {
+    return response as T;
+  }
+  
+  if (typeof response === 'object') {
+    // Check if response has 'data' property (ApiResponse wrapper case)
+    // This happens if apiClient wraps the response in ApiResponse format
+    if ('data' in response && (response as { data?: unknown }).data !== undefined) {
+      const data = (response as { data: unknown }).data;
+      // If data exists, return it
+      if (data !== null && data !== undefined) {
+        return data as T;
+      }
+    }
+    
+    // Check if response has 'success' property (ApiResponse format)
+    // If it does, it's wrapped in ApiResponse, so extract data
+    if ('success' in response && 'data' in response) {
+      const apiResponse = response as { success: boolean; data?: T };
+      if (apiResponse.data !== undefined) {
+        return apiResponse.data;
+      }
+    }
+    
+    // Otherwise, FastAPI returned the data directly (most common case)
+    // response is already ThemeFont, ThemeFontListResponse, etc.
+    return response as T;
+  }
+  
+  return response as T;
+}
+
+/**
  * Upload a custom font file.
  * Requires authentication and superadmin role.
  */
@@ -43,7 +84,7 @@ export async function uploadFont(
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response;
+    return extractFastApiData<ThemeFont>(response);
   } catch (error) {
     logger.error('Failed to upload font', error);
     throw error;
@@ -62,7 +103,7 @@ export async function listFonts(
     const response = await apiClient.get<ThemeFontListResponse>(
       `/v1/theme-fonts?skip=${skip}&limit=${limit}`
     );
-    return response;
+    return extractFastApiData<ThemeFontListResponse>(response);
   } catch (error) {
     logger.error('Failed to list fonts', error);
     throw error;
@@ -76,7 +117,7 @@ export async function listFonts(
 export async function getFont(fontId: number): Promise<ThemeFont> {
   try {
     const response = await apiClient.get<ThemeFont>(`/v1/theme-fonts/${fontId}`);
-    return response;
+    return extractFastApiData<ThemeFont>(response);
   } catch (error) {
     logger.error('Failed to get font', error);
     throw error;
