@@ -260,11 +260,26 @@ export function ThemeVisualisationContent() {
   };
 
   // Update JSON input when editedConfig changes (always keep in sync when editing)
+  // But only if jsonInput hasn't been manually edited (to avoid overwriting user input)
   useEffect(() => {
     if (editedConfig && isEditing) {
-      setJsonInput(JSON.stringify(editedConfig, null, 2));
+      // Only update if jsonInput is empty or matches the current editedConfig
+      // This prevents overwriting user's manual JSON edits
+      try {
+        const currentJson = jsonInput.trim() ? JSON.parse(jsonInput) : null;
+        const configJson = editedConfig;
+        
+        // Only update if they're different (to avoid infinite loops)
+        // Compare stringified versions to check for actual differences
+        if (!currentJson || JSON.stringify(currentJson) !== JSON.stringify(configJson)) {
+          setJsonInput(JSON.stringify(editedConfig, null, 2));
+        }
+      } catch {
+        // If jsonInput is invalid JSON, update it from editedConfig
+        setJsonInput(JSON.stringify(editedConfig, null, 2));
+      }
     }
-  }, [editedConfig, isEditing]);
+  }, [editedConfig, isEditing]); // Removed jsonInput from dependencies to avoid loops
 
   if (loading) {
     return (
