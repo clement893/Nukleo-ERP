@@ -259,9 +259,10 @@ async def login(
 
     if not user or not verify_password(form_data.password, user.hashed_password):
         # Log failed login attempt
+        # Use separate session (db=None) to ensure log is saved even if exception is raised
         try:
             await SecurityAuditLogger.log_authentication_event(
-                db=db,
+                db=None,  # Create separate session to ensure persistence
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 description=f"Failed login attempt for email: {form_data.username}",
                 user_email=form_data.username if user else None,
@@ -286,9 +287,10 @@ async def login(
     # Check if user account is active
     if not user.is_active:
         # Log failed login attempt (account disabled)
+        # Use separate session (db=None) to ensure log is saved even if exception is raised
         try:
             await SecurityAuditLogger.log_authentication_event(
-                db=db,
+                db=None,  # Create separate session to ensure persistence
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 description=f"Login attempt for disabled account: {user.email}",
                 user_email=user.email,
@@ -300,13 +302,8 @@ async def login(
                 success="failure",
                 metadata={"reason": "account_disabled"}
             )
-            await db.commit()
         except Exception as e:
             logger.error(f"Failed to log disabled account login attempt: {e}", exc_info=True)
-            try:
-                await db.rollback()
-            except Exception:
-                pass
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -517,9 +514,10 @@ async def logout(
     user_agent = request.headers.get("user-agent")
     
     # Log logout event
+    # Use separate session (db=None) to ensure log is saved independently
     try:
         await SecurityAuditLogger.log_authentication_event(
-            db=db,
+            db=None,  # Create separate session to ensure persistence
             event_type=SecurityEventType.LOGOUT,
             description=f"User logged out: {current_user.email}",
             user_id=current_user.id,
