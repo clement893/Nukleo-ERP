@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getActiveTheme, updateTheme } from '@/lib/api/theme';
-import type { ThemeConfigResponse, ThemeConfig, ThemeUpdate } from '@modele/types';
+import { useSearchParams } from 'next/navigation';
+import { getActiveTheme, getTheme, updateTheme } from '@/lib/api/theme';
+import type { ThemeConfigResponse, ThemeConfig, ThemeUpdate, Theme } from '@modele/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
@@ -12,6 +13,8 @@ import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Upload, Downlo
 import Select from '@/components/ui/Select';
 
 export function ThemeVisualisationContent() {
+  const searchParams = useSearchParams();
+  const themeIdParam = searchParams.get('themeId');
   const [theme, setTheme] = useState<ThemeConfigResponse | null>(null);
   const [editedConfig, setEditedConfig] = useState<ThemeConfig | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -27,9 +30,30 @@ export function ThemeVisualisationContent() {
       setLoading(true);
       setError(null);
       setSuccessMessage(null);
-      const activeTheme = await getActiveTheme();
-      setTheme(activeTheme);
-      setEditedConfig(activeTheme.config);
+      
+      let themeData: ThemeConfigResponse;
+      
+      // If themeId is provided, fetch that specific theme
+      if (themeIdParam) {
+        const themeId = parseInt(themeIdParam, 10);
+        if (isNaN(themeId)) {
+          throw new Error('Invalid theme ID');
+        }
+        const themeResponse = await getTheme(themeId);
+        // Convert Theme to ThemeConfigResponse format
+        themeData = {
+          id: themeResponse.id,
+          name: themeResponse.name,
+          display_name: themeResponse.display_name,
+          config: themeResponse.config,
+        };
+      } else {
+        // Otherwise, fetch the active theme
+        themeData = await getActiveTheme();
+      }
+      
+      setTheme(themeData);
+      setEditedConfig(themeData.config);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load theme');
     } finally {
@@ -103,7 +127,7 @@ export function ThemeVisualisationContent() {
 
   useEffect(() => {
     fetchTheme();
-  }, []);
+  }, [themeIdParam]); // Re-fetch when themeId changes
 
   // Update JSON input when editedConfig changes (if JSON editor is visible)
   useEffect(() => {
@@ -669,12 +693,56 @@ export function ThemeVisualisationContent() {
             </div>
           </div>
 
+          {/* Font Sizes */}
+          {typography.fontSize && (
+            <div>
+              <p className="text-sm font-medium mb-3">Tailles de police</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(typography.fontSize).map(([size, value]) => (
+                  <div key={size} className="text-center">
+                    <div
+                      className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                      style={{ fontSize: value as string }}
+                    >
+                      <p className="font-medium">Aa</p>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
+                      {size}: {value as string}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Font Weights */}
+          {typography.fontWeight && (
+            <div>
+              <p className="text-sm font-medium mb-3">Poids de police</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(typography.fontWeight).map(([weight, value]) => (
+                  <div key={weight} className="text-center">
+                    <div
+                      className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                      style={{ fontWeight: value as string }}
+                    >
+                      <p>Exemple</p>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
+                      {weight}: {value as string}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Font URL */}
-          {typography.fontUrl && (
+          {(typography.fontUrl || (config as any).font_url) && (
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">URL de la police</p>
               <code className="block p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm break-all">
-                {typography.fontUrl}
+                {typography.fontUrl || (config as any).font_url}
               </code>
             </div>
           )}
@@ -708,8 +776,63 @@ export function ThemeVisualisationContent() {
               </code>
             </div>
           </div>
+          
+          {/* Show all border radius values if available */}
+          {Object.keys(borderRadiusConfig).length > 0 && (
+            <div>
+              <p className="text-sm font-medium mb-3">Toutes les valeurs</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(borderRadiusConfig).map(([size, value]) => (
+                  <div key={size} className="text-center">
+                    <div
+                      className="w-16 h-16 mx-auto flex items-center justify-center text-white font-semibold text-xs"
+                      style={{ 
+                        borderRadius: value as string,
+                        backgroundColor: 'var(--color-primary-500, #3b82f6)'
+                      }}
+                    />
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
+                      {size}: {value as string}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
+
+      {/* Spacing Section */}
+      {Object.keys(spacing).length > 0 && (
+        <Card
+          header={
+            <div className="flex items-center gap-2">
+              <Layout className="w-5 h-5" />
+              <span>Espacement</span>
+            </div>
+          }
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.entries(spacing).map(([size, value]) => (
+              <div key={size} className="text-center">
+                <div className="flex items-center justify-center h-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div
+                    className="bg-primary-500 rounded"
+                    style={{ 
+                      width: value as string,
+                      height: value as string,
+                      backgroundColor: 'var(--color-primary-500, #3b82f6)'
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
+                  {size}: {value as string}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Effects Section */}
       {(effects.glassmorphism || effects.shadows || effects.gradients) && (
@@ -746,11 +869,11 @@ export function ThemeVisualisationContent() {
             )}
 
             {/* Shadows */}
-            {effects.shadows && (
+            {(effects.shadows || Object.keys(shadows).length > 0) && (
               <div>
                 <p className="text-sm font-medium mb-3">Ombres</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(effects.shadows).map(([name, shadow]) => (
+                  {Object.entries(effects.shadows || shadows).map(([name, shadow]) => (
                     <div key={name} className="text-center">
                       <div
                         className="w-full h-20 bg-white dark:bg-gray-800 rounded-lg mb-2"
@@ -759,6 +882,9 @@ export function ThemeVisualisationContent() {
                       <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
                         {name}
                       </p>
+                      <code className="text-xs text-gray-500 dark:text-gray-400 mt-1 block break-all">
+                        {String(shadow).substring(0, 30)}...
+                      </code>
                     </div>
                   ))}
                 </div>
