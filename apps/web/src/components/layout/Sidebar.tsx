@@ -16,7 +16,7 @@ interface NavItem {
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuthStore();
-  const { handleLogout } = useAuth();
+  const { logout } = useAuth();
 
   // Check if user is admin or superadmin
   const isAdmin = user?.is_admin;
@@ -111,7 +111,7 @@ export default function Sidebar() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={handleLogout}
+            onClick={logout}
             className="flex-1"
           >
             Deconnexion

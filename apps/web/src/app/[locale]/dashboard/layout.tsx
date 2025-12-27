@@ -35,7 +35,7 @@ function DashboardLayoutContent({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { handleLogout } = useAuth();
+  const { logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -114,14 +114,14 @@ function DashboardLayoutContent({
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-            <Button variant="danger" size="sm" onClick={handleLogout} className="hidden sm:flex">
+            <Button variant="danger" size="sm" onClick={logout} className="hidden sm:flex">
               <LogOut className="w-4 h-4 mr-1" />
               <span className="hidden md:inline">Logout</span>
             </Button>
             <Button 
               variant="danger" 
               size="sm" 
-              onClick={handleLogout} 
+              onClick={logout} 
               className="sm:hidden p-2"
               aria-label="Logout"
             >
@@ -192,7 +192,7 @@ function DashboardLayoutContent({
                   Accueil
                 </Button>
                 <ThemeToggleWithIcon />
-                <Button variant="danger" onClick={handleLogout}>
+                <Button variant="danger" onClick={logout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>

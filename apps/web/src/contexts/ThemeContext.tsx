@@ -11,18 +11,6 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
-// Helper function to get initial theme synchronously from localStorage
-// This runs during component initialization, before first render
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
-  try {
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    return savedTheme || 'system';
-  } catch {
-    return 'system';
-  }
-}
-
 // Helper function to resolve theme synchronously
 function resolveTheme(theme: Theme): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'light';
