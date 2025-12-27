@@ -1,5 +1,4 @@
-import { Link } from '@/i18n/routing';
-import Button from '../ui/Button';
+import ButtonLink from '../ui/ButtonLink';
 import Badge from '../ui/Badge';
 
 export default function Hero() {
@@ -30,26 +29,18 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-          <Link href="/auth/register">
-            <Button size="lg" variant="primary">
-              Commencer maintenant
-            </Button>
-          </Link>
-          <Link href="/components">
-            <Button size="lg" variant="secondary">
-              Voir les composants
-            </Button>
-          </Link>
-          <Link href="/monitoring">
-            <Button size="lg" variant="secondary">
-              Monitoring
-            </Button>
-          </Link>
-          <Link href="/auth/login">
-            <Button size="lg" variant="outline">
-              Se connecter
-            </Button>
-          </Link>
+          <ButtonLink href="/auth/register" size="lg" variant="primary">
+            Commencer maintenant
+          </ButtonLink>
+          <ButtonLink href="/components" size="lg" variant="secondary">
+            Voir les composants
+          </ButtonLink>
+          <ButtonLink href="/monitoring" size="lg" variant="secondary">
+            Monitoring
+          </ButtonLink>
+          <ButtonLink href="/auth/login" size="lg" variant="outline">
+            Se connecter
+          </ButtonLink>
         </div>
 
         <div className="flex items-center justify-center gap-8 text-sm text-gray-500 dark:text-gray-400">

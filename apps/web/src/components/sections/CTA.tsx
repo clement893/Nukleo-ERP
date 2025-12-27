@@ -1,5 +1,4 @@
-import { Link } from '@/i18n/routing';
-import Button from '../ui/Button';
+import ButtonLink from '../ui/ButtonLink';
 
 export default function CTA() {
   return (
@@ -14,21 +13,15 @@ export default function CTA() {
             pour créer des applications modernes et performantes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/components">
-              <Button size="lg" variant="primary">
-                Explorer les composants
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button size="lg" variant="secondary">
-                Créer un compte gratuit
-              </Button>
-            </Link>
-            <Link href="https://github.com/clement893/MODELE-NEXTJS-FULLSTACK" target="_blank">
-              <Button size="lg" variant="outline">
-                Voir sur GitHub
-              </Button>
-            </Link>
+            <ButtonLink href="/components" size="lg" variant="primary">
+              Explorer les composants
+            </ButtonLink>
+            <ButtonLink href="/auth/register" size="lg" variant="secondary">
+              Créer un compte gratuit
+            </ButtonLink>
+            <ButtonLink href="https://github.com/clement893/MODELE-NEXTJS-FULLSTACK" target="_blank" size="lg" variant="outline">
+              Voir sur GitHub
+            </ButtonLink>
           </div>
         </div>
       </div>

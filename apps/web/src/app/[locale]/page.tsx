@@ -7,7 +7,8 @@
 'use client';
 
 import { Link } from '@/i18n/routing';
-import { Button, Card, Container, StatsCard } from '@/components/ui';
+import { Card, Container, StatsCard } from '@/components/ui';
+import ButtonLink from '@/components/ui/ButtonLink';
 import { Hero, TechStack, CTA } from '@/components/sections';
 import { 
   CheckCircle, 
@@ -263,9 +264,9 @@ export default function HomePage() {
               <p className="text-muted-foreground mb-4">
                 Accédez à votre tableau de bord pour gérer vos projets et données.
               </p>
-              <Link href="/dashboard">
-                <Button variant="ghost" className="w-full">Accéder au dashboard</Button>
-              </Link>
+              <ButtonLink href="/dashboard" variant="ghost" className="w-full">
+                Accéder au dashboard
+              </ButtonLink>
             </Card>
 
             <Card className="p-6 hover:shadow-lg transition-shadow">
@@ -276,9 +277,9 @@ export default function HomePage() {
               <p className="text-muted-foreground mb-4">
                 Explorez notre bibliothèque de 270+ composants réutilisables.
               </p>
-              <Link href="/components">
-                <Button variant="ghost" className="w-full">Voir les composants</Button>
-              </Link>
+              <ButtonLink href="/components" variant="ghost" className="w-full">
+                Voir les composants
+              </ButtonLink>
             </Card>
 
             <Card className="p-6 hover:shadow-lg transition-shadow">
@@ -289,9 +290,9 @@ export default function HomePage() {
               <p className="text-muted-foreground mb-4">
                 Consultez la documentation complète pour apprendre à utiliser le template.
               </p>
-              <Link href="/docs">
-                <Button variant="ghost" className="w-full">Lire la documentation</Button>
-              </Link>
+              <ButtonLink href="/docs" variant="ghost" className="w-full">
+                Lire la documentation
+              </ButtonLink>
             </Card>
           </div>
         </Container>

@@ -37,6 +37,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
   /** Button content */
   children: ReactNode;
+  /** Render as child element (for use with Link) */
+  asChild?: boolean;
 }
 
 // Base styles
@@ -116,17 +118,25 @@ function Button({
   className,
   children,
   disabled,
+  asChild = false,
   ...props
 }: ButtonProps) {
+  const buttonClasses = clsx(
+    baseStyles,
+    variants[variant],
+    sizes[size],
+    fullWidth && 'w-full',
+    className
+  );
+
+  // If asChild is true, render children directly (for use with Link)
+  if (asChild) {
+    return <>{children}</>;
+  }
+
   return (
     <button
-      className={clsx(
-        baseStyles,
-        variants[variant],
-        sizes[size],
-        fullWidth && 'w-full',
-        className
-      )}
+      className={buttonClasses}
       disabled={disabled || loading}
       {...props}
     >

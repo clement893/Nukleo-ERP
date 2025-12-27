@@ -22,6 +22,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
                          pathname?.includes('/admin') || 
                          pathname?.includes('/profile') || 
                          pathname?.includes('/settings');
+  
+  // Check if it's an auth page (login, register, etc.) - these should have their own backgrounds
+  const isAuthPage = pathname?.includes('/auth/');
 
   useEffect(() => {
     // Track page views
@@ -114,11 +117,18 @@ function AppContent({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // For auth pages, don't wrap with Header/Footer or background - let them handle their own styling
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
   // For public pages, show Header and Footer
+  // Note: Background is handled by body tag in layout.tsx, so we don't override it here
+  // This allows individual pages to set their own backgrounds (gradients, etc.)
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900">
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <main id="main-content" className="flex-1 bg-white dark:bg-gray-900">
+      <main id="main-content" className="flex-1">
         {children}
       </main>
       <Footer />
