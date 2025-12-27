@@ -252,7 +252,7 @@ export default function HomePage() {
       <CTA />
 
       {/* Quick Links - Custom section using Card component */}
-      <div className="bg-background dark:bg-gray-800 py-16">
+      <div className="bg-background py-16">
         <Container>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-6 hover:shadow-lg transition-shadow">
