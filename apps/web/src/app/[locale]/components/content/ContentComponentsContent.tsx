@@ -72,7 +72,7 @@ export default function ContentComponentsContent() {
         </Section>
 
         <Section title="Content Preview">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-muted-foreground mb-4">
             ContentPreview requires a modal state. See component implementation for usage.
           </p>
         </Section>

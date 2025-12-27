@@ -21,7 +21,7 @@ export default function MediaContent() {
         <Section title="Video Player">
           <Card>
             <div className="space-y-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Lecteur vidéo avec contrôles complets : lecture/pause, volume, recherche, plein écran.
               </p>
               <VideoPlayer
@@ -41,7 +41,7 @@ export default function MediaContent() {
         <Section title="Video Player - Autoplay">
           <Card>
             <div className="space-y-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Lecteur vidéo avec lecture automatique (muted).
               </p>
               <VideoPlayer
@@ -60,7 +60,7 @@ export default function MediaContent() {
         <Section title="Audio Player">
           <Card>
             <div className="space-y-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Lecteur audio avec contrôles complets : lecture/pause, volume, recherche.
               </p>
               <AudioPlayer
@@ -79,7 +79,7 @@ export default function MediaContent() {
         <Section title="Audio Player - Multiple Tracks">
           <Card>
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Plusieurs lecteurs audio pour une playlist.
               </p>
               <div className="space-y-4">
@@ -108,7 +108,7 @@ export default function MediaContent() {
 
         <Section title="Informations">
           <Card>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+            <div className="space-y-4 text-foreground">
               <div>
                 <h4 className="font-semibold mb-2">Composants disponibles:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
@@ -122,7 +122,7 @@ export default function MediaContent() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Utilisation:</h4>
-                <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-sm overflow-x-auto">
+                <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
 {`import { VideoPlayer, AudioPlayer } from '@/components/ui';
 
 // Video Player

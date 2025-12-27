@@ -205,10 +205,10 @@ export default function CollaborationComponentsContent() {
 
         <Section title="Mentions">
           <div className="max-w-2xl">
-            <Card className="bg-white dark:bg-gray-800">
+            <Card className="bg-background">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Type @ to mention someone
                   </label>
                   <Mentions

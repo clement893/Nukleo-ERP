@@ -32,7 +32,7 @@ export default function I18nComponentsContent() {
         <div className="space-y-8 mt-8">
           <Section title="Language Switcher">
             <Card className="p-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 LanguageSwitcher allows users to switch between available languages. It uses window.location for navigation.
               </p>
               <div className="flex items-center gap-4">
@@ -44,7 +44,7 @@ export default function I18nComponentsContent() {
 
           <Section title="Locale Switcher">
             <Card className="p-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 LocaleSwitcher is an alternative implementation using Next.js router for navigation.
               </p>
               <div className="flex items-center gap-4">
@@ -56,7 +56,7 @@ export default function I18nComponentsContent() {
 
           <Section title="RTL Provider">
             <Card className="p-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 RTLProvider automatically handles Right-to-Left layout for Arabic and Hebrew languages.
               </p>
               <div className="space-y-4">
@@ -66,7 +66,7 @@ export default function I18nComponentsContent() {
                     RTL Mode: {rtl ? 'Enabled' : 'Disabled'}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm">
                     {rtl
                       ? 'هذا النص يظهر من اليمين إلى اليسار عندما يكون الوضع RTL مفعلاً'
@@ -100,7 +100,7 @@ export default function I18nComponentsContent() {
 
           <Section title="Usage Example">
             <Card className="p-6">
-              <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-foreground text-background p-4 rounded-lg overflow-x-auto text-sm">
                 <code>{`import LanguageSwitcher from '@/components/i18n/LanguageSwitcher';
 import RTLProvider from '@/components/i18n/RTLProvider';
 

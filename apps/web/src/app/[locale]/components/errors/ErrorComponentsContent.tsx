@@ -62,7 +62,7 @@ export default function ErrorComponentsContent() {
       <div className="space-y-8 mt-8">
         <Section title="Error Boundary">
           <Card className="p-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               ErrorBoundary catches React component errors and displays a fallback UI. Click the button below to trigger an error.
             </p>
             <ErrorBoundary showDetails>

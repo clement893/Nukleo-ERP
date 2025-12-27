@@ -25,7 +25,7 @@ export default function SEOComponentsContent() {
         <Section title="Schema Markup">
           <Card>
             <div className="p-6">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 SchemaMarkup injecte du JSON-LD dans le document pour améliorer le référencement SEO.
               </p>
               <div className="space-y-4">
@@ -39,7 +39,7 @@ export default function SEOComponentsContent() {
                       logo: 'https://example.com/logo.png',
                     }}
                   />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Schema pour les informations de l'organisation (injecté dans le head).
                   </p>
                 </div>
@@ -53,7 +53,7 @@ export default function SEOComponentsContent() {
                       description: 'Example website description',
                     }}
                   />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Schema pour les informations du site web (injecté dans le head).
                   </p>
                 </div>
@@ -67,7 +67,7 @@ export default function SEOComponentsContent() {
             <Card>
               <div className="p-6">
                 <h3 className="font-semibold mb-2">Structured Data</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   JSON-LD pour améliorer la compréhension par les moteurs de recherche.
                 </p>
               </div>
@@ -75,7 +75,7 @@ export default function SEOComponentsContent() {
             <Card>
               <div className="p-6">
                 <h3 className="font-semibold mb-2">Meta Tags</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Gestion des balises meta pour le SEO (voir SEOManager dans CMS).
                 </p>
               </div>

@@ -24,16 +24,16 @@ export default function ProvidersComponentsContent() {
         <Section title="App Providers">
           <Card>
             <div className="p-6">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 AppProviders est un composant qui combine tous les providers nécessaires pour l'application :
               </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+              <ul className="list-disc list-inside space-y-2 text-foreground">
                 <li>QueryClientProvider (React Query)</li>
                 <li>SessionProvider (NextAuth)</li>
                 <li>ThemeProvider (Gestion du thème)</li>
                 <li>GlobalErrorHandler (Gestion des erreurs)</li>
               </ul>
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-4 text-sm text-muted-foreground">
                 Ce composant est généralement utilisé au niveau racine de l'application pour fournir
                 tous les contextes nécessaires aux composants enfants.
               </p>
@@ -46,7 +46,7 @@ export default function ProvidersComponentsContent() {
             <Card>
               <div className="p-6">
                 <h3 className="font-semibold mb-2">QueryProvider</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Provider pour React Query (TanStack Query) permettant la gestion des requêtes et du cache.
                 </p>
               </div>
@@ -55,7 +55,7 @@ export default function ProvidersComponentsContent() {
             <Card>
               <div className="p-6">
                 <h3 className="font-semibold mb-2">SessionProvider</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Provider pour NextAuth.js permettant la gestion des sessions utilisateur.
                 </p>
               </div>
@@ -64,7 +64,7 @@ export default function ProvidersComponentsContent() {
             <Card>
               <div className="p-6">
                 <h3 className="font-semibold mb-2">ThemeManagerProvider</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Provider pour la gestion du thème (mode sombre/clair) et des préférences utilisateur.
                 </p>
               </div>
@@ -73,7 +73,7 @@ export default function ProvidersComponentsContent() {
             <Card>
               <div className="p-6">
                 <h3 className="font-semibold mb-2">GlobalErrorHandler</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Handler global pour la gestion des erreurs non capturées dans l'application.
                 </p>
               </div>

@@ -32,25 +32,25 @@ export default function RBACComponentsContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">Role Management</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Gestion des rôles utilisateur avec permissions granulaires.
                 </p>
               </div>
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">Permission Checks</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Vérification des permissions pour contrôler l'accès aux fonctionnalités.
                 </p>
               </div>
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">Protected Routes</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Routes protégées basées sur les rôles et permissions.
                 </p>
               </div>
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">UI Components</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Composants UI qui respectent les permissions utilisateur.
                 </p>
               </div>

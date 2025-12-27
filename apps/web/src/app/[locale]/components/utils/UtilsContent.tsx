@@ -242,7 +242,7 @@ export default function UtilsContent() {
             <div>
               <h4 className="text-sm font-semibold mb-2">Palette de commandes moderne</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Appuyez sur <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-xs">⌘K</kbd> ou cliquez sur le bouton pour ouvrir la palette de commandes.
+                Appuyez sur <kbd className="px-2 py-1 bg-muted border border-border rounded text-xs">⌘K</kbd> ou cliquez sur le bouton pour ouvrir la palette de commandes.
               </p>
               <Button onClick={openCommandPalette} variant="primary">
                 Ouvrir Command Palette
