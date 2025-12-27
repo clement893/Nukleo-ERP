@@ -40,30 +40,66 @@ export default function AdminLogsContent() {
       if (severityFilter) params.append('severity', severityFilter);
       params.append('limit', '100');
 
-      const response = await apiClient.get(`/v1/audit-trail/audit-trail?${params.toString()}`);
-      interface ApiResponse<T> {
-        data?: T | { data?: T; results?: T[] };
-      }
-      const responseData = (response as ApiResponse<AuditLog[]>).data;
+      const url = `/v1/audit-trail/audit-trail?${params.toString()}`;
+      console.log('[AdminLogs] Fetching logs from:', url);
+      
+      const response = await apiClient.get(url);
+      console.log('[AdminLogs] Response received:', { 
+        type: typeof response, 
+        isArray: Array.isArray(response),
+        keys: response && typeof response === 'object' ? Object.keys(response) : null,
+        responsePreview: JSON.stringify(response).substring(0, 200)
+      });
+      
       let logsData: AuditLog[] = [];
       
-      if (Array.isArray(responseData)) {
-        logsData = responseData as AuditLog[];
-      } else if (responseData && typeof responseData === 'object') {
-        const dataObj = responseData as { data?: AuditLog[]; results?: AuditLog[] };
-        logsData = (dataObj.data || dataObj.results || []) as AuditLog[];
-      } else if (response.data) {
-        const apiData = response.data as { data?: AuditLog[]; results?: AuditLog[] } | AuditLog[];
-        if (Array.isArray(apiData)) {
-          logsData = apiData;
+      // FastAPI returns List[AuditLogResponse] directly (array), not wrapped
+      // But apiClient.get returns ApiResponse<T> which wraps it in { data: T }
+      // However, axios response.data contains the direct FastAPI response
+      // So we need to check both: response (ApiResponse) and response.data (direct array)
+      
+      // First check if response itself is an array (direct FastAPI response)
+      if (Array.isArray(response)) {
+        logsData = response as AuditLog[];
+        console.log('[AdminLogs] Response is direct array, logs count:', logsData.length);
+      } 
+      // Check if response.data exists and is an array (wrapped in ApiResponse)
+      else if (response && typeof response === 'object' && 'data' in response) {
+        const responseData = (response as { data?: unknown }).data;
+        if (Array.isArray(responseData)) {
+          logsData = responseData as AuditLog[];
+          console.log('[AdminLogs] Response.data is array, logs count:', logsData.length);
+        } else if (responseData && typeof responseData === 'object' && 'results' in responseData) {
+          // Handle paginated response format
+          logsData = ((responseData as { results: AuditLog[] }).results) || [];
+          console.log('[AdminLogs] Response.data.results found, logs count:', logsData.length);
         } else {
-          logsData = (apiData.data || apiData.results || []) as AuditLog[];
+          console.warn('[AdminLogs] Unexpected response.data format:', responseData);
         }
       }
+      // Fallback: check if response has results property
+      else if (response && typeof response === 'object' && 'results' in response) {
+        const results = (response as { results?: AuditLog[] }).results;
+        if (Array.isArray(results)) {
+          logsData = results;
+          console.log('[AdminLogs] Response.results found, logs count:', logsData.length);
+        }
+      } else {
+        console.warn('[AdminLogs] Unexpected response format:', response);
+      }
       
+      // Ensure logsData is always an array
+      if (!Array.isArray(logsData)) {
+        console.warn('[AdminLogs] logsData is not an array, defaulting to empty array');
+        logsData = [];
+      }
+      
+      console.log('[AdminLogs] Final logs count:', logsData.length);
       setLogs(logsData);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Erreur lors du chargement des logs'));
+      const errorMessage = getErrorMessage(err, 'Erreur lors du chargement des logs');
+      console.error('[AdminLogs] Error loading logs:', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

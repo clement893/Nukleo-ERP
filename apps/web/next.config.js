@@ -13,6 +13,10 @@ const nextConfig = {
   // This ensures Next.js can resolve paths correctly in standalone mode
   basePath: '',
   
+  // Disable source maps in production for faster builds
+  // Source maps are only needed for debugging, not for production builds
+  productionBrowserSourceMaps: false,
+  
   // Performance budgets
   // These limits help prevent bundle size regressions
   // Build will warn if budgets are exceeded

@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit_decorator
 from app.core.logging import logger
+from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.models.user import User
 from app.schemas.auth import Token, TokenData, UserCreate, UserResponse, RefreshTokenRequest
 
@@ -216,7 +217,30 @@ async def login(
     )
     user = result.scalar_one_or_none()
 
+    # Get client IP and user agent for audit logging
+    client_ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # Log failed login attempt
+        try:
+            await SecurityAuditLogger.log_authentication_event(
+                db=db,
+                event_type=SecurityEventType.LOGIN_FAILURE,
+                description=f"Failed login attempt for email: {form_data.username}",
+                user_email=form_data.username if user else None,
+                user_id=user.id if user else None,
+                ip_address=client_ip,
+                user_agent=user_agent,
+                request_method=request.method,
+                request_path=str(request.url.path),
+                success="failure",
+                metadata={"reason": "invalid_credentials"}
+            )
+        except Exception as e:
+            # Don't fail the request if audit logging fails
+            logger.error(f"Failed to log authentication event: {e}", exc_info=True)
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -225,6 +249,24 @@ async def login(
     
     # Check if user account is active
     if not user.is_active:
+        # Log failed login attempt (account disabled)
+        try:
+            await SecurityAuditLogger.log_authentication_event(
+                db=db,
+                event_type=SecurityEventType.LOGIN_FAILURE,
+                description=f"Login attempt for disabled account: {user.email}",
+                user_email=user.email,
+                user_id=user.id,
+                ip_address=client_ip,
+                user_agent=user_agent,
+                request_method=request.method,
+                request_path=str(request.url.path),
+                success="failure",
+                metadata={"reason": "account_disabled"}
+            )
+        except Exception as e:
+            logger.error(f"Failed to log authentication event: {e}", exc_info=True)
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Account is disabled. Please contact support.",
@@ -237,6 +279,25 @@ async def login(
         data={"sub": user.email, "type": "access"},
         expires_delta=access_token_expires,
     )
+
+    # Log successful login
+    try:
+        await SecurityAuditLogger.log_authentication_event(
+            db=db,
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            description=f"User logged in successfully: {user.email}",
+            user_id=user.id,
+            user_email=user.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            request_method=request.method,
+            request_path=str(request.url.path),
+            success="success",
+            metadata={"login_method": "password"}
+        )
+    except Exception as e:
+        # Don't fail the request if audit logging fails
+        logger.error(f"Failed to log authentication event: {e}", exc_info=True)
 
     # Return JSONResponse explicitly to work with rate limiting middleware
     token_data = Token(access_token=access_token, token_type="bearer")
@@ -375,6 +436,51 @@ async def refresh_token(
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+@router.post("/logout")
+async def logout(
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict:
+    """
+    Logout endpoint
+    
+    Logs the logout event in the audit trail.
+    Note: Token invalidation is handled client-side by removing the token.
+    
+    Args:
+        request: FastAPI request object
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Success message
+    """
+    # Get client IP and user agent for audit logging
+    client_ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
+    # Log logout event
+    try:
+        await SecurityAuditLogger.log_authentication_event(
+            db=db,
+            event_type=SecurityEventType.LOGOUT,
+            description=f"User logged out: {current_user.email}",
+            user_id=current_user.id,
+            user_email=current_user.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            request_method=request.method,
+            request_path=str(request.url.path),
+            success="success"
+        )
+    except Exception as e:
+        # Don't fail the request if audit logging fails
+        logger.error(f"Failed to log logout event: {e}", exc_info=True)
+    
+    return {"message": "Logged out successfully"}
 
 
 @router.get("/me", response_model=UserResponse)
@@ -595,6 +701,7 @@ async def google_oauth_callback(
                 select(User).where(User.email == email)
             )
             user = result.scalar_one_or_none()
+            is_new_user = user is None
             
             # Create or update user
             if user:
@@ -632,6 +739,27 @@ async def google_oauth_callback(
                 data={"sub": user.email, "type": "access"},
                 expires_delta=access_token_expires,
             )
+            
+            # Log successful Google OAuth login
+            try:
+                client_ip = request.client.host if request.client else None
+                user_agent = request.headers.get("user-agent")
+                await SecurityAuditLogger.log_authentication_event(
+                    db=db,
+                    event_type=SecurityEventType.LOGIN_SUCCESS,
+                    description=f"User logged in via Google OAuth: {user.email}",
+                    user_id=user.id,
+                    user_email=user.email,
+                    ip_address=client_ip,
+                    user_agent=user_agent,
+                    request_method=request.method,
+                    request_path=str(request.url.path),
+                    success="success",
+                    metadata={"login_method": "google_oauth", "is_new_user": is_new_user}
+                )
+            except Exception as e:
+                # Don't fail the request if audit logging fails
+                logger.error(f"Failed to log Google OAuth authentication event: {e}", exc_info=True)
             
             # Determine frontend redirect URL
             # If state is already a full URL (starts with http), use it directly
