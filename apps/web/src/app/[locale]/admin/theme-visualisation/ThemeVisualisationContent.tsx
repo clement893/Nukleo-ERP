@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getActiveTheme, getTheme, updateTheme } from '@/lib/api/theme';
+import { uploadFont, listFonts, deleteFont } from '@/lib/api/theme-font';
+import type { ThemeFont } from '@modele/types';
 import { useGlobalTheme } from '@/lib/theme/global-theme-provider';
 import { DEFAULT_THEME_CONFIG } from '@/lib/theme/default-theme-config';
 import type { ThemeConfigResponse, ThemeConfig, ThemeUpdate } from '@modele/types';
@@ -12,7 +14,7 @@ import Alert from '@/components/ui/Alert';
 import Input from '@/components/ui/Input';
 import ColorPicker from '@/components/ui/ColorPicker';
 import TextareaComponent from '@/components/ui/Textarea';
-import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Download, Code } from 'lucide-react';
+import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Download, Code, Upload, Trash2 } from 'lucide-react';
 import Select from '@/components/ui/Select';
 
 export function ThemeVisualisationContent() {
@@ -27,7 +29,9 @@ export function ThemeVisualisationContent() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [jsonInput, setJsonInput] = useState<string>('');
-  // Removed unused state variables: showJsonImport, uploadedFonts, uploadingFont, selectedFontFile
+  const [uploadedFonts, setUploadedFonts] = useState<ThemeFont[]>([]);
+  const [uploadingFont, setUploadingFont] = useState(false);
+  const [selectedFontFile, setSelectedFontFile] = useState<File | null>(null);
 
   const fetchTheme = async () => {
     try {
