@@ -90,8 +90,18 @@ async def list_users(
         user_responses = []
         for user in paginated_result.items:
             try:
-                # Use model_validate directly on SQLAlchemy object - Pydantic handles conversion
-                user_responses.append(UserResponse.model_validate(user))
+                # Convert SQLAlchemy User to dict, excluding relationships
+                # This prevents issues with eager-loaded relationships
+                user_dict = {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_active": user.is_active,
+                    "created_at": user.created_at,
+                    "updated_at": user.updated_at,
+                }
+                user_responses.append(UserResponse.model_validate(user_dict))
             except Exception as validation_error:
                 logger.error(
                     f"Error validating user {user.id} (email: {user.email}): {validation_error}\n"
@@ -123,8 +133,18 @@ async def list_users(
             user_responses = []
             for user in paginated_result.items:
                 try:
-                    # Use model_validate directly on SQLAlchemy object - Pydantic handles conversion
-                    user_responses.append(UserResponse.model_validate(user))
+                    # Convert SQLAlchemy User to dict, excluding relationships
+                    # This prevents issues with eager-loaded relationships
+                    user_dict = {
+                        "id": user.id,
+                        "email": user.email,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "is_active": user.is_active,
+                        "created_at": user.created_at,
+                        "updated_at": user.updated_at,
+                    }
+                    user_responses.append(UserResponse.model_validate(user_dict))
                 except Exception as validation_error:
                     logger.error(
                         f"Error validating user {user.id} (email: {user.email}) in fallback: {validation_error}\n"
