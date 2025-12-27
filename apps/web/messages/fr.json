@@ -160,6 +160,74 @@
       "success": {
         "saved": "Paramètres de facturation enregistrés avec succès"
       }
+    },
+    "security": {
+      "title": "Paramètres de sécurité",
+      "description": "Gérez vos paramètres de sécurité, l'authentification à deux facteurs et les clés API",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "settings": "Paramètres",
+        "security": "Sécurité"
+      },
+      "tabs": {
+        "security": "Sécurité",
+        "apiKeys": "Clés API"
+      },
+      "sections": {
+        "security": "Paramètres de sécurité",
+        "apiKeys": "Clés API"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des paramètres de sécurité. Veuillez réessayer.",
+        "saveFailed": "Échec de l'enregistrement des paramètres de sécurité. Veuillez réessayer."
+      },
+      "success": {
+        "saved": "Paramètres de sécurité enregistrés avec succès"
+      }
+    },
+    "notifications": {
+      "title": "Paramètres de notifications",
+      "description": "Gérez vos préférences de notifications",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "settings": "Paramètres",
+        "notifications": "Notifications"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des paramètres de notifications. Veuillez réessayer.",
+        "saveFailed": "Échec de l'enregistrement des paramètres de notifications. Veuillez réessayer."
+      },
+      "success": {
+        "saved": "Paramètres de notifications enregistrés avec succès"
+      }
+    },
+    "integrations": {
+      "title": "Paramètres d'intégrations",
+      "description": "Gérez les intégrations et connexions tierces",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "settings": "Paramètres",
+        "integrations": "Intégrations"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des intégrations. Veuillez réessayer."
+      }
+    },
+    "api": {
+      "title": "Paramètres API",
+      "description": "Gérez la configuration et les paramètres de l'API",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "settings": "Paramètres",
+        "api": "API"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des paramètres API. Veuillez réessayer.",
+        "saveFailed": "Échec de l'enregistrement des paramètres API. Veuillez réessayer."
+      },
+      "success": {
+        "saved": "Paramètres API enregistrés avec succès"
+      }
     }
   }
 }
