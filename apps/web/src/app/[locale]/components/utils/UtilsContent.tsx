@@ -241,7 +241,7 @@ export default function UtilsContent() {
           <div className="space-y-4">
             <div>
               <h4 className="text-sm font-semibold mb-2">Palette de commandes moderne</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Appuyez sur <kbd className="px-2 py-1 bg-muted border border-border rounded text-xs">⌘K</kbd> ou cliquez sur le bouton pour ouvrir la palette de commandes.
               </p>
               <Button onClick={openCommandPalette} variant="primary">
@@ -249,7 +249,7 @@ export default function UtilsContent() {
               </Button>
             </div>
             <div className="p-4 bg-muted rounded-lg">
-              <p className="text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 <strong>Fonctionnalités :</strong> Recherche instantanée, navigation au clavier, catégorisation, raccourcis clavier affichés.
               </p>
             </div>
@@ -272,7 +272,7 @@ export default function UtilsContent() {
                 clearable
               />
               {multiSelectValue.length > 0 && (
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-sm text-muted-foreground">
                   Sélectionné : {multiSelectValue.join(', ')}
                 </p>
               )}

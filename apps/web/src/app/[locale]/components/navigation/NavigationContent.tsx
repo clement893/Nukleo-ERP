@@ -141,9 +141,9 @@ export default function NavigationContent() {
 
         <Section title="Pagination" description="Pagination pour les listes">
           <div className="space-y-6">
-            <div><p className="text-sm text-gray-600 mb-2">Pagination simple</p><Pagination currentPage={currentPage} totalPages={10} onPageChange={setCurrentPage} /></div>
-            <div><p className="text-sm text-gray-600 mb-2">Avec boutons premiÃ¨re/derniÃ¨re page</p><Pagination currentPage={5} totalPages={20} onPageChange={setCurrentPage} showFirstLast maxVisible={7} /></div>
-            <div><p className="text-sm text-gray-600 mb-2">Page actuelle : {currentPage}</p></div>
+            <div><p className="text-sm text-muted-foreground mb-2">Pagination simple</p><Pagination currentPage={currentPage} totalPages={10} onPageChange={setCurrentPage} /></div>
+            <div><p className="text-sm text-muted-foreground mb-2">Avec boutons premiÃ¨re/derniÃ¨re page</p><Pagination currentPage={5} totalPages={20} onPageChange={setCurrentPage} showFirstLast maxVisible={7} /></div>
+            <div><p className="text-sm text-muted-foreground mb-2">Page actuelle : {currentPage}</p></div>
           </div>
         </Section>
       </div>

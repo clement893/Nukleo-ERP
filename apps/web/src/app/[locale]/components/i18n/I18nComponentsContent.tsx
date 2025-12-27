@@ -62,7 +62,7 @@ export default function I18nComponentsContent() {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium mb-2">Current Locale: {locale}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     RTL Mode: {rtl ? 'Enabled' : 'Disabled'}
                   </p>
                 </div>

@@ -81,9 +81,9 @@ export default function FeedbackContent() {
 
         <Section title="Loading">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center"><Loading size="sm" /><p className="mt-2 text-sm text-gray-600">Petit</p></div>
-            <div className="text-center"><Loading size="md" /><p className="mt-2 text-sm text-gray-600">Moyen</p></div>
-            <div className="text-center"><Loading size="lg" text="Chargement..." /><p className="mt-2 text-sm text-gray-600">Grand avec texte</p></div>
+            <div className="text-center"><Loading size="sm" /><p className="mt-2 text-sm text-muted-foreground">Petit</p></div>
+            <div className="text-center"><Loading size="md" /><p className="mt-2 text-sm text-muted-foreground">Moyen</p></div>
+            <div className="text-center"><Loading size="lg" text="Chargement..." /><p className="mt-2 text-sm text-muted-foreground">Grand avec texte</p></div>
           </div>
         </Section>
 
@@ -124,8 +124,8 @@ export default function FeedbackContent() {
 
         <Section title="Spinner">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center"><Spinner size="sm" color="primary" /><p className="mt-2 text-sm text-gray-600">Petit - Primary</p></div>
-            <div className="text-center"><Spinner size="md" color="secondary" /><p className="mt-2 text-sm text-gray-600">Moyen - Secondary</p></div>
+            <div className="text-center"><Spinner size="sm" color="primary" /><p className="mt-2 text-sm text-muted-foreground">Petit - Primary</p></div>
+            <div className="text-center"><Spinner size="md" color="secondary" /><p className="mt-2 text-sm text-muted-foreground">Moyen - Secondary</p></div>
             <div className="text-center bg-foreground p-4 rounded-lg"><Spinner size="lg" color="white" /><p className="mt-2 text-sm text-background">Grand - White</p></div>
           </div>
         </Section>
