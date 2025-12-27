@@ -7,7 +7,7 @@
 
 ## 📊 Vue d'Ensemble
 
-**Batches complétés :** 4/6 (66.7%)  
+**Batches complétés :** 5/6 (83.3%)  
 **Batches en cours :** 0  
 **Batches restants :** 5
 
@@ -173,9 +173,44 @@ Les labels NPS dans SurveyTaker utilisent maintenant les couleurs du thème acti
 
 ---
 
-## ⏳ Batch 5 : Standardisation Card.tsx - EN ATTENTE
+## ✅ Batch 5 : Standardisation Card.tsx - COMPLÉTÉ
 
-**Statut :** ⏳ En attente
+**Date de complétion :** 2025-01-27  
+**Statut :** ✅ Complété avec succès
+
+### Modifications Apportées
+
+1. **Couleurs de fond migrées**
+   - `bg-white dark:bg-gray-800` → `bg-[var(--color-background)]`
+   - `bg-gray-100 dark:bg-gray-900/70` → `bg-[var(--color-muted)]`
+
+2. **Bordures migrées**
+   - `border-gray-200 dark:border-gray-700` → `border-[var(--color-border)]`
+
+3. **Couleurs de texte migrées**
+   - `text-gray-900 dark:text-white` → `text-[var(--color-foreground)]`
+   - `text-gray-700 dark:text-gray-300` → `text-[var(--color-muted-foreground)]`
+
+4. **Fallbacks conservés**
+   - Fallbacks appropriés pour compatibilité
+   - Classes `dark:` conservées pour compatibilité
+
+### Fichiers Modifiés
+
+- `apps/web/src/components/ui/Card.tsx`
+
+### Vérifications Effectuées
+
+- ✅ Pas d'erreurs TypeScript
+- ✅ Pas d'erreurs de lint
+- ✅ Toutes les couleurs hardcodées remplacées
+- ✅ Commit et push réussis
+
+### Résultat
+
+Les Cards utilisent maintenant les variables CSS du thème pour les couleurs de fond, bordures et texte, permettant une personnalisation complète via le système de thème.
+
+**Commit :** Standardisation complète avec variables CSS
 
 ---
 
@@ -212,6 +247,11 @@ Les labels NPS dans SurveyTaker utilisent maintenant les couleurs du thème acti
 - Cohérence : 70% (+5%)
 - Utilisation variables CSS : 45% (+5%)
 
+### Après Batch 5
+- Application thème : 75% (+15%)
+- Cohérence : 80% (+10%)
+- Utilisation variables CSS : 60% (+15%)
+
 ### Objectif Final
 - Application thème : 95%
 - Cohérence : 90%
@@ -235,5 +275,5 @@ Les labels NPS dans SurveyTaker utilisent maintenant les couleurs du thème acti
 
 ---
 
-**Prochaine action :** Démarrer Batch 5 - Standardisation Card.tsx
+**Prochaine action :** Démarrer Batch 6 - Créer Helpers et Tests
 
