@@ -6,6 +6,7 @@ import type { ThemeConfig } from '@modele/types';
 import { generateColorShades, generateRgb } from './color-utils';
 import { validateThemeConfig } from './theme-validator';
 import { getThemeConfigForMode, applyDarkModeClass } from './dark-mode-utils';
+import { preloadFont, loadFontWithFallback } from './font-loader';
 import { logger } from '@/lib/logger';
 
 export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
@@ -164,7 +165,7 @@ export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
     }
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = config.font_url;
+    link.href = configToApply.font_url;
     link.setAttribute('data-theme-font', 'true');
     document.head.appendChild(link);
   }

@@ -181,10 +181,10 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     }
     
     // Also apply colors from nested colors object if available
-    if (colorsConfig.background) {
+    if (colorsConfig.background && typeof colorsConfig.background === 'string') {
       root.style.setProperty('--color-background', colorsConfig.background);
     }
-    if (colorsConfig.foreground) {
+    if (colorsConfig.foreground && typeof colorsConfig.foreground === 'string') {
       root.style.setProperty('--color-foreground', colorsConfig.foreground);
     }
     if (colorsConfig.muted) {
@@ -331,7 +331,7 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     fetchTheme();
     
     // Watch for system dark mode preference changes
-    const cleanup = watchDarkModePreference((isDark) => {
+    const cleanup = watchDarkModePreference(() => {
       // Re-apply theme when system preference changes (if mode is 'system')
       if (theme && (theme.config as any).mode === 'system') {
         applyThemeConfig(theme.config);

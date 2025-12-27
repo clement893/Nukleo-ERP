@@ -47,30 +47,34 @@ export function getThemeConfigForMode(config: ThemeConfig): ThemeConfig {
   
   if (mode === 'dark') {
     // Merge dark mode config with custom config
+    const configColors = (config as any).colors;
+    const configTypography = (config as any).typography;
     return {
       ...config,
       colors: {
         ...DARK_MODE_CONFIG.colors,
-        ...(config as any).colors,
+        ...(configColors && typeof configColors === 'object' ? configColors : {}),
       },
       typography: {
         ...DARK_MODE_CONFIG.typography,
-        ...(config as any).typography,
+        ...(configTypography && typeof configTypography === 'object' ? configTypography : {}),
       },
     } as ThemeConfig;
   }
   
   // Light mode - use default or provided config
+  const configColors = (config as any).colors;
+  const configTypography = (config as any).typography;
   return {
     ...DEFAULT_THEME_CONFIG,
     ...config,
     colors: {
       ...DEFAULT_THEME_CONFIG.colors,
-      ...(config as any).colors,
+      ...(configColors && typeof configColors === 'object' ? configColors : {}),
     },
     typography: {
       ...DEFAULT_THEME_CONFIG.typography,
-      ...(config as any).typography,
+      ...(configTypography && typeof configTypography === 'object' ? configTypography : {}),
     },
   } as ThemeConfig;
 }
