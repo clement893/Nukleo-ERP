@@ -53,7 +53,7 @@ function ClientProjectsContent() {
               ? 'bg-green-100 text-green-800'
               : value === 'completed'
               ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
+              : 'bg-muted text-foreground'
           }`}
         >
           {value as string}
@@ -68,13 +68,13 @@ function ClientProjectsContent() {
         const progress = typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) : 0);
         return (
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="flex-1 bg-muted rounded-full h-2">
               <div
                 className="bg-primary-500 h-2 rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="text-sm text-muted-foreground">
               {progress}%
             </span>
           </div>
@@ -102,10 +102,10 @@ function ClientProjectsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           My Projects
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Track your project progress and status
         </p>
       </div>

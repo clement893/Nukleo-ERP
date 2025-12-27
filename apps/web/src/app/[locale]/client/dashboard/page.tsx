@@ -27,10 +27,10 @@ function ClientDashboardContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Client Dashboard
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Welcome to your client portal. Here's an overview of your account.
         </p>
       </div>
@@ -41,34 +41,34 @@ function ClientDashboardContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <a
             href="/client/invoices"
-            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
           >
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+            <h3 className="font-semibold text-foreground mb-1">
               View Invoices
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               View and download your invoices
             </p>
           </a>
           <a
             href="/client/projects"
-            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
           >
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+            <h3 className="font-semibold text-foreground mb-1">
               View Projects
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Track your project progress
             </p>
           </a>
           <a
             href="/client/tickets"
-            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
           >
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+            <h3 className="font-semibold text-foreground mb-1">
               Support Tickets
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Get help from our support team
             </p>
           </a>

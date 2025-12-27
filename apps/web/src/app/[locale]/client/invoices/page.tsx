@@ -59,7 +59,7 @@ function ClientInvoicesContent() {
               ? 'bg-green-100 text-green-800'
               : value === 'pending'
               ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-gray-100 text-gray-800'
+              : 'bg-muted text-foreground'
           }`}
         >
           {value as string}
@@ -82,8 +82,8 @@ function ClientInvoicesContent() {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-        <p className="text-red-600 dark:text-red-400">
+      <div className="p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
+        <p className="text-danger-600 dark:text-danger-400">
           Failed to load invoices. Please try again later.
         </p>
       </div>
@@ -93,10 +93,10 @@ function ClientInvoicesContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           My Invoices
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           View and download your invoices
         </p>
       </div>
