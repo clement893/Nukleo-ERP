@@ -6,6 +6,10 @@
  * Accessible via dashboard navigation and sitemap.
  */
 
+// Force dynamic rendering to avoid static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 'use client';
 
 import { useTranslations } from 'next-intl';

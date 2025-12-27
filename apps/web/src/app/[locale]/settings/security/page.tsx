@@ -5,6 +5,10 @@
  * Uses existing SecuritySettings component.
  */
 
+// Force dynamic rendering to avoid static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 'use client';
 
 import { useEffect, useState } from 'react';

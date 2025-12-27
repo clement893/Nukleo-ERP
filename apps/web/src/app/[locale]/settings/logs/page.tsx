@@ -4,6 +4,10 @@
  * Page for viewing system logs and audit trail from settings.
  */
 
+// Force dynamic rendering to avoid static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 'use client';
 
 import { useEffect, useState } from 'react';
