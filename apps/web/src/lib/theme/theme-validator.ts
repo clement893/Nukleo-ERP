@@ -4,7 +4,7 @@
  */
 
 import { getContrastIssues, ContrastIssue } from './contrast-utils';
-import { validateThemeColors, ColorValidationResult } from './color-validation';
+import { validateThemeColors, type ColorValidationResult } from './color-validation';
 
 /**
  * Theme validation result
