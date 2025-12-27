@@ -17,10 +17,10 @@ export default function AdminThemeContent() {
   return (
     <Container className="py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Gestion des Thèmes
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Configurez les thèmes disponibles pour la plateforme
         </p>
       </div>
@@ -30,7 +30,7 @@ export default function AdminThemeContent() {
           <h2 className="text-xl font-semibold mb-2">Thème Actuel</h2>
           <div className="flex items-center gap-4">
             <ThemeToggleWithIcon />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="text-sm text-muted-foreground">
               Basculer entre clair et sombre
             </span>
           </div>
@@ -46,12 +46,12 @@ export default function AdminThemeContent() {
               className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                 selectedTheme === theme.id
                   ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
               }`}
               onClick={() => setSelectedTheme(theme.id)}
             >
               <h3 className="font-semibold mb-1">{theme.name}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {theme.description}
               </p>
             </div>

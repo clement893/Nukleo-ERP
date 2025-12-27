@@ -30,7 +30,7 @@ export default function ThemeVisualisationPage() {
         <Container className="py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <p className="text-gray-600 dark:text-gray-400">Redirection...</p>
+              <p className="text-muted-foreground">Redirection...</p>
             </div>
           </div>
         </Container>

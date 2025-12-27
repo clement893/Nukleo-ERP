@@ -194,8 +194,8 @@ export default function InvitationsPage() {
         <Container>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des Invitations</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gérer les invitations envoyées aux utilisateurs</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Gestion des Invitations</h1>
+          <p className="text-muted-foreground">Gérer les invitations envoyées aux utilisateurs</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           Inviter un utilisateur
@@ -207,8 +207,8 @@ export default function InvitationsPage() {
         {Object.entries(statusCounts).map(([status, count]) => (
           <Card key={status}>
             <div className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{count}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">{status === 'all' ? 'Total' : getStatusLabel(status)}</div>
+              <div className="text-2xl font-bold text-foreground">{count}</div>
+              <div className="text-sm text-muted-foreground capitalize">{status === 'all' ? 'Total' : getStatusLabel(status)}</div>
             </div>
           </Card>
         ))}
@@ -243,60 +243,60 @@ export default function InvitationsPage() {
       ) : filteredInvitations.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               {filterStatus === 'all' ? 'Aucune invitation' : `Aucune invitation ${getStatusLabel(filterStatus).toLowerCase()}`}
             </p>
           </div>
         </Card>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg shadow">
+          <table className="w-full border-collapse bg-background rounded-lg shadow">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <tr className="bg-muted border-b border-border">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Rôle
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Organisation
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Invitée le
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Expire le
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-border">
               {filteredInvitations.map((invitation) => (
-                <tr key={invitation.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr key={invitation.id} className="hover:bg-muted">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">{invitation.email}</div>
+                    <div className="font-medium text-foreground">{invitation.email}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{invitation.role}</Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{invitation.organization_name}</div>
+                    <div className="text-sm text-muted-foreground">{invitation.organization_name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant={getStatusBadge(invitation.status)}>
                       {getStatusLabel(invitation.status)}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {new Date(invitation.invited_at).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

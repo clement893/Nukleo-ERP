@@ -183,7 +183,7 @@ function ProjectsContent() {
       label: 'Description',
       sortable: true,
       render: (value) => (
-        <span className="text-gray-600 dark:text-gray-400">
+        <span className="text-muted-foreground">
           {value && String(value).length > 50 ? `${String(value).substring(0, 50)}...` : (value ? String(value) : '-')}
         </span>
       ),
@@ -203,7 +203,7 @@ function ProjectsContent() {
       label: 'Créé le',
       sortable: true,
       render: (value) => (
-        <span className="text-gray-600 dark:text-gray-400">
+        <span className="text-muted-foreground">
           {new Date(String(value)).toLocaleDateString('fr-FR')}
         </span>
       ),
@@ -242,7 +242,7 @@ function ProjectsContent() {
       <Container>
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-foreground">
               Gérez vos projets et leurs statuts
             </p>
           </div>

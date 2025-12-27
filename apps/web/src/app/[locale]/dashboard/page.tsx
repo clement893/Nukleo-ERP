@@ -18,25 +18,25 @@ function DashboardContent() {
         <Card title="Your Profile">
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Name</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-sm text-muted-foreground">Name</p>
+              <p className="text-lg font-semibold text-foreground">
                 {user?.name}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="text-lg font-semibold text-foreground">
                 {user?.email}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
+              <p className="text-sm text-muted-foreground">Status</p>
               <Badge variant={user?.is_active ? 'success' : 'default'}>
                 {user?.is_active ? 'Active' : 'Inactive'}
               </Badge>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Verified</p>
+              <p className="text-sm text-muted-foreground">Verified</p>
               <Badge variant={user?.is_verified ? 'success' : 'default'}>
                 {user?.is_verified ? '✓ Yes' : '✗ No'}
               </Badge>

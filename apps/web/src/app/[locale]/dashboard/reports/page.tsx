@@ -201,21 +201,21 @@ export default function DashboardReportsPage() {
                       {savedReports.map((report) => (
                         <div
                           key={report.id}
-                          className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors"
                           onClick={() => setSelectedReport(report)}
                         >
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{report.name}</h3>
+                          <h3 className="font-semibold text-foreground">{report.name}</h3>
                           {report.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{report.description}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
                           )}
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          <p className="text-xs text-muted-foreground mt-2">
                             Generated: {new Date(report.generatedAt).toLocaleString()}
                           </p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-gray-600 dark:text-gray-400">
+                    <div className="text-center py-12 text-muted-foreground">
                       <p>{t('empty') || 'No reports found. Create your first report using the Report Builder.'}</p>
                     </div>
                   )}

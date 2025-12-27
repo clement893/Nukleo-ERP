@@ -143,7 +143,7 @@ export default function DashboardActivityPage() {
                 groupByDate={true}
               />
             ) : (
-              <div className="text-center py-12 text-gray-600 dark:text-gray-400">
+              <div className="text-center py-12 text-muted-foreground">
                 <p>{t('empty') || 'No activity found'}</p>
               </div>
             )}

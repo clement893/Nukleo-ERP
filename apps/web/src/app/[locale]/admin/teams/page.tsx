@@ -178,8 +178,8 @@ export default function TeamsPage() {
       <Container>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des Équipes</h1>
-          <p className="text-gray-600 dark:text-gray-400">Administration des équipes</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Gestion des Équipes</h1>
+          <p className="text-muted-foreground">Administration des équipes</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           Créer une équipe
@@ -204,7 +204,7 @@ export default function TeamsPage() {
           <div className="lg:col-span-1">
             <Card>
               <div className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Équipes</h2>
+                <h2 className="text-xl font-bold text-foreground mb-4">Équipes</h2>
                 <div className="space-y-2">
                   {teams.map((team) => (
                     <Button
@@ -214,11 +214,11 @@ export default function TeamsPage() {
                       className="w-full text-left justify-start h-auto p-4"
                     >
                       <div className="w-full">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">{team.name}</div>
+                        <div className="font-medium text-foreground">{team.name}</div>
                         {team.description && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{team.description}</div>
+                          <div className="text-sm text-muted-foreground mt-1">{team.description}</div>
                         )}
-                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                        <div className="text-xs text-muted-foreground mt-2">
                           {team.member_count} membre{team.member_count > 1 ? 's' : ''}
                         </div>
                       </div>
@@ -236,9 +236,9 @@ export default function TeamsPage() {
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedTeam.name}</h2>
+                      <h2 className="text-2xl font-bold text-foreground">{selectedTeam.name}</h2>
                       {selectedTeam.description && (
-                        <p className="text-gray-600 dark:text-gray-400 mt-2">{selectedTeam.description}</p>
+                        <p className="text-muted-foreground mt-2">{selectedTeam.description}</p>
                       )}
                     </div>
                     <div className="flex gap-2">
@@ -253,18 +253,18 @@ export default function TeamsPage() {
 
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Membres</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Membres</h3>
                       <Button size="sm">Ajouter un membre</Button>
                     </div>
                     <div className="space-y-2">
                       {teamMembers.map((member) => (
                         <div
                           key={member.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
                         >
                           <div>
-                            <div className="font-medium text-gray-900 dark:text-gray-100">{member.user_name}</div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">{member.user_email}</div>
+                            <div className="font-medium text-foreground">{member.user_name}</div>
+                            <div className="text-sm text-muted-foreground">{member.user_email}</div>
                           </div>
                           <div className="flex items-center gap-3">
                             <Badge variant={member.role === 'Manager' ? 'success' : 'default'}>
@@ -283,7 +283,7 @@ export default function TeamsPage() {
             ) : (
               <Card>
                 <div className="py-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400">Sélectionnez une équipe pour voir ses détails</p>
+                  <p className="text-muted-foreground">Sélectionnez une équipe pour voir ses détails</p>
                 </div>
               </Card>
             )}

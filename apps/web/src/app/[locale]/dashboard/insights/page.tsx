@@ -165,7 +165,7 @@ export default function DashboardInsightsPage() {
           {/* Revenue Trends */}
           {trendData.length > 0 && (
             <Section title={t('sections.revenue') || 'Revenue Trends'} className="mt-6">
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className="bg-background">
                 <Chart
                   type="line"
                   data={trendData}
@@ -179,7 +179,7 @@ export default function DashboardInsightsPage() {
           {/* User Growth */}
           {userGrowthData.length > 0 && (
             <Section title={t('sections.users') || 'User Growth'} className="mt-6">
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className="bg-background">
                 <Chart
                   type="bar"
                   data={userGrowthData}
