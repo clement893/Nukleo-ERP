@@ -111,7 +111,7 @@ export function applyThemeConfigDirectly(config: ThemeConfig) {
   }
   
   // Load font URL if configured
-  if (config.font_url && typeof document !== 'undefined') {
+  if (config.font_url && typeof config.font_url === 'string' && typeof document !== 'undefined') {
     const existingLink = document.querySelector(`link[data-theme-font]`);
     if (existingLink) {
       existingLink.remove();
