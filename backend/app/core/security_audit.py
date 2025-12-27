@@ -130,24 +130,30 @@ class SecurityAuditLogger:
             metadata: Additional structured data
         
         Returns:
-            Created SecurityAuditLog record
+            Created SecurityAuditLog record, or None if logging failed
         """
-        audit_log = SecurityAuditLog(
-            event_type=event_type.value,
-            description=description,
-            user_id=user_id,
-            user_email=user_email,
-            api_key_id=api_key_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            request_method=request_method,
-            request_path=request_path,
-            severity=severity,
-            success=success,
-            event_metadata=metadata or {},
-        )
+        # Use provided session or create a new one for audit logging
+        # Creating a separate session ensures the log is saved even if the main transaction fails
+        use_separate_session = db is None
+        if use_separate_session:
+            db = AsyncSessionLocal()
         
         try:
+            audit_log = SecurityAuditLog(
+                event_type=event_type.value,
+                description=description,
+                user_id=user_id,
+                user_email=user_email,
+                api_key_id=api_key_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                request_method=request_method,
+                request_path=request_path,
+                severity=severity,
+                success=success,
+                event_metadata=metadata or {},
+            )
+            
             db.add(audit_log)
             # Commit immediately to ensure the audit log is saved
             # This is critical for security audit logs - they must be persisted
