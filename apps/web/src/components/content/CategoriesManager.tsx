@@ -69,8 +69,8 @@ export default function CategoriesManager({
       sortable: true,
       render: (_value: unknown, category: Category) => (
         <div className="flex items-center gap-2">
-          <Folder className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900 dark:text-gray-100">{category.name}</span>
+          <Folder className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{category.name}</span>
           {category.color && (
             <div
               className="w-3 h-3 rounded-full"
@@ -85,7 +85,7 @@ export default function CategoriesManager({
       label: 'Slug',
       sortable: true,
       render: (_value: unknown, category: Category) => (
-        <code className="text-sm text-gray-600 dark:text-gray-400">{category.slug}</code>
+        <code className="text-sm text-muted-foreground">{category.slug}</code>
       ),
     },
     {
@@ -101,7 +101,7 @@ export default function CategoriesManager({
       label: 'Parent',
       sortable: true,
       render: (_value: unknown, category: Category) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {category.parent_name || '—'}
         </span>
       ),
@@ -259,7 +259,7 @@ export default function CategoriesManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -271,13 +271,13 @@ export default function CategoriesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Entity Type *
             </label>
             <select
               value={formData.entity_type}
               onChange={(e) => setFormData({ ...formData, entity_type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               required
             >
               <option value="post">Post</option>
@@ -288,13 +288,13 @@ export default function CategoriesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Parent Category
             </label>
             <select
               value={formData.parent_id || ''}
               onChange={(e) => setFormData({ ...formData, parent_id: e.target.value ? parseInt(e.target.value, 10) : undefined })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="">None (Top Level)</option>
               {parentCategories.map((cat) => (
@@ -306,7 +306,7 @@ export default function CategoriesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -319,7 +319,7 @@ export default function CategoriesManager({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Icon
               </label>
               <Input
@@ -330,7 +330,7 @@ export default function CategoriesManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Color
               </label>
               <Input
@@ -371,7 +371,7 @@ export default function CategoriesManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -383,13 +383,13 @@ export default function CategoriesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Entity Type *
             </label>
             <select
               value={formData.entity_type}
               onChange={(e) => setFormData({ ...formData, entity_type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               required
             >
               <option value="post">Post</option>
@@ -400,13 +400,13 @@ export default function CategoriesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Parent Category
             </label>
             <select
               value={formData.parent_id || ''}
               onChange={(e) => setFormData({ ...formData, parent_id: e.target.value ? parseInt(e.target.value, 10) : undefined })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="">None (Top Level)</option>
               {parentCategories
@@ -420,7 +420,7 @@ export default function CategoriesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -433,7 +433,7 @@ export default function CategoriesManager({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Icon
               </label>
               <Input
@@ -444,7 +444,7 @@ export default function CategoriesManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Color
               </label>
               <Input

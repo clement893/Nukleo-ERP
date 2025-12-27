@@ -142,7 +142,7 @@ export default function ContentDashboard({
               <Link
                 key={link.href}
                 href={link.href}
-                className="group p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all"
+                className="group p-4 border border-border rounded-lg hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -150,15 +150,15 @@ export default function ContentDashboard({
                       <div className={`p-2 rounded-lg ${link.iconBgClass}`}>
                         <Icon className={`w-5 h-5 ${link.iconTextClass}`} />
                       </div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                      <h3 className="font-semibold text-foreground group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                         {link.title}
                       </h3>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {link.description}
                     </p>
                     {link.count !== undefined && (
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {link.count} {link.count === 1 ? 'item' : 'items'}
                       </p>
                     )}

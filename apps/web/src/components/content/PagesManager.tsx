@@ -64,8 +64,8 @@ export default function PagesManager({
       sortable: true,
       render: (_value: unknown, page: Page) => (
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900 dark:text-gray-100">{page.title}</span>
+          <FileText className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{page.title}</span>
         </div>
       ),
     },
@@ -74,7 +74,7 @@ export default function PagesManager({
       label: 'Slug',
       sortable: true,
       render: (_value: unknown, page: Page) => (
-        <code className="text-sm text-gray-600 dark:text-gray-400">/{page.slug}</code>
+        <code className="text-sm text-muted-foreground">/{page.slug}</code>
       ),
     },
     {
@@ -99,7 +99,7 @@ export default function PagesManager({
       label: 'Last Updated',
       sortable: true,
       render: (_value: unknown, page: Page) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {new Date(page.updated_at).toLocaleDateString()}
         </span>
       ),
@@ -276,7 +276,7 @@ export default function PagesManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Title *
             </label>
             <Input
@@ -288,7 +288,7 @@ export default function PagesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Slug *
             </label>
             <Input
@@ -297,13 +297,13 @@ export default function PagesManager({
               placeholder="page-slug"
               required
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               URL-friendly identifier (e.g., about-us)
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Content
             </label>
             <Textarea
@@ -315,13 +315,13 @@ export default function PagesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Status
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as Page['status'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>
@@ -358,7 +358,7 @@ export default function PagesManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Title *
             </label>
             <Input
@@ -370,7 +370,7 @@ export default function PagesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Slug *
             </label>
             <Input
@@ -382,7 +382,7 @@ export default function PagesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Content
             </label>
             <Textarea
@@ -394,13 +394,13 @@ export default function PagesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Status
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as Page['status'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>

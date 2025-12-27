@@ -72,8 +72,8 @@ export default function PostsManager({
       sortable: true,
       render: (_value: unknown, post: BlogPost) => (
         <div className="flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900 dark:text-gray-100">{post.title}</span>
+          <BookOpen className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{post.title}</span>
         </div>
       ),
     },
@@ -83,8 +83,8 @@ export default function PostsManager({
       sortable: true,
       render: (_value: unknown, post: BlogPost) => (
         <div className="flex items-center gap-2">
-          <User className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <User className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
             {post.author_name || 'Unknown'}
           </span>
         </div>
@@ -113,8 +113,8 @@ export default function PostsManager({
       sortable: true,
       render: (_value: unknown, post: BlogPost) => (
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
             {post.published_at ? new Date(post.published_at).toLocaleDateString() : 'Not published'}
           </span>
         </div>
@@ -125,7 +125,7 @@ export default function PostsManager({
       label: 'Last Updated',
       sortable: true,
       render: (_value: unknown, post: BlogPost) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {new Date(post.updated_at).toLocaleDateString()}
         </span>
       ),
@@ -306,7 +306,7 @@ export default function PostsManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Title *
             </label>
             <Input
@@ -318,7 +318,7 @@ export default function PostsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Slug *
             </label>
             <Input
@@ -327,13 +327,13 @@ export default function PostsManager({
               placeholder="post-slug"
               required
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               URL-friendly identifier (e.g., my-first-post)
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Excerpt
             </label>
             <Textarea
@@ -342,13 +342,13 @@ export default function PostsManager({
               placeholder="Short excerpt..."
               rows={3}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Brief summary displayed in post listings
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Content
             </label>
             <Textarea
@@ -360,13 +360,13 @@ export default function PostsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Status
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as BlogPost['status'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>
@@ -403,7 +403,7 @@ export default function PostsManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Title *
             </label>
             <Input
@@ -415,7 +415,7 @@ export default function PostsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Slug *
             </label>
             <Input
@@ -427,7 +427,7 @@ export default function PostsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Excerpt
             </label>
             <Textarea
@@ -439,7 +439,7 @@ export default function PostsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Content
             </label>
             <Textarea
@@ -451,13 +451,13 @@ export default function PostsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Status
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as BlogPost['status'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>

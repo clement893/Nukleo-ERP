@@ -70,8 +70,8 @@ export default function ScheduledContentManager({
       sortable: true,
       render: (_value: unknown, schedule: ScheduledContent) => (
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900 dark:text-gray-100">{schedule.name}</span>
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{schedule.name}</span>
         </div>
       ),
     },
@@ -88,7 +88,7 @@ export default function ScheduledContentManager({
       label: 'Scheduled At',
       sortable: true,
       render: (_value: unknown, schedule: ScheduledContent) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {new Date(schedule.scheduled_at).toLocaleString()}
         </span>
       ),
@@ -293,7 +293,7 @@ export default function ScheduledContentManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -305,13 +305,13 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Task Type *
             </label>
             <select
               value={formData.task_type}
               onChange={(e) => setFormData({ ...formData, task_type: e.target.value as ScheduledContent['task_type'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               required
             >
               <option value="publish_post">Publish Post</option>
@@ -322,7 +322,7 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Scheduled At *
             </label>
             <Input
@@ -334,13 +334,13 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Recurrence (optional)
             </label>
             <select
               value={formData.recurrence}
               onChange={(e) => setFormData({ ...formData, recurrence: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="">None (One-time)</option>
               <option value="daily">Daily</option>
@@ -351,7 +351,7 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -391,7 +391,7 @@ export default function ScheduledContentManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -403,13 +403,13 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Task Type *
             </label>
             <select
               value={formData.task_type}
               onChange={(e) => setFormData({ ...formData, task_type: e.target.value as ScheduledContent['task_type'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               required
             >
               <option value="publish_post">Publish Post</option>
@@ -420,7 +420,7 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Scheduled At *
             </label>
             <Input
@@ -432,13 +432,13 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Recurrence (optional)
             </label>
             <select
               value={formData.recurrence}
               onChange={(e) => setFormData({ ...formData, recurrence: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
             >
               <option value="">None (One-time)</option>
               <option value="daily">Daily</option>
@@ -449,7 +449,7 @@ export default function ScheduledContentManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea

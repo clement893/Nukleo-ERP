@@ -43,7 +43,7 @@ export default function ContentPreview({
         <div className="flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            className="px-4 py-2 text-sm font-medium text-foreground hover:text-foreground"
           >
             Close
           </button>

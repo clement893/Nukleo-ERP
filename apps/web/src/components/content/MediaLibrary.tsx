@@ -73,7 +73,7 @@ export default function MediaLibrary({
       case 'audio':
         return <File className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />;
       default:
-        return <File className="w-5 h-5 text-gray-600 dark:text-gray-400" />;
+        return <File className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -121,7 +121,7 @@ export default function MediaLibrary({
         <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex-1 w-full sm:w-auto">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,7 +132,7 @@ export default function MediaLibrary({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+            <div className="flex border border-border rounded-lg overflow-hidden">
               <Button
                 variant={viewMode === 'grid' ? 'primary' : 'ghost'}
                 size="sm"
@@ -180,8 +180,8 @@ export default function MediaLibrary({
         {/* Media Display */}
         {filteredMedia.length === 0 ? (
           <div className="text-center py-12">
-            <File className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <File className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">
               No media files found
             </p>
             <Button variant="primary" onClick={() => setIsUploadModalOpen(true)}>
@@ -196,11 +196,11 @@ export default function MediaLibrary({
                 {filteredMedia.map((item) => (
                   <div
                     key={item.id}
-                    className="group relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                    className="group relative border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => handleSelect(item)}
                   >
                     {item.type === 'image' ? (
-                      <div className="aspect-square relative bg-gray-100 dark:bg-gray-800">
+                      <div className="aspect-square relative bg-muted">
                         <img
                           src={item.url}
                           alt={item.name}
@@ -232,18 +232,18 @@ export default function MediaLibrary({
                         </div>
                       </div>
                     ) : (
-                      <div className="aspect-square flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 p-4">
+                      <div className="aspect-square flex flex-col items-center justify-center bg-muted p-4">
                         {getMediaIcon(item)}
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center truncate w-full">
+                        <p className="text-xs text-muted-foreground mt-2 text-center truncate w-full">
                           {item.name}
                         </p>
                       </div>
                     )}
-                    <div className="p-2 bg-white dark:bg-gray-900">
-                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                    <div className="p-2 bg-background">
+                      <p className="text-xs font-medium text-foreground truncate">
                         {item.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {formatFileSize(item.size)}
                       </p>
                     </div>
@@ -259,10 +259,10 @@ export default function MediaLibrary({
                   .map((item) => (
                     <div
                       key={item.id}
-                      className="group relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      className="group relative border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                       onClick={() => handleSelect(item)}
                     >
-                      <div className="aspect-video relative bg-gray-100 dark:bg-gray-800">
+                      <div className="aspect-video relative bg-muted">
                         <img
                           src={item.url}
                           alt={item.name}
@@ -293,13 +293,13 @@ export default function MediaLibrary({
                           </Button>
                         </div>
                       </div>
-                      <div className="p-4 bg-white dark:bg-gray-900">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <div className="p-4 bg-background">
+                        <p className="text-sm font-medium text-foreground">
                           {item.name}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant="default">{item.type}</Badge>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             {formatFileSize(item.size)}
                           </span>
                         </div>
@@ -314,7 +314,7 @@ export default function MediaLibrary({
                 {filteredMedia.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer"
                     onClick={() => handleSelect(item)}
                   >
                     <div className="flex-shrink-0">
@@ -325,22 +325,22 @@ export default function MediaLibrary({
                           className="w-16 h-16 object-cover rounded"
                         />
                       ) : (
-                        <div className="w-16 h-16 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
+                        <div className="w-16 h-16 flex items-center justify-center bg-muted rounded">
                           {getMediaIcon(item)}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {item.name}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="default">{item.type}</Badge>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {formatFileSize(item.size)}
                         </span>
                         {item.width && item.height && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             {item.width} × {item.height}
                           </span>
                         )}
@@ -428,26 +428,26 @@ export default function MediaLibrary({
             )}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-gray-600 dark:text-gray-400">Type</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{selectedMedia.type}</p>
+                <p className="text-muted-foreground">Type</p>
+                <p className="font-medium text-foreground">{selectedMedia.type}</p>
               </div>
               <div>
-                <p className="text-gray-600 dark:text-gray-400">Size</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-muted-foreground">Size</p>
+                <p className="font-medium text-foreground">
                   {formatFileSize(selectedMedia.size)}
                 </p>
               </div>
               {selectedMedia.width && selectedMedia.height && (
                 <>
                   <div>
-                    <p className="text-gray-600 dark:text-gray-400">Dimensions</p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                    <p className="text-muted-foreground">Dimensions</p>
+                    <p className="font-medium text-foreground">
                       {selectedMedia.width} × {selectedMedia.height}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600 dark:text-gray-400">Created</p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                    <p className="text-muted-foreground">Created</p>
+                    <p className="font-medium text-foreground">
                       {new Date(selectedMedia.created_at).toLocaleDateString()}
                     </p>
                   </div>

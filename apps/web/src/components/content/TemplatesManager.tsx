@@ -71,8 +71,8 @@ export default function TemplatesManager({
       sortable: true,
       render: (_value: unknown, template: ContentTemplate) => (
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900 dark:text-gray-100">{template.name}</span>
+          <FileText className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{template.name}</span>
         </div>
       ),
     },
@@ -89,7 +89,7 @@ export default function TemplatesManager({
       label: 'Category',
       sortable: true,
       render: (_value: unknown, template: ContentTemplate) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {template.category || '—'}
         </span>
       ),
@@ -109,7 +109,7 @@ export default function TemplatesManager({
       label: 'Last Updated',
       sortable: true,
       render: (_value: unknown, template: ContentTemplate) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {new Date(template.updated_at).toLocaleDateString()}
         </span>
       ),
@@ -281,7 +281,7 @@ export default function TemplatesManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -294,13 +294,13 @@ export default function TemplatesManager({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Entity Type *
               </label>
               <select
                 value={formData.entity_type}
                 onChange={(e) => setFormData({ ...formData, entity_type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                 required
               >
                 <option value="post">Post</option>
@@ -311,7 +311,7 @@ export default function TemplatesManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Category
               </label>
               <Input
@@ -323,7 +323,7 @@ export default function TemplatesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -335,7 +335,7 @@ export default function TemplatesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Content *
             </label>
             <Textarea
@@ -348,7 +348,7 @@ export default function TemplatesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               HTML Content
             </label>
             <Textarea
@@ -365,9 +365,9 @@ export default function TemplatesManager({
                 type="checkbox"
                 checked={formData.is_public}
                 onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
-                className="rounded border-gray-300 dark:border-gray-600"
+                className="rounded border-border"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Make template publicly available</span>
+              <span className="text-sm text-foreground">Make template publicly available</span>
             </label>
           </div>
         </form>
@@ -400,7 +400,7 @@ export default function TemplatesManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -413,13 +413,13 @@ export default function TemplatesManager({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Entity Type *
               </label>
               <select
                 value={formData.entity_type}
                 onChange={(e) => setFormData({ ...formData, entity_type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                 required
               >
                 <option value="post">Post</option>
@@ -430,7 +430,7 @@ export default function TemplatesManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Category
               </label>
               <Input
@@ -442,7 +442,7 @@ export default function TemplatesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -454,7 +454,7 @@ export default function TemplatesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Content *
             </label>
             <Textarea
@@ -467,7 +467,7 @@ export default function TemplatesManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               HTML Content
             </label>
             <Textarea
@@ -484,9 +484,9 @@ export default function TemplatesManager({
                 type="checkbox"
                 checked={formData.is_public}
                 onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
-                className="rounded border-gray-300 dark:border-gray-600"
+                className="rounded border-border"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Make template publicly available</span>
+              <span className="text-sm text-foreground">Make template publicly available</span>
             </label>
           </div>
         </form>

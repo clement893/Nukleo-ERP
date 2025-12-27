@@ -169,7 +169,7 @@ export default function FormsContent() {
 
         <Section title="RichTextEditor">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Éditeur de texte riche avec barre d'outils.</p>
+            <p className="text-sm text-muted-foreground">Éditeur de texte riche avec barre d'outils.</p>
             <RichTextEditor
               value={formData.richText}
               onChange={(value) => setFormData({ ...formData, richText: value })}
@@ -182,7 +182,7 @@ export default function FormsContent() {
 
         <Section title="FormBuilder">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Constructeur de formulaires dynamiques à partir d'une configuration.</p>
+            <p className="text-sm text-muted-foreground">Constructeur de formulaires dynamiques à partir d'une configuration.</p>
             <FormBuilder
               fields={[
                 { name: 'name', label: 'Nom complet', type: 'text' as const, placeholder: 'John Doe', required: true },

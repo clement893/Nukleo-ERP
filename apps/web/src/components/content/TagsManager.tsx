@@ -64,7 +64,7 @@ export default function TagsManager({
       sortable: true,
       render: (_value: unknown, tag: TagItem) => (
         <div className="flex items-center gap-2">
-          <Tag className="w-4 h-4 text-gray-400" />
+          <Tag className="w-4 h-4 text-muted-foreground" />
           <Badge variant="default" style={tag.color ? { backgroundColor: tag.color } : undefined}>
             {tag.name}
           </Badge>
@@ -76,7 +76,7 @@ export default function TagsManager({
       label: 'Slug',
       sortable: true,
       render: (_value: unknown, tag: TagItem) => (
-        <code className="text-sm text-gray-600 dark:text-gray-400">{tag.slug}</code>
+        <code className="text-sm text-muted-foreground">{tag.slug}</code>
       ),
     },
     {
@@ -92,7 +92,7 @@ export default function TagsManager({
       label: 'Usage',
       sortable: true,
       render: (_value: unknown, tag: TagItem) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {tag.usage_count} {tag.usage_count === 1 ? 'time' : 'times'}
         </span>
       ),
@@ -242,7 +242,7 @@ export default function TagsManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -254,13 +254,13 @@ export default function TagsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Entity Type *
             </label>
             <select
               value={formData.entity_type}
               onChange={(e) => setFormData({ ...formData, entity_type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               required
             >
               <option value="post">Post</option>
@@ -271,7 +271,7 @@ export default function TagsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -283,7 +283,7 @@ export default function TagsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Color
             </label>
             <Input
@@ -323,7 +323,7 @@ export default function TagsManager({
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Name *
             </label>
             <Input
@@ -335,13 +335,13 @@ export default function TagsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Entity Type *
             </label>
             <select
               value={formData.entity_type}
               onChange={(e) => setFormData({ ...formData, entity_type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               required
             >
               <option value="post">Post</option>
@@ -352,7 +352,7 @@ export default function TagsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Description
             </label>
             <Textarea
@@ -364,7 +364,7 @@ export default function TagsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Color
             </label>
             <Input
