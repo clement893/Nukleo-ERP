@@ -11,7 +11,8 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import Input from '@/components/ui/Input';
 import ColorPicker from '@/components/ui/ColorPicker';
-import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Upload, Download } from 'lucide-react';
+import Textarea from '@/components/ui/Textarea';
+import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Upload, Download, Code } from 'lucide-react';
 import Select from '@/components/ui/Select';
 
 export function ThemeVisualisationContent() {
@@ -71,13 +72,35 @@ export function ThemeVisualisationContent() {
       return;
     }
 
+    // Validate JSON if jsonInput is set and different from editedConfig
+    if (jsonInput.trim()) {
+      try {
+        const parsed = JSON.parse(jsonInput);
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          setError('Le JSON doit être un objet valide. Veuillez corriger le JSON avant de sauvegarder.');
+          return;
+        }
+        // Use parsed JSON if valid
+        setEditedConfig(parsed as ThemeConfig);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+        setError(`JSON invalide : ${errorMessage}. Veuillez corriger le JSON avant de sauvegarder.`);
+        return;
+      }
+    }
+
     try {
       setSaving(true);
       setError(null);
       setSuccessMessage(null);
 
+      // Use the latest editedConfig (which may have been updated from JSON)
+      const configToSave = jsonInput.trim() 
+        ? (JSON.parse(jsonInput) as ThemeConfig)
+        : editedConfig;
+
       const updateData: ThemeUpdate = {
-        config: editedConfig as Partial<ThemeConfig>,
+        config: configToSave as Partial<ThemeConfig>,
       };
 
       await updateTheme(theme.id, updateData);
