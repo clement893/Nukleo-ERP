@@ -167,12 +167,35 @@ export function applyThemeConfigDirectly(config: ThemeConfig) {
   // Apply CSS effects
   const effects = (config as any).effects;
   if (effects) {
-    if (effects.glassmorphism?.enabled) {
-      const blur = effects.glassmorphism.blur || '10px';
-      const saturation = effects.glassmorphism.saturation || '180%';
-      root.style.setProperty('--glassmorphism-backdrop', `blur(${blur}) saturate(${saturation})`);
-      root.style.setProperty('--glassmorphism-opacity', String(effects.glassmorphism.opacity || 0.1));
-      root.style.setProperty('--glassmorphism-border-opacity', String(effects.glassmorphism.borderOpacity || 0.2));
+    // Support both old format (glassmorphism.enabled) and new format (glassmorphism.card, etc.)
+    if (effects.glassmorphism) {
+      // New format: glassmorphism.card, glassmorphism.panel, etc.
+      if (effects.glassmorphism.card) {
+        const card = effects.glassmorphism.card;
+        if (card.background) root.style.setProperty('--glassmorphism-card-background', card.background);
+        if (card.backdropBlur) root.style.setProperty('--glassmorphism-card-backdrop-blur', card.backdropBlur);
+        if (card.border) root.style.setProperty('--glassmorphism-card-border', card.border);
+      }
+      if (effects.glassmorphism.panel) {
+        const panel = effects.glassmorphism.panel;
+        if (panel.background) root.style.setProperty('--glassmorphism-panel-background', panel.background);
+        if (panel.backdropBlur) root.style.setProperty('--glassmorphism-panel-backdrop-blur', panel.backdropBlur);
+        if (panel.border) root.style.setProperty('--glassmorphism-panel-border', panel.border);
+      }
+      if (effects.glassmorphism.overlay) {
+        const overlay = effects.glassmorphism.overlay;
+        if (overlay.background) root.style.setProperty('--glassmorphism-overlay-background', overlay.background);
+        if (overlay.backdropBlur) root.style.setProperty('--glassmorphism-overlay-backdrop-blur', overlay.backdropBlur);
+      }
+      
+      // Old format: glassmorphism.enabled (for backward compatibility)
+      if (effects.glassmorphism.enabled) {
+        const blur = effects.glassmorphism.blur || '10px';
+        const saturation = effects.glassmorphism.saturation || '180%';
+        root.style.setProperty('--glassmorphism-backdrop', `blur(${blur}) saturate(${saturation})`);
+        root.style.setProperty('--glassmorphism-opacity', String(effects.glassmorphism.opacity || 0.1));
+        root.style.setProperty('--glassmorphism-border-opacity', String(effects.glassmorphism.borderOpacity || 0.2));
+      }
     }
     
     if (effects.shadows) {
