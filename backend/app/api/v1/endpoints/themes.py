@@ -72,21 +72,19 @@ async def ensure_default_theme(db: AsyncSession, created_by: int = 1) -> Theme:
     # Create TemplateTheme - activate it only if no other theme is active
     is_active = active_theme is None
     
-    # Use raw SQL to insert with specific ID 32
-    await db.execute(text("""
-        INSERT INTO themes (id, name, display_name, description, config, is_active, created_by, created_at, updated_at)
-        VALUES (32, 'TemplateTheme', 'Template Theme', 'Master theme that controls all components', 
-                :config::jsonb, :is_active, :created_by, NOW(), NOW())
-    """), {
-        "config": json.dumps(default_config),
-        "is_active": is_active,
-        "created_by": created_by
-    })
+    # Use SQLAlchemy ORM to create the theme (works properly with asyncpg)
+    template_theme = Theme(
+        id=32,
+        name='TemplateTheme',
+        display_name='Template Theme',
+        description='Master theme that controls all components',
+        config=default_config,  # SQLAlchemy will handle JSON serialization
+        is_active=is_active,
+        created_by=created_by
+    )
+    db.add(template_theme)
     await db.commit()
-    
-    # Refresh to get the created theme
-    result = await db.execute(select(Theme).where(Theme.id == 32))
-    template_theme = result.scalar_one()
+    await db.refresh(template_theme)
     return template_theme
 
 

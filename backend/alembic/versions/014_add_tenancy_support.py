@@ -5,7 +5,7 @@ TENANCY_MODE is set to 'shared_db' or 'separate_db'. If TENANCY_MODE is 'single'
 this migration does nothing.
 
 Revision ID: 014_add_tenancy_support
-Revises: 013_add_pages_forms_menus_support_tickets
+Revises: 013_pages_forms_menus_tickets
 Create Date: 2025-01-25 12:00:00.000000
 
 """
@@ -17,7 +17,7 @@ from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision = '014_add_tenancy_support'
-down_revision = '013_add_pages_forms_menus_support_tickets'
+down_revision = '013_pages_forms_menus_tickets'
 branch_labels = None
 depends_on = None
 

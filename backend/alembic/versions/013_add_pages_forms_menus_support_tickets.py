@@ -1,6 +1,6 @@
 """add pages forms menus support tickets
 
-Revision ID: 013_add_pages_forms_menus_support_tickets
+Revision ID: 013_pages_forms_menus_tickets
 Revises: 012_add_integrations_table
 Create Date: 2025-01-25 12:00:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '013_add_pages_forms_menus_support_tickets'
+revision = '013_pages_forms_menus_tickets'
 down_revision = '012_add_integrations_table'
 branch_labels = None
 depends_on = None
