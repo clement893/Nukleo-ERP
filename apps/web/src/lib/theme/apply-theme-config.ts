@@ -4,10 +4,38 @@
  */
 import type { ThemeConfig } from '@modele/types';
 import { generateColorShades, generateRgb } from './color-utils';
+import { validateThemeConfig } from './theme-validator';
+import { logger } from '@/lib/logger';
 
-export function applyThemeConfigDirectly(config: ThemeConfig) {
+export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
+  validateContrast?: boolean;
+  logWarnings?: boolean;
+}) {
   if (typeof document === 'undefined') {
     return; // Server-side rendering, skip
+  }
+  
+  const { validateContrast = true, logWarnings = true } = options || {};
+  
+  // Validate theme configuration if requested
+  if (validateContrast) {
+    const validation = validateThemeConfig(config as any, { 
+      strictContrast: false, 
+      logWarnings 
+    });
+    
+    if (!validation.valid) {
+      if (validation.colorFormatErrors.length > 0) {
+        logger.warn('[Theme] Color format errors detected:', validation.colorFormatErrors);
+      }
+      
+      if (validation.contrastIssues.length > 0) {
+        const failCount = validation.contrastIssues.filter(issue => issue.level === 'fail').length;
+        if (failCount > 0) {
+          logger.warn(`[Theme] ${failCount} contrast issue(s) detected that do not meet WCAG requirements`);
+        }
+      }
+    }
   }
 
   const root = document.documentElement;
