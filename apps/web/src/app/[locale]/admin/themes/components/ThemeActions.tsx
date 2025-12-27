@@ -42,8 +42,14 @@ export function useThemeActions() {
       // Clear cache to force fresh theme load
       clearThemeCache();
       
-      // Refresh global theme to apply changes
+      // Small delay to ensure cache is cleared before refresh
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refresh global theme to apply changes (force apply)
       await refreshTheme();
+      
+      // Additional delay to ensure theme is applied before closing modal
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       setShowActivateModal(false);
       const themeName = selectedTheme.display_name;

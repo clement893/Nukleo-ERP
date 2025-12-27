@@ -38,7 +38,7 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
   const [theme, setTheme] = useState<ThemeConfigResponse | null>(initialTheme);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchTheme = async () => {
+  const fetchTheme = async (forceApply: boolean = false) => {
     try {
       setError(null);
       
@@ -50,14 +50,20 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       const themeIdChanged = currentThemeId !== activeTheme.id;
       
       // Compare config to detect changes even if ID is the same
-      const configChanged = themeIdChanged || JSON.stringify(theme?.config) !== JSON.stringify(activeTheme.config);
+      // Use a more robust comparison that handles object order differences
+      const currentConfigStr = theme?.config ? JSON.stringify(theme.config, Object.keys(theme.config).sort()) : null;
+      const newConfigStr = activeTheme.config ? JSON.stringify(activeTheme.config, Object.keys(activeTheme.config).sort()) : null;
+      const configChanged = themeIdChanged || currentConfigStr !== newConfigStr;
       
-      if (configChanged) {
-        logger.info('[Theme] Theme changed, applying new configuration', {
+      // Always apply if forced, or if theme/config changed, or if no theme is set yet
+      if (forceApply || configChanged || !theme) {
+        logger.info('[Theme] Theme changed or force apply, applying new configuration', {
           oldId: currentThemeId,
           newId: activeTheme.id,
           idChanged: themeIdChanged,
           configChanged: !themeIdChanged && configChanged,
+          forceApply,
+          hasTheme: !!theme,
         });
         
         setTheme(activeTheme);
@@ -66,12 +72,17 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
         const isManualTheme = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-manual-theme');
         if (!isManualTheme) {
           applyThemeConfig(activeTheme.config);
+          logger.info('[Theme] Theme config applied to DOM', { themeId: activeTheme.id });
+        } else {
+          logger.info('[Theme] Skipped theme application (manual theme active)');
         }
         // Cache the theme for next time
         saveThemeToCache(activeTheme.config, activeTheme.id);
-      } else if (!theme && cachedTheme) {
-        // If no theme set but we have cached theme, still update state for consistency
-        setTheme(activeTheme);
+      } else {
+        logger.debug('[Theme] Theme unchanged, skipping application', {
+          currentId: currentThemeId,
+          activeId: activeTheme.id,
+        });
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load theme');
@@ -415,7 +426,8 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
   }, [theme]); // Re-run when theme changes to update observer
 
   const refreshTheme = async () => {
-    await fetchTheme();
+    // Force apply when refreshing (e.g., after theme activation)
+    await fetchTheme(true);
   };
 
   return (
