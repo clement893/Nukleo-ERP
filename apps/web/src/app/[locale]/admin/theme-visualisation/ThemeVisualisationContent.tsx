@@ -267,7 +267,7 @@ export function ThemeVisualisationContent() {
           <p className="text-gray-600 dark:text-gray-400">
             Thème: <span className="font-semibold">{theme.display_name}</span> (ID: {theme.id})
             {canEdit && (
-              <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+              <span className="ml-2 text-xs bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2 py-1 rounded">
                 Thème éditable
               </span>
             )}
