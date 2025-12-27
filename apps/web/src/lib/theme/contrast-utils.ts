@@ -17,16 +17,20 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
   
   // Handle 3-digit hex (#RGB)
   if (cleanHex.length === 3) {
-    const r = parseInt(cleanHex[0] + cleanHex[0], 16);
-    const g = parseInt(cleanHex[1] + cleanHex[1], 16);
-    const b = parseInt(cleanHex[2] + cleanHex[2], 16);
+    const rChar = cleanHex[0];
+    const gChar = cleanHex[1];
+    const bChar = cleanHex[2];
+    if (!rChar || !gChar || !bChar) return null;
+    const r = parseInt(rChar + rChar, 16);
+    const g = parseInt(gChar + gChar, 16);
+    const b = parseInt(bChar + bChar, 16);
     return { r, g, b };
   }
   
   // Handle 6-digit hex (#RRGGBB)
   if (cleanHex.length === 6) {
     const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
-    if (!result) return null;
+    if (!result || !result[1] || !result[2] || !result[3]) return null;
     return {
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
@@ -58,12 +62,16 @@ export function rgbToHex(r: number, g: number, b: number): string {
  */
 export function getLuminance(r: number, g: number, b: number): number {
   // Normalize RGB values to 0-1
-  const [rs, gs, bs] = [r, g, b].map((val) => {
-    const normalized = val / 255;
-    return normalized <= 0.03928
-      ? normalized / 12.92
-      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+  const normalized = [r, g, b].map((val) => {
+    const norm = val / 255;
+    return norm <= 0.03928
+      ? norm / 12.92
+      : Math.pow((norm + 0.055) / 1.055, 2.4);
   });
+  
+  const rs = normalized[0] ?? 0;
+  const gs = normalized[1] ?? 0;
+  const bs = normalized[2] ?? 0;
   
   // Calculate relative luminance using WCAG formula
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
