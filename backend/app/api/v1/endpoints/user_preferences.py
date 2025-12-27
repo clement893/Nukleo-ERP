@@ -4,8 +4,8 @@ User Preferences API Endpoints
 
 from typing import Dict, Any, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.exc import ProgrammingError, OperationalError
 
@@ -70,11 +70,11 @@ class PreferencesDictResponse(BaseModel):
         }
 
 
-@router.get("/preferences", response_model=None, tags=["user-preferences"])
+@router.get("/preferences", tags=["user-preferences"])
 async def get_all_preferences(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Response:
     """Get all preferences for the current user"""
     try:
         service = UserPreferenceService(db)
