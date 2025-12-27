@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getActiveTheme, getTheme, updateTheme } from '@/lib/api/theme';
+import { useGlobalTheme } from '@/lib/theme/global-theme-provider';
 import type { ThemeConfigResponse, ThemeConfig, ThemeUpdate } from '@modele/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -15,6 +16,7 @@ import Select from '@/components/ui/Select';
 export function ThemeVisualisationContent() {
   const searchParams = useSearchParams();
   const themeIdParam = searchParams.get('themeId');
+  const { refreshTheme } = useGlobalTheme();
   const [theme, setTheme] = useState<ThemeConfigResponse | null>(null);
   const [editedConfig, setEditedConfig] = useState<ThemeConfig | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -81,8 +83,11 @@ export function ThemeVisualisationContent() {
       setSuccessMessage('Thème TemplateTheme mis à jour avec succès !');
       setIsEditing(false);
       
-      // Refresh theme
+      // Refresh theme data
       await fetchTheme();
+      
+      // Refresh global theme immediately to apply changes site-wide
+      await refreshTheme();
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
