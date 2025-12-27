@@ -20,11 +20,12 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
 
-# Install dependencies with BuildKit cache mount for faster subsequent builds
+# Install dependencies
 # Sharp will use system libvips (vips-dev) instead of downloading binaries
-# Cache pnpm store to speed up dependency installation on subsequent builds
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-    pnpm install --frozen-lockfile || \
+# Railway automatically caches .pnpm-store via railway.json configuration
+# Configure pnpm to use a cache directory that Railway can cache (relative to workdir)
+RUN pnpm config set store-dir .pnpm-store
+RUN pnpm install --frozen-lockfile || \
     (echo "Retrying installation with relaxed lockfile..." && sleep 5 && pnpm install --no-frozen-lockfile) || \
     (echo "Final retry with build from source..." && npm_config_build_from_source=true pnpm install --no-frozen-lockfile)
 
@@ -38,9 +39,8 @@ COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=deps /app/apps/web/package.json ./apps/web/package.json
 COPY --from=deps /app/packages/types/package.json ./packages/types/package.json
 # Reinstall to recreate symlinks for binaries (offline mode to use cached packages)
-# Use cache mount for faster reinstalls
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-    pnpm install --offline --no-frozen-lockfile || pnpm install --no-frozen-lockfile
+# Railway automatically caches .pnpm-store via railway.json configuration
+RUN pnpm install --offline --no-frozen-lockfile || pnpm install --no-frozen-lockfile
 
 # Copy and build types package first (required for web app build)
 COPY packages/types ./packages/types
@@ -55,9 +55,8 @@ COPY apps/web ./apps/web
 COPY packages ./packages
 
 # Reinstall to ensure workspace links are correct after types package build
-# Use cache mount for faster reinstalls
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-    pnpm install --offline --no-frozen-lockfile || pnpm install --no-frozen-lockfile
+# Railway automatically caches .pnpm-store via railway.json configuration
+RUN pnpm install --offline --no-frozen-lockfile || pnpm install --no-frozen-lockfile
 
 # Railway passes environment variables, but they need to be available during build
 # We use ARG to accept them and ENV to make them available to Next.js
