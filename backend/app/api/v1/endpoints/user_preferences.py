@@ -81,7 +81,11 @@ async def get_all_preferences(
         preferences = await service.get_all_preferences(current_user.id)
         
         if not preferences:
-            return {}
+            # Convert to JSONResponse for slowapi compatibility
+            return JSONResponse(
+                content={},
+                status_code=200
+            )
         
         # Clean all preference values to ensure JSON serialization
         cleaned_preferences = {
@@ -145,13 +149,13 @@ async def get_preference(
         )
 
 
-@router.put("/preferences/{key}", response_model=PreferenceResponse, tags=["user-preferences"])
+@router.put("/preferences/{key}", response_model=None, tags=["user-preferences"])
 async def set_preference(
     key: str,
     preference_data: PreferenceUpdate = Body(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """Set a preference for the current user"""
     try:
         service = UserPreferenceService(db)
