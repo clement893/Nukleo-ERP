@@ -23,15 +23,20 @@ class UserPreferenceService:
         key: str
     ) -> Optional[UserPreference]:
         """Get a specific preference for a user"""
-        result = await self.db.execute(
-            select(UserPreference).where(
-                and_(
-                    UserPreference.user_id == user_id,
-                    UserPreference.key == key
+        try:
+            result = await self.db.execute(
+                select(UserPreference).where(
+                    and_(
+                        UserPreference.user_id == user_id,
+                        UserPreference.key == key
+                    )
                 )
             )
-        )
-        return result.scalar_one_or_none()
+            return result.scalar_one_or_none()
+        except Exception as e:
+            logger.error(f"Error getting preference {key} for user {user_id}: {e}", exc_info=True)
+            # Return None if table doesn't exist or other error occurs
+            return None
 
     async def get_all_preferences(
         self,
