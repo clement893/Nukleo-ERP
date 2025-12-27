@@ -1,10 +1,7 @@
 'use client';
 
-// Force dynamic rendering to avoid static generation
-// Note: generateStaticParams() cannot be used with 'use client'
-// The dynamic exports are sufficient for Client Components
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
+// Note: Client Components are automatically dynamic in Next.js App Router
+// No need for export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/lib/store';
