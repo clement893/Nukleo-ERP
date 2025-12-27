@@ -14,20 +14,17 @@ import {
   Palette, 
   Plus, 
   Check, 
-  Edit, 
   Trash2, 
   RefreshCw,
-  Eye,
-  Sparkles
+  Eye
 } from 'lucide-react';
-import { useToast } from '@/components/ui/Toast';
+import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
 
 export function ThemeManagementContent() {
   const router = useRouter();
   const { showToast } = useToast();
   const [themes, setThemes] = useState<Theme[]>([]);
-  const [activeThemeId, setActiveThemeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -60,7 +57,6 @@ export function ThemeManagementContent() {
       setError(null);
       const response: ThemeListResponse = await listThemes();
       setThemes(response.themes || []);
-      setActiveThemeId(response.active_theme_id || null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load themes';
       setError(errorMessage);
@@ -371,7 +367,7 @@ export function ThemeManagementContent() {
             onChange={(e) => setNewTheme({ ...newTheme, name: e.target.value })}
             placeholder="mon-theme"
             required
-            helpText="Identifiant unique (minuscules, tirets, underscores uniquement)"
+            helperText="Identifiant unique (minuscules, tirets, underscores uniquement)"
           />
 
           <Input
