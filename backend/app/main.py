@@ -109,23 +109,35 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         if logger:
             logger.warning(f"Theme preference column migration skipped: {e}", exc_info=True)
     
-    # Ensure default theme exists - only if DB is available
+    # Ensure default theme exists - CRITICAL for template functionality
+    # This must succeed for the application to work properly
+    theme_created = False
     try:
         from app.core.database import get_db
         from app.api.v1.endpoints.themes import ensure_default_theme
         async for db in get_db():
             try:
-                await ensure_default_theme(db, created_by=1)
+                theme = await ensure_default_theme(db, created_by=1)
+                theme_created = True
                 if logger:
-                    logger.info("Default theme ensured")
-                print("✓ Default theme ensured", file=sys.stderr)
+                    logger.info(f"Default theme ensured: {theme.name} (ID: {theme.id}, Active: {theme.is_active})")
+                print(f"✓ Default theme ensured: {theme.name} (ID: {theme.id}, Active: {theme.is_active})", file=sys.stderr)
             except Exception as e:
                 if logger:
-                    logger.warning(f"Default theme creation skipped: {e}")
+                    logger.error(f"CRITICAL: Default theme creation failed: {e}", exc_info=True)
+                print(f"❌ CRITICAL ERROR: Default theme creation failed: {e}", file=sys.stderr)
+                print("   The application may not function correctly without a theme.", file=sys.stderr)
+                # Don't break startup, but log the error prominently
             break
     except Exception as e:
         if logger:
-            logger.warning(f"Default theme initialization skipped: {e}")
+            logger.error(f"CRITICAL: Default theme initialization failed: {e}", exc_info=True)
+        print(f"❌ CRITICAL ERROR: Default theme initialization failed: {e}", file=sys.stderr)
+        print("   Database connection may be unavailable. Theme will be created on first API call.", file=sys.stderr)
+    
+    if not theme_created:
+        print("⚠️  WARNING: TemplateTheme was not created during startup.", file=sys.stderr)
+        print("   It will be created automatically when /api/v1/themes/active is first called.", file=sys.stderr)
     
     # Log environment info
     if logger:
