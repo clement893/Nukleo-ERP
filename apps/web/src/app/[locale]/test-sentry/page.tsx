@@ -126,7 +126,7 @@ export default function TestSentryPage() {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Browser Console Test
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Open browser DevTools (F12) and run this in the console:
           </p>
           <div className="bg-muted p-4 rounded-lg font-mono text-sm">

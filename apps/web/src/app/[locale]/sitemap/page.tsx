@@ -110,11 +110,11 @@ function SitemapPageContent() {
                                 )}
                               </div>
                             </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-500 mb-2">
+                            <p className="text-sm text-muted-foreground mb-2">
                               {page.description}
                             </p>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400 dark:text-gray-600 font-mono">
+                              <span className="text-xs text-muted-foreground font-mono">
                                 {page.path}
                               </span>
                               <span className="text-xs text-red-600 dark:text-red-400">
@@ -131,11 +131,11 @@ function SitemapPageContent() {
             ))}
           </div>
 
-          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+          <div className="mt-8 pt-8 border-t border-border">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
               Sitemap XML
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Pour les moteurs de recherche, vous pouvez également accéder au sitemap XML :
             </p>
             <Link
@@ -147,19 +147,19 @@ function SitemapPageContent() {
           </div>
 
           {/* Note explicative sur la logique d'accès */}
-          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+          <div className="mt-8 pt-8 border-t border-border">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
               📋 Note sur l'accès aux pages
             </h2>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="font-semibold text-foreground mb-2">
                   Pages publiques (accessibles sans connexion)
                 </h3>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                <p className="text-sm text-foreground mb-2">
                   Ces pages sont accessibles à tous les visiteurs, même sans compte utilisateur :
                 </p>
-                <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
+                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 ml-4">
                   <li>Page d'accueil, tarifs, exemples, composants, documentation</li>
                   <li>Pages d'authentification (connexion, inscription)</li>
                   <li>Pages de test et monitoring</li>

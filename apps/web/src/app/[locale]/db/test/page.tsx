@@ -156,7 +156,7 @@ function DatabaseTestContent() {
                 {healthData.database_url && (
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">Database:</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                    <span className="text-sm text-muted-foreground font-mono">
                       {healthData.database_url}
                     </span>
                   </div>
@@ -235,7 +235,7 @@ function DatabaseTestContent() {
                         <span className="font-semibold">Duplicate Emails</span>
                         {getStatusBadge(healthData.checks.integrity.duplicate_emails.status)}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Count: {healthData.checks.integrity.duplicate_emails.count}
                       </p>
                       {healthData.checks.integrity.duplicate_emails.details && 
@@ -256,7 +256,7 @@ function DatabaseTestContent() {
                         <span className="font-semibold">Orphaned Subscriptions</span>
                         {getStatusBadge(healthData.checks.integrity.orphaned_subscriptions.status)}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Count: {healthData.checks.integrity.orphaned_subscriptions.count}
                       </p>
                     </div>
@@ -267,7 +267,7 @@ function DatabaseTestContent() {
                         <span className="font-semibold">Orphaned Team Members</span>
                         {getStatusBadge(healthData.checks.integrity.orphaned_team_members.status)}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Count: {healthData.checks.integrity.orphaned_team_members.count}
                       </p>
                     </div>
@@ -278,7 +278,7 @@ function DatabaseTestContent() {
                         <span className="font-semibold">Active Themes</span>
                         {getStatusBadge(healthData.checks.integrity.active_themes.status)}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Count: {healthData.checks.integrity.active_themes.count}
                         {healthData.checks.integrity.active_themes.message && (
                           <span className="ml-2">({healthData.checks.integrity.active_themes.message})</span>

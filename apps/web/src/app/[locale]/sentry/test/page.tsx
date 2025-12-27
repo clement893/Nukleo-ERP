@@ -210,7 +210,7 @@ function SentryTestContent() {
           >
             Capture Test Exception
           </Button>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             This will send a test exception to Sentry with additional context.
           </p>
         </div>
@@ -322,19 +322,19 @@ function SentryTestContent() {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">2. Test Exception Capture</h3>
+            <h3 className="font-semibold mb-1 text-foreground">2. Test Exception Capture</h3>
             <p>Click "Capture Test Exception" to send a test error to Sentry. Check your Sentry dashboard to see the error appear.</p>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">3. Test Message Capture</h3>
+            <h3 className="font-semibold mb-1 text-foreground">3. Test Message Capture</h3>
             <p>Use the message buttons to send different severity levels (info, warning, error) to Sentry.</p>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">4. User Context</h3>
+            <h3 className="font-semibold mb-1 text-foreground">4. User Context</h3>
             <p>Set user context to associate errors with specific users. This helps track which users are experiencing issues.</p>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">5. Error Boundary</h3>
+            <h3 className="font-semibold mb-1 text-foreground">5. Error Boundary</h3>
             <p>The "Throw Unhandled Error" button tests the Error Boundary component, which catches React errors and reports them to Sentry.</p>
           </div>
           <Alert variant="info" title="ℹ️ Note" className="mt-4">

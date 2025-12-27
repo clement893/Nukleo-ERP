@@ -307,15 +307,15 @@ function EmailTestContent() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">2. Test Email</h3>
+              <h3 className="font-semibold mb-1 text-foreground">2. Test Email</h3>
               <p>Select "Test Email" and enter your email address. This sends a simple test email.</p>
             </div>
             <div>
-              <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">3. Welcome Email</h3>
+              <h3 className="font-semibold mb-1 text-foreground">3. Welcome Email</h3>
               <p>Select "Welcome Email" to send a formatted welcome email template.</p>
             </div>
             <div>
-              <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">4. Custom Email</h3>
+              <h3 className="font-semibold mb-1 text-foreground">4. Custom Email</h3>
               <p>Select "Custom Email" to send a fully customized email with HTML content.</p>
             </div>
             <Alert variant="warning" title="⚠️ Important" className="mt-4">

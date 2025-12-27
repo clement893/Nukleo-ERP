@@ -227,7 +227,7 @@ function StripeTestContent() {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">2. Test Checkout</h3>
+            <h3 className="font-semibold mb-1 text-foreground">2. Test Checkout</h3>
             <p>Click "Subscribe" on a plan to create a Stripe checkout session. Use test card:</p>
             <ul className="list-disc list-inside ml-4 mt-1">
               <li>Card: 4242 4242 4242 4242</li>
@@ -236,7 +236,7 @@ function StripeTestContent() {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">3. Customer Portal</h3>
+            <h3 className="font-semibold mb-1 text-foreground">3. Customer Portal</h3>
             <p>If you have an active subscription, use "Open Customer Portal" to test the Stripe customer portal.</p>
           </div>
           <Alert variant="warning" title="⚠️ Important" className="mt-4">
