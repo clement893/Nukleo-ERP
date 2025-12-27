@@ -49,7 +49,7 @@ function SubscriptionSuccessContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-muted dark:to-muted flex items-center justify-center px-4">
       <Card className="w-full max-w-2xl">
         <div className="p-8 text-center">
           {/* Success Icon */}
@@ -139,7 +139,7 @@ export default function SubscriptionSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-muted dark:to-muted flex items-center justify-center px-4">
           <Card className="w-full max-w-2xl">
             <div className="p-8 text-center">
               <Loading />

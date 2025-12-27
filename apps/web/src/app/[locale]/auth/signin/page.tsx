@@ -20,7 +20,7 @@ export default function SignInPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-muted dark:to-muted">
       <Container>
         <Card className="text-center">
           <div className="py-12">

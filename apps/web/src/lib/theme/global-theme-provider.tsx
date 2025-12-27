@@ -80,16 +80,22 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
   };
 
   const applyThemeConfig = (config: ThemeConfig) => {
+    // Check actual dark class on document root (set by ThemeContext)
+    // This ensures we use the correct mode even if theme config mode doesn't match
+    const root = document.documentElement;
+    const isDarkMode = root.classList.contains('dark');
+    
     // Get theme config for current mode (light/dark/system)
-    const modeConfig = getThemeConfigForMode(config);
+    // But override mode based on actual dark class if present
+    const actualMode = isDarkMode ? 'dark' : 'light';
+    const configWithActualMode = { ...config, mode: actualMode } as ThemeConfig;
+    const modeConfig = getThemeConfigForMode(configWithActualMode);
     
     // Note: We do NOT manage light/dark classes here - that's ThemeProvider's responsibility
     // ThemeProvider is the single source of truth for light/dark mode classes
     // We only manage CSS variables (colors, fonts, effects, etc.)
     
     // Apply CSS variables to document root
-    const root = document.documentElement;
-    
     // Use mode-specific config
     const configToApply = modeConfig;
     
@@ -341,6 +347,23 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       fetchTheme();
     });
     
+    // Watch for dark class changes on document root (set by ThemeContext)
+    // This ensures theme CSS variables update when user toggles dark mode
+    const observer = new MutationObserver(() => {
+      if (theme) {
+        // Re-apply theme config when dark class changes
+        applyThemeConfig(theme.config);
+      }
+    });
+    
+    // Observe class changes on document root
+    if (typeof document !== 'undefined') {
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+    }
+    
     // Watch for system dark mode preference changes
     const cleanup = watchDarkModePreference(() => {
       // Re-apply theme when system preference changes (if mode is 'system')
@@ -359,9 +382,10 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     return () => {
       clearInterval(interval);
       cleanup();
+      observer.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount to prevent re-render loops
+  }, [theme]); // Re-run when theme changes to update observer
 
   const refreshTheme = async () => {
     await fetchTheme();

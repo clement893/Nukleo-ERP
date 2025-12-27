@@ -176,13 +176,15 @@ export default async function LocaleLayout({
               
               /* Dark mode styles - Use .dark class instead of @media for user preference */
               /* This ensures styles apply when user chooses dark mode, not just system preference */
+              /* Match dark-mode-config.ts for consistency */
               .dark {
-                --color-background: #1f2937;
-                --color-foreground: #ffffff;
-                --color-muted: #111827;
-                --color-muted-foreground: #d1d5db;
-                --color-border: #374151;
-                --color-input: #1f2937;
+                --color-background: #0f172a;  /* Slate 900 - matches dark-mode-config.ts */
+                --color-foreground: #f8fafc;  /* Slate 50 - matches dark-mode-config.ts */
+                --color-muted: #1e293b;  /* Slate 800 - matches dark-mode-config.ts */
+                --color-muted-foreground: #cbd5e1;  /* Slate 300 - matches dark-mode-config.ts */
+                --color-border: #334155;  /* Slate 700 - matches dark-mode-config.ts */
+                --color-input: #1e293b;  /* Slate 800 - matches dark-mode-config.ts */
+                --color-ring: #60a5fa;  /* Blue 400 - lighter for dark mode */
               }
               
               /* Apply background colors immediately to prevent flash */
@@ -195,8 +197,8 @@ export default async function LocaleLayout({
               
               /* Dark mode body styles - Use .dark class instead of @media */
               .dark body {
-                background-color: var(--color-background, #1f2937);
-                color: var(--color-foreground, #ffffff);
+                background-color: var(--color-background, #0f172a);
+                color: var(--color-foreground, #f8fafc);
               }
             `,
           }}
@@ -234,8 +236,8 @@ export default async function LocaleLayout({
         className={inter.className}
         style={{ 
           fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
-          backgroundColor: 'var(--color-background, #ffffff)',
-          color: 'var(--color-foreground, #0f172a)'
+          backgroundColor: 'var(--color-background)',
+          color: 'var(--color-foreground)'
         }}
         suppressHydrationWarning
         // Note: suppressHydrationWarning can be removed after testing confirms no hydration errors

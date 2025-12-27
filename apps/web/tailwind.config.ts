@@ -127,6 +127,16 @@ const config: Config = {
           900: '#111827',
           950: '#030712',
         },
+        // Theme-aware base colors - These use CSS variables that change with theme
+        background: 'var(--color-background)',
+        foreground: 'var(--color-foreground)',
+        muted: {
+          DEFAULT: 'var(--color-muted)',
+          foreground: 'var(--color-muted-foreground)',
+        },
+        border: 'var(--color-border)',
+        input: 'var(--color-input)',
+        ring: 'var(--color-ring)',
       },
       spacing: {
         // Extended spacing scale for consistent layouts

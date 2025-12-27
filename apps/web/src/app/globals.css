@@ -110,15 +110,15 @@
   --color-ring: #2563eb;
 }
 
-/* Dark mode default values */
+/* Dark mode default values - Match dark-mode-config.ts for consistency */
 .dark {
-  --color-background: #1f2937;
-  --color-foreground: #ffffff;
-  --color-muted: #111827;
-  --color-muted-foreground: #d1d5db;
-  --color-border: #374151;
-  --color-input: #1f2937;
-  --color-ring: #3b82f6;
+  --color-background: #0f172a;  /* Slate 900 - matches dark-mode-config.ts */
+  --color-foreground: #f8fafc;  /* Slate 50 - matches dark-mode-config.ts */
+  --color-muted: #1e293b;  /* Slate 800 - matches dark-mode-config.ts */
+  --color-muted-foreground: #cbd5e1;  /* Slate 300 - matches dark-mode-config.ts */
+  --color-border: #334155;  /* Slate 700 - matches dark-mode-config.ts */
+  --color-input: #1e293b;  /* Slate 800 - matches dark-mode-config.ts */
+  --color-ring: #60a5fa;  /* Blue 400 - lighter for dark mode */
 }
 
 /* RTL Support */
