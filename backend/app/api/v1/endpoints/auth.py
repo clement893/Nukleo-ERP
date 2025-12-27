@@ -260,8 +260,9 @@ async def login(
     if not user or not verify_password(form_data.password, user.hashed_password):
         # Log failed login attempt
         # Use separate session (db=None) to ensure log is saved even if exception is raised
+        logger.info(f"Login failure detected for email: {form_data.username}")
         try:
-            await SecurityAuditLogger.log_authentication_event(
+            audit_log = await SecurityAuditLogger.log_authentication_event(
                 db=None,  # Create separate session to ensure persistence
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 description=f"Failed login attempt for email: {form_data.username}",
@@ -274,9 +275,21 @@ async def login(
                 success="failure",
                 metadata={"reason": "invalid_credentials"}
             )
+            if audit_log:
+                logger.info(f"✅ Login failure audit log created successfully (ID: {audit_log.id})")
+            else:
+                logger.error("❌ Login failure audit log returned None - logging may have failed silently")
         except Exception as e:
-            # Don't fail the request if audit logging fails
-            logger.error(f"Failed to log authentication event: {e}", exc_info=True)
+            # Don't fail the request if audit logging fails, but log prominently
+            error_msg = (
+                f"❌ FAILED TO LOG LOGIN FAILURE EVENT: {e}\n"
+                f"   Email: {form_data.username}\n"
+                f"   IP: {client_ip}\n"
+                f"   Error Type: {type(e).__name__}\n"
+                f"   Error Details: {str(e)}"
+            )
+            logger.error(error_msg, exc_info=True)
+            print(error_msg, flush=True)
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -515,8 +528,9 @@ async def logout(
     
     # Log logout event
     # Use separate session (db=None) to ensure log is saved independently
+    logger.info(f"Logout endpoint called for user {current_user.email} (ID: {current_user.id})")
     try:
-        await SecurityAuditLogger.log_authentication_event(
+        audit_log = await SecurityAuditLogger.log_authentication_event(
             db=None,  # Create separate session to ensure persistence
             event_type=SecurityEventType.LOGOUT,
             description=f"User logged out: {current_user.email}",
@@ -528,9 +542,21 @@ async def logout(
             request_path=str(request.url.path),
             success="success"
         )
+        if audit_log:
+            logger.info(f"✅ Logout audit log created successfully (ID: {audit_log.id})")
+        else:
+            logger.error("❌ Logout audit log returned None - logging may have failed silently")
     except Exception as e:
-        # Don't fail the request if audit logging fails
-        logger.error(f"Failed to log logout event: {e}", exc_info=True)
+        # Don't fail the request if audit logging fails, but log prominently
+        error_msg = (
+            f"❌ FAILED TO LOG LOGOUT EVENT: {e}\n"
+            f"   User: {current_user.email} (ID: {current_user.id})\n"
+            f"   IP: {client_ip}\n"
+            f"   Error Type: {type(e).__name__}\n"
+            f"   Error Details: {str(e)}"
+        )
+        logger.error(error_msg, exc_info=True)
+        print(error_msg, flush=True)
     
     return {"message": "Logged out successfully"}
 
