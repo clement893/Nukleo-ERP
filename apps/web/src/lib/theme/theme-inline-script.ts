@@ -290,132 +290,16 @@ export const themeInlineScript = `
     }
   }
   
-  // Apply default theme colors IMMEDIATELY to prevent color flash
-  // These match the DEFAULT_THEME_CONFIG from the backend
-  // This ensures consistent colors from the very first render
-  (function() {
-    try {
-      var defaultConfig = {
-        primary_color: '#2563eb',  // Deep professional blue
-        secondary_color: '#6366f1',  // Elegant indigo
-        danger_color: '#dc2626',  // Refined red
-        warning_color: '#d97706',  // Warm amber
-        info_color: '#0891b2',  // Professional cyan
-        success_color: '#059669',  // Professional green
-        colors: {
-          primary: '#2563eb',
-          secondary: '#6366f1',
-          danger: '#dc2626',
-          destructive: '#dc2626',
-          warning: '#d97706',
-          info: '#0891b2',
-          success: '#059669',
-          background: '#ffffff',
-          foreground: '#0f172a',  // Slate 900 for better contrast
-          muted: '#f1f5f9',  // Slate 100
-          mutedForeground: '#64748b',  // Slate 500
-          border: '#e2e8f0',  // Slate 200
-          input: '#ffffff',
-          ring: '#2563eb'
-        },
-        font_family: 'Inter',
-        border_radius: '8px',
-        typography: {
-          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-          fontFamilyHeading: 'Inter, system-ui, -apple-system, sans-serif',
-          fontFamilySubheading: 'Inter, system-ui, -apple-system, sans-serif'
-        }
-      };
-      
-      // Apply default theme immediately (synchronously)
-      applyThemeConfig(defaultConfig);
-      
-      // Note: Body styles are handled via CSS in layout.tsx using CSS variables
-      // We don't manipulate body.style directly to prevent React hydration mismatches
-    } catch (e) {
-      // Silently fail
-    }
-  })();
-  
-  // Then try to load theme from API asynchronously and update if different
-  // This runs before React hydration to prevent FOUC
-  // We use fetch with immediate execution to load theme as fast as possible
-  (function() {
-    try {
-      // Get API URL from various sources
-      var apiUrl = '';
-      if (typeof window !== 'undefined') {
-        // Try to get from window.__NEXT_DATA__ first (Next.js)
-        if (window.__NEXT_DATA__ && window.__NEXT_DATA__.env && window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL) {
-          apiUrl = window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL;
-        }
-        // Try to get from data attribute on html element (priority method)
-        if (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.apiUrl) {
-          apiUrl = document.documentElement.dataset.apiUrl;
-        }
-        // Also try window.__NEXT_DATA__ as fallback
-        else if (window.__NEXT_DATA__ && window.__NEXT_DATA__.env && window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL) {
-          apiUrl = window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL;
-        }
-        // Fallback to default
-        else {
-          apiUrl = 'http://localhost:8000';
-        }
-      } else {
-        apiUrl = 'http://localhost:8000';
-      }
-      
-      // Use fetch for async loading (non-blocking)
-      // This will update theme as soon as it loads, replacing the default
-      // Note: This endpoint is public and doesn't require authentication
-      if (!apiUrl || apiUrl === 'http://localhost:8000') {
-        // In production, try to detect API URL from current origin
-        if (typeof window !== 'undefined' && window.location) {
-          var origin = window.location.origin;
-          // If we're on Railway or similar, try to construct API URL
-          // This is a fallback - ideally apiUrl should be set via data-api-url attribute
-          if (origin.includes('railway') || origin.includes('vercel') || origin.includes('netlify')) {
-            // Try common patterns - this might need adjustment based on your setup
-            // For now, keep using the provided apiUrl or fallback
-          }
-        }
-      }
-      
-      fetch(apiUrl + '/api/v1/themes/active', {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        credentials: 'omit', // Don't send cookies - this is a public endpoint
-        cache: 'no-cache'
-      })
-      .then(function(response) {
-        if (response.ok) {
-          return response.json();
-        }
-        // If response is not ok, log for debugging but don't throw
-        console.warn('[Theme] Failed to load theme from API:', response.status, response.statusText);
-        throw new Error('Failed to load theme: ' + response.status);
-      })
-      .then(function(data) {
-        if (data && data.config) {
-          // Update theme with actual values from API
-          applyThemeConfig(data.config);
-        }
-      })
-      .catch(function(error) {
-        // Silently fail - default theme is already applied
-        // This prevents errors from blocking page load if API is unavailable
-        // Only log in development
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-          console.warn('[Theme] Could not load theme from API, using defaults:', error);
-        }
-      });
-    } catch (e) {
-      // Silently fail - default theme is already applied
-    }
-  })();
+  // NOTE: We NO LONGER apply default theme colors or fetch from API here.
+  // This was causing the "green buttons flash" issue because:
+  // 1. Default colors were applied immediately (including success_color: '#059669')
+  // 2. Then a fetch API call was made (async, takes time)
+  // 3. During this delay, buttons showed green colors
+  // 4. Finally, React hydrated and GlobalThemeProvider applied the correct theme
+  //
+  // SOLUTION: Let the CSS inline styles in layout.tsx handle default colors,
+  // and let GlobalThemeProvider handle theme loading from cache (sync) and API (async).
+  // This eliminates the race condition and prevents the color flash.
 })();
 `;
 
