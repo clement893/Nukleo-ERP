@@ -12,6 +12,7 @@ import Alert from '@/components/ui/Alert';
 import Input from '@/components/ui/Input';
 import ColorPicker from '@/components/ui/ColorPicker';
 import Textarea from '@/components/ui/Textarea';
+import Textarea from '@/components/ui/Textarea';
 import { RefreshCw, Palette, Type, Layout, Sparkles, Save, Edit2, Upload, Download, Code } from 'lucide-react';
 import Select from '@/components/ui/Select';
 
@@ -200,12 +201,12 @@ export function ThemeVisualisationContent() {
     fetchTheme();
   }, [themeIdParam]); // Re-fetch when themeId changes
 
-  // Update JSON input when editedConfig changes (if JSON editor is visible)
+  // Update JSON input when editedConfig changes (always keep in sync when editing)
   useEffect(() => {
-    if (editedConfig && showJsonImport) {
+    if (editedConfig && isEditing) {
       setJsonInput(JSON.stringify(editedConfig, null, 2));
     }
-  }, [editedConfig, showJsonImport]);
+  }, [editedConfig, isEditing]);
 
   if (loading) {
     return (
@@ -490,27 +491,17 @@ export function ThemeVisualisationContent() {
               />
             </div>
 
-            {/* JSON Import/Export Section */}
+            {/* JSON Editor Section - Always visible when editing */}
             <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Upload className="w-5 h-5" />
-                Import / Export JSON
+                <Code className="w-5 h-5" />
+                Éditeur JSON
               </h3>
               <div className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-2">
                   <Button
                     variant="secondary"
-                    onClick={() => {
-                      if (editedConfig) {
-                        setJsonInput(JSON.stringify(editedConfig, null, 2));
-                      }
-                      setShowJsonImport(!showJsonImport);
-                    }}
-                  >
-                    {showJsonImport ? 'Masquer' : 'Afficher'} JSON
-                  </Button>
-                  <Button
-                    variant="secondary"
+                    size="sm"
                     onClick={() => {
                       if (editedConfig) {
                         const jsonStr = JSON.stringify(editedConfig, null, 2);
@@ -531,21 +522,49 @@ export function ThemeVisualisationContent() {
                     <Download className="w-4 h-4 mr-2" />
                     Exporter JSON
                   </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      if (editedConfig) {
+                        setJsonInput(JSON.stringify(editedConfig, null, 2));
+                        setSuccessMessage('JSON réinitialisé depuis la configuration actuelle.');
+                        setTimeout(() => setSuccessMessage(null), 3000);
+                      }
+                    }}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Réinitialiser depuis config
+                  </Button>
                 </div>
-                {showJsonImport && (
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium mb-2">
-                      Importer depuis JSON
-                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                        (Supporte les configurations complexes : glassmorphism, shadows, gradients, etc.)
-                      </span>
-                    </label>
-                    <textarea
-                      value={jsonInput}
-                      onChange={(e) => setJsonInput(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 font-mono text-sm"
-                      rows={15}
-                      placeholder={`{
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Modifier la configuration JSON directement
+                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                      (Les modifications sont appliquées en temps réel)
+                    </span>
+                  </label>
+                  <Textarea
+                    value={jsonInput}
+                    onChange={(e) => {
+                      setJsonInput(e.target.value);
+                      // Try to parse and update editedConfig in real-time
+                      try {
+                        if (e.target.value.trim()) {
+                          const parsed = JSON.parse(e.target.value);
+                          if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                            setEditedConfig(parsed as ThemeConfig);
+                            setError(null);
+                          }
+                        }
+                      } catch (err) {
+                        // Don't show error for incomplete JSON while typing
+                        // Error will be shown when saving if JSON is invalid
+                      }
+                    }}
+                    className="font-mono text-sm"
+                    rows={20}
+                    placeholder={`{
   "primary_color": "#3b82f6",
   "secondary_color": "#8b5cf6",
   "danger_color": "#ef4444",
@@ -579,63 +598,49 @@ export function ThemeVisualisationContent() {
     }
   }
 }`}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="primary"
-                        onClick={() => {
-                          try {
-                            if (!jsonInput.trim()) {
-                              setError('Le JSON ne peut pas être vide.');
-                              return;
-                            }
-                            
-                            const parsed = JSON.parse(jsonInput);
-                            
-                            // Validate that it's an object
-                            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-                              setError('Le JSON doit être un objet valide.');
-                              return;
-                            }
-                            
-                            // Merge with existing config to preserve structure
-                            const mergedConfig = editedConfig 
-                              ? { ...editedConfig, ...parsed }
-                              : parsed;
-                            
-                            setEditedConfig(mergedConfig as ThemeConfig);
-                            setSuccessMessage('Configuration JSON importée avec succès ! Toutes les propriétés (y compris les effets complexes) ont été appliquées.');
-                            setTimeout(() => setSuccessMessage(null), 5000);
-                            setError(null);
-                          } catch (err) {
-                            const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
-                            if (errorMessage.includes('JSON')) {
-                              setError(`JSON invalide : ${errorMessage}. Veuillez vérifier la syntaxe (virgules, guillemets, accolades).`);
-                            } else {
-                              setError(`Erreur lors de l'import : ${errorMessage}`);
-                            }
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        try {
+                          if (!jsonInput.trim()) {
+                            setError('Le JSON ne peut pas être vide.');
+                            return;
                           }
-                        }}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Importer JSON
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          setJsonInput('');
-                          setShowJsonImport(false);
+                          
+                          const parsed = JSON.parse(jsonInput);
+                          
+                          // Validate that it's an object
+                          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+                            setError('Le JSON doit être un objet valide.');
+                            return;
+                          }
+                          
+                          // Update editedConfig with parsed JSON
+                          setEditedConfig(parsed as ThemeConfig);
+                          setSuccessMessage('Configuration JSON appliquée avec succès !');
+                          setTimeout(() => setSuccessMessage(null), 3000);
                           setError(null);
-                        }}
-                      >
-                        Annuler
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      💡 Astuce : Vous pouvez importer des configurations complexes incluant glassmorphism, shadows, gradients et autres effets CSS personnalisés.
-                    </p>
+                        } catch (err) {
+                          const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+                          if (errorMessage.includes('JSON')) {
+                            setError(`JSON invalide : ${errorMessage}. Veuillez vérifier la syntaxe (virgules, guillemets, accolades).`);
+                          } else {
+                            setError(`Erreur lors de l'application : ${errorMessage}`);
+                          }
+                        }
+                      }}
+                    >
+                      <Code className="w-4 h-4 mr-2" />
+                      Appliquer JSON
+                    </Button>
                   </div>
-                )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    💡 Astuce : Modifiez le JSON directement pour changer toutes les propriétés du thème. Les modifications sont appliquées en temps réel. Cliquez sur "Appliquer JSON" pour valider et appliquer les changements.
+                  </p>
+                </div>
               </div>
             </div>
 
