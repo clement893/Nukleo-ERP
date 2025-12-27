@@ -781,7 +781,13 @@ export function ThemeVisualisationContent() {
                           }
                           
                           // Update editedConfig with parsed JSON
-                          setEditedConfig(parsed as ThemeConfig);
+                          const updatedConfig = parsed as ThemeConfig;
+                          setEditedConfig(updatedConfig);
+                          
+                          // Update jsonInput to reflect the parsed and normalized JSON
+                          // This ensures the JSON is properly formatted
+                          setJsonInput(JSON.stringify(updatedConfig, null, 2));
+                          
                           setSuccessMessage('Configuration JSON appliquée avec succès !');
                           setTimeout(() => setSuccessMessage(null), 3000);
                           setError(null);
