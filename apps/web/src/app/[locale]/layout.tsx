@@ -209,7 +209,7 @@ export default async function LocaleLayout({
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
       </head>
-      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
+      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`} style={{ fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)' }}>
         <SkipLink />
         <SchemaMarkup
           type="organization"

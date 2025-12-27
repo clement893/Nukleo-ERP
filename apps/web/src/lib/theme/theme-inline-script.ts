@@ -163,15 +163,13 @@ export const themeInlineScript = `
       root.style.setProperty('--color-ring', colorsConfig.ring);
     }
     
-    // Apply fonts
+    // Apply fonts - Only set CSS variables, don't modify body directly to avoid hydration issues
     if (config.font_family) {
       const fontFamily = config.font_family.trim();
       root.style.setProperty('--font-family', fontFamily + ', sans-serif');
       root.style.setProperty('--font-family-heading', fontFamily + ', sans-serif');
       root.style.setProperty('--font-family-subheading', fontFamily + ', sans-serif');
-      if (document.body) {
-        document.body.style.fontFamily = 'var(--font-family), sans-serif';
-      }
+      // Don't modify document.body directly - let CSS handle it via var(--font-family)
     }
     
     // Apply fonts from typography config if available
@@ -184,9 +182,7 @@ export const themeInlineScript = `
       if (config.typography.fontFamilySubheading) {
         root.style.setProperty('--font-family-subheading', String(config.typography.fontFamilySubheading));
       }
-      if (document.body) {
-        document.body.style.fontFamily = 'var(--font-family), sans-serif';
-      }
+      // Don't modify document.body directly - let CSS handle it via var(--font-family)
     }
     
     // Load font URL if configured

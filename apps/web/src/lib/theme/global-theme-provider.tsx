@@ -172,17 +172,13 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       document.head.appendChild(link);
     }
 
-    // Apply fonts
+    // Apply fonts - Only set CSS variables, don't modify body/html directly to avoid hydration issues
     if (config.font_family) {
       const fontFamily = config.font_family.trim();
       root.style.setProperty('--font-family', `${fontFamily}, sans-serif`);
       root.style.setProperty('--font-family-heading', `${fontFamily}, sans-serif`);
       root.style.setProperty('--font-family-subheading', `${fontFamily}, sans-serif`);
-      // Apply to body and html
-      if (typeof document !== 'undefined') {
-        document.body.style.fontFamily = `var(--font-family), sans-serif`;
-        root.style.fontFamily = `var(--font-family), sans-serif`;
-      }
+      // Don't modify document.body or root directly - let CSS handle it via var(--font-family)
     }
     
     // Also check typography.fontUrl for new format
@@ -210,10 +206,7 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       if ((config as any).typography.fontFamilySubheading) {
         root.style.setProperty('--font-family-subheading', String((config as any).typography.fontFamilySubheading));
       }
-      if (typeof document !== 'undefined') {
-        document.body.style.fontFamily = `var(--font-family), sans-serif`;
-        root.style.fontFamily = `var(--font-family), sans-serif`;
-      }
+      // Don't modify document.body or root directly - let CSS handle it via var(--font-family)
     }
     
     // Apply border radius
