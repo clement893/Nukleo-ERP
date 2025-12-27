@@ -2,9 +2,8 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { clsx } from 'clsx';
-import ClientOnly from './ClientOnly';
 
-function ThemeToggleContent() {
+export default function ThemeToggle() {
   const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
@@ -31,15 +30,7 @@ function ThemeToggleContent() {
   );
 }
 
-export default function ThemeToggle() {
-  return (
-    <ClientOnly>
-      <ThemeToggleContent />
-    </ClientOnly>
-  );
-}
-
-function ThemeToggleWithIconContent() {
+export function ThemeToggleWithIcon() {
   const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
@@ -84,14 +75,6 @@ function ThemeToggleWithIconContent() {
         </svg>
       )}
     </button>
-  );
-}
-
-export function ThemeToggleWithIcon() {
-  return (
-    <ClientOnly>
-      <ThemeToggleWithIconContent />
-    </ClientOnly>
   );
 }
 

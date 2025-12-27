@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useMemo, ReactNode, startTransition } from 'react';
 import { getActiveTheme } from '@/lib/api/theme';
 
 type Theme = 'light' | 'dark' | 'system';
@@ -10,6 +10,27 @@ interface ThemeContextType {
   resolvedTheme: 'light' | 'dark';
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+}
+
+// Helper function to get initial theme synchronously from localStorage
+// This runs during component initialization, before first render
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'system';
+  try {
+    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    return savedTheme || 'system';
+  } catch {
+    return 'system';
+  }
+}
+
+// Helper function to resolve theme synchronously
+function resolveTheme(theme: Theme): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  if (theme === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return theme;
 }
 
 // Default context value to prevent "useTheme must be used within a ThemeProvider" errors
@@ -28,63 +49,71 @@ const defaultContextValue: ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType>(defaultContextValue);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
-  const [mounted, setMounted] = useState(false);
+  // Preload theme from localStorage synchronously to avoid re-renders
+  const initialTheme = useMemo(() => getInitialTheme(), []);
+  const initialResolvedTheme = useMemo(() => resolveTheme(initialTheme), [initialTheme]);
+  
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(initialResolvedTheme);
+  
+  // Apply theme to document immediately on mount (synchronous)
+  useLayoutEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(initialResolvedTheme);
+  }, []); // Only run once on mount
 
+  // Load theme preference asynchronously (non-blocking)
   useEffect(() => {
-    setMounted(true);
+    // If we already have a theme from localStorage, skip API call
+    if (initialTheme !== 'system' || localStorage.getItem('theme')) {
+      return;
+    }
     
-    // Load theme preference: localStorage takes precedence over global theme
-    const loadTheme = async () => {
-      // First check localStorage for user's local preference
-      const savedTheme = localStorage.getItem('theme') as Theme | null;
-      if (savedTheme) {
-        setThemeState(savedTheme);
-        return;
-      }
-      
-      // If no local preference, try to load global theme from database
-      // Silently fail if backend is unavailable (CORS issues, 502, etc.)
-      try {
-        const response = await getActiveTheme();
-        // Extract mode from config, default to 'system' if not present
-        const mode = (response.config?.mode as Theme) || 'system';
-        setThemeState(mode);
-      } catch (error) {
-        // Silently fallback to system theme if backend is unavailable
-        // This prevents CORS errors from cluttering the console
-        setThemeState('system');
-      }
-    };
-
-    loadTheme();
+    // Load global theme from database (non-critical, use startTransition)
+    startTransition(() => {
+      getActiveTheme()
+        .then((response) => {
+          const mode = (response.config?.mode as Theme) || 'system';
+          if (mode !== theme) {
+            setThemeState(mode);
+          }
+        })
+        .catch(() => {
+          // Silently fallback - theme already set from localStorage or default
+        });
+    });
     
     // Poll for global theme changes every 30 seconds (only if no local preference)
     const interval = setInterval(() => {
       const savedTheme = localStorage.getItem('theme') as Theme | null;
       if (!savedTheme) {
-        loadTheme();
+        getActiveTheme()
+          .then((response) => {
+            const mode = (response.config?.mode as Theme) || 'system';
+            if (mode !== theme) {
+              setThemeState(mode);
+            }
+          })
+          .catch(() => {
+            // Silently fail
+          });
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Only run once on mount
 
-  useEffect(() => {
-    if (!mounted) return;
-
+  // Update resolved theme and apply to document when theme changes
+  useLayoutEffect(() => {
     const root = window.document.documentElement;
     
     // Déterminer le thème résolu
-    let resolved: 'light' | 'dark' = 'light';
+    const resolved = resolveTheme(theme);
     
-    if (theme === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = theme;
+    // Batch state updates to avoid multiple re-renders
+    if (resolved !== resolvedTheme) {
+      setResolvedTheme(resolved);
     }
-
-    setResolvedTheme(resolved);
 
     // Appliquer le thème au document
     root.classList.remove('light', 'dark');
@@ -93,42 +122,41 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Note: Theme is now global and managed by superadmins only
     // Users cannot change it, so we don't save to DB here
     // Only save to localStorage as fallback
-    localStorage.setItem('theme', theme);
-  }, [theme, mounted]);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', theme);
+    }
+  }, [theme]); // Only depend on theme, not resolvedTheme
 
   useEffect(() => {
-    if (!mounted) return;
-
     // Écouter les changements de préférence système
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
       if (theme === 'system') {
         const resolved = mediaQuery.matches ? 'dark' : 'light';
-        setResolvedTheme(resolved);
-        document.documentElement.classList.remove('light', 'dark');
-        document.documentElement.classList.add(resolved);
+        // Use startTransition for non-critical UI updates
+        startTransition(() => {
+          setResolvedTheme(resolved);
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add(resolved);
+        });
       }
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme, mounted]);
+  }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
     // Allow users to override the global theme with their local preference
     // This preference is stored in localStorage and takes precedence
     setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    // Apply immediately
-    const root = window.document.documentElement;
-    let resolved: 'light' | 'dark' = 'light';
-    
-    if (newTheme === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = newTheme;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
     }
+    
+    // Apply immediately (synchronous for user interactions)
+    const root = window.document.documentElement;
+    const resolved = resolveTheme(newTheme);
     
     setResolvedTheme(resolved);
     root.classList.remove('light', 'dark');
@@ -142,11 +170,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme(newTheme);
   };
 
-  // Always render the Provider to prevent "useTheme must be used within a ThemeProvider" errors
-  // Use default values during SSR/hydration, then switch to actual values when mounted
-  const contextValue = mounted
-    ? { theme, resolvedTheme, setTheme, toggleTheme }
-    : defaultContextValue;
+  // Always render the Provider with actual values (no mounted check needed)
+  // Theme is preloaded synchronously, so we always have valid values
+  const contextValue = useMemo(
+    () => ({ theme, resolvedTheme, setTheme, toggleTheme }),
+    [theme, resolvedTheme]
+  );
 
   return (
     <ThemeContext.Provider value={contextValue}>

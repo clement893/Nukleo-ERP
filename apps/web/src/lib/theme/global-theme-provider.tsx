@@ -3,7 +3,7 @@
  */
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, startTransition } from 'react';
 import { getActiveTheme } from '@/lib/api/theme';
 import { logger } from '@/lib/logger';
 import type { ThemeConfigResponse, ThemeConfig } from '@modele/types';
@@ -27,29 +27,26 @@ interface GlobalThemeProviderProps {
 }
 
 export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
-  const [theme, setTheme] = useState<ThemeConfigResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Preload theme from cache synchronously to avoid re-renders
+  const cachedTheme = typeof window !== 'undefined' ? getThemeFromCache() : null;
+  const initialTheme = cachedTheme
+    ? ({
+        config: cachedTheme,
+      } as ThemeConfigResponse)
+    : null;
+
+  const [theme, setTheme] = useState<ThemeConfigResponse | null>(initialTheme);
   const [error, setError] = useState<Error | null>(null);
+  
+  // Apply cached theme immediately on mount (synchronous)
+  if (cachedTheme && initialTheme && typeof window !== 'undefined') {
+    applyThemeConfig(cachedTheme);
+    logger.info('[Theme] Loaded theme from cache');
+  }
 
   const fetchTheme = async () => {
     try {
-      setIsLoading(true);
       setError(null);
-      
-      // Try to get theme from cache first
-      const cachedTheme = getThemeFromCache();
-      if (cachedTheme) {
-        // Apply cached theme immediately for faster initial load
-        const cachedThemeResponse: ThemeConfigResponse = {
-          config: cachedTheme,
-        } as ThemeConfigResponse;
-        setTheme(cachedThemeResponse);
-        applyThemeConfig(cachedTheme);
-        logger.info('[Theme] Loaded theme from cache');
-        // Set loading to false immediately after applying cached theme
-        // Don't wait for API fetch to complete
-        setIsLoading(false);
-      }
       
       // Fetch fresh theme from backend (non-blocking)
       const activeTheme = await getActiveTheme();
@@ -62,13 +59,10 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
         applyThemeConfig(activeTheme.config);
         // Cache the theme for next time
         saveThemeToCache(activeTheme.config, activeTheme.id);
-      } else if (cachedTheme) {
-        // If theme ID matches but we have cached theme, still update state for consistency
+      } else if (!theme && cachedTheme) {
+        // If no theme set but we have cached theme, still update state for consistency
         setTheme(activeTheme);
       }
-      
-      // Ensure loading is false after API fetch completes
-      setIsLoading(false);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load theme');
       setError(error);
@@ -78,18 +72,14 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       });
       
       // If we have a cached theme, use it as fallback
-      const cachedTheme = getThemeFromCache();
-      if (cachedTheme) {
+      const fallbackCachedTheme = getThemeFromCache();
+      if (fallbackCachedTheme && !theme) {
         const cachedThemeResponse: ThemeConfigResponse = {
-          config: cachedTheme,
+          config: fallbackCachedTheme,
         } as ThemeConfigResponse;
         setTheme(cachedThemeResponse);
-        applyThemeConfig(cachedTheme);
+        applyThemeConfig(fallbackCachedTheme);
         logger.info('[Theme] Using cached theme as fallback');
-        setIsLoading(false);
-      } else {
-        // No cached theme available, set loading to false anyway
-        setIsLoading(false);
       }
       // Otherwise, the application will continue without theme customization
     }
@@ -347,7 +337,11 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
   };
 
   useEffect(() => {
-    fetchTheme();
+    // Fetch theme from API asynchronously (non-blocking, use startTransition)
+    // Cache is already applied synchronously above
+    startTransition(() => {
+      fetchTheme();
+    });
     
     // Watch for system dark mode preference changes
     const cleanup = watchDarkModePreference(() => {
@@ -358,7 +352,11 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     });
     
     // Refresh theme every 5 minutes to catch updates
-    const interval = setInterval(fetchTheme, 5 * 60 * 1000);
+    const interval = setInterval(() => {
+      startTransition(() => {
+        fetchTheme();
+      });
+    }, 5 * 60 * 1000);
     
     return () => {
       clearInterval(interval);
@@ -375,7 +373,7 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     <GlobalThemeContext.Provider
       value={{
         theme,
-        isLoading,
+        isLoading: false, // Always false - theme is preloaded from cache
         error,
         refreshTheme,
       }}

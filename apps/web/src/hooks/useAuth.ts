@@ -3,7 +3,7 @@
  * Centralized authentication logic and token management
  */
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { authAPI, usersAPI } from '@/lib/api';
@@ -140,24 +140,26 @@ export function useAuth() {
         return; // Exit early, refreshToken will handle user fetch
       }
 
-      // If we have a token but no user, try to fetch user
+      // If we have a token but no user, try to fetch user (non-critical, use startTransition)
       if (storedToken && !user) {
-        try {
-          const response = await usersAPI.getMe();
-          if (response.data) {
-            setUser(response.data);
+        startTransition(async () => {
+          try {
+            const response = await usersAPI.getMe();
+            if (response.data) {
+              setUser(response.data);
+            }
+          } catch (err: unknown) {
+            // Token might be invalid, try refresh
+            const statusCode = getErrorStatus(err);
+            if (storedRefreshToken && (statusCode === 401 || statusCode === 422)) {
+              await refreshToken();
+            } else if (statusCode === 401 || statusCode === 422) {
+              // No refresh token or refresh failed, logout
+              handleLogout();
+            }
+            // For other errors, don't logout (might be network issue)
           }
-        } catch (err: unknown) {
-          // Token might be invalid, try refresh
-          const statusCode = getErrorStatus(err);
-          if (storedRefreshToken && (statusCode === 401 || statusCode === 422)) {
-            await refreshToken();
-          } else if (statusCode === 401 || statusCode === 422) {
-            // No refresh token or refresh failed, logout
-            handleLogout();
-          }
-          // For other errors, don't logout (might be network issue)
-        }
+        });
       }
     };
 
