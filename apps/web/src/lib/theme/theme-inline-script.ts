@@ -261,9 +261,13 @@ export const themeInlineScript = `
         if (window.__NEXT_DATA__ && window.__NEXT_DATA__.env && window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL) {
           apiUrl = window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL;
         }
-        // Try to get from data attribute on html element
-        else if (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.apiUrl) {
+        // Try to get from data attribute on html element (priority method)
+        if (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.apiUrl) {
           apiUrl = document.documentElement.dataset.apiUrl;
+        }
+        // Also try window.__NEXT_DATA__ as fallback
+        else if (window.__NEXT_DATA__ && window.__NEXT_DATA__.env && window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL) {
+          apiUrl = window.__NEXT_DATA__.env.NEXT_PUBLIC_API_URL;
         }
         // Fallback to default
         else {
