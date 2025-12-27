@@ -75,7 +75,7 @@ export default async function LocaleLayout({
   const appDescription = process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Full-stack template with Next.js 16 frontend and FastAPI backend';
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} className={inter.variable} data-api-url={apiUrl}>
       <head>
         {/* Theme inline script - loads theme before React hydration to prevent FOUC */}
         <script
