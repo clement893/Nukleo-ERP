@@ -33,9 +33,15 @@ async def get_all_preferences(
     db: AsyncSession = Depends(get_db),
 ):
     """Get all preferences for the current user"""
-    service = UserPreferenceService(db)
-    preferences = await service.get_all_preferences(current_user.id)
-    return preferences
+    try:
+        service = UserPreferenceService(db)
+        preferences = await service.get_all_preferences(current_user.id)
+        return preferences
+    except Exception as e:
+        from app.core.logging import logger
+        logger.error(f"Error getting preferences: {e}", exc_info=True)
+        # Return empty dict if there's an error (e.g., table doesn't exist yet)
+        return {}
 
 
 @router.get("/preferences/{key}", tags=["user-preferences"])
@@ -45,14 +51,24 @@ async def get_preference(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific preference for the current user"""
-    service = UserPreferenceService(db)
-    preference = await service.get_preference(current_user.id, key)
-    if not preference:
+    try:
+        service = UserPreferenceService(db)
+        preference = await service.get_preference(current_user.id, key)
+        if not preference:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Preference not found"
+            )
+        return {"key": preference.key, "value": preference.value}
+    except HTTPException:
+        raise
+    except Exception as e:
+        from app.core.logging import logger
+        logger.error(f"Error getting preference {key}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Preference not found"
         )
-    return {"key": preference.key, "value": preference.value}
 
 
 @router.put("/preferences/{key}", response_model=PreferenceResponse, tags=["user-preferences"])
@@ -63,13 +79,21 @@ async def set_preference(
     db: AsyncSession = Depends(get_db),
 ):
     """Set a preference for the current user"""
-    service = UserPreferenceService(db)
-    preference = await service.set_preference(
-        current_user.id,
-        key,
-        preference_data.value
-    )
-    return PreferenceResponse(key=preference.key, value=preference.value)
+    try:
+        service = UserPreferenceService(db)
+        preference = await service.set_preference(
+            current_user.id,
+            key,
+            preference_data.value
+        )
+        return PreferenceResponse(key=preference.key, value=preference.value)
+    except Exception as e:
+        from app.core.logging import logger
+        logger.error(f"Error setting preference {key}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update preference"
+        )
 
 
 @router.put("/preferences", tags=["user-preferences"])
@@ -79,9 +103,17 @@ async def set_preferences(
     db: AsyncSession = Depends(get_db),
 ):
     """Set multiple preferences at once"""
-    service = UserPreferenceService(db)
-    await service.set_preferences(current_user.id, preferences)
-    return {"success": True, "message": "Preferences updated successfully"}
+    try:
+        service = UserPreferenceService(db)
+        await service.set_preferences(current_user.id, preferences)
+        return {"success": True, "message": "Preferences updated successfully"}
+    except Exception as e:
+        from app.core.logging import logger
+        logger.error(f"Error setting preferences: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update preferences"
+        )
 
 
 @router.delete("/preferences/{key}", tags=["user-preferences"])

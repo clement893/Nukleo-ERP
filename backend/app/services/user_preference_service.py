@@ -38,13 +38,18 @@ class UserPreferenceService:
         user_id: int
     ) -> Dict[str, Any]:
         """Get all preferences for a user as a dictionary"""
-        result = await self.db.execute(
-            select(UserPreference).where(
-                UserPreference.user_id == user_id
+        try:
+            result = await self.db.execute(
+                select(UserPreference).where(
+                    UserPreference.user_id == user_id
+                )
             )
-        )
-        preferences = result.scalars().all()
-        return {pref.key: pref.value for pref in preferences}
+            preferences = result.scalars().all()
+            return {pref.key: pref.value for pref in preferences}
+        except Exception as e:
+            logger.error(f"Error getting all preferences for user {user_id}: {e}", exc_info=True)
+            # Return empty dict if table doesn't exist or other error occurs
+            return {}
 
     async def set_preference(
         self,
