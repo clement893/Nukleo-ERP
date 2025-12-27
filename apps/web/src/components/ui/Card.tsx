@@ -135,7 +135,18 @@ export default function Card({
         backgroundColor: 'var(--color-background)',
         borderColor: 'var(--color-border)',
       }}
-      onClick={onClick}
+      onClick={onClick ? (e: React.MouseEvent<HTMLDivElement>) => {
+        // Only trigger card onClick if the click target is the card itself or a non-interactive element
+        const target = e.target as HTMLElement;
+        const isInteractive = target.tagName === 'BUTTON' || 
+                              target.tagName === 'A' || 
+                              target.closest('button') !== null ||
+                              target.closest('a') !== null;
+        
+        if (!isInteractive) {
+          onClick();
+        }
+      } : undefined}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       aria-label={ariaLabel}
