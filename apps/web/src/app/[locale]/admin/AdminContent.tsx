@@ -50,6 +50,16 @@ export default function AdminContent() {
           </Link>
         </Card>
 
+        <Card title="Thèmes" className="flex flex-col">
+          <p className="text-muted-foreground mb-4">
+            Créez, modifiez et activez les thèmes de la plateforme.
+          </p>
+          <Link href="/admin/themes">
+            <Button variant="primary" className="w-full">
+              Gérer les thèmes
+            </Button>
+          </Link>
+        </Card>
 
         <Card title="Paramètres" className="flex flex-col">
           <p className="text-muted-foreground mb-4">
