@@ -145,12 +145,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const handleChange = () => {
       if (theme === 'system') {
         const resolved = mediaQuery.matches ? 'dark' : 'light';
-        // Use startTransition for non-critical UI updates
-        startTransition(() => {
-          setResolvedTheme(resolved);
-          document.documentElement.classList.remove('light', 'dark');
-          document.documentElement.classList.add(resolved);
-        });
+        const root = document.documentElement;
+        const currentClass = root.classList.contains('dark') ? 'dark' : root.classList.contains('light') ? 'light' : null;
+        
+        // Only update if different
+        if (currentClass !== resolved) {
+          // Use startTransition for non-critical UI updates
+          startTransition(() => {
+            setResolvedTheme(resolved);
+            root.classList.remove('light', 'dark');
+            root.classList.add(resolved);
+          });
+        }
       }
     };
 
