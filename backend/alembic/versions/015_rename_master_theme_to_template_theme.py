@@ -12,7 +12,7 @@ from datetime import datetime
 import json
 
 # revision identifiers, used by Alembic.
-revision = '015_rename_master_theme_to_template_theme'
+revision = '015_rename_master_theme'
 down_revision = '014_add_tenancy_support'
 branch_labels = None
 depends_on = None

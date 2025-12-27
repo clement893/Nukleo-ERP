@@ -1,7 +1,7 @@
 """Remove default theme from database
 
 Revision ID: 016_remove_default_theme
-Revises: 015_rename_master_theme_to_template_theme
+Revises: 015_rename_master_theme
 Create Date: 2025-12-26 16:22:17.000000
 
 """
@@ -12,7 +12,7 @@ import json
 
 # revision identifiers, used by Alembic.
 revision = '016_remove_default_theme'
-down_revision = '015_rename_master_theme_to_template_theme'
+down_revision = '015_rename_master_theme'
 branch_labels = None
 depends_on = None
 
