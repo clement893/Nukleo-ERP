@@ -56,7 +56,7 @@ function ClientTicketsContent() {
               ? 'bg-green-100 text-green-800'
               : value === 'resolved'
               ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
+              : 'bg-muted text-foreground'
           }`}
         >
           {value as string}
@@ -74,7 +74,7 @@ function ClientTicketsContent() {
               ? 'bg-red-100 text-red-800'
               : value === 'high'
               ? 'bg-orange-100 text-orange-800'
-              : 'bg-gray-100 text-gray-800'
+              : 'bg-muted text-foreground'
           }`}
         >
           {value as string}
@@ -106,8 +106,8 @@ function ClientTicketsContent() {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-        <p className="text-red-600 dark:text-red-400">
+      <div className="p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
+        <p className="text-danger-600 dark:text-danger-400">
           Failed to load tickets. Please try again later.
         </p>
       </div>
@@ -118,10 +118,10 @@ function ClientTicketsContent() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Support Tickets
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Get help from our support team
           </p>
         </div>
@@ -182,7 +182,7 @@ function CreateTicketForm({
           type="text"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
+          className="w-full px-3 py-2 border border-border rounded-lg"
           required
         />
       </div>
@@ -191,7 +191,7 @@ function CreateTicketForm({
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
+          className="w-full px-3 py-2 border border-border rounded-lg"
           rows={4}
           required
         />
@@ -202,7 +202,7 @@ function CreateTicketForm({
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high' | 'urgent')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg"
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -215,7 +215,7 @@ function CreateTicketForm({
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg"
           >
             <option value="general">General</option>
             <option value="technical">Technical</option>

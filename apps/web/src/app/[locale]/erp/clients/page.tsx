@@ -46,8 +46,8 @@ function ERPClientsContent() {
       sortable: true,
       render: (value, row) => (
         <div>
-          <p className="font-medium text-gray-900 dark:text-white">{value as string}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{row.email}</p>
+          <p className="font-medium text-foreground">{value as string}</p>
+          <p className="text-xs text-muted-foreground">{row.email}</p>
         </div>
       ),
     },
@@ -78,7 +78,7 @@ function ERPClientsContent() {
           className={`px-2 py-1 rounded text-xs ${
             value
               ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-              : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+              : 'bg-muted text-foreground'
           }`}
         >
           {value ? 'Active' : 'Inactive'}
@@ -107,10 +107,10 @@ function ERPClientsContent() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             All Clients
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             View and manage all clients in the system
           </p>
         </div>
@@ -121,7 +121,7 @@ function ERPClientsContent() {
               const val = e.target.value;
               setActiveFilter(val === '' ? null : val === 'true');
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
+            className="px-3 py-2 border border-border rounded-lg bg-background"
           >
             <option value="">All Clients</option>
             <option value="true">Active Only</option>

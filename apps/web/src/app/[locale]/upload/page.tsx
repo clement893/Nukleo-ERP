@@ -179,10 +179,10 @@ function UploadContent() {
   return (
     <Container className="py-8 lg:py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Test S3 Upload
         </h1>
-        <p className="text-gray-700 dark:text-gray-300">
+        <p className="text-foreground">
           Testez l'upload de fichiers vers AWS S3
         </p>
       </div>
@@ -215,22 +215,22 @@ function UploadContent() {
 
             {selectedFiles.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <p className="text-sm font-medium text-foreground">
                   Fichiers sélectionnés ({selectedFiles.length}):
                 </p>
                 <div className="space-y-2">
                   {selectedFiles.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         {getFileIcon(file.type)}
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <p className="text-sm font-medium text-foreground">
                             {file.name}
                           </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                          <p className="text-xs text-muted-foreground">
                             {formatFileSize(file.size)}
                           </p>
                         </div>
@@ -244,7 +244,7 @@ function UploadContent() {
 
             <div className="flex flex-col gap-3">
               {selectedFiles.length === 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                <p className="text-sm text-muted-foreground italic">
                   Sélectionnez des fichiers ci-dessus pour activer le bouton d'upload
                 </p>
               )}
@@ -294,7 +294,7 @@ function UploadContent() {
               {uploadedFiles.map((file) => (
                 <div
                   key={file.id}
-                  className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                  className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {file.status === 'success' ? (
@@ -303,15 +303,15 @@ function UploadContent() {
                       <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {file.name}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className="text-xs text-muted-foreground">
                           {formatFileSize(file.size)}
                         </p>
-                        <span className="text-gray-400 dark:text-gray-500">•</span>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-muted-foreground">•</span>
+                        <p className="text-xs text-muted-foreground">
                           {new Date(file.uploadedAt).toLocaleString('fr-FR')}
                         </p>
                       </div>
@@ -347,7 +347,7 @@ function UploadContent() {
 
         {/* Instructions */}
         <Card title="Instructions">
-          <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+          <div className="space-y-4 text-sm text-foreground">
             <div>
               <h3 className="font-semibold mb-2">Types de fichiers acceptés:</h3>
               <ul className="list-disc list-inside space-y-1 ml-2">
@@ -366,7 +366,7 @@ function UploadContent() {
             </div>
             <div>
               <h3 className="font-semibold mb-2">Note:</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Cette page simule l'upload vers S3. Dans un environnement de production,
                 vous devrez configurer les credentials AWS et utiliser l'API backend
                 pour générer les URLs de pré-signature S3.
@@ -378,20 +378,20 @@ function UploadContent() {
         {/* Status */}
         <Card title="Statut du service">
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium text-foreground">
                 Connexion S3
               </span>
               <Badge variant="success">Connecté</Badge>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium text-foreground">
                 Bucket configuré
               </span>
               <Badge variant="success">Actif</Badge>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium text-foreground">
                 Permissions
               </span>
               <Badge variant="success">OK</Badge>

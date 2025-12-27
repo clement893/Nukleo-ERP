@@ -47,8 +47,8 @@ export default function MonitoringPage() {
   return (
     <Container className="py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">Monitoring & Observability</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <h1 className="text-3xl font-bold mb-2 text-foreground">Monitoring & Observability</h1>
+        <p className="text-muted-foreground">
           Dashboard de santé, métriques de performance, logs centralisés et alertes
         </p>
       </div>

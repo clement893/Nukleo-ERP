@@ -19,8 +19,9 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Loading from '@/components/ui/Loading';
 import Modal from '@/components/ui/Modal';
+import DataTable, { type Column } from '@/components/ui/DataTable';
 
-interface Invitation {
+interface Invitation extends Record<string, unknown> {
   id: string;
   email: string;
   role: string;
@@ -188,6 +189,86 @@ export default function InvitationsPage() {
     return labels[status] || status;
   };
 
+  const columns: Column<Invitation>[] = [
+    {
+      key: 'email',
+      label: 'Email',
+      sortable: true,
+      render: (_value: unknown, invitation: Invitation) => (
+        <div className="font-medium text-foreground">{invitation.email}</div>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Rôle',
+      sortable: true,
+      render: (_value: unknown, invitation: Invitation) => (
+        <Badge>{invitation.role}</Badge>
+      ),
+    },
+    {
+      key: 'organization_name',
+      label: 'Organisation',
+      sortable: true,
+      render: (_value: unknown, invitation: Invitation) => (
+        <div className="text-sm text-muted-foreground">{invitation.organization_name}</div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Statut',
+      sortable: true,
+      render: (_value: unknown, invitation: Invitation) => (
+        <Badge variant={getStatusBadge(invitation.status)}>
+          {getStatusLabel(invitation.status)}
+        </Badge>
+      ),
+    },
+    {
+      key: 'invited_at',
+      label: 'Invitée le',
+      sortable: true,
+      render: (_value: unknown, invitation: Invitation) => (
+        <span className="text-sm text-muted-foreground">
+          {new Date(invitation.invited_at).toLocaleDateString('fr-FR')}
+        </span>
+      ),
+    },
+    {
+      key: 'expires_at',
+      label: 'Expire le',
+      sortable: true,
+      render: (_value: unknown, invitation: Invitation) => (
+        <span className="text-sm text-muted-foreground">
+          {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (_value: unknown, invitation: Invitation) => (
+        <div className="flex gap-2">
+          {invitation.status === 'pending' && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => handleResendInvitation(invitation.id)}>
+                Réenvoyer
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleCancelInvitation(invitation.id)}
+                className="border-danger-500 text-danger-600 hover:bg-danger-50"
+              >
+                Annuler
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <ProtectedSuperAdminRoute>
       <div className="py-12">
@@ -249,80 +330,19 @@ export default function InvitationsPage() {
           </div>
         </Card>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse bg-background rounded-lg shadow">
-            <thead>
-              <tr className="bg-muted border-b border-border">
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Rôle
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Organisation
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Statut
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Invitée le
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Expire le
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredInvitations.map((invitation) => (
-                <tr key={invitation.id} className="hover:bg-muted">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-foreground">{invitation.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge>{invitation.role}</Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-muted-foreground">{invitation.organization_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getStatusBadge(invitation.status)}>
-                      {getStatusLabel(invitation.status)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {new Date(invitation.invited_at).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex gap-2">
-                      {invitation.status === 'pending' && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => handleResendInvitation(invitation.id)}>
-                            Réenvoyer
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleCancelInvitation(invitation.id)}
-                            className="border-red-500 text-red-600 hover:bg-red-50"
-                          >
-                            Annuler
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Card>
+          <DataTable
+            data={filteredInvitations}
+            columns={columns}
+            searchable={true}
+            searchPlaceholder="Rechercher par email..."
+            filterable={false}
+            sortable={true}
+            pageSize={10}
+            emptyMessage="Aucune invitation trouvée"
+            loading={loading}
+          />
+        </Card>
       )}
 
       {/* Create Invitation Modal */}
