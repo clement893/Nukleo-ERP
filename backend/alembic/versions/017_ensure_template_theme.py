@@ -19,7 +19,8 @@ depends_on = None
 def upgrade():
     """Ensure TemplateTheme (ID 32) exists in the database."""
     conn = op.get_bind()
-    trans = conn.begin()
+    # Alembic already manages transactions, don't create a new one
+    # Use conn directly without begin()
     
     try:
         # Check if themes table exists
@@ -29,7 +30,6 @@ def upgrade():
         if 'themes' not in tables:
             print("⚠️  Themes table does not exist, skipping TemplateTheme creation")
             print("   Run migration 001_create_themes_table first")
-            trans.rollback()
             return
         
         # Check if TemplateTheme (ID 32) already exists
@@ -47,7 +47,6 @@ def upgrade():
                 print("   Activating TemplateTheme (no other active theme found)")
                 conn.execute(text("UPDATE themes SET is_active = true, updated_at = NOW() WHERE id = 32"))
             
-            trans.commit()
             return
         
         # Check if any theme is currently active
@@ -193,11 +192,9 @@ def upgrade():
             "is_active": is_active
         })
         
-        trans.commit()
         print(f"✅ Created TemplateTheme (ID 32) - Active: {is_active}")
         
     except Exception as e:
-        trans.rollback()
         print(f"❌ Error creating TemplateTheme: {e}")
         raise
 

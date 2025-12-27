@@ -155,8 +155,8 @@ async def list_users(
                         "first_name": user.first_name,
                         "last_name": user.last_name,
                         "is_active": user.is_active,
-                        "created_at": user.created_at,
-                        "updated_at": user.updated_at,
+                        "created_at": user.created_at.isoformat() if hasattr(user.created_at, 'isoformat') else str(user.created_at),
+                        "updated_at": user.updated_at.isoformat() if hasattr(user.updated_at, 'isoformat') else str(user.updated_at),
                     }
                     user_responses.append(UserResponse.model_validate(user_dict))
                 except Exception as validation_error:

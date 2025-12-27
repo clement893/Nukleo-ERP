@@ -5,6 +5,7 @@ Manage API configuration settings for users
 
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field, field_validator
 
@@ -81,7 +82,12 @@ async def get_api_settings(
                     try:
                         # Use model_validate to safely create the model
                         settings_obj = APISettingsData.model_validate(cleaned_value)
-                        return APISettingsResponse(settings=settings_obj)
+                        response = APISettingsResponse(settings=settings_obj)
+                        # Convert to JSONResponse for slowapi compatibility
+                        return JSONResponse(
+                            content=response.model_dump(),
+                            status_code=200
+                        )
                     except Exception as validation_error:
                         logger.warning(f"Validation error for API settings, using defaults: {validation_error}")
                         # Fall through to return defaults
@@ -93,12 +99,22 @@ async def get_api_settings(
         
         # Return default settings
         default_settings = APISettingsData()
-        return APISettingsResponse(settings=default_settings)
+        response = APISettingsResponse(settings=default_settings)
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content=response.model_dump(),
+            status_code=200
+        )
     except Exception as e:
         logger.error(f"Error getting API settings: {e}", exc_info=True)
         # Return default settings on error
         default_settings = APISettingsData()
-        return APISettingsResponse(settings=default_settings)
+        response = APISettingsResponse(settings=default_settings)
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content=response.model_dump(),
+            status_code=200
+        )
 
 
 @router.put("/", response_model=APISettingsResponse, tags=["api-settings"])
@@ -139,14 +155,29 @@ async def update_api_settings(
                 
                 # Use model_validate to safely create the model
                 settings_obj = APISettingsData.model_validate(cleaned_value)
-                return APISettingsResponse(settings=settings_obj)
+                response = APISettingsResponse(settings=settings_obj)
+                # Convert to JSONResponse for slowapi compatibility
+                return JSONResponse(
+                    content=response.model_dump(),
+                    status_code=200
+                )
             except Exception as e:
                 logger.warning(f"Error parsing saved preference value, using provided settings: {e}")
                 # Fallback to provided settings if preference value is invalid
-                return APISettingsResponse(settings=settings)
+                response = APISettingsResponse(settings=settings)
+                # Convert to JSONResponse for slowapi compatibility
+                return JSONResponse(
+                    content=response.model_dump(),
+                    status_code=200
+                )
         else:
             # Fallback to provided settings if preference value is invalid
-            return APISettingsResponse(settings=settings)
+            response = APISettingsResponse(settings=settings)
+            # Convert to JSONResponse for slowapi compatibility
+            return JSONResponse(
+                content=response.model_dump(),
+                status_code=200
+            )
     except Exception as e:
         from app.core.logging import logger
         logger.error(f"Error updating API settings: {e}", exc_info=True)
