@@ -114,10 +114,10 @@ function GoogleAuthTestContent() {
   return (
     <Container className="py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Google Auth Test
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Test Google OAuth integration for authentication
         </p>
       </div>
@@ -144,7 +144,7 @@ function GoogleAuthTestContent() {
         ) : (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-400">Status:</span>
+              <span className="text-muted-foreground">Status:</span>
               <Badge variant={status?.configured ? 'success' : 'error'}>
                 {status?.configured ? 'Configured' : 'Not Configured'}
               </Badge>
@@ -162,8 +162,8 @@ function GoogleAuthTestContent() {
                     Test Google Authentication
                   </Button>
                 </div>
-                <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <div className="mt-4 p-4 bg-muted rounded">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Authorization URL:
                   </p>
                   <code className="text-xs break-all">{authUrl}</code>
@@ -177,9 +177,9 @@ function GoogleAuthTestContent() {
       {/* Instructions */}
       <Card>
         <h2 className="text-xl font-semibold mb-4">How to Test</h2>
-        <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-4 text-sm text-foreground">
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">1. Check Configuration</h3>
+            <h3 className="font-semibold mb-1 text-foreground">1. Check Configuration</h3>
             <p>Verify that Google OAuth is configured in environment variables:</p>
             <ul className="list-disc list-inside ml-4 mt-1">
               <li>GOOGLE_CLIENT_ID</li>
@@ -188,11 +188,11 @@ function GoogleAuthTestContent() {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">2. Test Authentication</h3>
+            <h3 className="font-semibold mb-1 text-foreground">2. Test Authentication</h3>
             <p>Click "Test Google Authentication" to initiate the OAuth flow. You will be redirected to Google to sign in.</p>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">3. Verify Redirect</h3>
+            <h3 className="font-semibold mb-1 text-foreground">3. Verify Redirect</h3>
             <p>After authentication, you should be redirected back to this page with a success message.</p>
           </div>
           <Alert variant="info" title="ℹ️ Note" className="mt-4">

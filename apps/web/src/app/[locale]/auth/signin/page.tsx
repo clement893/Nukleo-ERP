@@ -24,7 +24,7 @@ export default function SignInPage() {
       <Container>
         <Card className="text-center">
           <div className="py-12">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Redirection vers la page de connexion...</p>
+            <p className="text-muted-foreground mb-4">Redirection vers la page de connexion...</p>
             <Link href="/auth/login">
               <Button variant="outline">
                 Cliquez ici si la redirection ne fonctionne pas

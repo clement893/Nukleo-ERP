@@ -133,9 +133,9 @@ function AITestContent() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card title="AI Test Interface">
           {/* Health Check */}
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="mb-6 p-4 bg-muted rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Health Check</h2>
+              <h2 className="text-lg font-semibold text-foreground">Health Check</h2>
               <Button variant="primary" onClick={checkHealth} size="sm">
                 Check Status
               </Button>
@@ -143,15 +143,15 @@ function AITestContent() {
             {healthStatus && (
               <div className="mt-2 text-sm space-y-2">
                 <div className="flex items-center gap-2">
-                  <strong className="text-gray-700 dark:text-gray-300">Configured:</strong>
+                  <strong className="text-foreground">Configured:</strong>
                   <Badge variant={healthStatus.configured ? 'success' : 'error'}>
                     {healthStatus.configured ? 'Yes' : 'No'}
                   </Badge>
                 </div>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-foreground">
                   <strong>Model:</strong> {healthStatus.model ? String(healthStatus.model) : 'N/A'}
                 </p>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-foreground">
                   <strong>Available:</strong> {healthStatus.available ? 'Yes' : 'No'}
                 </p>
                 {healthStatus.error && (
@@ -165,7 +165,7 @@ function AITestContent() {
 
           {/* Mode Selection */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Mode</label>
+            <label className="block text-sm font-medium mb-2 text-foreground">Mode</label>
             <Tabs defaultTab={mode} onChange={(value) => setMode(value as 'simple' | 'chat')}>
               <TabList>
                 <Tab value="simple">Simple Chat</Tab>
@@ -190,7 +190,7 @@ function AITestContent() {
                 fullWidth
               />
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-medium mb-1 text-foreground">
                   Temperature: {temperature}
                 </label>
                 <input
@@ -252,7 +252,7 @@ function AITestContent() {
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Messages</label>
+                  <label className="block text-sm font-medium text-foreground">Messages</label>
                   <Button variant="primary" onClick={addMessage} size="sm">
                     + Add Message
                   </Button>
@@ -312,7 +312,7 @@ function AITestContent() {
           {/* Response Display */}
           {response && (
             <Alert variant="success" title="AI Response" className="mt-6">
-              <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap mt-2">{response}</div>
+              <div className="text-foreground whitespace-pre-wrap mt-2">{response}</div>
             </Alert>
           )}
         </Card>
