@@ -264,8 +264,13 @@ async def login(
                 success="failure",
                 metadata={"reason": "account_disabled"}
             )
+            await db.commit()
         except Exception as e:
-            logger.error(f"Failed to log authentication event: {e}", exc_info=True)
+            logger.error(f"Failed to log disabled account login attempt: {e}", exc_info=True)
+            try:
+                await db.rollback()
+            except Exception:
+                pass
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -295,9 +300,23 @@ async def login(
             success="success",
             metadata={"login_method": "password"}
         )
+        # Ensure the audit log is committed
+        await db.commit()
     except Exception as e:
-        # Don't fail the request if audit logging fails
-        logger.error(f"Failed to log authentication event: {e}", exc_info=True)
+        # Don't fail the request if audit logging fails, but log the error prominently
+        error_msg = (
+            f"⚠️ SECURITY AUDIT LOGGING FAILED FOR LOGIN: {e}\n"
+            f"   User: {user.email} (ID: {user.id})\n"
+            f"   IP: {client_ip}\n"
+            f"   This is a critical issue - audit logs are not being saved!"
+        )
+        logger.error(error_msg, exc_info=True)
+        print(error_msg, flush=True)
+        # Try to rollback any partial transaction
+        try:
+            await db.rollback()
+        except Exception:
+            pass
 
     # Return JSONResponse explicitly to work with rate limiting middleware
     token_data = Token(access_token=access_token, token_type="bearer")

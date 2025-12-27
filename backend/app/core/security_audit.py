@@ -149,7 +149,9 @@ class SecurityAuditLogger:
         
         try:
             db.add(audit_log)
-            await db.commit()
+            # Use flush() instead of commit() to avoid transaction conflicts
+            # The session will be committed by FastAPI's dependency system
+            await db.flush()
             await db.refresh(audit_log)
             
             # Also log to application logger
@@ -172,19 +174,26 @@ class SecurityAuditLogger:
             return audit_log
         except Exception as e:
             # Rollback on error
-            await db.rollback()
-            # Log the error with full context
-            logger.error(
-                f"Failed to create security audit log: {e}",
-                exc_info=True,
-                context={
-                    "event_type": event_type.value,
-                    "description": description,
-                    "user_id": user_id,
-                    "user_email": user_email,
-                    "error": str(e),
-                }
+            try:
+                await db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
+            
+            # Log the error with full context - make it very visible
+            error_msg = (
+                f"❌ FAILED TO CREATE SECURITY AUDIT LOG: {e}\n"
+                f"   Event Type: {event_type.value}\n"
+                f"   Description: {description}\n"
+                f"   User ID: {user_id}\n"
+                f"   User Email: {user_email}\n"
+                f"   Error Type: {type(e).__name__}\n"
+                f"   Error Details: {str(e)}"
             )
+            logger.error(error_msg, exc_info=True)
+            
+            # Also print to console for immediate visibility
+            print(error_msg, flush=True)
+            
             # Re-raise to allow caller to handle
             raise
     
