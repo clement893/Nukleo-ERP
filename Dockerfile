@@ -23,7 +23,7 @@ COPY packages/types/package.json ./packages/types/
 # Install dependencies with BuildKit cache mount for faster subsequent builds
 # Sharp will use system libvips (vips-dev) instead of downloading binaries
 # Cache pnpm store to speed up dependency installation on subsequent builds
-RUN --mount=type=cache,target=/root/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
     pnpm install --frozen-lockfile || \
     (echo "Retrying installation with relaxed lockfile..." && sleep 5 && pnpm install --no-frozen-lockfile) || \
     (echo "Final retry with build from source..." && npm_config_build_from_source=true pnpm install --no-frozen-lockfile)
@@ -39,7 +39,7 @@ COPY --from=deps /app/apps/web/package.json ./apps/web/package.json
 COPY --from=deps /app/packages/types/package.json ./packages/types/package.json
 # Reinstall to recreate symlinks for binaries (offline mode to use cached packages)
 # Use cache mount for faster reinstalls
-RUN --mount=type=cache,target=/root/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
     pnpm install --offline --no-frozen-lockfile || pnpm install --no-frozen-lockfile
 
 # Copy and build types package first (required for web app build)
@@ -56,7 +56,7 @@ COPY packages ./packages
 
 # Reinstall to ensure workspace links are correct after types package build
 # Use cache mount for faster reinstalls
-RUN --mount=type=cache,target=/root/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
     pnpm install --offline --no-frozen-lockfile || pnpm install --no-frozen-lockfile
 
 # Railway passes environment variables, but they need to be available during build
