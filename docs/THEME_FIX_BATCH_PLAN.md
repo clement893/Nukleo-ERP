@@ -371,11 +371,11 @@ export const themeSpacing = {
 | Batch | Statut | Date | Notes |
 |-------|--------|------|-------|
 | Batch 1: Config Tailwind | ✅ Complété | 2025-01-27 | Ajout fontFamily et borderRadius avec variables CSS |
-| Batch 2: Documentation | ⏳ En attente | - | - |
-| Batch 3: SurveyResults | ⏳ En attente | - | - |
-| Batch 4: SurveyTaker | ⏳ En attente | - | - |
-| Batch 5: Card.tsx | ⏳ En attente | - | - |
-| Batch 6: Helpers & Tests | ⏳ En attente | - | - |
+| Batch 2: Documentation | ✅ Complété | 2025-01-27 | Documentation complète des variables CSS créée |
+| Batch 3: SurveyResults | ✅ Complété | 2025-01-27 | Toutes les couleurs hardcodées migrées vers variables CSS |
+| Batch 4: SurveyTaker | ✅ Complété | 2025-01-27 | Labels NPS migrés vers classes thématiques |
+| Batch 5: Card.tsx | ✅ Complété | 2025-01-27 | Card standardisé avec variables CSS du thème |
+| Batch 6: Helpers & Tests | ✅ Complété | 2025-01-27 | Helpers et tests créés pour faciliter l'utilisation |
 
 **Légende :**
 - ⏳ En attente
