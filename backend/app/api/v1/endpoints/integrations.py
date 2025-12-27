@@ -6,6 +6,7 @@ Manage third-party integrations for users
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel, Field
@@ -120,7 +121,11 @@ async def list_integrations(
                 # Skip this integration if serialization fails
                 continue
         
-        return response_list
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content=[item.model_dump(mode='json') for item in response_list],
+            status_code=200
+        )
     except Exception as e:
         from app.core.logging import logger
         logger.error(f"Error listing integrations: {e}", exc_info=True)
@@ -153,7 +158,7 @@ async def get_integration(
                 detail="Integration not found"
             )
         
-        return IntegrationResponse(
+        integration_response = IntegrationResponse(
             id=integration.id,
             type=integration.type,
             name=integration.name,
@@ -165,6 +170,11 @@ async def get_integration(
             error_count=integration.error_count,
             created_at=safe_datetime_to_str_required(integration.created_at),
             updated_at=safe_datetime_to_str_required(integration.updated_at),
+        )
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content=integration_response.model_dump(mode='json'),
+            status_code=200
         )
     except HTTPException:
         raise
@@ -215,7 +225,7 @@ async def create_integration(
     await db.commit()
     await db.refresh(integration)
     
-    return IntegrationResponse(
+    integration_response = IntegrationResponse(
         id=integration.id,
         type=integration.type,
         name=integration.name,
@@ -227,6 +237,11 @@ async def create_integration(
         error_count=integration.error_count,
         created_at=safe_datetime_to_str_required(integration.created_at),
         updated_at=safe_datetime_to_str_required(integration.updated_at),
+    )
+    # Convert to JSONResponse for slowapi compatibility
+    return JSONResponse(
+        content=integration_response.model_dump(mode='json'),
+        status_code=201
     )
 
 
@@ -268,7 +283,7 @@ async def update_integration(
     await db.commit()
     await db.refresh(integration)
     
-    return IntegrationResponse(
+    integration_response = IntegrationResponse(
         id=integration.id,
         type=integration.type,
         name=integration.name,
@@ -280,6 +295,11 @@ async def update_integration(
         error_count=integration.error_count,
         created_at=safe_datetime_to_str_required(integration.created_at),
         updated_at=safe_datetime_to_str_required(integration.updated_at),
+    )
+    # Convert to JSONResponse for slowapi compatibility
+    return JSONResponse(
+        content=integration_response.model_dump(mode='json'),
+        status_code=200
     )
 
 
@@ -309,7 +329,7 @@ async def toggle_integration(
     await db.commit()
     await db.refresh(integration)
     
-    return IntegrationResponse(
+    integration_response = IntegrationResponse(
         id=integration.id,
         type=integration.type,
         name=integration.name,
@@ -321,6 +341,11 @@ async def toggle_integration(
         error_count=integration.error_count,
         created_at=safe_datetime_to_str_required(integration.created_at),
         updated_at=safe_datetime_to_str_required(integration.updated_at),
+    )
+    # Convert to JSONResponse for slowapi compatibility
+    return JSONResponse(
+        content=integration_response.model_dump(mode='json'),
+        status_code=200
     )
 
 
