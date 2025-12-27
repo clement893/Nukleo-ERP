@@ -50,7 +50,11 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       if (currentThemeId !== activeTheme.id) {
         setTheme(activeTheme);
         // Apply theme config from backend (TemplateTheme or active theme)
-        applyThemeConfig(activeTheme.config);
+        // BUT: Don't override if manual theme is active (for preview mode)
+        const isManualTheme = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-manual-theme');
+        if (!isManualTheme) {
+          applyThemeConfig(activeTheme.config);
+        }
         // Cache the theme for next time
         saveThemeToCache(activeTheme.config, activeTheme.id);
       } else if (!theme && cachedTheme) {
@@ -72,8 +76,12 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
           config: fallbackCachedTheme,
         } as ThemeConfigResponse;
         setTheme(cachedThemeResponse);
-        applyThemeConfig(fallbackCachedTheme);
-        logger.info('[Theme] Using cached theme as fallback');
+        // Don't override if manual theme is active
+        const isManualTheme = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-manual-theme');
+        if (!isManualTheme) {
+          applyThemeConfig(fallbackCachedTheme);
+          logger.info('[Theme] Using cached theme as fallback');
+        }
       }
       // Otherwise, the application will continue without theme customization
     }
@@ -335,8 +343,12 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
   // Apply cached theme immediately on mount (synchronous, before first render)
   useLayoutEffect(() => {
     if (cachedTheme && typeof window !== 'undefined') {
-      applyThemeConfig(cachedTheme);
-      logger.info('[Theme] Loaded theme from cache');
+      // Don't apply if manual theme is active
+      const isManualTheme = document.documentElement.hasAttribute('data-manual-theme');
+      if (!isManualTheme) {
+        applyThemeConfig(cachedTheme);
+        logger.info('[Theme] Loaded theme from cache');
+      }
     }
   }, []); // Only run once on mount
 
@@ -349,9 +361,12 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
     
     // Watch for dark class changes on document root (set by ThemeContext)
     // This ensures theme CSS variables update when user toggles dark mode
+    // BUT: Don't override if manual theme is active (for preview mode)
     const observer = new MutationObserver(() => {
-      if (theme) {
-        // Re-apply theme config when dark class changes
+      // Check if manual theme is active (data-manual-theme attribute)
+      const isManualTheme = document.documentElement.hasAttribute('data-manual-theme');
+      if (theme && !isManualTheme) {
+        // Re-apply theme config when dark class changes (only if not manual)
         applyThemeConfig(theme.config);
       }
     });

@@ -894,16 +894,21 @@ export function ThemeVisualisationContent() {
                       size="sm"
                       onClick={() => {
                         try {
+                          console.log('[Theme Preview] Début de l\'application du JSON...');
+                          
                           if (!jsonInput.trim()) {
                             setError('Le JSON ne peut pas être vide.');
+                            console.error('[Theme Preview] JSON vide');
                             return;
                           }
                           
+                          console.log('[Theme Preview] Parsing JSON...', jsonInput.substring(0, 100));
                           const parsed = JSON.parse(jsonInput);
                           
                           // Validate that it's an object
                           if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
                             setError('Le JSON doit être un objet valide.');
+                            console.error('[Theme Preview] JSON n\'est pas un objet valide');
                             return;
                           }
                           
@@ -915,21 +920,76 @@ export function ThemeVisualisationContent() {
                           // This ensures the JSON is properly formatted
                           setJsonInput(JSON.stringify(updatedConfig, null, 2));
                           
-                          // If this is the active theme, apply the changes immediately for preview
-                          if (theme?.is_active) {
-                            applyThemeConfigDirectly(updatedConfig);
-                            setSuccessMessage('Configuration JSON appliquée avec succès ! Les changements sont visibles immédiatement (aperçu).');
-                          } else {
-                            setSuccessMessage('Configuration JSON appliquée avec succès ! Sauvegardez pour appliquer les changements.');
+                          console.log('[Theme Preview] Application du thème avec bypassDarkModeProtection...', {
+                            hasColors: !!(updatedConfig as any).colors,
+                            colorsKeys: (updatedConfig as any).colors ? Object.keys((updatedConfig as any).colors) : [],
+                            primary: (updatedConfig as any).colors?.primary || (updatedConfig as any).primary_color,
+                            background: (updatedConfig as any).colors?.background,
+                          });
+                          
+                          // Apply the changes immediately for preview (bypass dark mode protection for manual editing)
+                          try {
+                            applyThemeConfigDirectly(updatedConfig, {
+                              bypassDarkModeProtection: true, // Allow full customization in preview mode
+                              logWarnings: true,
+                            });
+                            
+                            // Verify that colors were applied
+                            const root = document.documentElement;
+                            const appliedBackground = root.style.getPropertyValue('--color-background');
+                            const appliedPrimary = root.style.getPropertyValue('--color-primary-500');
+                            const hasManualFlag = root.hasAttribute('data-manual-theme');
+                            
+                            console.log('[Theme Preview] Thème appliqué. Vérification:', {
+                              appliedBackground,
+                              appliedPrimary,
+                              hasManualFlag,
+                              allCSSVars: Array.from(document.styleSheets).some(sheet => {
+                                try {
+                                  return Array.from(sheet.cssRules || []).some(rule => 
+                                    rule instanceof CSSStyleRule && rule.selectorText === ':root'
+                                  );
+                                } catch {
+                                  return false;
+                                }
+                              }),
+                            });
+                            
+                            // Show success message with details
+                            const appliedColors = [];
+                            if (appliedBackground) appliedColors.push('background');
+                            if (appliedPrimary) appliedColors.push('primary');
+                            
+                            if (theme?.is_active) {
+                              setSuccessMessage(
+                                `✅ Configuration JSON appliquée avec succès ! ` +
+                                `Les changements sont visibles immédiatement (aperçu). ` +
+                                `Couleurs appliquées: ${appliedColors.length > 0 ? appliedColors.join(', ') : 'vérifiez la console'}. ` +
+                                `Flag manuel: ${hasManualFlag ? 'actif' : 'inactif'}`
+                              );
+                            } else {
+                              setSuccessMessage(
+                                `✅ Configuration JSON appliquée avec succès ! ` +
+                                `Les changements sont visibles en aperçu. ` +
+                                `Couleurs appliquées: ${appliedColors.length > 0 ? appliedColors.join(', ') : 'vérifiez la console'}. ` +
+                                `Sauvegardez pour appliquer définitivement.`
+                              );
+                            }
+                            
+                            setTimeout(() => setSuccessMessage(null), 8000); // Longer timeout to see the message
+                            setError(null);
+                          } catch (applyError) {
+                            console.error('[Theme Preview] Erreur lors de l\'application du thème:', applyError);
+                            setError(`Erreur lors de l'application du thème : ${applyError instanceof Error ? applyError.message : 'Erreur inconnue'}. Vérifiez la console pour plus de détails.`);
+                            throw applyError;
                           }
-                          setTimeout(() => setSuccessMessage(null), 5000);
-                          setError(null);
                         } catch (err) {
+                          console.error('[Theme Preview] Erreur générale:', err);
                           const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
                           if (errorMessage.includes('JSON')) {
-                            setError(`JSON invalide : ${errorMessage}. Veuillez vérifier la syntaxe (virgules, guillemets, accolades).`);
+                            setError(`❌ JSON invalide : ${errorMessage}. Veuillez vérifier la syntaxe (virgules, guillemets, accolades).`);
                           } else {
-                            setError(`Erreur lors de l'application : ${errorMessage}`);
+                            setError(`❌ Erreur lors de l'application : ${errorMessage}. Vérifiez la console pour plus de détails.`);
                           }
                         }
                       }}

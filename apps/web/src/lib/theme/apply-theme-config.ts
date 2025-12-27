@@ -8,18 +8,73 @@ import { validateThemeConfig } from './theme-validator';
 import { getThemeConfigForMode, applyDarkModeClass } from './dark-mode-utils';
 import { logger } from '@/lib/logger';
 
+/**
+ * Flag to prevent GlobalThemeProvider from overriding manual theme changes
+ * Set when applying theme manually, cleared after a delay
+ */
+let manualThemeActive = false;
+let manualThemeTimeout: NodeJS.Timeout | null = null;
+
+/**
+ * Mark that a manual theme is being applied (prevents GlobalThemeProvider from overriding)
+ * @param duration Duration in milliseconds to prevent override (default: 10 seconds)
+ */
+export function setManualThemeActive(duration: number = 10000) {
+  manualThemeActive = true;
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-manual-theme', 'true');
+  }
+  
+  // Clear existing timeout
+  if (manualThemeTimeout) {
+    clearTimeout(manualThemeTimeout);
+  }
+  
+  // Clear flag after duration
+  manualThemeTimeout = setTimeout(() => {
+    manualThemeActive = false;
+    if (typeof document !== 'undefined') {
+      document.documentElement.removeAttribute('data-manual-theme');
+    }
+  }, duration);
+}
+
+/**
+ * Check if a manual theme is currently active
+ */
+export function isManualThemeActive(): boolean {
+  return manualThemeActive;
+}
+
 export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
   validateContrast?: boolean;
   logWarnings?: boolean;
+  /**
+   * If true, bypass dark mode protection and apply colors directly from config
+   * Useful for manual theme editing/preview where user wants full control
+   */
+  bypassDarkModeProtection?: boolean;
 }) {
   if (typeof document === 'undefined') {
     return; // Server-side rendering, skip
   }
   
-  const { validateContrast = true, logWarnings = true } = options || {};
+  const { validateContrast = true, logWarnings = true, bypassDarkModeProtection = false } = options || {};
+  
+  logger.info('[applyThemeConfigDirectly] Début de l\'application du thème', {
+    bypassDarkModeProtection,
+    hasColors: !!(config as any).colors,
+  });
+  
+  // If bypassDarkModeProtection is true, mark manual theme as active to prevent GlobalThemeProvider from overriding
+  if (bypassDarkModeProtection) {
+    setManualThemeActive(30000); // Prevent override for 30 seconds
+    logger.info('[applyThemeConfigDirectly] Flag manuel activé pour 30 secondes');
+  }
   
   // Get theme config for current mode (light/dark/system)
-  const modeConfig = getThemeConfigForMode(config);
+  // If bypassDarkModeProtection is true, use config directly (for manual editing/preview)
+  const modeConfig = bypassDarkModeProtection ? config : getThemeConfigForMode(config);
   
   // Apply dark mode class if needed
   const mode = (config as any).mode || 'system';
@@ -60,12 +115,15 @@ export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
   // 2. Short format: primary, secondary, etc. (directly in config)
   // 3. Nested format: colors.primary, colors.secondary, etc.
   const colorsConfig = (configToApply as any).colors || {};
-  const primaryColor = (configToApply as any).primary || configToApply.primary_color || colorsConfig.primary_color || colorsConfig.primary;
-  const secondaryColor = (configToApply as any).secondary || configToApply.secondary_color || colorsConfig.secondary_color || colorsConfig.secondary;
-  const dangerColor = (configToApply as any).danger || configToApply.danger_color || colorsConfig.danger_color || colorsConfig.destructive || colorsConfig.danger;
-  const warningColor = (configToApply as any).warning || configToApply.warning_color || colorsConfig.warning_color || colorsConfig.warning;
-  const infoColor = (configToApply as any).info || configToApply.info_color || colorsConfig.info_color || colorsConfig.info;
-  const successColor = (configToApply as any).success || configToApply.success_color || colorsConfig.success_color || colorsConfig.success;
+  // If bypassDarkModeProtection, also check original config for theme colors
+  const originalConfig = bypassDarkModeProtection ? config : configToApply;
+  const originalColorsConfig = (originalConfig as any).colors || {};
+  const primaryColor = (configToApply as any).primary || configToApply.primary_color || colorsConfig.primary_color || colorsConfig.primary || originalColorsConfig.primary_color || originalColorsConfig.primary;
+  const secondaryColor = (configToApply as any).secondary || configToApply.secondary_color || colorsConfig.secondary_color || colorsConfig.secondary || originalColorsConfig.secondary_color || originalColorsConfig.secondary;
+  const dangerColor = (configToApply as any).danger || configToApply.danger_color || colorsConfig.danger_color || colorsConfig.destructive || colorsConfig.danger || originalColorsConfig.danger_color || originalColorsConfig.destructive || originalColorsConfig.danger;
+  const warningColor = (configToApply as any).warning || configToApply.warning_color || colorsConfig.warning_color || colorsConfig.warning || originalColorsConfig.warning_color || originalColorsConfig.warning;
+  const infoColor = (configToApply as any).info || configToApply.info_color || colorsConfig.info_color || colorsConfig.info || originalColorsConfig.info_color || originalColorsConfig.info;
+  const successColor = (configToApply as any).success || configToApply.success_color || colorsConfig.success_color || colorsConfig.success || originalColorsConfig.success_color || originalColorsConfig.success;
   
   // Generate color shades from base colors
   if (primaryColor) {
@@ -134,27 +192,53 @@ export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
   }
   
   // Apply colors from nested colors object
-  if (colorsConfig.background) {
-    root.style.setProperty('--color-background', colorsConfig.background);
+  // If bypassDarkModeProtection is true, also check original config for base colors
+  const originalBaseColorsConfig = bypassDarkModeProtection ? ((config as any).colors || {}) : colorsConfig;
+  
+  const appliedColors: string[] = [];
+  
+  // Apply base colors (always apply if bypassDarkModeProtection is true, otherwise only if in modeConfig)
+  if (originalBaseColorsConfig.background || colorsConfig.background) {
+    const bgColor = originalBaseColorsConfig.background || colorsConfig.background;
+    root.style.setProperty('--color-background', bgColor);
+    appliedColors.push(`background: ${bgColor}`);
   }
-  if (colorsConfig.foreground) {
-    root.style.setProperty('--color-foreground', colorsConfig.foreground);
+  if (originalBaseColorsConfig.foreground || colorsConfig.foreground) {
+    const fgColor = originalBaseColorsConfig.foreground || colorsConfig.foreground;
+    root.style.setProperty('--color-foreground', fgColor);
+    appliedColors.push(`foreground: ${fgColor}`);
   }
-  if (colorsConfig.muted) {
-    root.style.setProperty('--color-muted', colorsConfig.muted);
+  if (originalBaseColorsConfig.muted || colorsConfig.muted) {
+    const mutedColor = originalBaseColorsConfig.muted || colorsConfig.muted;
+    root.style.setProperty('--color-muted', mutedColor);
+    appliedColors.push(`muted: ${mutedColor}`);
   }
-  if (colorsConfig.mutedForeground) {
-    root.style.setProperty('--color-muted-foreground', colorsConfig.mutedForeground);
+  if (originalBaseColorsConfig.mutedForeground || colorsConfig.mutedForeground) {
+    const mutedFgColor = originalBaseColorsConfig.mutedForeground || colorsConfig.mutedForeground;
+    root.style.setProperty('--color-muted-foreground', mutedFgColor);
+    appliedColors.push(`mutedForeground: ${mutedFgColor}`);
   }
-  if (colorsConfig.border) {
-    root.style.setProperty('--color-border', colorsConfig.border);
+  if (originalBaseColorsConfig.border || colorsConfig.border) {
+    const borderColor = originalBaseColorsConfig.border || colorsConfig.border;
+    root.style.setProperty('--color-border', borderColor);
+    appliedColors.push(`border: ${borderColor}`);
   }
-  if (colorsConfig.input) {
-    root.style.setProperty('--color-input', colorsConfig.input);
+  if (originalBaseColorsConfig.input || colorsConfig.input) {
+    const inputColor = originalBaseColorsConfig.input || colorsConfig.input;
+    root.style.setProperty('--color-input', inputColor);
+    appliedColors.push(`input: ${inputColor}`);
   }
-  if (colorsConfig.ring) {
-    root.style.setProperty('--color-ring', colorsConfig.ring);
+  if (originalBaseColorsConfig.ring || colorsConfig.ring) {
+    const ringColor = originalBaseColorsConfig.ring || colorsConfig.ring;
+    root.style.setProperty('--color-ring', ringColor);
+    appliedColors.push(`ring: ${ringColor}`);
   }
+  
+  logger.info('[applyThemeConfigDirectly] Couleurs de base appliquées', {
+    count: appliedColors.length,
+    colors: appliedColors,
+    hasManualFlag: root.hasAttribute('data-manual-theme'),
+  });
   
   // Load font URL if configured
   if (configToApply.font_url && typeof configToApply.font_url === 'string' && typeof document !== 'undefined') {
