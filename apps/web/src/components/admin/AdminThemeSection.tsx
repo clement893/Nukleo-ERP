@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, Button, Badge, Loading, Alert } from '@/components/ui';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import { listThemes, getActiveTheme, updateActiveThemeMode, activateTheme } from '@/lib/api/theme';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import { checkMySuperAdminStatus } from '@/lib/api/admin';
@@ -10,7 +10,7 @@ import type { Theme, ThemeConfigResponse } from '@modele/types';
 import ClientOnly from '@/components/ui/ClientOnly';
 
 function AdminThemeSectionContent() {
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { isDark, mode, setMode } = useDarkMode();
   const [activeTheme, setActiveTheme] = useState<ThemeConfigResponse | null>(null);
   const [themes, setThemes] = useState<Theme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,8 +84,7 @@ function AdminThemeSectionContent() {
       await updateActiveThemeMode(mode, token);
       
       // Update local theme state
-      setTheme(mode);
-      localStorage.setItem('theme', mode);
+      setMode(mode);
       
       setSuccess(`Thème changé en mode ${mode === 'light' ? 'clair' : mode === 'dark' ? 'sombre' : 'système'}`);
       
@@ -216,30 +215,30 @@ function AdminThemeSectionContent() {
           <h4 className="font-medium mb-3">Changer le mode du thème:</h4>
           <div className="flex flex-wrap gap-2">
             <Button
-              variant={theme === 'light' ? 'primary' : 'secondary'}
+              variant={mode === 'light' ? 'primary' : 'secondary'}
               onClick={() => handleModeChange('light')}
-              disabled={isUpdating || theme === 'light'}
+              disabled={isUpdating || mode === 'light'}
             >
               Clair
             </Button>
             <Button
-              variant={theme === 'dark' ? 'primary' : 'secondary'}
+              variant={mode === 'dark' ? 'primary' : 'secondary'}
               onClick={() => handleModeChange('dark')}
-              disabled={isUpdating || theme === 'dark'}
+              disabled={isUpdating || mode === 'dark'}
             >
               Sombre
             </Button>
             <Button
-              variant={theme === 'system' ? 'primary' : 'secondary'}
+              variant={mode === 'system' ? 'primary' : 'secondary'}
               onClick={() => handleModeChange('system')}
-              disabled={isUpdating || theme === 'system'}
+              disabled={isUpdating || mode === 'system'}
             >
               Système
             </Button>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            Mode actuel: <strong>{resolvedTheme === 'dark' ? 'Sombre' : 'Clair'}</strong>
-            {theme === 'system' && ' (basé sur les préférences système)'}
+            Mode actuel: <strong>{isDark ? 'Sombre' : 'Clair'}</strong>
+            {mode === 'system' && ' (basé sur les préférences système)'}
           </p>
         </div>
 

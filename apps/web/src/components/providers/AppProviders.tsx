@@ -12,7 +12,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react';
 import { getQueryClient } from '@/lib/query/queryClient';
 import { GlobalThemeProvider } from '@/lib/theme/global-theme-provider';
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useThemeManager } from '@/components/theme/hooks';
 import { GlobalErrorHandler } from './GlobalErrorHandler';
 import { useState, type ReactNode } from 'react';
@@ -36,19 +35,17 @@ export default function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <GlobalThemeProvider>
-      <ThemeProvider>
-        <ThemeManagerInitializer>
-          <GlobalErrorHandler />
-          <QueryClientProvider client={queryClient}>
-            <NextAuthSessionProvider>
-              {children}
-              {process.env.NODE_ENV === 'development' && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </NextAuthSessionProvider>
-          </QueryClientProvider>
-        </ThemeManagerInitializer>
-      </ThemeProvider>
+      <ThemeManagerInitializer>
+        <GlobalErrorHandler />
+        <QueryClientProvider client={queryClient}>
+          <NextAuthSessionProvider>
+            {children}
+            {process.env.NODE_ENV === 'development' && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+          </NextAuthSessionProvider>
+        </QueryClientProvider>
+      </ThemeManagerInitializer>
     </GlobalThemeProvider>
   );
 }

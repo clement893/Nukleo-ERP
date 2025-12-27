@@ -2,14 +2,14 @@
 
 import { Card, Input, Badge, Button, ThemeToggle, ThemeToggleWithIcon, ClientOnly } from '@/components/ui';
 import { PageHeader, PageContainer, Section, ExampleCard } from '@/components/layout';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useDarkMode } from '@/hooks/useDarkMode';
 
 // Note: Client Components are already dynamic by nature.
 // Route segment config (export const dynamic) only works in Server Components.
 // Client Components run on the client side, so they don't need this export.
 
 function ThemePageContent() {
-  const { theme, resolvedTheme } = useTheme();
+  const { isDark, mode } = useDarkMode();
 
   return (
     <PageContainer>
@@ -51,12 +51,12 @@ function ThemePageContent() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-gray-700 dark:text-gray-300 font-medium">Thème sélectionné:</span>
-                <Badge variant="info">{theme}</Badge>
+                <Badge variant="info">{mode}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-700 dark:text-gray-300 font-medium">Thème actif:</span>
-                <Badge variant={resolvedTheme === 'dark' ? 'default' : 'info'}>
-                  {resolvedTheme}
+                <Badge variant={isDark ? 'default' : 'info'}>
+                  {isDark ? 'dark' : 'light'}
                 </Badge>
               </div>
               <div className="pt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -130,11 +130,11 @@ function ThemePageContent() {
               <div>
                 <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">Utilisation:</h4>
                 <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-sm overflow-x-auto">
-{`import { useTheme } from '@/contexts/ThemeContext';
+{`import { useDarkMode } from '@/hooks/useDarkMode';
 import { ThemeToggle } from '@/components/ui';
 
 function MyComponent() {
-  const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
+  const { isDark, toggle, setMode, mode } = useDarkMode();
   
   return <ThemeToggle />;
 }`}

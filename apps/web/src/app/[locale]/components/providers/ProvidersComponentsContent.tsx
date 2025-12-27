@@ -30,7 +30,7 @@ export default function ProvidersComponentsContent() {
               <ul className="list-disc list-inside space-y-2 text-foreground">
                 <li>QueryClientProvider (React Query)</li>
                 <li>SessionProvider (NextAuth)</li>
-                <li>ThemeProvider (Gestion du thème)</li>
+                <li>GlobalThemeProvider (Gestion du thème)</li>
                 <li>GlobalErrorHandler (Gestion des erreurs)</li>
               </ul>
               <p className="mt-4 text-sm text-muted-foreground">

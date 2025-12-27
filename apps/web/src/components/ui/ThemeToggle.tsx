@@ -1,28 +1,28 @@
 'use client';
 
-import { useTheme } from '@/contexts/ThemeContext';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import { clsx } from 'clsx';
 
 export default function ThemeToggle() {
-  const { resolvedTheme, toggleTheme } = useTheme();
+  const { isDark, toggle } = useDarkMode();
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={toggle}
       className={clsx(
         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2',
         'dark:focus:ring-offset-gray-800',
-        resolvedTheme === 'dark' ? 'bg-primary-600 dark:bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+        isDark ? 'bg-primary-600 dark:bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
       )}
       aria-label="Toggle theme"
       role="switch"
-      aria-checked={resolvedTheme === 'dark'}
+      aria-checked={isDark}
     >
       <span
         className={clsx(
           'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-          resolvedTheme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+          isDark ? 'translate-x-6' : 'translate-x-1'
         )}
       />
       <span className="sr-only">Toggle theme</span>
@@ -31,11 +31,11 @@ export default function ThemeToggle() {
 }
 
 export function ThemeToggleWithIcon() {
-  const { resolvedTheme, toggleTheme } = useTheme();
+  const { isDark, toggle } = useDarkMode();
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={toggle}
       className={clsx(
         'p-2 rounded-lg transition-colors',
         'text-gray-700 dark:text-gray-300',
@@ -45,7 +45,7 @@ export function ThemeToggleWithIcon() {
       )}
       aria-label="Toggle theme"
     >
-      {resolvedTheme === 'dark' ? (
+      {isDark ? (
         <svg
           className="w-5 h-5"
           fill="none"

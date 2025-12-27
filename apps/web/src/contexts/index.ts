@@ -1,2 +1,3 @@
-export { ThemeProvider, useTheme } from './ThemeContext';
+// ThemeContext removed - use useDarkMode hook instead
+// export { ThemeProvider, useTheme } from './ThemeContext';
 
