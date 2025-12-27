@@ -237,16 +237,18 @@ class SecurityAuditLogger:
     
     @staticmethod
     async def log_authentication_event(
-        db: AsyncSession,
-        event_type: SecurityEventType,
-        description: str,
+        db: Optional[AsyncSession] = None,
+        event_type: SecurityEventType = None,
+        description: str = None,
         user_id: Optional[int] = None,
         user_email: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
+        request_method: Optional[str] = None,
+        request_path: Optional[str] = None,
         success: str = "unknown",
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> SecurityAuditLog:
+    ) -> Optional[SecurityAuditLog]:
         """Log authentication-related security event"""
         severity = "error" if "failure" in event_type.value else "info"
         return await SecurityAuditLogger.log_event(
@@ -257,6 +259,8 @@ class SecurityAuditLogger:
             user_email=user_email,
             ip_address=ip_address,
             user_agent=user_agent,
+            request_method=request_method,
+            request_path=request_path,
             severity=severity,
             success=success,
             metadata=metadata,
