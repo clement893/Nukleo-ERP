@@ -12,6 +12,7 @@ import type { ThemeListItem } from '../types';
 import { Card, Button, Loading, Alert } from '@/components/ui';
 import { Plus } from 'lucide-react';
 import { ThemeListItem as ThemeListItemComponent } from './ThemeListItem';
+import { useThemeActions, ConfirmActivateModal, ConfirmDeleteModal } from './ThemeActions';
 
 interface ThemeListProps {
   onCreateTheme: () => void;
@@ -31,6 +32,20 @@ export function ThemeList({
   const [themes, setThemes] = useState<ThemeListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  const {
+    isActivating,
+    isDeleting,
+    showActivateModal,
+    showDeleteModal,
+    selectedTheme,
+    handleActivateClick,
+    handleDeleteClick,
+    confirmActivate,
+    confirmDelete,
+    cancelAction,
+  } = useThemeActions();
 
   useEffect(() => {
     fetchThemes();
@@ -62,6 +77,46 @@ export function ThemeList({
     }
   };
 
+  const handleActivate = async (theme: Theme) => {
+    handleActivateClick(theme);
+  };
+
+  const handleDelete = async (theme: Theme) => {
+    handleDeleteClick(theme);
+  };
+
+  const handleActivateConfirm = async (): Promise<{ success: boolean; message: string }> => {
+    const result = await confirmActivate();
+    if (result.success) {
+      setSuccessMessage(result.message);
+      setTimeout(() => setSuccessMessage(null), 5000);
+      await fetchThemes(); // Refresh list
+      if (selectedTheme) {
+        onActivateTheme(selectedTheme);
+      }
+    } else {
+      setError(result.message);
+      setTimeout(() => setError(null), 5000);
+    }
+    return result;
+  };
+
+  const handleDeleteConfirm = async (): Promise<{ success: boolean; message: string }> => {
+    const result = await confirmDelete();
+    if (result.success) {
+      setSuccessMessage(result.message);
+      setTimeout(() => setSuccessMessage(null), 5000);
+      await fetchThemes(); // Refresh list
+      if (selectedTheme) {
+        onDeleteTheme(selectedTheme);
+      }
+    } else {
+      setError(result.message);
+      setTimeout(() => setError(null), 5000);
+    }
+    return result;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -85,20 +140,27 @@ export function ThemeList({
   }
 
   return (
-    <Card>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Thèmes</h2>
-            <p className="text-muted-foreground mt-1">
-              {themes.length} thème{themes.length > 1 ? 's' : ''} disponible{themes.length > 1 ? 's' : ''}
-            </p>
+    <>
+      {successMessage && (
+        <Alert variant="success" title="Succès" className="mb-4">
+          {successMessage}
+        </Alert>
+      )}
+      
+      <Card>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Thèmes</h2>
+              <p className="text-muted-foreground mt-1">
+                {themes.length} thème{themes.length > 1 ? 's' : ''} disponible{themes.length > 1 ? 's' : ''}
+              </p>
+            </div>
+            <Button onClick={onCreateTheme} variant="primary">
+              <Plus className="w-4 h-4 mr-2" />
+              Créer un thème
+            </Button>
           </div>
-          <Button onClick={onCreateTheme} variant="primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Créer un thème
-          </Button>
-        </div>
 
         {themes.length === 0 ? (
           <div className="text-center py-12">
@@ -115,8 +177,8 @@ export function ThemeList({
                 key={theme.id}
                 theme={theme}
                 onEdit={() => onEditTheme(theme)}
-                onDelete={() => onDeleteTheme(theme)}
-                onActivate={() => onActivateTheme(theme)}
+                onDelete={() => handleDelete(theme)}
+                onActivate={() => handleActivate(theme)}
                 onDuplicate={() => onDuplicateTheme(theme)}
               />
             ))}
@@ -124,6 +186,26 @@ export function ThemeList({
         )}
       </div>
     </Card>
+
+      {selectedTheme && (
+        <>
+          <ConfirmActivateModal
+            theme={selectedTheme}
+            isOpen={showActivateModal}
+            isLoading={isActivating}
+            onConfirm={handleActivateConfirm}
+            onCancel={cancelAction}
+          />
+          <ConfirmDeleteModal
+            theme={selectedTheme}
+            isOpen={showDeleteModal}
+            isLoading={isDeleting}
+            onConfirm={handleDeleteConfirm}
+            onCancel={cancelAction}
+          />
+        </>
+      )}
+    </>
   );
 }
 
