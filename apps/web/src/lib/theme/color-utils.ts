@@ -26,38 +26,93 @@ function rgbToHex(r: number, g: number, b: number): string {
 }
 
 /**
- * Lighten a color by a percentage
+ * Convert RGB to HSL
  */
-function lighten(color: string, percent: number): string {
-  const rgb = hexToRgb(color);
-  if (!rgb) return color;
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
 
-  const amount = percent / 100;
-  const r = Math.min(255, Math.round(rgb.r + (255 - rgb.r) * amount));
-  const g = Math.min(255, Math.round(rgb.g + (255 - rgb.g) * amount));
-  const b = Math.min(255, Math.round(rgb.b + (255 - rgb.b) * amount));
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
 
-  return rgbToHex(r, g, b);
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return { h: h * 360, s: s * 100, l: l * 100 };
 }
 
 /**
- * Darken a color by a percentage
+ * Convert HSL to RGB
  */
-function darken(color: string, percent: number): string {
-  const rgb = hexToRgb(color);
-  if (!rgb) return color;
+function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+  h /= 360;
+  s /= 100;
+  l /= 100;
 
-  const amount = percent / 100;
-  const r = Math.max(0, Math.round(rgb.r * (1 - amount)));
-  const g = Math.max(0, Math.round(rgb.g * (1 - amount)));
-  const b = Math.max(0, Math.round(rgb.b * (1 - amount)));
+  let r: number, g: number, b: number;
 
-  return rgbToHex(r, g, b);
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255),
+  };
 }
 
 /**
- * Generate color shades from a base color
+ * Generate color shades from a base color using HSL-based approach
+ * This preserves hue and saturation while adjusting lightness
  * Returns an object with shades from 50 (lightest) to 950 (darkest)
+ * 
+ * Uses Tailwind-like color scale:
+ * - 50: Very light (95% lightness)
+ * - 100: Light (90% lightness)
+ * - 200: Lighter (80% lightness)
+ * - 300: Light (70% lightness)
+ * - 400: Medium-light (60% lightness)
+ * - 500: Base color (original lightness)
+ * - 600: Medium-dark (40% lightness)
+ * - 700: Dark (30% lightness)
+ * - 800: Darker (20% lightness)
+ * - 900: Very dark (10% lightness)
+ * - 950: Darkest (5% lightness)
  */
 export function generateColorShades(baseColor: string): {
   50: string;
@@ -72,18 +127,59 @@ export function generateColorShades(baseColor: string): {
   900: string;
   950: string;
 } {
+  const rgb = hexToRgb(baseColor);
+  if (!rgb) {
+    // Fallback if color parsing fails
+    return {
+      50: baseColor,
+      100: baseColor,
+      200: baseColor,
+      300: baseColor,
+      400: baseColor,
+      500: baseColor,
+      600: baseColor,
+      700: baseColor,
+      800: baseColor,
+      900: baseColor,
+      950: baseColor,
+    };
+  }
+
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  const baseLightness = hsl.l;
+  const baseSaturation = hsl.s;
+  const baseHue = hsl.h;
+
+  // For very light colors, increase saturation for lighter shades
+  // For very dark colors, decrease saturation for darker shades
+  const adjustSaturation = (lightness: number, targetLightness: number): number => {
+    if (targetLightness > lightness) {
+      // Lighter shades: reduce saturation slightly for pastel effect
+      return Math.max(0, baseSaturation * (1 - (targetLightness - lightness) / 100));
+    } else {
+      // Darker shades: increase saturation slightly for richer colors
+      return Math.min(100, baseSaturation * (1 + (lightness - targetLightness) / 200));
+    }
+  };
+
+  const generateShade = (targetLightness: number): string => {
+    const adjustedSaturation = adjustSaturation(baseLightness, targetLightness);
+    const shadeRgb = hslToRgb(baseHue, adjustedSaturation, targetLightness);
+    return rgbToHex(shadeRgb.r, shadeRgb.g, shadeRgb.b);
+  };
+
   return {
-    50: lighten(baseColor, 90),
-    100: lighten(baseColor, 80),
-    200: lighten(baseColor, 60),
-    300: lighten(baseColor, 40),
-    400: lighten(baseColor, 20),
-    500: baseColor, // Base color
-    600: darken(baseColor, 20),
-    700: darken(baseColor, 40),
-    800: darken(baseColor, 60),
-    900: darken(baseColor, 80),
-    950: darken(baseColor, 90),
+    50: generateShade(95),   // Very light
+    100: generateShade(90),  // Light
+    200: generateShade(80),  // Lighter
+    300: generateShade(70),  // Light
+    400: generateShade(60),  // Medium-light
+    500: baseColor,          // Base color (original)
+    600: generateShade(40),  // Medium-dark
+    700: generateShade(30),  // Dark
+    800: generateShade(20),  // Darker
+    900: generateShade(10),  // Very dark
+    950: generateShade(5),   // Darkest
   };
 }
 
