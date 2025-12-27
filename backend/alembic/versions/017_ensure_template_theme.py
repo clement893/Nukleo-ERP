@@ -19,66 +19,76 @@ depends_on = None
 def upgrade():
     """Ensure TemplateTheme (ID 32) exists in the database."""
     conn = op.get_bind()
+    trans = conn.begin()
     
-    # Check if themes table exists
-    inspector = sa.inspect(conn)
-    tables = inspector.get_table_names()
-    
-    if 'themes' not in tables:
-        print("⚠️  Themes table does not exist, skipping TemplateTheme creation")
-        print("   Run migration 001_create_themes_table first")
-        return
-    
-    # Check if TemplateTheme (ID 32) already exists
-    result = conn.execute(text("SELECT id FROM themes WHERE id = 32"))
-    existing_theme = result.fetchone()
-    
-    if existing_theme:
-        print("✅ TemplateTheme (ID 32) already exists, skipping creation")
+    try:
+        # Check if themes table exists
+        inspector = sa.inspect(conn)
+        tables = inspector.get_table_names()
         
-        # Ensure it's active if no other theme is active
+        if 'themes' not in tables:
+            print("⚠️  Themes table does not exist, skipping TemplateTheme creation")
+            print("   Run migration 001_create_themes_table first")
+            trans.rollback()
+            return
+        
+        # Check if TemplateTheme (ID 32) already exists
+        result = conn.execute(text("SELECT id, is_active FROM themes WHERE id = 32"))
+        existing_theme = result.fetchone()
+        
+        if existing_theme:
+            print("✅ TemplateTheme (ID 32) already exists")
+            
+            # Ensure it's active if no other theme is active
+            active_result = conn.execute(text("SELECT id FROM themes WHERE is_active = true AND id != 32"))
+            active_theme = active_result.fetchone()
+            
+            if not active_theme and not existing_theme[1]:  # existing_theme[1] is is_active
+                print("   Activating TemplateTheme (no other active theme found)")
+                conn.execute(text("UPDATE themes SET is_active = true, updated_at = NOW() WHERE id = 32"))
+            
+            trans.commit()
+            return
+        
+        # Check if any theme is currently active
         active_result = conn.execute(text("SELECT id FROM themes WHERE is_active = true"))
         active_theme = active_result.fetchone()
         
-        if not active_theme:
-            print("   Activating TemplateTheme (no other active theme found)")
-            conn.execute(text("UPDATE themes SET is_active = true WHERE id = 32"))
-            conn.commit()
+        # Create TemplateTheme - activate it only if no other theme is active
+        is_active = active_theme is None
         
-        return
-    
-    # Check if any theme is currently active
-    active_result = conn.execute(text("SELECT id FROM themes WHERE is_active = true"))
-    active_theme = active_result.fetchone()
-    
-    # Create TemplateTheme - activate it only if no other theme is active
-    is_active = active_theme is None
-    
-    # Default config for TemplateTheme
-    default_config = {
-        "mode": "system",
-        "primary": "#3b82f6",
-        "secondary": "#8b5cf6",
-        "danger": "#ef4444",
-        "warning": "#f59e0b",
-        "info": "#06b6d4",
-    }
-    
-    import json
-    config_json = json.dumps(default_config)
-    
-    # Insert TemplateTheme with ID 32
-    conn.execute(text("""
-        INSERT INTO themes (id, name, display_name, description, config, is_active, created_by, created_at, updated_at)
-        VALUES (32, 'TemplateTheme', 'Template Theme', 'Master theme that controls all components', 
-                :config::jsonb, :is_active, 1, NOW(), NOW())
-    """), {
-        "config": config_json,
-        "is_active": is_active
-    })
-    conn.commit()
-    
-    print(f"✅ Created TemplateTheme (ID 32) - Active: {is_active}")
+        # Default config for TemplateTheme
+        default_config = {
+            "mode": "system",
+            "primary": "#3b82f6",
+            "secondary": "#8b5cf6",
+            "danger": "#ef4444",
+            "warning": "#f59e0b",
+            "info": "#06b6d4",
+            "font_family": "Inter",
+            "border_radius": "8px",
+        }
+        
+        import json
+        config_json = json.dumps(default_config)
+        
+        # Insert TemplateTheme with ID 32
+        conn.execute(text("""
+            INSERT INTO themes (id, name, display_name, description, config, is_active, created_by, created_at, updated_at)
+            VALUES (32, 'TemplateTheme', 'Template Theme', 'Master theme that controls all components', 
+                    :config::jsonb, :is_active, 1, NOW(), NOW())
+        """), {
+            "config": config_json,
+            "is_active": is_active
+        })
+        
+        trans.commit()
+        print(f"✅ Created TemplateTheme (ID 32) - Active: {is_active}")
+        
+    except Exception as e:
+        trans.rollback()
+        print(f"❌ Error creating TemplateTheme: {e}")
+        raise
 
 
 def downgrade():

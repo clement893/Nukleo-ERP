@@ -37,6 +37,17 @@ if [ -n "$DATABASE_URL" ]; then
     # Run migrations with error handling - don't fail if migrations fail
     if alembic upgrade head; then
         echo "✅ Database migrations completed successfully"
+        
+        # Ensure default theme exists after migrations
+        echo "=========================================="
+        echo "Ensuring default theme exists..."
+        echo "=========================================="
+        if python scripts/create_default_theme.py; then
+            echo "✅ Default theme ensured"
+        else
+            echo "⚠️  Could not ensure default theme (will be created on first API call)"
+            echo "   This is not critical - the theme will be created automatically when needed."
+        fi
     else
         echo "⚠️  Database migrations failed or skipped!"
         echo "This may be due to:"
