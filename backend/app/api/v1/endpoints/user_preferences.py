@@ -5,6 +5,7 @@ User Preferences API Endpoints
 from typing import Dict, Any, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.exc import ProgrammingError, OperationalError
 
@@ -88,15 +89,27 @@ async def get_all_preferences(
             for key, value in preferences.items()
         }
         
-        return cleaned_preferences
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content=cleaned_preferences,
+            status_code=200
+        )
     except (ProgrammingError, OperationalError) as e:
         # Table doesn't exist yet - return empty dict
         logger.warning(f"Table user_preferences may not exist yet: {e}")
-        return {}
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content={},
+            status_code=200
+        )
     except Exception as e:
         logger.error(f"Error getting preferences: {e}", exc_info=True)
         # Return empty dict if there's an error (e.g., table doesn't exist yet)
-        return {}
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content={},
+            status_code=200
+        )
 
 
 @router.get("/preferences/{key}", tags=["user-preferences"])
@@ -116,7 +129,11 @@ async def get_preference(
             )
         # Clean the preference value to ensure JSON serialization
         cleaned_value = clean_preference_value(preference.value)
-        return {"key": preference.key, "value": cleaned_value}
+        # Convert to JSONResponse for slowapi compatibility
+        return JSONResponse(
+            content={"key": preference.key, "value": cleaned_value},
+            status_code=200
+        )
     except HTTPException:
         raise
     except Exception as e:
