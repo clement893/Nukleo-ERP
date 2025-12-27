@@ -135,12 +135,16 @@ const config: Config = {
         128: '32rem',
       },
       borderRadius: {
+        // Use theme border radius if available, otherwise use default
+        DEFAULT: 'var(--border-radius, 0.5rem)',
         // Consistent border radius scale
         '4xl': '2rem',
         '5xl': '2.5rem',
       },
       fontFamily: {
+        // Use theme font family if available, otherwise fallback to system fonts
         sans: [
+          'var(--font-family)',
           '-apple-system',
           'BlinkMacSystemFont',
           'Segoe UI',
@@ -151,6 +155,24 @@ const config: Config = {
           'Fira Sans',
           'Droid Sans',
           'Helvetica Neue',
+          'sans-serif',
+        ],
+        heading: [
+          'var(--font-family-heading)',
+          'var(--font-family)',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+        subheading: [
+          'var(--font-family-subheading)',
+          'var(--font-family)',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
           'sans-serif',
         ],
       },
