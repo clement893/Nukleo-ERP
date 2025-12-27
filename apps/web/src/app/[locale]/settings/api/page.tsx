@@ -4,11 +4,10 @@
  * Page for managing API configuration and settings.
  */
 
-// Force dynamic rendering to avoid static generation
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 'use client';
+
+// Note: Client Components are automatically dynamic in Next.js App Router
+// No need for export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';

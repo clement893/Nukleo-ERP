@@ -6,11 +6,10 @@
  * Accessible via dashboard navigation and sitemap.
  */
 
-// Force dynamic rendering to avoid static generation
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 'use client';
+
+// Note: Client Components are automatically dynamic in Next.js App Router
+// No need for export const dynamic = 'force-dynamic'
 
 import { useTranslations } from 'next-intl';
 import { PageHeader, PageContainer } from '@/components/layout';

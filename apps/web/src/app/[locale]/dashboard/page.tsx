@@ -1,8 +1,7 @@
-// Force dynamic rendering to avoid static generation
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 'use client';
+
+// Note: Client Components are automatically dynamic in Next.js App Router
+// No need for export const dynamic = 'force-dynamic'
 
 import { useAuthStore } from '@/lib/store';
 import { Card, Badge, Container, StatsCard, StatusCard, ServiceTestCard, Button } from '@/components/ui';
