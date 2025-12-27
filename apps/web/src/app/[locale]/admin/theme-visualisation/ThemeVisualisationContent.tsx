@@ -315,13 +315,16 @@ export function ThemeVisualisationContent() {
                         updateConfigField(['font_family'], value);
                       }
                       // Auto-generate Google Fonts URL if it's a Google Font
-                      const fontName = value.split(',')[0].replace(/['"]/g, '').trim();
-                      if (fontName && !typography.fontUrl) {
-                        const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;500;600;700&display=swap`;
-                        if (!(config as any).typography) {
-                          updateConfigField(['typography'], {});
+                      if (value && value.trim()) {
+                        const fontParts = value.split(',');
+                        const fontName = fontParts[0]?.replace(/['"]/g, '').trim();
+                        if (fontName && !typography.fontUrl) {
+                          const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;500;600;700&display=swap`;
+                          if (!(config as any).typography) {
+                            updateConfigField(['typography'], {});
+                          }
+                          updateConfigField(['typography', 'fontUrl'], fontUrl);
                         }
-                        updateConfigField(['typography', 'fontUrl'], fontUrl);
                       }
                     }}
                   />
