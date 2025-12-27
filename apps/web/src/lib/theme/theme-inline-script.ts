@@ -202,7 +202,51 @@ export const themeInlineScript = `
     }
   }
   
-  // Try to load theme from API asynchronously
+  // Apply default theme colors IMMEDIATELY to prevent color flash
+  // These match the DEFAULT_THEME_CONFIG from the backend
+  // This ensures consistent colors from the very first render
+  (function() {
+    try {
+      var defaultConfig = {
+        primary_color: '#3b82f6',
+        secondary_color: '#8b5cf6',
+        danger_color: '#ef4444',
+        warning_color: '#f59e0b',
+        info_color: '#06b6d4',
+        success_color: '#10b981',
+        colors: {
+          primary: '#3b82f6',
+          secondary: '#8b5cf6',
+          danger: '#ef4444',
+          destructive: '#ef4444',
+          warning: '#f59e0b',
+          info: '#06b6d4',
+          success: '#10b981',
+          background: '#ffffff',
+          foreground: '#000000',
+          muted: '#f3f4f6',
+          mutedForeground: '#6b7280',
+          border: '#e5e7eb',
+          input: '#ffffff',
+          ring: '#3b82f6'
+        },
+        font_family: 'Inter',
+        border_radius: '8px',
+        typography: {
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+          fontFamilyHeading: 'Inter, system-ui, -apple-system, sans-serif',
+          fontFamilySubheading: 'Inter, system-ui, -apple-system, sans-serif'
+        }
+      };
+      
+      // Apply default theme immediately (synchronously)
+      applyThemeConfig(defaultConfig);
+    } catch (e) {
+      // Silently fail
+    }
+  })();
+  
+  // Then try to load theme from API asynchronously and update if different
   // This runs before React hydration to prevent FOUC
   // We use fetch with immediate execution to load theme as fast as possible
   (function() {
@@ -227,7 +271,7 @@ export const themeInlineScript = `
       }
       
       // Use fetch for async loading (non-blocking)
-      // This will apply theme as soon as it loads, even if after initial render
+      // This will update theme as soon as it loads, replacing the default
       fetch(apiUrl + '/api/v1/themes/active', {
         method: 'GET',
         headers: {
@@ -243,15 +287,16 @@ export const themeInlineScript = `
       })
       .then(function(data) {
         if (data && data.config) {
+          // Update theme with actual values from API
           applyThemeConfig(data.config);
         }
       })
       .catch(function(error) {
-        // Silently fail - theme will be loaded by React component
+        // Silently fail - default theme is already applied
         // This prevents errors from blocking page load if API is unavailable
       });
     } catch (e) {
-      // Silently fail - theme will be loaded by React component
+      // Silently fail - default theme is already applied
     }
   })();
 })();
