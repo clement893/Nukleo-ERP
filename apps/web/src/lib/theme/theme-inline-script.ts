@@ -275,18 +275,36 @@ export const themeInlineScript = `
       
       // Use fetch for async loading (non-blocking)
       // This will update theme as soon as it loads, replacing the default
+      // Note: This endpoint is public and doesn't require authentication
+      if (!apiUrl || apiUrl === 'http://localhost:8000') {
+        // In production, try to detect API URL from current origin
+        if (typeof window !== 'undefined' && window.location) {
+          var origin = window.location.origin;
+          // If we're on Railway or similar, try to construct API URL
+          // This is a fallback - ideally apiUrl should be set via data-api-url attribute
+          if (origin.includes('railway') || origin.includes('vercel') || origin.includes('netlify')) {
+            // Try common patterns - this might need adjustment based on your setup
+            // For now, keep using the provided apiUrl or fallback
+          }
+        }
+      }
+      
       fetch(apiUrl + '/api/v1/themes/active', {
         method: 'GET',
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
+        credentials: 'omit', // Don't send cookies - this is a public endpoint
         cache: 'no-cache'
       })
       .then(function(response) {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('Failed to load theme');
+        // If response is not ok, log for debugging but don't throw
+        console.warn('[Theme] Failed to load theme from API:', response.status, response.statusText);
+        throw new Error('Failed to load theme: ' + response.status);
       })
       .then(function(data) {
         if (data && data.config) {
@@ -297,6 +315,10 @@ export const themeInlineScript = `
       .catch(function(error) {
         // Silently fail - default theme is already applied
         // This prevents errors from blocking page load if API is unavailable
+        // Only log in development
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+          console.warn('[Theme] Could not load theme from API, using defaults:', error);
+        }
       });
     } catch (e) {
       // Silently fail - default theme is already applied

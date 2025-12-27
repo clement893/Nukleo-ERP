@@ -74,7 +74,7 @@ export default function HealthStatus() {
   if (error) {
     return (
       <Card>
-        <div className="p-4 text-red-600 dark:text-red-400">
+        <div className="p-4 text-danger-600 dark:text-danger-400">
           Error: {error}
         </div>
       </Card>
@@ -86,11 +86,11 @@ export default function HealthStatus() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
-        return 'bg-green-500';
+        return 'bg-success-500';
       case 'degraded':
-        return 'bg-yellow-500';
+        return 'bg-warning-500';
       case 'down':
-        return 'bg-red-500';
+        return 'bg-danger-500';
       default:
         return 'bg-gray-500';
     }
@@ -112,19 +112,19 @@ export default function HealthStatus() {
           {health.services.map((service) => (
             <div
               key={service.name}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              className="flex items-center justify-between p-3 bg-muted dark:bg-gray-800 rounded-lg"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${getStatusColor(service.status)}`} />
                 <div>
                   <div className="font-medium">{service.name}</div>
                   {service.message && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{service.message}</div>
+                    <div className="text-sm text-muted-foreground">{service.message}</div>
                   )}
                 </div>
               </div>
               {service.responseTime !== undefined && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   {service.responseTime}ms
                 </div>
               )}
@@ -132,7 +132,7 @@ export default function HealthStatus() {
           ))}
         </div>
 
-        <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-4 text-xs text-muted-foreground">
           Last updated: {new Date(health.timestamp).toLocaleString()}
         </div>
       </div>
