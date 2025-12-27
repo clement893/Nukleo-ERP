@@ -108,7 +108,7 @@ export function ThemeVisualisationContent() {
         config: configToSave as Partial<ThemeConfig>,
       };
 
-      const updatedTheme = await updateTheme(theme.id, updateData);
+      await updateTheme(theme.id, updateData);
       
       setSuccessMessage(`Thème "${theme.display_name}" mis à jour avec succès !`);
       setIsEditing(false);
@@ -118,10 +118,8 @@ export function ThemeVisualisationContent() {
       
       // If this is the active theme, apply the changes immediately
       if (theme.is_active) {
-        // Import applyThemeConfig to apply the new config directly
-        const { applyThemeConfig } = await import('@/lib/theme/global-theme-provider');
-        // Apply the updated config immediately
-        applyThemeConfig(configToSave);
+        // Apply the updated config immediately using the imported function
+        applyThemeConfigDirectly(configToSave);
         // Also refresh from backend to ensure consistency
         await refreshTheme();
       } else {
