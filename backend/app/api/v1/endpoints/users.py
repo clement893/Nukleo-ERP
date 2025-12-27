@@ -129,8 +129,9 @@ async def list_users(
             page_size=pagination.page_size,
         )
         # Convert to JSONResponse for slowapi compatibility
+        # Use model_dump with mode='json' to ensure datetime serialization
         return JSONResponse(
-            content=paginated_response.model_dump(),
+            content=paginated_response.model_dump(mode='json'),
             status_code=200
         )
     except Exception as e:
@@ -177,8 +178,9 @@ async def list_users(
                 page_size=paginated_result.page_size,
             )
             # Convert to JSONResponse for slowapi compatibility
+            # Use model_dump with mode='json' to ensure datetime serialization
             return JSONResponse(
-                content=paginated_response.model_dump(),
+                content=paginated_response.model_dump(mode='json'),
                 status_code=200
             )
         except Exception as fallback_error:
