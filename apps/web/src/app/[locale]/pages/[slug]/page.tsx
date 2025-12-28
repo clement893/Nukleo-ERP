@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Loading, Alert } from '@/components/ui';
@@ -23,14 +23,12 @@ export default function DynamicPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFoundError, setNotFoundError] = useState(false);
+  const loadingRef = useRef(false);
 
-  useEffect(() => {
-    if (slug) {
-      loadPage();
-    }
-  }, [slug]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
+    // Prevent multiple simultaneous loads
+    if (loadingRef.current || !slug) return;
+    loadingRef.current = true;
     try {
       setIsLoading(true);
       setError(null);
@@ -63,8 +61,16 @@ export default function DynamicPage() {
       const appError = handleApiError(error);
       setError(appError.message || t('errors.loadFailed') || 'Failed to load page. Please try again.');
       setIsLoading(false);
+    } finally {
+      loadingRef.current = false;
     }
-  };
+  }, [slug, t]);
+
+  useEffect(() => {
+    if (slug) {
+      loadPage();
+    }
+  }, [slug, loadPage]);
 
   if (isLoading) {
     return (

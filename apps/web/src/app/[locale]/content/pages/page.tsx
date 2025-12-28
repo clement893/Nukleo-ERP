@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/lib/store';
@@ -26,17 +26,12 @@ export default function PagesManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
+  const loadingRef = useRef(false);
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/auth/login');
-      return;
-    }
-
-    loadPages();
-  }, [isAuthenticated, router]);
-
-  const loadPages = async () => {
+  const loadPages = useCallback(async () => {
+    // Prevent multiple simultaneous loads
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     try {
       setIsLoading(true);
       setError(null);
@@ -49,8 +44,19 @@ export default function PagesManagementPage() {
       const appError = handleApiError(error);
       setError(appError.message || t('errors.loadFailed') || 'Failed to load pages. Please try again.');
       setIsLoading(false);
+    } finally {
+      loadingRef.current = false;
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/auth/login');
+      return;
+    }
+
+    loadPages();
+  }, [isAuthenticated, router, loadPages]);
 
   const handlePageCreate = async (pageData: Omit<Page, 'id' | 'created_at' | 'updated_at'>) => {
     try {

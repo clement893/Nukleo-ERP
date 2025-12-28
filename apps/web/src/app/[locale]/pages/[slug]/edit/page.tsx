@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PageEditor } from '@/components/page-builder';
@@ -28,12 +28,12 @@ export default function PageEditPage() {
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false);
 
-  useEffect(() => {
-    loadPage();
-  }, [slug]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
+    // Prevent multiple simultaneous loads
+    if (loadingRef.current || !slug) return;
+    loadingRef.current = true;
     try {
       setIsLoading(true);
       setError(null);
@@ -51,8 +51,16 @@ export default function PageEditPage() {
       const appError = handleApiError(error);
       setError(appError.message || t('errors.loadFailed') || 'Failed to load page. Please try again.');
       setIsLoading(false);
+    } finally {
+      loadingRef.current = false;
     }
-  };
+  }, [slug, t]);
+
+  useEffect(() => {
+    if (slug) {
+      loadPage();
+    }
+  }, [slug, loadPage]);
 
   const handleSave = async (updatedSections: PageSection[]) => {
     try {
