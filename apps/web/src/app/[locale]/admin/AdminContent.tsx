@@ -98,25 +98,25 @@ export default function AdminContent() {
 
       <Section title="Statut du système" className="mt-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-success-50 dark:bg-success-900/20 rounded-lg border border-success-200 dark:border-success-800">
+          <div className="p-4 border rounded-lg bg-secondary-100 dark:bg-secondary-900 border-secondary-200 dark:border-secondary-800">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-secondary-900 dark:text-secondary-100">
                 API Backend
               </span>
               <Badge variant="success">En ligne</Badge>
             </div>
           </div>
-          <div className="p-4 bg-success-50 dark:bg-success-900/20 rounded-lg border border-success-200 dark:border-success-800">
+          <div className="p-4 border rounded-lg bg-secondary-100 dark:bg-secondary-900 border-secondary-200 dark:border-secondary-800">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-secondary-900 dark:text-secondary-100">
                 Base de données
               </span>
               <Badge variant="success">Connectée</Badge>
             </div>
           </div>
-          <div className="p-4 bg-success-50 dark:bg-success-900/20 rounded-lg border border-success-200 dark:border-success-800">
+          <div className="p-4 border rounded-lg bg-secondary-100 dark:bg-secondary-900 border-secondary-200 dark:border-secondary-800">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-secondary-900 dark:text-secondary-100">
                 Services
               </span>
               <Badge variant="success">Opérationnels</Badge>
