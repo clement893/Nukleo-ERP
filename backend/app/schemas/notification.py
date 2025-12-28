@@ -21,6 +21,8 @@ class NotificationBase(BaseModel):
     )
     action_url: Optional[str] = Field(None, max_length=500, description="Optional action URL")
     action_label: Optional[str] = Field(None, max_length=100, description="Optional action button label")
+    # Note: Field name is 'metadata' for API
+    # The model uses 'notification_metadata' attribute (with 'metadata' property for Pydantic)
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata (JSON)")
 
 
@@ -50,6 +52,8 @@ class NotificationUpdate(BaseModel):
     read: Optional[bool] = Field(None, description="Read status")
     action_url: Optional[str] = Field(None, max_length=500, description="Action URL")
     action_label: Optional[str] = Field(None, max_length=100, description="Action label")
+    # Note: Field name is 'metadata' for API
+    # The model uses 'notification_metadata' attribute (with 'metadata' property for Pydantic)
     metadata: Optional[Dict[str, Any]] = Field(None, description="Metadata")
 
 
@@ -62,7 +66,10 @@ class NotificationResponse(NotificationBase):
     created_at: datetime
     updated_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True  # Allow both field name and alias
+    )
 
 
 class NotificationListResponse(BaseModel):

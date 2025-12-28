@@ -4,6 +4,7 @@ User notifications system
 """
 
 from datetime import datetime
+from typing import Optional, Dict, Any
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, func, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -49,7 +50,9 @@ class Notification(Base):
     action_label = Column(String(100), nullable=True)
     
     # Additional metadata (JSON)
-    metadata = Column(JSONB, nullable=True)
+    # Note: Python attribute is 'notification_metadata' to avoid SQLAlchemy reserved name conflict
+    # Database column remains 'metadata' for backward compatibility
+    notification_metadata = Column("metadata", JSONB, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
@@ -71,4 +74,14 @@ class Notification(Base):
         from datetime import datetime, timezone
         self.read = True
         self.read_at = datetime.now(timezone.utc)
+    
+    @property
+    def metadata(self) -> Optional[Dict[str, Any]]:
+        """Property to expose notification_metadata as 'metadata' for Pydantic serialization"""
+        return self.notification_metadata
+    
+    @metadata.setter
+    def metadata(self, value: Optional[Dict[str, Any]]) -> None:
+        """Setter to allow setting metadata property"""
+        self.notification_metadata = value
 

@@ -36,7 +36,7 @@ class NotificationService:
             notification_type=notification_type.value,
             action_url=action_url,
             action_label=action_label,
-            metadata=metadata
+            notification_metadata=metadata
         )
         
         self.db.add(notification)
