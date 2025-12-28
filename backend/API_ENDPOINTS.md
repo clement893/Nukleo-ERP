@@ -29,6 +29,7 @@ Authorization: Bearer <access_token>
 - [API Keys Endpoints](#api-keys-endpoints)
 - [Email Endpoints](#email-endpoints)
 - [Webhook Endpoints](#webhook-endpoints)
+- [Notification Endpoints](#notification-endpoints)
 
 ---
 
@@ -795,6 +796,222 @@ Stripe-Signature: t=timestamp,v1=signature
 ```json
 {
   "received": true
+}
+```
+
+---
+
+## Notification Endpoints
+
+### List Notifications
+
+```http
+GET /api/v1/notifications
+```
+
+Get user's notifications with pagination and filtering.
+
+**Query Parameters:**
+- `skip` (integer, default: 0) - Number of records to skip
+- `limit` (integer, default: 100, max: 1000) - Maximum number of records
+- `read` (boolean, optional) - Filter by read status (true/false)
+- `notification_type` (string, optional) - Filter by type (info, success, warning, error)
+
+**Response:**
+```json
+{
+  "notifications": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "Welcome!",
+      "message": "Welcome to the platform",
+      "notification_type": "info",
+      "read": false,
+      "read_at": null,
+      "action_url": "/dashboard",
+      "action_label": "Go to Dashboard",
+      "metadata": null,
+      "created_at": "2025-01-27T10:00:00Z",
+      "updated_at": "2025-01-27T10:00:00Z"
+    }
+  ],
+  "total": 1,
+  "unread_count": 1,
+  "skip": 0,
+  "limit": 100
+}
+```
+
+### Get Unread Count
+
+```http
+GET /api/v1/notifications/unread-count
+```
+
+Get count of unread notifications for the current user.
+
+**Response:**
+```json
+{
+  "unread_count": 5,
+  "user_id": 1
+}
+```
+
+### Get Notification
+
+```http
+GET /api/v1/notifications/{notification_id}
+```
+
+Get a specific notification by ID (only if it belongs to the current user).
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "title": "Welcome!",
+  "message": "Welcome to the platform",
+  "notification_type": "info",
+  "read": false,
+  "read_at": null,
+  "action_url": "/dashboard",
+  "action_label": "Go to Dashboard",
+  "metadata": null,
+  "created_at": "2025-01-27T10:00:00Z",
+  "updated_at": "2025-01-27T10:00:00Z"
+}
+```
+
+### Mark Notification as Read
+
+```http
+PATCH /api/v1/notifications/{notification_id}/read
+```
+
+Mark a notification as read.
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "title": "Welcome!",
+  "message": "Welcome to the platform",
+  "notification_type": "info",
+  "read": true,
+  "read_at": "2025-01-27T10:05:00Z",
+  "action_url": "/dashboard",
+  "action_label": "Go to Dashboard",
+  "metadata": null,
+  "created_at": "2025-01-27T10:00:00Z",
+  "updated_at": "2025-01-27T10:05:00Z"
+}
+```
+
+### Mark All Notifications as Read
+
+```http
+PATCH /api/v1/notifications/read-all
+```
+
+Mark all notifications as read for the current user.
+
+**Response:**
+```json
+{
+  "message": "Marked 5 notifications as read",
+  "count": 5
+}
+```
+
+### Delete Notification
+
+```http
+DELETE /api/v1/notifications/{notification_id}
+```
+
+Delete a notification (only if it belongs to the current user).
+
+**Response:** `204 No Content`
+
+### Create Notification
+
+```http
+POST /api/v1/notifications
+```
+
+Create a new notification. Users can only create notifications for themselves.
+
+**Request Body:**
+```json
+{
+  "user_id": 1,
+  "title": "New Feature Available",
+  "message": "Check out our new feature!",
+  "notification_type": "info",
+  "action_url": "/features/new",
+  "action_label": "Learn More",
+  "metadata": {
+    "feature_id": 123
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "id": 2,
+  "user_id": 1,
+  "title": "New Feature Available",
+  "message": "Check out our new feature!",
+  "notification_type": "info",
+  "read": false,
+  "read_at": null,
+  "action_url": "/features/new",
+  "action_label": "Learn More",
+  "metadata": {
+    "feature_id": 123
+  },
+  "created_at": "2025-01-27T10:10:00Z",
+  "updated_at": "2025-01-27T10:10:00Z"
+}
+```
+
+### WebSocket Notifications
+
+```http
+WS /api/v1/ws/notifications?token={access_token}
+```
+
+WebSocket endpoint for real-time notifications. Connect to receive notifications as they are created.
+
+**Connection:**
+- Pass JWT token as query parameter: `?token=YOUR_TOKEN`
+- Supports ping/pong for keepalive
+- Automatic reconnection on disconnect
+
+**Message Types:**
+- `connected` - Connection confirmed
+- `notification` - New notification received
+- `pong` - Response to ping
+- `error` - Error message
+
+**Example Message:**
+```json
+{
+  "type": "notification",
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "title": "New notification",
+    "message": "You have a new message",
+    "notification_type": "info",
+    "read": false,
+    "created_at": "2025-01-27T10:00:00Z"
+  }
 }
 ```
 

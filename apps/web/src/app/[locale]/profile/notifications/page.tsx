@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/lib/store';
 import { NotificationSettings } from '@/components/settings';
+import { NotificationCenterConnected } from '@/components/notifications';
 import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { Loading, Alert } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -248,7 +249,24 @@ export default function ProfileNotificationsPage() {
           </div>
         )}
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-8">
+          {/* Notification List Section */}
+          <Section title={t('list.title') || 'My Notifications'} className="mt-6">
+            <div className="mb-4">
+              <a
+                href="/profile/notifications-list"
+                className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium"
+              >
+                View all notifications →
+              </a>
+            </div>
+            <NotificationCenterConnected
+              initialFilters={{ skip: 0, limit: 10 }}
+              enableWebSocket={true}
+            />
+          </Section>
+
+          {/* Notification Preferences Section */}
           <Section title={t('section.title') || 'Notification Preferences'} className="mt-6">
             {notificationSettings && (
               <NotificationSettings
