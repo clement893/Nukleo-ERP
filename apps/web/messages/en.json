@@ -409,6 +409,28 @@
     }
   },
   "admin": {
+    "Users": {
+      "RoleDefaultPermissions": {
+        "title": "Default Role Permissions",
+        "description": "Configure default permissions for each role. These permissions will be automatically assigned to new users with this role.",
+        "selectRole": "Select a role",
+        "systemRole": "System role",
+        "searchPlaceholder": "Search permissions...",
+        "noPermissionsFound": "No permissions found",
+        "saveChangesButton": "Save Changes",
+        "allPermissions": "All permissions",
+        "superadminWarning": "The Superadmin role always has all permissions (admin:*). This configuration cannot be modified.",
+        "tabs": {
+          "admin": "Admin",
+          "users": "Users",
+          "roles": "Roles",
+          "permissions": "Permissions"
+        },
+        "errors": {
+          "saveFailed": "Failed to save permissions. Please try again."
+        }
+      }
+    },
     "tenancy": {
       "title": "Multi-Tenancy Configuration",
       "description": "Configure and manage multi-tenancy settings",

@@ -173,7 +173,7 @@ export default function Tabs({
 // TabList Component
 export function TabList({ children, className }: TabListProps) {
   return (
-    <div className={clsx('flex border-b border-gray-200 dark:border-gray-700', className)}>
+    <div className={clsx('flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto', className)}>
       {children}
     </div>
   );
@@ -190,7 +190,7 @@ export function Tab({ children, value, disabled, className }: TabProps) {
       onClick={() => !disabled && setActiveTab(value)}
       disabled={disabled}
       className={clsx(
-        'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+        'px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0',
         isActive
           ? 'border-primary-500 text-primary-600 dark:text-primary-400'
           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',

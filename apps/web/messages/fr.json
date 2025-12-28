@@ -271,5 +271,29 @@
         "saved": "Paramètres API enregistrés avec succès"
       }
     }
+  },
+  "admin": {
+    "Users": {
+      "RoleDefaultPermissions": {
+        "title": "Permissions par Défaut des Rôles",
+        "description": "Configurez les permissions par défaut pour chaque rôle. Ces permissions seront automatiquement assignées aux nouveaux utilisateurs ayant ce rôle.",
+        "selectRole": "Sélectionner un rôle",
+        "systemRole": "Rôle système",
+        "searchPlaceholder": "Rechercher des permissions...",
+        "noPermissionsFound": "Aucune permission trouvée",
+        "saveChangesButton": "Enregistrer les modifications",
+        "allPermissions": "Toutes les permissions",
+        "superadminWarning": "Le rôle Superadmin a toujours toutes les permissions (admin:*). Cette configuration ne peut pas être modifiée.",
+        "tabs": {
+          "admin": "Admin",
+          "users": "Utilisateurs",
+          "roles": "Rôles",
+          "permissions": "Permissions"
+        },
+        "errors": {
+          "saveFailed": "Échec de l'enregistrement des permissions. Veuillez réessayer."
+        }
+      }
+    }
   }
 }

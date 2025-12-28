@@ -283,7 +283,7 @@ export default function RoleDefaultPermissionsEditor({ onUpdate }: RoleDefaultPe
             <>
               {/* Permission Categories Tabs */}
               <Tabs defaultTab={activeTab} onChange={(tabId) => setActiveTab(tabId as typeof activeTab)}>
-                <TabList className="mb-4">
+                <TabList className="mb-4 flex-nowrap">
                   <Tab value="admin">{t('tabs.admin')} ({adminPermissions.length})</Tab>
                   <Tab value="users">{t('tabs.users')} ({userPermissions.length})</Tab>
                   <Tab value="roles">{t('tabs.roles')} ({rolePermissionsList.length})</Tab>
