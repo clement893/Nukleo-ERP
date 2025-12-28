@@ -184,8 +184,12 @@ export function handleApiError(error: unknown): AppError {
         
         // If we have detailed validation messages, use the first one as the main message
         // (it contains the formatted error details from Pydantic)
-        if (validationMessages.length > 0 && validationMessages[0].includes('Color format') || validationMessages[0].includes('contrast')) {
+        if (validationMessages.length > 0 && (validationMessages[0].includes('Color format') || validationMessages[0].includes('contrast') || validationMessages[0].includes('Invalid color'))) {
           // Use the detailed message from backend
+          message = validationMessages[0];
+        } else if (validationMessages.length > 0) {
+          // Use the first validation message even if it doesn't match the pattern
+          // It might contain useful information
           message = validationMessages[0];
         }
       } else if (typeof validationErrors === 'object') {

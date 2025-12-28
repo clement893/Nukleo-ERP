@@ -1,54 +1,101 @@
 """Notification tasks."""
 
 from typing import Optional, Dict, Union
+from datetime import datetime, timezone
 from app.celery_app import celery_app
 from app.core.logging import logger
 from app.services.email_service import EmailService
+from app.models.notification import Notification, NotificationType
 
 
 @celery_app.task(bind=True, max_retries=3)
 def send_notification_task(
     self, 
-    user_id: str, 
+    user_id: Union[str, int], 
     title: str, 
     message: str,
     notification_type: str = "info",
     email_notification: bool = True,
-    user_email: Optional[str] = None
+    user_email: Optional[str] = None,
+    action_url: Optional[str] = None,
+    action_label: Optional[str] = None,
+    metadata: Optional[Dict] = None
 ):
     """
     Send notification to a user.
     
+    Creates a notification in the database, optionally sends email, and sends WebSocket notification.
+    
     Args:
-        user_id: User ID to send notification to
+        user_id: User ID to send notification to (int or str)
         title: Notification title
         message: Notification message
         notification_type: Type of notification (info, success, warning, error)
         email_notification: Whether to send email notification (default: True)
         user_email: User email address (optional, will be fetched from DB if not provided)
+        action_url: Optional action URL for the notification
+        action_label: Optional action button label
+        metadata: Optional metadata dictionary
     
     Returns:
-        Dict with status and details
+        Dict with status and details including notification_id
     """
     try:
-        from app.core.database import get_db
+        from app.core.database import SessionLocal
         from app.models.user import User
         from sqlalchemy import select
         
-        # Get user email if not provided
-        if email_notification and not user_email:
-            # TODO: Consider using async database session for better performance
-            # For now, we'll log and try to send email if email service is available
-            logger.info(f"Notification task: user_id={user_id}, title={title}, type={notification_type}")
+        # Convert user_id to int if it's a string
+        user_id_int = int(user_id) if isinstance(user_id, str) else user_id
         
-        result: Dict[str, Union[str, bool, None]] = {
+        # Get database session (synchronous for Celery)
+        db = SessionLocal()
+        
+        result: Dict[str, Union[str, bool, int, None]] = {
             "status": "sent",
-            "user_id": user_id,
+            "user_id": user_id_int,
             "title": title,
             "message": message,
             "type": notification_type,
-            "email_sent": False
+            "notification_id": None,
+            "email_sent": False,
+            "websocket_sent": False
         }
+        
+        try:
+            # Validate notification type
+            try:
+                notif_type_enum = NotificationType(notification_type.lower())
+            except ValueError:
+                logger.warning(f"Invalid notification type '{notification_type}', defaulting to INFO")
+                notif_type_enum = NotificationType.INFO
+            
+            # Create notification in database
+            notification = Notification(
+                user_id=user_id_int,
+                title=title,
+                message=message,
+                notification_type=notif_type_enum.value,
+                action_url=action_url,
+                action_label=action_label,
+                metadata=metadata
+            )
+            
+            db.add(notification)
+            db.commit()
+            db.refresh(notification)
+            
+            result["notification_id"] = notification.id
+            logger.info(f"Created notification {notification.id} for user {user_id_int}")
+            
+            # Get user email if not provided and email notification is enabled
+            if email_notification and not user_email:
+                user = db.query(User).filter(User.id == user_id_int).first()
+                if user:
+                    user_email = user.email
+                else:
+                    logger.warning(f"User {user_id_int} not found, skipping email notification")
+                    email_notification = False
         
         # Send email notification if enabled
         if email_notification:

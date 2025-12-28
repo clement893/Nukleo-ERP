@@ -50,11 +50,15 @@ function extractValidationMessageFromDetails(details: Record<string, unknown>): 
     // FastAPI returns validationErrors as array of {field, message, code}
     // The actual validation message is in the message field
     const messages = validationErrors
-      .map((err: any) => err.message)
+      .map((err: any) => {
+        // Handle both formats: err.message or err.msg (Pydantic format)
+        return err.message || err.msg || '';
+      })
       .filter((msg: any) => typeof msg === 'string' && msg.length > 0);
     
     if (messages.length > 0) {
       // Join all messages - they contain the formatted error details
+      // The message from Pydantic validator contains the full formatted error
       return messages.join('\n');
     }
   }
@@ -73,8 +77,18 @@ export function parseThemeValidationErrors(error: Error): ThemeValidationError[]
   if (error instanceof AppError && error.details) {
     const extractedMessage = extractValidationMessageFromDetails(error.details);
     if (extractedMessage) {
+      // Prefer the extracted message as it contains the full formatted error from backend
       message = extractedMessage;
     }
+  }
+  
+  // Debug: log the message to help diagnose issues
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[parseThemeValidationErrors] Parsing error:', {
+      message,
+      hasDetails: error instanceof AppError && !!error.details,
+      details: error instanceof AppError ? error.details : null,
+    });
   }
   
   // Parse color format errors
@@ -123,12 +137,22 @@ export function parseThemeValidationErrors(error: Error): ThemeValidationError[]
     }
   }
   
-  // If no structured errors found, create a generic one
-  if (errors.length === 0 && (message.includes('validation') || message.includes('invalid'))) {
-    errors.push({
-      type: 'unknown',
-      message: message,
-    });
+  // If no structured errors found, but we have a message, create an error entry
+  // This ensures we always return at least one error if there's a validation issue
+  if (errors.length === 0) {
+    // Check if this looks like a validation error
+    const isValidationMessage = message.includes('validation') || 
+                                message.includes('invalid') ||
+                                message.includes('Color format') ||
+                                message.includes('contrast') ||
+                                message.includes('422');
+    
+    if (isValidationMessage || message.length > 0) {
+      errors.push({
+        type: 'unknown',
+        message: message || 'Erreur de validation inconnue',
+      });
+    }
   }
   
   return errors;
