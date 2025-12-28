@@ -3,10 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AxiosError } from 'axios';
 import { authAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { handleApiError } from '@/lib/errors/api';
 import { Input, Button, Alert, Card, Container } from '@/components/ui';
+
+interface ApiErrorResponse {
+  detail?: string;
+  message?: string;
+  retry_after?: number;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -56,9 +63,31 @@ export default function RegisterPage() {
       login(user, access_token);
       router.push('/dashboard');
     } catch (err) {
-      const appError = handleApiError(err);
-      setLocalError(appError.message);
-      setError(appError.message);
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      const statusCode = axiosError.response?.status;
+      
+      // Handle rate limit error (429) with specific message
+      if (statusCode === 429) {
+        const retryAfter = axiosError.response?.data?.retry_after;
+        let errorMessage = 'Too many registration attempts. ';
+        if (retryAfter) {
+          const seconds = parseInt(String(retryAfter), 10);
+          const minutes = Math.ceil(seconds / 60);
+          if (minutes > 1) {
+            errorMessage += `Please wait ${minutes} minutes before trying again.`;
+          } else {
+            errorMessage += `Please wait ${seconds} seconds before trying again.`;
+          }
+        } else {
+          errorMessage += 'Please wait a minute before trying again.';
+        }
+        setLocalError(errorMessage);
+        setError(errorMessage);
+      } else {
+        const appError = handleApiError(err);
+        setLocalError(appError.message);
+        setError(appError.message);
+      }
     } finally {
       setIsLoading(false);
     }
