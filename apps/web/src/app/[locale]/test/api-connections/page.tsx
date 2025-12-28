@@ -156,23 +156,9 @@ function APIConnectionTestContent() {
       
       console.log('Report response:', response); // Debug log
       
-      // apiClient.get returns response.data from axios (which is the FastAPI response directly)
-      // But the return type is ApiResponse<T>, so we need to check both response and response.data
-      // FastAPI returns the data directly, not wrapped in ApiResponse
-      let data: CheckResult | null = null;
-      
-      // Check if response is already CheckResult (direct FastAPI response)
-      if (response && typeof response === 'object' && ('success' in response || 'error' in response || 'reportContent' in response)) {
-        data = response as CheckResult;
-      }
-      // Check if response has a data property (ApiResponse wrapper)
-      else if (response && typeof response === 'object' && 'data' in response) {
-        data = (response as any).data as CheckResult;
-      }
-      // Fallback: try response directly
-      else {
-        data = response as unknown as CheckResult;
-      }
+      // Extract data using same pattern as pagesAPI and other API modules
+      // Handle both ApiResponse wrapper and direct FastAPI response
+      const data = (response as any)?.data || response;
       
       console.log('Extracted data:', data); // Debug log
       
