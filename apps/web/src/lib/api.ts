@@ -776,4 +776,7 @@ export default apiClient;
 export const api = apiClient;
 export { apiClient };
 
+// Re-export theme-font functions for convenience
+export { checkFonts } from './api/theme-font';
+
 

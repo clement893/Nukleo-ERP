@@ -307,14 +307,20 @@ export default function AdminOrganizationsContent() {
   };
 
   const filteredTeams = teams.filter(team => {
-    const nameMatch = team.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const descMatch = team.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = team.name.toLowerCase().includes(searchLower);
+    const descMatch = team.description?.toLowerCase().includes(searchLower);
     let settingsMatch = false;
     if (typeof team.settings === 'object' && team.settings) {
       const email = team.settings.email;
       if (typeof email === 'string') {
-        settingsMatch = email.toLowerCase().includes(searchTerm.toLowerCase());
+        settingsMatch = email.toLowerCase().includes(searchLower);
+      } else if (email != null) {
+        // Handle number or boolean by converting to string
+        settingsMatch = String(email).toLowerCase().includes(searchLower);
       }
+    } else if (typeof team.settings === 'string') {
+      settingsMatch = team.settings.toLowerCase().includes(searchLower);
     }
     return nameMatch || descMatch || settingsMatch;
   });

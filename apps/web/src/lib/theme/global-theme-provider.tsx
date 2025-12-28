@@ -10,7 +10,7 @@ import type { ThemeConfigResponse, ThemeConfig } from '@modele/types';
 import { generateColorShades, generateRgb } from './color-utils';
 import { watchDarkModePreference, getThemeConfigForMode } from './dark-mode-utils';
 import { getThemeFromCache, saveThemeToCache } from './theme-cache';
-import { checkFonts } from '@/lib/api';
+import { checkFonts } from '@/lib/api/theme-font';
 
 interface GlobalThemeContextType {
   theme: ThemeConfigResponse | null;

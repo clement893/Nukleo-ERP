@@ -7,7 +7,7 @@ import { generateColorShades, generateRgb } from './color-utils';
 import { validateThemeConfig } from './theme-validator';
 import { getThemeConfigForMode, applyDarkModeClass } from './dark-mode-utils';
 import { loadThemeFonts } from './font-loader';
-import { checkFonts } from '@/lib/api';
+import { checkFonts } from '@/lib/api/theme-font';
 import { logger } from '@/lib/logger';
 
 /**
