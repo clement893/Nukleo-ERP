@@ -37,21 +37,23 @@ if [ -n "$DATABASE_URL" ]; then
     
     # Check for multiple heads (migration overlap) and merge if needed
     echo "Checking for migration conflicts..."
-    MIGRATION_OUTPUT=$(alembic heads 2>&1)
-    HEAD_COUNT=$(echo "$MIGRATION_OUTPUT" | grep -c "revision" || echo "0")
+    HEADS_OUTPUT=$(alembic heads 2>&1)
+    # Count actual head revisions (lines that contain revision IDs)
+    HEAD_COUNT=$(echo "$HEADS_OUTPUT" | grep -E "^[a-f0-9]+_[a-z_]+" | wc -l | tr -d ' ')
     
     # If multiple heads detected, try to merge them
     if [ "$HEAD_COUNT" -gt 1 ]; then
-        echo "⚠️  Multiple migration heads detected. Attempting to merge..."
+        echo "⚠️  Multiple migration heads detected ($HEAD_COUNT heads). Attempting to merge..."
         # Get all head revisions
-        HEADS=$(alembic heads | grep -oE "[a-f0-9]+_[a-z_]+" | tr '\n' ' ')
+        HEADS=$(echo "$HEADS_OUTPUT" | grep -E "^[a-f0-9]+_[a-z_]+" | tr '\n' ' ')
         if [ -n "$HEADS" ]; then
+            echo "Merging heads: $HEADS"
             # Create a merge migration
             MERGE_OUTPUT=$(alembic merge -m "Merge migration heads" $HEADS 2>&1)
-            if echo "$MERGE_OUTPUT" | grep -q "Generating.*merge"; then
+            if echo "$MERGE_OUTPUT" | grep -qE "(Generating|Created)"; then
                 echo "✅ Merge migration created successfully"
             else
-                echo "⚠️  Could not create merge migration (may already exist)"
+                echo "⚠️  Could not create merge migration (may already exist or error occurred)"
             fi
         fi
     fi
