@@ -95,3 +95,7 @@ pnpm-lock.yaml.bak
 # OS
 .DS_Store
 Thumbs.db
+
+# Template-specific files (remove after customization)
+TEMPLATE_SETUP.md
+*.template.md

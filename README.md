@@ -73,43 +73,20 @@ A production-ready, comprehensive full-stack template for building modern SaaS a
 
 ---
 
-## 🆕 Recent Improvements
+## 🆕 Template Features
 
-This template has been continuously improved with the following enhancements:
+This template includes production-ready features and best practices:
 
-- ✅ **Type Safety Enhanced** - Replaced all `any` types with specific TypeScript types
-- ✅ **Test Coverage Increased** - Added comprehensive unit and integration tests for critical components and endpoints
-- ✅ **Database Performance Optimized** - Fixed N+1 query issues and implemented eager loading
-- ✅ **Code Quality Improved** - Replaced `console.log` with structured logging
-- ✅ **TODOs Resolved** - Implemented missing features (CSV exports, category loading, tag inputs)
-- ✅ **Backend TODOs Fixed** - Resolved critical backend TODOs (user roles, admin checks, file uploads)
-- ✅ **Health Checks Fixed** - Improved deployment reliability with better health check endpoints
-- ✅ **Hydration Issues Fixed** - Resolved frontend hydration problems with `useHydrated` hook
-- ✅ **API Endpoints Aligned** - Fixed API endpoint discrepancies between frontend and backend (9 new endpoints created, 5 fetch() calls converted to apiClient, 15 files with duplicate prefixes corrected)
+- ✅ **270+ Components** - Complete UI component library
+- ✅ **Type-Safe** - Full TypeScript coverage with strict mode
+- ✅ **Tested** - Comprehensive test suite (unit, integration, E2E)
+- ✅ **Secure** - Security best practices implemented
+- ✅ **Performant** - Optimized for production performance
+- ✅ **Documented** - Extensive documentation and guides
+- ✅ **CI/CD Ready** - GitHub Actions workflows included
+- ✅ **Docker Ready** - Docker Compose for local development
 
-### Code Quality Improvements
-
-- **Batch 1:** Replaced all `console.log` statements with structured logger
-- **Batch 2-3:** Improved type safety by replacing `any` types with specific interfaces
-- **Batch 4:** Implemented missing frontend features (CSV exports, category loading)
-- **Batch 5:** Fixed critical backend TODOs (RBAC, admin checks, file uploads)
-- **Batch 6:** Optimized database queries (fixed N+1 issues, added eager loading)
-- **Batch 7:** Added comprehensive frontend tests (error components, hooks)
-- **Batch 8:** Added comprehensive backend tests (endpoints, services)
-- **Batch 9:** Analyzed and documented migration chain
-
-### API Endpoints Improvements (2025-01-28)
-
-- **Batch 1:** Converted 5 `fetch()` calls to `apiClient` for consistency
-- **Batch 2:** Fixed 15 files with duplicate API path prefixes (e.g., `/api/v1/announcements/announcements` → `/v1/announcements`)
-- **Batch 3:** Created 5 critical backend endpoints (user preferences, tenancy config, media validation)
-- **Batch 4:** Created 4 backend endpoints (tags CRUD, scheduled tasks toggle)
-- **Batch 5:** Verified all authentication endpoints (all correct)
-- **Batch 6:** Added DELETE endpoint for pages by ID
-- **Batch 7:** Verified all RBAC endpoints (all correct)
-- **Batch 8:** Final verification and testing (277 endpoints total)
-
-See [TEMPLATE_UPDATES.md](./TEMPLATE_UPDATES.md) for detailed information about all improvements.
+> 📖 **For detailed setup instructions**, see [TEMPLATE_SETUP.md](./TEMPLATE_SETUP.md)
 
 ---
 
@@ -118,7 +95,7 @@ See [TEMPLATE_UPDATES.md](./TEMPLATE_UPDATES.md) for detailed information about 
 ### Option 1: Interactive Setup (Recommended)
 
 ```bash
-git clone https://github.com/clement893/MODELE-NEXTJS-FULLSTACK.git your-project-name
+git clone https://github.com/your-username/MODELE-NEXTJS-FULLSTACK.git your-project-name
 cd your-project-name
 node scripts/quick-start.js
 ```
@@ -134,7 +111,7 @@ The interactive script will guide you through:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/clement893/MODELE-NEXTJS-FULLSTACK.git your-project-name
+git clone https://github.com/your-username/MODELE-NEXTJS-FULLSTACK.git your-project-name
 cd your-project-name
 
 # 2. Install dependencies
@@ -149,7 +126,8 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm dev
 ```
 
-> 📖 **For detailed setup instructions**, see [GETTING_STARTED.md](./GETTING_STARTED.md)
+> 📖 **For detailed template setup**, see [TEMPLATE_SETUP.md](./TEMPLATE_SETUP.md)  
+> 📖 **For detailed development guide**, see [GETTING_STARTED.md](./GETTING_STARTED.md)
 
 ---
 
@@ -453,6 +431,7 @@ docker run -p 3000:3000 your-app
 
 ### Essential Guides
 
+- **[Template Setup](./TEMPLATE_SETUP.md)** ⭐ **START HERE** - Complete template setup and customization guide
 - **[Getting Started](./GETTING_STARTED.md)** - Complete setup and installation guide
 - **[Development Guide](./docs/DEVELOPMENT.md)** - Development tools, workflows, and best practices
 - **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment instructions
@@ -504,7 +483,7 @@ View interactive component documentation at `http://localhost:6006`
 - **[Bootstrap Key Setup](./docs/BOOTSTRAP_KEY_SETUP.md)** - Bootstrap key configuration guide
 - **[JWT Token Guide](./docs/HOW_TO_GET_JWT_TOKEN.md)** - How to obtain JWT tokens for testing
 
-**Note:** Historical documentation (progress reports, plans, audits) has been archived in [`docs/archive/`](./docs/archive/) for reference.
+**Note:** Historical documentation (progress reports, plans, audits) has been archived in [`docs/archive/`](./docs/archive/) for reference. These files are for historical purposes only and can be removed if not needed.
 
 ---
 
