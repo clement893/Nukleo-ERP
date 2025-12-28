@@ -465,6 +465,69 @@ Webhook event log table.
 
 ---
 
+## Notifications
+
+### `notifications`
+
+User notifications table.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | Integer | Primary Key | Notification ID |
+| `user_id` | Integer | Foreign Key → users.id, Not Null, Indexed | User ID |
+| `title` | String(200) | Not Null | Notification title |
+| `message` | Text | Not Null | Notification message |
+| `notification_type` | String(20) | Default: 'info', Not Null, Indexed | Type (info, success, warning, error) |
+| `read` | Boolean | Default: False, Not Null, Indexed | Read status |
+| `read_at` | DateTime(timezone) | Nullable | Timestamp when marked as read |
+| `action_url` | String(500) | Nullable | Optional action URL |
+| `action_label` | String(100) | Nullable | Optional action button label |
+| `metadata` | JSONB | Nullable | Additional metadata (JSON) |
+| `created_at` | DateTime(timezone) | Not Null, Indexed | Creation timestamp |
+| `updated_at` | DateTime(timezone) | Not Null | Last update timestamp |
+
+**Indexes:**
+- `idx_notifications_user_id` - User notification lookup
+- `idx_notifications_read` - Read status filtering
+- `idx_notifications_created_at` - Date sorting
+- `idx_notifications_type` - Type filtering
+- `idx_notifications_user_read` - Composite index for user + read queries
+
+**Relationships:**
+- `user` → `users`
+
+**Notification Types:**
+- `info` - Informational notification
+- `success` - Success notification
+- `warning` - Warning notification
+- `error` - Error notification
+
+**Example:**
+```sql
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    notification_type VARCHAR(20) DEFAULT 'info' NOT NULL,
+    read BOOLEAN DEFAULT FALSE NOT NULL,
+    read_at TIMESTAMP WITH TIME ZONE,
+    action_url VARCHAR(500),
+    action_label VARCHAR(100),
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_read ON notifications(read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at);
+CREATE INDEX idx_notifications_type ON notifications(notification_type);
+CREATE INDEX idx_notifications_user_read ON notifications(user_id, read);
+```
+
+---
+
 ## Entity Relationship Diagram
 
 ```
@@ -476,7 +539,8 @@ users
 │   └── invoices
 ├── projects
 ├── files
-└── api_keys
+├── api_keys
+└── notifications
 
 webhook_events (standalone)
 ```
@@ -490,8 +554,8 @@ webhook_events (standalone)
 All foreign keys are indexed for join performance:
 - User lookups: `idx_users_email`, `idx_users_is_active`
 - Relationship lookups: `idx_user_roles_user_id`, `idx_team_members_team_id`
-- Status filtering: `idx_subscriptions_status`, `idx_projects_status`
-- Date sorting: `idx_users_created_at`, `idx_projects_created_at`
+- Status filtering: `idx_subscriptions_status`, `idx_projects_status`, `idx_notifications_read`
+- Date sorting: `idx_users_created_at`, `idx_projects_created_at`, `idx_notifications_created_at`
 
 ### Composite Indexes
 
@@ -499,6 +563,7 @@ Consider adding composite indexes for common query patterns:
 - `(user_id, status)` on subscriptions
 - `(team_id, user_id)` on team_members (already unique)
 - `(user_id, created_at)` on projects
+- `(user_id, read)` on notifications (already implemented)
 
 ---
 
@@ -513,6 +578,7 @@ Key migrations:
 6. `008_add_subscriptions_tables.py` - Subscription system
 7. `009_add_webhook_events_table.py` - Webhook logging
 8. `010_add_theme_preference.py` - Theme support
+9. `021_add_notifications_table.py` - Notification system
 
 ---
 

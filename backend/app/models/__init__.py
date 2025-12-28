@@ -34,6 +34,7 @@ from app.models.menu import Menu
 from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority
 from app.models.theme import Theme
 from app.models.theme_font import ThemeFont
+from app.models.notification import Notification, NotificationType
 from app.core.security_audit import SecurityAuditLog
 
 __all__ = [
@@ -103,6 +104,8 @@ __all__ = [
     "TicketPriority",
     "Theme",
     "ThemeFont",
+    "Notification",
+    "NotificationType",
     "SecurityAuditLog",
 ]
 
