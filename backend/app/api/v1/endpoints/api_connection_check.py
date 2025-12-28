@@ -319,10 +319,16 @@ async def generate_report(
         ["--output", f"{output_name}.md"]
     )
     
-    if not result.get("success"):
-        # If script not found, return a helpful message instead of 500 error
+    # Check if script execution actually failed (not just non-zero exit code)
+    # The script may return non-zero exit code if it finds issues, but that's OK
+    # We only treat it as an error if there's no stdout (script didn't run) or there's an actual error
+    has_output = bool(result.get("stdout", "").strip())
+    has_error = bool(result.get("error"))
+    
+    if has_error or (not has_output and result.get("returncode") != 0):
+        # If script not found or execution failed, return a helpful message
         error_msg = result.get('error', result.get('stderr', 'Unknown error'))
-        if "Script not found" in error_msg or "not found" in error_msg.lower():
+        if "Script not found" in error_msg or "not found" in error_msg.lower() or "ENOENT" in error_msg:
             return {
                 "success": False,
                 "error": "Report generation scripts are not available in this environment.",
@@ -334,18 +340,43 @@ async def generate_report(
             detail=f"Failed to generate report: {error_msg}"
         )
     
-    # Try to read the generated report
-    project_root = Path(__file__).parent.parent.parent.parent.parent
-    report_path = project_root / f"{output_name}.md"
+    output = result.get("stdout", "")
+    
+    # Try to read the generated report from various possible locations
+    # In Docker, the report might be generated in different locations
+    possible_roots = [
+        Path("/app"),  # Docker default - backend root
+        Path("/app").parent,  # Project root if whole project is copied
+        Path(__file__).parent.parent.parent.parent.parent,  # backend/app/api/v1/endpoints -> root
+    ]
     
     report_content = None
-    if report_path.exists():
-        report_content = report_path.read_text(encoding="utf-8")
+    report_path = None
+    
+    for root in possible_roots:
+        test_path = root / f"{output_name}.md"
+        if test_path.exists():
+            report_path = test_path
+            try:
+                report_content = test_path.read_text(encoding="utf-8")
+                break
+            except Exception as e:
+                logger.warning(f"Could not read report file {test_path}: {e}")
+    
+    # If report file not found but script ran successfully, return output
+    if not report_path and has_output:
+        return {
+            "success": True,
+            "output": output,
+            "message": "Report generation completed, but report file not found in expected locations.",
+            "hint": "The report may have been generated in a different location. Check the script output for details.",
+            "raw": result,
+        }
     
     return {
         "success": True,
-        "output": result.get("stdout", ""),
-        "reportPath": str(report_path.relative_to(project_root)),
+        "output": output,
+        "reportPath": str(report_path.relative_to(report_path.parent.parent)) if report_path else None,
         "reportContent": report_content,
         "raw": result,
     }

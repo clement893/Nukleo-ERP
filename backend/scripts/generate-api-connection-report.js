@@ -152,15 +152,33 @@ function generateMarkdownReport(analyses, outputPath) {
 
 function main() {
   const args = process.argv.slice(2);
-  const outputPath = args.find(arg => arg.startsWith('--output='))?.split('=')[1] 
-    || 'API_CONNECTION_REPORT.md';
+  // Support both --output=FILE and --output FILE formats
+  let outputPath = args.find(arg => arg.startsWith('--output='))?.split('=')[1];
+  if (!outputPath) {
+    const outputIndex = args.indexOf('--output');
+    if (outputIndex !== -1 && args[outputIndex + 1]) {
+      outputPath = args[outputIndex + 1];
+    } else {
+      outputPath = 'API_CONNECTION_REPORT.md';
+    }
+  }
 
-  const frontendPath = path.join(__dirname, '../apps/web/src');
+  // Adjust paths based on whether we're in Docker container or local development
+  const isDocker = process.env.DOCKER === 'true' || fs.existsSync('/.dockerenv') || __dirname.startsWith('/app');
+  const frontendPath = isDocker 
+    ? '/app/apps/web/src'  // In Docker: frontend might not be available
+    : path.join(__dirname, '../../apps/web/src');  // Local: relative to backend/scripts
   const pagesPath = path.join(frontendPath, 'app/[locale]');
 
   console.log('🔍 Scanning pages...');
   const pageFiles = findPageFiles(pagesPath);
-  console.log(`Found ${pageFiles.length} pages\n`);
+  
+  if (pageFiles.length === 0) {
+    console.log('⚠️  No pages found. This may be normal if frontend files are not available in backend container.');
+    console.log('   Generating report with backend-only information...\n');
+  } else {
+    console.log(`Found ${pageFiles.length} pages\n`);
+  }
 
   console.log('📝 Analyzing...');
   const analyses = pageFiles.map(pageFile => {
