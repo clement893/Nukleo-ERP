@@ -11,6 +11,7 @@ import { handleApiError } from '@/lib/errors/api';
 import Container from '@/components/ui/Container';
 import Loading from '@/components/ui/Loading';
 import Card from '@/components/ui/Card';
+import { routing } from '@/i18n/routing';
 
 // Note: Client Components are already dynamic by nature.
 // Route segment config (export const dynamic) only works in Server Components.
@@ -23,20 +24,40 @@ function CallbackContent() {
   const { login } = useAuthStore();
 
   const handleAuthCallback = useCallback(async () => {
-    // Support both formats: token (from Google OAuth callback) and access_token/refresh_token
-    const accessToken = searchParams.get('token') || searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token') ?? undefined;
+    // Get token from URL params - try multiple methods to ensure we get it
+    // This handles cases where next-intl middleware might interfere
+    let accessToken: string | null = null;
+    let refreshToken: string | undefined = undefined;
+    
+    // Method 1: Try useSearchParams (works in most cases)
+    accessToken = searchParams.get('token') || searchParams.get('access_token');
+    refreshToken = searchParams.get('refresh_token') ?? undefined;
+    
+    // Method 2: Fallback to window.location.search if useSearchParams didn't work
+    if (!accessToken && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      accessToken = urlParams.get('token') || urlParams.get('access_token');
+      refreshToken = urlParams.get('refresh_token') ?? undefined;
+    }
 
     logger.info('Auth callback started', { 
       hasToken: !!accessToken, 
       hasRefreshToken: !!refreshToken,
-      urlParams: Object.fromEntries(searchParams.entries())
+      urlParams: Object.fromEntries(searchParams.entries()),
+      windowSearch: typeof window !== 'undefined' ? window.location.search : 'N/A',
+      windowHref: typeof window !== 'undefined' ? window.location.href : 'N/A'
     });
 
     if (!accessToken) {
-      logger.error('No access token provided in callback URL');
-      // Don't add redirect parameter to avoid loops
-      router.push('/auth/login?error=No access token provided');
+      logger.error('No access token provided in callback URL', {
+        searchParamsEntries: Object.fromEntries(searchParams.entries()),
+        windowLocation: typeof window !== 'undefined' ? window.location.href : 'N/A',
+        windowSearch: typeof window !== 'undefined' ? window.location.search : 'N/A'
+      });
+      // Redirect to locale-specific login page
+      const defaultLocale = routing.defaultLocale;
+      const loginPath = defaultLocale === 'en' ? '/auth/login' : `/${defaultLocale}/auth/login`;
+      router.push(`${loginPath}?error=${encodeURIComponent('No access token provided')}`);
       return;
     }
 
@@ -105,7 +126,10 @@ function CallbackContent() {
         // Small delay to ensure store is updated
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        router.push('/dashboard');
+        // Redirect to locale-specific dashboard
+      const defaultLocale = routing.defaultLocale;
+      const dashboardPath = defaultLocale === 'en' ? '/dashboard' : `/${defaultLocale}/dashboard`;
+      router.push(dashboardPath);
       } else {
         throw new Error('No user data received');
       }
@@ -116,8 +140,10 @@ function CallbackContent() {
         errorCode: appError.code,
         errorDetails: appError.details 
       });
-      // Don't add redirect parameter to avoid loops
-      router.push(`/auth/login?error=${encodeURIComponent(appError.message || 'Failed to get user info')}`);
+      // Redirect to locale-specific login page
+      const defaultLocale = routing.defaultLocale;
+      const loginPath = defaultLocale === 'en' ? '/auth/login' : `/${defaultLocale}/auth/login`;
+      router.push(`${loginPath}?error=${encodeURIComponent(appError.message || 'Failed to get user info')}`);
     }
   }, [searchParams, router, login]);
 

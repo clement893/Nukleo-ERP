@@ -23,19 +23,37 @@ function CallbackContent() {
   const { login } = useAuthStore();
 
   const handleAuthCallback = useCallback(async () => {
-    // Support both formats: token (from Google OAuth callback) and access_token/refresh_token
-    const accessToken = searchParams.get('token') || searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token') ?? undefined;
+    // Get token from URL params - try multiple methods to ensure we get it
+    // This handles cases where next-intl middleware might interfere
+    let accessToken: string | null = null;
+    let refreshToken: string | undefined = undefined;
+    
+    // Method 1: Try useSearchParams (works in most cases)
+    accessToken = searchParams.get('token') || searchParams.get('access_token');
+    refreshToken = searchParams.get('refresh_token') ?? undefined;
+    
+    // Method 2: Fallback to window.location.search if useSearchParams didn't work
+    if (!accessToken && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      accessToken = urlParams.get('token') || urlParams.get('access_token');
+      refreshToken = urlParams.get('refresh_token') ?? undefined;
+    }
 
     logger.info('Auth callback started', { 
       hasToken: !!accessToken, 
       hasRefreshToken: !!refreshToken,
-      urlParams: Object.fromEntries(searchParams.entries())
+      urlParams: Object.fromEntries(searchParams.entries()),
+      windowSearch: typeof window !== 'undefined' ? window.location.search : 'N/A',
+      windowHref: typeof window !== 'undefined' ? window.location.href : 'N/A'
     });
 
     if (!accessToken) {
-      logger.error('No access token provided in callback URL');
-      // Don't add redirect parameter to avoid loops
+      logger.error('No access token provided in callback URL', {
+        searchParamsEntries: Object.fromEntries(searchParams.entries()),
+        windowLocation: typeof window !== 'undefined' ? window.location.href : 'N/A',
+        windowSearch: typeof window !== 'undefined' ? window.location.search : 'N/A'
+      });
+      // Redirect to locale-specific login page
       router.push('/auth/login?error=No access token provided');
       return;
     }
