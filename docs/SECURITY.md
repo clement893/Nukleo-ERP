@@ -2,6 +2,8 @@
 
 Bonnes pratiques de sécurité pour ce template full-stack.
 
+> **📢 Recent Updates:** Security has been enhanced with improved type safety, better error handling, and comprehensive test coverage. See [TEMPLATE_UPDATES.md](../../TEMPLATE_UPDATES.md) for details.
+
 ## 📋 Table des Matières
 
 - [Authentification](#authentification)

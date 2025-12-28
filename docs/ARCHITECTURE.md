@@ -2,6 +2,8 @@
 
 Complete architecture overview of this full-stack template application.
 
+> **📢 Recent Updates:** The architecture has been improved with better type safety, optimized database queries, comprehensive tests, and enhanced logging. See [TEMPLATE_UPDATES.md](../../TEMPLATE_UPDATES.md) for details.
+
 ---
 
 ## 📐 System Architecture

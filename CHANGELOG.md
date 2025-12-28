@@ -7,6 +7,60 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.2.0] - 2025-01-28
+
+### Added
+- **Structured Logging** - Replaced all `console.log` with structured logger (`logger.log`, `logger.error`, etc.)
+- **Type Safety** - Replaced `any` types with specific TypeScript interfaces throughout the codebase
+- **API Response Types** - Created `extractApiData` utility for type-safe API response handling
+- **User Preferences Types** - Defined `UserPreferences` and `UserPreferenceValue` types
+- **CSV Export** - Implemented CSV export for analytics, reports, and form submissions
+- **Category Loading** - Added API integration for loading categories in post editor
+- **Tag Input Component** - Implemented tag input with comma separation
+- **Backend RBAC Integration** - Implemented user roles retrieval in onboarding endpoints
+- **Admin Checks** - Added admin/ownership verification for scheduled tasks and backups
+- **File Upload Support** - Implemented file uploads in feedback endpoints with S3 integration
+- **User Context** - Added user team_id and roles retrieval for announcements
+- **Database Optimizations** - Fixed N+1 query issues in CommentService and ClientService
+- **Eager Loading** - Implemented `selectinload` for related entities (Team.members, Invoice.user, etc.)
+- **Health Check Endpoints** - Added simple `/health/health` endpoint for deployment platforms
+- **Hydration Hook** - Created `useHydrated` hook to prevent hydration issues
+- **Frontend Tests** - Added unit tests for ApiError, ErrorDisplay, PreferencesManager, useHydrated
+- **Backend Tests** - Added integration tests for onboarding, announcements, scheduled_tasks, backups
+- **Migration Analysis** - Created script to analyze and validate Alembic migrations
+
+### Changed
+- **Logger Usage** - All `console.log` statements replaced with structured logger
+- **API Client** - Improved type safety with `extractApiData` helper
+- **Preferences Management** - Enhanced type safety with proper TypeScript interfaces
+- **Comment Service** - Refactored to eliminate N+1 queries (single query with in-memory threading)
+- **Client Service** - Added eager loading for user and subscription relationships
+- **Health Checks** - Improved reliability with fallback responses and simpler endpoints
+- **Protected Routes** - Enhanced with `useHydrated` hook to prevent hydration issues
+- **Locale Sync** - Fixed hydration timing with `useHydrated` hook
+
+### Fixed
+- **Type Errors** - Fixed TypeScript errors related to `any` types
+- **API Response Handling** - Fixed type extraction from API responses
+- **N+1 Queries** - Eliminated N+1 query problems in comment and client services
+- **Health Check Failures** - Fixed deployment health check failures on Railway
+- **Hydration Issues** - Fixed frontend hydration problems with Zustand persist
+- **Analytics Page** - Fixed property access errors (`metric.label` instead of `metric.name`)
+
+### Documentation
+- **PROGRESS_BATCH_1.md** - Console.log cleanup report
+- **PROGRESS_BATCH_2.md** - API types improvement report
+- **PROGRESS_BATCH_3.md** - Component types improvement report
+- **PROGRESS_BATCH_4.md** - Frontend TODOs resolution report
+- **PROGRESS_BATCH_5.md** - Backend TODOs resolution report
+- **PROGRESS_BATCH_6.md** - Database optimization report
+- **PROGRESS_BATCH_7.md** - Frontend tests report
+- **PROGRESS_BATCH_8.md** - Backend tests report
+- **PROGRESS_BATCH_9.md** - Migration analysis report
+- **TEMPLATE_UPDATES.md** - Comprehensive template improvements documentation
+
+---
+
 ## [1.1.0] - 2025-01-22
 
 ### Added

@@ -2,6 +2,8 @@
 
 Guide complet pour développer avec le template MODELE-NEXTJS-FULLSTACK.
 
+> **📢 Recent Updates:** Development experience has been improved with structured logging, better type safety, comprehensive tests, and optimized database queries. See [TEMPLATE_UPDATES.md](../../TEMPLATE_UPDATES.md) for details.
+
 ## 📋 Table des Matières
 
 - [Prérequis](#prérequis)

@@ -2,6 +2,8 @@
 
 Complete guide to get your project up and running with this full-stack template.
 
+> **📢 Recent Updates:** This template has been improved with enhanced type safety, comprehensive tests, database optimizations, and better code quality. See [TEMPLATE_UPDATES.md](../TEMPLATE_UPDATES.md) for details.
+
 ---
 
 ## ⚡ Quick Start (5 Minutes)
