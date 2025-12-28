@@ -7,6 +7,7 @@ import { Button, Card, Alert, Badge } from '@/components/ui';
 import { getErrorMessage } from '@/lib/errors';
 import { RefreshCw, CheckCircle, Download, FileText } from 'lucide-react';
 import { PageHeader, PageContainer } from '@/components/layout';
+import { ClientOnly } from '@/components/ui/ClientOnly';
 
 interface ConnectionStatus {
   success: boolean;
@@ -143,8 +144,10 @@ function APIConnectionTestContent() {
   };
 
   useEffect(() => {
-    // Auto-check status on mount
-    checkStatus();
+    // Auto-check status on mount (only on client)
+    if (typeof window !== 'undefined') {
+      checkStatus();
+    }
   }, []);
 
   const downloadReport = () => {
@@ -162,17 +165,18 @@ function APIConnectionTestContent() {
   };
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="API Connection Test"
-        description="Test and verify API connections between frontend pages and backend endpoints"
-      />
+    <ClientOnly>
+      <PageContainer>
+        <PageHeader
+          title="API Connection Test"
+          description="Test and verify API connections between frontend pages and backend endpoints"
+        />
 
-      {error && (
-        <Alert variant="error" className="mb-6">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert variant="error" className="mb-6">
+            {error}
+          </Alert>
+        )}
 
       {/* Quick Status */}
       <Card className="mb-6">
@@ -454,7 +458,8 @@ function APIConnectionTestContent() {
           </div>
         )}
       </Card>
-    </PageContainer>
+      </PageContainer>
+    </ClientOnly>
   );
 }
 
