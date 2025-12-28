@@ -729,6 +729,9 @@ async def get_google_auth_url(
                     logger.warning(f"Using fallback base_url from environment: {backend_base_url}")
             callback_uri = f"{backend_base_url}{settings.API_V1_STR}/auth/google/callback"
         
+        # Ensure callback_uri doesn't have trailing slash (Google is strict about exact match)
+        callback_uri = callback_uri.rstrip("/")
+        
         logger.info(f"Google OAuth callback URI: {callback_uri}")
         logger.info(f"GOOGLE_REDIRECT_URI from settings: {settings.GOOGLE_REDIRECT_URI}")
         logger.info(f"BASE_URL from settings: {settings.BASE_URL}")
@@ -794,36 +797,66 @@ async def google_oauth_callback(
             detail="Google OAuth is not configured"
         )
     
-    # Build redirect URI - must match the one used in /google endpoint
+    # Build redirect URI - must match EXACTLY the one used in /google endpoint
     redirect_uri = settings.GOOGLE_REDIRECT_URI
     if not redirect_uri:
         # Use BASE_URL from settings if available, otherwise construct from request
         if settings.BASE_URL:
             backend_base_url = settings.BASE_URL.rstrip("/")
+            logger.info(f"Using BASE_URL from settings for redirect_uri: {backend_base_url}")
         else:
             backend_base_url = str(request.base_url).rstrip("/")
+            logger.info(f"Using request.base_url for redirect_uri: {backend_base_url}")
         redirect_uri = f"{backend_base_url}{settings.API_V1_STR}/auth/google/callback"
+    
+    # Ensure redirect_uri doesn't have trailing slash (Google is strict about exact match)
+    redirect_uri = redirect_uri.rstrip("/")
+    
+    logger.info(f"Google OAuth callback - redirect_uri: {redirect_uri}")
+    logger.info(f"Google OAuth callback - code received: {code[:20]}... (truncated)")
+    logger.info(f"Google OAuth callback - state: {state}")
     
     try:
         # Exchange authorization code for tokens
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            token_request_data = {
+                "code": code,
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            }
+            logger.info(f"Google token exchange request - redirect_uri: {redirect_uri}")
+            logger.info(f"Google token exchange request - client_id: {settings.GOOGLE_CLIENT_ID[:10]}... (truncated)")
+            
             token_response = await client.post(
                 "https://oauth2.googleapis.com/token",
-                data={
-                    "code": code,
-                    "client_id": settings.GOOGLE_CLIENT_ID,
-                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                    "redirect_uri": redirect_uri,
-                    "grant_type": "authorization_code",
-                },
+                data=token_request_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             
+            logger.info(f"Google token exchange response status: {token_response.status_code}")
+            
             if token_response.status_code != 200:
-                logger.error(f"Google token exchange failed: {token_response.text}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Failed to exchange authorization code"
-                )
+                error_text = token_response.text
+                logger.error(f"Google token exchange failed - Status: {token_response.status_code}")
+                logger.error(f"Google token exchange failed - Response: {error_text}")
+                logger.error(f"Google token exchange failed - Request redirect_uri: {redirect_uri}")
+                
+                # Try to parse error details if available
+                try:
+                    error_json = token_response.json()
+                    error_detail = error_json.get("error_description", error_json.get("error", "Unknown error"))
+                    logger.error(f"Google token exchange error details: {error_detail}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Failed to exchange authorization code: {error_detail}"
+                    )
+                except Exception:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Failed to exchange authorization code: {error_text}"
+                    )
             
             token_data = token_response.json()
             access_token = token_data.get("access_token")
