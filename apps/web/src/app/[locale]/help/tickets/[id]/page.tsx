@@ -18,6 +18,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
 import { handleApiError } from '@/lib/errors';
 import { supportTicketsAPI } from '@/lib/api';
+import { extractApiData } from '@/lib/api/utils';
 
 export default function TicketDetailsPage() {
   const params = useParams();
@@ -52,11 +53,13 @@ export default function TicketDetailsPage() {
       
       // Load ticket details
       const ticketResponse = await supportTicketsAPI.get(ticketIdNum);
-      const ticketData = (ticketResponse as any).data || ticketResponse;
+      // supportTicketsAPI returns ApiResponse<T>, extractApiData handles both formats
+      const ticketData = extractApiData<SupportTicket>(ticketResponse as unknown as SupportTicket | import('@modele/types').ApiResponse<SupportTicket>);
       
       // Load ticket messages
       const messagesResponse = await supportTicketsAPI.getMessages(ticketIdNum);
-      const messagesData = (messagesResponse as any).data || messagesResponse;
+      // supportTicketsAPI returns ApiResponse<T>, extractApiData handles both formats
+      const messagesData = extractApiData<TicketMessage[]>(messagesResponse as unknown as TicketMessage[] | import('@modele/types').ApiResponse<TicketMessage[]>);
       
       setTicket({
         id: ticketData.id,

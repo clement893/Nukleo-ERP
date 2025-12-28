@@ -5,6 +5,7 @@
 
 import { apiClient } from './client';
 import type { BlogPost } from '@/components/content';
+import { extractApiData } from './utils';
 
 export interface PostListResponse {
   items: BlogPost[];
@@ -64,7 +65,7 @@ export const postsAPI = {
     });
     
     // Handle both array and paginated response formats
-    const data = (response as any).data || response;
+    const data = extractApiData(response);
     if (Array.isArray(data)) {
       return data;
     }
@@ -79,7 +80,7 @@ export const postsAPI = {
    */
   getBySlug: async (slug: string): Promise<BlogPost> => {
     const response = await apiClient.get<BlogPost>(`/v1/posts/${slug}`);
-    const data = (response as any).data || response;
+    const data = extractApiData(response);
     if (!data) {
       throw new Error(`Post not found: ${slug}`);
     }
@@ -104,7 +105,7 @@ export const postsAPI = {
    */
   create: async (data: PostCreate): Promise<BlogPost> => {
     const response = await apiClient.post<BlogPost>('/v1/posts', data);
-    const result = (response as any).data || response;
+    const result = extractApiData(response);
     if (!result) {
       throw new Error('Failed to create post: no data returned');
     }
@@ -116,7 +117,7 @@ export const postsAPI = {
    */
   update: async (id: number, data: PostUpdate): Promise<BlogPost> => {
     const response = await apiClient.put<BlogPost>(`/v1/posts/${id}`, data);
-    const result = (response as any).data || response;
+    const result = extractApiData(response);
     if (!result) {
       throw new Error('Failed to update post: no data returned');
     }

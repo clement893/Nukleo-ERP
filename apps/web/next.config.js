@@ -215,9 +215,11 @@ const nextConfig = {
     // This is acceptable for dev but should be tightened in production using nonces
     // See: https://nextjs.org/docs/advanced-features/security-headers
     // Include both localhost (for dev) and the configured API URL in connect-src
+    // Also include WebSocket URLs (wss://) for WebSocket connections
+    const apiUrlWss = apiUrl.replace(/^https?:\/\//, 'wss://');
     const connectSrcUrls = isProduction 
-      ? [`'self'`, apiUrl, 'https://*.sentry.io', 'wss://*.sentry.io']
-      : [`'self'`, apiUrl, 'http://localhost:8000', 'https://*.sentry.io', 'wss://*.sentry.io'];
+      ? [`'self'`, apiUrl, apiUrlWss, 'https://*.sentry.io', 'wss://*.sentry.io']
+      : [`'self'`, apiUrl, apiUrlWss, 'http://localhost:8000', 'ws://localhost:8000', 'https://*.sentry.io', 'wss://*.sentry.io'];
     
     const cspDirectives = [
       "default-src 'self'",
