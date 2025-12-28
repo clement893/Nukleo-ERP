@@ -13,8 +13,11 @@ import { TokenStorage } from './auth/tokenStorage';
 
 /**
  * User interface representing authenticated user data
+ * 
+ * This is the format used in the Zustand store.
+ * For API responses, use transformApiUserToStoreUser to convert from backend format.
  */
-interface User {
+export interface User {
   /** Unique user identifier */
   id: string;
   /** User email address */
