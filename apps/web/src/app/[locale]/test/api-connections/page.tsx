@@ -145,24 +145,41 @@ function APIConnectionTestContent() {
     setReport(null);
 
     try {
+      console.log('Generating report...'); // Debug log
       const response = await apiClient.get<CheckResult>('/v1/api-connection-check/report', {
         params: { output_name: `API_CONNECTION_REPORT_${Date.now()}` },
       });
       
-      // apiClient.get returns ApiResponse<T>, but FastAPI returns data directly
-      // So response.data is the CheckResult, not wrapped in ApiResponse
+      console.log('Report response:', response); // Debug log
+      
+      // apiClient.get returns response.data from axios, which is the FastAPI response directly
+      // FastAPI returns the data directly, not wrapped in ApiResponse
+      // So response is already CheckResult, not ApiResponse<CheckResult>
       const data = (response as unknown as CheckResult) ?? null;
+      
+      console.log('Extracted data:', data); // Debug log
       
       if (data) {
         setReport(data);
         // If there's an error in the response, also set it for visibility
         if (!data.success && data.error) {
           setError(data.error);
+        } else if (data.success) {
+          // Clear any previous errors on success
+          setError('');
         }
       } else {
-        setError('No data returned from report generation');
+        const errorMsg = 'No data returned from report generation';
+        setError(errorMsg);
+        setReport({
+          success: false,
+          error: errorMsg,
+          message: 'The report generation completed but no data was returned.',
+          hint: 'Please check the backend logs for more details.'
+        });
       }
     } catch (err: unknown) {
+      console.error('Error generating report:', err); // Debug log
       const errorMessage = getErrorMessage(err) || 'Failed to generate report';
       setError(errorMessage);
       setReport({
