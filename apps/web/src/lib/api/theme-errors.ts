@@ -5,7 +5,7 @@
 
 import { AppError } from '@/lib/errors/AppError';
 
-export interface ThemeValidationError {
+export interface ThemeValidationErrorData {
   type: 'color_format' | 'contrast' | 'unknown';
   field?: string;
   message: string;
@@ -13,7 +13,7 @@ export interface ThemeValidationError {
 
 export interface ParsedThemeError {
   isValidationError: boolean;
-  validationErrors: ThemeValidationError[];
+  validationErrors: ThemeValidationErrorData[];
   originalError: Error;
   message: string;
 }
@@ -69,8 +69,8 @@ function extractValidationMessageFromDetails(details: Record<string, unknown>): 
 /**
  * Parse validation errors from backend error message
  */
-export function parseThemeValidationErrors(error: Error): ThemeValidationError[] {
-  const errors: ThemeValidationError[] = [];
+export function parseThemeValidationErrors(error: Error): ThemeValidationErrorData[] {
+  const errors: ThemeValidationErrorData[] = [];
   let message = error.message;
   
   // If it's an AppError with details, extract validation message from details
@@ -202,7 +202,7 @@ export function parseThemeError(error: unknown): ParsedThemeError {
   }
 
   const isValidation = isThemeValidationError(error);
-  let validationErrors: ThemeValidationError[] = [];
+  let validationErrors: ThemeValidationErrorData[] = [];
   let message = error.message;
 
   if (isValidation) {
@@ -238,7 +238,7 @@ export function parseThemeError(error: unknown): ParsedThemeError {
 /**
  * Format validation errors for display
  */
-export function formatValidationErrors(errors: ThemeValidationError[]): string[] {
+export function formatValidationErrors(errors: ThemeValidationErrorData[]): string[] {
   const formatted: string[] = [];
   
   const colorErrors = errors.filter(e => e.type === 'color_format');
