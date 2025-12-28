@@ -165,49 +165,65 @@ export function handleApiError(error: unknown): AppError {
       const validationErrors = responseData.error.validationErrors;
       details.validationErrors = validationErrors;
       
-      // Debug logging to help diagnose issues
-      console.log('[handleApiError] Validation errors received:', {
+      // Debug logging to help diagnose issues (always log, even in production for debugging)
+      console.error('[handleApiError] Validation errors received:', {
         validationErrors,
         responseData,
         statusCode,
+        fullResponse: JSON.stringify(responseData, null, 2),
       });
       
       // FastAPI returns validationErrors as an array of {field, message, code}
       // Extract field names and messages for better error message
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-        const fields = validationErrors
-          .map((err: any) => err.field)
-          .filter((field: any) => field)
-          .join(', ');
-        
         // Extract the actual validation messages (they contain detailed info)
         const validationMessages = validationErrors
-          .map((err: any) => err.message || err.msg || '')
-          .filter((msg: any) => typeof msg === 'string' && msg.length > 0);
+          .map((err: any) => {
+            // Try multiple possible fields for the message
+            return err.message || err.msg || err.detail || String(err) || '';
+          })
+          .filter((msg: any) => typeof msg === 'string' && msg.length > 0 && !msg.includes('Request failed'));
         
-        console.log('[handleApiError] Extracted validation messages:', validationMessages);
+        console.error('[handleApiError] Extracted validation messages:', validationMessages);
         
-        if (fields) {
-          message = `Validation failed for fields: ${fields}. ${message}`;
-        }
-        
-        // If we have detailed validation messages, use the first one as the main message
-        // (it contains the formatted error details from Pydantic)
+        // If we have detailed validation messages, ALWAYS use them instead of generic message
         if (validationMessages.length > 0) {
-          // Always use the first validation message as it contains the detailed error from backend
-          // The message from Pydantic validator contains the full formatted error
-          // Join all messages if there are multiple (they might contain different parts of the error)
+          // Join all messages - they contain the formatted error details from Pydantic
+          // The message from Pydantic validator contains the full formatted error with all details
           message = validationMessages.join('\n');
-          console.log('[handleApiError] Using validation message:', message);
+          console.error('[handleApiError] Using validation message:', message);
         } else {
-          // If no messages extracted, log the full validationErrors for debugging
-          console.warn('[handleApiError] No validation messages extracted from:', validationErrors);
+          // If no messages extracted, try to extract from the error object itself
+          console.warn('[handleApiError] No validation messages extracted, trying alternative extraction');
+          const alternativeMessages = validationErrors
+            .map((err: any) => {
+              // Try to stringify the whole error object
+              if (typeof err === 'object' && err !== null) {
+                return JSON.stringify(err);
+              }
+              return String(err);
+            })
+            .filter((msg: string) => msg.length > 0 && !msg.includes('Request failed'));
+          
+          if (alternativeMessages.length > 0) {
+            message = alternativeMessages.join('\n');
+          } else {
+            // Last resort: log the full validationErrors for debugging
+            console.error('[handleApiError] No validation messages extracted from:', JSON.stringify(validationErrors, null, 2));
+            message = `Erreur de validation. Détails: ${JSON.stringify(validationErrors)}`;
+          }
         }
       } else if (typeof validationErrors === 'object') {
         // Handle object format (legacy or other formats)
         const validationFields = Object.keys(validationErrors).join(', ');
         message = `Validation failed for fields: ${validationFields}. ${message}`;
       }
+    } else if (statusCode === 422) {
+      // If 422 but no validationErrors, log the full response for debugging
+      console.error('[handleApiError] 422 error but no validationErrors:', {
+        responseData,
+        fullResponse: JSON.stringify(responseData, null, 2),
+      });
     }
 
     const appError = createErrorFromStatusCode(statusCode, message, details);

@@ -231,21 +231,65 @@ export async function updateTheme(
       }
     }
     
+    // Log what we're sending for debugging
+    console.error('[updateTheme] Sending theme data:', {
+      themeId,
+      themeData: JSON.stringify(themeData, null, 2),
+      config: themeData.config ? JSON.stringify(themeData.config, null, 2) : 'no config',
+    });
+    
     // Use apiClient which automatically handles token from TokenStorage
     const response = await apiClient.put<Theme>(`/v1/themes/${themeId}`, themeData);
     return extractFastApiData<Theme>(response);
   } catch (error) {
-    console.log('[updateTheme] Error caught:', error);
+    // Always log errors for debugging (use console.error for visibility)
+    console.error('[updateTheme] Error caught:', error);
+    
+    // If it's an AxiosError, log the full response
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as any;
+      console.error('[updateTheme] Axios error response:', {
+        status: axiosError.response?.status,
+        data: axiosError.response?.data,
+        fullResponse: JSON.stringify(axiosError.response?.data, null, 2),
+      });
+    }
+    
     const parsed = parseThemeError(error);
-    console.log('[updateTheme] Parsed error:', parsed);
+    console.error('[updateTheme] Parsed error:', {
+      isValidationError: parsed.isValidationError,
+      message: parsed.message,
+      validationErrors: parsed.validationErrors,
+      originalError: parsed.originalError,
+    });
     
     if (parsed.isValidationError) {
       const formattedErrors = formatValidationErrors(parsed.validationErrors);
-      const errorMessage = formattedErrors.length > 0 
-        ? formattedErrors.join('\n')
-        : parsed.message || 'Erreur de validation';
+      // Always prefer the parsed message if it's not generic
+      let errorMessage = parsed.message;
       
-      console.log('[updateTheme] Throwing ThemeValidationError with message:', errorMessage);
+      // If formatted errors exist and are not generic, use them
+      if (formattedErrors.length > 0) {
+        const formattedMessage = formattedErrors.join('\n');
+        // Only use formatted message if it's not the generic fallback
+        if (!formattedMessage.includes('Erreur de validation inconnue') && 
+            !formattedMessage.includes('Request failed with status code')) {
+          errorMessage = formattedMessage;
+        } else if (parsed.message && !parsed.message.includes('Request failed')) {
+          // Use parsed message if it's not generic
+          errorMessage = parsed.message;
+        }
+      } else if (parsed.message && !parsed.message.includes('Request failed')) {
+        // Use parsed message directly if no formatted errors
+        errorMessage = parsed.message;
+      } else {
+        // Last resort: use formatted errors even if generic
+        errorMessage = formattedErrors.length > 0 
+          ? formattedErrors.join('\n')
+          : 'Erreur de validation. Vérifiez les formats de couleur et les ratios de contraste.';
+      }
+      
+      console.error('[updateTheme] Throwing ThemeValidationError with message:', errorMessage);
       throw new ThemeValidationError(parsed, errorMessage);
     }
     throw error;
