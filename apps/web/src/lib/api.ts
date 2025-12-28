@@ -185,8 +185,17 @@ apiClient.interceptors.response.use(
             // Refresh failed, clear tokens and redirect
             await TokenStorage.removeTokens();
             
-            // Prevent redirect loop - check if already on login page
-            if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+            // Only redirect if we're on a protected page (not public pages)
+            const isPublicPage = typeof window !== 'undefined' && (
+              window.location.pathname === '/' ||
+              window.location.pathname.match(/^\/(en|fr|ar|he)?\/?$/) ||
+              window.location.pathname.includes('/auth/') ||
+              window.location.pathname.includes('/components') ||
+              window.location.pathname.includes('/pricing')
+            );
+            
+            // Prevent redirect loop - check if already on login page or public page
+            if (typeof window !== 'undefined' && !isPublicPage && !window.location.pathname.includes('/auth/login')) {
               window.location.href = '/auth/login?error=session_expired';
             }
             throw refreshError;
@@ -212,8 +221,17 @@ apiClient.interceptors.response.use(
         // No refresh token, clear tokens and redirect
         await TokenStorage.removeTokens();
         
-        // Prevent redirect loop - check if already on login page
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+        // Only redirect if we're on a protected page (not public pages)
+        const isPublicPage = typeof window !== 'undefined' && (
+          window.location.pathname === '/' ||
+          window.location.pathname.match(/^\/(en|fr|ar|he)?\/?$/) ||
+          window.location.pathname.includes('/auth/') ||
+          window.location.pathname.includes('/components') ||
+          window.location.pathname.includes('/pricing')
+        );
+        
+        // Prevent redirect loop - check if already on login page or public page
+        if (typeof window !== 'undefined' && !isPublicPage && !window.location.pathname.includes('/auth/login')) {
           window.location.href = '/auth/login?error=unauthorized';
         }
       }

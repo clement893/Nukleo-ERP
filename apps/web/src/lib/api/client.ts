@@ -120,8 +120,17 @@ class ApiClient {
               logger.warn('Token refresh failed', refreshError);
               await TokenStorage.removeTokens();
               
-              // Prevent redirect loop - check if already on login page
-              if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+              // Only redirect if we're on a protected page (not public pages like home, login, register)
+              const isPublicPage = typeof window !== 'undefined' && (
+                window.location.pathname === '/' ||
+                window.location.pathname.match(/^\/(en|fr|ar|he)?\/?$/) ||
+                window.location.pathname.includes('/auth/') ||
+                window.location.pathname.includes('/components') ||
+                window.location.pathname.includes('/pricing')
+              );
+              
+              // Prevent redirect loop - check if already on login page or public page
+              if (typeof window !== 'undefined' && !isPublicPage && !window.location.pathname.includes('/auth/login')) {
                 window.location.href = '/auth/login?error=session_expired';
               }
               
@@ -132,8 +141,17 @@ class ApiClient {
             logger.warn('No refresh token available for 401 error');
             await TokenStorage.removeTokens();
             
-            // Prevent redirect loop - check if already on login page
-            if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+            // Only redirect if we're on a protected page (not public pages like home, login, register)
+            const isPublicPage = typeof window !== 'undefined' && (
+              window.location.pathname === '/' ||
+              window.location.pathname.match(/^\/(en|fr|ar|he)?\/?$/) ||
+              window.location.pathname.includes('/auth/') ||
+              window.location.pathname.includes('/components') ||
+              window.location.pathname.includes('/pricing')
+            );
+            
+            // Prevent redirect loop - check if already on login page or public page
+            if (typeof window !== 'undefined' && !isPublicPage && !window.location.pathname.includes('/auth/login')) {
               window.location.href = '/auth/login?error=unauthorized';
             }
             
