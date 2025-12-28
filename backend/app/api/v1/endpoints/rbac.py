@@ -212,6 +212,17 @@ async def delete_role(
             detail="Cannot delete system role",
         )
     
+    # Check if role is assigned to any users
+    from app.models import UserRole
+    users_with_role = await db.execute(
+        select(UserRole).where(UserRole.role_id == role_id)
+    )
+    if users_with_role.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete role that is assigned to users. Remove role from users first.",
+        )
+    
     role.is_active = False
     await db.commit()
     
@@ -396,6 +407,24 @@ async def remove_role_from_user(
     
     target_user_result = await db.execute(select(UserModel).where(UserModel.id == user_id))
     target_user = target_user_result.scalar_one_or_none()
+    
+    # Prevent removing superadmin role if it's the last superadmin
+    if role and role.slug == "superadmin":
+        # Count how many users have superadmin role
+        from app.models import UserRole
+        superadmin_users = await db.execute(
+            select(UserRole)
+            .join(Role)
+            .where(Role.slug == "superadmin")
+            .where(Role.is_active == True)
+        )
+        superadmin_count = len(list(superadmin_users.scalars().all()))
+        
+        if superadmin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot remove superadmin role from the last superadmin user",
+            )
     
     rbac_service = RBACService(db)
     await rbac_service.remove_role(user_id, role_id)
@@ -662,6 +691,34 @@ async def update_user_roles(
     """Update all roles for a user (bulk operation - replaces all existing roles)"""
     await require_permission("users:update", current_user, db, request)
     
+    # Validate that we're not removing the last superadmin
+    from app.models import UserRole
+    # Check current superadmin users
+    current_superadmin_users = await db.execute(
+        select(UserRole)
+        .join(Role)
+        .where(Role.slug == "superadmin")
+        .where(Role.is_active == True)
+    )
+    current_superadmin_user_ids = {ur.user_id for ur in current_superadmin_users.scalars().all()}
+    
+    # Check if target user is currently a superadmin
+    target_is_superadmin = user_id in current_superadmin_user_ids
+    
+    # Check if new roles include superadmin
+    new_role_result = await db.execute(
+        select(Role).where(Role.id.in_(role_data.role_ids))
+    )
+    new_roles = list(new_role_result.scalars().all())
+    new_has_superadmin = any(role.slug == "superadmin" for role in new_roles)
+    
+    # If removing superadmin from the last superadmin, prevent it
+    if target_is_superadmin and not new_has_superadmin and len(current_superadmin_user_ids) <= 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot remove superadmin role from the last superadmin user",
+        )
+    
     rbac_service = RBACService(db)
     user_roles = await rbac_service.update_user_roles(user_id, role_data.role_ids)
     
@@ -739,6 +796,19 @@ async def update_role_permissions(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot modify permissions for system role",
+        )
+    
+    # Validate that all permissions exist
+    invalid_permission_ids = []
+    for perm_id in permission_data.permission_ids:
+        perm_result = await db.execute(select(Permission).where(Permission.id == perm_id))
+        if not perm_result.scalar_one_or_none():
+            invalid_permission_ids.append(perm_id)
+    
+    if invalid_permission_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid permission IDs: {invalid_permission_ids}",
         )
     
     rbac_service = RBACService(db)
