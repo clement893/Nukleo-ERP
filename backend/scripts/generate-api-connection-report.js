@@ -15,16 +15,29 @@ const path = require('path');
 const { analyzePage, generateReport } = require('./check-api-connections');
 
 function findPageFiles(dir, fileList = []) {
-  const files = fs.readdirSync(dir);
-  files.forEach(file => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat.isDirectory() && !['node_modules', '.next', '.git', 'dist', 'build'].includes(file)) {
-      findPageFiles(filePath, fileList);
-    } else if (file === 'page.tsx' || file === 'page.ts') {
-      fileList.push(filePath);
-    }
-  });
+  // Check if directory exists (frontend might not be available in backend container)
+  if (!fs.existsSync(dir)) {
+    return fileList;
+  }
+  
+  try {
+    const files = fs.readdirSync(dir);
+    files.forEach(file => {
+      const filePath = path.join(dir, file);
+      try {
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory() && !['node_modules', '.next', '.git', 'dist', 'build'].includes(file)) {
+          findPageFiles(filePath, fileList);
+        } else if (file === 'page.tsx' || file === 'page.ts') {
+          fileList.push(filePath);
+        }
+      } catch (err) {
+        // Skip files we can't access
+      }
+    });
+  } catch (err) {
+    // Directory doesn't exist or can't be read
+  }
   return fileList;
 }
 
