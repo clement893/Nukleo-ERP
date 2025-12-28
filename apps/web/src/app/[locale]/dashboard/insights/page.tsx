@@ -25,6 +25,8 @@ import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { Loading, Alert, Card } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/errors';
+import { insightsAPI } from '@/lib/api/insights';
 import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
 
 export default function DashboardInsightsPage() {
@@ -51,74 +53,34 @@ export default function DashboardInsightsPage() {
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual insights API endpoint when available
-      // const response = await apiClient.get('/v1/insights');
-      // if (response.data) {
-      //   setMetrics(response.data.metrics);
-      //   setTrendData(response.data.trends);
-      //   setUserGrowthData(response.data.userGrowth);
-      // }
+      const insights = await insightsAPI.get();
       
-      // Mock data for now
-      const mockMetrics: AnalyticsMetric[] = [
-        {
-          label: 'Revenue Growth',
-          value: 24.5,
-          change: 5.2,
-          changeType: 'increase',
-          icon: <TrendingUp className="w-5 h-5" />,
-          format: 'percentage',
-        },
-        {
-          label: 'Active Users',
-          value: 1250,
-          change: 12.3,
-          changeType: 'increase',
-          icon: <Users className="w-5 h-5" />,
-          format: 'number',
-        },
-        {
-          label: 'Monthly Revenue',
-          value: 45200,
-          change: 8.7,
-          changeType: 'increase',
-          icon: <DollarSign className="w-5 h-5" />,
-          format: 'currency',
-        },
-        {
-          label: 'Conversion Rate',
-          value: 3.8,
-          change: -0.3,
-          changeType: 'decrease',
-          icon: <Target className="w-5 h-5" />,
-          format: 'percentage',
-        },
-      ];
+      // Add icons to metrics based on label
+      const metricsWithIcons: AnalyticsMetric[] = insights.metrics.map((metric) => {
+        let icon;
+        if (metric.label.toLowerCase().includes('revenue') || metric.label.toLowerCase().includes('growth')) {
+          icon = <TrendingUp className="w-5 h-5" />;
+        } else if (metric.label.toLowerCase().includes('user')) {
+          icon = <Users className="w-5 h-5" />;
+        } else if (metric.label.toLowerCase().includes('revenue') || metric.label.toLowerCase().includes('revenue')) {
+          icon = <DollarSign className="w-5 h-5" />;
+        } else {
+          icon = <Target className="w-5 h-5" />;
+        }
+        
+        return {
+          ...metric,
+          icon,
+        };
+      });
       
-      const mockTrendData: ChartDataPoint[] = [
-        { label: 'Jan', value: 12500 },
-        { label: 'Feb', value: 15200 },
-        { label: 'Mar', value: 18900 },
-        { label: 'Apr', value: 22100 },
-        { label: 'May', value: 24500 },
-        { label: 'Jun', value: 28900 },
-      ];
-      
-      const mockUserGrowth: ChartDataPoint[] = [
-        { label: 'Jan', value: 1200 },
-        { label: 'Feb', value: 1450 },
-        { label: 'Mar', value: 1680 },
-        { label: 'Apr', value: 1920 },
-        { label: 'May', value: 2150 },
-        { label: 'Jun', value: 2380 },
-      ];
-      
-      setMetrics(mockMetrics);
-      setTrendData(mockTrendData);
-      setUserGrowthData(mockUserGrowth);
+      setMetrics(metricsWithIcons);
+      setTrendData(insights.trends);
+      setUserGrowthData(insights.userGrowth);
     } catch (error: unknown) {
       logger.error('Failed to load insights', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load insights. Please try again.');
+      const appError = handleApiError(error);
+      setError(appError.message || t('errors.loadFailed') || 'Failed to load insights. Please try again.');
     } finally {
       setIsLoading(false);
     }

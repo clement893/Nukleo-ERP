@@ -263,3 +263,13 @@ export async function checkSuperAdminStatus(
   }
 }
 
+
+/**
+ * Admin API object
+ */
+export const adminAPI = {
+  bootstrapSuperAdmin,
+  makeSuperAdmin,
+  checkMySuperAdminStatus,
+  checkSuperAdminStatus,
+};

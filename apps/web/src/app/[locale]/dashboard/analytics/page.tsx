@@ -22,6 +22,8 @@ import { PageHeader, PageContainer, Section } from '@/components/layout';
 import { Loading, Alert } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/errors';
+import { analyticsAPI } from '@/lib/api/analytics';
 
 export default function DashboardAnalyticsPage() {
   const router = useRouter();
@@ -49,20 +51,16 @@ export default function DashboardAnalyticsPage() {
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual analytics API endpoint when available
-      // For now, use default metrics from AnalyticsDashboard component
-      // const response = await apiClient.get('/v1/analytics/metrics', {
-      //   params: { start_date: dateRange.start, end_date: dateRange.end },
-      // });
-      // if (response.data) {
-      //   setMetrics(response.data.metrics);
-      // }
+      const metrics = await analyticsAPI.getMetrics({
+        start_date: dateRange.start,
+        end_date: dateRange.end,
+      });
       
-      // Using default metrics for now
-      setMetrics([]);
+      setMetrics(metrics);
     } catch (error: unknown) {
       logger.error('Failed to load analytics', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load analytics. Please try again.');
+      const appError = handleApiError(error);
+      setError(appError.message || t('errors.loadFailed') || 'Failed to load analytics. Please try again.');
     } finally {
       setIsLoading(false);
     }
