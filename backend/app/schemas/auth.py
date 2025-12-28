@@ -148,6 +148,7 @@ class UserResponse(BaseModel):
     email: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    avatar: Optional[str] = None
     is_active: bool
     # DEPRECATED: theme_preference is kept for API compatibility only
     # Theme management is now handled globally via the theme system

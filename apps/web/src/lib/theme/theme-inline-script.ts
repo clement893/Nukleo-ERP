@@ -284,9 +284,30 @@ export const themeInlineScript = `
       document.head.appendChild(link);
     }
     
-    // Apply border radius
+    // Apply border radius (support both string and object formats)
     if (config.border_radius) {
       root.style.setProperty('--border-radius', config.border_radius);
+    }
+    
+    // Support borderRadius object format (sm, md, lg, xl, full)
+    if (config.borderRadius) {
+      Object.entries(config.borderRadius).forEach(function([key, value]) {
+        root.style.setProperty('--border-radius-' + key, String(value));
+      });
+    }
+    
+    // Apply typography fontSize
+    if (config.typography && config.typography.fontSize) {
+      Object.entries(config.typography.fontSize).forEach(function([key, value]) {
+        root.style.setProperty('--font-size-' + key, String(value));
+      });
+    }
+    
+    // Apply spacing
+    if (config.spacing) {
+      Object.entries(config.spacing).forEach(function([key, value]) {
+        root.style.setProperty('--spacing-' + key, String(value));
+      });
     }
   }
   

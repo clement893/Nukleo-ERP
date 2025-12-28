@@ -261,8 +261,21 @@ export const usersAPI = {
   getMe: () => {
     return apiClient.get('/v1/auth/me');
   },
-  updateMe: (data: { name?: string; email?: string; first_name?: string; last_name?: string }) => {
+  updateMe: (data: { name?: string; email?: string; first_name?: string; last_name?: string; avatar?: string }) => {
     return apiClient.put('/v1/users/me', data);
+  },
+  uploadAvatar: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/upload/file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      params: {
+        folder: 'avatars',
+      },
+    });
+    return response.data.url;
   },
   getUser: (userId: string) => {
     return apiClient.get(`/v1/users/${userId}`);

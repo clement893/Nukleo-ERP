@@ -26,6 +26,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     first_name = Column(String(100), nullable=True, index=True)  # For search
     last_name = Column(String(100), nullable=True, index=True)  # For search
+    avatar = Column(String(500), nullable=True)  # Avatar URL
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     # DEPRECATED: theme_preference column exists in DB but is deprecated
     # Theme management is now handled globally via the theme system

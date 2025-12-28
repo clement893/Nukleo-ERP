@@ -140,6 +140,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = Field(None, strip_whitespace=True)
     first_name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
     last_name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
+    avatar: Optional[str] = Field(None, max_length=500, description="Avatar URL")
     is_active: Optional[bool] = None
     
     @field_validator('email')

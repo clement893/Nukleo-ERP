@@ -137,3 +137,20 @@ export async function deleteFont(fontId: number): Promise<void> {
   }
 }
 
+/**
+ * Check if font families exist in the database.
+ * Returns a dictionary mapping font family names to boolean (exists or not).
+ * Requires authentication.
+ */
+export async function checkFonts(fontFamilies: string[]): Promise<Record<string, boolean>> {
+  try {
+    const response = await apiClient.post<Record<string, boolean>>(
+      '/v1/theme-fonts/check',
+      fontFamilies
+    );
+    return extractFastApiData<Record<string, boolean>>(response);
+  } catch (error) {
+    logger.error('Failed to check fonts', error);
+    throw error;
+  }
+}

@@ -3,13 +3,14 @@ API Connection Check Endpoint
 Provides endpoint to check API connections status
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.api.v1.endpoints.auth import get_current_user
 from app.models.user import User
 from app.dependencies import is_admin_or_superadmin
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+from pydantic import BaseModel
 import os
 import subprocess
 import json
@@ -20,6 +21,13 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api-connection-check", tags=["api-connection-check"])
+
+
+class FrontendAnalysisResult(BaseModel):
+    """Model for frontend analysis results sent from frontend"""
+    pages: List[Dict[str, Any]]
+    summary: Dict[str, int]
+    timestamp: Optional[float] = None
 
 
 async def run_node_script(script_path: str, args: List[str] = None) -> Dict[str, Any]:
