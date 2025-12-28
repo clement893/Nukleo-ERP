@@ -6,7 +6,7 @@ Provides endpoint to check API connections status
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.api.v1.endpoints.auth import get_current_user
 from app.models.user import User
 from typing import Dict, List, Any
 import os
