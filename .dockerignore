@@ -74,10 +74,9 @@ backend
 apps/backend
 apps/admin
 
-# Scripts (except build scripts)
-scripts
-!scripts/generate-frontend-api-manifest.js
-!apps/web/scripts/prepare-build-env.js
+# Scripts - include scripts directory in build context
+# The generate-frontend-api-manifest.js script is needed during build
+# Note: We don't exclude scripts/ to ensure the directory structure exists for COPY commands
 
 # Tests
 **/__tests__
