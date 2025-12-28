@@ -10,6 +10,7 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { apiClient } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
@@ -37,12 +38,14 @@ const SYNC_TIMEOUT = 10000; // 10 seconds - prevent infinite loops
 export function LocaleSync({ children }: LocaleSyncProps) {
   const pathname = usePathname(); // This returns pathname WITHOUT locale prefix (next-intl behavior)
   const currentLocale = useLocale() as Locale;
+  const router = useRouter();
   const { user, token } = useAuthStore();
   const isHydrated = useHydrated();
   const hasCheckedRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
   const lastUserRef = useRef(user);
   const lastTokenRef = useRef(token);
+  const lastPathnameRef = useRef<string>(pathname);
 
   useEffect(() => {
     // Wait for hydration to complete before syncing locale
@@ -68,17 +71,16 @@ export function LocaleSync({ children }: LocaleSyncProps) {
         return;
       }
 
-      // Check if user or token actually changed (not just hydration)
+      // Check if user, token, or pathname actually changed (not just hydration)
       const userChanged = lastUserRef.current !== user;
       const tokenChanged = lastTokenRef.current !== token;
+      const pathnameChanged = lastPathnameRef.current !== pathname;
       
       // Update refs
       lastUserRef.current = user;
       lastTokenRef.current = token;
-
-      // Skip if nothing changed (avoid re-checking on every render)
-      if (!userChanged && !tokenChanged && hasCheckedRef.current) {
-        return;
+      if (pathnameChanged) {
+        lastPathnameRef.current = pathname;
       }
 
       // Get actual URL pathname (includes locale prefix)
@@ -86,7 +88,7 @@ export function LocaleSync({ children }: LocaleSyncProps) {
       
       // Skip if we've already checked this exact combination in this render cycle
       const checkKey = `${currentLocale}_${actualPathname}`;
-      if (hasCheckedRef.current === checkKey) {
+      if (hasCheckedRef.current === checkKey && !userChanged && !tokenChanged && !pathnameChanged) {
         return;
       }
 
@@ -155,9 +157,9 @@ export function LocaleSync({ children }: LocaleSyncProps) {
                 newPath,
               });
 
-              // Use window.location.href for full page reload to ensure locale change
-              // This will cause the component to unmount, so we don't need to reset flags
-              window.location.href = newPath;
+              // Use router.replace instead of window.location.href to avoid polluting history
+              // This prevents the "back" button from returning to the same page
+              router.replace(newPath);
               return;
             }
           }
@@ -174,7 +176,7 @@ export function LocaleSync({ children }: LocaleSyncProps) {
     };
 
     syncLocale();
-  }, [isHydrated, currentLocale, pathname, user, token]);
+  }, [isHydrated, currentLocale, pathname, user, token, router]);
 
   // Show children immediately - don't block rendering
   return <>{children}</>;

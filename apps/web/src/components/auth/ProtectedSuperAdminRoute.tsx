@@ -31,6 +31,7 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
   const checkingRef = useRef(false);
   const lastUserEmailRef = useRef<string | undefined>(user?.email);
   const lastTokenRef = useRef<string | null>(token);
+  const lastPathnameRef = useRef<string>(pathname);
 
   useEffect(() => {
     // Wait for hydration to complete
@@ -43,12 +44,20 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
       return;
     }
 
-    // Check if user email or token actually changed (not just hydration)
+    // Check if user email or token actually changed (not just hydration or pathname)
     const userEmailChanged = lastUserEmailRef.current !== user?.email;
     const tokenChanged = lastTokenRef.current !== token;
+    const pathnameChanged = lastPathnameRef.current !== pathname;
+    
+    // If already authorized and only pathname changed (navigation), skip check
+    if (isAuthorized && !userEmailChanged && !tokenChanged && pathnameChanged) {
+      lastPathnameRef.current = pathname;
+      setIsChecking(false);
+      return;
+    }
     
     // If already authorized and nothing changed, skip check
-    if (isAuthorized && !userEmailChanged && !tokenChanged) {
+    if (isAuthorized && !userEmailChanged && !tokenChanged && !pathnameChanged) {
       setIsChecking(false);
       return;
     }
@@ -56,6 +65,7 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
     // Update refs
     lastUserEmailRef.current = user?.email;
     lastTokenRef.current = token;
+    lastPathnameRef.current = pathname;
 
     const checkAuth = async () => {
       checkingRef.current = true;
@@ -187,7 +197,7 @@ export default function ProtectedSuperAdminRoute({ children }: ProtectedSuperAdm
 
     // Check immediately
     checkAuth();
-  }, [isHydrated, user?.email, token, isAuthorized, router, pathname]);
+  }, [isHydrated, user?.email, token, isAuthorized, router]);
 
   // Show loader during verification
   if (isChecking || !isAuthorized) {

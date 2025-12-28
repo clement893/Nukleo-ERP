@@ -46,6 +46,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   const checkingRef = useRef(false);
   const lastUserRef = useRef(user);
   const lastTokenRef = useRef(token);
+  const lastPathnameRef = useRef<string>(pathname);
 
   useEffect(() => {
     // Wait for hydration to complete before checking auth
@@ -56,6 +57,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     // If user or token changed, update refs but only reset if going from authenticated to unauthenticated
     const userChanged = lastUserRef.current !== user;
     const tokenChanged = lastTokenRef.current !== token;
+    const pathnameChanged = lastPathnameRef.current !== pathname;
     
     // Detect authentication state transitions
     const wasAuthenticated = !!lastUserRef.current && !!lastTokenRef.current;
@@ -72,9 +74,20 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
         checkingRef.current = false;
       }
     }
+    
+    // Update pathname ref
+    if (pathnameChanged) {
+      lastPathnameRef.current = pathname;
+    }
 
     // Prevent multiple simultaneous checks
     if (checkingRef.current) {
+      return;
+    }
+
+    // If already authorized and only pathname changed (navigation), skip check
+    if (isAuthorized && isNowAuthenticated && !userChanged && !tokenChanged && pathnameChanged) {
+      setIsChecking(false);
       return;
     }
 
@@ -262,7 +275,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
     // Check immediately
     checkAuth();
-  }, [isHydrated, user, token, requireAdmin, pathname, isAuthorized]);
+  }, [isHydrated, user, token, requireAdmin, isAuthorized]);
 
   // Show loader during verification
   if (isChecking || !isAuthorized) {
