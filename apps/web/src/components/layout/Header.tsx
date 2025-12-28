@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Button from '../ui/Button';
 import { ThemeToggleWithIcon } from '../ui/ThemeToggle';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
+import NotificationBellConnected from '../notifications/NotificationBellConnected';
 import { Menu, X } from 'lucide-react';
 
 export default function Header() {
@@ -60,6 +61,7 @@ export default function Header() {
             <ThemeToggleWithIcon />
             {isAuthenticated() ? (
               <>
+                <NotificationBellConnected />
                 <span className="text-sm text-muted-foreground hidden lg:block">
                   {user?.name || user?.email}
                 </span>
@@ -130,13 +132,18 @@ export default function Header() {
                 Composants
               </Link>
               {isAuthenticated() && (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition px-4 py-3 min-h-[44px] flex items-center"
-                >
-                  Dashboard
-                </Link>
+                <>
+                  <div className="px-4 py-3">
+                    <NotificationBellConnected />
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition px-4 py-3 min-h-[44px] flex items-center"
+                  >
+                    Dashboard
+                  </Link>
+                </>
               )}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                 <div className="px-2 mb-4">
