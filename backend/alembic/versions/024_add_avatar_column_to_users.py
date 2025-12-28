@@ -1,7 +1,7 @@
 """Add avatar column to users table
 
 Revision ID: 024_add_avatar_column
-Revises: 023_merge_migration_heads
+Revises: 022_add_user_permissions
 Create Date: 2025-12-28 23:35:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '024_add_avatar_column'
-down_revision: Union[str, None] = '023_merge_migration_heads'
+down_revision: Union[str, None] = '022_add_user_permissions'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
