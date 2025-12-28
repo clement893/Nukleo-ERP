@@ -29,10 +29,10 @@ function log(message, color = 'reset') {
 const isDocker = process.env.DOCKER === 'true' || fs.existsSync('/.dockerenv') || __dirname.startsWith('/app');
 const backendPath = isDocker 
   ? '/app/app/api/v1/endpoints'  // In Docker: backend is at /app
-  : path.join(__dirname, '../backend/app/api/v1/endpoints');  // Local: relative to scripts
+  : path.join(__dirname, '../app/api/v1/endpoints');  // Local: scripts are in backend/scripts, backend is at backend/
 const routerPath = isDocker
   ? '/app/app/api/v1/router.py'  // In Docker: backend is at /app
-  : path.join(__dirname, '../backend/app/api/v1/router.py');  // Local: relative to scripts
+  : path.join(__dirname, '../app/api/v1/router.py');  // Local: scripts are in backend/scripts, backend is at backend/
 
 /**
  * Extract endpoints from a Python file

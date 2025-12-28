@@ -39,11 +39,12 @@ const config = isDocker ? {
   pagesPath: '/app/apps/web/src/app/[locale]', // Not available in backend container
   apiLibPath: '/app/apps/web/src/lib/api', // Not available in backend container
 } : {
-  // Local development: scripts are at project root/scripts
-  frontendPath: path.join(__dirname, '../apps/web/src'),
-  backendPath: path.join(__dirname, '../backend/app/api/v1/endpoints'),
-  pagesPath: path.join(__dirname, '../apps/web/src/app/[locale]'),
-  apiLibPath: path.join(__dirname, '../apps/web/src/lib/api'),
+  // Local development: scripts are in backend/scripts, backend is at backend/
+  // Frontend is at project root/apps/web
+  frontendPath: path.join(__dirname, '../../apps/web/src'),
+  backendPath: path.join(__dirname, '../app/api/v1/endpoints'),
+  pagesPath: path.join(__dirname, '../../apps/web/src/app/[locale]'),
+  apiLibPath: path.join(__dirname, '../../apps/web/src/lib/api'),
 };
 
 // Expected API patterns

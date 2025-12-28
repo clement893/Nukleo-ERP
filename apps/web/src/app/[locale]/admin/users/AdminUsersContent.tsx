@@ -212,6 +212,47 @@ export default function AdminUsersContent() {
         />
       </Card>
 
+      {/* Roles Modal */}
+      <Modal
+        isOpen={rolesModalOpen}
+        onClose={() => {
+          setRolesModalOpen(false);
+          setSelectedUser(null);
+        }}
+        title={`Gérer les rôles - ${selectedUser?.email}`}
+        size="lg"
+      >
+        {selectedUser && (
+          <UserRolesEditor
+            userId={parseInt(selectedUser.id)}
+            onUpdate={() => {
+              fetchUsers();
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Permissions Modal */}
+      <Modal
+        isOpen={permissionsModalOpen}
+        onClose={() => {
+          setPermissionsModalOpen(false);
+          setSelectedUser(null);
+        }}
+        title={`Gérer les permissions - ${selectedUser?.email}`}
+        size="lg"
+      >
+        {selectedUser && (
+          <UserPermissionsEditor
+            userId={parseInt(selectedUser.id)}
+            onUpdate={() => {
+              fetchUsers();
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Delete Modal */}
       <Modal
         isOpen={deleteModalOpen}
         onClose={() => {
@@ -243,3 +284,30 @@ export default function AdminUsersContent() {
   );
 }
 
+// Component to display user roles in table
+function UserRolesDisplay({ userId }: { userId: number }) {
+  const { roles, loading } = useUserRoles(userId);
+
+  if (loading) {
+    return <span className="text-muted-foreground">Chargement...</span>;
+  }
+
+  if (roles.length === 0) {
+    return <span className="text-muted-foreground">Aucun rôle</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.slice(0, 2).map((role) => (
+        <Badge key={role.id} variant="default" className="text-xs">
+          {role.name}
+        </Badge>
+      ))}
+      {roles.length > 2 && (
+        <Badge variant="default" className="text-xs">
+          +{roles.length - 2}
+        </Badge>
+      )}
+    </div>
+  );
+}

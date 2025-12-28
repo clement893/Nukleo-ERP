@@ -243,6 +243,112 @@ async def get_user(
     return user
 
 
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@rate_limit_decorator("10/hour")
+async def delete_user(
+    request: Request,
+    user_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """
+    Delete a user (admin/superadmin only)
+    
+    Features:
+    - Requires admin or superadmin permissions
+    - Prevents self-deletion
+    - Prevents deletion of last superadmin
+    - Soft delete (sets is_active=False) or hard delete based on configuration
+    """
+    from app.dependencies import is_admin_or_superadmin
+    
+    # Check if user is admin or superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    if not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can delete users"
+        )
+    
+    # Prevent self-deletion
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot delete your own account"
+        )
+    
+    # Get user to delete
+    result = await db.execute(select(User).where(User.id == user_id))
+    user_to_delete = result.scalar_one_or_none()
+    
+    if not user_to_delete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Check if user is the last superadmin
+    from app.models import Role, UserRole
+    superadmin_role_result = await db.execute(
+        select(Role).where(Role.slug == "superadmin")
+    )
+    superadmin_role = superadmin_role_result.scalar_one_or_none()
+    
+    if superadmin_role:
+        superadmin_users_result = await db.execute(
+            select(UserRole)
+            .join(Role)
+            .where(Role.slug == "superadmin")
+            .where(Role.is_active == True)
+        )
+        superadmin_users = list(superadmin_users_result.scalars().all())
+        
+        # Check if user to delete is a superadmin
+        user_is_superadmin = any(
+            ur.user_id == user_id for ur in superadmin_users
+        )
+        
+        if user_is_superadmin and len(superadmin_users) <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete the last superadmin user"
+            )
+    
+    # Log deletion attempt
+    try:
+        from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+        await SecurityAuditLogger.log_event(
+            db=db,
+            event_type=SecurityEventType.DATA_DELETED,
+            description=f"User '{user_to_delete.email}' deleted",
+            user_id=current_user.id,
+            user_email=current_user.email,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            request_method=request.method,
+            request_path=str(request.url.path),
+            severity="warning",
+            success="success",
+            metadata={
+                "resource_type": "user",
+                "deleted_user_id": user_id,
+                "deleted_user_email": user_to_delete.email,
+                "action": "deleted"
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log user deletion event: {e}")
+    
+    # Perform soft delete (set is_active=False) instead of hard delete
+    # This preserves data integrity and allows for recovery if needed
+    user_to_delete.is_active = False
+    await db.commit()
+    
+    logger.info(f"User {user_id} ({user_to_delete.email}) deleted by {current_user.email}")
+    
+    return None
+
+
 @router.put("/me", response_model=UserResponse)
 @rate_limit_decorator("10/minute")
 async def update_current_user(
