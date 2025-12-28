@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/ensure-css-file.js && pnpm type-check && node ../../scripts/generate-frontend-api-manifest.js",
+    "prebuild": "node scripts/ensure-css-file.js && pnpm type-check && pnpm api:manifest",
+    "api:manifest": "node ../../scripts/generate-frontend-api-manifest.js",
     "build": "node scripts/build-with-fallback.js",
     "build:turbopack": "USE_TURBOPACK=true node scripts/build-with-fallback.js",
     "build:webpack": "USE_WEBPACK=true node scripts/build-with-fallback.js",

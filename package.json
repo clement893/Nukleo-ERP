@@ -20,7 +20,8 @@
     "api:check:detailed": "node scripts/check-api-connections.js --detailed",
     "api:check:backend": "node scripts/check-api-connections-backend.js",
     "api:report": "node scripts/generate-api-connection-report.js",
-    "api:report:custom": "node scripts/generate-api-connection-report.js --output"
+    "api:report:custom": "node scripts/generate-api-connection-report.js --output",
+    "api:manifest": "node scripts/generate-frontend-api-manifest.js"
   },
   "devDependencies": {
     "prettier": "^3.1.1"

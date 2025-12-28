@@ -13,11 +13,13 @@
 const fs = require('fs');
 const path = require('path');
 
+// Get root directory (scripts/ is at project root)
+const rootDir = path.join(__dirname, '..');
 const config = {
-  frontendPath: path.join(__dirname, '../apps/web/src'),
-  pagesPath: path.join(__dirname, '../apps/web/src/app/[locale]'),
-  apiLibPath: path.join(__dirname, '../apps/web/src/lib/api'),
-  outputPath: path.join(__dirname, '../apps/web/public/api-manifest.json'),
+  frontendPath: path.join(rootDir, 'apps/web/src'),
+  pagesPath: path.join(rootDir, 'apps/web/src/app/[locale]'),
+  apiLibPath: path.join(rootDir, 'apps/web/src/lib/api'),
+  outputPath: path.join(rootDir, 'apps/web/public/api-manifest.json'),
 };
 
 const apiPatterns = {

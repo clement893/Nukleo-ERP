@@ -169,6 +169,65 @@ async def run_node_script(script_path: str, args: List[str] = None) -> Dict[str,
         }
 
 
+@router.post("/frontend/analyze", response_model=Dict[str, Any])
+async def receive_frontend_analysis(
+    analysis_data: FrontendAnalysisResult = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Receive frontend analysis results from frontend client
+    
+    This endpoint allows the frontend to analyze its own files and send results to backend.
+    Useful in production where backend doesn't have access to frontend source files.
+    
+    Requires authentication and admin or superadmin role
+    """
+    # Check if user is admin or superadmin
+    user_is_admin = await is_admin_or_superadmin(current_user, db)
+    if not user_is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="This endpoint requires admin or superadmin privileges"
+        )
+    
+    # Process the analysis data
+    summary = analysis_data.summary
+    pages = analysis_data.pages
+    
+    # Generate output string similar to Node.js script
+    output_lines = []
+    output_lines.append("Frontend API Connection Analysis")
+    output_lines.append("=" * 50)
+    output_lines.append("")
+    
+    if pages:
+        output_lines.append("Pages analyzed:")
+        for page in pages:
+            output_lines.append(f"  - {page.get('path', 'Unknown')}")
+            if page.get('apiCalls'):
+                for call in page.get('apiCalls', []):
+                    output_lines.append(f"    {call.get('method', 'GET')} {call.get('endpoint', '')}")
+        output_lines.append("")
+    
+    output_lines.append("Summary:")
+    output_lines.append(f"  Total pages analyzed: {summary.get('total', 0)}")
+    output_lines.append(f"  Connected: {summary.get('connected', 0)}")
+    output_lines.append(f"  Partial: {summary.get('partial', 0)}")
+    output_lines.append(f"  Needs integration: {summary.get('needsIntegration', 0)}")
+    output_lines.append(f"  Static: {summary.get('static', 0)}")
+    
+    output = "\n".join(output_lines)
+    
+    return {
+        "success": True,
+        "summary": summary,
+        "output": output,
+        "pages": pages,
+        "source": "frontend_client",
+    }
+
+
 @router.get("/frontend", response_model=Dict[str, Any])
 async def check_frontend_connections(
     detailed: bool = False,
@@ -198,15 +257,16 @@ async def check_frontend_connections(
     result = await run_node_script("scripts/check-api-connections.js", args)
     
     if not result.get("success"):
-        # If script not found, return a helpful message instead of 500 error
+        # If script not found, return instructions for frontend to analyze itself
         error_msg = result.get('error', result.get('stderr', 'Unknown error'))
-        if "Script not found" in error_msg or "not found" in error_msg.lower():
+        if "Script not found" in error_msg or "not found" in error_msg.lower() or "ENOENT" in error_msg:
             return {
                 "success": False,
                 "error": "API connection check scripts are not available in this environment.",
-                "message": "This feature requires Node.js scripts that are not included in the production backend container.",
-                "hint": "To use this feature, ensure scripts/check-api-connections.js is available in the container, or run the check locally using: pnpm api:check",
-                "summary": {}
+                "message": "Node.js scripts are not available. Use the frontend client to analyze files.",
+                "hint": "The frontend can analyze its own files and send results to POST /v1/api-connection-check/frontend/analyze",
+                "summary": {},
+                "useFrontendAnalysis": True,
             }
         raise HTTPException(
             status_code=500,
@@ -240,6 +300,7 @@ async def check_frontend_connections(
         "summary": summary,
         "output": output,
         "raw": result,
+        "source": "node_script",
     }
 
 

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.dependencies import get_current_user
 from app.models import User
 from app.services.ai_service import AIService, AIProvider
+from app.services.documentation_service import get_documentation_service
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -113,6 +114,86 @@ async def simple_chat(
             "response": response,
             "provider": service.provider.value,
         }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"AI service error: {str(e)}",
+        )
+
+
+@router.post("/chat/template", response_model=ChatResponse)
+async def template_chat(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Chat completion with template documentation context.
+    This endpoint automatically includes template documentation in the system prompt.
+    """
+    if not AIService.is_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No AI provider is configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY.",
+        )
+    
+    try:
+        # Load documentation
+        doc_service = get_documentation_service()
+        documentation_context = doc_service.format_documentation_for_context(max_total_size=80000)
+        doc_summary = doc_service.get_documentation_summary()
+        
+        # Build enhanced system prompt
+        base_system_prompt = request.system_prompt or """You are a helpful AI assistant specialized in helping users understand and work with the Next.js Full-Stack Template.
+
+You have access to the complete template documentation. Use this information to provide accurate, helpful answers about:
+- Template features and capabilities
+- Setup and configuration
+- Architecture and design patterns
+- API endpoints and usage
+- Database schema and migrations
+- Authentication and security
+- Deployment and development workflows
+- Customization and theming
+- And any other template-related questions
+
+Always cite specific documentation when providing answers. If you're unsure about something, say so rather than guessing.
+
+Be friendly, professional, and concise. Format your responses clearly with proper markdown when appropriate."""
+
+        enhanced_system_prompt = f"""{base_system_prompt}
+
+=== TEMPLATE DOCUMENTATION ===
+
+{doc_summary}
+
+{documentation_context}
+
+=== END DOCUMENTATION ===
+
+Remember: You have access to the complete template documentation above. Use it to provide accurate, detailed answers."""
+
+        # Resolve provider
+        provider = AIProvider(request.provider) if request.provider != "auto" else AIProvider.AUTO
+        service = AIService(provider=provider)
+        
+        # Convert Pydantic models to dicts
+        messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+        
+        response = await service.chat_completion(
+            messages=messages,
+            model=request.model,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens or 2000,  # Increased for longer responses
+            system_prompt=enhanced_system_prompt,
+        )
+        
+        return ChatResponse(**response)
         
     except ValueError as e:
         raise HTTPException(

@@ -235,7 +235,9 @@ export default function AdminStatisticsContent() {
           const date = new Date();
           date.setDate(date.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
-          dayCounts[dateStr] = 0;
+          if (dateStr) {
+            dayCounts[dateStr] = 0;
+          }
         }
 
         logs.forEach((log: any) => {

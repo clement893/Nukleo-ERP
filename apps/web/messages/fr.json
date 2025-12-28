@@ -295,5 +295,25 @@
         }
       }
     }
+  },
+  "Dashboard": {
+    "AIChat": {
+      "title": "Assistant Template",
+      "clear": "Effacer",
+      "via": "via",
+      "inputPlaceholder": "Posez une question sur le template...",
+      "welcome": {
+        "title": "Assistant Template AI",
+        "description": "Je peux vous aider à comprendre et utiliser ce template Next.js Full-Stack. J'ai accès à toute la documentation !",
+        "examples": "Exemples de questions",
+        "example1": "Comment configurer l'authentification ?",
+        "example2": "Comment déployer sur Railway ?",
+        "example3": "Comment personnaliser les thèmes ?"
+      },
+      "errors": {
+        "sendFailed": "Échec de l'envoi du message",
+        "errorPrefix": "Erreur"
+      }
+    }
   }
 }

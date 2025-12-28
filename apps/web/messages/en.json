@@ -484,5 +484,25 @@
         "saveFailed": "Failed to save configuration. Please try again."
       }
     }
+  },
+  "Dashboard": {
+    "AIChat": {
+      "title": "Template Assistant",
+      "clear": "Clear",
+      "via": "via",
+      "inputPlaceholder": "Ask a question about the template...",
+      "welcome": {
+        "title": "Template AI Assistant",
+        "description": "I can help you understand and work with this Next.js Full-Stack Template. I have access to all the documentation!",
+        "examples": "Example questions",
+        "example1": "How do I configure authentication?",
+        "example2": "How do I deploy to Railway?",
+        "example3": "How do I customize themes?"
+      },
+      "errors": {
+        "sendFailed": "Failed to send message",
+        "errorPrefix": "Error"
+      }
+    }
   }
 }

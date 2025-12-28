@@ -7,6 +7,7 @@ export const dynamicParams = true;
 import { useAuthStore } from '@/lib/store';
 import { Card, Badge, Container, StatsCard, StatusCard, ServiceTestCard, Button } from '@/components/ui';
 import { Link } from '@/i18n/routing';
+import { TemplateAIChat } from '@/components/ai/TemplateAIChat';
 
 function DashboardContent() {
   const { user } = useAuthStore();
@@ -210,6 +211,9 @@ function DashboardContent() {
           />
         </div>
       </Card>
+
+      {/* AI Chat Assistant */}
+      <TemplateAIChat />
     </Container>
   );
 }

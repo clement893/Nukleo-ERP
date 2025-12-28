@@ -17,6 +17,7 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import { handleApiError, isClientError, isNetworkError } from './errors/api';
 import { TokenStorage } from './auth/tokenStorage';
 import { logger } from '@/lib/logger';
+import { getApiUrl } from './api';
 
 /**
  * API base URL with trailing slash removed to avoid double slashes
@@ -267,10 +268,26 @@ export const usersAPI = {
   uploadAvatar: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post('/upload/file', formData, {
+    
+    // Create a separate client for file uploads (multipart/form-data)
+    // The upload endpoint is at /api/upload/file (not under /v1)
+    const uploadClient = axios.create({
+      baseURL: getApiUrl(),
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      withCredentials: true,
+    });
+    
+    // Add auth token
+    if (typeof window !== 'undefined') {
+      const token = TokenStorage.getToken();
+      if (token) {
+        uploadClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    
+    const response = await uploadClient.post('/api/upload/file', formData, {
       params: {
         folder: 'avatars',
       },

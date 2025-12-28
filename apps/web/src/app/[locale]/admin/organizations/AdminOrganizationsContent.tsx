@@ -7,8 +7,9 @@ import { Button, Card, Badge, Alert, Input, Loading, Modal, DataTable } from '@/
 import type { Column } from '@/components/ui/DataTable';
 import { Edit2, Trash2, Eye, Plus } from 'lucide-react';
 import OrganizationSettings, { type OrganizationSettingsData } from '@/components/settings/OrganizationSettings';
+import type { TeamSettings } from '@/lib/api/teams';
 
-interface TeamSettings {
+interface LocalTeamSettings {
   email?: string;
   phone?: string;
   website?: string;

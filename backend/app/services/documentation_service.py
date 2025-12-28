@@ -1,215 +1,200 @@
 """
 Documentation Service
-Manages documentation articles and help content
+Loads and processes documentation files for AI context
 """
 
-from typing import List, Optional, Dict, Any
-from sqlalchemy import select, and_, or_, desc, func
-from sqlalchemy.ext.asyncio import AsyncSession
-import json
-
-from app.models.documentation import DocumentationArticle, DocumentationCategory, DocumentationFeedback
+import os
+from pathlib import Path
+from typing import List, Dict, Optional
 from app.core.logging import logger
 
 
 class DocumentationService:
-    """Service for documentation operations"""
-
-    def __init__(self, db: AsyncSession):
-        self.db = db
-
-    async def create_article(
-        self,
-        slug: str,
-        title: str,
-        content: str,
-        excerpt: Optional[str] = None,
-        category_id: Optional[int] = None,
-        tags: Optional[List[str]] = None,
-        is_published: bool = False,
-        is_featured: bool = False,
-        meta_title: Optional[str] = None,
-        meta_description: Optional[str] = None,
-        author_id: Optional[int] = None
-    ) -> DocumentationArticle:
-        """Create a new documentation article"""
-        from datetime import datetime
+    """Service for loading and processing documentation files"""
+    
+    def __init__(self, docs_path: Optional[str] = None):
+        """
+        Initialize documentation service.
         
-        article = DocumentationArticle(
-            slug=slug,
-            title=title,
-            content=content,
-            excerpt=excerpt,
-            category_id=category_id,
-            tags=json.dumps(tags) if tags else None,
-            is_published=is_published,
-            is_featured=is_featured,
-            meta_title=meta_title,
-            meta_description=meta_description,
-            author_id=author_id,
-            published_at=datetime.utcnow() if is_published else None
-        )
-        
-        self.db.add(article)
-        await self.db.commit()
-        await self.db.refresh(article)
-        
-        return article
-
-    async def get_article(self, slug: str) -> Optional[DocumentationArticle]:
-        """Get an article by slug"""
-        result = await self.db.execute(
-            select(DocumentationArticle).where(DocumentationArticle.slug == slug)
-        )
-        return result.scalar_one_or_none()
-
-    async def get_article_by_id(self, article_id: int) -> Optional[DocumentationArticle]:
-        """Get an article by ID"""
-        return await self.db.get(DocumentationArticle, article_id)
-
-    async def get_published_articles(
-        self,
-        category_id: Optional[int] = None,
-        featured_only: bool = False,
-        search_query: Optional[str] = None,
-        limit: int = 50,
-        offset: int = 0
-    ) -> List[DocumentationArticle]:
-        """Get published articles with filters"""
-        query = select(DocumentationArticle).where(
-            DocumentationArticle.is_published == True
-        )
-        
-        if category_id:
-            query = query.where(DocumentationArticle.category_id == category_id)
-        
-        if featured_only:
-            query = query.where(DocumentationArticle.is_featured == True)
-        
-        if search_query:
-            query = query.where(
-                or_(
-                    DocumentationArticle.title.ilike(f"%{search_query}%"),
-                    DocumentationArticle.content.ilike(f"%{search_query}%"),
-                    DocumentationArticle.excerpt.ilike(f"%{search_query}%")
-                )
-            )
-        
-        result = await self.db.execute(
-            query.order_by(desc(DocumentationArticle.is_featured), desc(DocumentationArticle.published_at))
-            .limit(limit)
-            .offset(offset)
-        )
-        return list(result.scalars().all())
-
-    async def increment_view_count(self, article_id: int) -> None:
-        """Increment article view count"""
-        article = await self.get_article_by_id(article_id)
-        if article:
-            article.view_count += 1
-            await self.db.commit()
-
-    async def submit_feedback(
-        self,
-        article_id: int,
-        is_helpful: bool,
-        comment: Optional[str] = None,
-        user_id: Optional[int] = None
-    ) -> DocumentationFeedback:
-        """Submit feedback on an article"""
-        feedback = DocumentationFeedback(
-            article_id=article_id,
-            user_id=user_id,
-            is_helpful=is_helpful,
-            comment=comment
-        )
-        
-        self.db.add(feedback)
-        
-        # Update article helpful counts
-        article = await self.get_article_by_id(article_id)
-        if article:
-            if is_helpful:
-                article.helpful_count += 1
-            else:
-                article.not_helpful_count += 1
-        
-        await self.db.commit()
-        await self.db.refresh(feedback)
-        
-        return feedback
-
-    async def create_category(
-        self,
-        slug: str,
-        name: str,
-        description: Optional[str] = None,
-        parent_id: Optional[int] = None,
-        order: int = 0,
-        icon: Optional[str] = None
-    ) -> DocumentationCategory:
-        """Create a documentation category"""
-        category = DocumentationCategory(
-            slug=slug,
-            name=name,
-            description=description,
-            parent_id=parent_id,
-            order=order,
-            icon=icon
-        )
-        
-        self.db.add(category)
-        await self.db.commit()
-        await self.db.refresh(category)
-        
-        return category
-
-    async def get_categories(self, parent_id: Optional[int] = None) -> List[DocumentationCategory]:
-        """Get categories"""
-        query = select(DocumentationCategory)
-        
-        if parent_id is not None:
-            query = query.where(DocumentationCategory.parent_id == parent_id)
+        Args:
+            docs_path: Path to documentation directory (defaults to project root/docs)
+        """
+        if docs_path:
+            self.docs_path = Path(docs_path)
         else:
-            query = query.where(DocumentationCategory.parent_id == None)
+            # Default to project root/docs
+            # Assuming backend/app/services/documentation_service.py
+            # Project root is backend/../
+            current_file = Path(__file__)
+            project_root = current_file.parent.parent.parent
+            self.docs_path = project_root / "docs"
         
-        result = await self.db.execute(query.order_by(DocumentationCategory.order))
-        return list(result.scalars().all())
+        if not self.docs_path.exists():
+            logger.warning(f"Documentation path does not exist: {self.docs_path}")
+            self.docs_path = None
+    
+    def load_all_documentation(self, max_size_per_file: int = 50000) -> Dict[str, str]:
+        """
+        Load all markdown documentation files.
+        
+        Args:
+            max_size_per_file: Maximum size per file in characters (default: 50000)
+            
+        Returns:
+            Dict mapping file paths to file contents
+        """
+        if not self.docs_path or not self.docs_path.exists():
+            logger.warning("Documentation path not available")
+            return {}
+        
+        documentation = {}
+        
+        try:
+            # Find all markdown files
+            md_files = list(self.docs_path.glob("**/*.md"))
+            
+            for md_file in md_files:
+                try:
+                    # Read file content
+                    content = md_file.read_text(encoding='utf-8')
+                    
+                    # Limit file size to avoid token limits
+                    if len(content) > max_size_per_file:
+                        content = content[:max_size_per_file] + "\n\n[... content truncated ...]"
+                    
+                    # Use relative path as key
+                    relative_path = md_file.relative_to(self.docs_path)
+                    documentation[str(relative_path)] = content
+                    
+                except Exception as e:
+                    logger.error(f"Error reading documentation file {md_file}: {e}")
+                    continue
+            
+            logger.info(f"Loaded {len(documentation)} documentation files")
+            
+        except Exception as e:
+            logger.error(f"Error loading documentation: {e}")
+        
+        return documentation
+    
+    def get_documentation_summary(self) -> str:
+        """
+        Get a summary of available documentation files.
+        
+        Returns:
+            String listing all available documentation files
+        """
+        if not self.docs_path or not self.docs_path.exists():
+            return "No documentation available"
+        
+        try:
+            md_files = list(self.docs_path.glob("**/*.md"))
+            file_list = [str(f.relative_to(self.docs_path)) for f in md_files]
+            return f"Available documentation files ({len(file_list)}):\n" + "\n".join(f"- {f}" for f in sorted(file_list))
+        except Exception as e:
+            logger.error(f"Error getting documentation summary: {e}")
+            return "Error loading documentation summary"
+    
+    def format_documentation_for_context(self, max_total_size: int = 100000) -> str:
+        """
+        Format documentation for AI context.
+        
+        Args:
+            max_total_size: Maximum total size in characters (default: 100000)
+            
+        Returns:
+            Formatted documentation string
+        """
+        docs = self.load_all_documentation()
+        
+        if not docs:
+            return "No documentation available."
+        
+        # Format as a single string
+        formatted = []
+        total_size = 0
+        
+        for file_path, content in docs.items():
+            file_section = f"\n\n=== {file_path} ===\n{content}\n"
+            
+            # Check if adding this file would exceed limit
+            if total_size + len(file_section) > max_total_size:
+                # Add partial content if possible
+                remaining = max_total_size - total_size
+                if remaining > 100:  # Only add if meaningful amount remains
+                    formatted.append(f"\n\n=== {file_path} (partial) ===\n{content[:remaining]}...\n")
+                break
+            
+            formatted.append(file_section)
+            total_size += len(file_section)
+        
+        return "".join(formatted)
+    
+    def search_documentation(self, query: str, max_results: int = 5) -> List[Dict[str, str]]:
+        """
+        Simple text search in documentation files.
+        
+        Args:
+            query: Search query
+            max_results: Maximum number of results
+            
+        Returns:
+            List of dicts with 'file' and 'content' keys
+        """
+        if not self.docs_path or not self.docs_path.exists():
+            return []
+        
+        query_lower = query.lower()
+        results = []
+        
+        try:
+            md_files = list(self.docs_path.glob("**/*.md"))
+            
+            for md_file in md_files:
+                try:
+                    content = md_file.read_text(encoding='utf-8')
+                    
+                    # Simple text search
+                    if query_lower in content.lower():
+                        # Extract relevant snippet (around the match)
+                        content_lower = content.lower()
+                        index = content_lower.find(query_lower)
+                        
+                        if index >= 0:
+                            # Extract context around match (500 chars before and after)
+                            start = max(0, index - 500)
+                            end = min(len(content), index + len(query) + 500)
+                            snippet = content[start:end]
+                            
+                            results.append({
+                                'file': str(md_file.relative_to(self.docs_path)),
+                                'content': snippet,
+                                'relevance': content_lower.count(query_lower)  # Simple relevance score
+                            })
+                            
+                            if len(results) >= max_results:
+                                break
+                                
+                except Exception as e:
+                    logger.error(f"Error searching in {md_file}: {e}")
+                    continue
+            
+            # Sort by relevance
+            results.sort(key=lambda x: x['relevance'], reverse=True)
+            
+        except Exception as e:
+            logger.error(f"Error searching documentation: {e}")
+        
+        return results[:max_results]
 
-    async def update_article(
-        self,
-        article_id: int,
-        updates: Dict[str, Any]
-    ) -> Optional[DocumentationArticle]:
-        """Update an article"""
-        article = await self.get_article_by_id(article_id)
-        if not article:
-            return None
-        
-        from datetime import datetime
-        
-        for key, value in updates.items():
-            if hasattr(article, key) and value is not None:
-                if key == 'tags' and isinstance(value, list):
-                    setattr(article, key, json.dumps(value))
-                elif key == 'is_published' and value and not article.published_at:
-                    setattr(article, 'published_at', datetime.utcnow())
-                else:
-                    setattr(article, key, value)
-        
-        await self.db.commit()
-        await self.db.refresh(article)
-        
-        return article
 
-    async def delete_article(self, article_id: int) -> bool:
-        """Delete an article"""
-        article = await self.get_article_by_id(article_id)
-        if not article:
-            return False
-        
-        await self.db.delete(article)
-        await self.db.commit()
-        
-        return True
+# Singleton instance
+_documentation_service: Optional[DocumentationService] = None
 
+
+def get_documentation_service() -> DocumentationService:
+    """Get singleton documentation service instance"""
+    global _documentation_service
+    if _documentation_service is None:
+        _documentation_service = DocumentationService()
+    return _documentation_service

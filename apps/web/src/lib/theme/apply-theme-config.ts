@@ -7,7 +7,7 @@ import { generateColorShades, generateRgb } from './color-utils';
 import { validateThemeConfig } from './theme-validator';
 import { getThemeConfigForMode, applyDarkModeClass } from './dark-mode-utils';
 import { loadThemeFonts } from './font-loader';
-import { checkFonts } from '@/lib/api/theme-font';
+import { checkFonts } from '@/lib/api';
 import { logger } from '@/lib/logger';
 
 /**
@@ -322,7 +322,7 @@ export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
       
       if (fontNames.length > 0) {
         checkFonts(fontNames)
-          .then((fontCheckResult) => {
+          .then((fontCheckResult: Record<string, boolean>) => {
             const missingFonts = Object.entries(fontCheckResult)
               .filter(([_, exists]) => !exists)
               .map(([name]) => name);
@@ -339,7 +339,7 @@ export function applyThemeConfigDirectly(config: ThemeConfig, options?: {
               );
             }
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             // Don't block theme application if font check fails
             logger.warn('[Theme] Failed to check fonts in database', error);
           });

@@ -38,6 +38,7 @@ from app.core.request_signing import RequestSigningMiddleware
 from app.api.v1.router import api_router
 from app.api import email as email_router
 from app.api.webhooks import stripe as stripe_webhook_router
+from app.api import upload as upload_router
 
 
 @asynccontextmanager
@@ -45,6 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan context manager for startup and shutdown events"""
     import sys
     import os
+    import asyncio
     
     # Use print for critical startup messages to ensure they're visible even if logging fails
     print("=" * 50, file=sys.stderr)
@@ -61,85 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         print(f"WARNING: Unexpected error initializing logger: {e}", file=sys.stderr)
         logger = None
     
-    # Startup - make database initialization resilient
-    try:
-        await init_db()
-        if logger:
-            logger.info("Database initialized successfully")
-        print("✓ Database initialized", file=sys.stderr)
-    except (ConnectionError, TimeoutError) as e:
-        error_msg = f"Database connection failed: {e}. App will continue but database features may be unavailable."
-        if logger:
-            logger.error(error_msg)
-            logger.warning("The app will start, but database operations will fail until connection is established.")
-        print(f"⚠ {error_msg}", file=sys.stderr)
-    except Exception as e:
-        # Keep generic Exception for unexpected database errors
-        error_msg = f"Database initialization failed: {e}. App will continue but database features may be unavailable."
-        if logger:
-            logger.error(error_msg, exc_info=True)
-            logger.warning("The app will start, but database operations will fail until connection is established.")
-        print(f"⚠ {error_msg}", file=sys.stderr)
-    
-    try:
-        await init_cache()
-        if logger:
-            logger.info("Cache initialized successfully")
-        print("✓ Cache initialized", file=sys.stderr)
-    except (ConnectionError, TimeoutError) as e:
-        warning_msg = f"Cache connection failed: {e}. App will continue without cache."
-        if logger:
-            logger.warning(warning_msg)
-        print(f"⚠ {warning_msg}", file=sys.stderr)
-    except Exception as e:
-        # Keep generic Exception for unexpected cache errors
-        warning_msg = f"Cache initialization failed: {e}. App will continue without cache."
-        if logger:
-            logger.warning(warning_msg, exc_info=True)
-        print(f"⚠ {warning_msg}", file=sys.stderr)
-    
-    # Ensure required columns exist (auto-migration) - only if DB is available
-    try:
-        await ensure_theme_preference_column()
-    except (ConnectionError, TimeoutError) as e:
-        if logger:
-            logger.warning(f"Theme preference column migration skipped (connection error): {e}")
-    except Exception as e:
-        # Keep generic Exception for migration errors
-        if logger:
-            logger.warning(f"Theme preference column migration skipped: {e}", exc_info=True)
-    
-    # Ensure default theme exists - CRITICAL for template functionality
-    # This must succeed for the application to work properly
-    theme_created = False
-    try:
-        from app.core.database import get_db
-        from app.api.v1.endpoints.themes import ensure_default_theme
-        async for db in get_db():
-            try:
-                theme = await ensure_default_theme(db, created_by=1)
-                theme_created = True
-                if logger:
-                    logger.info(f"Default theme ensured: {theme.name} (ID: {theme.id}, Active: {theme.is_active})")
-                print(f"✓ Default theme ensured: {theme.name} (ID: {theme.id}, Active: {theme.is_active})", file=sys.stderr)
-            except Exception as e:
-                if logger:
-                    logger.error(f"CRITICAL: Default theme creation failed: {e}", exc_info=True)
-                print(f"❌ CRITICAL ERROR: Default theme creation failed: {e}", file=sys.stderr)
-                print("   The application may not function correctly without a theme.", file=sys.stderr)
-                # Don't break startup, but log the error prominently
-            break
-    except Exception as e:
-        if logger:
-            logger.error(f"CRITICAL: Default theme initialization failed: {e}", exc_info=True)
-        print(f"❌ CRITICAL ERROR: Default theme initialization failed: {e}", file=sys.stderr)
-        print("   Database connection may be unavailable. Theme will be created on first API call.", file=sys.stderr)
-    
-    if not theme_created:
-        print("⚠️  WARNING: TemplateTheme was not created during startup.", file=sys.stderr)
-        print("   It will be created automatically when /api/v1/themes/active is first called.", file=sys.stderr)
-    
-    # Log environment info
+    # Log environment info early
     if logger:
         logger.info(f"CORS Origins configured: {settings.CORS_ORIGINS}")
         logger.info(f"ENVIRONMENT: {os.getenv('ENVIRONMENT', 'NOT SET')}")
@@ -150,37 +74,143 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("✓ FastAPI Application Ready - Starting server", file=sys.stderr)
     print(f"  Environment: {os.getenv('ENVIRONMENT', 'development')}", file=sys.stderr)
     print(f"  Port: {os.getenv('PORT', '8000')}", file=sys.stderr)
+    print("  Health endpoint available at: /api/v1/health", file=sys.stderr)
     print("=" * 50, file=sys.stderr)
     
-    # Yield immediately to allow the app to start serving requests
-    # Background tasks can continue after the app is ready
+    # Background initialization tasks - these run after the app has started serving requests
+    # This allows healthchecks to succeed even if initialization takes time
+    async def background_init():
+        """Background initialization tasks"""
+        try:
+            from app.core.logging import logger
+        except:
+            logger = None
+        
+        # Startup - make database initialization resilient
+        try:
+            await init_db()
+            if logger:
+                logger.info("Database initialized successfully")
+            print("✓ Database initialized", file=sys.stderr)
+        except (ConnectionError, TimeoutError) as e:
+            error_msg = f"Database connection failed: {e}. App will continue but database features may be unavailable."
+            if logger:
+                logger.error(error_msg)
+                logger.warning("The app will start, but database operations will fail until connection is established.")
+            print(f"⚠ {error_msg}", file=sys.stderr)
+        except Exception as e:
+            # Keep generic Exception for unexpected database errors
+            error_msg = f"Database initialization failed: {e}. App will continue but database features may be unavailable."
+            if logger:
+                logger.error(error_msg, exc_info=True)
+                logger.warning("The app will start, but database operations will fail until connection is established.")
+            print(f"⚠ {error_msg}", file=sys.stderr)
+        
+        try:
+            await init_cache()
+            if logger:
+                logger.info("Cache initialized successfully")
+            print("✓ Cache initialized", file=sys.stderr)
+        except (ConnectionError, TimeoutError) as e:
+            warning_msg = f"Cache connection failed: {e}. App will continue without cache."
+            if logger:
+                logger.warning(warning_msg)
+            print(f"⚠ {warning_msg}", file=sys.stderr)
+        except Exception as e:
+            # Keep generic Exception for unexpected cache errors
+            warning_msg = f"Cache initialization failed: {e}. App will continue without cache."
+            if logger:
+                logger.warning(warning_msg, exc_info=True)
+            print(f"⚠ {warning_msg}", file=sys.stderr)
+        
+        # Ensure required columns exist (auto-migration) - only if DB is available
+        try:
+            await ensure_theme_preference_column()
+        except (ConnectionError, TimeoutError) as e:
+            if logger:
+                logger.warning(f"Theme preference column migration skipped (connection error): {e}")
+        except Exception as e:
+            # Keep generic Exception for migration errors
+            if logger:
+                logger.warning(f"Theme preference column migration skipped: {e}", exc_info=True)
+        
+        # Ensure default theme exists - CRITICAL for template functionality
+        # This must succeed for the application to work properly
+        theme_created = False
+        try:
+            from app.core.database import get_db
+            from app.api.v1.endpoints.themes import ensure_default_theme
+            async for db in get_db():
+                try:
+                    theme = await ensure_default_theme(db, created_by=1)
+                    theme_created = True
+                    if logger:
+                        logger.info(f"Default theme ensured: {theme.name} (ID: {theme.id}, Active: {theme.is_active})")
+                    print(f"✓ Default theme ensured: {theme.name} (ID: {theme.id}, Active: {theme.is_active})", file=sys.stderr)
+                except Exception as e:
+                    if logger:
+                        logger.error(f"CRITICAL: Default theme creation failed: {e}", exc_info=True)
+                    print(f"❌ CRITICAL ERROR: Default theme creation failed: {e}", file=sys.stderr)
+                    print("   The application may not function correctly without a theme.", file=sys.stderr)
+                    # Don't break startup, but log the error prominently
+                break
+        except Exception as e:
+            if logger:
+                logger.error(f"CRITICAL: Default theme initialization failed: {e}", exc_info=True)
+            print(f"❌ CRITICAL ERROR: Default theme initialization failed: {e}", file=sys.stderr)
+            print("   Database connection may be unavailable. Theme will be created on first API call.", file=sys.stderr)
+        
+        if not theme_created:
+            print("⚠️  WARNING: TemplateTheme was not created during startup.", file=sys.stderr)
+            print("   It will be created automatically when /api/v1/themes/active is first called.", file=sys.stderr)
+        
+        # Create recommended indexes (non-blocking, runs after app starts)
+        # This runs in the background after the app has started serving requests
+        try:
+            from app.core.database_indexes import create_recommended_indexes, analyze_tables
+            from app.core.database import AsyncSessionLocal
+            
+            async with AsyncSessionLocal() as session:
+                index_results = await create_recommended_indexes(session)
+                if index_results.get("created"):
+                    if logger:
+                        logger.info(f"Created {len(index_results['created'])} indexes")
+                if index_results.get("errors"):
+                    if logger:
+                        logger.warning(f"Failed to create {len(index_results['errors'])} indexes")
+                
+                # Analyze tables to update statistics
+                await analyze_tables(session)
+                if logger:
+                    logger.info("Index creation/analysis completed")
+        except Exception as e:
+            if logger:
+                logger.warning(f"Index creation/analysis skipped: {e}")
+        
+        if logger:
+            logger.info("Application startup complete")
+    
+    # Start background initialization as a task BEFORE yielding
+    # This allows the app to serve requests immediately while initialization happens in the background
+    # The task will run concurrently with the app serving requests
+    # Note: In FastAPI lifespan, the event loop is always running, so create_task should work
+    init_task = asyncio.create_task(background_init())
+    
+    # CRITICAL: Yield immediately to allow the app to start serving requests
+    # This ensures the health endpoint is available immediately for Railway healthchecks
+    # Heavy initialization will happen in the background via init_task
     yield
     
-    # Create recommended indexes (non-blocking, runs after app starts)
-    # This runs in the background after the app has started serving requests
+    # Shutdown - wait for background initialization to complete if still running
+    # This ensures clean shutdown
     try:
-        from app.core.database_indexes import create_recommended_indexes, analyze_tables
-        from app.core.database import AsyncSessionLocal
-        
-        async with AsyncSessionLocal() as session:
-            index_results = await create_recommended_indexes(session)
-            if index_results.get("created"):
-                if logger:
-                    logger.info(f"Created {len(index_results['created'])} indexes")
-            if index_results.get("errors"):
-                if logger:
-                    logger.warning(f"Failed to create {len(index_results['errors'])} indexes")
-            
-            # Analyze tables to update statistics
-            await analyze_tables(session)
-            if logger:
-                logger.info("Index creation/analysis completed")
+        if init_task and not init_task.done():
+            print("Waiting for background initialization to complete...", file=sys.stderr)
+            await asyncio.wait_for(init_task, timeout=5.0)
+    except asyncio.TimeoutError:
+        print("Background initialization timed out during shutdown", file=sys.stderr)
     except Exception as e:
-        if logger:
-            logger.warning(f"Index creation/analysis skipped: {e}")
-    
-    if logger:
-        logger.info("Application startup complete")
+        print(f"Error waiting for background initialization: {e}", file=sys.stderr)
     
     # Shutdown
     print("Shutting down application...", file=sys.stderr)
@@ -324,6 +354,9 @@ def create_app() -> FastAPI:
 
     # Include API router
     app.include_router(api_router, prefix=settings.API_V1_STR)
+    
+    # Include upload router (separate from v1)
+    app.include_router(upload_router.router)
     
     # Include email router (separate from v1)
     app.include_router(email_router.router)

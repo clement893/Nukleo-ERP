@@ -227,58 +227,6 @@ function APIConnectionTestContent() {
     }
   };
 
-  const generateReport = async () => {
-    setIsLoading(true);
-    setError('');
-    setReport(null);
-
-    try {
-      console.log('Generating report...'); // Debug log
-      const response = await apiClient.get<CheckResult>('/v1/api-connection-check/report', {
-        params: { output_name: `API_CONNECTION_REPORT_${Date.now()}` },
-      });
-      
-      console.log('Report response:', response); // Debug log
-      
-      // Extract data using same pattern as pagesAPI and other API modules
-      // Handle both ApiResponse wrapper and direct FastAPI response
-      const data = (response as any)?.data || response;
-      
-      console.log('Extracted data:', data); // Debug log
-      
-      if (data) {
-        setReport(data);
-        // If there's an error in the response, also set it for visibility
-        if (!data.success && data.error) {
-          setError(data.error);
-        } else if (data.success) {
-          // Clear any previous errors on success
-          setError('');
-        }
-      } else {
-        const errorMsg = 'No data returned from report generation';
-        setError(errorMsg);
-        setReport({
-          success: false,
-          error: errorMsg,
-          message: 'The report generation completed but no data was returned.',
-          hint: 'Please check the backend logs for more details.'
-        });
-      }
-    } catch (err: unknown) {
-      console.error('Error generating report:', err); // Debug log
-      const errorMessage = getErrorMessage(err) || 'Failed to generate report';
-      setError(errorMessage);
-      setReport({
-        success: false,
-        error: errorMessage,
-        message: 'An error occurred while generating the report.',
-        hint: 'Please check the browser console and network tab for more details.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const testCriticalEndpoints = async () => {
     setIsTestingEndpoints(true);
@@ -576,9 +524,9 @@ function APIConnectionTestContent() {
       }},
     ];
 
-    const results = [];
+    const results: Array<{ name: string; status: 'pending' | 'success' | 'error'; message?: string }> = [];
     for (const { name, test } of tests) {
-      const result = { name, status: 'pending' as const, message: undefined as string | undefined };
+      const result: { name: string; status: 'pending' | 'success' | 'error'; message?: string } = { name, status: 'pending', message: undefined };
       results.push(result);
       setComponentTests([...results]);
 
