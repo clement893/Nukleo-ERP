@@ -38,12 +38,13 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, token } = useAuthStore();
+  const { user, token, setUser } = useAuthStore();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const checkingRef = useRef(false);
   const lastUserRef = useRef(user);
   const lastTokenRef = useRef(token);
+  const hydrationCheckedRef = useRef(false);
 
   useEffect(() => {
     // If user or token changed, update refs but only reset if going from authenticated to unauthenticated
@@ -81,21 +82,74 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
       checkingRef.current = true;
       setIsChecking(true);
       
-      // Wait a bit for Zustand persist to hydrate
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait longer for Zustand persist to hydrate (up to 500ms)
+      // Check multiple times to ensure hydration is complete
+      for (let i = 0; i < 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const storeState = useAuthStore.getState();
+        if (storeState.user || storeState.token) {
+          // Store has been hydrated, break early
+          break;
+        }
+      }
       
-      // Check authentication - use user and token directly instead of isAuthenticated function
+      // Check authentication - prioritize sessionStorage if store not hydrated yet
       const tokenFromStorage = typeof window !== 'undefined' ? TokenStorage.getToken() : null;
       const currentToken = token || tokenFromStorage;
-      const hasUser = !!user;
+      const currentUser = user;
+      const hasUser = !!currentUser;
       const hasToken = !!currentToken;
-      const isAuth = hasUser && hasToken;
+      
+      // If we have a token but no user, try to fetch user from API
+      // This handles the case where Zustand persist hasn't hydrated yet but token exists
+      let fetchedUser = currentUser;
+      if (hasToken && !hasUser && typeof window !== 'undefined') {
+        try {
+          const { usersAPI } = await import('@/lib/api');
+          const { transformApiUserToStoreUser } = await import('@/lib/auth/userTransform');
+          const response = await usersAPI.getMe();
+          if (response.data) {
+            const userForStore = transformApiUserToStoreUser(response.data);
+            setUser(userForStore);
+            // Update refs to reflect the new user
+            lastUserRef.current = userForStore;
+            fetchedUser = userForStore;
+          }
+        } catch (err: unknown) {
+          // If fetching user fails, log but don't block - might be network issue
+          const statusCode = getErrorStatus(err);
+          if (process.env.NODE_ENV === 'development') {
+            logger.debug('Failed to fetch user in ProtectedRoute', {
+              error: err instanceof Error ? err.message : String(err),
+              statusCode
+            });
+          }
+          // Only fail if it's an auth error (401/403), not server errors (500)
+          if (statusCode === 401 || statusCode === 403) {
+            // Token is invalid, clear it and redirect
+            if (typeof window !== 'undefined') {
+              TokenStorage.removeTokens();
+            }
+            checkingRef.current = false;
+            setIsChecking(false);
+            setIsAuthorized(false);
+            router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+            return;
+          }
+          // For other errors (500, network, etc.), continue with token check
+        }
+      }
+      
+      // Final auth check with potentially fetched user
+      const finalHasUser = !!fetchedUser;
+      const isAuth = finalHasUser && hasToken;
       
       if (process.env.NODE_ENV === 'development') {
         logger.debug('ProtectedRoute auth check', {
           hasToken: !!tokenFromStorage,
           hasTokenFromStore: !!token,
           hasUser: !!user,
+          fetchedUser: !!fetchedUser,
           isAuth,
           pathname,
           isAuthorized,
@@ -125,8 +179,9 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
       // Check admin privileges if required
       if (requireAdmin) {
-        // Check if user is admin OR superadmin
-        let isAdmin = user?.is_admin || false;
+        // Check if user is admin OR superadmin (use fetchedUser if available)
+        const userForAdminCheck = fetchedUser || user;
+        let isAdmin = userForAdminCheck?.is_admin || false;
         
         // If not admin, check if user is superadmin
         if (!isAdmin) {
@@ -136,20 +191,20 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
               logger.debug('Checking superadmin status', {
                 hasToken: !!authToken,
                 tokenLength: authToken.length,
-                userEmail: user?.email
+                userEmail: userForAdminCheck?.email
               });
               const status = await checkMySuperAdminStatus(authToken);
               isAdmin = status.is_superadmin;
               if (status.is_superadmin) {
                 logger.debug('User is superadmin, granting admin access');
               } else {
-                logger.debug('User is not superadmin', { userEmail: user?.email });
+                logger.debug('User is not superadmin', { userEmail: userForAdminCheck?.email });
               }
             } else {
               logger.warn('No token available for superadmin check', {
                 hasTokenFromStorage: !!tokenFromStorage,
                 hasTokenFromStore: !!token,
-                userEmail: user?.email
+                userEmail: userForAdminCheck?.email
               });
             }
           } catch (err: unknown) {

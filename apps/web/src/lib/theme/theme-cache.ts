@@ -83,7 +83,7 @@ export function getThemeFromCache(themeId?: number): ThemeConfig | null {
     return cached.config;
   } catch (error) {
     // Silently fail if cache is corrupted
-    console.warn('[Theme Cache] Failed to read theme from cache:', error);
+    logger.warn('[Theme Cache] Failed to read theme from cache', { error });
     clearThemeCache();
     return null;
   }

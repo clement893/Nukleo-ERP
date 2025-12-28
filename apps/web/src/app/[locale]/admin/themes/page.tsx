@@ -32,17 +32,17 @@ function ThemesPageContent() {
     setIsCreating(false);
   };
 
-  const handleDeleteTheme = (theme: Theme) => {
+  const handleDeleteTheme = (_theme: Theme) => {
     // Already handled in ThemeList with modal
     // No action needed here
   };
 
-  const handleActivateTheme = (theme: Theme) => {
+  const handleActivateTheme = (_theme: Theme) => {
     // Already handled in ThemeList with modal
     // No action needed here
   };
 
-  const handleDuplicateTheme = (theme: Theme) => {
+  const handleDuplicateTheme = (_theme: Theme) => {
     // Will be implemented in Batch 14
     // No action needed here
   };

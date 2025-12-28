@@ -251,7 +251,7 @@ export function validateThemeConfig(
     
     if (logWarnings) {
       contrastIssues.forEach(issue => {
-        console.warn(`[Theme Validation] ${issue.message}`);
+        logger.warn(`[Theme Validation] ${issue.message}`);
       });
     }
   }

@@ -11,6 +11,7 @@ import { teamsAPI, type Team, type TeamMember, type TeamCreate, type TeamUpdate,
 import { usersAPI } from '@/lib/api';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import { Plus, Edit, Trash2, Users, Save } from 'lucide-react';
 
 export interface TeamManagementProps {
@@ -109,7 +110,7 @@ export default function TeamManagement({ className }: TeamManagementProps) {
         }
       }
     } catch (err) {
-      console.error('Error loading users:', err);
+      logger.error('Error loading users', err instanceof Error ? err : new Error(String(err)));
     }
   };
 
@@ -125,7 +126,7 @@ export default function TeamManagement({ className }: TeamManagementProps) {
         setRoles(responseData as Role[]);
       }
     } catch (err) {
-      console.error('Error loading roles:', err);
+      logger.error('Error loading roles', err instanceof Error ? err : new Error(String(err)));
     }
   };
 

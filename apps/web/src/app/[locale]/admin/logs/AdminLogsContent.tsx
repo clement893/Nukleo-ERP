@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api';
 import { getErrorMessage } from '@/lib/errors';
 import { Button, Card, Badge, Alert, Input, Loading, DataTable, Select } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
+import { logger } from '@/lib/logger';
 
 interface AuditLog {
   id: number;
@@ -41,10 +42,10 @@ export default function AdminLogsContent() {
       params.append('limit', '100');
 
       const url = `/v1/audit-trail/audit-trail?${params.toString()}`;
-      console.log('[AdminLogs] Fetching logs from:', url);
+      logger.debug('[AdminLogs] Fetching logs from', { url });
       
       const response = await apiClient.get(url);
-      console.log('[AdminLogs] Response received:', { 
+      logger.debug('[AdminLogs] Response received', { 
         type: typeof response, 
         isArray: Array.isArray(response),
         keys: response && typeof response === 'object' ? Object.keys(response) : null,
@@ -61,20 +62,20 @@ export default function AdminLogsContent() {
       // First check if response itself is an array (direct FastAPI response)
       if (Array.isArray(response)) {
         logsData = response as AuditLog[];
-        console.log('[AdminLogs] Response is direct array, logs count:', logsData.length);
+        logger.debug('[AdminLogs] Response is direct array', { logsCount: logsData.length });
       } 
       // Check if response.data exists and is an array (wrapped in ApiResponse)
       else if (response && typeof response === 'object' && 'data' in response) {
         const responseData = (response as { data?: unknown }).data;
         if (Array.isArray(responseData)) {
           logsData = responseData as AuditLog[];
-          console.log('[AdminLogs] Response.data is array, logs count:', logsData.length);
+          logger.debug('[AdminLogs] Response.data is array', { logsCount: logsData.length });
         } else if (responseData && typeof responseData === 'object' && 'results' in responseData) {
           // Handle paginated response format
           logsData = ((responseData as { results: AuditLog[] }).results) || [];
-          console.log('[AdminLogs] Response.data.results found, logs count:', logsData.length);
+          logger.debug('[AdminLogs] Response.data.results found', { logsCount: logsData.length });
         } else {
-          console.warn('[AdminLogs] Unexpected response.data format:', responseData);
+          logger.warn('[AdminLogs] Unexpected response.data format', { responseData });
         }
       }
       // Fallback: check if response has results property
@@ -82,23 +83,23 @@ export default function AdminLogsContent() {
         const results = (response as { results?: AuditLog[] }).results;
         if (Array.isArray(results)) {
           logsData = results;
-          console.log('[AdminLogs] Response.results found, logs count:', logsData.length);
+          logger.debug('[AdminLogs] Response.results found', { logsCount: logsData.length });
         }
       } else {
-        console.warn('[AdminLogs] Unexpected response format:', response);
+        logger.warn('[AdminLogs] Unexpected response format', { response });
       }
       
       // Ensure logsData is always an array
       if (!Array.isArray(logsData)) {
-        console.warn('[AdminLogs] logsData is not an array, defaulting to empty array');
+        logger.warn('[AdminLogs] logsData is not an array, defaulting to empty array');
         logsData = [];
       }
       
-      console.log('[AdminLogs] Final logs count:', logsData.length);
+      logger.debug('[AdminLogs] Final logs count', { logsCount: logsData.length });
       setLogs(logsData);
     } catch (err: unknown) {
       const errorMessage = getErrorMessage(err, 'Erreur lors du chargement des logs');
-      console.error('[AdminLogs] Error loading logs:', err);
+      logger.error('[AdminLogs] Error loading logs', err instanceof Error ? err : new Error(String(err)));
       setError(errorMessage);
     } finally {
       setLoading(false);

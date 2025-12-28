@@ -106,7 +106,7 @@ export function loadFontWithFallback(
       })
       .catch((error) => {
         // Font failed to load, keep fallback
-        console.warn(`[Font Loader] Failed to load font ${fontFamily}, using fallback:`, error);
+        logger.warn(`[Font Loader] Failed to load font ${fontFamily}, using fallback`, { error, fontFamily });
         root.style.setProperty('--font-family', fallback);
         resolve(); // Resolve anyway to not block rendering
       });

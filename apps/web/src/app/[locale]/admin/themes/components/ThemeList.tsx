@@ -13,6 +13,7 @@ import { Card, Button, Loading, Alert } from '@/components/ui';
 import { Plus } from 'lucide-react';
 import { ThemeListItem as ThemeListItemComponent } from './ThemeListItem';
 import { useThemeActions, ConfirmActivateModal, ConfirmDeleteModal } from './ThemeActions';
+import { logger } from '@/lib/logger';
 
 interface ThemeListProps {
   onCreateTheme: () => void;
@@ -71,7 +72,7 @@ export function ThemeList({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement des thèmes';
       setError(errorMessage);
-      console.error('[ThemeList] Error fetching themes:', err);
+      logger.error('[ThemeList] Error fetching themes', err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }

@@ -118,7 +118,7 @@ export function handleApiError(error: unknown): AppError {
     // Check for FastAPI standard validation error format (detail array)
     // FastAPI returns 422 errors in format: { "detail": [{ "type": "...", "loc": [...], "msg": "..." }] }
     if (statusCode === 422 && responseData?.detail && Array.isArray(responseData.detail)) {
-      console.error('[handleApiError] FastAPI standard validation format detected:', responseData);
+      logger.error('[handleApiError] FastAPI standard validation format detected', new Error('Validation error'), { responseData });
       
       // Convert FastAPI format to our format
       const validationErrors = responseData.detail.map((err: any) => ({

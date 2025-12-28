@@ -276,7 +276,7 @@ export default function MyPage() {
 }
 ```
 
-### Available Component Categories (32 total)
+### Available Component Categories (50+ total)
 
 **Core UI Components:**
 - **Forms**: Input, Select, Textarea, Checkbox, Radio, Switch, RichTextEditor, DatePicker

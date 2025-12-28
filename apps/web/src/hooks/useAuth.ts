@@ -160,13 +160,28 @@ export function useAuth() {
           } catch (err: unknown) {
             // Token might be invalid, try refresh
             const statusCode = getErrorStatus(err);
-            if (storedRefreshToken && (statusCode === 401 || statusCode === 422)) {
-              await refreshToken();
-            } else if (statusCode === 401 || statusCode === 422) {
-              // No refresh token or refresh failed, logout
-              handleLogout();
+            
+            // Only logout on authentication errors (401, 403), not server errors (500, 502, etc.)
+            if (statusCode === 401 || statusCode === 403 || statusCode === 422) {
+              // Authentication error - try refresh if available
+              if (storedRefreshToken) {
+                await refreshToken();
+              } else {
+                // No refresh token or refresh failed, logout
+                logger.warn('Authentication failed, logging out', {
+                  statusCode,
+                  hasRefreshToken: !!storedRefreshToken
+                });
+                handleLogout();
+              }
+            } else {
+              // Server errors (500, 502, 503, etc.) or network errors - don't logout
+              // User might still be authenticated, just server is having issues
+              logger.warn('Failed to fetch user info, but not logging out (server/network error)', {
+                statusCode,
+                error: err instanceof Error ? err.message : String(err)
+              });
             }
-            // For other errors, don't logout (might be network issue)
           }
         });
       }
