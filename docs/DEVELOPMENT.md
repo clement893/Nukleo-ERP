@@ -257,6 +257,100 @@ git push origin feat/ma-fonctionnalite
 
 ## 📝 Standards de Code
 
+### Logging
+
+**✅ Use structured logger instead of console.log:**
+
+```typescript
+// ✅ Good: Use structured logger
+import { logger } from '@/lib/logger';
+
+logger.log('User action', { userId: user.id });
+logger.error('Error occurred', error);
+logger.debug('Debug info', { data });
+
+// ❌ Bad: Don't use console.log
+console.log('User action', user);
+console.error('Error', error);
+```
+
+### Type Safety
+
+**✅ Always use specific types instead of `any`:**
+
+```typescript
+// ✅ Good: Use specific types
+interface UserPreferences {
+  theme: 'light' | 'dark';
+  language: string;
+}
+
+function updatePreferences(prefs: UserPreferences) {
+  // ...
+}
+
+// ❌ Bad: Don't use any
+function updatePreferences(prefs: any) {
+  // ...
+}
+```
+
+### API Responses
+
+**✅ Use extractApiData helper for type-safe API responses:**
+
+```typescript
+// ✅ Good: Use extractApiData
+import { extractApiData } from '@/lib/api/utils';
+
+const response = await apiClient.get<ApiResponse<User>>('/users/1');
+const user = extractApiData(response); // Type-safe extraction
+
+// ❌ Bad: Type assertion
+const user = (response as any).data || response;
+```
+
+### Database Queries
+
+**✅ Use eager loading to avoid N+1 queries:**
+
+```python
+# ✅ Good: Eager load relationships
+from sqlalchemy.orm import selectinload
+
+query = select(Team).options(
+    selectinload(Team.members),
+    selectinload(Team.owner)
+)
+
+# ❌ Bad: Lazy loading causes N+1 queries
+query = select(Team)  # Members loaded separately
+```
+
+### Testing
+
+**✅ Write tests for critical components and endpoints:**
+
+```typescript
+// ✅ Good: Test error handling
+describe('ApiError', () => {
+  it('should display error message', () => {
+    // Test implementation
+  });
+});
+```
+
+```python
+# ✅ Good: Test endpoints
+@pytest.mark.asyncio
+async def test_create_user(client: TestClient):
+    # Test implementation
+```
+
+---
+
+## 📝 Standards de Code (General)
+
 ### TypeScript
 
 - Utiliser TypeScript strict
