@@ -30,6 +30,13 @@ api_router.include_router(
     tags=["api-keys"]
 )
 
+# Register user preferences endpoints (MUST be before /users/{user_id} route)
+api_router.include_router(
+    user_preferences.router,
+    prefix="/users",
+    tags=["user-preferences"]
+)
+
 # Register user endpoints (with pagination and optimization)
 api_router.include_router(
     users.router,
@@ -191,13 +198,6 @@ api_router.include_router(
     feature_flags.router,
     prefix="/feature-flags",
     tags=["feature-flags"]
-)
-
-# Register user preferences endpoints
-api_router.include_router(
-    user_preferences.router,
-    prefix="/users",
-    tags=["user-preferences"]
 )
 
 # Register announcements endpoints
