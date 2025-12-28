@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.dependencies.rbac import require_permission, require_role
-from app.models import User
+from app.models import User, UserPermission, Role, Permission
 from app.core.logging import logger
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.schemas.rbac import (
@@ -502,4 +502,261 @@ async def check_permission(
         permission=check_data.permission,
         roles=[role.slug for role in roles],
     )
+
+
+# Custom permissions endpoints
+@router.post("/users/{user_id}/permissions/custom", response_model=UserPermissionResponse, status_code=status.HTTP_201_CREATED)
+async def add_custom_permission(
+    request: Request,
+    user_id: int,
+    permission_data: UserPermissionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Add a custom permission to a user (requires admin permission)"""
+    await require_permission("users:update", current_user, db, request)
+    
+    rbac_service = RBACService(db)
+    user_permission = await rbac_service.add_custom_permission(user_id, permission_data.permission_id)
+    
+    # Load permission for response
+    from app.models import Permission
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(UserPermission)
+        .where(UserPermission.id == user_permission.id)
+        .options(selectinload(UserPermission.permission))
+    )
+    user_permission_with_perm = result.scalar_one_or_none()
+    
+    if not user_permission_with_perm:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User permission not found")
+    
+    # Log permission changed event
+    from app.models.user import User as UserModel
+    target_user_result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    target_user = target_user_result.scalar_one_or_none()
+    
+    perm_result = await db.execute(select(Permission).where(Permission.id == permission_data.permission_id))
+    permission = perm_result.scalar_one_or_none()
+    perm_name = permission.name if permission else f"permission_id_{permission_data.permission_id}"
+    
+    try:
+        await SecurityAuditLogger.log_event(
+            db=db,
+            event_type=SecurityEventType.ROLE_CHANGED,  # Using ROLE_CHANGED for permission changes
+            description=f"Custom permission '{perm_name}' added to user {target_user.email if target_user else user_id}",
+            user_id=current_user.id,
+            user_email=current_user.email,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            request_method=request.method,
+            request_path=str(request.url.path),
+            severity="info",
+            success="success",
+            metadata={
+                "target_user_id": user_id,
+                "target_user_email": target_user.email if target_user else None,
+                "permission_id": permission_data.permission_id,
+                "permission_name": perm_name,
+                "action": "custom_permission_added"
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log custom permission added event: {e}")
+    
+    return UserPermissionResponse.model_validate(user_permission_with_perm)
+
+
+@router.delete("/users/{user_id}/permissions/custom/{permission_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_custom_permission(
+    request: Request,
+    user_id: int,
+    permission_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Remove a custom permission from a user (requires admin permission)"""
+    await require_permission("users:update", current_user, db, request)
+    
+    # Get user and permission info before removal for logging
+    from app.models.user import User as UserModel
+    from app.models import Permission
+    target_user_result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    target_user = target_user_result.scalar_one_or_none()
+    
+    perm_result = await db.execute(select(Permission).where(Permission.id == permission_id))
+    permission = perm_result.scalar_one_or_none()
+    perm_name = permission.name if permission else f"permission_id_{permission_id}"
+    
+    rbac_service = RBACService(db)
+    removed = await rbac_service.remove_custom_permission(user_id, permission_id)
+    
+    if not removed:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Custom permission not found")
+    
+    # Log permission changed event
+    try:
+        await SecurityAuditLogger.log_event(
+            db=db,
+            event_type=SecurityEventType.ROLE_CHANGED,
+            description=f"Custom permission '{perm_name}' removed from user {target_user.email if target_user else user_id}",
+            user_id=current_user.id,
+            user_email=current_user.email,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            request_method=request.method,
+            request_path=str(request.url.path),
+            severity="info",
+            success="success",
+            metadata={
+                "target_user_id": user_id,
+                "target_user_email": target_user.email if target_user else None,
+                "permission_id": permission_id,
+                "permission_name": perm_name,
+                "action": "custom_permission_removed"
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log custom permission removed event: {e}")
+    
+    return None
+
+
+@router.get("/users/{user_id}/permissions/custom", response_model=List[UserPermissionResponse])
+async def get_user_custom_permissions(
+    request: Request,
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all custom permissions for a user"""
+    # Users can view their own permissions, admins can view anyone's
+    if user_id != current_user.id:
+        await require_permission("users:read", current_user, db, request)
+    
+    rbac_service = RBACService(db)
+    custom_permissions = await rbac_service.get_user_custom_permissions(user_id)
+    
+    # Convert to response format
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(UserPermission)
+        .where(UserPermission.user_id == user_id)
+        .options(selectinload(UserPermission.permission))
+    )
+    user_permissions = result.scalars().all()
+    
+    return [UserPermissionResponse.model_validate(up) for up in user_permissions]
+
+
+# Bulk operations endpoints
+@router.put("/users/{user_id}/roles", response_model=List[RoleResponse])
+async def update_user_roles(
+    request: Request,
+    user_id: int,
+    role_data: BulkRoleUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update all roles for a user (bulk operation - replaces all existing roles)"""
+    await require_permission("users:update", current_user, db, request)
+    
+    rbac_service = RBACService(db)
+    user_roles = await rbac_service.update_user_roles(user_id, role_data.role_ids)
+    
+    # Get role details for response
+    roles_with_permissions = []
+    for user_role in user_roles:
+        permissions = await rbac_service.get_role_permissions(user_role.role_id)
+        role_result = await db.execute(select(Role).where(Role.id == user_role.role_id))
+        role = role_result.scalar_one_or_none()
+        
+        if role:
+            role_dict = {
+                "id": role.id,
+                "name": role.name,
+                "slug": role.slug,
+                "description": role.description,
+                "is_system": role.is_system,
+                "is_active": role.is_active,
+                "created_at": role.created_at,
+                "updated_at": role.updated_at,
+                "permissions": [PermissionResponse.model_validate(p) for p in permissions],
+            }
+            roles_with_permissions.append(RoleResponse.model_validate(role_dict))
+    
+    # Log role changed event
+    from app.models.user import User as UserModel
+    target_user_result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    target_user = target_user_result.scalar_one_or_none()
+    
+    try:
+        await SecurityAuditLogger.log_event(
+            db=db,
+            event_type=SecurityEventType.ROLE_CHANGED,
+            description=f"Roles updated for user {target_user.email if target_user else user_id}",
+            user_id=current_user.id,
+            user_email=current_user.email,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            request_method=request.method,
+            request_path=str(request.url.path),
+            severity="info",
+            success="success",
+            metadata={
+                "target_user_id": user_id,
+                "target_user_email": target_user.email if target_user else None,
+                "role_ids": role_data.role_ids,
+                "action": "bulk_update"
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log bulk role update event: {e}")
+    
+    return roles_with_permissions
+
+
+@router.put("/roles/{role_id}/permissions", response_model=RoleResponse)
+async def update_role_permissions(
+    request: Request,
+    role_id: int,
+    permission_data: BulkPermissionUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update all permissions for a role (bulk operation - replaces all existing permissions)"""
+    await require_permission("roles:update", current_user, db, request)
+    
+    from app.models import Role
+    role_result = await db.execute(select(Role).where(Role.id == role_id))
+    role = role_result.scalar_one_or_none()
+    
+    if not role:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    
+    if role.is_system:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot modify permissions for system role",
+        )
+    
+    rbac_service = RBACService(db)
+    await rbac_service.update_role_permissions(role_id, permission_data.permission_ids)
+    
+    # Get updated role with permissions
+    permissions = await rbac_service.get_role_permissions(role_id)
+    role_dict = {
+        "id": role.id,
+        "name": role.name,
+        "slug": role.slug,
+        "description": role.description,
+        "is_system": role.is_system,
+        "is_active": role.is_active,
+        "created_at": role.created_at,
+        "updated_at": role.updated_at,
+        "permissions": [PermissionResponse.model_validate(p) for p in permissions],
+    }
+    
+    return RoleResponse.model_validate(role_dict)
 
