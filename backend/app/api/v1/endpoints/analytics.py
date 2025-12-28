@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 
 from app.models.user import User
 from app.models.project import Project
-from app.models.activity import Activity
 from app.dependencies import get_current_user, get_db
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.core.tenancy_helpers import apply_tenant_scope
