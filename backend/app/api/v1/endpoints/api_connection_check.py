@@ -294,8 +294,9 @@ async def generate_report(
     
     Requires authentication and admin or superadmin role
     """
-    # Check if user is admin or superadmin
-    if not (current_user.is_superadmin or current_user.is_admin):
+    # Check if user is admin or superadmin (using async function to avoid lazy load)
+    user_is_admin = await is_admin_or_superadmin(current_user, db)
+    if not user_is_admin:
         raise HTTPException(
             status_code=403,
             detail="This endpoint requires admin or superadmin privileges"

@@ -262,7 +262,7 @@ function APIConnectionTestContent() {
 
         {frontendCheck && (
           <div className="space-y-4">
-            {!frontendCheck.success && (
+            {!frontendCheck.success ? (
               <Alert variant="error">
                 <div>
                   <p className="font-medium">{frontendCheck.error || 'Check failed'}</p>
@@ -270,8 +270,7 @@ function APIConnectionTestContent() {
                   {frontendCheck.hint && <p className="text-sm mt-1 text-gray-600">{frontendCheck.hint}</p>}
                 </div>
               </Alert>
-            )}
-            {frontendCheck.summary && (
+            ) : frontendCheck.summary && Object.keys(frontendCheck.summary).length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {frontendCheck.summary.total !== undefined && (
                   <div className="text-center">
@@ -312,7 +311,11 @@ function APIConnectionTestContent() {
                   </div>
                 )}
               </div>
-            )}
+            ) : frontendCheck.success ? (
+              <Alert variant="info">
+                <p>Check completed successfully, but no summary data available.</p>
+              </Alert>
+            ) : null}
 
             {frontendCheck.output && (
               <div className="mt-4">
@@ -343,7 +346,7 @@ function APIConnectionTestContent() {
 
         {backendCheck && (
           <div className="space-y-4">
-            {!backendCheck.success && (
+            {!backendCheck.success ? (
               <Alert variant="error">
                 <div>
                   <p className="font-medium">{backendCheck.error || 'Check failed'}</p>
@@ -351,8 +354,7 @@ function APIConnectionTestContent() {
                   {backendCheck.hint && <p className="text-sm mt-1 text-gray-600">{backendCheck.hint}</p>}
                 </div>
               </Alert>
-            )}
-            {backendCheck.summary && (
+            ) : backendCheck.summary && Object.keys(backendCheck.summary).length > 0 ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="text-3xl font-bold text-green-600">
@@ -373,7 +375,11 @@ function APIConnectionTestContent() {
                   <div className="text-sm text-gray-600 dark:text-gray-400">❌ Unregistered Modules</div>
                 </div>
               </div>
-            )}
+            ) : backendCheck.success ? (
+              <Alert variant="info">
+                <p>Check completed successfully, but no summary data available.</p>
+              </Alert>
+            ) : null}
 
             {backendCheck.output && (
               <div className="mt-4">
