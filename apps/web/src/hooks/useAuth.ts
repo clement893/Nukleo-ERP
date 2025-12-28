@@ -98,7 +98,7 @@ export function useAuth() {
       logger.error('Logout error', err instanceof Error ? err : new Error(String(err)));
     } finally {
       // Clear tokens securely
-      TokenStorage.removeTokens();
+      await TokenStorage.removeTokens();
       logout();
       router.push('/auth/login');
     }
