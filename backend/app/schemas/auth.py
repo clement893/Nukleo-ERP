@@ -84,3 +84,9 @@ class UserResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
+class TokenWithUser(BaseModel):
+    """Token response schema with user data"""
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+    user: UserResponse = Field(..., description="User data")

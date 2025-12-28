@@ -22,7 +22,7 @@ from app.core.rate_limit import rate_limit_decorator
 from app.core.logging import logger
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.models.user import User
-from app.schemas.auth import Token, TokenData, UserCreate, UserResponse, RefreshTokenRequest
+from app.schemas.auth import Token, TokenData, UserCreate, UserResponse, RefreshTokenRequest, TokenWithUser
 from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
@@ -254,12 +254,12 @@ class LoginRequest(BaseModel):
     password: str
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=TokenWithUser)
 @rate_limit_decorator("5/minute")
 async def login(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> Token:
+) -> TokenWithUser:
     """
     Login endpoint - accepts both form-data (OAuth2) and JSON
     
@@ -420,8 +420,24 @@ async def login(
         except Exception:
             pass
 
+    # Convert user to UserResponse format
+    user_dict = {
+        "id": user.id,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "is_active": user.is_active,
+        "created_at": user.created_at.isoformat() if user.created_at else "",
+        "updated_at": user.updated_at.isoformat() if user.updated_at else "",
+    }
+    user_response = UserResponse.model_validate(user_dict)
+    
     # Return JSONResponse explicitly to work with rate limiting middleware
-    token_data = Token(access_token=access_token, token_type="bearer")
+    token_data = TokenWithUser(
+        access_token=access_token,
+        token_type="bearer",
+        user=user_response
+    )
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=token_data.model_dump()

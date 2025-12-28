@@ -35,13 +35,27 @@ export function useAuth() {
       try {
         setError(null);
         const response = await authAPI.login(credentials.email, credentials.password);
-        const { access_token, refresh_token, user: userData } = response.data;
+        const { access_token, user: userData } = response.data;
+
+        // Adapt user data to match store format
+        const userForStore = {
+          id: String(userData.id),
+          email: userData.email,
+          name: userData.first_name && userData.last_name 
+            ? `${userData.first_name} ${userData.last_name}` 
+            : userData.first_name || userData.last_name || userData.email,
+          is_active: userData.is_active ?? true,
+          is_verified: false, // Default value, update if available
+          is_admin: false, // Default value, update if available
+          created_at: userData.created_at,
+          updated_at: userData.updated_at,
+        };
 
         // Store tokens securely
-        await TokenStorage.setToken(access_token, refresh_token);
+        await TokenStorage.setToken(access_token);
 
         // Update store
-        login(userData, access_token, refresh_token);
+        login(userForStore, access_token);
 
         return { success: true, user: userData };
       } catch (err) {

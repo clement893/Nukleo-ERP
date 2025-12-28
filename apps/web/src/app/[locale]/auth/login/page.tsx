@@ -54,7 +54,21 @@ function LoginContent() {
       const response = await authAPI.login(email, password);
       const { access_token, user } = response.data;
 
-      login(user, access_token);
+      // Adapt user data to match store format
+      const userForStore = {
+        id: String(user.id),
+        email: user.email,
+        name: user.first_name && user.last_name 
+          ? `${user.first_name} ${user.last_name}` 
+          : user.first_name || user.last_name || user.email,
+        is_active: user.is_active ?? true,
+        is_verified: false, // Default value, update if available
+        is_admin: false, // Default value, update if available
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+      };
+
+      login(userForStore, access_token);
       router.push('/dashboard'); // Will automatically use current locale
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
