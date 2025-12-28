@@ -17,7 +17,6 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import { handleApiError, isClientError, isNetworkError } from './errors/api';
 import { TokenStorage } from './auth/tokenStorage';
 import { logger } from '@/lib/logger';
-import { getApiUrl } from './api';
 
 /**
  * API base URL with trailing slash removed to avoid double slashes

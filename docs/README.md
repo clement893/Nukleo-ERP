@@ -8,6 +8,10 @@ Bienvenue dans la documentation du template MODELE-NEXTJS-FULLSTACK.
 - [Guide de Démarrage](../GETTING_STARTED.md) - Installation et configuration complète
 - [Guide de Développement](./DEVELOPMENT.md) - Outils et workflows de développement
 - [Guide de Contribution](../CONTRIBUTING.md) - Comment contribuer au projet
+- [Guide Rapide Base de Données](./QUICK_DATABASE_GUIDE.md) - Guide rapide pour la base de données
+- [Configuration Railway CLI](./RAILWAY_CLI_SETUP.md) - Configuration de Railway CLI
+- [Configuration Bootstrap Key](./BOOTSTRAP_KEY_SETUP.md) - Configuration de la clé bootstrap
+- [Obtenir un Token JWT](./HOW_TO_GET_JWT_TOKEN.md) - Comment obtenir un token JWT pour les tests
 
 ### 🧪 Tests
 - [Guide des Tests](./TESTING.md) - Comment écrire et exécuter les tests
@@ -24,6 +28,7 @@ Bienvenue dans la documentation du template MODELE-NEXTJS-FULLSTACK.
 ### 📦 Développement
 - [Utilitaires](./UTILS.md) - Documentation des utilitaires
 - [Composants UI](../apps/web/src/components/README.md) - Documentation des composants
+- [Pages et Fonctionnalités](./APP_PAGES_AND_FEATURES.md) - Liste complète des pages et fonctionnalités
 
 ### 📊 Monitoring
 - [Monitoring et Observabilité](./MONITORING.md) - Configuration du monitoring
@@ -45,7 +50,17 @@ docs/
 ├── SUBSCRIPTIONS_GUIDE.md       # Guide des abonnements
 ├── UTILS.md                     # Utilitaires
 ├── MONITORING.md                # Monitoring
-└── EMAIL_SYSTEM.md              # Système email
+├── EMAIL_SYSTEM.md              # Système email
+├── QUICK_DATABASE_GUIDE.md      # Guide rapide base de données
+├── RAILWAY_CLI_SETUP.md         # Configuration Railway CLI
+├── BOOTSTRAP_KEY_SETUP.md       # Configuration bootstrap key
+├── HOW_TO_GET_JWT_TOKEN.md      # Comment obtenir un token JWT
+├── APP_PAGES_AND_FEATURES.md    # Liste des pages et fonctionnalités
+└── archive/                     # Documentation archivée (historique)
+    ├── README.md                # Description de l'archive
+    ├── progress/                 # Rapports de progression
+    ├── plans/                   # Documents de planification
+    └── audits/                  # Rapports d'audit
 ```
 
 ---
