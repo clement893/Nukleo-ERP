@@ -8,12 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.api.v1.endpoints.auth import get_current_user
 from app.models.user import User
+from app.dependencies import is_admin_or_superadmin
 from typing import Dict, List, Any
 import os
 import subprocess
 import json
 import asyncio
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api-connection-check", tags=["api-connection-check"])
 
@@ -159,8 +163,9 @@ async def check_frontend_connections(
     
     Requires authentication and admin or superadmin role
     """
-    # Check if user is admin or superadmin
-    if not (current_user.is_superadmin or current_user.is_admin):
+    # Check if user is admin or superadmin (using async function to avoid lazy load)
+    user_is_admin = await is_admin_or_superadmin(current_user, db)
+    if not user_is_admin:
         raise HTTPException(
             status_code=403,
             detail="This endpoint requires admin or superadmin privileges"
@@ -220,8 +225,9 @@ async def check_backend_endpoints(
     
     Requires authentication and admin or superadmin role
     """
-    # Check if user is admin or superadmin
-    if not (current_user.is_superadmin or current_user.is_admin):
+    # Check if user is admin or superadmin (using async function to avoid lazy load)
+    user_is_admin = await is_admin_or_superadmin(current_user, db)
+    if not user_is_admin:
         raise HTTPException(
             status_code=403,
             detail="This endpoint requires admin or superadmin privileges"
@@ -314,16 +320,16 @@ async def get_connection_status(
     Requires authentication
     """
     try:
-        # Check if user is admin or superadmin (with error handling)
-        is_admin = False
+        # Check if user is admin or superadmin (using async function to avoid lazy load)
         try:
-            is_admin = bool(current_user.is_superadmin or current_user.is_admin)
+            user_is_admin = await is_admin_or_superadmin(current_user, db)
         except Exception as e:
             # If we can't check admin status, log but don't fail
             logger.warning(f"Could not check admin status: {e}")
+            user_is_admin = False
         
         # If not admin, return basic status without running checks
-        if not is_admin:
+        if not user_is_admin:
             return {
                 "success": True,
                 "frontend": {
