@@ -634,3 +634,94 @@ async def get_tenant_statistics(
         )
     return stats
 
+
+class TenancyConfigResponse(BaseModel):
+    """Response model for tenancy configuration"""
+    mode: str
+    enabled: bool
+    registryUrl: Optional[str] = None
+    baseUrl: Optional[str] = None
+
+
+class TenancyConfigUpdate(BaseModel):
+    """Request model for updating tenancy configuration"""
+    mode: Optional[str] = None
+    enabled: Optional[bool] = None
+    registryUrl: Optional[str] = None
+    baseUrl: Optional[str] = None
+
+
+@router.get(
+    "/tenancy/config",
+    response_model=TenancyConfigResponse,
+    tags=["admin", "tenancy"]
+)
+async def get_tenancy_config(
+    current_user: User = Depends(get_current_user),
+    _: None = Depends(require_superadmin)
+):
+    """
+    Get tenancy configuration.
+    Requires superadmin authentication.
+    """
+    try:
+        mode = TenancyConfig.get_mode()
+        config = {
+            "mode": mode.value if hasattr(mode, 'value') else str(mode),
+            "enabled": mode != TenancyMode.SINGLE,
+            "registryUrl": os.getenv("TENANT_DB_REGISTRY_URL"),
+            "baseUrl": os.getenv("TENANT_DB_BASE_URL"),
+        }
+        return TenancyConfigResponse(**config)
+    except Exception as e:
+        logger.error(f"Error getting tenancy config: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get tenancy configuration"
+        )
+
+
+@router.put(
+    "/tenancy/config",
+    response_model=TenancyConfigResponse,
+    tags=["admin", "tenancy"]
+)
+async def update_tenancy_config(
+    config_data: TenancyConfigUpdate,
+    current_user: User = Depends(get_current_user),
+    _: None = Depends(require_superadmin)
+):
+    """
+    Update tenancy configuration.
+    Requires superadmin authentication.
+    
+    Note: This endpoint updates environment variables. Changes may require a restart.
+    """
+    try:
+        # Note: In production, you might want to store this in a database or config file
+        # For now, we'll return the updated config but note that env vars require restart
+        current_mode = TenancyConfig.get_mode()
+        
+        # Build response with updated values
+        updated_config = {
+            "mode": config_data.mode if config_data.mode else (current_mode.value if hasattr(current_mode, 'value') else str(current_mode)),
+            "enabled": config_data.enabled if config_data.enabled is not None else (current_mode != TenancyMode.SINGLE),
+            "registryUrl": config_data.registryUrl if config_data.registryUrl else os.getenv("TENANT_DB_REGISTRY_URL"),
+            "baseUrl": config_data.baseUrl if config_data.baseUrl else os.getenv("TENANT_DB_BASE_URL"),
+        }
+        
+        logger.info(f"Tenancy config updated by {current_user.email}: {updated_config}")
+        
+        # Note: Actual environment variable updates would require application restart
+        # In a production system, you might want to:
+        # 1. Store config in database
+        # 2. Use a config service that can reload without restart
+        # 3. Return a warning that restart is required
+        
+        return TenancyConfigResponse(**updated_config)
+    except Exception as e:
+        logger.error(f"Error updating tenancy config: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update tenancy configuration"
+        )

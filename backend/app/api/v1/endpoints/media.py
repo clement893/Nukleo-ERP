@@ -268,3 +268,81 @@ async def delete_media(
         pass
     
     return None
+
+
+class MediaValidationRequest(BaseModel):
+    """Request model for media validation"""
+    name: str
+    size: int
+    type: str
+
+
+class MediaValidationResponse(BaseModel):
+    """Response model for media validation"""
+    valid: bool
+    sanitizedName: Optional[str] = None
+    error: Optional[str] = None
+
+
+@router.post("/media/validate", response_model=MediaValidationResponse, tags=["media"])
+async def validate_media(
+    validation_data: MediaValidationRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Validate a media file before upload.
+    Checks file name, size, and MIME type.
+    """
+    try:
+        # Sanitize filename
+        sanitized_name = sanitize_filename(validation_data.name)
+        
+        # Check file size (max 10MB by default, can be configured)
+        max_size = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))  # 10MB default
+        if validation_data.size > max_size:
+            return MediaValidationResponse(
+                valid=False,
+                sanitizedName=sanitized_name,
+                error=f"File size exceeds maximum allowed size of {max_size / (1024 * 1024):.1f}MB"
+            )
+        
+        # Check MIME type (basic validation)
+        allowed_types = [
+            "image/jpeg", "image/png", "image/gif", "image/webp",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ]
+        
+        if validation_data.type and validation_data.type not in allowed_types:
+            return MediaValidationResponse(
+                valid=False,
+                sanitizedName=sanitized_name,
+                error=f"File type '{validation_data.type}' is not allowed"
+            )
+        
+        # Check filename extension matches MIME type (basic check)
+        if sanitized_name and "." in sanitized_name:
+            ext = sanitized_name.split(".")[-1].lower()
+            # Basic extension validation
+            allowed_extensions = ["jpg", "jpeg", "png", "gif", "webp", "pdf", "doc", "docx", "xls", "xlsx"]
+            if ext not in allowed_extensions:
+                return MediaValidationResponse(
+                    valid=False,
+                    sanitizedName=sanitized_name,
+                    error=f"File extension '.{ext}' is not allowed"
+                )
+        
+        return MediaValidationResponse(
+            valid=True,
+            sanitizedName=sanitized_name
+        )
+    except Exception as e:
+        logger.error(f"Error validating media: {e}", exc_info=True)
+        return MediaValidationResponse(
+            valid=False,
+            error=f"Validation error: {str(e)}"
+        )

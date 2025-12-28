@@ -240,5 +240,95 @@ async def delete_all_preferences(
     )
 
 
+@router.get("/preferences/notifications", tags=["user-preferences"])
+async def get_notification_preferences(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Get notification preferences for the current user"""
+    try:
+        service = UserPreferenceService(db)
+        preference = await service.get_preference(current_user.id, "notifications")
+        if not preference:
+            # Return default notification preferences if none exist
+            default_preferences = {
+                "email": {
+                    "enabled": True,
+                    "frequency": "instant",
+                    "types": {
+                        "marketing": False,
+                        "product": True,
+                        "security": True,
+                        "billing": True,
+                        "system": True,
+                    },
+                },
+                "push": {
+                    "enabled": False,
+                    "types": {
+                        "marketing": False,
+                        "product": True,
+                        "security": True,
+                        "billing": False,
+                        "system": False,
+                    },
+                },
+                "inApp": {
+                    "enabled": True,
+                    "types": {
+                        "marketing": False,
+                        "product": True,
+                        "security": True,
+                        "billing": True,
+                        "system": True,
+                    },
+                },
+            }
+            return JSONResponse(
+                content={"key": "notifications", "value": default_preferences},
+                status_code=200
+            )
+        # Clean the preference value to ensure JSON serialization
+        cleaned_value = clean_preference_value(preference.value)
+        return JSONResponse(
+            content={"key": preference.key, "value": cleaned_value},
+            status_code=200
+        )
+    except Exception as e:
+        logger.error(f"Error getting notification preferences: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get notification preferences"
+        )
+
+
+@router.put("/preferences/notifications", tags=["user-preferences"])
+async def update_notification_preferences(
+    preference_data: PreferenceUpdate = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Update notification preferences for the current user"""
+    try:
+        service = UserPreferenceService(db)
+        preference = await service.set_preference(
+            current_user.id,
+            "notifications",
+            preference_data.value
+        )
+        # Clean the preference value to ensure JSON serialization
+        cleaned_value = clean_preference_value(preference.value)
+        return JSONResponse(
+            content={"key": preference.key, "value": cleaned_value},
+            status_code=200
+        )
+    except Exception as e:
+        logger.error(f"Error updating notification preferences: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update notification preferences"
+        )
+
+
 
 
