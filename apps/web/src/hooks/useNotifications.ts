@@ -34,6 +34,7 @@ import {
   connectNotificationSocket,
   disconnectNotificationSocket,
 } from '@/lib/websocket/notificationSocket';
+import { logger } from '@/lib/logger';
 import type {
   Notification,
   NotificationFilters,
