@@ -50,8 +50,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     const userChanged = lastUserRef.current !== user;
     const tokenChanged = lastTokenRef.current !== token;
     
-    // Only reset authorization if we're going from authenticated to unauthenticated
-    // If we're going from unauthenticated to authenticated, keep the current state
+    // Detect authentication state transitions
     const wasAuthenticated = !!lastUserRef.current && !!lastTokenRef.current;
     const isNowAuthenticated = !!user && !!token;
     
@@ -83,7 +82,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
       setIsChecking(true);
       
       // Wait a bit for Zustand persist to hydrate
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Check authentication - use user and token directly instead of isAuthenticated function
       const tokenFromStorage = typeof window !== 'undefined' ? TokenStorage.getToken() : null;
@@ -100,7 +99,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
           isAuth,
           pathname,
           isAuthorized,
-          wasAuthenticated: !!lastUserRef.current && !!lastTokenRef.current,
+          wasAuthenticated,
           isNowAuthenticated: isAuth
         });
       }
