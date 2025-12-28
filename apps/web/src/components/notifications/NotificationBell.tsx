@@ -12,14 +12,14 @@ import Badge from '@/components/ui/Badge';
 import Dropdown from '@/components/ui/Dropdown';
 import type { DropdownItem } from '@/components/ui/Dropdown';
 import NotificationCenter from './NotificationCenter';
-import type { Notification } from './NotificationCenter';
+import type { NotificationUI } from '@/types/notification';
 
 export interface NotificationBellProps {
-  notifications: Notification[];
-  onMarkAsRead?: (id: string) => Promise<void>;
+  notifications: NotificationUI[];
+  onMarkAsRead?: (id: number) => Promise<void>;
   onMarkAllAsRead?: () => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
-  onActionClick?: (notification: Notification) => void;
+  onDelete?: (id: number) => Promise<void>;
+  onActionClick?: (notification: NotificationUI) => void;
   onViewAll?: () => void;
   className?: string;
 }

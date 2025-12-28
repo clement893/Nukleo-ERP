@@ -12,30 +12,14 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Bell, Check, X } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
-
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: string;
-  read: boolean;
-  actionUrl?: string;
-  actionLabel?: string;
-  icon?: React.ReactNode;
-  avatar?: string;
-  sender?: {
-    name: string;
-    avatar?: string;
-  };
-}
+import type { Notification as NotificationType, NotificationUI } from '@/types/notification';
 
 export interface NotificationCenterProps {
-  notifications: Notification[];
-  onMarkAsRead?: (id: string) => Promise<void>;
+  notifications: NotificationUI[];
+  onMarkAsRead?: (id: number) => Promise<void>;
   onMarkAllAsRead?: () => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
-  onActionClick?: (notification: Notification) => void;
+  onDelete?: (id: number) => Promise<void>;
+  onActionClick?: (notification: NotificationUI) => void;
   className?: string;
 }
 
@@ -48,7 +32,7 @@ export default function NotificationCenter({
   className,
 }: NotificationCenterProps) {
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
-  const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
+  const [localNotifications, setLocalNotifications] = useState<NotificationUI[]>(notifications);
 
   useEffect(() => {
     setLocalNotifications(notifications);
@@ -69,7 +53,7 @@ export default function NotificationCenter({
     return localNotifications.filter((n) => !n.read).length;
   }, [localNotifications]);
 
-  const handleMarkAsRead = async (id: string) => {
+  const handleMarkAsRead = async (id: number) => {
     setLocalNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
@@ -81,12 +65,12 @@ export default function NotificationCenter({
     await onMarkAllAsRead?.();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     setLocalNotifications((prev) => prev.filter((n) => n.id !== id));
     await onDelete?.(id);
   };
 
-  const getTypeStyles = (type: Notification['type']) => {
+  const getTypeStyles = (type: NotificationUI['notification_type']) => {
     switch (type) {
       case 'success':
         return 'border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/20';
@@ -217,14 +201,14 @@ export default function NotificationCenter({
                       </p>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatTimestamp(notification.timestamp)}
+                          {formatTimestamp(notification.created_at)}
                         </span>
-                        {notification.actionUrl && (
+                        {notification.action_url && (
                           <button
                             onClick={() => onActionClick?.(notification)}
                             className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                           >
-                            {notification.actionLabel || 'View'}
+                            {notification.action_label || 'View'}
                           </button>
                         )}
                       </div>
