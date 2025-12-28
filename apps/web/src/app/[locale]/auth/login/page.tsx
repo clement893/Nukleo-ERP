@@ -141,6 +141,7 @@ function LoginContent() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
+              maxLength={128}
               fullWidth
             />
 

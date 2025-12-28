@@ -305,9 +305,17 @@ async def login(
                 detail=f"Invalid form data: {str(e)}",
             )
     
+    # Normalize email (lowercase and trim) for consistent lookup
+    normalized_email = email.strip().lower() if email else None
+    if not normalized_email:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Email is required",
+        )
+    
     # Get user from database
     result = await db.execute(
-        User.__table__.select().where(User.email == email)
+        User.__table__.select().where(User.email == normalized_email)
     )
     user = result.scalar_one_or_none()
 
@@ -323,8 +331,8 @@ async def login(
             audit_log = await SecurityAuditLogger.log_authentication_event(
                 db=None,  # Create separate session to ensure persistence
                 event_type=SecurityEventType.LOGIN_FAILURE,
-                description=f"Failed login attempt for email: {email}",
-                user_email=email if user else None,
+                description=f"Failed login attempt for email: {normalized_email}",
+                user_email=normalized_email if user else None,
                 user_id=user.id if user else None,
                 ip_address=client_ip,
                 user_agent=user_agent,
@@ -339,15 +347,15 @@ async def login(
                 logger.error("❌ Login failure audit log returned None - logging may have failed silently")
         except Exception as e:
             # Don't fail the request if audit logging fails, but log prominently
-            error_msg = (
-                f"❌ FAILED TO LOG LOGIN FAILURE EVENT: {e}\n"
-                f"   Email: {email}\n"
-                f"   IP: {client_ip}\n"
-                f"   Error Type: {type(e).__name__}\n"
-                f"   Error Details: {str(e)}"
-            )
-            logger.error(error_msg, exc_info=True)
-            print(error_msg, flush=True)
+        error_msg = (
+            f"❌ FAILED TO LOG LOGIN FAILURE EVENT: {e}\n"
+            f"   Email: {normalized_email}\n"
+            f"   IP: {client_ip}\n"
+            f"   Error Type: {type(e).__name__}\n"
+            f"   Error Details: {str(e)}"
+        )
+        logger.error(error_msg, exc_info=True)
+        print(error_msg, flush=True)
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

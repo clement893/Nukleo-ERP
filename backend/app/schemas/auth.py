@@ -36,22 +36,33 @@ class TokenData(BaseModel):
 class UserCreate(BaseModel):
     """User creation schema"""
     email: EmailStr = Field(..., description="User email address")
-    password: str = Field(..., min_length=8, description="User password")
+    password: str = Field(..., min_length=8, max_length=128, description="User password")
     first_name: Optional[str] = Field(None, max_length=100, description="First name")
     last_name: Optional[str] = Field(None, max_length=100, description="Last name")
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        """Validate password strength"""
-        if len(v) < 8:
+        """Validate password strength - standardized with user.py schema"""
+        if not v or len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
+        if len(v) > 128:
+            raise ValueError("Password cannot exceed 128 characters")
+        # Check for at least one letter and one number
+        if not any(c.isalpha() for c in v):
+            raise ValueError("Password must contain at least one letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        # Check for uppercase and lowercase (recommended but not required for compatibility)
         if not any(c.isupper() for c in v):
             raise ValueError("Password must contain at least one uppercase letter")
         if not any(c.islower() for c in v):
             raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
+        # Check for common weak passwords
+        weak_passwords = ['password', '12345678', 'qwerty', 'abc123', 'password123', 
+                         'admin123', 'letmein', 'welcome', 'monkey', '1234567890']
+        if v.lower() in weak_passwords:
+            raise ValueError("Password is too weak. Please choose a stronger password")
         return v
 
     model_config = {

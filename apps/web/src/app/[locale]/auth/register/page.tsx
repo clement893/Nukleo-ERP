@@ -151,6 +151,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
+              maxLength={128}
               helperText="Must be at least 8 characters with uppercase, lowercase, and a number"
               fullWidth
             />
@@ -162,6 +163,7 @@ export default function RegisterPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               placeholder="••••••••"
+              maxLength={128}
               error={password !== confirmPassword && confirmPassword ? 'Passwords do not match' : undefined}
               fullWidth
             />
