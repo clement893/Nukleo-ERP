@@ -180,9 +180,19 @@ async def check_frontend_connections(
     result = await run_node_script("scripts/check-api-connections.js", args)
     
     if not result.get("success"):
+        # If script not found, return a helpful message instead of 500 error
+        error_msg = result.get('error', result.get('stderr', 'Unknown error'))
+        if "Script not found" in error_msg or "not found" in error_msg.lower():
+            return {
+                "success": False,
+                "error": "API connection check scripts are not available in this environment.",
+                "message": "This feature requires Node.js scripts that are not included in the production backend container.",
+                "hint": "To use this feature, ensure scripts/check-api-connections.js is available in the container, or run the check locally using: pnpm api:check",
+                "summary": {}
+            }
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to run check: {result.get('error', result.get('stderr', 'Unknown error'))}"
+            detail=f"Failed to run check: {error_msg}"
         )
     
     # Parse the output to extract structured data
@@ -236,9 +246,19 @@ async def check_backend_endpoints(
     result = await run_node_script("scripts/check-api-connections-backend.js")
     
     if not result.get("success"):
+        # If script not found, return a helpful message instead of 500 error
+        error_msg = result.get('error', result.get('stderr', 'Unknown error'))
+        if "Script not found" in error_msg or "not found" in error_msg.lower():
+            return {
+                "success": False,
+                "error": "API connection check scripts are not available in this environment.",
+                "message": "This feature requires Node.js scripts that are not included in the production backend container.",
+                "hint": "To use this feature, ensure scripts/check-api-connections-backend.js is available in the container, or run the check locally using: pnpm api:check:backend",
+                "summary": {}
+            }
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to run check: {result.get('error', result.get('stderr', 'Unknown error'))}"
+            detail=f"Failed to run check: {error_msg}"
         )
     
     output = result.get("stdout", "")
@@ -287,9 +307,18 @@ async def generate_report(
     )
     
     if not result.get("success"):
+        # If script not found, return a helpful message instead of 500 error
+        error_msg = result.get('error', result.get('stderr', 'Unknown error'))
+        if "Script not found" in error_msg or "not found" in error_msg.lower():
+            return {
+                "success": False,
+                "error": "Report generation scripts are not available in this environment.",
+                "message": "This feature requires Node.js scripts that are not included in the production backend container.",
+                "hint": "To use this feature, ensure scripts/generate-api-connection-report.js is available in the container, or run the report locally using: pnpm api:report",
+            }
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate report: {result.get('error', result.get('stderr', 'Unknown error'))}"
+            detail=f"Failed to generate report: {error_msg}"
         )
     
     # Try to read the generated report
@@ -351,10 +380,25 @@ async def get_connection_status(
                 current_user=current_user,
                 db=db
             )
-        except Exception as e:
+            # If the result indicates scripts are not available, extract that info
+            if not frontend_result.get("success") and "not available" in str(frontend_result.get("error", "")).lower():
+                frontend_result = {
+                    "success": False,
+                    "error": frontend_result.get("error", "Scripts not available"),
+                    "message": frontend_result.get("message", "Node.js scripts required"),
+                    "summary": {}
+                }
+        except HTTPException as e:
             frontend_result = {
                 "success": False,
-                "error": str(e),
+                "error": e.detail,
+                "summary": {}
+            }
+        except Exception as e:
+            logger.error(f"Error checking frontend connections: {e}", exc_info=True)
+            frontend_result = {
+                "success": False,
+                "error": f"An unexpected error occurred: {str(e)}",
                 "summary": {}
             }
         
@@ -363,10 +407,25 @@ async def get_connection_status(
                 current_user=current_user,
                 db=db
             )
-        except Exception as e:
+            # If the result indicates scripts are not available, extract that info
+            if not backend_result.get("success") and "not available" in str(backend_result.get("error", "")).lower():
+                backend_result = {
+                    "success": False,
+                    "error": backend_result.get("error", "Scripts not available"),
+                    "message": backend_result.get("message", "Node.js scripts required"),
+                    "summary": {}
+                }
+        except HTTPException as e:
             backend_result = {
                 "success": False,
-                "error": str(e),
+                "error": e.detail,
+                "summary": {}
+            }
+        except Exception as e:
+            logger.error(f"Error checking backend endpoints: {e}", exc_info=True)
+            backend_result = {
+                "success": False,
+                "error": f"An unexpected error occurred: {str(e)}",
                 "summary": {}
             }
         
