@@ -74,6 +74,7 @@ export default function NotificationBellConnected({
   return (
     <NotificationBell
       notifications={notificationUIs}
+      unreadCount={unreadCount}
       onMarkAsRead={markAsRead}
       onMarkAllAsRead={markAllAsRead}
       onDelete={deleteNotification}

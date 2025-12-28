@@ -16,6 +16,8 @@ import type { NotificationUI } from '@/types/notification';
 
 export interface NotificationBellProps {
   notifications: NotificationUI[];
+  /** Total unread count (if provided, used instead of calculating from notifications) */
+  unreadCount?: number;
   onMarkAsRead?: (id: number) => Promise<void>;
   onMarkAllAsRead?: () => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
@@ -26,6 +28,7 @@ export interface NotificationBellProps {
 
 export default function NotificationBell({
   notifications,
+  unreadCount: providedUnreadCount,
   onMarkAsRead,
   onMarkAllAsRead,
   onDelete,
@@ -36,7 +39,8 @@ export default function NotificationBell({
   const [isOpen, setIsOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Use provided unreadCount if available, otherwise calculate from notifications
+  const unreadCount = providedUnreadCount ?? notifications.filter((n) => !n.read).length;
   const recentNotifications = notifications.slice(0, 5);
 
   useEffect(() => {
