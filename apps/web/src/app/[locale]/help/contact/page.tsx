@@ -22,7 +22,6 @@ export default function ContactSupportPage() {
   const handleSubmit = async (data: { email: string; subject: string; message: string; category: string; priority: string }) => {
     try {
       await supportTicketsAPI.create({
-        email: data.email,
         subject: data.subject,
         category: data.category as 'technical' | 'billing' | 'feature' | 'general' | 'bug',
         priority: data.priority as 'low' | 'medium' | 'high' | 'urgent',
