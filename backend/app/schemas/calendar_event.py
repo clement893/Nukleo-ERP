@@ -20,19 +20,34 @@ class CalendarEventBase(BaseModel):
     date: date = Field(..., description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
     time: Optional[time] = Field(None, description="Event time")
-    # Use event_type internally to avoid conflict with Python's 'type' keyword
-    # We'll serialize it as 'type' for API compatibility using alias
-    # validation_alias maps SQLAlchemy model attribute 'type' to Pydantic field 'event_type'
-    # serialization_alias serializes 'event_type' as 'type' in JSON responses
+    # Use event_type internally, but accept 'type' from API via alias
+    # This avoids conflict with Python's 'type' keyword while maintaining API compatibility
     event_type: str = Field(
         default='other',
-        validation_alias='type',  # Read from SQLAlchemy model attribute 'type' or API input 'type'
-        serialization_alias='type',  # Serialize as 'type' for API
+        alias='type',  # Accept 'type' from API input
         description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
     )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
     color: Optional[str] = Field(default='#3B82F6', description="Hex color code for the event")
+    
+    @model_validator(mode='before')
+    @classmethod
+    def convert_sqlalchemy_type_to_event_type(cls, data: Any) -> Any:
+        """Convert 'type' attribute from SQLAlchemy model to 'event_type' for Pydantic"""
+        # Handle SQLAlchemy model instance (when from_attributes=True is used)
+        if hasattr(data, 'type') and not isinstance(data, dict):
+            # Convert SQLAlchemy model to dict
+            result = {}
+            for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
+                       'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
+                if hasattr(data, key):
+                    result[key] = getattr(data, key)
+            # Map 'type' to 'type' (which will be read via alias as 'event_type')
+            if hasattr(data, 'type'):
+                result['type'] = getattr(data, 'type')
+            return result
+        return data
     
     @field_validator('event_type', mode='before')
     @classmethod
@@ -63,7 +78,6 @@ class CalendarEventUpdate(BaseModel):
     """Calendar event update schema"""
     model_config = ConfigDict(
         populate_by_name=True,
-        # Allow 'type' field to work despite being a Python built-in
         protected_namespaces=()
     )
     
@@ -72,14 +86,10 @@ class CalendarEventUpdate(BaseModel):
     date: Optional[date] = Field(None, description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
     time: Optional[time] = Field(None, description="Event time")
-    # Use event_type internally to avoid conflict with Python's 'type' keyword
-    # We'll serialize it as 'type' for API compatibility using alias
-    # validation_alias maps SQLAlchemy model attribute 'type' to Pydantic field 'event_type'
-    # serialization_alias serializes 'event_type' as 'type' in JSON responses
+    # Use event_type internally, but accept 'type' from API via alias
     event_type: Optional[str] = Field(
         None,
-        validation_alias='type',  # Read from SQLAlchemy model attribute 'type' or API input 'type'
-        serialization_alias='type',  # Serialize as 'type' for API
+        alias='type',  # Accept 'type' from API input
         description="Event type"
     )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
@@ -115,30 +125,26 @@ class CalendarEvent(CalendarEventBase):
 
     model_config = ConfigDict(
         from_attributes=True,
-        populate_by_name=True
+        populate_by_name=True,
+        serialize_by_alias=True  # Serialize 'event_type' as 'type' in JSON responses
     )
     
     @model_validator(mode='before')
     @classmethod
     def handle_sqlalchemy_type_field(cls, data: Any) -> Any:
-        """Convert 'type' field from SQLAlchemy model to 'event_type' for Pydantic"""
-        # Handle SQLAlchemy model instance
-        if hasattr(data, '__dict__') and hasattr(data, 'type'):
-            if not isinstance(data, dict):
-                # Convert SQLAlchemy model to dict
-                result = {}
-                for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
-                           'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
-                    if hasattr(data, key):
-                        result[key] = getattr(data, key)
-                # Map 'type' to 'type' (which will be read via validation_alias as 'event_type')
-                if hasattr(data, 'type'):
-                    result['type'] = getattr(data, 'type')
-                return result
-        # Handle dict input - ensure 'type' key exists if it's from SQLAlchemy
-        elif isinstance(data, dict):
-            # If 'type' exists but 'event_type' doesn't, keep 'type' (validation_alias will handle it)
-            pass
+        """Convert 'type' attribute from SQLAlchemy model to dict with 'type' key for alias mapping"""
+        # Handle SQLAlchemy model instance (when from_attributes=True is used)
+        if hasattr(data, 'type') and not isinstance(data, dict):
+            # Convert SQLAlchemy model to dict
+            result = {}
+            for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
+                       'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
+                if hasattr(data, key):
+                    result[key] = getattr(data, key)
+            # Map 'type' attribute to 'type' key (which will be read via alias as 'event_type')
+            if hasattr(data, 'type'):
+                result['type'] = getattr(data, 'type')
+            return result
         return data
 
 
