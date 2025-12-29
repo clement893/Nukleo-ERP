@@ -79,7 +79,8 @@ def upgrade() -> None:
                 op.create_index('idx_opportunites_company_id', 'opportunites', ['company_id'])
     
     # Create opportunity_contacts junction table if it doesn't exist
-    if 'opportunity_contacts' not in existing_tables:
+    # Only create if opportunites table exists (it might not exist in all databases)
+    if 'opportunity_contacts' not in existing_tables and 'opportunites' in existing_tables:
         op.create_table(
             'opportunity_contacts',
             sa.Column('opportunity_id', postgresql.UUID(as_uuid=True), nullable=False),
