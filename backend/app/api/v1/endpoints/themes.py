@@ -359,7 +359,7 @@ async def update_theme(
     Update an existing theme.
     Requires superadmin authentication.
     If is_active=True, automatically deactivates all other themes.
-    TemplateTheme (ID 32) can be updated but its name cannot be changed.
+    TemplateTheme (ID 32) and TemplateTheme2 (ID 33) can be updated but their names cannot be changed.
     """
     # Prevent modification of TemplateTheme name (ID 32)
     if theme_id == 32:
@@ -368,6 +368,15 @@ async def update_theme(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Cannot modify display_name of TemplateTheme (ID 32). Only config can be updated."
+            )
+    
+    # Prevent modification of TemplateTheme2 name (ID 33)
+    if theme_id == 33:
+        # Allow config updates but prevent name/display_name changes
+        if theme_data.display_name is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot modify display_name of TemplateTheme2 (ID 33). Only config can be updated."
             )
     
     result = await db.execute(select(Theme).where(Theme.id == theme_id))
@@ -482,13 +491,20 @@ async def delete_theme(
     Delete a theme.
     Requires superadmin authentication.
     Cannot delete the active theme.
-    Cannot delete TemplateTheme (ID 32).
+    Cannot delete TemplateTheme (ID 32) or TemplateTheme2 (ID 33).
     """
     # Prevent deletion of TemplateTheme (ID 32)
     if theme_id == 32:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot delete TemplateTheme (ID 32). This is a protected system theme."
+        )
+    
+    # Prevent deletion of TemplateTheme2 (ID 33)
+    if theme_id == 33:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete TemplateTheme2 (ID 33). This is a protected system theme."
         )
     
     result = await db.execute(select(Theme).where(Theme.id == theme_id))

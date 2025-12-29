@@ -15,8 +15,9 @@ import { FontUploader } from '@/components/theme/FontUploader';
 import { Card, Button, Alert } from '@/components/ui';
 import type { Theme, ThemeConfig } from '@modele/types';
 import type { ThemeFormData } from '../types';
-import { X, Save } from 'lucide-react';
+import { X, Save, RotateCcw } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { DEFAULT_THEME_CONFIG } from '@/lib/theme/default-theme-config';
 
 interface ThemeEditorProps {
   theme: Theme | null;
@@ -24,10 +25,12 @@ interface ThemeEditorProps {
   onCancel: () => void;
 }
 
-// Check if theme is TemplateTheme (ID 32 or name 'template-theme')
+// Check if theme is TemplateTheme (ID 32) or TemplateTheme2 (ID 33)
 function isTemplateTheme(theme: Theme | null): boolean {
   if (!theme) return false;
-  return theme.id === 32 || theme.name === 'template-theme' || theme.name === 'TemplateTheme';
+  return theme.id === 32 || theme.id === 33 || 
+         theme.name === 'template-theme' || theme.name === 'TemplateTheme' ||
+         theme.name === 'template-theme2' || theme.name === 'TemplateTheme2';
 }
 
 export function ThemeEditor({ theme, onSave, onCancel }: ThemeEditorProps) {
@@ -49,6 +52,7 @@ export function ThemeEditor({ theme, onSave, onCancel }: ThemeEditorProps) {
   });
 
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jsonValidationError, setJsonValidationError] = useState<string | null>(null);
   const [isJSONValid, setIsJSONValid] = useState(true);
@@ -140,6 +144,60 @@ export function ThemeEditor({ theme, onSave, onCancel }: ThemeEditorProps) {
   const handleJSONValidationChange = (isValid: boolean, error: string | null) => {
     setIsJSONValid(isValid);
     setJsonValidationError(error);
+  };
+
+  const handleResetToDefault = async () => {
+    if (!theme || !isTemplate) {
+      return;
+    }
+
+    try {
+      setResetting(true);
+      setError(null);
+
+      // Use DEFAULT_THEME_CONFIG as the new config
+      const defaultConfig = { ...DEFAULT_THEME_CONFIG } as ThemeConfig;
+
+      // Update the config in state immediately for preview
+      updateConfig(defaultConfig);
+
+      // Prepare updated form data with default values
+      const updatedFormData: ThemeFormData = {
+        ...formData,
+        primary_color: defaultConfig.primary_color || '#2563eb',
+        secondary_color: defaultConfig.secondary_color || '#6366f1',
+        danger_color: defaultConfig.danger_color || '#dc2626',
+        warning_color: defaultConfig.warning_color || '#b45309',
+        info_color: defaultConfig.info_color || '#0891b2',
+        success_color: defaultConfig.success_color || '#047857',
+        font_family: defaultConfig.font_family || 'Inter',
+        border_radius: defaultConfig.border_radius || '8px',
+        mode: (defaultConfig.mode || 'system') as 'light' | 'dark' | 'system',
+      };
+
+      // Update form data state
+      setFormData(updatedFormData);
+
+      // Clear selected fonts (default config doesn't have custom fonts)
+      setSelectedFontIds([]);
+
+      // Save the default config with updated form data
+      await onSave(defaultConfig, updatedFormData);
+    } catch (err) {
+      let errorMessage = 'Erreur lors de la réinitialisation aux valeurs par défaut';
+      
+      logger.error('[ThemeEditor] Reset to default error', err instanceof Error ? err : new Error(String(err)), {
+        context: 'ThemeEditor.resetToDefault',
+      });
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setResetting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -251,7 +309,21 @@ export function ThemeEditor({ theme, onSave, onCancel }: ThemeEditorProps) {
 
         {isTemplate && (
           <Alert variant="warning" title="Thème Template" className="mb-4">
-            Ce thème est le TemplateTheme. Seule la configuration (couleurs, polices, etc.) peut être modifiée. Le nom et la description ne peuvent pas être changés.
+            <div className="space-y-2">
+              <p>
+                Ce thème est un TemplateTheme (TemplateTheme ou TemplateTheme2). Seule la configuration (couleurs, polices, etc.) peut être modifiée. Le nom et la description ne peuvent pas être changés.
+              </p>
+              <Button
+                onClick={handleResetToDefault}
+                variant="outline"
+                size="sm"
+                disabled={resetting || saving}
+                className="mt-2"
+              >
+                <RotateCcw className={`w-4 h-4 mr-2 ${resetting ? 'animate-spin' : ''}`} />
+                {resetting ? 'Réinitialisation...' : 'Réinitialiser aux valeurs par défaut'}
+              </Button>
+            </div>
           </Alert>
         )}
 
@@ -281,18 +353,30 @@ export function ThemeEditor({ theme, onSave, onCancel }: ThemeEditorProps) {
           )}
         </div>
 
-        <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
-          <Button onClick={onCancel} variant="outline" disabled={saving}>
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant="primary"
-            disabled={saving || (state.activeTab === 'json' && !isJSONValid)}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-          </Button>
+        <div className="flex justify-between items-center gap-3 mt-6 pt-6 border-t border-border">
+          {isTemplate && (
+            <Button
+              onClick={handleResetToDefault}
+              variant="outline"
+              disabled={resetting || saving}
+            >
+              <RotateCcw className={`w-4 h-4 mr-2 ${resetting ? 'animate-spin' : ''}`} />
+              {resetting ? 'Réinitialisation...' : 'Réinitialiser aux valeurs par défaut'}
+            </Button>
+          )}
+          <div className="flex gap-3 ml-auto">
+            <Button onClick={onCancel} variant="outline" disabled={saving || resetting}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSave}
+              variant="primary"
+              disabled={saving || resetting || (state.activeTab === 'json' && !isJSONValid)}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </Button>
+          </div>
         </div>
       </div>
     </Card>

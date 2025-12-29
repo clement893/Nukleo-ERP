@@ -318,6 +318,11 @@ class ClientService:
         Returns:
             Dictionary with dashboard statistics
         """
+        import time
+        from app.core.slow_query_logger import log_slow_query_async, SLOW_QUERY_THRESHOLD
+        
+        start_time = time.time()
+        
         # Get invoice stats
         invoice_query = select(
             func.count(Invoice.id).label("total"),

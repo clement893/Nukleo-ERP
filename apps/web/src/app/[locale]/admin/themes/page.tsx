@@ -50,12 +50,12 @@ function ThemesPageContent() {
   const handleSave = async (config: ThemeConfig, formData: ThemeFormData) => {
     try {
       if (editingTheme) {
-        // TemplateTheme (ID 32) can only have its config updated, not display_name or description
-        const isTemplateTheme = editingTheme.id === 32;
+        // TemplateTheme (ID 32) and TemplateTheme2 (ID 33) can only have their config updated, not display_name or description
+        const isTemplateTheme = editingTheme.id === 32 || editingTheme.id === 33;
         
         // Update existing theme
         if (isTemplateTheme) {
-          // Only update config for TemplateTheme
+          // Only update config for TemplateTheme/TemplateTheme2
           await updateTheme(editingTheme.id, {
             config,
           });

@@ -32,11 +32,13 @@ export function ThemeForm({ formData, onChange, config }: ThemeFormProps) {
           onChange={(e) => onChange('name', e.target.value)}
           placeholder="mon-theme"
           required
-          disabled={formData.name === 'template-theme' || formData.name === 'TemplateTheme'}
+          disabled={formData.name === 'template-theme' || formData.name === 'TemplateTheme' || 
+                   formData.name === 'template-theme2' || formData.name === 'TemplateTheme2'}
         />
         <p className="text-xs text-muted-foreground mt-1">
           Nom unique utilisé pour identifier le thème (sans espaces, en minuscules)
-          {(formData.name === 'template-theme' || formData.name === 'TemplateTheme') && (
+          {(formData.name === 'template-theme' || formData.name === 'TemplateTheme' ||
+            formData.name === 'template-theme2' || formData.name === 'TemplateTheme2') && (
             <span className="block mt-1 text-warning-600 dark:text-warning-400">
               ⚠ Le TemplateTheme ne peut pas avoir son nom modifié
             </span>
@@ -54,11 +56,13 @@ export function ThemeForm({ formData, onChange, config }: ThemeFormProps) {
           onChange={(e) => onChange('display_name', e.target.value)}
           placeholder="Mon Thème"
           required
-          disabled={formData.name === 'template-theme' || formData.name === 'TemplateTheme'}
+          disabled={formData.name === 'template-theme' || formData.name === 'TemplateTheme' ||
+                   formData.name === 'template-theme2' || formData.name === 'TemplateTheme2'}
         />
         <p className="text-xs text-muted-foreground mt-1">
           Nom affiché dans l'interface d'administration
-          {(formData.name === 'template-theme' || formData.name === 'TemplateTheme') && (
+          {(formData.name === 'template-theme' || formData.name === 'TemplateTheme' ||
+            formData.name === 'template-theme2' || formData.name === 'TemplateTheme2') && (
             <span className="block mt-1 text-warning-600 dark:text-warning-400">
               ⚠ Le TemplateTheme ne peut pas avoir son nom modifié
             </span>
@@ -76,11 +80,13 @@ export function ThemeForm({ formData, onChange, config }: ThemeFormProps) {
           onChange={(e) => onChange('description', e.target.value)}
           placeholder="Description du thème..."
           rows={3}
-          disabled={formData.name === 'template-theme' || formData.name === 'TemplateTheme'}
+          disabled={formData.name === 'template-theme' || formData.name === 'TemplateTheme' ||
+                   formData.name === 'template-theme2' || formData.name === 'TemplateTheme2'}
         />
         <p className="text-xs text-muted-foreground mt-1">
           Description optionnelle du thème
-          {(formData.name === 'template-theme' || formData.name === 'TemplateTheme') && (
+          {(formData.name === 'template-theme' || formData.name === 'TemplateTheme' ||
+            formData.name === 'template-theme2' || formData.name === 'TemplateTheme2') && (
             <span className="block mt-1 text-warning-600 dark:text-warning-400">
               ⚠ Le TemplateTheme ne peut pas avoir sa description modifiée
             </span>
