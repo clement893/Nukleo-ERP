@@ -50,7 +50,7 @@ function GoogleAuthTestContent() {
       // Check if Google Auth is configured
       const response = await apiClient.get<{ auth_url?: string }>('/v1/auth/google', {
         params: {
-          redirect: window.location.origin + '/auth/google/test?success=true',
+          redirect: window.location.origin + '/auth/google/testing?success=true',
         },
       });
 

@@ -77,8 +77,8 @@ function StripeTestContent() {
       const baseUrl = window.location.origin;
       const response = await subscriptionsAPI.createCheckoutSession({
         plan_id: planId,
-        success_url: `${baseUrl}/stripe/test?success=true`,
-        cancel_url: `${baseUrl}/stripe/test?canceled=true`,
+        success_url: `${baseUrl}/stripe/testing?success=true`,
+        cancel_url: `${baseUrl}/stripe/testing?canceled=true`,
       });
 
       if (response.data?.url) {
@@ -102,7 +102,7 @@ function StripeTestContent() {
       setSuccess('');
 
       const baseUrl = window.location.origin;
-      const response = await subscriptionsAPI.createPortalSession(`${baseUrl}/stripe/test`);
+      const response = await subscriptionsAPI.createPortalSession(`${baseUrl}/stripe/testing`);
 
       if (response.data?.url) {
         setSuccess('Portal session created successfully! Redirecting...');

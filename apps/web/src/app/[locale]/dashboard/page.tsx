@@ -269,7 +269,7 @@ function DashboardContent() {
           </div>
           <Grid columns={{ mobile: 1, tablet: 2, desktop: 3 }} gap="normal">
           <ServiceTestCard
-            href="/ai/test"
+            href="/ai/testing"
             title="AI Test"
             description="Test OpenAI integration with chat completions and text generation"
             color="info"
@@ -280,7 +280,7 @@ function DashboardContent() {
             }
           />
           <ServiceTestCard
-            href="/email/test"
+            href="/email/testing"
             title="Email Test"
             description="Test SendGrid email service with test, welcome, and custom emails"
             color="secondary"
@@ -291,7 +291,7 @@ function DashboardContent() {
             }
           />
           <ServiceTestCard
-            href="/stripe/test"
+            href="/stripe/testing"
             title="Stripe Test"
             description="Test Stripe integration for subscriptions and payment processing"
             color="success"
@@ -302,7 +302,7 @@ function DashboardContent() {
             }
           />
           <ServiceTestCard
-            href="/auth/google/test"
+            href="/auth/google/testing"
             title="Google Auth Test"
             description="Test Google OAuth integration for authentication"
             color="warning"
@@ -313,7 +313,7 @@ function DashboardContent() {
             }
           />
           <ServiceTestCard
-            href="/sentry/test"
+            href="/sentry/testing"
             title="Sentry Test"
             description="Test Sentry error tracking and monitoring integration"
             color="error"

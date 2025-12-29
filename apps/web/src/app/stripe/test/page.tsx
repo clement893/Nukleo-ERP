@@ -2,6 +2,6 @@ import { redirect } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 
 export default function StripeTestRedirect() {
-  redirect(`/${routing.defaultLocale}/stripe/test`);
+  redirect(`/${routing.defaultLocale}/stripe/testing`);
 }
 

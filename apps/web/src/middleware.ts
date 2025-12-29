@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
     '/auth/login',
     '/auth/register',
     '/auth/callback', // OAuth callback - needs to be public to receive token
-    '/auth/google/test', // Google OAuth test page
+    '/auth/google/testing', // Google OAuth test page
     '/auth/forgot-password',
     '/auth/reset-password',
     '/pricing',
@@ -70,10 +70,10 @@ export async function middleware(request: NextRequest) {
     '/sitemap.xml',
     '/api/auth',
     // Test routes - should be public for testing purposes
-    '/email/test',
-    '/ai/test',
-    '/stripe/test',
-    '/sentry/test',
+    '/email/testing',
+    '/ai/testing',
+    '/stripe/testing',
+    '/sentry/testing',
   ];
 
   // Check if the route is public (check both with and without locale)
