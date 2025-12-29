@@ -18,7 +18,7 @@ export default function ContactDetailPage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [_deleting, setDeleting] = useState(false);
 
   const contactId = params?.id ? parseInt(String(params.id)) : null;
 
