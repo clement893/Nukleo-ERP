@@ -95,7 +95,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-muted dark:to-muted">
+    <div className="min-h-screen bg-background">
       {/* Mobile/Tablet Sidebar Overlay */}
       {mobileMenuOpen && (
         <div
@@ -142,11 +142,11 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
         </aside>
 
         {/* Main Content - Only this part changes during navigation */}
-        <div className="flex-1 flex flex-col min-w-0 w-full">
+        <div className="flex-1 flex flex-col min-w-0 w-full bg-background">
           {/* Page Content - This is the only part that updates on navigation */}
           <main 
             key={pathname} 
-            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8"
+            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8 bg-background"
           >
             {children}
           </main>
