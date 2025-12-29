@@ -293,13 +293,11 @@ export default function Sidebar({
                 title="Retour à l'accueil"
               >
                 <Home className="w-5 h-5" />
-                {!collapsed && !isMobile && !onClose && <span className="ml-2 text-sm">Accueil</span>}
               </button>
             )}
             {themeToggleComponent && (
               <div className="flex-shrink-0 flex items-center justify-center">
                 {themeToggleComponent}
-                {!collapsed && !isMobile && !onClose && <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Thème</span>}
               </div>
             )}
             {onLogoutClick && (
@@ -310,7 +308,6 @@ export default function Sidebar({
                 title="Déconnexion"
               >
                 <LogOut className="w-5 h-5" />
-                {!collapsed && !isMobile && !onClose && <span className="ml-2 text-sm">Déconnexion</span>}
               </button>
             )}
           </div>
