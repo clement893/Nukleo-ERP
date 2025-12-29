@@ -103,32 +103,20 @@ export default function LeoPage() {
       // apiClient.post returns response.data from axios, which is the FastAPI response
       // FastAPI returns ChatResponse directly, so response is already ChatResponse
       // But apiClient.post has return type ApiResponse<T>, so we extract to handle both cases
-      let chatResponse: ChatResponse;
-      
-      // Try to extract data - handle both direct response and wrapped response
       const extracted = extractApiData<ChatResponse>(response);
       
       // Check if extracted data has the expected structure
-      if (extracted && typeof extracted === 'object' && 'content' in extracted) {
-        chatResponse = extracted;
-      } else if (response && typeof response === 'object' && 'content' in response) {
-        // Response is already ChatResponse
-        chatResponse = response as ChatResponse;
-      } else {
-        // Last resort: try to find content in nested structure
-        const anyResponse = response as any;
-        if (anyResponse?.data?.content) {
-          chatResponse = anyResponse.data as ChatResponse;
-        } else {
-          console.error('AI Response structure:', { 
-            response, 
-            extracted,
-            responseType: typeof response,
-            responseKeys: response && typeof response === 'object' ? Object.keys(response) : [],
-          });
-          throw new Error('Aucune réponse reçue du service IA');
-        }
+      if (!extracted || typeof extracted !== 'object' || !('content' in extracted)) {
+        console.error('AI Response structure:', { 
+          response, 
+          extracted,
+          responseType: typeof response,
+          responseKeys: response && typeof response === 'object' ? Object.keys(response) : [],
+        });
+        throw new Error('Aucune réponse reçue du service IA');
       }
+      
+      const chatResponse: ChatResponse = extracted;
 
       if (!chatResponse || !chatResponse.content) {
         console.error('AI Response missing content:', { chatResponse });

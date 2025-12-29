@@ -20,8 +20,7 @@ import Select from '@/components/ui/Select';
 import { 
   leoDocumentationAPI, 
   type LeoDocumentation, 
-  type LeoDocumentationCreate, 
-  type LeoDocumentationUpdate,
+  type LeoDocumentationCreate,
   DocumentationCategory,
   DocumentationPriority 
 } from '@/lib/api/leo-documentation';
@@ -30,6 +29,7 @@ import { PageHeader, PageContainer } from '@/components/layout';
 import { useToast } from '@/components/ui';
 import { Plus, Edit, Trash2, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { clsx } from 'clsx';
+import { checkMySuperAdminStatus } from '@/lib/api/admin';
 
 const CATEGORY_LABELS: Record<DocumentationCategory, string> = {
   [DocumentationCategory.GENERAL]: 'Général',
@@ -59,7 +59,7 @@ const PRIORITY_COLORS: Record<DocumentationPriority, string> = {
 
 export default function LeoDocumentationPage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, token } = useAuthStore();
   const { showToast } = useToast();
   const [documentation, setDocumentation] = useState<LeoDocumentation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,19 +82,30 @@ export default function LeoDocumentationPage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/auth/login');
-      return;
-    }
+    const checkAccess = async () => {
+      if (!isAuthenticated()) {
+        router.push('/auth/login');
+        return;
+      }
 
-    // Check if user is superadmin
-    if (!user?.is_superadmin) {
-      router.push('/dashboard');
-      return;
-    }
+      // Check if user is superadmin
+      try {
+        const status = await checkMySuperAdminStatus(token || undefined);
+        if (!status.is_superadmin) {
+          router.push('/dashboard');
+          return;
+        }
+      } catch (err) {
+        logger.error('Failed to check superadmin status', err instanceof Error ? err : new Error(String(err)));
+        router.push('/dashboard');
+        return;
+      }
 
-    loadDocumentation();
-  }, [isAuthenticated, user, router]);
+      loadDocumentation();
+    };
+
+    checkAccess();
+  }, [isAuthenticated, user, token, router]);
 
   const loadDocumentation = async () => {
     try {
@@ -274,7 +285,7 @@ export default function LeoDocumentationPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold">{doc.title}</h3>
-                      <Badge variant={doc.is_active ? 'success' : 'secondary'}>
+                      <Badge variant={doc.is_active ? 'success' : 'default'}>
                         {doc.is_active ? (
                           <>
                             <Eye className="w-3 h-3 mr-1" />
@@ -290,7 +301,7 @@ export default function LeoDocumentationPage() {
                       <Badge className={clsx('text-white', PRIORITY_COLORS[doc.priority])}>
                         {PRIORITY_LABELS[doc.priority]}
                       </Badge>
-                      <Badge variant="outline">
+                      <Badge variant="default" className="border">
                         {CATEGORY_LABELS[doc.category]}
                       </Badge>
                     </div>
@@ -338,7 +349,7 @@ export default function LeoDocumentationPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Nouvelle documentation"
-        size="large"
+        size="lg"
       >
         <DocumentationForm
           formData={formData}
@@ -358,7 +369,7 @@ export default function LeoDocumentationPage() {
           resetForm();
         }}
         title="Modifier la documentation"
-        size="large"
+        size="lg"
       >
         <DocumentationForm
           formData={formData}
@@ -416,18 +427,18 @@ export default function LeoDocumentationPage() {
           setSelectedDoc(null);
         }}
         title={selectedDoc?.title || 'Aperçu'}
-        size="large"
+        size="lg"
       >
         {selectedDoc && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Badge variant={selectedDoc.is_active ? 'success' : 'secondary'}>
+              <Badge variant={selectedDoc.is_active ? 'success' : 'default'}>
                 {selectedDoc.is_active ? 'Actif' : 'Inactif'}
               </Badge>
               <Badge className={clsx('text-white', PRIORITY_COLORS[selectedDoc.priority])}>
                 {PRIORITY_LABELS[selectedDoc.priority]}
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="default" className="border">
                 {CATEGORY_LABELS[selectedDoc.category]}
               </Badge>
             </div>

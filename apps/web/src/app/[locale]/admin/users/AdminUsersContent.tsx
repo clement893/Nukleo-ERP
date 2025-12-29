@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { clsx } from 'clsx';
 import { getErrorMessage } from '@/lib/errors';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -311,8 +312,8 @@ function UserRolesDisplay({ userId }: { userId: number }) {
       {roles.map((role) => (
         <Badge 
           key={role.id} 
-          variant={role.is_active ? "default" : "secondary"} 
-          className="text-xs"
+          variant={role.is_active ? "default" : "default"} 
+          className={clsx("text-xs", !role.is_active && "opacity-60")}
           title={role.description || role.name}
         >
           {role.name}
