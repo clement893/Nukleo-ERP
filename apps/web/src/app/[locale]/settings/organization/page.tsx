@@ -18,11 +18,12 @@ import { useAuthStore } from '@/lib/store';
 import { OrganizationSettings } from '@/components/settings';
 import type { OrganizationSettingsData } from '@/components/settings';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
+import { Loading, Alert, Modal, Button } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errors';
-import { teamsAPI, type Team, type TeamSettings, type TeamListResponse } from '@/lib/api/teams';
+import { teamsAPI, type Team, type TeamSettings, type TeamListResponse, type TeamCreate } from '@/lib/api/teams';
+import { Plus } from 'lucide-react';
 
 export default function OrganizationSettingsPage() {
   const router = useRouter();
@@ -30,6 +31,9 @@ export default function OrganizationSettingsPage() {
   const { isAuthenticated, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasNoOrganization, setHasNoOrganization] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [organization, setOrganization] = useState<{
     id: string;
     name: string;
@@ -47,11 +51,7 @@ export default function OrganizationSettingsPage() {
     };
     timezone?: string;
     locale?: string;
-  }>({
-    id: '1',
-    name: '',
-    slug: '',
-  });
+  } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -95,7 +95,9 @@ export default function OrganizationSettingsPage() {
       }
       
       if (teamsData.length === 0) {
-        throw new Error('No organization found. Please create an organization first.');
+        setHasNoOrganization(true);
+        setIsLoading(false);
+        return;
       }
       
       // Find the team where the user is the owner
@@ -115,8 +117,12 @@ export default function OrganizationSettingsPage() {
       }
       
       if (!userTeam) {
-        throw new Error('No organization found. Please create an organization first.');
+        setHasNoOrganization(true);
+        setIsLoading(false);
+        return;
       }
+      
+      setHasNoOrganization(false);
       
       // Parse settings from team
       let teamSettings: {
@@ -186,12 +192,115 @@ export default function OrganizationSettingsPage() {
     }
   };
 
+  const handleCreateOrganization = async (data: OrganizationSettingsData) => {
+    try {
+      setIsCreating(true);
+      setError(null);
+      
+      // Generate slug from name if not provided
+      const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      
+      // Prepare team settings
+      const teamSettings: TeamSettings = {
+        email: data.email,
+        phone: data.phone,
+        website: data.website,
+        address: data.address ? JSON.stringify(data.address) : undefined,
+        timezone: data.timezone,
+        locale: data.locale,
+      };
+      
+      // Create the team
+      const teamData: TeamCreate = {
+        name: data.name,
+        slug: slug,
+        description: data.description,
+        settings: teamSettings,
+      };
+      
+      const response = await teamsAPI.createTeam(teamData);
+      
+      // Parse response
+      let newTeam: Team | null = null;
+      if (!response) {
+        throw new Error('Failed to create team: no response returned');
+      }
+      
+      if (typeof response === 'object' && 'data' in response && response.data) {
+        newTeam = response.data as Team;
+      } else if (typeof response === 'object' && 'id' in response) {
+        newTeam = response as unknown as Team;
+      } else {
+        logger.warn('Unexpected create team response format', response);
+        throw new Error('Failed to parse create team response: unexpected format');
+      }
+      
+      if (!newTeam) {
+        throw new Error('Failed to create organization: no data returned');
+      }
+      
+      // Parse settings from new team
+      let teamSettingsParsed: TeamSettings = {};
+      if (newTeam.settings && typeof newTeam.settings === 'object') {
+        teamSettingsParsed = newTeam.settings as TeamSettings;
+      } else if (typeof newTeam.settings === 'string') {
+        try {
+          teamSettingsParsed = JSON.parse(newTeam.settings) as TeamSettings;
+        } catch (e) {
+          logger.warn('Failed to parse new team settings', e);
+        }
+      }
+      
+      // Parse address from JSON string if it exists
+      let parsedAddress: {
+        line1: string;
+        line2?: string;
+        city: string;
+        state: string;
+        postalCode: string;
+        country: string;
+      } | undefined;
+      
+      if (teamSettingsParsed.address && typeof teamSettingsParsed.address === 'string') {
+        try {
+          parsedAddress = JSON.parse(teamSettingsParsed.address);
+        } catch (e) {
+          logger.warn('Failed to parse address from settings', e);
+        }
+      }
+      
+      // Update local state with created organization
+      setOrganization({
+        id: String(newTeam.id),
+        name: newTeam.name,
+        slug: newTeam.slug,
+        email: teamSettingsParsed.email as string | undefined,
+        phone: teamSettingsParsed.phone as string | undefined,
+        website: teamSettingsParsed.website as string | undefined,
+        address: parsedAddress,
+        timezone: (teamSettingsParsed.timezone as string | undefined) || 'UTC',
+        locale: (teamSettingsParsed.locale as string | undefined) || 'en-US',
+      });
+      
+      setHasNoOrganization(false);
+      setShowCreateModal(false);
+      logger.info('Organization created successfully');
+    } catch (error: unknown) {
+      logger.error('Failed to create organization', error instanceof Error ? error : new Error(String(error)));
+      const errorMessage = getErrorMessage(error) || t('errors.createFailed') || 'Failed to create organization. Please try again.';
+      setError(errorMessage);
+      throw error;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const handleSave = async (data: OrganizationSettingsData) => {
     try {
       setError(null);
       
-      if (!organization.id) {
-        throw new Error('Organization ID is missing');
+      if (!organization || !organization.id) {
+        throw new Error('Organization ID is missing. Please create an organization first.');
       }
       
       // Prepare team settings with additional information
@@ -309,6 +418,112 @@ export default function OrganizationSettingsPage() {
           <div className="flex items-center justify-center min-h-[400px]">
             <Loading />
           </div>
+        </PageContainer>
+      </ProtectedRoute>
+    );
+  }
+
+  // Show create organization prompt if no organization exists
+  if (hasNoOrganization || !organization) {
+    return (
+      <ProtectedRoute>
+        <PageContainer>
+          <PageHeader
+            title={t('title') || 'Organization Settings'}
+            description={t('description') || 'Manage your organization settings and configuration'}
+            breadcrumbs={[
+              { label: t('breadcrumbs.dashboard') || 'Dashboard', href: '/dashboard' },
+              { label: t('breadcrumbs.settings') || 'Settings', href: '/settings' },
+              { label: t('breadcrumbs.organization') || 'Organization' },
+            ]}
+          />
+
+          {error && (
+            <div className="mt-6">
+              <Alert variant="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            </div>
+          )}
+
+          <div className="mt-8">
+            <div className="bg-background border border-border rounded-lg p-8 text-center">
+              <h3 className="text-xl font-semibold mb-2">
+                {t('noOrganization.title') || 'No Organization Found'}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {t('noOrganization.description') || 'You need to create an organization to manage settings. Click the button below to get started.'}
+              </p>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {t('noOrganization.createButton') || 'Create Organization'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Create Organization Modal */}
+          <Modal
+            isOpen={showCreateModal}
+            onClose={() => {
+              setShowCreateModal(false);
+              setError(null);
+            }}
+            title={t('createModal.title') || 'Create Organization'}
+            size="lg"
+            footer={
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setError(null);
+                  }}
+                  disabled={isCreating}
+                >
+                  {t('createModal.cancel') || 'Cancel'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Trigger form submission - find the form inside the modal
+                    const modalContent = document.querySelector('[data-create-org-form]');
+                    const form = modalContent?.querySelector('form') as HTMLFormElement;
+                    if (form) {
+                      form.requestSubmit();
+                    }
+                  }}
+                  disabled={isCreating}
+                >
+                  {isCreating ? (
+                    <>
+                      <Loading className="w-4 h-4 mr-2" />
+                      {t('createModal.creating') || 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      {t('createModal.create') || 'Create'}
+                    </>
+                  )}
+                </Button>
+              </>
+            }
+          >
+            <div className="max-h-[70vh] overflow-y-auto">
+              <div data-create-org-form>
+                <OrganizationSettings
+                  organization={{
+                    id: '',
+                    name: '',
+                    slug: '',
+                  }}
+                  onSave={handleCreateOrganization}
+                />
+              </div>
+            </div>
+          </Modal>
         </PageContainer>
       </ProtectedRoute>
     );
