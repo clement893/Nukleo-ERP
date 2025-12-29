@@ -101,9 +101,9 @@ export default function ContactDetailPage() {
         <PageHeader
           title="Erreur"
           breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Module Commercial', href: '/dashboard/commercial' },
-            { label: 'Contacts', href: '/dashboard/commercial/contacts' },
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Module Commercial', href: `/${params?.locale || 'fr'}/dashboard/commercial` },
+            { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/commercial/contacts` },
             { label: 'Détail' },
           ]}
         />
@@ -127,9 +127,9 @@ export default function ContactDetailPage() {
         <PageHeader
           title="Contact non trouvé"
           breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Module Commercial', href: '/dashboard/commercial' },
-            { label: 'Contacts', href: '/dashboard/commercial/contacts' },
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Module Commercial', href: `/${params?.locale || 'fr'}/dashboard/commercial` },
+            { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/commercial/contacts` },
             { label: 'Détail' },
           ]}
         />
@@ -152,9 +152,9 @@ export default function ContactDetailPage() {
       <PageHeader
         title={`${contact.first_name} ${contact.last_name}`}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Commercial', href: '/dashboard/commercial' },
-          { label: 'Contacts', href: '/dashboard/commercial/contacts' },
+          { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+          { label: 'Module Commercial', href: `/${params?.locale || 'fr'}/dashboard/commercial` },
+          { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/commercial/contacts` },
           { label: `${contact.first_name} ${contact.last_name}` },
         ]}
       />
