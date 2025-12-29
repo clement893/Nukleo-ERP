@@ -22,7 +22,8 @@ export default function Progress({
 }: ProgressProps) {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
-  const sizes = {
+  const sizes: Record<Size, string> = {
+    xs: 'h-0.5',
     sm: 'h-1',
     md: 'h-2',
     lg: 'h-4',
