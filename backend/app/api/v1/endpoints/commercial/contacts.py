@@ -301,6 +301,47 @@ async def create_contact(
     # Load relationships
     await db.refresh(contact, ["company", "employee"])
     
+    # Regenerate presigned URL for photo if it exists and S3 is configured
+    photo_url = contact.photo_url
+    if photo_url and S3Service.is_configured():
+        try:
+            s3_service = S3Service()
+            # Try to extract file_key from presigned URL or use photo_url as file_key
+            file_key = None
+            
+            # If it's a presigned URL, try to extract the file_key from it
+            if photo_url.startswith('http'):
+                # Try to extract file_key from presigned URL
+                from urllib.parse import urlparse, parse_qs, unquote
+                parsed = urlparse(photo_url)
+                
+                # Check query params for 'key' parameter (some S3 presigned URLs have it)
+                query_params = parse_qs(parsed.query)
+                if 'key' in query_params:
+                    file_key = unquote(query_params['key'][0])
+                else:
+                    # Extract from path - remove bucket name if present
+                    path = parsed.path.strip('/')
+                    # Look for 'contacts/photos' in the path
+                    if 'contacts/photos' in path:
+                        # Find the position of 'contacts/photos' and take everything after
+                        idx = path.find('contacts/photos')
+                        if idx != -1:
+                            file_key = path[idx:]
+                    elif path.startswith('contacts/'):
+                        file_key = path
+            else:
+                # It's likely already a file_key
+                file_key = photo_url
+            
+            # Regenerate presigned URL if we have a file_key
+            if file_key:
+                photo_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+        except Exception as e:
+            logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
+            # Keep original URL if regeneration fails
+            pass
+    
     # Convert to response format
     contact_dict = {
         "id": contact.id,
@@ -311,7 +352,7 @@ async def create_contact(
         "position": contact.position,
         "circle": contact.circle,
         "linkedin": contact.linkedin,
-        "photo_url": contact.photo_url,
+        "photo_url": photo_url,
         "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,

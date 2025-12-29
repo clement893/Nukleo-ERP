@@ -421,6 +421,10 @@
     }
   },
   "admin": {
+    "roles": {
+      "title": "Roles Management",
+      "description": "Create and manage roles and their permissions"
+    },
     "Users": {
       "RoleDefaultPermissions": {
         "title": "Default Role Permissions",

@@ -86,8 +86,9 @@ function ContactsContent() {
     try {
       setLoading(true);
       setError(null);
-      const newContact = await contactsAPI.create(data as ContactCreate);
-      setContacts([...contacts, newContact]);
+      await contactsAPI.create(data as ContactCreate);
+      // Reload contacts to ensure we have the latest data with correct presigned URLs
+      await loadContacts();
       setShowCreateModal(false);
       showToast({
         message: 'Contact créé avec succès',
@@ -142,7 +143,8 @@ function ContactsContent() {
       setLoading(true);
       setError(null);
       await contactsAPI.delete(contactId);
-      setContacts(contacts.filter((c) => c.id !== contactId));
+      // Reload contacts to ensure we have the latest data
+      await loadContacts();
       if (selectedContact?.id === contactId) {
         setSelectedContact(null);
       }

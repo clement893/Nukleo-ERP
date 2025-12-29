@@ -386,6 +386,10 @@
     }
   },
   "admin": {
+    "roles": {
+      "title": "Gestion des rôles",
+      "description": "Créez et gérez les rôles et leurs permissions"
+    },
     "Users": {
       "RoleDefaultPermissions": {
         "title": "Permissions par Défaut des Rôles",
