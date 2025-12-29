@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
 import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Settings, Trash2, Edit } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { useToast } from '@/components/ui';
 
 // Types temporaires - à remplacer par les types générés depuis l'API
@@ -50,7 +50,6 @@ function PipelineClientContent() {
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<Opportunite[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   // Modals
   const [showPipelineModal, setShowPipelineModal] = useState(false);
@@ -131,8 +130,9 @@ function PipelineClientContent() {
         },
       ];
       setPipelines(mockPipelines);
-      if (mockPipelines.length > 0) {
-        setSelectedPipelineId(mockPipelines[0].id);
+      const firstPipeline = mockPipelines[0];
+      if (firstPipeline) {
+        setSelectedPipelineId(firstPipeline.id);
       }
       setLoading(false);
     }, 500);
