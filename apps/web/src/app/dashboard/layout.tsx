@@ -18,7 +18,6 @@ import {
   FolderKanban, 
   LogOut,
   Menu,
-  X,
   Shield,
   Home
 } from 'lucide-react';
@@ -73,7 +72,7 @@ function DashboardLayoutContent({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-muted dark:to-muted">
-      {/* Mobile Header */}
+          {/* Mobile Header */}
       <header className="lg:hidden bg-background shadow border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
               <h1 className="text-xl font-bold text-foreground">
@@ -85,25 +84,10 @@ function DashboardLayoutContent({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/')}
-              aria-label="Retour à l'accueil"
-              title="Retour à l'accueil"
-            >
-              <Home className="w-5 h-5" />
-            </Button>
-            <NotificationBellConnected />
-            <ThemeToggleWithIcon />
-            <Button
-              variant="ghost"
-              size="sm"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-            <Button variant="danger" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-1" />
-              Logout
+              <Menu className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -129,6 +113,17 @@ function DashboardLayoutContent({
           currentPath={pathname}
           className="h-full"
           user={user}
+          isMobile={true}
+          onClose={() => setMobileMenuOpen(false)}
+          onHomeClick={() => {
+            router.push('/');
+            setMobileMenuOpen(false);
+          }}
+          themeToggleComponent={<ThemeToggleWithIcon />}
+          onLogoutClick={() => {
+            handleLogout();
+            setMobileMenuOpen(false);
+          }}
         />
       </aside>
 

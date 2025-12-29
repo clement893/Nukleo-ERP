@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/lib/store';
@@ -41,6 +41,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profileFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -184,13 +185,58 @@ export default function ProfilePage() {
           <ProfileCard
             user={user}
             onEdit={() => {
-              // Scroll to form
-              document.getElementById('profile-form')?.scrollIntoView({ behavior: 'smooth' });
+              logger.debug('Edit profile button clicked');
+              // Scroll to form with proper handling
+              const scrollToForm = () => {
+                if (profileFormRef.current) {
+                  try {
+                    logger.debug('Scrolling to profile form');
+                    profileFormRef.current.scrollIntoView({ 
+                      behavior: 'smooth', 
+                      block: 'start',
+                      inline: 'nearest'
+                    });
+                    // Focus on first input field for better UX
+                    setTimeout(() => {
+                      const firstInput = profileFormRef.current?.querySelector('input');
+                      if (firstInput) {
+                        logger.debug('Focusing on first input field');
+                        firstInput.focus();
+                      }
+                    }, 500);
+                  } catch (error) {
+                    logger.warn('scrollIntoView failed, using fallback', error);
+                    // Fallback: use window.scrollTo if scrollIntoView fails
+                    const element = profileFormRef.current;
+                    if (element) {
+                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                      const offsetPosition = elementPosition - 100; // 100px offset from top
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      });
+                      setTimeout(() => {
+                        const firstInput = element.querySelector('input');
+                        if (firstInput) {
+                          firstInput.focus();
+                        }
+                      }, 500);
+                    }
+                  }
+                } else {
+                  logger.warn('profileFormRef.current is null');
+                }
+              };
+              
+              // Use requestAnimationFrame to ensure DOM is ready
+              requestAnimationFrame(() => {
+                setTimeout(scrollToForm, 100);
+              });
             }}
           />
 
           {/* Profile Form */}
-          <div id="profile-form">
+          <div id="profile-form" ref={profileFormRef}>
             <ProfileForm
               user={user}
               onSubmit={handleSubmit}

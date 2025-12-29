@@ -32,6 +32,8 @@ interface SidebarProps {
   onHomeClick?: () => void;
   themeToggleComponent?: ReactNode;
   onLogoutClick?: () => void;
+  onClose?: () => void; // For mobile menu close button
+  isMobile?: boolean; // To hide text labels in mobile mode
 }
 
 export default function Sidebar({
@@ -46,6 +48,8 @@ export default function Sidebar({
   onHomeClick,
   themeToggleComponent,
   onLogoutClick,
+  onClose,
+  isMobile = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -264,13 +268,23 @@ export default function Sidebar({
         )}
       </nav>
       
-      {/* Footer: Home, Theme Toggle, Logout (bottom left) */}
-      {(onHomeClick || themeToggleComponent || onLogoutClick) && (
+      {/* Footer: Close button (mobile), Home, Theme Toggle, Logout (bottom) */}
+      {(onClose || onHomeClick || themeToggleComponent || onLogoutClick) && (
         <div className="p-lg border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className={clsx(
             'flex items-center gap-2',
-            collapsed ? 'justify-center flex-col' : 'justify-start'
+            collapsed || isMobile ? 'justify-center flex-wrap' : 'justify-start'
           )}>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Fermer le menu"
+                title="Fermer le menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
             {onHomeClick && (
               <button
                 onClick={onHomeClick}
@@ -279,13 +293,13 @@ export default function Sidebar({
                 title="Retour à l'accueil"
               >
                 <Home className="w-5 h-5" />
-                {!collapsed && <span className="ml-2 text-sm">Accueil</span>}
+                {!collapsed && !isMobile && <span className="ml-2 text-sm">Accueil</span>}
               </button>
             )}
             {themeToggleComponent && (
-              <div className="flex-shrink-0 flex items-center">
+              <div className="flex-shrink-0 flex items-center justify-center">
                 {themeToggleComponent}
-                {!collapsed && <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Thème</span>}
+                {!collapsed && !isMobile && <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Thème</span>}
               </div>
             )}
             {onLogoutClick && (
@@ -296,7 +310,7 @@ export default function Sidebar({
                 title="Déconnexion"
               >
                 <LogOut className="w-5 h-5" />
-                {!collapsed && <span className="ml-2 text-sm">Déconnexion</span>}
+                {!collapsed && !isMobile && <span className="ml-2 text-sm">Déconnexion</span>}
               </button>
             )}
           </div>

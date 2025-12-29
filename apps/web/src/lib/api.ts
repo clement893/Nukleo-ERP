@@ -17,7 +17,8 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import { handleApiError, isClientError, isNetworkError } from './errors/api';
 import { TokenStorage } from './auth/tokenStorage';
 import { logger } from '@/lib/logger';
-import { mediaAPI } from './api/media';
+// Import mediaAPI - media.ts is in the api subdirectory
+import { mediaAPI } from '@/lib/api/media';
 
 /**
  * API base URL with trailing slash removed to avoid double slashes
