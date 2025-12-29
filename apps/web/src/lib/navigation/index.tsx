@@ -35,7 +35,11 @@ import {
   CalendarCheck,
   CalendarOff,
   CalendarClock,
-  Sparkles
+  Sparkles,
+  DollarSign,
+  Receipt,
+  FileBarChart,
+  Wallet
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -203,6 +207,35 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Deadlines',
             href: '/dashboard/agenda/deadlines',
             icon: <CalendarClock className="w-5 h-5" />,
+          },
+        ],
+        collapsible: true,
+        defaultOpen: false,
+      },
+      // Module Finances (collapsible group)
+      {
+        name: 'Module Finances',
+        icon: <DollarSign className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Accueil',
+            href: '/dashboard/finances',
+            icon: <DollarSign className="w-5 h-5" />,
+          },
+          {
+            name: 'Facturations',
+            href: '/dashboard/finances/facturations',
+            icon: <Receipt className="w-5 h-5" />,
+          },
+          {
+            name: 'Rapport',
+            href: '/dashboard/finances/rapport',
+            icon: <FileBarChart className="w-5 h-5" />,
+          },
+          {
+            name: 'Compte de dépenses',
+            href: '/dashboard/finances/compte-depenses',
+            icon: <Wallet className="w-5 h-5" />,
           },
         ],
         collapsible: true,
