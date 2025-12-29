@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
@@ -94,13 +94,40 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
     [isAdmin]
   );
 
+  // Memoize callbacks to prevent re-renders
+  const handleToggleCollapse = useCallback(() => {
+    setSidebarCollapsed(prev => !prev);
+  }, []);
+
+  const handleMobileMenuClose = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
+  const handleHomeClick = useCallback(() => {
+    router.push('/');
+    setMobileMenuOpen(false);
+  }, [router]);
+
+  const handleLogoutClick = useCallback(() => {
+    logout();
+    setMobileMenuOpen(false);
+  }, [logout]);
+
+  const handleDesktopHomeClick = useCallback(() => {
+    router.push('/');
+  }, [router]);
+
+  const handleDesktopLogoutClick = useCallback(() => {
+    logout();
+  }, [logout]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile/Tablet Sidebar Overlay */}
       {mobileMenuOpen && (
         <div
           className="xl:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={handleMobileMenuClose}
         />
       )}
 
@@ -118,16 +145,10 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           user={user}
           showSearch={true}
           isMobile={true}
-          onClose={() => setMobileMenuOpen(false)}
-          onHomeClick={() => {
-            router.push('/');
-            setMobileMenuOpen(false);
-          }}
+          onClose={handleMobileMenuClose}
+          onHomeClick={handleHomeClick}
           themeToggleComponent={<ThemeToggleWithIcon />}
-          onLogoutClick={() => {
-            logout();
-            setMobileMenuOpen(false);
-          }}
+          onLogoutClick={handleLogoutClick}
         />
       </aside>
 
@@ -139,13 +160,13 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
             items={sidebarItems}
             currentPath={pathname}
             collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onToggleCollapse={handleToggleCollapse}
             className="h-screen sticky top-0"
             user={user}
             showSearch={true}
-            onHomeClick={() => router.push('/')}
+            onHomeClick={handleDesktopHomeClick}
             themeToggleComponent={<ThemeToggleWithIcon />}
-            onLogoutClick={logout}
+            onLogoutClick={handleDesktopLogoutClick}
           />
         </aside>
 
@@ -154,7 +175,10 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           {/* Page Content - This is the only part that updates on navigation */}
           <main 
             key={pathname} 
-            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8 bg-background"
+            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8 bg-background animate-fade-in"
+            style={{
+              animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
           >
             {children}
           </main>
