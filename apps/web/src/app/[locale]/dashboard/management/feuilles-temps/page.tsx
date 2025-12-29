@@ -7,22 +7,22 @@ export const dynamicParams = true;
 import { PageHeader } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 
-function ProjetsListContent() {
+function FeuillesTempsContent() {
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
       <PageHeader
-        title="Projets"
-        description="Gérez vos projets"
+        title="Feuilles de temps"
+        description="Gérez les feuilles de temps"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Modules Opérations', href: '/dashboard/projets' },
-          { label: 'Projets' },
+          { label: 'Module Management', href: '/dashboard/management' },
+          { label: 'Feuilles de temps' },
         ]}
       />
     </MotionDiv>
   );
 }
 
-export default function ProjetsListPage() {
-  return <ProjetsListContent />;
+export default function FeuillesTempsPage() {
+  return <FeuillesTempsContent />;
 }

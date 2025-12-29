@@ -1,4 +1,4 @@
-# Module Projets
+# Modules Opérations
 
 Module complet pour la gestion des projets, clients et équipes.
 

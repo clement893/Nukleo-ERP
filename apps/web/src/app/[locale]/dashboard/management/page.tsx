@@ -8,25 +8,25 @@ import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 
-function ProjetsContent() {
+function ManagementContent() {
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
       <PageHeader
-        title="Modules Opérations"
-        description="Gérez vos projets, clients et équipes"
+        title="Module Management"
+        description="Gérez vos employés, feuilles de temps, onboarding, vacances et calendrier"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Modules Opérations' },
+          { label: 'Module Management' },
         ]}
       />
 
       <Card>
         <div className="p-6">
           <h2 className="text-2xl font-bold text-foreground mb-4">
-            Modules Opérations
+            Module Management
           </h2>
           <p className="text-muted-foreground">
-            Bienvenue dans les Modules Opérations. Utilisez le menu latéral pour accéder aux différentes sections.
+            Bienvenue dans le Module Management. Utilisez le menu latéral pour accéder aux différentes sections.
           </p>
         </div>
       </Card>
@@ -34,6 +34,6 @@ function ProjetsContent() {
   );
 }
 
-export default function ProjetsPage() {
-  return <ProjetsContent />;
+export default function ManagementPage() {
+  return <ManagementContent />;
 }

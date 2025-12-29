@@ -27,7 +27,12 @@ import {
   Target,
   TrendingUp,
   FolderOpen,
-  Building
+  Building,
+  BriefcaseBusiness,
+  Clock,
+  UserPlus,
+  Calendar,
+  CalendarDays
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -96,9 +101,9 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
         collapsible: true,
         defaultOpen: false,
       },
-      // Module Projets (collapsible group)
+      // Modules Opérations (collapsible group)
       {
-        name: 'Module Projets',
+        name: 'Modules Opérations',
         icon: <FolderOpen className="w-5 h-5" />,
         items: [
           {
@@ -120,6 +125,45 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Équipes',
             href: '/dashboard/projets/equipes',
             icon: <Users className="w-5 h-5" />,
+          },
+        ],
+        collapsible: true,
+        defaultOpen: false,
+      },
+      // Module Management (collapsible group)
+      {
+        name: 'Module Management',
+        icon: <BriefcaseBusiness className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Accueil',
+            href: '/dashboard/management',
+            icon: <BriefcaseBusiness className="w-5 h-5" />,
+          },
+          {
+            name: 'Employés',
+            href: '/dashboard/management/employes',
+            icon: <Users className="w-5 h-5" />,
+          },
+          {
+            name: 'Feuilles de temps',
+            href: '/dashboard/management/feuilles-temps',
+            icon: <Clock className="w-5 h-5" />,
+          },
+          {
+            name: 'Onboarding',
+            href: '/dashboard/management/onboarding',
+            icon: <UserPlus className="w-5 h-5" />,
+          },
+          {
+            name: 'Vacances',
+            href: '/dashboard/management/vacances',
+            icon: <Calendar className="w-5 h-5" />,
+          },
+          {
+            name: 'Calendrier',
+            href: '/dashboard/management/calendrier',
+            icon: <CalendarDays className="w-5 h-5" />,
           },
         ],
         collapsible: true,

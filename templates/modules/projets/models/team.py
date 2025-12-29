@@ -14,7 +14,7 @@ from app.core.database import Base
 
 
 class Team(Base):
-    """Modèle Team pour le module Projets"""
+    """Modèle Team pour les Modules Opérations"""
     __tablename__ = "teams"
 
     id: UUID = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)

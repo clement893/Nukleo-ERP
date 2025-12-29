@@ -135,5 +135,5 @@ Après avoir créé un module backend:
 Consultez les templates existants pour voir des exemples complets:
 - `templates/modules/crm/` - Module CRM complet
 - `templates/modules/billing/` - Module Facturation complet
-- `templates/modules/projets/` - Module Projets complet
+- `templates/modules/projets/` - Modules Opérations complet
 

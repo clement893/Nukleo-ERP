@@ -14,7 +14,7 @@ from app.core.database import Base
 
 
 class Client(Base):
-    """Modèle Client pour le module Projets"""
+    """Modèle Client pour les Modules Opérations"""
     __tablename__ = "clients"
 
     id: UUID = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)

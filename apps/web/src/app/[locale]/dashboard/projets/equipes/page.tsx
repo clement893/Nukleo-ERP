@@ -129,7 +129,7 @@ function EquipesContent() {
         description="Gérez vos équipes et leurs projets"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Projets', href: '/dashboard/projets' },
+          { label: 'Modules Opérations', href: '/dashboard/projets' },
           { label: 'Équipes' },
         ]}
       />

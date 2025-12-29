@@ -25,7 +25,7 @@ class ProjectStatus(str, enum.Enum):
 
 
 class Project(Base):
-    """Modèle Project pour le module Projets"""
+    """Modèle Project pour les Modules Opérations"""
     __tablename__ = "projects"
 
     id: UUID = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)

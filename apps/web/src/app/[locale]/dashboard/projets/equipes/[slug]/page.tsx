@@ -207,7 +207,7 @@ function TeamProjectManagementContent() {
           description="Gérez les tâches et les employés de l'équipe"
           breadcrumbs={[
             { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Module Projets', href: '/dashboard/projets' },
+            { label: 'Modules Opérations', href: '/dashboard/projets' },
             { label: 'Équipes', href: '/dashboard/projets/equipes' },
             { label: getTeamName(teamSlug) },
           ]}

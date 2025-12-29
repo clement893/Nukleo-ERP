@@ -15,7 +15,7 @@ function ClientsContent() {
         description="Gérez vos clients"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Projets', href: '/dashboard/projets' },
+          { label: 'Modules Opérations', href: '/dashboard/projets' },
           { label: 'Clients' },
         ]}
       />
