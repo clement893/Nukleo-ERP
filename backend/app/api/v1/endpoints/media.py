@@ -15,6 +15,7 @@ from app.dependencies import get_current_user, get_db
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.core.tenancy_helpers import apply_tenant_scope
 from app.services.s3_service import S3Service
+from app.core.logging import logger
 from fastapi import Request
 import os
 import re
@@ -23,19 +24,35 @@ router = APIRouter()
 
 
 class MediaResponse(BaseModel):
-    id: int
+    id: str  # UUID as string
     filename: str
-    file_path: str
-    file_size: int
-    mime_type: Optional[str] = None
-    storage_type: str
-    is_public: bool
+    file_path: str  # Alias for file_key/url for backward compatibility
+    file_size: int  # Alias for size
+    mime_type: Optional[str] = None  # Alias for content_type
+    storage_type: str = "s3"  # Default, not in model but used in response
+    is_public: bool = False  # Default, not in model but used in response
     user_id: int
     created_at: str
     updated_at: str
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_file_model(cls, file: FileModel):
+        """Create MediaResponse from File model"""
+        return cls(
+            id=str(file.id),
+            filename=file.filename,
+            file_path=file.url or file.file_key,  # Use url as file_path for compatibility
+            file_size=file.size,
+            mime_type=file.content_type,
+            storage_type="s3",  # Default since we use S3
+            is_public=False,  # Default
+            user_id=file.user_id,
+            created_at=file.created_at.isoformat() if hasattr(file.created_at, 'isoformat') else str(file.created_at),
+            updated_at=file.updated_at.isoformat() if hasattr(file.updated_at, 'isoformat') else str(file.updated_at),
+        )
 
 
 def sanitize_filename(filename: str) -> str:
@@ -60,7 +77,7 @@ async def list_media(
     
     # Filter by folder if provided
     if folder:
-        query = query.where(FileModel.file_path.like(f"{folder}/%"))
+        query = query.where(FileModel.file_key.like(f"{folder}/%"))
     
     # Apply tenant scoping if tenancy is enabled
     query = apply_tenant_scope(query, FileModel)
@@ -81,19 +98,27 @@ async def list_media(
     except Exception:
         pass
     
-    return [MediaResponse.model_validate(file) for file in files]
+    return [MediaResponse.from_file_model(file) for file in files]
 
 
 @router.get("/media/{media_id}", response_model=MediaResponse, tags=["media"])
 async def get_media(
-    media_id: int,
+    media_id: str,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a media file by ID"""
+    try:
+        media_uuid = uuid.UUID(media_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid media ID format"
+        )
+    
     query = select(FileModel).where(
-        FileModel.id == media_id,
+        FileModel.id == media_uuid,
         FileModel.user_id == current_user.id
     )
     query = apply_tenant_scope(query, FileModel)
@@ -119,7 +144,7 @@ async def get_media(
     except Exception:
         pass
     
-    return MediaResponse.model_validate(file)
+    return MediaResponse.from_file_model(file)
 
 
 @router.post("/media", response_model=MediaResponse, status_code=status.HTTP_201_CREATED, tags=["media"])
@@ -183,12 +208,13 @@ async def upload_media(
         # Save file metadata to database
         file_record = FileModel(
             user_id=current_user.id,
+            file_key=upload_result.get("file_key") or upload_result.get("url", ""),
             filename=upload_result.get("filename") or filename,
-            file_path=upload_result.get("file_key") or upload_result.get("url", ""),
-            file_size=file_size,
-            mime_type=file.content_type,
-            storage_type='s3',
-            is_public=is_public,
+            original_filename=file.filename or filename,
+            content_type=file.content_type or "application/octet-stream",
+            size=file_size,
+            url=upload_result.get("url", ""),
+            folder=folder,
         )
         
         db.add(file_record)
@@ -207,7 +233,7 @@ async def upload_media(
         except Exception:
             pass
         
-        return MediaResponse.model_validate(file_record)
+        return MediaResponse.from_file_model(file_record)
         
     except ValueError as e:
         raise HTTPException(
@@ -223,14 +249,22 @@ async def upload_media(
 
 @router.delete("/media/{media_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["media"])
 async def delete_media(
-    media_id: int,
+    media_id: str,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a media file"""
+    try:
+        media_uuid = uuid.UUID(media_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid media ID format"
+        )
+    
     query = select(FileModel).where(
-        FileModel.id == media_id,
+        FileModel.id == media_uuid,
         FileModel.user_id == current_user.id
     )
     query = apply_tenant_scope(query, FileModel)
@@ -245,10 +279,10 @@ async def delete_media(
         )
     
     # Delete from S3 if configured
-    if S3Service.is_configured() and file.storage_type == 's3':
+    if S3Service.is_configured():
         try:
             s3_service = S3Service()
-            s3_service.delete_file(file.file_path)
+            s3_service.delete_file(file.file_key)
         except Exception:
             pass  # Continue even if S3 deletion fails
     
