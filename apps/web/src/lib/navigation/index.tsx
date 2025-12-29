@@ -20,7 +20,12 @@ import {
   Sliders, 
   FileCheck, 
   Palette, 
-  Cog 
+  Cog,
+  Briefcase,
+  Building2,
+  UserCircle,
+  Target,
+  TrendingUp
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -54,6 +59,40 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
         name: 'Dashboard',
         href: '/dashboard',
         icon: <LayoutDashboard className="w-5 h-5" />,
+      },
+      // Module Commercial (collapsible group)
+      {
+        name: 'Module Commercial',
+        icon: <Briefcase className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Accueil',
+            href: '/dashboard/commercial',
+            icon: <Briefcase className="w-5 h-5" />,
+          },
+          {
+            name: 'Contacts',
+            href: '/dashboard/commercial/contacts',
+            icon: <UserCircle className="w-5 h-5" />,
+          },
+          {
+            name: 'Entreprises',
+            href: '/dashboard/commercial/entreprises',
+            icon: <Building2 className="w-5 h-5" />,
+          },
+          {
+            name: 'Opportunités',
+            href: '/dashboard/commercial/opportunites',
+            icon: <Target className="w-5 h-5" />,
+          },
+          {
+            name: 'Pipeline & client',
+            href: '/dashboard/commercial/pipeline-client',
+            icon: <TrendingUp className="w-5 h-5" />,
+          },
+        ],
+        collapsible: true,
+        defaultOpen: false,
       },
       // Gestion (collapsible group)
       {
