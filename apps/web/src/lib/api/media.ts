@@ -10,6 +10,7 @@ export interface Media {
   id: number;
   filename: string;
   file_path: string;
+  file_key?: string;  // S3 file key for regenerating URLs
   file_size: number;
   mime_type?: string;
   storage_type: string;

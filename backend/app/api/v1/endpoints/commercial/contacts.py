@@ -72,19 +72,39 @@ async def list_contacts(
         photo_url = contact.photo_url
         if photo_url and s3_service:
             try:
-                # Extract file_key from URL if it's a presigned URL, or use the URL as-is
-                # If photo_url looks like an S3 key (contains folder structure), regenerate presigned URL
-                if photo_url.startswith('contacts/photos/') or '/' in photo_url and not photo_url.startswith('http'):
-                    # It's likely a file_key, regenerate presigned URL
-                    photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)  # 1 year
-                elif not photo_url.startswith('http'):
-                    # Try to use as file_key
-                    try:
-                        photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)
-                    except:
-                        pass  # Keep original URL if regeneration fails
-            except Exception:
-                pass  # Keep original URL if regeneration fails
+                # Try to extract file_key from presigned URL or use photo_url as file_key
+                file_key = None
+                
+                # If it's a presigned URL, try to extract the file_key from it
+                if photo_url.startswith('http'):
+                    # Try to extract file_key from presigned URL (format: .../contacts/photos/...)
+                    # Parse URL to get the key parameter or path
+                    from urllib.parse import urlparse, parse_qs
+                    parsed = urlparse(photo_url)
+                    # Check if it's an S3 presigned URL - the key is usually in the path or query params
+                    path_parts = parsed.path.strip('/').split('/')
+                    if 'contacts/photos' in photo_url or any('contacts' in part for part in path_parts):
+                        # Reconstruct file_key from path
+                        # Remove bucket name if present, keep the rest
+                        key_parts = []
+                        found_contacts = False
+                        for part in path_parts:
+                            if part == 'contacts' or found_contacts:
+                                found_contacts = True
+                                key_parts.append(part)
+                        if key_parts:
+                            file_key = '/'.join(key_parts)
+                else:
+                    # It's likely already a file_key
+                    file_key = photo_url
+                
+                # Regenerate presigned URL if we have a file_key
+                if file_key:
+                    photo_url = s3_service.generate_presigned_url(file_key, expiration=31536000)  # 1 year
+            except Exception as e:
+                logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
+                # Keep original URL if regeneration fails
+                pass
         
         contact_dict = {
             "id": contact.id,
@@ -153,18 +173,41 @@ async def get_contact(
     if photo_url and S3Service.is_configured():
         try:
             s3_service = S3Service()
-            # If photo_url looks like an S3 key (contains folder structure), regenerate presigned URL
-            if photo_url.startswith('contacts/photos/') or ('/' in photo_url and not photo_url.startswith('http')):
-                # It's likely a file_key, regenerate presigned URL
-                photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)  # 1 year
-            elif not photo_url.startswith('http'):
-                # Try to use as file_key
-                try:
-                    photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)
-                except:
-                    pass  # Keep original URL if regeneration fails
-        except Exception:
-            pass  # Keep original URL if regeneration fails
+            # Try to extract file_key from presigned URL or use photo_url as file_key
+            file_key = None
+            
+            # If it's a presigned URL, try to extract the file_key from it
+            if photo_url.startswith('http'):
+                # Try to extract file_key from presigned URL
+                from urllib.parse import urlparse, parse_qs, unquote
+                parsed = urlparse(photo_url)
+                
+                # Check query params for 'key' parameter (some S3 presigned URLs have it)
+                query_params = parse_qs(parsed.query)
+                if 'key' in query_params:
+                    file_key = unquote(query_params['key'][0])
+                else:
+                    # Extract from path - remove bucket name if present
+                    path = parsed.path.strip('/')
+                    # Look for 'contacts/photos' in the path
+                    if 'contacts/photos' in path:
+                        # Find the position of 'contacts/photos' and take everything after
+                        idx = path.find('contacts/photos')
+                        if idx != -1:
+                            file_key = path[idx:]
+                    elif path.startswith('contacts/'):
+                        file_key = path
+            else:
+                # It's likely already a file_key
+                file_key = photo_url
+            
+            # Regenerate presigned URL if we have a file_key
+            if file_key:
+                photo_url = s3_service.generate_presigned_url(file_key, expiration=31536000)  # 1 year
+        except Exception as e:
+            logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
+            # Keep original URL if regeneration fails
+            pass
     
     # Convert to response format
     contact_dict = {

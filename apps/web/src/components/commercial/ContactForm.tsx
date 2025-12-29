@@ -84,9 +84,10 @@ export default function ContactForm({
         is_public: true,
       });
       
-      // Use file_path (which is the URL) for photo_url
+      // Save file_key if available, otherwise use file_path (URL)
       // The backend will regenerate presigned URLs when needed
-      setFormData({ ...formData, photo_url: uploadedMedia.file_path });
+      const photoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
+      setFormData({ ...formData, photo_url: photoUrlToSave });
       showToast({
         message: 'Photo uploadée avec succès',
         type: 'success',

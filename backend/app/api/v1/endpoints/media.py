@@ -26,7 +26,8 @@ router = APIRouter()
 class MediaResponse(BaseModel):
     id: str  # UUID as string
     filename: str
-    file_path: str  # Alias for file_key/url for backward compatibility
+    file_path: str  # file_key (for saving) or presigned URL (for display)
+    file_key: Optional[str] = None  # S3 file key for regenerating URLs
     file_size: int  # Alias for size
     mime_type: Optional[str] = None  # Alias for content_type
     storage_type: str = "s3"  # Default, not in model but used in response
@@ -44,7 +45,8 @@ class MediaResponse(BaseModel):
         return cls(
             id=str(file.id),
             filename=file.filename,
-            file_path=file.url or file.file_key,  # Use url as file_path for compatibility
+            file_path=file.url or file.file_key,  # Use url as file_path for display compatibility
+            file_key=file.file_key,  # Always include file_key for regenerating URLs
             file_size=file.size,
             mime_type=file.content_type,
             storage_type="s3",  # Default since we use S3
