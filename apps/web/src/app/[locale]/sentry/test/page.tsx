@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering to avoid static generation
-export const dynamic = 'force-dynamic';
-
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { captureException, captureMessage, setUser, clearUser } from '@/lib/sentry/client';

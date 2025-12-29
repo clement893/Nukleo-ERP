@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering to avoid static generation
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
