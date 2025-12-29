@@ -25,7 +25,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'dan
 /**
  * Tailles communes pour les composants
  */
-export type Size = 'sm' | 'md' | 'lg';
+export type Size = 'xs' | 'sm' | 'md' | 'lg';
 
 /**
  * Props de base communes à tous les composants

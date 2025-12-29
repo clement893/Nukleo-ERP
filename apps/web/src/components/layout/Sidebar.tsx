@@ -48,11 +48,47 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
   };
 
   // Check if item is active
+  // Only mark as active if it's an exact match or if it's the most specific matching route
   const isActive = (href: string) => {
+    if (!pathname) return false;
+    
+    // Exact match
+    if (pathname === href) return true;
+    
+    // For dashboard root, only match exactly
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
-    return pathname?.startsWith(href);
+    
+    // Check if pathname starts with href
+    if (!pathname.startsWith(href)) return false;
+    
+    // If href is a prefix, check that the next character is '/' or end of string
+    // This prevents /dashboard/commercial from matching /dashboard/commercials
+    const nextChar = pathname[href.length];
+    if (nextChar && nextChar !== '/') return false;
+    
+    // Now we need to check if there's a more specific route that should be active instead
+    // Get all navigation items to check for more specific matches
+    const allItems: NavigationItem[] = [];
+    navigationConfig.items.forEach((item) => {
+      if ('items' in item) {
+        allItems.push(...item.items);
+      } else {
+        allItems.push(item);
+      }
+    });
+    
+    // Check if any other route is a more specific match (longer href that also matches)
+    const moreSpecificMatch = allItems.some((item) => {
+      if (item.href === href) return false; // Skip self
+      if (item.href.length <= href.length) return false; // Must be longer
+      // Check if the more specific route matches the current pathname
+      return pathname.startsWith(item.href) && (pathname[item.href.length] === '/' || pathname.length === item.href.length);
+    });
+    
+    // If there's a more specific match, this route shouldn't be active
+    return !moreSpecificMatch;
   };
 
   // Filter navigation based on search query

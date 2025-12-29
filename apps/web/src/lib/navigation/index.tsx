@@ -28,11 +28,13 @@ import {
   TrendingUp,
   FolderOpen,
   Building,
-  BriefcaseBusiness,
   Clock,
   UserPlus,
   Calendar,
-  CalendarDays
+  CalendarDays,
+  CalendarCheck,
+  CalendarOff,
+  CalendarClock
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -133,12 +135,12 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
       // Module Management (collapsible group)
       {
         name: 'Module Management',
-        icon: <BriefcaseBusiness className="w-5 h-5" />,
+        icon: <Briefcase className="w-5 h-5" />,
         items: [
           {
             name: 'Accueil',
             href: '/dashboard/management',
-            icon: <BriefcaseBusiness className="w-5 h-5" />,
+            icon: <Briefcase className="w-5 h-5" />,
           },
           {
             name: 'Employés',
@@ -164,6 +166,40 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Calendrier',
             href: '/dashboard/management/calendrier',
             icon: <CalendarDays className="w-5 h-5" />,
+          },
+        ],
+        collapsible: true,
+        defaultOpen: false,
+      },
+      // Module Agenda (collapsible group)
+      {
+        name: 'Module Agenda',
+        icon: <CalendarDays className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Accueil',
+            href: '/dashboard/agenda',
+            icon: <CalendarDays className="w-5 h-5" />,
+          },
+          {
+            name: 'Calendrier',
+            href: '/dashboard/agenda/calendrier',
+            icon: <Calendar className="w-5 h-5" />,
+          },
+          {
+            name: 'Événements',
+            href: '/dashboard/agenda/evenements',
+            icon: <CalendarCheck className="w-5 h-5" />,
+          },
+          {
+            name: 'Absences/Vacances',
+            href: '/dashboard/agenda/absences-vacances',
+            icon: <CalendarOff className="w-5 h-5" />,
+          },
+          {
+            name: 'Deadlines',
+            href: '/dashboard/agenda/deadlines',
+            icon: <CalendarClock className="w-5 h-5" />,
           },
         ],
         collapsible: true,

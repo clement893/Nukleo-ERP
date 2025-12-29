@@ -107,7 +107,7 @@ export default function AdminContent() {
           <p className="text-muted-foreground mb-4">
             Consulter les logs système et les activités.
           </p>
-          <Link href="/test/admin-logs">
+          <Link href="/admin/testing">
             <Button variant="primary" className="w-full">
               Voir les logs
             </Button>
@@ -229,7 +229,7 @@ export default function AdminContent() {
               }
             />
             <ServiceTestCard
-              href="/test/api-connections"
+              href="/api/testing"
               title="API Connections Test"
               description="Test and verify API connections between frontend pages and backend endpoints"
               color="info"

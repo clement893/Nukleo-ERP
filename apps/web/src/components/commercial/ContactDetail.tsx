@@ -45,13 +45,13 @@ export default function ContactDetail({
             <div className="flex gap-2">
               {onEdit && (
                 <Button variant="outline" size="sm" onClick={onEdit}>
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-4 h-4 mr-1.5" />
                   Modifier
                 </Button>
               )}
               {onDelete && (
                 <Button variant="outline" size="sm" onClick={onDelete} className="text-red-600 hover:text-red-700">
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-4 h-4 mr-1.5" />
                   Supprimer
                 </Button>
               )}

@@ -89,9 +89,10 @@ const variants: Record<string, string> = {
 
 // Size styles - same as Button component
 const sizes: Record<string, string> = {
-  sm: 'px-4 py-2 text-sm min-h-[44px]',
-  md: 'px-6 py-3 text-base min-h-[44px]',
-  lg: 'px-8 py-4 text-lg min-h-[44px]',
+  xs: 'px-2.5 py-1.5 text-xs min-h-[32px]',
+  sm: 'px-3 py-2 text-sm min-h-[36px]',
+  md: 'px-4 py-2.5 text-sm min-h-[40px]',
+  lg: 'px-6 py-3 text-base min-h-[44px]',
 };
 
 export interface ButtonLinkProps {

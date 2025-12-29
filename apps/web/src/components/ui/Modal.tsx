@@ -277,7 +277,7 @@ function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-xl border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-center justify-end gap-3 p-xl border-t border-border flex-shrink-0">
             {footer}
           </div>
         )}
@@ -332,7 +332,7 @@ export function ConfirmModal({
         </>
       }
     >
-      <p className="text-gray-600 dark:text-gray-400">{message}</p>
+      <p className="text-foreground">{message}</p>
     </Modal>
   );
 }

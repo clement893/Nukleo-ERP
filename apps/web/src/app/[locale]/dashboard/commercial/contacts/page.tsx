@@ -386,7 +386,7 @@ function ContactsContent() {
               <button
                 onClick={() => setViewMode('list')}
                 className={clsx(
-                  'px-3 py-2',
+                  'px-2.5 py-1.5 transition-colors',
                   viewMode === 'list'
                     ? 'bg-primary text-white'
                     : 'bg-background text-foreground hover:bg-muted'
@@ -397,7 +397,7 @@ function ContactsContent() {
               <button
                 onClick={() => setViewMode('gallery')}
                 className={clsx(
-                  'px-3 py-2',
+                  'px-2.5 py-1.5 transition-colors',
                   viewMode === 'gallery'
                     ? 'bg-primary text-white'
                     : 'bg-background text-foreground hover:bg-muted'
@@ -419,7 +419,7 @@ function ContactsContent() {
               id="import-contacts"
             />
             <label htmlFor="import-contacts">
-              <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border-2 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer transition-all duration-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border-2 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer transition-all duration-200 min-h-[36px]">
                 <Upload className="w-4 h-4" />
                 Importer
               </span>
@@ -427,13 +427,13 @@ function ContactsContent() {
 
             {/* Export */}
             <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-1.5" />
               Exporter
             </Button>
 
             {/* Create */}
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button size="sm" onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4 mr-1.5" />
               Nouveau contact
             </Button>
           </div>

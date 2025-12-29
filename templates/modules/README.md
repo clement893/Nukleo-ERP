@@ -56,7 +56,7 @@ alembic revision --autogenerate -m "Add Billing module"
 alembic upgrade head
 ```
 
-### 3. Projets
+### 3. Modules Opérations
 **Localisation**: `templates/modules/projets/`
 
 Module complet pour la gestion des projets, clients et équipes.
@@ -79,6 +79,57 @@ npm run generate:types
 # Créer les migrations
 cd backend
 alembic revision --autogenerate -m "Add Projets module"
+alembic upgrade head
+```
+
+### 4. Employés
+**Localisation**: `templates/modules/employes/`
+
+Module complet pour la gestion des employés, feuilles de temps, onboarding, vacances et calendrier.
+
+**Fonctionnalités**:
+- ✅ Gestion des employés
+- ✅ Feuilles de temps
+- ✅ Onboarding
+- ✅ Gestion des vacances
+- ✅ Calendrier des événements
+
+**Utilisation**:
+```bash
+# Copier le template dans votre projet
+cp -r templates/modules/employes backend/app/modules/
+
+# Générer les types TypeScript
+npm run generate:types
+
+# Créer les migrations
+cd backend
+alembic revision --autogenerate -m "Add Employés module"
+alembic upgrade head
+```
+
+### 5. Agenda
+**Localisation**: `templates/modules/agenda/`
+
+Module complet pour la gestion de l'agenda, événements, absences/vacances et deadlines.
+
+**Fonctionnalités**:
+- ✅ Calendrier
+- ✅ Gestion des événements
+- ✅ Gestion des absences/vacances
+- ✅ Gestion des deadlines
+
+**Utilisation**:
+```bash
+# Copier le template dans votre projet
+cp -r templates/modules/agenda backend/app/modules/
+
+# Générer les types TypeScript
+npm run generate:types
+
+# Créer les migrations
+cd backend
+alembic revision --autogenerate -m "Add Agenda module"
 alembic upgrade head
 ```
 
@@ -136,4 +187,6 @@ Consultez les templates existants pour voir des exemples complets:
 - `templates/modules/crm/` - Module CRM complet
 - `templates/modules/billing/` - Module Facturation complet
 - `templates/modules/projets/` - Modules Opérations complet
+- `templates/modules/employes/` - Module Employés complet
+- `templates/modules/agenda/` - Module Agenda complet
 
