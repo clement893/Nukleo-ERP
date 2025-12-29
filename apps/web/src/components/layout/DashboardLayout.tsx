@@ -13,16 +13,14 @@
 
 'use client';
 
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
-import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
 import Button from '@/components/ui/Button';
 import { Menu } from 'lucide-react';
-import { clsx } from 'clsx';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -36,14 +34,14 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const { logout } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [_sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user is admin or superadmin
-  const isAdmin = user?.is_admin ?? false;
+  const _isAdmin = user?.is_admin ?? false;
 
   // Memoize callbacks to prevent re-renders
-  const handleToggleCollapse = useCallback(() => {
+  const _handleToggleCollapse = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
 
@@ -51,21 +49,21 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
     setMobileMenuOpen(false);
   }, []);
 
-  const handleHomeClick = useCallback(() => {
+  const _handleHomeClick = useCallback(() => {
     router.push('/');
     setMobileMenuOpen(false);
   }, [router]);
 
-  const handleLogoutClick = useCallback(() => {
+  const _handleLogoutClick = useCallback(() => {
     logout();
     setMobileMenuOpen(false);
   }, [logout]);
 
-  const handleDesktopHomeClick = useCallback(() => {
+  const _handleDesktopHomeClick = useCallback(() => {
     router.push('/');
   }, [router]);
 
-  const handleDesktopLogoutClick = useCallback(() => {
+  const _handleDesktopLogoutClick = useCallback(() => {
     logout();
   }, [logout]);
 
