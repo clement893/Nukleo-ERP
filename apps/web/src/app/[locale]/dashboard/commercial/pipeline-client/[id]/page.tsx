@@ -59,7 +59,9 @@ function PipelineDetailContent() {
   // Modals
   const [showOpportunityModal, setShowOpportunityModal] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
+  const [showStagesManager, setShowStagesManager] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunite | null>(null);
+  const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
   const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
 
   // Form states
@@ -255,28 +257,112 @@ function PipelineDetailContent() {
     setSelectedStageStatus(null);
   };
 
+  const handleManageStages = () => {
+    setShowStagesManager(true);
+  };
+
   const handleAddStage = () => {
     if (!pipeline) return;
+    setEditingStage(null);
     setStageForm({ name: '', description: '', color: '#3B82F6', order: pipeline.stages.length });
     setShowStageModal(true);
+  };
+
+  const handleEditStage = (stage: PipelineStage) => {
+    setEditingStage(stage);
+    setStageForm({
+      name: stage.name,
+      description: stage.description || '',
+      color: stage.color || '#3B82F6',
+      order: stage.order,
+    });
+    setShowStageModal(true);
+  };
+
+  const handleDeleteStage = async (stageId: string) => {
+    if (!pipeline) return;
+    
+    // Vérifier si des opportunités utilisent cette étape
+    const hasOpportunities = opportunities.some(opp => opp.stage_id === stageId);
+    if (hasOpportunities) {
+      showToast({
+        message: 'Impossible de supprimer cette étape car des opportunités l\'utilisent',
+        type: 'error',
+      });
+      return;
+    }
+
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette étape ?')) {
+      return;
+    }
+
+    // TODO: Appel API pour supprimer le stage
+    setPipeline(prev => prev ? {
+      ...prev,
+      stages: prev.stages.filter(s => s.id !== stageId).map((s, idx) => ({ ...s, order: idx }))
+    } : null);
+    
+    showToast({ message: 'Étape supprimée avec succès', type: 'success' });
+  };
+
+  const handleMoveStage = (stageId: string, direction: 'up' | 'down') => {
+    if (!pipeline) return;
+    
+    const stages = [...pipeline.stages].sort((a, b) => a.order - b.order);
+    const index = stages.findIndex(s => s.id === stageId);
+    
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === stages.length - 1) return;
+    
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    [stages[index], stages[newIndex]] = [stages[newIndex], stages[index]];
+    
+    // Réorganiser les ordres
+    const reorderedStages = stages.map((s, idx) => ({ ...s, order: idx }));
+    
+    // TODO: Appel API pour mettre à jour l'ordre des stages
+    setPipeline(prev => prev ? { ...prev, stages: reorderedStages } : null);
+    
+    showToast({ message: 'Ordre des étapes mis à jour', type: 'success' });
   };
 
   const handleSaveStage = async () => {
     if (!pipeline) return;
     
     // TODO: Appel API pour créer/modifier le stage
-    const newStage: PipelineStage = {
-      id: Date.now().toString(),
-      name: stageForm.name,
-      description: stageForm.description,
-      color: stageForm.color,
-      order: stageForm.order,
-    };
+    if (editingStage) {
+      // Update
+      setPipeline(prev => prev ? {
+        ...prev,
+        stages: prev.stages.map(s => 
+          s.id === editingStage.id 
+            ? {
+                ...s,
+                name: stageForm.name,
+                description: stageForm.description,
+                color: stageForm.color,
+                order: stageForm.order,
+              }
+            : s
+        )
+      } : null);
+      showToast({ message: 'Étape modifiée avec succès', type: 'success' });
+    } else {
+      // Create
+      const newStage: PipelineStage = {
+        id: Date.now().toString(),
+        name: stageForm.name,
+        description: stageForm.description,
+        color: stageForm.color,
+        order: stageForm.order,
+      };
+      
+      setPipeline(prev => prev ? { ...prev, stages: [...prev.stages, newStage] } : null);
+      showToast({ message: 'Étape ajoutée avec succès', type: 'success' });
+    }
     
-    setPipeline(prev => prev ? { ...prev, stages: [...prev.stages, newStage] } : null);
-    
-    showToast({ message: 'Étape ajoutée avec succès', type: 'success' });
     setShowStageModal(false);
+    setEditingStage(null);
   };
 
   if (loading) {
@@ -447,11 +533,97 @@ function PipelineDetailContent() {
         </div>
       </Modal>
 
+      {/* Stages Manager Modal */}
+      <Modal
+        isOpen={showStagesManager}
+        onClose={() => setShowStagesManager(false)}
+        title="Gérer les étapes"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="flex justify-end mb-4">
+            <Button size="sm" onClick={handleAddStage}>
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter une étape
+            </Button>
+          </div>
+          
+          {pipeline && pipeline.stages.length > 0 ? (
+            <div className="space-y-2">
+              {pipeline.stages
+                .sort((a, b) => a.order - b.order)
+                .map((stage, index) => (
+                  <div
+                    key={stage.id}
+                    className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background hover:bg-muted/50 transition-colors"
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: stage.color || '#3B82F6' }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground">{stage.name}</div>
+                      {stage.description && (
+                        <div className="text-sm text-muted-foreground truncate">
+                          {stage.description}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMoveStage(stage.id, 'up')}
+                        disabled={index === 0}
+                        className="p-1"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMoveStage(stage.id, 'down')}
+                        disabled={index === pipeline.stages.length - 1}
+                        className="p-1"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditStage(stage)}
+                        className="p-1"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteStage(stage.id)}
+                        className="p-1 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucune étape définie. Cliquez sur "Ajouter une étape" pour commencer.
+            </div>
+          )}
+        </div>
+      </Modal>
+
       {/* Stage Modal */}
       <Modal
         isOpen={showStageModal}
-        onClose={() => setShowStageModal(false)}
-        title="Ajouter une étape"
+        onClose={() => {
+          setShowStageModal(false);
+          setEditingStage(null);
+        }}
+        title={editingStage ? 'Modifier l\'étape' : 'Ajouter une étape'}
         size="md"
       >
         <div className="space-y-4">
@@ -491,15 +663,22 @@ function PipelineDetailContent() {
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowStageModal(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowStageModal(false);
+                setEditingStage(null);
+              }}
+            >
               Annuler
             </Button>
             <Button onClick={handleSaveStage} disabled={!stageForm.name}>
-              Ajouter
+              {editingStage ? 'Modifier' : 'Ajouter'}
             </Button>
           </div>
         </div>
       </Modal>
+    </div>
     </MotionDiv>
   );
 }
