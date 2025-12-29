@@ -1,0 +1,170 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { contactsAPI, Contact } from '@/lib/api/contacts';
+import { handleApiError } from '@/lib/api/utils';
+import { useToast } from '@/components/ui';
+import { PageHeader, PageContainer } from '@/components/layout';
+import ContactDetail from '@/components/commercial/ContactDetail';
+import { Loading, Alert } from '@/components/ui';
+import { ArrowLeft } from 'lucide-react';
+import Button from '@/components/ui/Button';
+
+export default function ContactDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { showToast } = useToast();
+  const [contact, setContact] = useState<Contact | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const contactId = params?.id ? parseInt(String(params.id)) : null;
+
+  useEffect(() => {
+    if (!contactId) {
+      setError('ID de contact invalide');
+      setLoading(false);
+      return;
+    }
+
+    loadContact();
+  }, [contactId]);
+
+  const loadContact = async () => {
+    if (!contactId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await contactsAPI.get(contactId);
+      setContact(data);
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors du chargement du contact');
+      showToast({
+        message: appError.message || 'Erreur lors du chargement du contact',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = () => {
+    if (contact) {
+      router.push(`/dashboard/commercial/contacts/${contact.id}/edit`);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!contact || !confirm('Êtes-vous sûr de vouloir supprimer ce contact ?')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await contactsAPI.delete(contact.id);
+      showToast({
+        message: 'Contact supprimé avec succès',
+        type: 'success',
+      });
+      const locale = params?.locale as string || 'fr';
+      router.push(`/${locale}/dashboard/commercial/contacts`);
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la suppression');
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="py-12 text-center">
+          <Loading />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (error && !contact) {
+    return (
+      <PageContainer>
+        <PageHeader
+          title="Erreur"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Module Commercial', href: '/dashboard/commercial' },
+            { label: 'Contacts', href: '/dashboard/commercial/contacts' },
+            { label: 'Détail' },
+          ]}
+        />
+        <Alert variant="error">{error}</Alert>
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => router.push('/dashboard/commercial/contacts')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour aux contacts
+          </Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (!contact) {
+    return (
+      <PageContainer>
+        <PageHeader
+          title="Contact non trouvé"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Module Commercial', href: '/dashboard/commercial' },
+            { label: 'Contacts', href: '/dashboard/commercial/contacts' },
+            { label: 'Détail' },
+          ]}
+        />
+        <Alert variant="error">Le contact demandé n'existe pas.</Alert>
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => router.push('/dashboard/commercial/contacts')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour aux contacts
+          </Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer>
+      <PageHeader
+        title={`${contact.first_name} ${contact.last_name}`}
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Module Commercial', href: '/dashboard/commercial' },
+          { label: 'Contacts', href: '/dashboard/commercial/contacts' },
+          { label: `${contact.first_name} ${contact.last_name}` },
+        ]}
+      />
+
+      {error && (
+        <div className="mb-4">
+          <Alert variant="error">{error}</Alert>
+        </div>
+      )}
+
+      <div className="mt-6">
+        <ContactDetail
+          contact={contact}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </div>
+    </PageContainer>
+  );
+}

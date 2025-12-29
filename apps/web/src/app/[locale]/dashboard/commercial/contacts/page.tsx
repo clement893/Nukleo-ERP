@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -14,7 +15,6 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
-import ContactDetail from '@/components/commercial/ContactDetail';
 import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -22,6 +22,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 type ViewMode = 'list' | 'gallery';
 
 function ContactsContent() {
+  const router = useRouter();
   const { showToast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,6 @@ function ContactsContent() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCircle, setFilterCircle] = useState<string>('');
@@ -144,7 +144,6 @@ function ContactsContent() {
       await contactsAPI.delete(contactId);
       setContacts(contacts.filter((c) => c.id !== contactId));
       if (selectedContact?.id === contactId) {
-        setShowDetailModal(false);
         setSelectedContact(null);
       }
       showToast({
@@ -226,10 +225,10 @@ function ContactsContent() {
     }
   };
 
-  // Open detail modal
-  const openDetailModal = (contact: Contact) => {
-    setSelectedContact(contact);
-    setShowDetailModal(true);
+  // Navigate to detail page
+  const openDetailPage = (contact: Contact) => {
+    const locale = window.location.pathname.split('/')[1] || 'fr';
+    router.push(`/${locale}/dashboard/commercial/contacts/${contact.id}`);
   };
 
   // Open edit modal
@@ -463,13 +462,13 @@ function ContactsContent() {
             searchable={false}
             emptyMessage="Aucun contact trouvé"
             loading={loading}
-            onRowClick={(row) => openDetailModal(row as unknown as Contact)}
+            onRowClick={(row) => openDetailPage(row as unknown as Contact)}
             actions={(row) => {
               const contact = row as unknown as Contact;
               return [
                 {
                   label: 'Voir',
-                  onClick: () => openDetailModal(contact),
+                  onClick: () => openDetailPage(contact),
                   icon: <Eye className="w-4 h-4" />,
                 },
                 {
@@ -490,7 +489,7 @@ function ContactsContent() {
       ) : (
         <ContactsGallery
           contacts={filteredContacts}
-          onContactClick={openDetailModal}
+          onContactClick={openDetailPage}
         />
       )}
 
@@ -533,30 +532,6 @@ function ContactsContent() {
             companies={companies}
             employees={employees}
             circles={circles}
-          />
-        )}
-      </Modal>
-
-      {/* Detail Modal */}
-      <Modal
-        isOpen={showDetailModal && selectedContact !== null}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedContact(null);
-        }}
-        title="Fiche contact"
-        size="xl"
-      >
-        {selectedContact && (
-          <ContactDetail
-            contact={selectedContact}
-            onEdit={() => {
-              setShowDetailModal(false);
-              openEditModal(selectedContact);
-            }}
-            onDelete={() => {
-              handleDelete(selectedContact.id);
-            }}
           />
         )}
       </Modal>
