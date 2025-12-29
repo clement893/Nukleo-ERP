@@ -60,10 +60,10 @@ export default function AdminPagesManagementPage() {
   const handlePageCreate = async (pageData: Omit<Page, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       await pagesAPI.create({
-        slug: pageData.slug,
-        title: pageData.title,
-        content: pageData.content,
-        status: pageData.status,
+        slug: String(pageData.slug),
+        title: String(pageData.title),
+        content: String(pageData.content),
+        status: pageData.status as 'draft' | 'published' | 'archived' | undefined,
       });
       logger.info('Page created successfully');
       await loadPages();
@@ -78,10 +78,10 @@ export default function AdminPagesManagementPage() {
   const handlePageUpdate = async (id: number, pageData: Partial<Page>) => {
     try {
       await pagesAPI.update(id, {
-        slug: pageData.slug,
-        title: pageData.title,
-        content: pageData.content,
-        status: pageData.status,
+        slug: pageData.slug ? String(pageData.slug) : undefined,
+        title: pageData.title ? String(pageData.title) : undefined,
+        content: pageData.content ? String(pageData.content) : undefined,
+        status: pageData.status as 'draft' | 'published' | 'archived' | undefined,
       });
       logger.info('Page updated successfully', { id });
       await loadPages();
