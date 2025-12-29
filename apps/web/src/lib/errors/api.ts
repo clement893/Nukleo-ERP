@@ -124,7 +124,7 @@ export function handleApiError(error: unknown): AppError {
       const fastApiErrors = (responseData as FastAPIErrorResponse).detail;
       const validationErrors: ValidationErrorDetail[] = fastApiErrors.map((err: FastAPIValidationError) => ({
         field: Array.isArray(err.loc) ? err.loc.join('.') : String(err.loc || 'unknown'),
-        message: err.msg || err.message || String(err),
+        message: err.msg || String(err),
         code: err.type || 'validation_error',
       }));
       
@@ -285,7 +285,7 @@ export function handleApiError(error: unknown): AppError {
         const fastApiErrors = (responseData as FastAPIErrorResponse).detail;
         const validationErrors: ValidationErrorDetail[] = fastApiErrors.map((err: FastAPIValidationError) => ({
           field: Array.isArray(err.loc) ? err.loc.join('.') : String(err.loc || 'unknown'),
-          message: err.msg || err.message || String(err),
+          message: err.msg || String(err),
           code: err.type || 'validation_error',
         }));
         

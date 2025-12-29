@@ -47,8 +47,8 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const { getSize } = useComponentConfig('checkbox');
     const sizeConfig = getSize('md');
     
-    const size = sizeConfig.minHeight || '1rem';
-    const borderRadius = sizeConfig.borderRadius || '0.25rem';
+    const size = sizeConfig?.minHeight || '1rem';
+    const borderRadius = sizeConfig?.borderRadius || '0.25rem';
 
     return (
       <div className={clsx('flex flex-col', fullWidth && 'w-full')}>

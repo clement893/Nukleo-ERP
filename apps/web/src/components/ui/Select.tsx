@@ -127,10 +127,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const { getSize } = useComponentConfig('select');
     const sizeConfig = getSize('md');
     
-    const paddingX = sizeConfig.paddingX || '0.75rem';
-    const paddingY = sizeConfig.paddingY || '0.5rem';
-    const fontSize = sizeConfig.fontSize || '0.875rem';
-    const borderRadius = sizeConfig.borderRadius || '0.375rem';
+    const paddingX = sizeConfig?.paddingX || '0.75rem';
+    const paddingY = sizeConfig?.paddingY || '0.5rem';
+    const fontSize = sizeConfig?.fontSize || '0.875rem';
+    const borderRadius = sizeConfig?.borderRadius || '0.375rem';
 
     return (
       <div className={clsx('flex flex-col', fullWidth && 'w-full')}>

@@ -31,9 +31,9 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     const { getSize } = useComponentConfig('switch');
     const sizeConfig = getSize('md');
     
-    const height = sizeConfig.minHeight || '1.5rem';
+    const height = sizeConfig?.minHeight || '1.5rem';
     const width = `calc(${height} * 1.833)`; // Maintain aspect ratio
-    const borderRadius = sizeConfig.borderRadius || '9999px';
+    const borderRadius = sizeConfig?.borderRadius || '9999px';
 
     return (
       <div className={clsx('flex items-center', fullWidth && 'w-full')}>

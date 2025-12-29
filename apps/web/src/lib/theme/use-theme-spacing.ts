@@ -22,8 +22,6 @@
  * ```
  */
 
-import { useGlobalTheme } from './global-theme-provider';
-
 /**
  * Get spacing value from theme
  * 

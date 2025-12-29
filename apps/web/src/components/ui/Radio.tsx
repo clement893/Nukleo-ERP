@@ -31,7 +31,7 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(
     const { getSize } = useComponentConfig('radio');
     const sizeConfig = getSize('md');
     
-    const size = sizeConfig.minHeight || '1rem';
+    const size = sizeConfig?.minHeight || '1rem';
 
     return (
       <div className={clsx('flex items-center', fullWidth && 'w-full')}>
