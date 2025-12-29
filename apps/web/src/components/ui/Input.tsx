@@ -1,5 +1,6 @@
 import { InputHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
+import { useComponentConfig } from '@/lib/theme/use-component-config';
 
 /**
  * Input Component
@@ -52,10 +53,38 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
+    const { getSize } = useComponentConfig('input');
+    // Use 'md' as default size for input
+    const sizeConfig = getSize('md');
+    
     const inputId = props.id || `input-${Math.random().toString(36).substring(7)}`;
     const errorId = error ? `${inputId}-error` : undefined;
     const helperId = helperText && !error ? `${inputId}-helper` : undefined;
     const describedBy = [errorId, helperId].filter(Boolean).join(' ') || undefined;
+    
+    // Build input style - use theme config if available
+    const inputStyle: React.CSSProperties = {};
+    let paddingClasses = 'px-4 py-2';
+    
+    if (sizeConfig) {
+      if (sizeConfig.paddingX || sizeConfig.paddingY) {
+        paddingClasses = '';
+        if (sizeConfig.paddingX) {
+          inputStyle.paddingLeft = sizeConfig.paddingX;
+          inputStyle.paddingRight = sizeConfig.paddingX;
+        }
+        if (sizeConfig.paddingY) {
+          inputStyle.paddingTop = sizeConfig.paddingY;
+          inputStyle.paddingBottom = sizeConfig.paddingY;
+        }
+      }
+      if (sizeConfig.fontSize) {
+        inputStyle.fontSize = sizeConfig.fontSize;
+      }
+      if (sizeConfig.minHeight) {
+        inputStyle.minHeight = sizeConfig.minHeight;
+      }
+    }
 
     return (
       <div className={clsx('flex flex-col', fullWidth && 'w-full')}>
@@ -83,7 +112,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={clsx(
-              'w-full px-4 py-2 border rounded-lg transition-all duration-200',
+              'w-full border rounded-lg transition-all duration-200',
+              paddingClasses,
               'bg-[var(--color-input)] text-[var(--color-foreground)]',
               'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent',
               'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -95,6 +125,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               rightIcon && 'pr-10',
               className
             )}
+            style={{ ...inputStyle, ...props.style }}
             aria-invalid={error ? 'true' : undefined}
             aria-describedby={describedBy}
             aria-required={props.required}

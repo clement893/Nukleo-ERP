@@ -1,6 +1,8 @@
 import { ButtonHTMLAttributes, ReactNode, memo } from 'react';
 import { clsx } from 'clsx';
 import { ButtonVariant, Size } from './types';
+import { useComponentConfig } from '@/lib/theme/use-component-config';
+import { mergeVariantConfig, applyVariantConfigAsStyles } from '@/lib/theme/variant-helpers';
 
 /**
  * Button Component
@@ -104,7 +106,8 @@ const variants = {
   ),
 };
 
-const sizes = {
+// Default sizes (fallback if theme config not available)
+const defaultSizes = {
   sm: 'px-4 py-2 text-sm min-h-[44px]', // Ensure minimum touch target (44x44px)
   md: 'px-6 py-3 text-base min-h-[44px]',
   lg: 'px-8 py-4 text-lg min-h-[44px]',
@@ -121,10 +124,62 @@ function Button({
   asChild = false,
   ...props
 }: ButtonProps) {
+  const { getSize, getVariant } = useComponentConfig('button');
+  const sizeConfig = getSize(size);
+  const variantConfig = getVariant(variant);
+  
+  // Build size classes - use theme config if available, otherwise use defaults
+  let sizeClasses = defaultSizes[size] || defaultSizes.md;
+  const sizeStyle: React.CSSProperties = {};
+  
+  // Apply theme size config if available
+  if (sizeConfig) {
+    // Use theme padding if provided
+    if (sizeConfig.paddingX || sizeConfig.paddingY) {
+      // Remove padding classes and use inline styles instead
+      sizeClasses = sizeClasses.replace(/px-\d+|py-\d+/g, '').trim();
+      if (sizeConfig.paddingX) {
+        sizeStyle.paddingLeft = sizeConfig.paddingX;
+        sizeStyle.paddingRight = sizeConfig.paddingX;
+      }
+      if (sizeConfig.paddingY) {
+        sizeStyle.paddingTop = sizeConfig.paddingY;
+        sizeStyle.paddingBottom = sizeConfig.paddingY;
+      }
+    }
+    
+    // Use theme fontSize if provided
+    if (sizeConfig.fontSize) {
+      sizeClasses = sizeClasses.replace(/text-(xs|sm|base|lg|xl|2xl)/g, '').trim();
+      sizeStyle.fontSize = sizeConfig.fontSize;
+    }
+    
+    // Use theme minHeight if provided
+    if (sizeConfig.minHeight) {
+      sizeClasses = sizeClasses.replace(/min-h-\[.*?\]/g, '').trim();
+      sizeStyle.minHeight = sizeConfig.minHeight;
+    }
+    
+    // Use theme borderRadius if provided
+    if (sizeConfig.borderRadius) {
+      sizeStyle.borderRadius = sizeConfig.borderRadius;
+    }
+  }
+  
+  // Merge theme variant with default variant
+  const variantClasses = variantConfig
+    ? mergeVariantConfig(variants[variant] || variants.primary, variantConfig)
+    : variants[variant] || variants.primary;
+  
+  // Get variant styles for inline application
+  const variantStyles = variantConfig
+    ? applyVariantConfigAsStyles(variantConfig)
+    : {};
+  
   const buttonClasses = clsx(
     baseStyles,
-    variants[variant],
-    sizes[size],
+    variantClasses,
+    sizeClasses,
     fullWidth && 'w-full',
     className
   );
@@ -137,6 +192,7 @@ function Button({
   return (
     <button
       className={buttonClasses}
+      style={{ ...sizeStyle, ...variantStyles, ...props.style }}
       disabled={disabled || loading}
       aria-busy={loading}
       aria-disabled={disabled || loading}

@@ -139,7 +139,18 @@ const config: Config = {
         ring: 'var(--color-ring)',
       },
       spacing: {
-        // Extended spacing scale for consistent layouts
+        // Theme-aware spacing using CSS variables with fallbacks
+        // These map to the theme's spacing scale
+        xs: 'var(--spacing-xs, 0.5rem)',      // 8px default
+        sm: 'var(--spacing-sm, 0.75rem)',     // 12px default
+        md: 'var(--spacing-md, 1rem)',        // 16px default
+        lg: 'var(--spacing-lg, 1.5rem)',      // 24px default
+        xl: 'var(--spacing-xl, 2rem)',        // 32px default
+        '2xl': 'var(--spacing-2xl, 3rem)',    // 48px default
+        '3xl': 'var(--spacing-3xl, 4rem)',    // 64px default
+        // Spacing unit and scale (for calculations)
+        unit: 'var(--spacing-unit, 0.5rem)',  // 8px default
+        // Extended spacing scale for consistent layouts (keep for backward compatibility)
         18: '4.5rem',
         88: '22rem',
         128: '32rem',

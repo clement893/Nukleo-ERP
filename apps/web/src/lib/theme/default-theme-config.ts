@@ -138,6 +138,156 @@ export const DEFAULT_THEME_CONFIG = {
       primary: "0 0 15px rgba(59, 130, 246, 0.4)",
       secondary: "0 0 15px rgba(139, 92, 246, 0.4)"
     }
+  },
+  
+  // Layout configuration (new - for complex theming)
+  layout: {
+    spacing: {
+      unit: "8px",
+      scale: 1.5,
+      xs: "4px",
+      sm: "8px",
+      md: "16px",
+      lg: "24px",
+      xl: "32px",
+      "2xl": "48px",
+      "3xl": "64px"
+    },
+    gaps: {
+      tight: "0.5rem",
+      normal: "1rem",
+      loose: "1.5rem"
+    },
+    containers: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px"
+    }
+  },
+  
+  // Component configuration (new - for complex theming)
+  components: {
+    button: {
+      sizes: {
+        sm: {
+          paddingX: "1rem",
+          paddingY: "0.5rem",
+          fontSize: "0.875rem",
+          minHeight: "36px"
+        },
+        md: {
+          paddingX: "1.5rem",
+          paddingY: "0.75rem",
+          fontSize: "1rem",
+          minHeight: "44px"
+        },
+        lg: {
+          paddingX: "2rem",
+          paddingY: "1rem",
+          fontSize: "1.125rem",
+          minHeight: "48px"
+        }
+      },
+      variants: {
+        primary: {
+          background: "var(--color-primary-500)",
+          hover: "var(--color-primary-600)",
+          text: "white"
+        },
+        secondary: {
+          background: "var(--color-secondary-500)",
+          hover: "var(--color-secondary-600)",
+          text: "white"
+        },
+        outline: {
+          border: "2px solid var(--color-primary-500)",
+          text: "var(--color-primary-600)",
+          hover: "var(--color-primary-50)"
+        },
+        ghost: {
+          text: "var(--color-foreground)",
+          hover: "var(--color-muted)"
+        },
+        danger: {
+          background: "var(--color-danger-500)",
+          hover: "var(--color-danger-600)",
+          text: "white"
+        }
+      },
+      layout: {
+        iconPosition: "left",
+        iconGap: "0.5rem",
+        contentAlignment: "center"
+      }
+    },
+    card: {
+      padding: {
+        sm: "1rem",
+        md: "1.5rem",
+        lg: "2rem"
+      },
+      structure: {
+        header: true,
+        footer: true,
+        divider: true
+      }
+    },
+    input: {
+      sizes: {
+        sm: {
+          paddingX: "0.75rem",
+          paddingY: "0.5rem",
+          fontSize: "0.875rem",
+          minHeight: "36px"
+        },
+        md: {
+          paddingX: "1rem",
+          paddingY: "0.75rem",
+          fontSize: "1rem",
+          minHeight: "44px"
+        },
+        lg: {
+          paddingX: "1.25rem",
+          paddingY: "1rem",
+          fontSize: "1.125rem",
+          minHeight: "48px"
+        }
+      }
+    }
+  },
+  
+  // Animation configuration (new - for complex theming)
+  animations: {
+    duration: {
+      fast: "150ms",
+      normal: "200ms",
+      slow: "300ms"
+    },
+    easing: {
+      default: "ease-in-out",
+      bounce: "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+      smooth: "cubic-bezier(0.4, 0, 0.2, 1)"
+    },
+    transitions: {
+      colors: "colors 200ms ease-in-out",
+      transform: "transform 150ms ease-out",
+      opacity: "opacity 200ms ease-in-out"
+    }
+  },
+  
+  // Responsive configuration (new - for complex theming)
+  responsive: {
+    breakpoints: {
+      mobile: "480px",
+      tablet: "768px",
+      desktop: "1024px",
+      wide: "1280px"
+    },
+    behaviors: {
+      mobileFirst: true,
+      containerQueries: false
+    }
   }
 } as const;
 

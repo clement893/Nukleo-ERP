@@ -31,6 +31,10 @@ export type { DropdownItem } from './Dropdown';
 // Layout Components
 export { default as Card } from './Card';
 export { default as Container } from './Container';
+export { default as Stack } from './Stack';
+export type { StackProps } from './Stack';
+export { default as Grid } from './Grid';
+export type { GridProps } from './Grid';
 export { default as Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs';
 export type { TabListProps, TabProps, TabPanelsProps, TabPanelProps } from './Tabs';
 export type { Tab as TabType } from './Tabs';

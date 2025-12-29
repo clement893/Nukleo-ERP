@@ -26,6 +26,8 @@
 import { type ReactNode, memo } from 'react';
 import { clsx } from 'clsx';
 import { AlertVariant, BaseComponentProps, ClosableProps, IconProps } from './types';
+import { useComponentConfig } from '@/lib/theme/use-component-config';
+import { applyVariantConfigAsStyles } from '@/lib/theme/variant-helpers';
 
 export interface AlertProps extends BaseComponentProps, ClosableProps, IconProps {
   /** Alert variant style */
@@ -110,8 +112,16 @@ function Alert({
   className,
   icon,
 }: AlertProps) {
+  const { getVariant } = useComponentConfig('alert');
+  const variantConfig = getVariant(variant);
+  
   const classes = variantClasses[variant];
   const displayIcon = icon ?? defaultIcons[variant];
+  
+  // Get variant styles for inline application
+  const variantStyles = variantConfig
+    ? applyVariantConfigAsStyles(variantConfig)
+    : {};
 
   return (
     <div
@@ -120,6 +130,7 @@ function Alert({
         classes.container,
         className
       )}
+      style={variantStyles}
     >
       <div className="flex">
         <div className="flex-shrink-0">{displayIcon}</div>

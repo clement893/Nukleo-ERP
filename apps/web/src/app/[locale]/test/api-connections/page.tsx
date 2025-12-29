@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { apiClient } from '@/lib/api/client';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button, Card, Alert, Badge } from '@/components/ui';
@@ -8,7 +8,6 @@ import { getErrorMessage } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { RefreshCw, CheckCircle, Download, FileText, ExternalLink, Eye, XCircle, Loader2, Copy, Check } from 'lucide-react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { ClientOnly } from '@/components/ui/ClientOnly';
 
 interface ConnectionStatus {
   success: boolean;
@@ -71,6 +70,11 @@ type ApiResponseWrapper<T> = {
 };
 
 function APIConnectionTestContent() {
+  // Mounted check to prevent memory leaks
+  const isMountedRef = useRef(true);
+  // AbortController for request cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const [status, setStatus] = useState<ConnectionStatus | null>(null);
   const [frontendCheck, setFrontendCheck] = useState<CheckResult | null>(null);
   const [backendCheck, setBackendCheck] = useState<CheckResult | null>(null);
@@ -84,15 +88,39 @@ function APIConnectionTestContent() {
   const [componentTests, setComponentTests] = useState<Array<{ name: string; status: 'pending' | 'success' | 'error'; message?: string }>>([]);
   const [isTestingComponents, setIsTestingComponents] = useState(false);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Cancel any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   const checkStatus = async () => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
     setIsLoadingStatus(true);
     setError('');
 
     try {
-      const response = await apiClient.get<ConnectionStatus>('/v1/api-connection-check/status');
+      const response = await apiClient.get<ConnectionStatus>('/v1/api-connection-check/status', { signal });
       // Extract data using proper type handling
       const apiResponse = response as unknown as ApiResponseWrapper<ConnectionStatus>;
       const data = apiResponse?.data || (response as ConnectionStatus);
+      
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) return;
       
       // If frontend/backend data is empty but success is true, it means scripts are not available
       // This is normal in production environments
@@ -114,11 +142,16 @@ function APIConnectionTestContent() {
         setStatus(data);
       }
     } catch (err: unknown) {
+      // Don't update state if request was aborted or component unmounted
+      if (signal.aborted || !isMountedRef.current) return;
+      
       const errorMessage = getErrorMessage(err) || 'Failed to check API connection status';
       setError(errorMessage);
       setStatus(null);
     } finally {
-      setIsLoadingStatus(false);
+      if (isMountedRef.current) {
+        setIsLoadingStatus(false);
+      }
     }
   };
 
@@ -172,39 +205,60 @@ function APIConnectionTestContent() {
   };
 
   const checkFrontend = async (detailed = false) => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
     setIsLoading(true);
     setError('');
     setFrontendCheck(null);
 
     try {
       const params = detailed ? { detailed: 'true' } : {};
-      const response = await apiClient.get<CheckResult>('/v1/api-connection-check/frontend', { params });
+      const response = await apiClient.get<CheckResult>('/v1/api-connection-check/frontend', { params, signal });
       const apiResponse = response as unknown as ApiResponseWrapper<CheckResult>;
       const data = (apiResponse?.data || (response as CheckResult)) ?? null;
+      
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) return;
       
       // If backend suggests using frontend analysis, do it
       if (data && !data.success && data.useFrontendAnalysis) {
         // Try frontend analysis
         try {
           const frontendAnalysis = await analyzeFrontendFiles();
-          setFrontendCheck(frontendAnalysis);
+          if (isMountedRef.current) {
+            setFrontendCheck(frontendAnalysis);
+          }
           return;
         } catch (frontendErr) {
           // If frontend analysis also fails, show the original error
-          setFrontendCheck(data);
-          if (data.error) {
-            setError(data.error + ' (Frontend analysis also unavailable)');
+          if (isMountedRef.current) {
+            setFrontendCheck(data);
+            if (data.error) {
+              setError(data.error + ' (Frontend analysis also unavailable)');
+            }
           }
           return;
         }
       }
       
-      setFrontendCheck(data);
-      // If the response indicates failure, also set error for visibility
-      if (data && !data.success && data.error) {
-        setError(data.error);
+      if (isMountedRef.current) {
+        setFrontendCheck(data);
+        // If the response indicates failure, also set error for visibility
+        if (data && !data.success && data.error) {
+          setError(data.error);
+        }
       }
     } catch (err: unknown) {
+      // Don't update state if request was aborted or component unmounted
+      if (signal.aborted || !isMountedRef.current) return;
+      
       const errorMessage = getErrorMessage(err) || 'Failed to check frontend connections';
       setError(errorMessage);
       setFrontendCheck({
@@ -212,28 +266,46 @@ function APIConnectionTestContent() {
         error: errorMessage,
       });
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   const checkBackend = async () => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
     setIsLoading(true);
     setError('');
     setBackendCheck(null);
 
     try {
-      const response = await apiClient.get<CheckResult>('/v1/api-connection-check/backend');
+      const response = await apiClient.get<CheckResult>('/v1/api-connection-check/backend', { signal });
       // apiClient.get returns response.data from axios, which is the FastAPI response directly
       // FastAPI returns the data directly, not wrapped in ApiResponse
       // So response is already CheckResult, not ApiResponse<CheckResult>
       const apiResponse = response as unknown as ApiResponseWrapper<CheckResult>;
       const data = (apiResponse?.data || (response as CheckResult)) ?? null;
+      
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) return;
+      
       setBackendCheck(data);
       // If the response indicates failure, also set error for visibility
       if (data && !data.success && data.error) {
         setError(data.error);
       }
     } catch (err: unknown) {
+      // Don't update state if request was aborted or component unmounted
+      if (signal.aborted || !isMountedRef.current) return;
+      
       const errorMessage = getErrorMessage(err) || 'Failed to check backend endpoints';
       setError(errorMessage);
       setBackendCheck({
@@ -241,12 +313,23 @@ function APIConnectionTestContent() {
         error: errorMessage,
       });
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
 
   const testCriticalEndpoints = async () => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
     setIsTestingEndpoints(true);
     setError('');
     
@@ -381,6 +464,12 @@ function APIConnectionTestContent() {
     const results: EndpointTestResult[] = [];
 
     for (const { endpoint, method, requiresAuth, category } of endpointsToTest) {
+      // Check if request was aborted
+      if (signal.aborted || !isMountedRef.current) {
+        setIsTestingEndpoints(false);
+        return;
+      }
+
       const startTime = Date.now();
       const testResult: EndpointTestResult = {
         endpoint,
@@ -390,7 +479,9 @@ function APIConnectionTestContent() {
       };
       
       results.push(testResult);
-      setEndpointTests([...results]);
+      if (isMountedRef.current) {
+        setEndpointTests([...results]);
+      }
 
       try {
         if (!endpoint) {
@@ -404,7 +495,7 @@ function APIConnectionTestContent() {
         const params = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
         
         if (testMethod === 'get') {
-          await apiClient.get(urlPath || endpoint, { params });
+          await apiClient.get(urlPath || endpoint, { params, signal });
         } else if (testMethod === 'post') {
           // Pour POST, on envoie des données minimales selon le type d'endpoint
           let testData: any = {};
@@ -423,16 +514,22 @@ function APIConnectionTestContent() {
             testData = {};
           }
           
-          await apiClient.post(urlPath || endpoint, testData);
+          await apiClient.post(urlPath || endpoint, testData, { signal });
         } else {
           throw new Error(`Method ${method} not supported in test`);
         }
+
+        // Check if component is still mounted before updating state
+        if (!isMountedRef.current) return;
 
         const responseTime = Date.now() - startTime;
         testResult.status = 'success';
         testResult.message = `OK (${responseTime}ms)`;
         testResult.responseTime = responseTime;
       } catch (err: unknown) {
+        // Don't update state if request was aborted or component unmounted
+        if (signal.aborted || !isMountedRef.current) return;
+
         const responseTime = Date.now() - startTime;
         const errorMessage = getErrorMessage(err);
         
@@ -476,11 +573,15 @@ function APIConnectionTestContent() {
         testResult.responseTime = responseTime;
       }
 
-      results[results.length - 1] = testResult;
-      setEndpointTests([...results]);
+      if (isMountedRef.current) {
+        results[results.length - 1] = testResult;
+        setEndpointTests([...results]);
+      }
     }
 
-    setIsTestingEndpoints(false);
+    if (isMountedRef.current) {
+      setIsTestingEndpoints(false);
+    }
   };
 
   const copyTestResult = useCallback(async (test: EndpointTestResult) => {
@@ -829,8 +930,7 @@ function APIConnectionTestContent() {
   };
 
   return (
-    <ClientOnly>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
           title="API Connection Test"
           description="Test and verify API connections between frontend pages and backend endpoints"
@@ -1588,7 +1688,6 @@ function APIConnectionTestContent() {
         )}
       </Card>
       </PageContainer>
-    </ClientOnly>
   );
 }
 

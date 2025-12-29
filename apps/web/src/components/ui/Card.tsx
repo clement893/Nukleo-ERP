@@ -80,6 +80,7 @@
 
 import { type ReactNode, type HTMLAttributes } from 'react';
 import { clsx } from 'clsx';
+import { useGlobalTheme } from '@/lib/theme/global-theme-provider';
 
 export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> {
   /** Card content */
@@ -115,11 +116,30 @@ export default function Card({
   padding = true,
   ...props
 }: CardProps) {
+  const { theme } = useGlobalTheme();
+  // Get card padding from theme config (card uses padding object, not sizes)
+  const cardConfig = theme?.config?.components?.card;
+  const cardPaddingConfig = cardConfig?.padding;
+  
   // Use actions as footer if footer is not provided
   const cardFooter = footer || actions;
   
   // Generate aria-label for clickable cards without title
   const ariaLabel = onClick && !title ? 'Clickable card' : undefined;
+  
+  // Get card padding - use theme config if available, otherwise use defaults
+  const getCardPadding = () => {
+    if (!cardPaddingConfig) {
+      return 'p-4 sm:p-6'; // Default padding classes
+    }
+    // Use theme padding (sm, md, lg)
+    const paddingSize = 'md'; // Default to md
+    const paddingValue = cardPaddingConfig[paddingSize] || cardPaddingConfig.md || '1.5rem';
+    return paddingValue;
+  };
+  
+  const cardPadding = getCardPadding();
+  const useThemePadding = typeof cardPadding === 'string' && cardPadding !== 'p-4 sm:p-6';
   
   return (
     <div
@@ -165,7 +185,18 @@ export default function Card({
       {...props}
     >
       {(title || subtitle || header) && (
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--color-border)]">
+        <div 
+          className={clsx(
+            'border-b border-[var(--color-border)]',
+            !useThemePadding && 'px-4 sm:px-6 py-3 sm:py-4'
+          )}
+          style={useThemePadding ? {
+            paddingLeft: cardPadding,
+            paddingRight: cardPadding,
+            paddingTop: cardPadding,
+            paddingBottom: cardPadding,
+          } : undefined}
+        >
           {header || (
             <>
               {title && (
@@ -183,10 +214,30 @@ export default function Card({
         </div>
       )}
 
-      <div className={clsx(padding && 'p-4 sm:p-6')}>{children}</div>
+      <div 
+        className={clsx(
+          padding && !useThemePadding && cardPadding
+        )}
+        style={padding && useThemePadding ? {
+          padding: cardPadding,
+        } : undefined}
+      >
+        {children}
+      </div>
 
       {cardFooter && (
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--color-border)] bg-[var(--color-muted)]">
+        <div 
+          className={clsx(
+            'border-t border-[var(--color-border)] bg-[var(--color-muted)]',
+            !useThemePadding && 'px-4 sm:px-6 py-3 sm:py-4'
+          )}
+          style={useThemePadding ? {
+            paddingLeft: cardPadding,
+            paddingRight: cardPadding,
+            paddingTop: cardPadding,
+            paddingBottom: cardPadding,
+          } : undefined}
+        >
           {cardFooter}
         </div>
       )}

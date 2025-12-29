@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { useLayout } from '@/lib/theme/use-layout';
 
 interface ContainerProps {
   children: ReactNode;
@@ -14,7 +15,10 @@ export default function Container({
   maxWidth = 'xl',
   padding = true,
 }: ContainerProps) {
-  const maxWidths = {
+  const { getContainerWidth } = useLayout();
+  
+  // Default max widths (fallback if theme not available)
+  const defaultMaxWidths = {
     sm: 'max-w-screen-sm',
     md: 'max-w-screen-md',
     lg: 'max-w-screen-lg',
@@ -22,15 +26,24 @@ export default function Container({
     '2xl': 'max-w-screen-2xl',
     full: 'max-w-full',
   };
+  
+  // Use theme container width if available and size matches theme sizes
+  const useThemeWidth = ['sm', 'md', 'lg', 'xl'].includes(maxWidth);
+  const containerStyle = useThemeWidth
+    ? { maxWidth: getContainerWidth(maxWidth as 'sm' | 'md' | 'lg' | 'xl') }
+    : undefined;
+  
+  const maxWidthClass = useThemeWidth ? undefined : defaultMaxWidths[maxWidth];
 
   return (
     <div
       className={clsx(
         'mx-auto',
-        maxWidths[maxWidth],
+        maxWidthClass,
         padding && 'px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12',
         className
       )}
+      style={containerStyle}
     >
       {children}
     </div>

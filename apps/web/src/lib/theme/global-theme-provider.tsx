@@ -394,11 +394,49 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
       });
     }
     
-    // Apply spacing
+    // Apply spacing (support both old format and new layout.spacing format)
+    // Old format: config.spacing (for backward compatibility)
     if ((configToApply as any).spacing) {
       const spacing = (configToApply as any).spacing;
       Object.entries(spacing).forEach(([key, value]) => {
-        root.style.setProperty(`--spacing-${key}`, String(value));
+        if (key !== 'unit' && key !== 'scale' && typeof value === 'string') {
+          root.style.setProperty(`--spacing-${key}`, String(value));
+        }
+      });
+      // Set unit and scale if provided
+      if (spacing.unit) root.style.setProperty('--spacing-unit', String(spacing.unit));
+      if (spacing.scale) root.style.setProperty('--spacing-scale', String(spacing.scale));
+    }
+    
+    // New format: config.layout.spacing (for complex theming)
+    if ((configToApply as any).layout?.spacing) {
+      const spacing = (configToApply as any).layout.spacing;
+      if (spacing.unit) root.style.setProperty('--spacing-unit', String(spacing.unit));
+      if (spacing.scale) root.style.setProperty('--spacing-scale', String(spacing.scale));
+      Object.entries(spacing).forEach(([key, value]) => {
+        if (key !== 'unit' && key !== 'scale' && typeof value === 'string') {
+          root.style.setProperty(`--spacing-${key}`, String(value));
+        }
+      });
+    }
+    
+    // Apply gaps (new layout system)
+    if ((configToApply as any).layout?.gaps) {
+      const gaps = (configToApply as any).layout.gaps;
+      Object.entries(gaps).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          root.style.setProperty(`--gap-${key}`, String(value));
+        }
+      });
+    }
+    
+    // Apply container widths (new layout system)
+    if ((configToApply as any).layout?.containers) {
+      const containers = (configToApply as any).layout.containers;
+      Object.entries(containers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          root.style.setProperty(`--container-${key}`, String(value));
+        }
       });
     }
     
