@@ -114,6 +114,27 @@ export function handleApiError(error: unknown): AppError {
     const responseData = error.response?.data as ApiErrorResponse | any | undefined;
     const requestUrl = error.config?.url ?? 'unknown';
     const requestMethod = error.config?.method?.toUpperCase() ?? 'UNKNOWN';
+    
+    // If response data is a Blob (common for export endpoints with errors), 
+    // it should have been converted to JSON by the caller before reaching here
+    // But if it hasn't, we'll handle it gracefully
+    if (responseData instanceof Blob) {
+      logger.warn('[handleApiError] Error response is still a Blob - should have been converted by caller', {
+        statusCode,
+        url: requestUrl,
+        contentType: error.response?.headers?.['content-type'],
+      });
+      
+      // Return a generic error - the caller should convert blob to JSON first
+      return new ValidationError(
+        'Erreur lors de l\'export. Le service d\'export n\'est peut-être pas disponible.',
+        {
+          url: requestUrl,
+          method: requestMethod,
+          statusCode,
+        }
+      );
+    }
 
     // Check for FastAPI standard validation error format (detail array)
     // FastAPI returns 422 errors in format: { "detail": [{ "type": "...", "loc": [...], "msg": "..." }] }

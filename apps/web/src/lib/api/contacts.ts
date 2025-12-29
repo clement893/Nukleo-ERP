@@ -161,10 +161,63 @@ export const contactsAPI = {
    * Export contacts to Excel
    */
   export: async (): Promise<Blob> => {
-    const response = await apiClient.get('/v1/commercial/contacts/export', {
-      responseType: 'blob',
-    });
-    return response.data as Blob;
+    try {
+      const response = await apiClient.get('/v1/commercial/contacts/export', {
+        responseType: 'blob',
+      });
+      
+      // Check if response is actually an error (blob containing JSON error)
+      if (response.status >= 400) {
+        // Try to parse blob as JSON error
+        const text = await (response.data as Blob).text();
+        let errorData: any;
+        try {
+          errorData = JSON.parse(text);
+        } catch (parseError) {
+          // If not JSON, create error object with text
+          errorData = { detail: text || 'Export failed' };
+        }
+        
+        // Create AxiosError-like object
+        const axiosError = {
+          response: {
+            status: response.status,
+            statusText: response.statusText,
+            data: errorData,
+            headers: response.headers,
+            config: response.config,
+          },
+          config: response.config,
+          isAxiosError: true,
+          name: 'AxiosError',
+          message: `Request failed with status code ${response.status}`,
+        };
+        
+        throw axiosError;
+      }
+      
+      return response.data as Blob;
+    } catch (error: any) {
+      // If error response is a blob, convert it to JSON first
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          let errorData: any;
+          try {
+            errorData = JSON.parse(text);
+          } catch (parseError) {
+            // If not JSON, create error object with text
+            errorData = { detail: text || 'Export failed' };
+          }
+          // Replace blob with parsed JSON
+          error.response.data = errorData;
+        } catch (parseError) {
+          // If parsing fails, create a generic error
+          error.response.data = { detail: 'Erreur lors de l\'export' };
+        }
+      }
+      throw error;
+    }
   },
 
   /**
