@@ -37,6 +37,8 @@ from app.models.theme_font import ThemeFont
 from app.models.notification import Notification, NotificationType
 from app.models.report import Report
 from app.models.post import Post
+from app.models.contact import Contact
+from app.models.company import Company
 from app.models.file import File
 from app.core.security_audit import SecurityAuditLog
 
@@ -114,5 +116,7 @@ __all__ = [
     "Post",
     "File",
     "SecurityAuditLog",
+    "Contact",
+    "Company",
 ]
 

@@ -68,3 +68,7 @@ export { apiClient as client } from './client';
 
 // Re-export theme errors utilities
 export * from './theme-errors';
+
+// Re-export contacts API
+export { contactsAPI } from './contacts';
+export type { Contact, ContactCreate, ContactUpdate } from './contacts';
