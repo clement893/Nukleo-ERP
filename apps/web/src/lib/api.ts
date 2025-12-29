@@ -301,14 +301,18 @@ export const usersAPI = {
         is_public: true 
       });
       
-      // Return the file_path or url from media response
-      // media.file_path should be the URL to access the file
+      // MediaResponse returns file_path which should be the URL
+      // But if it's a relative path, we might need to construct the full URL
       if (media.file_path) {
+        // If file_path is already a full URL, return it
+        if (media.file_path.startsWith('http://') || media.file_path.startsWith('https://')) {
+          return media.file_path;
+        }
+        // Otherwise, it might be a file_key - we'll need to use the upload endpoint response
+        // For now, try to use it as-is (backend should return full URL)
         return media.file_path;
       }
       
-      // Fallback: try to construct URL from filename if file_path is not available
-      // This might happen if backend returns relative path
       throw new Error('Media upload succeeded but no file path returned');
     } catch (error) {
       // If mediaAPI fails, try the legacy upload endpoint as fallback
@@ -351,8 +355,10 @@ export const usersAPI = {
         
         throw new Error('Upload succeeded but no URL returned in response');
       } catch (fallbackError) {
-        // If both methods fail, throw the original error
-        throw error instanceof Error ? error : new Error(String(error));
+        // If both methods fail, throw the original error with better message
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+        throw new Error(`Avatar upload failed: ${errorMessage}. Fallback also failed: ${fallbackMessage}`);
       }
     }
   },
