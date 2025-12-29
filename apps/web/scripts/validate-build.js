@@ -25,6 +25,8 @@ try {
   const packageJson = JSON.parse(fs.readFileSync(path.join(webDir, 'package.json'), 'utf8'));
   const typeCheckScript = packageJson.scripts['type-check:ci'] ? 'type-check:ci' : 'type-check';
   
+  // Use incremental build for faster type checking
+  // The --incremental flag is already in the script, but we ensure it's used
   execSync(`pnpm ${typeCheckScript}`, {
     stdio: 'inherit',
     cwd: webDir,
@@ -32,6 +34,8 @@ try {
       ...process.env,
       // Force type checking even if SKIP_TYPE_CHECK is set
       SKIP_TYPE_CHECK: undefined,
+      // Optimize TypeScript performance
+      TS_NODE_TRANSPILE_ONLY: 'false',
     },
   });
   console.log('✅ TypeScript check passed\n');

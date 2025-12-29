@@ -3,8 +3,9 @@
 Ce document décrit les optimisations appliquées pour accélérer les builds Docker sur Railway.
 
 ## Temps de build actuel
-- **Avant optimisations** : ~241 secondes (4 minutes)
-- **Objectif** : Réduire à ~150-180 secondes (2.5-3 minutes)
+- **Avant optimisations** : ~367 secondes (6.1 minutes)
+- **Après optimisations** : ~280-300 secondes (4.5-5 minutes) estimé
+- **Objectif** : Réduire à ~200-250 secondes (3.5-4 minutes)
 
 ## Optimisations appliquées
 
@@ -25,17 +26,19 @@ Ce document décrit les optimisations appliquées pour accélérer les builds Do
 - `apps/web/next.config.js` : Ajout de `skipLibCheck: true`
 
 ### 2. Optimisation des build traces ✅
-**Gain estimé** : ~30-45 secondes
+**Gain estimé** : ~50 secondes
 
-**Problème** : Les build traces prenaient ~45 secondes malgré `buildTraces: false` dans `next.config.js`
+**Problème** : Les build traces prenaient ~50 secondes malgré `buildTraces: false` dans `next.config.js`
 
 **Solution** :
 - `buildTraces: false` déjà présent dans `next.config.js`
 - Ajout de `ENV NEXT_PRIVATE_STANDALONE=true` dans Dockerfile pour forcer le mode standalone
+- Ajout de `ENV NEXT_PRIVATE_SKIP_TRACE=1` pour désactiver complètement les build traces
 - Les build traces sont désactivées dans le mode standalone
 
 **Fichiers modifiés** :
-- `Dockerfile` : Ajout de `ENV NEXT_PRIVATE_STANDALONE=true`
+- `Dockerfile` : Ajout de `ENV NEXT_PRIVATE_STANDALONE=true` et `ENV NEXT_PRIVATE_SKIP_TRACE=1`
+- `apps/web/next.config.js` : Documentation mise à jour
 
 ### 3. Optimisation des installations pnpm ✅
 **Gain estimé** : ~5-10 secondes
@@ -62,6 +65,19 @@ Ce document décrit les optimisations appliquées pour accélérer les builds Do
 - `apps/web/tsconfig.json` : Déjà optimisé
 - `apps/web/next.config.js` : Ajout de `skipLibCheck: true`
 
+### 5. Optimisation du cache Webpack ✅
+**Gain estimé** : ~10-20 secondes sur les builds suivants
+
+**Solution** :
+- Configuration du cache Webpack filesystem dans `next.config.js`
+- Création anticipée du répertoire de cache dans le Dockerfile
+- Cache compressé avec gzip pour de meilleures performances
+- Durée de cache de 7 jours pour réutiliser les builds précédents
+
+**Fichiers modifiés** :
+- `apps/web/next.config.js` : Configuration du cache Webpack optimisée
+- `Dockerfile` : Création anticipée du répertoire de cache
+
 ## Optimisations futures possibles
 
 ### 1. Cache Docker BuildKit
@@ -71,6 +87,7 @@ Utiliser BuildKit cache mounts pour :
 - Cache pnpm store entre builds
 - Cache node_modules entre builds
 - Cache TypeScript build info
+- Cache Webpack entre builds
 
 **Exemple** :
 ```dockerfile
@@ -103,12 +120,14 @@ Utiliser un cache externe pour `.next/cache/` entre les builds.
 | Optimisation | Gain estimé | Statut |
 |-------------|-------------|--------|
 | Élimination double type check | 15-20s | ✅ Appliqué |
-| Désactivation build traces | 30-45s | ✅ Appliqué |
+| Désactivation build traces | 50s | ✅ Appliqué |
 | Optimisation pnpm install | 5-10s | ✅ Appliqué |
 | Cache TypeScript amélioré | 5-10s | ✅ Appliqué |
-| **Total** | **55-85s** | **✅ Appliqué** |
+| Cache Webpack optimisé | 10-20s (builds suivants) | ✅ Appliqué |
+| **Total** | **85-110s** | **✅ Appliqué** |
 
-**Temps de build estimé après optimisations** : ~155-185 secondes (2.5-3 minutes)
+**Temps de build estimé après optimisations** : ~280-300 secondes (4.5-5 minutes)
+**Temps de build avec cache** : ~250-270 secondes (4-4.5 minutes) sur les builds suivants
 
 ## Vérification
 

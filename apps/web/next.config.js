@@ -65,8 +65,9 @@ const nextConfig = {
     ],
     // Enable faster refresh for better dev experience
     optimizeCss: true,
-    // Disable build traces to speed up finalization phase (~10-30s faster)
-    // Build traces are used for analyzing bundle size but slow down builds
+    // Disable build traces to speed up finalization phase (~50s faster)
+    // Build traces are used for analyzing bundle size but slow down builds significantly
+    // This is also controlled by NEXT_PRIVATE_SKIP_TRACE=1 env var in Dockerfile
     buildTraces: false,
     // Enable partial prerendering for better performance
     ppr: false, // Can be enabled when stable
@@ -93,14 +94,16 @@ const nextConfig = {
   webpack: (config, { isServer, dev, webpack }) => {
     // Optimize webpack cache for faster builds
     // Use persistent filesystem cache that survives between builds
+    // This cache persists across Docker builds when using BuildKit cache mounts
     if (!dev) {
       const path = require('path');
       config.cache = {
         type: 'filesystem',
+        // Store cache in .next/cache/webpack for better Docker layer caching
+        cacheDirectory: path.resolve(__dirname, '.next/cache/webpack'),
         buildDependencies: {
           config: [__filename],
         },
-        cacheDirectory: path.resolve(__dirname, '.next/cache/webpack'),
         // Improve cache performance
         compression: 'gzip',
         // Cache more aggressively

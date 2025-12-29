@@ -49,6 +49,8 @@ RUN test -f packages/types/dist/theme.d.ts || (echo "ERROR: theme.d.ts not found
 
 # Copy source code (copy last to maximize cache hits)
 # Copy only what's needed for build (apps/web and shared packages)
+# Create webpack cache directory early for better caching
+RUN mkdir -p apps/web/.next/cache/webpack
 COPY apps/web ./apps/web
 COPY packages ./packages
 # Copy the API manifest script (needed for api:manifest build step)
@@ -101,8 +103,14 @@ RUN cd apps/web && node scripts/validate-build.js
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_TYPE_CHECK=true
 ENV TSC_COMPILE_ON_ERROR=true
-# Disable build traces collection (saves ~30-45 seconds)
+# Disable build traces collection (saves ~50 seconds)
+# NEXT_PRIVATE_STANDALONE enables standalone output
+# NEXT_PRIVATE_SKIP_TRACE=1 completely disables build traces collection
 ENV NEXT_PRIVATE_STANDALONE=true
+ENV NEXT_PRIVATE_SKIP_TRACE=1
+# Disable type checking during build (already done in validate-build.js)
+ENV SKIP_TYPE_CHECK=true
+# Use Webpack with filesystem cache for faster rebuilds
 RUN cd apps/web && USE_WEBPACK=true pnpm build
 
 # Production image
