@@ -576,9 +576,19 @@ async def import_contacts(
         has_headers=True
     )
     
+    # Load all companies once to create a name -> ID mapping (case-insensitive)
+    companies_result = await db.execute(select(Company))
+    all_companies = companies_result.scalars().all()
+    # Create a case-insensitive mapping: company_name_lower -> company_id
+    company_name_to_id = {}
+    for company in all_companies:
+        if company.name:
+            company_name_to_id[company.name.lower().strip()] = company.id
+    
     # Process imported data
     created_contacts = []
     errors = []
+    warnings = []
     s3_service = S3Service() if S3Service.is_configured() else None
     
     for idx, row_data in enumerate(result['data']):
@@ -586,6 +596,93 @@ async def import_contacts(
             # Map Excel columns to Contact fields
             first_name = row_data.get('first_name') or row_data.get('prénom') or ''
             last_name = row_data.get('last_name') or row_data.get('nom') or ''
+            
+            # Handle company matching by name
+            company_id = row_data.get('company_id') or None
+            
+            # If company_id is not provided, try to find company by name
+            if not company_id:
+                # Try multiple column names for company name
+                company_name = (
+                    row_data.get('company_name') or 
+                    row_data.get('company') or 
+                    row_data.get('entreprise') or 
+                    row_data.get('entreprise_name') or
+                    row_data.get('nom_entreprise') or
+                    None
+                )
+                
+                if company_name and company_name.strip():
+                    company_name_normalized = company_name.strip().lower()
+                    # Remove common prefixes/suffixes for better matching
+                    company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                    
+                    # Try exact match first
+                    if company_name_normalized in company_name_to_id:
+                        company_id = company_name_to_id[company_name_normalized]
+                    elif company_name_clean and company_name_clean in company_name_to_id:
+                        # Try match without legal form
+                        company_id = company_name_to_id[company_name_clean]
+                        warnings.append({
+                            'row': idx + 2,
+                            'type': 'company_match_without_legal_form',
+                            'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
+                            'data': {'company_name': company_name, 'matched_company_id': company_id}
+                        })
+                    else:
+                        # Try partial match (contains) - check both original and cleaned
+                        matched_company_id = None
+                        matched_company_name = None
+                        
+                        # First try with cleaned name
+                        for stored_name, stored_id in company_name_to_id.items():
+                            stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                            if (company_name_clean and stored_clean and 
+                                (company_name_clean in stored_clean or stored_clean in company_name_clean)):
+                                matched_company_id = stored_id
+                                # Find the original company name
+                                for c in all_companies:
+                                    if c.id == stored_id:
+                                        matched_company_name = c.name
+                                        break
+                                break
+                        
+                        # If no match with cleaned, try original normalized
+                        if not matched_company_id:
+                            for stored_name, stored_id in company_name_to_id.items():
+                                if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                                    matched_company_id = stored_id
+                                    # Find the original company name
+                                    for c in all_companies:
+                                        if c.id == stored_id:
+                                            matched_company_name = c.name
+                                            break
+                                    break
+                        
+                        if matched_company_id:
+                            company_id = matched_company_id
+                            warnings.append({
+                                'row': idx + 2,
+                                'type': 'company_partial_match',
+                                'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
+                                'data': {
+                                    'company_name': company_name,
+                                    'matched_company_name': matched_company_name,
+                                    'matched_company_id': matched_company_id,
+                                    'contact': f"{first_name} {last_name}".strip()
+                                }
+                            })
+                        else:
+                            # No match found - add warning
+                            warnings.append({
+                                'row': idx + 2,
+                                'type': 'company_not_found',
+                                'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
+                                'data': {
+                                    'company_name': company_name,
+                                    'contact': f"{first_name} {last_name}".strip()
+                                }
+                            })
             
             # Handle photo upload if ZIP contains photos
             photo_url = row_data.get('photo_url') or row_data.get('photo') or None
@@ -641,7 +738,7 @@ async def import_contacts(
             contact_data = ContactCreate(
                 first_name=first_name,
                 last_name=last_name,
-                company_id=row_data.get('company_id') or None,
+                company_id=company_id,
                 position=row_data.get('position') or row_data.get('poste') or None,
                 circle=row_data.get('circle') or row_data.get('cercle') or None,
                 linkedin=row_data.get('linkedin') or None,
@@ -674,12 +771,15 @@ async def import_contacts(
         for contact in created_contacts:
             await db.refresh(contact)
     
+    # Merge warnings from import service with our company matching warnings
+    all_warnings = (result.get('warnings') or []) + warnings
+    
     return {
         'total_rows': result['total_rows'],
         'valid_rows': len(created_contacts),
         'invalid_rows': len(errors) + result['invalid_rows'],
         'errors': errors + result['errors'],
-        'warnings': result['warnings'],
+        'warnings': all_warnings,
         'photos_uploaded': len(photos_dict) if photos_dict else 0,
         'data': [ContactSchema.model_validate(c) for c in created_contacts]
     }

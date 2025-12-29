@@ -211,6 +211,37 @@ function ContactsContent() {
         });
       }
       
+      // Display warnings, especially for companies not found
+      if (result.warnings && result.warnings.length > 0) {
+        const companyWarnings = result.warnings.filter(w => 
+          w.type === 'company_not_found' || w.type === 'company_partial_match'
+        );
+        
+        if (companyWarnings.length > 0) {
+          const uniqueCompanies = new Set(
+            companyWarnings
+              .map(w => w.data?.company_name as string)
+              .filter(Boolean)
+          );
+          
+          const warningMsg = companyWarnings.length === 1
+            ? `⚠️ ${companyWarnings[0].message}`
+            : `⚠️ ${companyWarnings.length} entreprise(s) nécessitent une révision (${Array.from(uniqueCompanies).join(', ')})`;
+          
+          showToast({
+            message: warningMsg,
+            type: 'warning',
+            duration: 8000, // Longer duration for important warnings
+          });
+          
+          // Also set error state to show detailed warnings
+          const warningsText = companyWarnings
+            .map(w => `Ligne ${w.row}: ${w.message}`)
+            .join('\n');
+          setError(`Avertissements d'import:\n${warningsText}`);
+        }
+      }
+      
       if (result.invalid_rows > 0) {
         showToast({
           message: `${result.invalid_rows} ligne(s) avec erreur(s)`,

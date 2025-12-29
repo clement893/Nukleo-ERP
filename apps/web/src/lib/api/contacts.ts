@@ -131,6 +131,12 @@ export const contactsAPI = {
     valid_rows: number;
     invalid_rows: number;
     errors: Array<{ row: number; data: unknown; error: string }>;
+    warnings?: Array<{ 
+      row: number; 
+      type: string; 
+      message: string; 
+      data?: Record<string, unknown> 
+    }>;
     data: Contact[];
     photos_uploaded?: number;
   }> => {
@@ -142,6 +148,12 @@ export const contactsAPI = {
       valid_rows: number;
       invalid_rows: number;
       errors: Array<{ row: number; data: unknown; error: string }>;
+      warnings?: Array<{ 
+        row: number; 
+        type: string; 
+        message: string; 
+        data?: Record<string, unknown> 
+      }>;
       data: Contact[];
       photos_uploaded?: number;
     }>('/v1/commercial/contacts/import', formData, {
@@ -155,6 +167,7 @@ export const contactsAPI = {
       valid_rows: 0,
       invalid_rows: 0,
       errors: [],
+      warnings: [],
       data: [],
       photos_uploaded: 0,
     };
