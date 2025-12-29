@@ -639,6 +639,54 @@ function ContactsContent() {
                 <div className="space-y-2">
                   {/* Active filters badges */}
                   <div className="flex flex-wrap gap-2">
+                    {filterFirstName && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                        {filterFirstName}
+                        <button
+                          onClick={() => setFilterFirstName('')}
+                          className="ml-0.5 hover:text-danger"
+                          aria-label="Retirer le filtre prénom"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </Badge>
+                    )}
+                    {filterLastName && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                        {filterLastName}
+                        <button
+                          onClick={() => setFilterLastName('')}
+                          className="ml-0.5 hover:text-danger"
+                          aria-label="Retirer le filtre nom"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </Badge>
+                    )}
+                    {filterEmail && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                        {filterEmail}
+                        <button
+                          onClick={() => setFilterEmail('')}
+                          className="ml-0.5 hover:text-danger"
+                          aria-label="Retirer le filtre email"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </Badge>
+                    )}
+                    {filterPhone && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                        {filterPhone}
+                        <button
+                          onClick={() => setFilterPhone('')}
+                          className="ml-0.5 hover:text-danger"
+                          aria-label="Retirer le filtre téléphone"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </Badge>
+                    )}
                     {filterCircle && (() => {
                       const foundCircle = circles.find(c => c === filterCircle);
                       const displayName = foundCircle 
@@ -670,23 +718,6 @@ function ContactsContent() {
                       </Badge>
                     )}
                   </div>
-                  {companies.length > 0 && (
-                    <div>
-                      <label className="block text-xs text-muted-foreground mb-1">Entreprise</label>
-                      <select
-                        value={filterCompany}
-                        onChange={(e) => setFilterCompany(e.target.value)}
-                        className="w-full px-2 py-1 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option value="">Toutes les entreprises</option>
-                        {companies.map((company) => (
-                          <option key={company.id} value={company.id.toString()}>
-                            {company.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
