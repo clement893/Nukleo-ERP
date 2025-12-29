@@ -89,10 +89,12 @@ const variants = {
     '[color:var(--color-primary-500)]',
   ].join(' '),
   ghost: [
-    'text-foreground',
-    'hover:bg-muted',
-    'focus:ring-primary-500',
-    'dark:focus:ring-primary-400',
+    'text-gray-700',
+    'dark:text-gray-300',
+    'hover:bg-gray-100',
+    'dark:hover:bg-gray-800',
+    'focus:ring-gray-500',
+    'dark:focus:ring-gray-400',
   ].join(' '),
   danger: createVariantStyles(
     ['bg-danger-600', 'dark:bg-danger-500', 'text-white'],

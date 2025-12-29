@@ -131,7 +131,7 @@ export default function Header() {
               <Link
                 href="/components"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-foreground hover:text-primary transition-colors px-4 py-3 min-h-[44px] flex items-center rounded-lg hover:bg-muted/50"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors px-4 py-3 min-h-[44px] flex items-center rounded-lg hover:bg-muted/50"
               >
                 Composants
               </Link>
@@ -143,19 +143,19 @@ export default function Header() {
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-foreground hover:text-primary transition-colors px-4 py-3 min-h-[44px] flex items-center rounded-lg hover:bg-muted/50"
+                    className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors px-4 py-3 min-h-[44px] flex items-center rounded-lg hover:bg-muted/50"
                   >
                     Dashboard
                   </Link>
                 </>
               )}
-              <div className="border-t border-border pt-4 mt-2">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                 <div className="px-2 mb-4">
                   <LanguageSwitcher />
                 </div>
                 {isAuthenticated() ? (
                   <div className="flex flex-col gap-2 px-2">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       {user?.name || user?.email}
                     </span>
                     <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
