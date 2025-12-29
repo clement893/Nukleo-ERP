@@ -79,8 +79,8 @@ class S3Service:
                 },
             )
 
-            # Generate presigned URL (valid for 1 year)
-            url = self.generate_presigned_url(file_key, expiration=31536000)  # 1 year
+            # Generate presigned URL (valid for 7 days - AWS S3 maximum)
+            url = self.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
 
             return {
                 "file_key": file_key,

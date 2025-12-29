@@ -100,7 +100,7 @@ async def list_contacts(
                 
                 # Regenerate presigned URL if we have a file_key
                 if file_key:
-                    photo_url = s3_service.generate_presigned_url(file_key, expiration=31536000)  # 1 year
+                    photo_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
             except Exception as e:
                 logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
                 # Keep original URL if regeneration fails
@@ -203,7 +203,7 @@ async def get_contact(
             
             # Regenerate presigned URL if we have a file_key
             if file_key:
-                photo_url = s3_service.generate_presigned_url(file_key, expiration=31536000)  # 1 year
+                photo_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
         except Exception as e:
             logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
             # Keep original URL if regeneration fails
