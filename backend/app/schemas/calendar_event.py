@@ -22,9 +22,11 @@ class CalendarEventBase(BaseModel):
     time: Optional[time] = Field(None, description="Event time")
     # Use event_type internally to avoid conflict with Python's 'type' keyword
     # We'll serialize it as 'type' for API compatibility using alias
+    # validation_alias maps SQLAlchemy model attribute 'type' to Pydantic field 'event_type'
+    # serialization_alias serializes 'event_type' as 'type' in JSON responses
     event_type: str = Field(
         default='other',
-        alias='type',  # Accept 'type' from API
+        validation_alias='type',  # Read from SQLAlchemy model attribute 'type' or API input 'type'
         serialization_alias='type',  # Serialize as 'type' for API
         description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
     )
@@ -72,9 +74,11 @@ class CalendarEventUpdate(BaseModel):
     time: Optional[time] = Field(None, description="Event time")
     # Use event_type internally to avoid conflict with Python's 'type' keyword
     # We'll serialize it as 'type' for API compatibility using alias
+    # validation_alias maps SQLAlchemy model attribute 'type' to Pydantic field 'event_type'
+    # serialization_alias serializes 'event_type' as 'type' in JSON responses
     event_type: Optional[str] = Field(
         None,
-        alias='type',  # Accept 'type' from API
+        validation_alias='type',  # Read from SQLAlchemy model attribute 'type' or API input 'type'
         serialization_alias='type',  # Serialize as 'type' for API
         description="Event type"
     )
