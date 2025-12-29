@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Opportunity, OpportunityCreate, OpportunityUpdate } from '@/lib/api/opportunities';
-import { contactsAPI } from '@/lib/api/contacts';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
@@ -33,7 +32,6 @@ export default function OpportunityForm({
   loading = false,
 }: OpportunityFormProps) {
   const { showToast } = useToast();
-  const [contacts, setContacts] = useState<Array<{ id: number; name: string }>>([]);
   const [formData, setFormData] = useState<OpportunityCreate>({
     name: opportunity?.name || '',
     description: opportunity?.description || null,
@@ -54,23 +52,6 @@ export default function OpportunityForm({
     contact_ids: [],
   });
 
-  // Load contacts for multi-select
-  useEffect(() => {
-    const loadContacts = async () => {
-      try {
-        const contactsList = await contactsAPI.list();
-        setContacts(
-          contactsList.map((c) => ({
-            id: c.id,
-            name: `${c.first_name} ${c.last_name}`,
-          }))
-        );
-      } catch (error) {
-        console.error('Error loading contacts:', error);
-      }
-    };
-    loadContacts();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

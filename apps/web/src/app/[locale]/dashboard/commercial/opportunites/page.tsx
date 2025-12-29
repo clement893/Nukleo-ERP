@@ -13,8 +13,7 @@ import Modal from '@/components/ui/Modal';
 import { opportunitiesAPI, type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Plus, Edit, Trash2, Eye, Download, Upload, MoreVertical, FileSpreadsheet, Search } from 'lucide-react';
-import { clsx } from 'clsx';
+import { Plus, Edit, Trash2, Eye, Download, Upload, MoreVertical, Search } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import OpportunityForm from '@/components/commercial/OpportunityForm';
 
@@ -29,7 +28,7 @@ function OpportunitesContent() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const [filterPipeline, setFilterPipeline] = useState<string>('');
+  const [filterPipeline, _setFilterPipeline] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
 

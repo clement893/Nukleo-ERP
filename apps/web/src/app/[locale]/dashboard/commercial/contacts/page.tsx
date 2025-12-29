@@ -224,7 +224,7 @@ function ContactsContent() {
               .filter(Boolean)
           );
           
-          const warningMsg = companyWarnings.length === 1
+          const warningMsg = companyWarnings.length === 1 && companyWarnings[0]
             ? `⚠️ ${companyWarnings[0].message}`
             : `⚠️ ${companyWarnings.length} entreprise(s) nécessitent une révision (${Array.from(uniqueCompanies).join(', ')})`;
           
