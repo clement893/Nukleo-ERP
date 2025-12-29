@@ -117,9 +117,17 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           className="h-full"
           user={user}
           showSearch={true}
-          onHomeClick={() => router.push('/')}
+          isMobile={true}
+          onClose={() => setMobileMenuOpen(false)}
+          onHomeClick={() => {
+            router.push('/');
+            setMobileMenuOpen(false);
+          }}
           themeToggleComponent={<ThemeToggleWithIcon />}
-          onLogoutClick={logout}
+          onLogoutClick={() => {
+            logout();
+            setMobileMenuOpen(false);
+          }}
         />
       </aside>
 
