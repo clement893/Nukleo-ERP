@@ -1,9 +1,5 @@
 'use client';
 
-// Force dynamic rendering to avoid static generation
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api/client';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
