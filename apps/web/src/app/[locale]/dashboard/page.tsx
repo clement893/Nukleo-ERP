@@ -45,7 +45,7 @@ function DashboardContent() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-2xl">
         <div>
           <LoadingSkeleton variant="custom" className="h-10 w-64 mb-2" />
           <LoadingSkeleton variant="custom" className="h-6 w-96" />
@@ -62,7 +62,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-2xl">
       {/* Welcome Header */}
       <div>
         <PageHeader
