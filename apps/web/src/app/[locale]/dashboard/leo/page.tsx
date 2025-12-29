@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, Button, Input } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
+import { extractApiData } from '@/lib/api/utils';
 import { getErrorMessage } from '@/lib/errors';
 import { Loader2, Send, User, Sparkles, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -84,15 +85,18 @@ export default function LeoPage() {
         system_prompt: systemPrompt,
       });
 
-      if (!response.data) {
+      // FastAPI returns data directly, extract it properly
+      const chatResponse = extractApiData<ChatResponse>(response);
+
+      if (!chatResponse || !chatResponse.content) {
         throw new Error('Aucune réponse reçue du service IA');
       }
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response.data.content,
+        content: chatResponse.content,
         timestamp: new Date(),
-        provider: response.data.provider,
+        provider: chatResponse.provider,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);

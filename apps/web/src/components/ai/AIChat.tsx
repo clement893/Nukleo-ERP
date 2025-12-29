@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button, Input, Card } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
+import { extractApiData } from '@/lib/api/utils';
 import { Loader2, Send, Bot, User } from 'lucide-react';
 import { getErrorMessage } from '@/lib/errors';
 
@@ -86,15 +87,18 @@ export function AIChat({
         system_prompt: systemPrompt,
       });
 
-      if (!response.data) {
+      // FastAPI returns data directly, extract it properly
+      const chatResponse = extractApiData<ChatResponse>(response);
+
+      if (!chatResponse || !chatResponse.content) {
         throw new Error('No data received from AI service');
       }
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response.data.content,
+        content: chatResponse.content,
         timestamp: new Date(),
-        provider: response.data.provider,
+        provider: chatResponse.provider,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);

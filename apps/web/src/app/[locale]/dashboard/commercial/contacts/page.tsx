@@ -64,6 +64,18 @@ function ContactsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Revalidate contacts when window regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      loadContacts();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   // Filtered contacts
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
@@ -113,8 +125,9 @@ function ContactsContent() {
     try {
       setLoading(true);
       setError(null);
-      const updatedContact = await contactsAPI.update(selectedContact.id, data as ContactUpdate);
-      setContacts(contacts.map((c) => (c.id === selectedContact.id ? updatedContact : c)));
+      await contactsAPI.update(selectedContact.id, data as ContactUpdate);
+      // Reload contacts to ensure we have the latest data with correct presigned URLs
+      await loadContacts();
       setShowEditModal(false);
       setSelectedContact(null);
       showToast({

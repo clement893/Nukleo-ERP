@@ -53,10 +53,20 @@ export interface ContactUpdate extends Partial<ContactCreate> {}
 export const contactsAPI = {
   /**
    * Get list of contacts with pagination
+   * Uses cache-busting to ensure fresh data
    */
   list: async (skip = 0, limit = 100): Promise<Contact[]> => {
     const response = await apiClient.get<Contact[]>('/v1/commercial/contacts', {
-      params: { skip, limit },
+      params: { 
+        skip, 
+        limit,
+        _t: Date.now(), // Cache-busting timestamp
+      },
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
     });
     
     const data = extractApiData<Contact[] | { items: Contact[] }>(response);
