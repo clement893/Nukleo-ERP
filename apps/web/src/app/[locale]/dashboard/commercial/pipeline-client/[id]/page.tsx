@@ -442,24 +442,23 @@ function PipelineDetailContent() {
       </div>
 
       {/* Kanban Board - Prend tout l'espace restant */}
-      <div className="flex-1 overflow-hidden px-6 py-4">
-        <div className="h-full flex flex-col">
-          <div className="flex-shrink-0 mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{pipeline.name}</h3>
-            <Button size="sm" onClick={() => handleCardAdd('')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle opportunité
-            </Button>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <KanbanBoard
-              columns={kanbanColumns}
-              cards={kanbanCards}
-              onCardMove={handleCardMove}
-              onCardClick={handleCardClick}
-              onCardAdd={handleCardAdd}
-            />
-          </div>
+      <div className="flex-1 overflow-hidden px-6 py-4 flex flex-col">
+        <div className="flex-shrink-0 mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">{pipeline.name}</h3>
+          <Button size="sm" onClick={() => handleCardAdd('')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle opportunité
+          </Button>
+        </div>
+        <div className="flex-1 min-h-0">
+          <KanbanBoard
+            columns={kanbanColumns}
+            cards={kanbanCards}
+            onCardMove={handleCardMove}
+            onCardClick={handleCardClick}
+            onCardAdd={handleCardAdd}
+            className="h-full"
+          />
         </div>
       </div>
 
