@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { Card, Input, Label, Stack, Grid } from '@/components/ui';
+import { Card, Input, Stack, Grid } from '@/components/ui';
 import type { ThemeConfig } from '@modele/types';
 
 interface ThemeVisualEditorProps {
@@ -45,7 +45,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
           <h3 className="text-lg font-semibold text-foreground mb-4">Colors</h3>
           <Grid columns={{ mobile: 1, tablet: 2 }} gap="normal">
             <div>
-              <Label htmlFor="primary_color">Primary Color</Label>
+              <label htmlFor="primary_color" className="block text-sm font-medium text-foreground mb-1">Primary Color</label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="primary_color"
@@ -167,7 +167,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
           <h3 className="text-lg font-semibold text-foreground mb-4">Typography</h3>
           <Stack gap={4}>
             <div>
-              <Label htmlFor="font_family">Font Family</Label>
+              <label htmlFor="font_family" className="block text-sm font-medium text-foreground mb-1">Font Family</label>
               <Input
                 id="font_family"
                 type="text"
@@ -201,7 +201,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             <Stack gap={4}>
               {localConfig.layout.spacing && (
                 <div>
-                  <Label>Spacing Unit</Label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Spacing Unit</label>
                   <Input
                     type="text"
                     value={localConfig.layout.spacing.unit || '0.25rem'}

@@ -86,37 +86,46 @@ export function ThemeBuilder() {
 
           <Tabs
             tabs={[
-              { id: 'presets', label: 'Presets' },
-              { id: 'editor', label: 'Visual Editor' },
-              { id: 'preview', label: 'Live Preview' },
-              { id: 'export', label: 'Export/Import' },
+              {
+                id: 'presets',
+                label: 'Presets',
+                content: (
+                  <ThemePresets
+                    presets={themePresets}
+                    onSelect={handlePresetSelect}
+                  />
+                ),
+              },
+              {
+                id: 'editor',
+                label: 'Visual Editor',
+                content: (
+                  <ThemeVisualEditor
+                    config={config}
+                    onUpdate={handleConfigUpdate}
+                  />
+                ),
+              },
+              {
+                id: 'preview',
+                label: 'Live Preview',
+                content: <ThemeLivePreview config={config} />,
+              },
+              {
+                id: 'export',
+                label: 'Export/Import',
+                content: (
+                  <ThemeExportImport
+                    config={config}
+                    onImport={handleImport}
+                    onExport={handleExport}
+                  />
+                ),
+              },
             ]}
             defaultTab="presets"
             onChange={(tabId) => setActiveTab(tabId as typeof activeTab)}
-          >
-            {activeTab === 'presets' && (
-              <ThemePresets
-                presets={themePresets}
-                onSelect={handlePresetSelect}
-              />
-            )}
-            {activeTab === 'editor' && (
-              <ThemeVisualEditor
-                config={config}
-                onUpdate={handleConfigUpdate}
-              />
-            )}
-            {activeTab === 'preview' && (
-              <ThemeLivePreview config={config} />
-            )}
-            {activeTab === 'export' && (
-              <ThemeExportImport
-                config={config}
-                onImport={handleImport}
-                onExport={handleExport}
-              />
-            )}
-          </Tabs>
+          />
         </div>
       </Card>
     </div>

@@ -1,18 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api/client';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { Button, Card, Alert, Badge } from '@/components/ui';
+import { Alert } from '@/components/ui';
 import { getErrorMessage } from '@/lib/errors';
-import { logger } from '@/lib/logger';
-import { RefreshCw, CheckCircle, Download, FileText, ExternalLink, Eye, XCircle, Loader2, Copy, Check } from 'lucide-react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import type { ConnectionStatus, EndpointTestResult, CheckResult, TestProgress, ComponentTestResult } from './types/health.types';
+import type { ComponentTestResult, EndpointTestResult } from './types/health.types';
 import { useTemplateHealth } from './hooks/useTemplateHealth';
 import { useEndpointTests } from './hooks/useEndpointTests';
 import { useConnectionTests } from './hooks/useConnectionTests';
 import { useReportGeneration } from './hooks/useReportGeneration';
+import { OverviewSection } from './components/OverviewSection';
+import { FrontendCheckCard } from './components/FrontendCheckCard';
+import { BackendCheckCard } from './components/BackendCheckCard';
+import { EndpointTestCard } from './components/EndpointTestCard';
+import { ComponentTestCard } from './components/ComponentTestCard';
+import { ReportGeneratorCard } from './components/ReportGeneratorCard';
 
 function APIConnectionTestContent() {
   // Use custom hooks for health checking, endpoint testing, and report generation

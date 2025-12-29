@@ -9,22 +9,19 @@ import { useEffect } from 'react';
 import { Card, Button, Badge, Alert, Input } from '@/components/ui';
 import { Stack } from '@/components/ui';
 import type { ThemeConfig } from '@modele/types';
-import { useGlobalTheme } from '@/lib/theme/global-theme-provider';
+import { applyThemeConfigDirectly } from '@/lib/theme/apply-theme-config';
 
 interface ThemeLivePreviewProps {
   config: ThemeConfig;
 }
 
 export function ThemeLivePreview({ config }: ThemeLivePreviewProps) {
-  const { applyThemeConfig } = useGlobalTheme();
-
   useEffect(() => {
     // Apply the preview config temporarily
     if (typeof window !== 'undefined') {
-      const root = document.documentElement;
-      applyThemeConfig(config);
+      applyThemeConfigDirectly(config, { bypassDarkModeProtection: true });
     }
-  }, [config, applyThemeConfig]);
+  }, [config]);
 
   return (
     <div className="mt-6 space-y-6">

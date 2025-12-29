@@ -13,7 +13,8 @@
 | 1 | ✅ Complété | 2025-01-28 | ~1h | Fixes critiques appliqués |
 | 2 | ✅ Complété | 2025-01-28 | ~1.5h | Types et services extraits |
 | 3 | ✅ Complété | 2025-01-28 | ~1h | Tests parallèles implémentés |
-| 4 | ⏳ En attente | - | - | - |
+| 4 | ✅ Complété | 2025-01-28 | ~1.5h | Hooks réutilisables créés |
+| 5 | ⏳ En attente | - | - | - |
 | 3 | ⏳ En attente | - | - | - |
 | 4 | ⏳ En attente | - | - | - |
 | 5 | ⏳ En attente | - | - | - |
@@ -24,7 +25,7 @@
 | 10 | ⏳ En attente | - | - | - |
 | 11 | ⏳ En attente | - | - | - |
 
-**Progression globale:** 3/11 batches (27%)
+**Progression globale:** 4/11 batches (36%)
 
 ---
 
