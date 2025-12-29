@@ -14,7 +14,7 @@ interface RoleDefaultPermissionsEditorProps {
 }
 
 export default function RoleDefaultPermissionsEditor({ onUpdate }: RoleDefaultPermissionsEditorProps) {
-  const t = useTranslations('Admin.Users.RoleDefaultPermissions');
+  const t = useTranslations('admin.Users.RoleDefaultPermissions');
   const { roles, loading: loadingRoles, error: rolesError, loadRoles } = useRoles();
   const { permissions, loading: loadingPermissions, error: permissionsError } = usePermissions();
 
