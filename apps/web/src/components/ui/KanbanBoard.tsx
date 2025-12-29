@@ -78,15 +78,15 @@ export default function KanbanBoard({
   };
 
   return (
-    <div className={clsx('flex gap-4 overflow-x-auto pb-4', className)}>
+    <div className={clsx('flex gap-4 overflow-x-auto h-full', className)}>
       {columns.map((column) => {
         const columnCards = cards.filter((card) => card.status === column.status);
         
         return (
           <div
             key={column.id}
-              className={clsx(
-              'flex-shrink-0 w-80 bg-muted dark:bg-gray-900 rounded-lg p-4',
+            className={clsx(
+              'flex-shrink-0 w-80 bg-muted dark:bg-gray-900 rounded-lg p-4 flex flex-col h-full',
               dragOverColumn === column.id && 'ring-2 ring-primary-500'
             )}
             onDragOver={(e) => handleDragOver(e, column.id)}
@@ -94,7 +94,7 @@ export default function KanbanBoard({
             onDrop={(e) => handleDrop(e, column.status)}
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div
                   className={clsx(
@@ -121,8 +121,8 @@ export default function KanbanBoard({
               )}
             </div>
 
-            {/* Cards */}
-            <div className="space-y-3 min-h-[200px]">
+            {/* Cards - Scrollable area */}
+            <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
               {columnCards.map((card) => (
                 <div
                   key={card.id}
@@ -130,7 +130,7 @@ export default function KanbanBoard({
                   onDragStart={() => handleDragStart(card.id)}
                   onClick={() => onCardClick?.(card)}
                   className={clsx(
-                    'bg-background dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-shadow',
+                    'bg-background dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-shadow flex-shrink-0',
                     draggedCard === card.id && 'opacity-50'
                   )}
                 >
