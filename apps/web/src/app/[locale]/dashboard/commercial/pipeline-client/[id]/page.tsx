@@ -315,7 +315,12 @@ function PipelineDetailContent() {
     if (direction === 'down' && index === stages.length - 1) return;
     
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    [stages[index], stages[newIndex]] = [stages[newIndex], stages[index]];
+    const temp = stages[index];
+    const swap = stages[newIndex];
+    if (temp && swap) {
+      stages[index] = swap;
+      stages[newIndex] = temp;
+    }
     
     // Réorganiser les ordres
     const reorderedStages = stages.map((s, idx) => ({ ...s, order: idx }));
@@ -421,7 +426,7 @@ function PipelineDetailContent() {
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleAddStage}>
+            <Button variant="outline" size="sm" onClick={handleManageStages}>
               <Settings className="w-4 h-4 mr-2" />
               Gérer les étapes
             </Button>
