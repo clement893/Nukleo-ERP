@@ -93,6 +93,8 @@ export default function ContactForm({
         is_public: true,
       });
       
+      // Use file_path (which is the URL) for photo_url
+      // The backend will regenerate presigned URLs when needed
       setFormData({ ...formData, photo_url: uploadedMedia.file_path });
       showToast({
         message: 'Photo uploadée avec succès',
@@ -176,7 +178,7 @@ export default function ContactForm({
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingPhoto}
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-4 h-4 mr-1.5" />
               {uploadingPhoto ? 'Upload...' : formData.photo_url ? 'Changer' : 'Ajouter'}
             </Button>
           </div>
@@ -322,10 +324,10 @@ export default function ContactForm({
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Annuler
         </Button>
-        <Button type="submit" loading={loading}>
+        <Button type="submit" size="sm" loading={loading}>
           {contact ? 'Enregistrer' : 'Créer'}
         </Button>
       </div>

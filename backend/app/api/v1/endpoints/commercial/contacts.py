@@ -18,6 +18,7 @@ from app.models.user import User
 from app.schemas.contact import ContactCreate, ContactUpdate, Contact as ContactSchema
 from app.services.import_service import ImportService
 from app.services.export_service import ExportService
+from app.services.s3_service import S3Service
 from app.core.logging import logger
 
 router = APIRouter(prefix="/commercial/contacts", tags=["commercial-contacts"])
@@ -64,7 +65,27 @@ async def list_contacts(
     
     # Convert to response format with company and employee names
     contact_list = []
+    s3_service = S3Service() if S3Service.is_configured() else None
+    
     for contact in contacts:
+        # Regenerate presigned URL for photo if it exists and S3 is configured
+        photo_url = contact.photo_url
+        if photo_url and s3_service:
+            try:
+                # Extract file_key from URL if it's a presigned URL, or use the URL as-is
+                # If photo_url looks like an S3 key (contains folder structure), regenerate presigned URL
+                if photo_url.startswith('contacts/photos/') or '/' in photo_url and not photo_url.startswith('http'):
+                    # It's likely a file_key, regenerate presigned URL
+                    photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)  # 1 year
+                elif not photo_url.startswith('http'):
+                    # Try to use as file_key
+                    try:
+                        photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)
+                    except:
+                        pass  # Keep original URL if regeneration fails
+            except Exception:
+                pass  # Keep original URL if regeneration fails
+        
         contact_dict = {
             "id": contact.id,
             "first_name": contact.first_name,
@@ -74,7 +95,7 @@ async def list_contacts(
             "position": contact.position,
             "circle": contact.circle,
             "linkedin": contact.linkedin,
-            "photo_url": contact.photo_url,
+            "photo_url": photo_url,
             "email": contact.email,
             "phone": contact.phone,
             "city": contact.city,
