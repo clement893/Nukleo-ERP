@@ -427,7 +427,6 @@ api_router.include_router(
 # Register agenda events endpoints
 api_router.include_router(
     agenda_events.router,
-    prefix="/v1",
     tags=["agenda-events"]
 )
 
