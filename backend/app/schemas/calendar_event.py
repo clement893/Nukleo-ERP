@@ -12,7 +12,6 @@ class CalendarEventBase(BaseModel):
     """Base calendar event schema"""
     model_config = ConfigDict(
         populate_by_name=True,
-        # Allow 'type' field to work despite being a Python built-in
         protected_namespaces=()
     )
     
@@ -22,9 +21,11 @@ class CalendarEventBase(BaseModel):
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
     time: Optional[time] = Field(None, description="Event time")
     # Use event_type internally to avoid conflict with Python's 'type' keyword
-    # We'll serialize it as 'type' for API compatibility
+    # We'll serialize it as 'type' for API compatibility using alias
     event_type: str = Field(
         default='other',
+        alias='type',  # Accept 'type' from API
+        serialization_alias='type',  # Serialize as 'type' for API
         description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
     )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
@@ -41,23 +42,6 @@ class CalendarEventBase(BaseModel):
         if v not in valid_types:
             raise ValueError(f'Event type must be one of: {", ".join(valid_types)}')
         return v
-    
-    @model_validator(mode='before')
-    @classmethod
-    def handle_type_field(cls, data: Any) -> Any:
-        """Convert 'type' field from API to 'event_type' internally"""
-        if isinstance(data, dict):
-            if 'type' in data and 'event_type' not in data:
-                data['event_type'] = data.pop('type')
-        return data
-    
-    @model_serializer(mode='wrap')
-    def serialize_model(self, serializer, info):
-        """Serialize model with 'type' instead of 'event_type'"""
-        data = serializer(self)
-        if isinstance(data, dict) and 'event_type' in data:
-            data['type'] = data.pop('event_type')
-        return data
     
     @field_validator('color')
     @classmethod
@@ -146,9 +130,8 @@ class CalendarEvent(CalendarEventBase):
     @classmethod
     def handle_type_field(cls, data: Any) -> Any:
         """Convert 'type' field from database model to 'event_type'"""
-        # Handle SQLAlchemy model instance
+        # Handle SQLAlchemy model instance - from_attributes will handle it, but we need to map 'type' to 'event_type'
         if hasattr(data, '__dict__') and hasattr(data, 'type'):
-            # Convert SQLAlchemy model to dict with event_type
             if not isinstance(data, dict):
                 # Create a dict from the model attributes
                 result = {}
@@ -156,14 +139,14 @@ class CalendarEvent(CalendarEventBase):
                            'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
                     if hasattr(data, key):
                         result[key] = getattr(data, key)
-                # Convert 'type' to 'event_type'
+                # Convert 'type' to 'type' (which will be mapped to 'event_type' via alias)
                 if hasattr(data, 'type'):
-                    result['event_type'] = getattr(data, 'type')
+                    result['type'] = getattr(data, 'type')
                 return result
-        # Handle dict input
+        # Handle dict input - map 'type' key if present
         elif isinstance(data, dict):
-            if 'type' in data and 'event_type' not in data:
-                data['event_type'] = data.pop('type')
+            # Keep 'type' as is, it will be mapped to 'event_type' via alias
+            pass
         return data
 
 
