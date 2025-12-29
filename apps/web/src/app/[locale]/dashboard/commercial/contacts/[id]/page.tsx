@@ -54,7 +54,8 @@ export default function ContactDetailPage() {
 
   const handleEdit = () => {
     if (contact) {
-      router.push(`/dashboard/commercial/contacts/${contact.id}/edit`);
+      const locale = params?.locale as string || 'fr';
+      router.push(`/${locale}/dashboard/commercial/contacts/${contact.id}/edit`);
     }
   };
 
@@ -108,7 +109,10 @@ export default function ContactDetailPage() {
         />
         <Alert variant="error">{error}</Alert>
         <div className="mt-4">
-          <Button variant="outline" onClick={() => router.push('/dashboard/commercial/contacts')}>
+          <Button variant="outline" onClick={() => {
+            const locale = params?.locale as string || 'fr';
+            router.push(`/${locale}/dashboard/commercial/contacts`);
+          }}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour aux contacts
           </Button>
@@ -131,7 +135,10 @@ export default function ContactDetailPage() {
         />
         <Alert variant="error">Le contact demandé n'existe pas.</Alert>
         <div className="mt-4">
-          <Button variant="outline" onClick={() => router.push('/dashboard/commercial/contacts')}>
+          <Button variant="outline" onClick={() => {
+            const locale = params?.locale as string || 'fr';
+            router.push(`/${locale}/dashboard/commercial/contacts`);
+          }}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour aux contacts
           </Button>
