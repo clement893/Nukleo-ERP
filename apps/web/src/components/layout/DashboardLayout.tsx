@@ -18,60 +18,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import Sidebar from '@/components/ui/Sidebar';
+import Sidebar from '@/components/layout/Sidebar';
 import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
-import { 
-  LayoutDashboard, 
-  FolderKanban, 
-  Shield,
-  User,
-  Settings
-} from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
-
-// Memoize sidebar items to prevent recreation on every render
-// This ensures the sidebar doesn't re-render unnecessarily during navigation
-const createSidebarItems = (isAdmin: boolean) => [
-  {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: <LayoutDashboard className="w-5 h-5" />,
-  },
-  {
-    label: 'Profile',
-    href: '/profile',
-    icon: <User className="w-5 h-5" />,
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    icon: <Settings className="w-5 h-5" />,
-  },
-  {
-    label: 'Projets',
-    href: '/dashboard/projects',
-    icon: <FolderKanban className="w-5 h-5" />,
-  },
-  {
-    label: 'Super Admin',
-    href: '/dashboard/become-superadmin',
-    icon: <Shield className="w-5 h-5" />,
-  },
-  // Admin link - only visible to admins and superadmins
-  ...(isAdmin
-    ? [
-        {
-          label: 'Administration',
-          href: '/admin',
-          icon: <Shield className="w-5 h-5" />,
-        },
-      ]
-    : []),
-];
 
 // Memoize the sidebar component to prevent re-renders during navigation
 const MemoizedSidebar = memo(Sidebar);
@@ -86,13 +41,6 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
   // Check if user is admin or superadmin
   const isAdmin = user?.is_admin ?? false;
-
-  // Memoize sidebar items - only recreate if admin status changes
-  // This prevents the sidebar from re-rendering on every navigation
-  const sidebarItems = useMemo(
-    () => createSidebarItems(isAdmin),
-    [isAdmin]
-  );
 
   // Memoize callbacks to prevent re-renders
   const handleToggleCollapse = useCallback(() => {
@@ -123,66 +71,49 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile/Tablet Sidebar Overlay */}
+      {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
-          className="xl:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity"
           onClick={handleMobileMenuClose}
+          aria-hidden="true"
         />
       )}
 
-      {/* Mobile/Tablet Sidebar - Fixed position, persists during navigation */}
-      <aside
-        className={clsx(
-          'xl:hidden fixed top-0 left-0 h-full z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] w-64 sm:w-72',
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
-        <MemoizedSidebar
-          items={sidebarItems}
-          currentPath={pathname}
-          className="h-full"
-          user={user}
-          showSearch={true}
-          isMobile={true}
-          onClose={handleMobileMenuClose}
-          onHomeClick={handleHomeClick}
-          themeToggleComponent={<ThemeToggleWithIcon />}
-          onLogoutClick={handleLogoutClick}
-        />
-      </aside>
+      {/* Sidebar - handles mobile/desktop internally */}
+      <MemoizedSidebar
+        isOpen={mobileMenuOpen}
+        onClose={handleMobileMenuClose}
+      />
 
-      {/* Desktop Layout - Sidebar stays fixed, only content changes */}
-      <div className="flex h-screen pt-0 xl:pt-0">
-        {/* Desktop Sidebar - Fixed position, persists during navigation */}
-        <aside className="hidden xl:block">
-          <MemoizedSidebar
-            items={sidebarItems}
-            currentPath={pathname}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={handleToggleCollapse}
-            className="h-screen sticky top-0"
-            user={user}
-            showSearch={true}
-            onHomeClick={handleDesktopHomeClick}
-            themeToggleComponent={<ThemeToggleWithIcon />}
-            onLogoutClick={handleDesktopLogoutClick}
-          />
-        </aside>
+      {/* Main Content */}
+      <div className="flex h-screen pt-0 md:pt-0 md:ml-64">
+        {/* Mobile Header with Menu Button */}
+        <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background shadow border-b border-border">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Ouvrir le menu"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
+            <div className="w-10" /> {/* Spacer for centering */}
+          </div>
+        </header>
 
-        {/* Main Content - Only this part changes during navigation */}
-        <div className="flex-1 flex flex-col min-w-0 w-full bg-background">
-          {/* Page Content - This is the only part that updates on navigation */}
-          <main 
-            key={pathname} 
-            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8 bg-background"
-            style={{
-              animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-          >
-            {children}
-          </main>
-        </div>
+        {/* Page Content */}
+        <main 
+          key={pathname} 
+          className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 md:py-8 2xl:py-8 bg-background mt-14 md:mt-0"
+          style={{
+            animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
