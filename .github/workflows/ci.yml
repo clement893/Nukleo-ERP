@@ -109,7 +109,7 @@ jobs:
           PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./apps/web/coverage/coverage-final.json
           flags: frontend
@@ -167,7 +167,7 @@ jobs:
         run: pytest --cov=app --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./backend/coverage.xml
           flags: backend
