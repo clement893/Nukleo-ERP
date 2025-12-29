@@ -2,8 +2,6 @@
 
 // Force dynamic rendering to avoid static generation
 export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-export const runtime = 'nodejs';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';

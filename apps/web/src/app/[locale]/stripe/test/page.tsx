@@ -2,8 +2,6 @@
 
 // Force dynamic rendering to avoid static generation
 export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-export const runtime = 'nodejs';
 
 import { useState, useEffect } from 'react';
 import { AxiosError } from 'axios';
