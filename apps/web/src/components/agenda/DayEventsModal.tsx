@@ -5,7 +5,6 @@ import Modal from '@/components/ui/Modal';
 import { Button, Card, Badge } from '@/components/ui';
 import { CalendarEvent } from '@/components/ui/Calendar';
 import { Plus, Edit, Trash2, X, Clock, MapPin, User } from 'lucide-react';
-import { clsx } from 'clsx';
 import EventForm from './EventForm';
 
 export interface DayEvent extends CalendarEvent {

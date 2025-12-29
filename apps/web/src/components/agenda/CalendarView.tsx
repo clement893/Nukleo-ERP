@@ -7,7 +7,7 @@ import { Filter } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useToast } from '@/components/ui';
 import DayEventsModal, { type DayEvent } from './DayEventsModal';
-import { agendaAPI, type CalendarEvent as APICalendarEvent } from '@/lib/api/agenda';
+import { agendaAPI, type CalendarEvent as APICalendarEvent, type CalendarEventCreate } from '@/lib/api/agenda';
 import { handleApiError } from '@/lib/errors/api';
 
 // Types pour les différents événements
@@ -349,14 +349,19 @@ export default function CalendarView({ className }: CalendarViewProps) {
 
   const handleAddEvent = async (eventData: Omit<DayEvent, 'id'>) => {
     try {
+      // Vérifier que date est défini
+      if (!eventData.date) {
+        throw new Error('La date est requise pour créer un événement');
+      }
+      
       // Convertir DayEvent en format API
-      const apiEventData = {
+      const apiEventData: CalendarEventCreate = {
         title: eventData.title,
         description: eventData.description,
         date: eventData.date.toISOString().split('T')[0],
         end_date: eventData.endDate?.toISOString().split('T')[0],
         time: eventData.time,
-        type: eventData.type || 'other',
+        type: (eventData.type || 'other') as CalendarEventCreate['type'],
         location: eventData.location,
         attendees: eventData.attendees,
         color: eventData.color,

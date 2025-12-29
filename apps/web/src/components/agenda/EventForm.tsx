@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button, Input, Select } from '@/components/ui';
 import { DayEvent } from './DayEventsModal';
 import { useToast } from '@/components/ui';
@@ -111,7 +111,7 @@ export default function EventForm({
           label="Type"
           options={EVENT_TYPES}
           value={formData.type}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, type: e.target.value as DayEvent['type'] })}
           disabled={loading}
         />
       </div>

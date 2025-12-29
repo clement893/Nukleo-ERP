@@ -162,8 +162,18 @@ export const contactsAPI = {
    */
   export: async (): Promise<Blob> => {
     try {
-      const response = await apiClient.get('/v1/commercial/contacts/export', {
+      // Use axios directly for blob responses to get full AxiosResponse object
+      const axios = (await import('axios')).default;
+      const { getApiUrl } = await import('../api');
+      const apiUrl = getApiUrl();
+      const TokenStorage = (await import('../auth/tokenStorage')).TokenStorage;
+      
+      const response = await axios.get(`${apiUrl}/api/v1/commercial/contacts/export`, {
         responseType: 'blob',
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? TokenStorage.getToken() || '' : ''}`,
+        },
       });
       
       // Check if response is actually an error (blob containing JSON error)
