@@ -120,9 +120,16 @@ export default function SettingsNavigation({ className }: SettingsNavigationProp
     {
       id: 'logs',
       label: t('navigation.logs') || 'Logs',
-      href: '/settings/logs',
+      href: '/admin/testing',
       icon: <FileText className="w-6 h-6" />,
       description: t('navigation.logsDescription') || 'View system logs and audit trail',
+    },
+    {
+      id: 'api-testing',
+      label: t('navigation.apiTesting') || 'Test API',
+      href: '/api/testing',
+      icon: <Puzzle className="w-6 h-6" />,
+      description: t('navigation.apiTestingDescription') || 'Test and verify API connections',
     },
   ];
 
