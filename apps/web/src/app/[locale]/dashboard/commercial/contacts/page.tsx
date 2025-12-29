@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, Filter, X, ChevronDown, MoreVertical } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -34,6 +34,7 @@ function ContactsContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Mock data pour les entreprises et employés (à remplacer par des appels API réels)
   const [companies] = useState<Array<{ id: number; name: string }>>([]);
@@ -92,6 +93,20 @@ function ContactsContent() {
       return matchesSearch && matchesCircle && matchesCompany;
     });
   }, [contacts, searchTerm, filterCircle, filterCompany]);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filterCircle) count++;
+    if (filterCompany) count++;
+    return count;
+  }, [filterCircle, filterCompany]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilterCircle('');
+    setFilterCompany('');
+  };
 
   // Handle create
   const handleCreate = async (data: ContactCreate | ContactUpdate) => {
@@ -351,106 +366,194 @@ function ContactsContent() {
 
       {/* Toolbar */}
       <Card>
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          {/* Search */}
-          <div className="flex-1 w-full md:w-auto">
-            <input
-              type="text"
-              placeholder="Rechercher un contact..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
-            />
-          </div>
+        <div className="space-y-3">
+          {/* Top row: Search, View toggle, Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            {/* Search */}
+            <div className="flex-1 w-full sm:w-auto min-w-0">
+              <input
+                type="text"
+                placeholder="Rechercher un contact..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
 
-          {/* Filters */}
-          <div className="flex gap-2 flex-wrap">
-            <select
-              value={filterCircle}
-              onChange={(e) => setFilterCircle(e.target.value)}
-              className="px-4 py-2 border border-border rounded-lg bg-background text-foreground"
-            >
-              <option value="">Tous les cercles</option>
-              {circles.map((circle) => (
-                <option key={circle} value={circle}>
-                  {circle.charAt(0).toUpperCase() + circle.slice(1)}
-                </option>
-              ))}
-            </select>
-            {companies.length > 0 && (
+            {/* Right side: View toggle, Circle filter, Actions */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* View mode toggle */}
+              <div className="flex border border-border rounded-md overflow-hidden">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={clsx(
+                    'px-2 py-1.5 transition-colors text-xs',
+                    viewMode === 'list'
+                      ? 'bg-primary text-white'
+                      : 'bg-background text-foreground hover:bg-muted'
+                  )}
+                  aria-label="Vue liste"
+                >
+                  <List className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('gallery')}
+                  className={clsx(
+                    'px-2 py-1.5 transition-colors text-xs',
+                    viewMode === 'gallery'
+                      ? 'bg-primary text-white'
+                      : 'bg-background text-foreground hover:bg-muted'
+                  )}
+                  aria-label="Vue galerie"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Circle filter - simplified */}
               <select
-                value={filterCompany}
-                onChange={(e) => setFilterCompany(e.target.value)}
-                className="px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+                value={filterCircle}
+                onChange={(e) => setFilterCircle(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">Toutes les entreprises</option>
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id.toString()}>
-                    {company.name}
+                <option value="">Tous</option>
+                {circles.map((circle) => (
+                  <option key={circle} value={circle}>
+                    {circle.charAt(0).toUpperCase() + circle.slice(1)}
                   </option>
                 ))}
               </select>
-            )}
-          </div>
 
-          {/* Actions */}
-          <div className="flex gap-2">
-            {/* View mode toggle */}
-            <div className="flex border border-border rounded-lg overflow-hidden">
-              <button
-                onClick={() => setViewMode('list')}
-                className={clsx(
-                  'px-2.5 py-1.5 transition-colors',
-                  viewMode === 'list'
-                    ? 'bg-primary text-white'
-                    : 'bg-background text-foreground hover:bg-muted'
-                )}
-              >
-                <List className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('gallery')}
-                className={clsx(
-                  'px-2.5 py-1.5 transition-colors',
-                  viewMode === 'gallery'
-                    ? 'bg-primary text-white'
-                    : 'bg-background text-foreground hover:bg-muted'
-                )}
-              >
-                <Grid className="w-4 h-4" />
-              </button>
+              {/* Actions menu */}
+              <div className="relative ml-auto sm:ml-0">
+                <div className="flex items-center gap-2">
+                  {/* Primary action */}
+                  <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto">
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    Nouveau contact
+                  </Button>
+
+                  {/* Secondary actions dropdown */}
+                  <div className="relative">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="text-xs px-2 py-1.5 h-auto"
+                      aria-label="Actions"
+                    >
+                      <MoreVertical className="w-3.5 h-3.5" />
+                    </Button>
+                    {showFilters && (
+                      <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          <input
+                            type="file"
+                            accept=".xlsx,.xls"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleImport(file);
+                                setShowFilters(false);
+                              }
+                            }}
+                            className="hidden"
+                            id="import-contacts"
+                          />
+                          <label
+                            htmlFor="import-contacts"
+                            className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            Importer
+                          </label>
+                          <button
+                            onClick={() => {
+                              handleExport();
+                              setShowFilters(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Exporter
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-
-            {/* Import */}
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleImport(file);
-              }}
-              className="hidden"
-              id="import-contacts"
-            />
-            <label htmlFor="import-contacts">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border-2 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer transition-all duration-200 min-h-[36px]">
-                <Upload className="w-4 h-4" />
-                Importer
-              </span>
-            </label>
-
-            {/* Export */}
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-1.5" />
-              Exporter
-            </Button>
-
-            {/* Create */}
-            <Button size="sm" onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-4 h-4 mr-1.5" />
-              Nouveau contact
-            </Button>
           </div>
+
+          {/* Filters section - collapsible */}
+          {(activeFiltersCount > 0 || showFilters) && (
+            <div className="pt-3 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-foreground">Filtres avancés</span>
+                  {activeFiltersCount > 0 && (
+                    <Badge variant="default" className="text-xs px-1.5 py-0.5">
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
+                </div>
+                {activeFiltersCount > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    <X className="w-3 h-3" />
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {/* Active filters badges */}
+                {filterCircle && (
+                  <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                    Cercle: {circles.find(c => c === filterCircle)?.charAt(0).toUpperCase() + circles.find(c => c === filterCircle)?.slice(1)}
+                    <button
+                      onClick={() => setFilterCircle('')}
+                      className="ml-1 hover:text-danger"
+                      aria-label="Retirer le filtre cercle"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+                {filterCompany && companies.length > 0 && (
+                  <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                    Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name}
+                    <button
+                      onClick={() => setFilterCompany('')}
+                      className="ml-1 hover:text-danger"
+                      aria-label="Retirer le filtre entreprise"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+              {companies.length > 0 && (
+                <div className="mt-2">
+                  <select
+                    value={filterCompany}
+                    onChange={(e) => setFilterCompany(e.target.value)}
+                    className="px-2 py-1 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">Toutes les entreprises</option>
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id.toString()}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Card>
 
