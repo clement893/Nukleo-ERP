@@ -71,8 +71,13 @@ class CalendarEventUpdate(BaseModel):
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
     time: Optional[time] = Field(None, description="Event time")
     # Use event_type internally to avoid conflict with Python's 'type' keyword
-    # We'll serialize it as 'type' for API compatibility
-    event_type: Optional[str] = Field(None, description="Event type")
+    # We'll serialize it as 'type' for API compatibility using alias
+    event_type: Optional[str] = Field(
+        None,
+        alias='type',  # Accept 'type' from API
+        serialization_alias='type',  # Serialize as 'type' for API
+        description="Event type"
+    )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
     color: Optional[str] = Field(None, description="Hex color code for the event")
@@ -87,23 +92,6 @@ class CalendarEventUpdate(BaseModel):
         if v not in valid_types:
             raise ValueError(f'Event type must be one of: {", ".join(valid_types)}')
         return v
-    
-    @model_validator(mode='before')
-    @classmethod
-    def handle_type_field(cls, data: Any) -> Any:
-        """Convert 'type' field from API to 'event_type' internally"""
-        if isinstance(data, dict):
-            if 'type' in data and 'event_type' not in data:
-                data['event_type'] = data.pop('type')
-        return data
-    
-    @model_serializer(mode='wrap')
-    def serialize_model(self, serializer, info):
-        """Serialize model with 'type' instead of 'event_type'"""
-        data = serializer(self)
-        if isinstance(data, dict) and 'event_type' in data:
-            data['type'] = data.pop('event_type')
-        return data
     
     @field_validator('color')
     @classmethod
