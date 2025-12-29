@@ -39,7 +39,8 @@ import {
   DollarSign,
   Receipt,
   FileBarChart,
-  Wallet
+  Wallet,
+  MessageSquare
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -110,6 +111,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Pipeline & client',
             href: '/dashboard/commercial/pipeline-client',
             icon: <TrendingUp className="w-5 h-5" />,
+          },
+          {
+            name: 'Témoignages',
+            href: '/dashboard/commercial/temoignages',
+            icon: <MessageSquare className="w-5 h-5" />,
           },
         ],
         collapsible: true,
