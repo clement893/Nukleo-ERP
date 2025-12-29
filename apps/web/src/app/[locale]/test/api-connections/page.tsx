@@ -8,7 +8,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { RefreshCw, CheckCircle, Download, FileText, ExternalLink, Eye, XCircle, Loader2, Copy, Check } from 'lucide-react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import type { ConnectionStatus, EndpointTestResult, CheckResult, ComponentTestResult, TestProgress } from './types/health.types';
+import type { ConnectionStatus, EndpointTestResult, CheckResult, TestProgress } from './types/health.types';
 import { checkStatus, checkFrontend, checkBackend } from './services/healthChecker';
 import { testCriticalEndpoints } from './services/endpointTester';
 import { generateCompleteReport, generateReportPath } from './services/reportGenerator';
