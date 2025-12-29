@@ -152,7 +152,7 @@ async def create_event(
         date=event_data.date,
         end_date=event_data.end_date,
         time=event_data.time,
-        type=event_data.type,
+        type=event_data.event_type,  # Use event_type from schema (mapped from 'type' via alias)
         location=event_data.location,
         attendees=event_data.attendees,
         color=event_data.color,
@@ -203,7 +203,11 @@ async def update_event(
         )
     
     # Update fields
-    update_data = event_data.model_dump(exclude_unset=True)
+    update_data = event_data.model_dump(exclude_unset=True, by_alias=False)
+    
+    # Map event_type back to type for database model
+    if 'event_type' in update_data:
+        update_data['type'] = update_data.pop('event_type')
     
     # Validate end_date if provided
     if 'end_date' in update_data and 'date' in update_data:
