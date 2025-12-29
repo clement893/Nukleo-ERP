@@ -148,6 +148,24 @@ async def get_contact(
             detail="Contact not found"
         )
     
+    # Regenerate presigned URL for photo if it exists and S3 is configured
+    photo_url = contact.photo_url
+    if photo_url and S3Service.is_configured():
+        try:
+            s3_service = S3Service()
+            # If photo_url looks like an S3 key (contains folder structure), regenerate presigned URL
+            if photo_url.startswith('contacts/photos/') or ('/' in photo_url and not photo_url.startswith('http')):
+                # It's likely a file_key, regenerate presigned URL
+                photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)  # 1 year
+            elif not photo_url.startswith('http'):
+                # Try to use as file_key
+                try:
+                    photo_url = s3_service.generate_presigned_url(photo_url, expiration=31536000)
+                except:
+                    pass  # Keep original URL if regeneration fails
+        except Exception:
+            pass  # Keep original URL if regeneration fails
+    
     # Convert to response format
     contact_dict = {
         "id": contact.id,
@@ -158,7 +176,7 @@ async def get_contact(
         "position": contact.position,
         "circle": contact.circle,
         "linkedin": contact.linkedin,
-        "photo_url": contact.photo_url,
+        "photo_url": photo_url,
         "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
