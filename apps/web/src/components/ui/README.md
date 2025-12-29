@@ -2,7 +2,23 @@
 
 Core reusable UI component library - Foundation components used throughout the application.
 
+## 🎨 UX/UI Improvements
+
+This component library has been enhanced with:
+- ✅ **Standardized spacing** - Consistent padding and margins
+- ✅ **Typography system** - Heading and Text components for consistency
+- ✅ **Improved visual breathing room** - Increased padding across components
+- ✅ **Semantic color tokens** - Better theme support
+- ✅ **Enhanced accessibility** - ARIA labels and semantic HTML
+
+See [UX/UI Guide](../../../../docs/UX_UI_GUIDE.md) for complete documentation.
+
 ## 📦 Components
+
+### Typography Components
+
+- **Heading** - Semantic heading component (h1-h6) with standardized typography
+- **Text** - Text component with variants (body, small, caption)
 
 ### Form Components
 

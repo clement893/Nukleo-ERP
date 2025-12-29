@@ -22,6 +22,7 @@ This directory contains comprehensive documentation for the Next.js Full-Stack T
 
 ### 🎨 Components & Development
 - **[Component Library](../apps/web/src/components/README.md)** - Complete component library reference (270+ components)
+- **[UX/UI Guide](./UX_UI_GUIDE.md)** - UX/UI improvements and best practices ⭐ **NEW**
 - **[Development Guide](./DEVELOPMENT.md)** - Development tools and workflows
 - **[Testing Guide](./TESTING.md)** - Testing strategies and best practices
 - **[Utilities](./UTILS.md)** - Utility functions reference
