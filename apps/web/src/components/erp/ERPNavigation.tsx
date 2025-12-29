@@ -87,8 +87,8 @@ export function ERPNavigation({ className }: ERPNavigationProps) {
                     className={clsx(
                       'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'border-2 border-primary text-primary-700 dark:text-primary-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border-2 border-transparent'
                     )}
                   >
                     {item.icon && (
@@ -117,8 +117,8 @@ export function ERPNavigation({ className }: ERPNavigationProps) {
                             className={clsx(
                               'flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors',
                               isChildActive
-                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                ? 'border-2 border-primary text-primary-600 dark:text-primary-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
                             )}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />

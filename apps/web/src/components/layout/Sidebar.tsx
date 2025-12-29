@@ -133,8 +133,8 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
         className={clsx(
           'flex items-center gap-3 px-lg py-md rounded-lg text-sm font-medium transition-colors',
           active
-            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary font-semibold'
-            : 'text-foreground hover:bg-muted'
+            ? 'border-2 border-primary text-primary font-semibold'
+            : 'text-foreground hover:bg-muted border-2 border-transparent'
         )}
       >
         {item.icon}
@@ -166,8 +166,8 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
             className={clsx(
               'w-full flex items-center justify-between gap-3 px-lg py-md rounded-lg text-sm font-medium transition-colors',
               hasActiveItem
-                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary font-semibold'
-                : 'text-foreground hover:bg-muted'
+                ? 'border-2 border-primary text-primary font-semibold'
+                : 'text-foreground hover:bg-muted border-2 border-transparent'
             )}
             aria-expanded={isOpen}
             aria-label={`Toggle ${group.name} group`}
@@ -197,8 +197,8 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
                 className={clsx(
                   'flex items-center gap-3 px-lg py-md rounded-lg text-sm font-medium transition-colors',
                   isActive(item.href)
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary font-semibold'
-                    : 'text-foreground hover:bg-muted'
+                    ? 'border-2 border-primary text-primary font-semibold'
+                    : 'text-foreground hover:bg-muted border-2 border-transparent'
                 )}
               >
                 {item.icon}

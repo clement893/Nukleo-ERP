@@ -63,8 +63,8 @@ export function ClientNavigation({ className }: ClientNavigationProps) {
             className={clsx(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
               isActive
-                ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'border-2 border-primary text-primary-700 dark:text-primary-300'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border-2 border-transparent'
             )}
           >
             {item.icon && (

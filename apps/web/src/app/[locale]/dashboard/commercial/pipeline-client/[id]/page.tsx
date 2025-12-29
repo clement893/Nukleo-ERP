@@ -54,7 +54,7 @@ function PipelineDetailContent() {
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [opportunities, setOpportunities] = useState<Opportunite[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   
   // Modals
   const [showOpportunityModal, setShowOpportunityModal] = useState(false);

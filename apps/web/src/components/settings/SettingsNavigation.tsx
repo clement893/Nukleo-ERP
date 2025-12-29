@@ -150,7 +150,7 @@ export default function SettingsNavigation({ className }: SettingsNavigationProp
               className={clsx(
                 'h-full transition-all duration-200',
                 active
-                  ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                  ? 'ring-2 ring-primary-500'
                   : 'hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-700',
                 'cursor-pointer'
               )}

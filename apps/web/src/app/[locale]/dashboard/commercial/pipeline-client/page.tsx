@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Loading, Badge } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, ArrowRight, Settings } from 'lucide-react';
+import { Plus, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui';
 
 // Types temporaires - à remplacer par les types générés depuis l'API
@@ -160,7 +160,7 @@ function PipelinesListContent() {
                     )}
                   </div>
                   {pipeline.is_default && (
-                    <Badge variant="primary" className="ml-2">
+                    <Badge variant="default" className="ml-2">
                       Par défaut
                     </Badge>
                   )}

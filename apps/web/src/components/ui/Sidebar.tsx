@@ -105,8 +105,8 @@ export default function Sidebar({
           className={clsx(
             'flex items-center justify-between px-lg py-md rounded-lg transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] min-h-[44px]', // Improved spacing and touch target (UX/UI improvements - Batch 8, 17)
             isActive
-              ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-900 dark:text-primary-100 font-medium'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
+              ? 'border-2 border-primary text-primary-900 dark:text-primary-100 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border-2 border-transparent',
             level > 0 && 'ml-lg' // Increased indentation for nested items
           )}
         >
