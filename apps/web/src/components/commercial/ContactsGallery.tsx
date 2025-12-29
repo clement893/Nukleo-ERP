@@ -40,11 +40,11 @@ export default function ContactsGallery({
                 <img
                   src={contact.photo_url}
                   alt={`${contact.first_name} ${contact.last_name}`}
-                  className="w-16 h-16 rounded-full object-cover"
+                  className="w-24 h-24 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                  <UserCircle className="w-10 h-10 text-primary-600 dark:text-primary-400" />
+                <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                  <UserCircle className="w-12 h-12 text-primary-600 dark:text-primary-400" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
