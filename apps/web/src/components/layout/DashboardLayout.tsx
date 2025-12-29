@@ -14,9 +14,7 @@
 'use client';
 
 import { useState, memo, useCallback } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store';
-import { useAuth } from '@/hooks/useAuth';
+import { usePathname } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -31,41 +29,11 @@ const MemoizedSidebar = memo(Sidebar);
 
 function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const { logout } = useAuth();
-  const [_sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Check if user is admin or superadmin
-  const _isAdmin = user?.is_admin ?? false;
-
-  // Memoize callbacks to prevent re-renders
-  const _handleToggleCollapse = useCallback(() => {
-    setSidebarCollapsed(prev => !prev);
-  }, []);
 
   const handleMobileMenuClose = useCallback(() => {
     setMobileMenuOpen(false);
   }, []);
-
-  const _handleHomeClick = useCallback(() => {
-    router.push('/');
-    setMobileMenuOpen(false);
-  }, [router]);
-
-  const _handleLogoutClick = useCallback(() => {
-    logout();
-    setMobileMenuOpen(false);
-  }, [logout]);
-
-  const _handleDesktopHomeClick = useCallback(() => {
-    router.push('/');
-  }, [router]);
-
-  const _handleDesktopLogoutClick = useCallback(() => {
-    logout();
-  }, [logout]);
 
   return (
     <div className="min-h-screen bg-background">
