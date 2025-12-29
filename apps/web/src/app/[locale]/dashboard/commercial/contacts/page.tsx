@@ -524,18 +524,24 @@ function ContactsContent() {
                 <div className="space-y-2">
                   {/* Active filters badges */}
                   <div className="flex flex-wrap gap-2">
-                    {filterCircle && (
-                      <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                        Cercle: {circles.find(c => c === filterCircle)?.charAt(0).toUpperCase() + circles.find(c => c === filterCircle)?.slice(1)}
-                        <button
-                          onClick={() => setFilterCircle('')}
-                          className="ml-1 hover:text-danger"
-                          aria-label="Retirer le filtre cercle"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    )}
+                    {filterCircle && (() => {
+                      const foundCircle = circles.find(c => c === filterCircle);
+                      const displayName = foundCircle 
+                        ? foundCircle.charAt(0).toUpperCase() + foundCircle.slice(1)
+                        : filterCircle;
+                      return (
+                        <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                          Cercle: {displayName}
+                          <button
+                            onClick={() => setFilterCircle('')}
+                            className="ml-1 hover:text-danger"
+                            aria-label="Retirer le filtre cercle"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })()}
                     {filterCompany && companies.length > 0 && (
                       <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
                         Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name}
