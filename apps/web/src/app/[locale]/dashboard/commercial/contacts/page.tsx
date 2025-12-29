@@ -545,7 +545,7 @@ function ContactsContent() {
           setSelectedContact(null);
         }}
         title="Fiche contact"
-        size="lg"
+        size="xl"
       >
         {selectedContact && (
           <ContactDetail
