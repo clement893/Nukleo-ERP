@@ -66,9 +66,9 @@ try {
   const srcDir = path.join(webDir, 'src');
   const checkPatterns = [
     {
-      pattern: /variant=["']danger["']/g,
+      pattern: /<Badge[^>]*variant=["']danger["']/g,
       message: 'Badge variant="danger" should be variant="error"',
-      exclude: ['Button.tsx', 'Modal.tsx', 'Dropdown.tsx'], // These components support "danger"
+      exclude: [], // No exclusions needed - we're specifically looking for Badge
     },
   ];
 
