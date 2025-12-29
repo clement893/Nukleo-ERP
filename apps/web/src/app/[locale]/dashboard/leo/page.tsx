@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { Card } from '@/components/ui';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import PageHeader from '@/components/layout/PageHeader';
+import { Card, Button, Input } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Send, Bot, User, Sparkles, Trash2 } from 'lucide-react';
+import { Loader2, Send, User, Sparkles, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useToast } from '@/components/ui';
 
@@ -53,7 +51,6 @@ export default function LeoPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const currentInput = input.trim();
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -111,7 +108,7 @@ export default function LeoPage() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();

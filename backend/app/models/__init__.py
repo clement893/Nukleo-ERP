@@ -41,6 +41,7 @@ from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
 from app.models.contact import Contact
 from app.models.company import Company
 from app.models.file import File
+from app.models.pipeline import Pipeline, PipelineStage, Opportunite
 from app.core.security_audit import SecurityAuditLog
 
 __all__ = [
@@ -122,5 +123,8 @@ __all__ = [
     "ProjectTask",
     "TaskStatus",
     "TaskPriority",
+    "Pipeline",
+    "PipelineStage",
+    "Opportunite",
 ]
 

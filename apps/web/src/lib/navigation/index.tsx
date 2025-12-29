@@ -35,7 +35,6 @@ import {
   CalendarCheck,
   CalendarOff,
   CalendarClock,
-  Bot,
   Sparkles
 } from 'lucide-react';
 
