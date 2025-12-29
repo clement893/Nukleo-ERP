@@ -147,6 +147,11 @@ export default function ContactDetailPage() {
     );
   }
 
+  const handleBack = () => {
+    const locale = params?.locale as string || 'fr';
+    router.push(`/${locale}/dashboard/commercial/contacts`);
+  };
+
   return (
     <PageContainer>
       <PageHeader
@@ -157,6 +162,12 @@ export default function ContactDetailPage() {
           { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/commercial/contacts` },
           { label: `${contact.first_name} ${contact.last_name}` },
         ]}
+        actions={
+          <Button variant="outline" size="sm" onClick={handleBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour à la liste
+          </Button>
+        }
       />
 
       {error && (
