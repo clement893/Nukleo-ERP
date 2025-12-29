@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Badge, Button, Loading, Alert } from '@/components/ui';
 import KanbanBoard from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Users, CheckCircle2, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
+import { Plus, Users, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
 import { teamsAPI, projectTasksAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
@@ -50,7 +50,7 @@ function TeamProjectManagementContent() {
       // Trouver l'équipe par slug
       const teamsResponse = await teamsAPI.list();
       const teams = teamsResponse.data?.teams || [];
-      const foundTeam = teams.find((t) => t.slug === teamSlug);
+      const foundTeam = teams.find((t: Team) => t.slug === teamSlug);
       
       if (!foundTeam) {
         setError('Équipe non trouvée');
@@ -87,7 +87,7 @@ function TeamProjectManagementContent() {
   };
 
   // Convertir les tâches en format Kanban
-  const kanbanCards = tasks.map((task) => ({
+  const kanbanCards = tasks.map((task: ProjectTask) => ({
     id: task.id.toString(),
     title: task.title,
     description: task.description || undefined,
@@ -313,10 +313,10 @@ function TeamProjectManagementContent() {
               description: card.description,
               status: card.status,
               priority: card.priority as 'low' | 'medium' | 'high' | undefined,
-              assignee: card.assigneeName,
+              assignee: card.assignee,
             }))}
             onCardMove={handleCardMove}
-            onCardClick={(card) => handleCardClick(card.id)}
+            onCardClick={(card) => handleCardClick({ id: card.id })}
           />
         </div>
       </Card>

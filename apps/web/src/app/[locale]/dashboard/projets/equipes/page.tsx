@@ -52,20 +52,20 @@ function EquipesContent() {
       const teamsData = teamsResponse.data?.teams || [];
       
       // Filtrer les 3 équipes spécifiques (Bureau, Studio, Lab)
-      const targetTeams = teamsData.filter((team) => 
+      const targetTeams = teamsData.filter((team: TeamType) => 
         ['bureau', 'studio', 'lab'].includes(team.slug)
       );
       
       // Charger les tâches et statistiques pour chaque équipe
       const teamsWithStats: TeamWithStats[] = await Promise.all(
-        targetTeams.map(async (team) => {
+        targetTeams.map(async (team: TeamType) => {
           // Charger les tâches de l'équipe
           const tasks = await projectTasksAPI.list({ team_id: team.id });
           
           // Grouper les membres et leurs tâches
           const employees: Employee[] = (team.members || []).map((member: TeamMember) => {
             const memberTasks = tasks.filter(
-              (task) => task.assignee_id === member.user_id
+              (task: ProjectTask) => task.assignee_id === member.user_id
             );
             return {
               id: member.user_id,
@@ -80,7 +80,7 @@ function EquipesContent() {
           
           const totalTasks = tasks.length;
           const inProgressTasks = tasks.filter(
-            (task) => task.status === 'in_progress'
+            (task: ProjectTask) => task.status === 'in_progress'
           ).length;
           
           return {
@@ -111,16 +111,16 @@ function EquipesContent() {
 
   const getStatusBadge = (status: ProjectTask['status']) => {
     const statusConfig = {
-      todo: { label: 'À faire', variant: 'secondary' as const, icon: Clock },
-      in_progress: { label: 'En cours', variant: 'primary' as const, icon: Clock },
-      blocked: { label: 'Bloqué', variant: 'danger' as const, icon: AlertCircle },
+      todo: { label: 'À faire', variant: 'default' as const, icon: Clock },
+      in_progress: { label: 'En cours', variant: 'info' as const, icon: Clock },
+      blocked: { label: 'Bloqué', variant: 'error' as const, icon: AlertCircle },
       to_transfer: { label: 'À transférer', variant: 'warning' as const, icon: AlertCircle },
       completed: { label: 'Terminé', variant: 'success' as const, icon: CheckCircle2 },
     };
     return statusConfig[status];
   };
 
-  const getPriorityColor = (priority: ProjectTask['priority']) => {
+  const _getPriorityColor = (priority: ProjectTask['priority']) => {
     const colors = {
       low: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
       medium: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
@@ -180,11 +180,11 @@ function EquipesContent() {
                   {/* Statistiques */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Tâches en cours</span>
-                    <Badge variant="primary">{team.inProgressTasks}</Badge>
+                    <Badge variant="info">{team.inProgressTasks}</Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total tâches</span>
-                    <Badge variant="secondary">{team.totalTasks}</Badge>
+                    <Badge variant="default">{team.totalTasks}</Badge>
                   </div>
 
                   {/* Employés */}
