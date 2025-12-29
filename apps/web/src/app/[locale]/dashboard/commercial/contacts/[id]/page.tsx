@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { contactsAPI, Contact } from '@/lib/api/contacts';
-import { handleApiError } from '@/lib/api/utils';
+import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
 import ContactDetail from '@/components/commercial/ContactDetail';
@@ -18,7 +18,6 @@ export default function ContactDetailPage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const contactId = params?.id ? parseInt(String(params.id)) : null;
 
