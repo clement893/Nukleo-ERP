@@ -64,7 +64,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             </div>
 
             <div>
-              <Label htmlFor="secondary_color">Secondary Color</Label>
+              <label htmlFor="secondary_color" className="block text-sm font-medium text-foreground mb-1">Secondary Color</label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="secondary_color"
@@ -83,7 +83,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             </div>
 
             <div>
-              <Label htmlFor="success_color">Success Color</Label>
+              <label htmlFor="success_color" className="block text-sm font-medium text-foreground mb-1">Success Color</label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="success_color"
@@ -102,7 +102,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             </div>
 
             <div>
-              <Label htmlFor="danger_color">Danger Color</Label>
+              <label htmlFor="danger_color" className="block text-sm font-medium text-foreground mb-1">Danger Color</label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="danger_color"
@@ -121,7 +121,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             </div>
 
             <div>
-              <Label htmlFor="warning_color">Warning Color</Label>
+              <label htmlFor="warning_color" className="block text-sm font-medium text-foreground mb-1">Warning Color</label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="warning_color"
@@ -140,7 +140,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             </div>
 
             <div>
-              <Label htmlFor="info_color">Info Color</Label>
+              <label htmlFor="info_color" className="block text-sm font-medium text-foreground mb-1">Info Color</label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="info_color"
@@ -179,7 +179,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
             </div>
 
             <div>
-              <Label htmlFor="border_radius">Border Radius</Label>
+              <label htmlFor="border_radius" className="block text-sm font-medium text-foreground mb-1">Border Radius</label>
               <Input
                 id="border_radius"
                 type="text"

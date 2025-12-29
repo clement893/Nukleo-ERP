@@ -14,7 +14,7 @@ import { ThemeExportImport } from './ThemeExportImport';
 import type { ThemeConfig } from '@modele/types';
 import { DEFAULT_THEME_CONFIG } from '@/lib/theme/default-theme-config';
 import { themePresets, type ThemePreset } from '@/lib/theme/presets';
-import { Save, Download, Upload } from 'lucide-react';
+import { Save, Download } from 'lucide-react';
 
 export function ThemeBuilder() {
   const [config, setConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
