@@ -679,7 +679,6 @@ function PipelineDetailContent() {
         </div>
       </Modal>
     </div>
-    </MotionDiv>
   );
 }
 
