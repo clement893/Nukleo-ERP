@@ -34,7 +34,9 @@ import {
   CalendarDays,
   CalendarCheck,
   CalendarOff,
-  CalendarClock
+  CalendarClock,
+  Bot,
+  Sparkles
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -68,6 +70,13 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
         name: 'Dashboard',
         href: '/dashboard',
         icon: <LayoutDashboard className="w-5 h-5" />,
+      },
+      // Assistant AI Leo (non-grouped)
+      {
+        name: 'Leo',
+        href: '/dashboard/leo',
+        icon: <Sparkles className="w-5 h-5" />,
+        badge: 'AI',
       },
       // Module Commercial (collapsible group)
       {
