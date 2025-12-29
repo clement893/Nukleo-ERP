@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '032_add_calendar_events'
-down_revision = '031_fix_pipeline_user_foreign_keys'
+down_revision = '031_fix_pipeline_user_fkeys'
 branch_labels = None
 depends_on = None
 

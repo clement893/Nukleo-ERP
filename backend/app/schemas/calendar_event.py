@@ -3,7 +3,7 @@ Calendar Event Schemas
 Pydantic v2 models for calendar events
 """
 
-from datetime import datetime, date, time
+from datetime import datetime, date, time as dt_time
 from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator, model_serializer
 
@@ -19,7 +19,7 @@ class CalendarEventBase(BaseModel):
     description: Optional[str] = Field(None, description="Event description")
     date: date = Field(..., description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    time: Optional[time] = Field(None, description="Event time")
+    time: Optional[dt_time] = Field(None, description="Event time")
     # Use event_type internally, but accept 'type' from API via alias
     # This avoids conflict with Python's 'type' keyword while maintaining API compatibility
     event_type: str = Field(
@@ -85,7 +85,7 @@ class CalendarEventUpdate(BaseModel):
     description: Optional[str] = Field(None, description="Event description")
     date: Optional[date] = Field(None, description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    time: Optional[time] = Field(None, description="Event time")
+    time: Optional[dt_time] = Field(None, description="Event time")
     # Use event_type internally, but accept 'type' from API via alias
     event_type: Optional[str] = Field(
         None,
