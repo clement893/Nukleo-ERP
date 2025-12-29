@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import CompaniesGallery from '@/components/commercial/CompaniesGallery';
 import CompanyForm from '@/components/commercial/CompanyForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Filter, X, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, Filter, X, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -334,9 +334,9 @@ function CompaniesContent() {
       sortable: true,
       render: (value) => (
         value ? (
-          <Badge variant="success" size="sm">Oui</Badge>
+          <Badge variant="success">Oui</Badge>
         ) : (
-          <Badge variant="default" size="sm">Non</Badge>
+          <Badge variant="default">Non</Badge>
         )
       ),
     },
@@ -476,7 +476,7 @@ function CompaniesContent() {
             {activeFilters.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 {activeFilters.map((filter) => (
-                  <Badge key={filter.key} variant="default" size="sm" className="text-xs">
+                  <Badge key={filter.key} variant="default" className="text-xs">
                     {filter.label}: {filter.value}
                     <button
                       onClick={() => {

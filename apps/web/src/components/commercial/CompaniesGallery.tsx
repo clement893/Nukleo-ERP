@@ -59,12 +59,12 @@ export default function CompaniesGallery({
                     {company.name}
                   </h3>
                   {company.is_client ? (
-                    <Badge variant="success" size="sm">
+                    <Badge variant="success">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Client
                     </Badge>
                   ) : (
-                    <Badge variant="default" size="sm">
+                    <Badge variant="default">
                       <XCircle className="w-3 h-3 mr-1" />
                       Prospect
                     </Badge>

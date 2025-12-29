@@ -50,11 +50,11 @@ export default function CompanyDetail({
                 )}
               </div>
               {company.is_client ? (
-                <Badge variant="success" size="md">
+                <Badge variant="success">
                   Client
                 </Badge>
               ) : (
-                <Badge variant="default" size="md">
+                <Badge variant="default">
                   Prospect
                 </Badge>
               )}
