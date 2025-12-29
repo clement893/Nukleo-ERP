@@ -19,6 +19,12 @@ class CalendarEventBase(BaseModel):
         default='other',
         description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
     )
+    
+    model_config = ConfigDict(
+        populate_by_name=True,
+        # Allow 'type' field to work despite being a Python built-in
+        protected_namespaces=()
+    )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
     color: Optional[str] = Field(default='#3B82F6', description="Hex color code for the event")
@@ -54,6 +60,12 @@ class CalendarEventUpdate(BaseModel):
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
     time: Optional[time] = Field(None, description="Event time")
     type: Optional[str] = Field(None, description="Event type")
+    
+    model_config = ConfigDict(
+        populate_by_name=True,
+        # Allow 'type' field to work despite being a Python built-in
+        protected_namespaces=()
+    )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
     color: Optional[str] = Field(None, description="Hex color code for the event")

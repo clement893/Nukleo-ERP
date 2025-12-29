@@ -41,10 +41,18 @@ export default function EventForm({
   loading = false,
 }: EventFormProps) {
   const { showToast } = useToast();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    type: DayEvent['type'];
+    time: string;
+    location: string;
+    color: string;
+    attendees: string;
+  }>({
     title: event?.title || '',
     description: event?.description || '',
-    type: event?.type || 'meeting',
+    type: (event?.type || 'meeting') as DayEvent['type'],
     time: event?.time || '',
     location: event?.location || '',
     color: event?.color || '#3B82F6',
@@ -111,7 +119,7 @@ export default function EventForm({
           label="Type"
           options={EVENT_TYPES}
           value={formData.type}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value as DayEvent['type'] })}
+          onChange={(e) => setFormData({ ...formData, type: (e.target.value || 'meeting') as DayEvent['type'] })}
           disabled={loading}
         />
       </div>

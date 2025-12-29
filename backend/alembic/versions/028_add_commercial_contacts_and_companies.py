@@ -1,6 +1,6 @@
 """add commercial contacts and companies
 
-Revision ID: 028_commercial_contacts_companies
+Revision ID: 028_commercial_contacts
 Revises: 027_add_hype_modern_theme
 Create Date: 2025-12-29 14:00:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '028_commercial_contacts_companies'
+revision = '028_commercial_contacts'
 down_revision = '027_add_hype_modern_theme'
 branch_labels = None
 depends_on = None

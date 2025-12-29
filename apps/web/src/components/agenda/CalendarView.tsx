@@ -354,11 +354,14 @@ export default function CalendarView({ className }: CalendarViewProps) {
         throw new Error('La date est requise pour créer un événement');
       }
       
+      // Extraire la date pour garantir le typage
+      const eventDate = eventData.date;
+      
       // Convertir DayEvent en format API
       const apiEventData: CalendarEventCreate = {
         title: eventData.title,
         description: eventData.description,
-        date: eventData.date.toISOString().split('T')[0],
+        date: eventDate.toISOString().split('T')[0],
         end_date: eventData.endDate?.toISOString().split('T')[0],
         time: eventData.time,
         type: (eventData.type || 'other') as CalendarEventCreate['type'],
