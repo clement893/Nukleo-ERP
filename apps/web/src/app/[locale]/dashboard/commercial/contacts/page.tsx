@@ -595,6 +595,7 @@ function ContactsContent() {
             columns={columns as unknown as Column<Record<string, unknown>>[]}
             pageSize={10}
             searchable={false}
+            filterable={false}
             emptyMessage="Aucun contact trouvé"
             loading={loading}
             onRowClick={(row) => openDetailPage(row as unknown as Contact)}
