@@ -64,12 +64,19 @@ export function useDarkMode() {
   const [mode, setModeState] = useState<ThemeMode>(() => getThemeMode());
 
   // Initialize on mount - apply stored preference or default to light
+  // This ensures theme is applied even if inline script didn't run
   useEffect(() => {
     const stored = getThemeMode();
     const shouldBeDark = stored === 'dark';
-    if (document.documentElement.classList.contains('dark') !== shouldBeDark) {
+    const currentIsDark = document.documentElement.classList.contains('dark');
+    
+    // Only apply if there's a mismatch - don't override if already correct
+    if (currentIsDark !== shouldBeDark) {
       applyThemeClass(shouldBeDark);
       setIsDark(shouldBeDark);
+    } else {
+      // Sync state with DOM if already correct
+      setIsDark(currentIsDark);
     }
   }, []);
 

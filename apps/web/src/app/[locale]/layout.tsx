@@ -82,7 +82,30 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={inter.variable} data-api-url={apiUrl} suppressHydrationWarning>
       <head>
-        {/* CRITICAL: Apply theme script FIRST, before any CSS, to prevent flash */}
+        {/* CRITICAL: Apply dark mode FIRST, before any CSS, to prevent flash */}
+        {/* This script MUST execute synchronously and block rendering until dark mode is applied */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const root = document.documentElement;
+                  const storedTheme = localStorage.getItem('theme');
+                  if (storedTheme === 'dark') {
+                    root.classList.remove('light');
+                    root.classList.add('dark');
+                  } else {
+                    root.classList.remove('dark');
+                    root.classList.add('light');
+                  }
+                } catch (e) {
+                  // Silently fail - default to light mode
+                }
+              })();
+            `,
+          }}
+        />
+        {/* CRITICAL: Apply theme script SECOND, after dark mode, to prevent flash */}
         {/* This script MUST execute synchronously and block rendering until theme is applied */}
         <script
           dangerouslySetInnerHTML={{

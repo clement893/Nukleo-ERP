@@ -194,6 +194,44 @@
         "apiKeys": "Clés API"
       }
     }
+  },
+  "content": {
+    "pages": {
+      "title": "Gestion des pages",
+      "description": "Créez et gérez vos pages de contenu",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "content": "Contenu",
+        "pages": "Pages"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des pages. Veuillez réessayer."
+      }
+    },
+    "posts": {
+      "title": "Gestion des articles",
+      "description": "Créez et gérez vos articles de blog",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "content": "Contenu",
+        "posts": "Articles"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des articles. Veuillez réessayer."
+      }
+    },
+    "media": {
+      "title": "Bibliothèque média",
+      "description": "Téléchargez et gérez vos fichiers média",
+      "breadcrumbs": {
+        "dashboard": "Tableau de bord",
+        "content": "Contenu",
+        "media": "Médias"
+      },
+      "errors": {
+        "loadFailed": "Échec du chargement des médias. Veuillez réessayer."
+      }
+    }
   }
 }
 

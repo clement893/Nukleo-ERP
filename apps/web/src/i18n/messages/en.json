@@ -194,6 +194,44 @@
         "apiKeys": "API Keys"
       }
     }
+  },
+  "content": {
+    "pages": {
+      "title": "Pages Management",
+      "description": "Create and manage your content pages",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "content": "Content",
+        "pages": "Pages"
+      },
+      "errors": {
+        "loadFailed": "Failed to load pages. Please try again."
+      }
+    },
+    "posts": {
+      "title": "Articles Management",
+      "description": "Create and manage your blog posts and articles",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "content": "Content",
+        "posts": "Articles"
+      },
+      "errors": {
+        "loadFailed": "Failed to load posts. Please try again."
+      }
+    },
+    "media": {
+      "title": "Media Library",
+      "description": "Upload and manage your media files",
+      "breadcrumbs": {
+        "dashboard": "Dashboard",
+        "content": "Content",
+        "media": "Media"
+      },
+      "errors": {
+        "loadFailed": "Failed to load media. Please try again."
+      }
+    }
   }
 }
 

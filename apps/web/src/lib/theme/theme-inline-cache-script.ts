@@ -13,7 +13,8 @@ export const themeCacheInlineScript = `
   
   try {
     // ONLY load theme variables - NO automatic dark/light mode application
-    // Dark mode is ONLY activated manually via ThemeToggle component
+    // Dark mode is applied by a separate script in layout.tsx that runs FIRST
+    // This prevents conflicts and ensures dark mode is applied before theme colors
     const root = document.documentElement;
     
     // Get cached theme from localStorage
