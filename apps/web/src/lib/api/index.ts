@@ -72,3 +72,7 @@ export * from './theme-errors';
 // Re-export contacts API
 export { contactsAPI } from './contacts';
 export type { Contact, ContactCreate, ContactUpdate } from './contacts';
+
+// Re-export project tasks API
+export { projectTasksAPI } from './project-tasks';
+export type { ProjectTask, ProjectTaskCreate, ProjectTaskUpdate, TaskStatus, TaskPriority } from './project-tasks';

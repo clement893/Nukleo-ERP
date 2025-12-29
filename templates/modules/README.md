@@ -56,6 +56,32 @@ alembic revision --autogenerate -m "Add Billing module"
 alembic upgrade head
 ```
 
+### 3. Projets
+**Localisation**: `templates/modules/projets/`
+
+Module complet pour la gestion des projets, clients et équipes.
+
+**Fonctionnalités**:
+- ✅ Gestion des projets
+- ✅ Gestion des clients
+- ✅ Gestion des équipes
+- ✅ Suivi des projets
+- ✅ Attribution des tâches
+
+**Utilisation**:
+```bash
+# Copier le template dans votre projet
+cp -r templates/modules/projets backend/app/modules/
+
+# Générer les types TypeScript
+npm run generate:types
+
+# Créer les migrations
+cd backend
+alembic revision --autogenerate -m "Add Projets module"
+alembic upgrade head
+```
+
 ## 🚀 Créer un Nouveau Module
 
 1. **Créer la structure**:
@@ -109,4 +135,5 @@ Après avoir créé un module backend:
 Consultez les templates existants pour voir des exemples complets:
 - `templates/modules/crm/` - Module CRM complet
 - `templates/modules/billing/` - Module Facturation complet
+- `templates/modules/projets/` - Module Projets complet
 

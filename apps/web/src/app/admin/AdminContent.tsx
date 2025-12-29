@@ -66,7 +66,7 @@ export default function AdminContent() {
           <p className="text-muted-foreground mb-4">
             Consulter les logs système et les activités.
           </p>
-          <Link href="/test/admin-logs">
+          <Link href="/admin/testing">
             <Button variant="primary" className="w-full">
               Voir les logs
             </Button>

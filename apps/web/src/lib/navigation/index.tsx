@@ -25,7 +25,9 @@ import {
   Building2,
   UserCircle,
   Target,
-  TrendingUp
+  TrendingUp,
+  FolderOpen,
+  Building
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -89,6 +91,35 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Pipeline & client',
             href: '/dashboard/commercial/pipeline-client',
             icon: <TrendingUp className="w-5 h-5" />,
+          },
+        ],
+        collapsible: true,
+        defaultOpen: false,
+      },
+      // Module Projets (collapsible group)
+      {
+        name: 'Module Projets',
+        icon: <FolderOpen className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Accueil',
+            href: '/dashboard/projets',
+            icon: <FolderOpen className="w-5 h-5" />,
+          },
+          {
+            name: 'Projets',
+            href: '/dashboard/projets/projets',
+            icon: <FolderKanban className="w-5 h-5" />,
+          },
+          {
+            name: 'Clients',
+            href: '/dashboard/projets/clients',
+            icon: <Building className="w-5 h-5" />,
+          },
+          {
+            name: 'Équipes',
+            href: '/dashboard/projets/equipes',
+            icon: <Users className="w-5 h-5" />,
           },
         ],
         collapsible: true,
@@ -177,7 +208,7 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
       items: [
         {
           name: 'Logs',
-          href: '/test/admin-logs',
+          href: '/admin/testing',
           icon: <FileText className="w-5 h-5" />,
         },
         {
