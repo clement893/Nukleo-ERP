@@ -35,6 +35,7 @@ function ContactsContent() {
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   // Mock data pour les entreprises et employés (à remplacer par des appels API réels)
   const [companies] = useState<Array<{ id: number; name: string }>>([]);
@@ -438,47 +439,53 @@ function ContactsContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
+                      onClick={() => setShowActionsMenu(!showActionsMenu)}
                       className="text-xs px-2 py-1.5 h-auto"
                       aria-label="Actions"
                     >
                       <MoreVertical className="w-3.5 h-3.5" />
                     </Button>
-                    {showFilters && (
-                      <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-10">
-                        <div className="py-1">
-                          <input
-                            type="file"
-                            accept=".xlsx,.xls"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                handleImport(file);
-                                setShowFilters(false);
-                              }
-                            }}
-                            className="hidden"
-                            id="import-contacts"
-                          />
-                          <label
-                            htmlFor="import-contacts"
-                            className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                            Importer
-                          </label>
-                          <button
-                            onClick={() => {
-                              handleExport();
-                              setShowFilters(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Exporter
-                          </button>
+                    {showActionsMenu && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowActionsMenu(false)}
+                        />
+                        <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
+                          <div className="py-1">
+                            <input
+                              type="file"
+                              accept=".xlsx,.xls"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleImport(file);
+                                  setShowActionsMenu(false);
+                                }
+                              }}
+                              className="hidden"
+                              id="import-contacts"
+                            />
+                            <label
+                              htmlFor="import-contacts"
+                              className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              Importer
+                            </label>
+                            <button
+                              onClick={() => {
+                                handleExport();
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Exporter
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -536,20 +543,23 @@ function ContactsContent() {
                   </Badge>
                 )}
               </div>
-              {companies.length > 0 && (
-                <div className="mt-2">
-                  <select
-                    value={filterCompany}
-                    onChange={(e) => setFilterCompany(e.target.value)}
-                    className="px-2 py-1 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">Toutes les entreprises</option>
-                    {companies.map((company) => (
-                      <option key={company.id} value={company.id.toString()}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
+                  {companies.length > 0 && (
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Entreprise</label>
+                      <select
+                        value={filterCompany}
+                        onChange={(e) => setFilterCompany(e.target.value)}
+                        className="w-full px-2 py-1 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">Toutes les entreprises</option>
+                        {companies.map((company) => (
+                          <option key={company.id} value={company.id.toString()}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
