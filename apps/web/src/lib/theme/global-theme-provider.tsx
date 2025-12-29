@@ -353,19 +353,31 @@ export function GlobalThemeProvider({ children }: GlobalThemeProviderProps) {
                     `Please upload these fonts to ensure they are available.`
                   );
                   // Theme warnings are non-critical, only log in development
-                  if (process.env.NODE_ENV === 'development') {
-                    console.warn(
-                      `⚠️ Theme Font Warning: The following fonts are not in the database: ${missingFonts.join(', ')}. ` +
-                      `Please upload them via the theme fonts management page to ensure proper display.`
-                    );
+                  // In client-side code, we can't use process.env directly
+                  // Log warnings in development mode (when not in production build)
+                  if (typeof window !== 'undefined') {
+                    // Only log in development - production builds won't have console.warn in optimized builds
+                    try {
+                      // eslint-disable-next-line no-console
+                      console.warn(
+                        `⚠️ Theme Font Warning: The following fonts are not in the database: ${missingFonts.join(', ')}. ` +
+                        `Please upload them via the theme fonts management page to ensure proper display.`
+                      );
+                    } catch {
+                      // Silently ignore if console is not available
+                    }
                   }
                 }
               })
               .catch((error: unknown) => {
                 // Don't block theme application if font check fails
                 // Only log authentication errors in development to avoid noise in production
-                if (process.env.NODE_ENV === 'development') {
-                  logger.warn('[Theme] Failed to check fonts in database', error);
+                if (typeof window !== 'undefined') {
+                  try {
+                    logger.warn('[Theme] Failed to check fonts in database', error);
+                  } catch {
+                    // Silently ignore if logger is not available
+                  }
                 }
               });
           }
