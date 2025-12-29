@@ -113,29 +113,8 @@ class CalendarEvent(CalendarEventBase):
         from_attributes=True,
         populate_by_name=True
     )
-    
-    @model_validator(mode='before')
-    @classmethod
-    def handle_type_field(cls, data: Any) -> Any:
-        """Convert 'type' field from database model to 'event_type'"""
-        # Handle SQLAlchemy model instance - from_attributes will handle it, but we need to map 'type' to 'event_type'
-        if hasattr(data, '__dict__') and hasattr(data, 'type'):
-            if not isinstance(data, dict):
-                # Create a dict from the model attributes
-                result = {}
-                for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
-                           'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
-                    if hasattr(data, key):
-                        result[key] = getattr(data, key)
-                # Convert 'type' to 'type' (which will be mapped to 'event_type' via alias)
-                if hasattr(data, 'type'):
-                    result['type'] = getattr(data, 'type')
-                return result
-        # Handle dict input - map 'type' key if present
-        elif isinstance(data, dict):
-            # Keep 'type' as is, it will be mapped to 'event_type' via alias
-            pass
-        return data
+    # Pydantic will automatically map 'type' from SQLAlchemy model to 'event_type' via the alias
+    # defined in CalendarEventBase
 
 
 class CalendarEventInDB(CalendarEvent):
