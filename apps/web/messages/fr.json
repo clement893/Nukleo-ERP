@@ -54,7 +54,6 @@
   "errors": {
     "somethingWentWrong": "Quelque chose s'est mal passé",
     "tryAgain": "Réessayer",
-    "notFound": "Non trouvé",
     "unauthorized": "Non autorisé",
     "forbidden": "Interdit",
     "serverError": "Erreur serveur",
