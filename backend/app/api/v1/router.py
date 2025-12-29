@@ -412,7 +412,6 @@ api_router.include_router(
 # Register commercial module endpoints
 api_router.include_router(
     commercial_contacts.router,
-    prefix="/v1",
     tags=["commercial"]
 )
 
