@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
 import ContactDetail from '@/components/commercial/ContactDetail';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -266,7 +266,7 @@ function ContactsContent() {
       key: 'first_name',
       label: 'Prénom',
       sortable: true,
-      render: (value, contact) => (
+      render: (_value, contact) => (
         <div>
           <div className="font-medium">{contact.first_name} {contact.last_name}</div>
           {contact.position && (
@@ -280,7 +280,7 @@ function ContactsContent() {
       label: 'Entreprise',
       sortable: true,
       render: (value) => (
-        <span className="text-muted-foreground">{value || '-'}</span>
+        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
       ),
     },
     {
@@ -300,7 +300,7 @@ function ContactsContent() {
       label: 'Courriel',
       sortable: true,
       render: (value) => (
-        <span className="text-muted-foreground">{value || '-'}</span>
+        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
       ),
     },
     {
@@ -308,14 +308,14 @@ function ContactsContent() {
       label: 'Téléphone',
       sortable: true,
       render: (value) => (
-        <span className="text-muted-foreground">{value || '-'}</span>
+        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
       ),
     },
     {
       key: 'city',
       label: 'Ville',
       sortable: true,
-      render: (value, contact) => (
+      render: (_value, contact) => (
         <span className="text-muted-foreground">
           {[contact.city, contact.country].filter(Boolean).join(', ') || '-'}
         </span>
@@ -419,10 +419,10 @@ function ContactsContent() {
               id="import-contacts"
             />
             <label htmlFor="import-contacts">
-              <Button variant="outline" size="sm" as="span">
-                <Upload className="w-4 h-4 mr-2" />
+              <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border-2 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer transition-all duration-200">
+                <Upload className="w-4 h-4" />
                 Importer
-              </Button>
+              </span>
             </label>
 
             {/* Export */}
@@ -457,31 +457,34 @@ function ContactsContent() {
       ) : viewMode === 'list' ? (
         <Card>
           <DataTable
-            data={filteredContacts}
-            columns={columns}
+            data={filteredContacts as unknown as Record<string, unknown>[]}
+            columns={columns as unknown as Column<Record<string, unknown>>[]}
             pageSize={10}
             searchable={false}
             emptyMessage="Aucun contact trouvé"
             loading={loading}
-            onRowClick={openDetailModal}
-            actions={(contact) => [
-              {
-                label: 'Voir',
-                onClick: () => openDetailModal(contact),
-                icon: <Eye className="w-4 h-4" />,
-              },
-              {
-                label: 'Modifier',
-                onClick: () => openEditModal(contact),
-                icon: <Edit className="w-4 h-4" />,
-              },
-              {
-                label: 'Supprimer',
-                onClick: () => handleDelete(contact.id),
-                icon: <Trash2 className="w-4 h-4" />,
-                variant: 'danger',
-              },
-            ]}
+            onRowClick={(row) => openDetailModal(row as unknown as Contact)}
+            actions={(row) => {
+              const contact = row as unknown as Contact;
+              return [
+                {
+                  label: 'Voir',
+                  onClick: () => openDetailModal(contact),
+                  icon: <Eye className="w-4 h-4" />,
+                },
+                {
+                  label: 'Modifier',
+                  onClick: () => openEditModal(contact),
+                  icon: <Edit className="w-4 h-4" />,
+                },
+                {
+                  label: 'Supprimer',
+                  onClick: () => handleDelete(contact.id),
+                  icon: <Trash2 className="w-4 h-4" />,
+                  variant: 'danger',
+                },
+              ];
+            }}
           />
         </Card>
       ) : (

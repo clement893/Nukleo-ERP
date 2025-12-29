@@ -153,6 +153,6 @@ export const contactsAPI = {
     const response = await apiClient.get('/v1/commercial/contacts/export', {
       responseType: 'blob',
     });
-    return response.data;
+    return response.data as Blob;
   },
 };

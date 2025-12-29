@@ -8,7 +8,6 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Upload, X, UserCircle } from 'lucide-react';
 import { useToast } from '@/components/ui';
-import { clsx } from 'clsx';
 
 interface ContactFormProps {
   contact?: Contact | null;
@@ -94,7 +93,7 @@ export default function ContactForm({
         is_public: true,
       });
       
-      setFormData({ ...formData, photo_url: uploadedMedia.url });
+      setFormData({ ...formData, photo_url: uploadedMedia.file_path });
       showToast({
         message: 'Photo uploadée avec succès',
         type: 'success',
