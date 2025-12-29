@@ -256,6 +256,7 @@ const config: Config = {
         'slide-up': `slideUp var(--animation-duration-normal, 0.3s) var(--animation-easing-smooth, ease-out)`,
         'slide-down': `slideDown var(--animation-duration-normal, 0.3s) var(--animation-easing-smooth, ease-out)`,
         'scale-in': `scaleIn var(--animation-duration-fast, 0.2s) var(--animation-easing-smooth, ease-out)`,
+        'fade-in-slide-up': `fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)`,
         // Optimized blob animation - slower and smoother for better performance
         'blob': 'blob 20s ease-in-out infinite',
       },
@@ -275,6 +276,10 @@ const config: Config = {
         scaleIn: {
           '0%': { transform: 'scale(0.95)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        fadeInSlideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         blob: {
           '0%, 100%': { transform: 'translate(0, 0) scale(1)' },

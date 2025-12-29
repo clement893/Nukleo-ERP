@@ -126,7 +126,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
       {/* Mobile/Tablet Sidebar Overlay */}
       {mobileMenuOpen && (
         <div
-          className="xl:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          className="xl:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
           onClick={handleMobileMenuClose}
         />
       )}
@@ -134,7 +134,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
       {/* Mobile/Tablet Sidebar - Fixed position, persists during navigation */}
       <aside
         className={clsx(
-          'xl:hidden fixed top-0 left-0 h-full z-50 transform transition-transform duration-300 ease-in-out w-64 sm:w-72',
+          'xl:hidden fixed top-0 left-0 h-full z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] w-64 sm:w-72',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -175,9 +175,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           {/* Page Content - This is the only part that updates on navigation */}
           <main 
             key={pathname} 
-            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8 bg-background animate-fade-in"
+            className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 2xl:py-8 bg-background"
             style={{
-              animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             {children}

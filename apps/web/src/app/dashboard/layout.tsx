@@ -96,7 +96,7 @@ function DashboardLayoutContent({
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -104,7 +104,7 @@ function DashboardLayoutContent({
       {/* Mobile Sidebar */}
       <aside
         className={clsx(
-          'lg:hidden fixed top-0 left-0 h-full z-50 transform transition-transform duration-300',
+          'lg:hidden fixed top-0 left-0 h-full z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -172,7 +172,13 @@ function DashboardLayoutContent({
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main 
+            key={pathname}
+            className="flex-1 overflow-y-auto"
+            style={{
+              animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          >
             {children}
           </main>
         </div>
