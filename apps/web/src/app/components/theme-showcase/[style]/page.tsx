@@ -6,10 +6,17 @@ const validStyles = ['modern-minimal', 'glassmorphism', 'neon-cyberpunk', 'corpo
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-export default function DesignStylePage({ params }: { params: { style: string } }) {
-  if (!validStyles.includes(params.style)) {
+interface DesignStylePageProps {
+  params: Promise<{ style: string }> | { style: string };
+}
+
+export default async function DesignStylePage({ params }: DesignStylePageProps) {
+  const resolvedParams = await Promise.resolve(params);
+  const style = resolvedParams.style;
+
+  if (!validStyles.includes(style)) {
     notFound();
   }
 
-  return <DesignStyleContent style={params.style} />;
+  return <DesignStyleContent style={style} />;
 }

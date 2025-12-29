@@ -17,7 +17,7 @@ interface ThemeVisualEditorProps {
 export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) {
   const [localConfig, setLocalConfig] = useState<ThemeConfig>(config);
 
-  const updateColor = (key: keyof ThemeConfig, value: string) => {
+  const updateField = (key: keyof ThemeConfig, value: string) => {
     const updated = { ...localConfig, [key]: value };
     setLocalConfig(updated);
     onUpdate(updated);
@@ -25,14 +25,15 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
 
   const updateNested = (path: string[], value: unknown) => {
     const updated = { ...localConfig };
-    let current: any = updated;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let current: Record<string, any> = updated as Record<string, any>;
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (key === undefined) continue;
       if (!current[key]) {
         current[key] = {};
       }
-      current = current[key];
+      current = current[key] as Record<string, any>;
     }
     const lastKey = path[path.length - 1];
     if (lastKey !== undefined) {
@@ -56,13 +57,13 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                   id="primary_color"
                   type="color"
                   value={localConfig.primary_color || '#2563eb'}
-                  onChange={(e) => updateColor('primary_color', e.target.value)}
+                  onChange={(e) => updateField('primary_color', e.target.value)}
                   className="w-16 h-10"
                 />
                 <Input
                   type="text"
                   value={localConfig.primary_color || '#2563eb'}
-                  onChange={(e) => updateColor('primary_color', e.target.value)}
+                  onChange={(e) => updateField('primary_color', e.target.value)}
                   placeholder="#2563eb"
                 />
               </div>
@@ -75,13 +76,13 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                   id="secondary_color"
                   type="color"
                   value={localConfig.secondary_color || '#6366f1'}
-                  onChange={(e) => updateColor('secondary_color', e.target.value)}
+                  onChange={(e) => updateField('secondary_color', e.target.value)}
                   className="w-16 h-10"
                 />
                 <Input
                   type="text"
                   value={localConfig.secondary_color || '#6366f1'}
-                  onChange={(e) => updateColor('secondary_color', e.target.value)}
+                  onChange={(e) => updateField('secondary_color', e.target.value)}
                   placeholder="#6366f1"
                 />
               </div>
@@ -94,13 +95,13 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                   id="success_color"
                   type="color"
                   value={localConfig.success_color || '#059669'}
-                  onChange={(e) => updateColor('success_color', e.target.value)}
+                  onChange={(e) => updateField('success_color', e.target.value)}
                   className="w-16 h-10"
                 />
                 <Input
                   type="text"
                   value={localConfig.success_color || '#059669'}
-                  onChange={(e) => updateColor('success_color', e.target.value)}
+                  onChange={(e) => updateField('success_color', e.target.value)}
                   placeholder="#059669"
                 />
               </div>
@@ -113,13 +114,13 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                   id="danger_color"
                   type="color"
                   value={localConfig.danger_color || '#dc2626'}
-                  onChange={(e) => updateColor('danger_color', e.target.value)}
+                  onChange={(e) => updateField('danger_color', e.target.value)}
                   className="w-16 h-10"
                 />
                 <Input
                   type="text"
                   value={localConfig.danger_color || '#dc2626'}
-                  onChange={(e) => updateColor('danger_color', e.target.value)}
+                  onChange={(e) => updateField('danger_color', e.target.value)}
                   placeholder="#dc2626"
                 />
               </div>
@@ -132,13 +133,13 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                   id="warning_color"
                   type="color"
                   value={localConfig.warning_color || '#d97706'}
-                  onChange={(e) => updateColor('warning_color', e.target.value)}
+                  onChange={(e) => updateField('warning_color', e.target.value)}
                   className="w-16 h-10"
                 />
                 <Input
                   type="text"
                   value={localConfig.warning_color || '#d97706'}
-                  onChange={(e) => updateColor('warning_color', e.target.value)}
+                  onChange={(e) => updateField('warning_color', e.target.value)}
                   placeholder="#d97706"
                 />
               </div>
@@ -151,13 +152,13 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                   id="info_color"
                   type="color"
                   value={localConfig.info_color || '#0891b2'}
-                  onChange={(e) => updateColor('info_color', e.target.value)}
+                  onChange={(e) => updateField('info_color', e.target.value)}
                   className="w-16 h-10"
                 />
                 <Input
                   type="text"
                   value={localConfig.info_color || '#0891b2'}
-                  onChange={(e) => updateColor('info_color', e.target.value)}
+                  onChange={(e) => updateField('info_color', e.target.value)}
                   placeholder="#0891b2"
                 />
               </div>
@@ -177,7 +178,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                 id="font_family"
                 type="text"
                 value={localConfig.font_family || ''}
-                onChange={(e) => updateColor('font_family', e.target.value)}
+                onChange={(e) => updateField('font_family', e.target.value)}
                 placeholder="Inter, sans-serif"
                 className="mt-1"
               />
@@ -189,7 +190,7 @@ export function ThemeVisualEditor({ config, onUpdate }: ThemeVisualEditorProps) 
                 id="border_radius"
                 type="text"
                 value={localConfig.border_radius || ''}
-                onChange={(e) => updateColor('border_radius', e.target.value)}
+                onChange={(e) => updateField('border_radius', e.target.value)}
                 placeholder="0.375rem"
                 className="mt-1"
               />

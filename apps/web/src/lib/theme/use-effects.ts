@@ -27,6 +27,7 @@
  * ```
  */
 
+import type { CSSProperties } from 'react';
 import { useGlobalTheme } from './global-theme-provider';
 
 /**
@@ -92,7 +93,7 @@ export function useEffects() {
    * 
    * @returns Object with glassmorphism styles
    */
-  const getGlassmorphismCardStyles = (): React.CSSProperties => {
+  const getGlassmorphismCardStyles = (): CSSProperties => {
     if (!hasEffect('glassmorphism')) {
       return {};
     }
@@ -111,7 +112,7 @@ export function useEffects() {
    * 
    * @returns Object with glassmorphism panel styles
    */
-  const getGlassmorphismPanelStyles = (): React.CSSProperties => {
+  const getGlassmorphismPanelStyles = (): CSSProperties => {
     if (!hasEffect('glassmorphism')) {
       return {};
     }

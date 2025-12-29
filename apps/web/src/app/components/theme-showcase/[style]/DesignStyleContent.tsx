@@ -53,7 +53,11 @@ const styleConfigs = {
   },
 };
 
-export default function DesignStyleContent({ style }: { style: string }) {
+interface DesignStyleContentProps {
+  style: string;
+}
+
+export default function DesignStyleContent({ style }: DesignStyleContentProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const config = styleConfigs[style as keyof typeof styleConfigs];
 
@@ -62,7 +66,7 @@ export default function DesignStyleContent({ style }: { style: string }) {
   }
 
   // Style-specific background and wrapper classes
-  const styleWrappers = {
+  const styleWrappers: Record<keyof typeof styleConfigs, string> = {
     'modern-minimal': 'bg-gray-50 dark:bg-gray-950 min-h-screen',
     'glassmorphism': 'bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 min-h-screen',
     'neon-cyberpunk': 'bg-gradient-to-br from-purple-900 via-black to-cyan-900 min-h-screen text-cyan-100',
@@ -70,8 +74,11 @@ export default function DesignStyleContent({ style }: { style: string }) {
     'playful-colorful': 'bg-gradient-to-br from-yellow-200 via-pink-300 to-purple-300 dark:from-purple-900 dark:via-pink-900 dark:to-yellow-900 min-h-screen',
   };
 
+  const styleKey = style as keyof typeof styleConfigs;
+  const wrapperClass = styleWrappers[styleKey] || '';
+
   return (
-    <div className={`${config.className} ${styleWrappers[style as keyof typeof styleWrappers]} py-8`}>
+    <div className={`${config.className} ${wrapperClass} py-8`}>
       <PageContainer>
         <PageHeader
           title={config.title}
