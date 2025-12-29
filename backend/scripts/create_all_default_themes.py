@@ -21,10 +21,11 @@ from app.core.database import get_db
 from app.models.theme import Theme
 from app.api.v1.endpoints.themes import ensure_default_theme
 from sqlalchemy import select
+from datetime import datetime
 
-# Import theme creation scripts
-from scripts.create_luxury_theme import create_luxury_theme
-from scripts.create_hype_theme import create_hype_theme
+# Import theme configs
+from scripts.create_luxury_theme import LUXURY_THEME_CONFIG
+from scripts.create_hype_theme import HYPE_THEME_CONFIG
 
 
 async def create_all_default_themes():
@@ -66,9 +67,22 @@ async def create_all_default_themes():
                     themes_existing.append(f"LuxuryTheme (ID 31)")
                     print(f"ℹ️  LuxuryTheme already exists (ID: 31)")
                 else:
-                    # Import and run luxury theme creation
-                    await create_luxury_theme()
+                    theme = Theme(
+                        id=31,
+                        name="LuxuryTheme",
+                        display_name="Luxury Premium Theme",
+                        description="Premium luxury theme with intelligent design, sophisticated UI components, and wow effects.",
+                        config=LUXURY_THEME_CONFIG,
+                        is_active=False,
+                        created_by=1,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    db.add(theme)
+                    await db.commit()
+                    await db.refresh(theme)
                     themes_created.append(f"LuxuryTheme (ID 31)")
+                    print(f"✅ Created LuxuryTheme (ID 31)")
             except Exception as e:
                 print(f"❌ Error creating LuxuryTheme: {e}")
             
@@ -83,9 +97,22 @@ async def create_all_default_themes():
                     themes_existing.append(f"HypeModernTheme (ID 34)")
                     print(f"ℹ️  HypeModernTheme already exists (ID: 34)")
                 else:
-                    # Import and run hype theme creation
-                    await create_hype_theme()
+                    theme = Theme(
+                        id=34,
+                        name="HypeModernTheme",
+                        display_name="Hype Modern Theme",
+                        description="Thème moderne et hype avec design complexe : gradients néon, glassmorphism avancé, effets de lueur, animations fluides, et palette de couleurs vibrantes.",
+                        config=HYPE_THEME_CONFIG,
+                        is_active=False,
+                        created_by=1,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    db.add(theme)
+                    await db.commit()
+                    await db.refresh(theme)
                     themes_created.append(f"HypeModernTheme (ID 34)")
+                    print(f"✅ Created HypeModernTheme (ID 34)")
             except Exception as e:
                 print(f"❌ Error creating HypeModernTheme: {e}")
             
