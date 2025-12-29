@@ -78,6 +78,7 @@ export { default as Toast } from './Toast';
 export type { ToastProps } from './Toast';
 export type { ToastData } from './ToastContainer';
 export { default as Loading } from './Loading';
+export { default as LoadingSkeleton } from './LoadingSkeleton';
 export { default as Skeleton } from './Skeleton';
 export { default as Progress } from './Progress';
 export { default as Spinner } from './Spinner';

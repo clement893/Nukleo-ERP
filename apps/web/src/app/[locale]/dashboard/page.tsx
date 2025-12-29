@@ -4,8 +4,9 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
-import { Card, Badge, Container, StatsCard, StatusCard, ServiceTestCard, Button } from '@/components/ui';
+import { Card, Badge, Container, StatsCard, StatusCard, ServiceTestCard, Button, LoadingSkeleton } from '@/components/ui';
 import { Link } from '@/i18n/routing';
 import dynamicImport from 'next/dynamic';
 
@@ -17,6 +18,24 @@ const TemplateAIChat = dynamicImport(
 
 function DashboardContent() {
   const { user } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <Container className="py-8 lg:py-12">
+        <LoadingSkeleton variant="card" count={2} className="mb-8" />
+        <LoadingSkeleton variant="stats" count={4} />
+      </Container>
+    );
+  }
 
   return (
     <Container className="py-8 lg:py-12">

@@ -1,10 +1,39 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { PageHeader, PageContainer, Section } from '@/components/layout';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button, Badge, LoadingSkeleton } from '@/components/ui';
 import Link from 'next/link';
 
 export default function AdminContent() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <PageHeader 
+          title="Administration" 
+          description="Panneau d'administration du système"
+          breadcrumbs={[
+            { label: 'Accueil', href: '/' },
+            { label: 'Administration' }
+          ]} 
+        />
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <LoadingSkeleton variant="card" count={6} />
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <PageHeader 

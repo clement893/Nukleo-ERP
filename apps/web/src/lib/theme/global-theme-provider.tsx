@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
 import type { ThemeConfigResponse, ThemeConfig } from '@modele/types';
 import { generateColorShades, generateRgb } from './color-utils';
 import { watchDarkModePreference, getThemeConfigForMode } from './dark-mode-utils';
-import { getThemeFromCache, saveThemeToCache } from './theme-cache';
+import { getThemeFromCache, saveThemeToCache, clearThemeCache } from './theme-cache';
 import { checkFonts } from '@/lib/api/theme-font';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 
