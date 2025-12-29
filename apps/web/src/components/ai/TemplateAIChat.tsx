@@ -83,7 +83,7 @@ export function TemplateAIChat({
         finish_reason: string;
       }
 
-      const response = await apiClient.post<ChatResponse>('/api/v1/ai/chat/template', {
+      const response = await apiClient.post<ChatResponse>('/v1/ai/chat/template', {
         messages: apiMessages,
         provider: 'auto',
         max_tokens: 2000,

@@ -79,7 +79,7 @@ export function AIChat({
         finish_reason: string;
       }
 
-      const response = await apiClient.post<ChatResponse>('/api/v1/ai/chat', {
+      const response = await apiClient.post<ChatResponse>('/v1/ai/chat', {
         messages: apiMessages,
         provider: currentProvider,
         model,

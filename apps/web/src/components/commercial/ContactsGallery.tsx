@@ -34,13 +34,13 @@ export default function ContactsGallery({
           onClick={() => onContactClick?.(contact)}
         >
           <div className="flex flex-col">
-            {/* Photo rectangulaire en haut */}
-            <div className="w-full h-48 bg-muted overflow-hidden">
+            {/* Photo rectangulaire en hauteur */}
+            <div className="w-full aspect-[3/4] bg-muted overflow-hidden">
               {contact.photo_url ? (
                 <img
                   src={contact.photo_url}
                   alt={`${contact.first_name} ${contact.last_name}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center">

@@ -78,7 +78,7 @@ export default function LeoPage() {
 
       const systemPrompt = `Tu es Leo, l'assistant IA de l'ERP Nukleo. Tu es là pour aider les utilisateurs avec leurs questions sur l'ERP, les projets, les équipes, les clients, et toutes les fonctionnalités du système. Sois concis, précis, et amical. Réponds toujours en français sauf demande contraire.`;
 
-      const response = await apiClient.post<ChatResponse>('/api/v1/ai/chat', {
+      const response = await apiClient.post<ChatResponse>('/v1/ai/chat', {
         messages: apiMessages,
         provider: 'auto',
         system_prompt: systemPrompt,
