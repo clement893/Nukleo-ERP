@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, X, MoreVertical, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
