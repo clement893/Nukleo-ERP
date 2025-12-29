@@ -131,5 +131,6 @@ __all__ = [
     "LeoDocumentation",
     "DocumentationCategory",
     "DocumentationPriority",
+    "CalendarEvent",
 ]
 

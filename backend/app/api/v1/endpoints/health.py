@@ -20,7 +20,9 @@ router = APIRouter()
 
 # Simple health check that always returns success (for Railway healthcheck)
 # This endpoint should be lightweight and not depend on database/cache
-@router.get("/health", response_model=Dict[str, Any])
+# This is the main endpoint Railway checks: /api/v1/health
+@router.get("/", response_model=Dict[str, Any])
+@router.get("", response_model=Dict[str, Any])  # Handle both with and without trailing slash
 async def simple_health_check() -> Dict[str, Any]:
     """
     Simple health check endpoint for Railway/deployment healthchecks
@@ -36,8 +38,7 @@ async def simple_health_check() -> Dict[str, Any]:
     }
 
 
-@router.get("/", response_model=Dict[str, Any])
-@router.get("", response_model=Dict[str, Any])  # Handle both with and without trailing slash
+@router.get("/health", response_model=Dict[str, Any])
 async def health_check() -> Dict[str, Any]:
     """
     Basic health check endpoint
