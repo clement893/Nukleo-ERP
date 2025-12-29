@@ -25,17 +25,24 @@ export class TokenStorage {
   /**
    * Set access token (and optionally refresh token) via httpOnly cookies
    * This is the secure method that stores tokens server-side
+   * 
+   * IMPORTANT: Both access token and refresh token are stored in localStorage to persist across browser sessions.
+   * This prevents users from being logged out when they close the browser tab.
+   * Access token is also stored in sessionStorage for backward compatibility.
    */
   static async setToken(token: string, refreshToken?: string): Promise<void> {
     if (typeof window === 'undefined') {
       return; // Server-side, skip
     }
 
-    // Store in sessionStorage FIRST (synchronously) so it's immediately available
-    // This prevents race conditions where API calls are made before the token is stored
+    // Store access token in both localStorage (persists) and sessionStorage (for compatibility)
+    localStorage.setItem(TOKEN_KEY, token);
     sessionStorage.setItem(TOKEN_KEY, token);
+    
+    // Store refresh token in localStorage (persists across sessions - needed for "remember me")
+    // This prevents users from being logged out when they close the browser tab
     if (refreshToken) {
-      sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     }
 
     try {
@@ -60,12 +67,20 @@ export class TokenStorage {
   /**
    * Get access token
    * 
+   * Checks localStorage first (persistent storage), then sessionStorage as fallback.
+   * This ensures tokens persist across browser sessions while maintaining backward compatibility.
+   * 
    * Note: With httpOnly cookies, tokens are automatically sent with requests.
-   * This method checks sessionStorage for backward compatibility.
    * For new code, rely on cookies being sent automatically.
    */
   static getToken(): string | null {
     if (typeof window !== 'undefined') {
+      // Check localStorage first (persistent across sessions)
+      const tokenFromLocalStorage = localStorage.getItem(TOKEN_KEY);
+      if (tokenFromLocalStorage) {
+        return tokenFromLocalStorage;
+      }
+      // Fallback to sessionStorage for backward compatibility
       return sessionStorage.getItem(TOKEN_KEY);
     }
     return null;
@@ -75,18 +90,24 @@ export class TokenStorage {
   /**
    * Get refresh token
    * 
-   * Note: With httpOnly cookies, refresh tokens are stored server-side.
-   * This method checks sessionStorage for backward compatibility.
+   * Note: Refresh token is stored in localStorage to persist across browser sessions.
+   * This allows users to stay logged in even after closing the browser tab.
    */
   static getRefreshToken(): string | null {
     if (typeof window !== 'undefined') {
+      // Check localStorage first (persistent storage)
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+      if (refreshToken) {
+        return refreshToken;
+      }
+      // Fallback to sessionStorage for backward compatibility during migration
       return sessionStorage.getItem(REFRESH_TOKEN_KEY);
     }
     return null;
   }
 
   /**
-   * Remove all tokens (both cookies and sessionStorage)
+   * Remove all tokens (both cookies, localStorage, and sessionStorage)
    */
   static async removeTokens(): Promise<void> {
     if (typeof window === 'undefined') {
@@ -103,16 +124,20 @@ export class TokenStorage {
       // Continue even if API call fails
     }
 
-    // Also clear sessionStorage
+    // Also clear localStorage and sessionStorage
     if (typeof window !== 'undefined') {
+      // Clear access token from both storage locations
+      localStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(TOKEN_KEY);
+      // Clear refresh token from both localStorage and sessionStorage
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
       sessionStorage.removeItem(REFRESH_TOKEN_KEY);
     }
   }
 
   /**
    * Check if tokens exist
-   * Checks sessionStorage for backward compatibility
+   * Checks both localStorage and sessionStorage (access token) and localStorage (refresh token)
    */
   static hasTokens(): boolean {
     return this.getToken() !== null || this.getRefreshToken() !== null;

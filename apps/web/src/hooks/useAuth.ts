@@ -115,18 +115,40 @@ export function useAuth() {
       }
 
       const response = await authAPI.refresh(refreshTokenValue);
-      const { access_token, refresh_token: newRefreshToken } = response.data;
+      const { access_token, refresh_token: newRefreshToken, user: userData } = response.data;
 
       await TokenStorage.setToken(access_token, newRefreshToken);
 
+      // Update token in store
       useAuthStore.getState().setToken(access_token);
+      
+      // If user data is included in refresh response, update user in store
+      if (userData) {
+        const userForStore = transformApiUserToStoreUser(userData);
+        setUser(userForStore);
+      } else if (!user) {
+        // If no user data in response and no user in store, fetch it
+        try {
+          const userResponse = await usersAPI.getMe();
+          if (userResponse.data) {
+            const userForStore = transformApiUserToStoreUser(userResponse.data);
+            setUser(userForStore);
+          }
+        } catch (fetchErr) {
+          // Log but don't fail - token refresh succeeded
+          logger.warn('Failed to fetch user after token refresh', {
+            error: fetchErr instanceof Error ? fetchErr.message : String(fetchErr)
+          });
+        }
+      }
+      
       return { success: true };
     } catch (err) {
       // Refresh failed, logout user
       handleLogout();
       return { success: false, error: err };
     }
-  }, [handleLogout]);
+  }, [handleLogout, user, setUser]);
 
   /**
    * Check if user is authenticated and refresh token if needed
@@ -140,6 +162,14 @@ export function useAuth() {
       
       const storedToken = TokenStorage.getToken();
       const storedRefreshToken = TokenStorage.getRefreshToken();
+      const storeToken = token;
+      const storeRefreshToken = useAuthStore.getState().refreshToken;
+
+      // Sync: If store has token but TokenStorage doesn't, sync them
+      // This handles cases where Zustand persisted but TokenStorage didn't (e.g., after browser restart)
+      if (storeToken && !storedToken) {
+        await TokenStorage.setToken(storeToken, storeRefreshToken || undefined);
+      }
 
       // If we have a refresh token but no access token, try to refresh
       if (!storedToken && storedRefreshToken) {
