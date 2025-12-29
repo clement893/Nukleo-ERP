@@ -157,7 +157,7 @@ async def upload_media(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload a media file"""
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
     ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.pdf', '.mp4', '.mov', '.webm'}
     
     # Validate file
