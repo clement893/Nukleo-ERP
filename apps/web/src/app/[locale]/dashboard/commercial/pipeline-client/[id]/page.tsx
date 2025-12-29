@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
 import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Settings, ArrowLeft } from 'lucide-react';
+import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui';
 
 // Types temporaires - à remplacer par les types générés depuis l'API
