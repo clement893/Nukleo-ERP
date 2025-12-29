@@ -497,15 +497,19 @@ function ContactsContent() {
           {(activeFiltersCount > 0 || showFilters) && (
             <div className="pt-3 border-t border-border">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 text-xs font-medium text-foreground hover:text-primary"
+                >
                   <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium text-foreground">Filtres avancés</span>
+                  <span>Filtres avancés</span>
                   {activeFiltersCount > 0 && (
                     <Badge variant="default" className="text-xs px-1.5 py-0.5">
                       {activeFiltersCount}
                     </Badge>
                   )}
-                </div>
+                  <ChevronDown className={clsx('w-3 h-3 transition-transform', showFilters && 'rotate-180')} />
+                </button>
                 {activeFiltersCount > 0 && (
                   <button
                     onClick={clearFilters}
@@ -516,33 +520,35 @@ function ContactsContent() {
                   </button>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {/* Active filters badges */}
-                {filterCircle && (
-                  <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                    Cercle: {circles.find(c => c === filterCircle)?.charAt(0).toUpperCase() + circles.find(c => c === filterCircle)?.slice(1)}
-                    <button
-                      onClick={() => setFilterCircle('')}
-                      className="ml-1 hover:text-danger"
-                      aria-label="Retirer le filtre cercle"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
-                {filterCompany && companies.length > 0 && (
-                  <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                    Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name}
-                    <button
-                      onClick={() => setFilterCompany('')}
-                      className="ml-1 hover:text-danger"
-                      aria-label="Retirer le filtre entreprise"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
-              </div>
+              {showFilters && (
+                <div className="space-y-2">
+                  {/* Active filters badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {filterCircle && (
+                      <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                        Cercle: {circles.find(c => c === filterCircle)?.charAt(0).toUpperCase() + circles.find(c => c === filterCircle)?.slice(1)}
+                        <button
+                          onClick={() => setFilterCircle('')}
+                          className="ml-1 hover:text-danger"
+                          aria-label="Retirer le filtre cercle"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    )}
+                    {filterCompany && companies.length > 0 && (
+                      <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                        Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name}
+                        <button
+                          onClick={() => setFilterCompany('')}
+                          className="ml-1 hover:text-danger"
+                          aria-label="Retirer le filtre entreprise"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    )}
+                  </div>
                   {companies.length > 0 && (
                     <div>
                       <label className="block text-xs text-muted-foreground mb-1">Entreprise</label>
