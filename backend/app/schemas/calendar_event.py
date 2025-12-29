@@ -4,30 +4,30 @@ Pydantic v2 models for calendar events
 """
 
 from datetime import datetime, date, time
-from typing import Optional, List
+from typing import Optional, List, Annotated
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 class CalendarEventBase(BaseModel):
     """Base calendar event schema"""
-    title: str = Field(..., min_length=1, max_length=200, description="Event title", strip_whitespace=True)
-    description: Optional[str] = Field(None, description="Event description")
-    date: date = Field(..., description="Event date")
-    end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    time: Optional[time] = Field(None, description="Event time")
-    type: str = Field(
-        default='other',
-        description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
-    )
-    location: Optional[str] = Field(None, max_length=500, description="Event location")
-    attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
-    color: Optional[str] = Field(default='#3B82F6', description="Hex color code for the event")
-    
     model_config = ConfigDict(
         populate_by_name=True,
         # Allow 'type' field to work despite being a Python built-in
         protected_namespaces=()
     )
+    
+    title: str = Field(..., min_length=1, max_length=200, description="Event title", strip_whitespace=True)
+    description: Optional[str] = Field(None, description="Event description")
+    date: date = Field(..., description="Event date")
+    end_date: Optional[date] = Field(None, description="End date for multi-day events")
+    time: Optional[time] = Field(None, description="Event time")
+    type: Annotated[str, Field(
+        default='other',
+        description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
+    )]
+    location: Optional[str] = Field(None, max_length=500, description="Event location")
+    attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
+    color: Optional[str] = Field(default='#3B82F6', description="Hex color code for the event")
     
     @field_validator('type')
     @classmethod
@@ -54,18 +54,18 @@ class CalendarEventCreate(CalendarEventBase):
 
 class CalendarEventUpdate(BaseModel):
     """Calendar event update schema"""
-    title: Optional[str] = Field(None, min_length=1, max_length=200, description="Event title")
-    description: Optional[str] = Field(None, description="Event description")
-    date: Optional[date] = Field(None, description="Event date")
-    end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    time: Optional[time] = Field(None, description="Event time")
-    type: Optional[str] = Field(None, description="Event type")
-    
     model_config = ConfigDict(
         populate_by_name=True,
         # Allow 'type' field to work despite being a Python built-in
         protected_namespaces=()
     )
+    
+    title: Optional[str] = Field(None, min_length=1, max_length=200, description="Event title")
+    description: Optional[str] = Field(None, description="Event description")
+    date: Optional[date] = Field(None, description="Event date")
+    end_date: Optional[date] = Field(None, description="End date for multi-day events")
+    time: Optional[time] = Field(None, description="Event time")
+    type: Annotated[Optional[str], Field(None, description="Event type")]
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
     color: Optional[str] = Field(None, description="Hex color code for the event")

@@ -31,9 +31,7 @@ function ContactsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [filterFirstName, setFilterFirstName] = useState<string>('');
-  const [filterLastName, setFilterLastName] = useState<string>('');
-  const [filterEmail, setFilterEmail] = useState<string>('');
+  const [filterCity, setFilterCity] = useState<string>('');
   const [filterPhone, setFilterPhone] = useState<string>('');
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
@@ -83,24 +81,18 @@ function ContactsContent() {
 
   // Extract unique values for dropdowns
   const uniqueValues = useMemo(() => {
-    const firstNames = new Set<string>();
-    const lastNames = new Set<string>();
-    const emails = new Set<string>();
+    const cities = new Set<string>();
     const phones = new Set<string>();
     const companyNames = new Set<string>();
 
     contacts.forEach((contact) => {
-      if (contact.first_name) firstNames.add(contact.first_name);
-      if (contact.last_name) lastNames.add(contact.last_name);
-      if (contact.email) emails.add(contact.email);
+      if (contact.city) cities.add(contact.city);
       if (contact.phone) phones.add(contact.phone);
       if (contact.company_name) companyNames.add(contact.company_name);
     });
 
     return {
-      firstNames: Array.from(firstNames).sort(),
-      lastNames: Array.from(lastNames).sort(),
-      emails: Array.from(emails).sort(),
+      cities: Array.from(cities).sort(),
       phones: Array.from(phones).sort(),
       companyNames: Array.from(companyNames).sort(),
     };
@@ -109,34 +101,28 @@ function ContactsContent() {
   // Filtered contacts
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
-      const matchesFirstName = !filterFirstName || contact.first_name === filterFirstName;
-      const matchesLastName = !filterLastName || contact.last_name === filterLastName;
-      const matchesEmail = !filterEmail || contact.email === filterEmail;
+      const matchesCity = !filterCity || contact.city === filterCity;
       const matchesPhone = !filterPhone || contact.phone === filterPhone;
       const matchesCircle = !filterCircle || contact.circle === filterCircle;
       const matchesCompany = !filterCompany || contact.company_id?.toString() === filterCompany;
 
-      return matchesFirstName && matchesLastName && matchesEmail && matchesPhone && matchesCircle && matchesCompany;
+      return matchesCity && matchesPhone && matchesCircle && matchesCompany;
     });
-  }, [contacts, filterFirstName, filterLastName, filterEmail, filterPhone, filterCircle, filterCompany]);
+  }, [contacts, filterCity, filterPhone, filterCircle, filterCompany]);
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (filterFirstName) count++;
-    if (filterLastName) count++;
-    if (filterEmail) count++;
+    if (filterCity) count++;
     if (filterPhone) count++;
     if (filterCircle) count++;
     if (filterCompany) count++;
     return count;
-  }, [filterFirstName, filterLastName, filterEmail, filterPhone, filterCircle, filterCompany]);
+  }, [filterCity, filterPhone, filterCircle, filterCompany]);
 
   // Clear all filters
   const clearFilters = () => {
-    setFilterFirstName('');
-    setFilterLastName('');
-    setFilterEmail('');
+    setFilterCity('');
     setFilterPhone('');
     setFilterCircle('');
     setFilterCompany('');
@@ -406,44 +392,32 @@ function ContactsContent() {
           <div className="flex flex-col gap-3">
             {/* Filters row */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Prénom */}
+              {/* Entreprise */}
+              {companies.length > 0 && (
+                <select
+                  value={filterCompany}
+                  onChange={(e) => setFilterCompany(e.target.value)}
+                  className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[150px]"
+                >
+                  <option value="">Entreprise</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id.toString()}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* Ville */}
               <select
-                value={filterFirstName}
-                onChange={(e) => setFilterFirstName(e.target.value)}
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
                 className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
               >
-                <option value="">Prénom</option>
-                {uniqueValues.firstNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-
-              {/* Nom */}
-              <select
-                value={filterLastName}
-                onChange={(e) => setFilterLastName(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
-              >
-                <option value="">Nom</option>
-                {uniqueValues.lastNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-
-              {/* Email */}
-              <select
-                value={filterEmail}
-                onChange={(e) => setFilterEmail(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[180px]"
-              >
-                <option value="">Email</option>
-                {uniqueValues.emails.map((email) => (
-                  <option key={email} value={email}>
-                    {email}
+                <option value="">Ville</option>
+                {uniqueValues.cities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
                   </option>
                 ))}
               </select>
@@ -461,22 +435,6 @@ function ContactsContent() {
                   </option>
                 ))}
               </select>
-
-              {/* Entreprise */}
-              {companies.length > 0 && (
-                <select
-                  value={filterCompany}
-                  onChange={(e) => setFilterCompany(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[150px]"
-                >
-                  <option value="">Entreprise</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id.toString()}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-              )}
 
               {/* Cercle */}
               <select
@@ -662,37 +620,13 @@ function ContactsContent() {
                 <div className="space-y-2">
                   {/* Active filters badges */}
                   <div className="flex flex-wrap gap-2">
-                    {filterFirstName && (
+                    {filterCity && (
                       <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                        {filterFirstName}
+                        {filterCity}
                         <button
-                          onClick={() => setFilterFirstName('')}
+                          onClick={() => setFilterCity('')}
                           className="ml-0.5 hover:text-danger"
-                          aria-label="Retirer le filtre prénom"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </Badge>
-                    )}
-                    {filterLastName && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                        {filterLastName}
-                        <button
-                          onClick={() => setFilterLastName('')}
-                          className="ml-0.5 hover:text-danger"
-                          aria-label="Retirer le filtre nom"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </Badge>
-                    )}
-                    {filterEmail && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                        {filterEmail}
-                        <button
-                          onClick={() => setFilterEmail('')}
-                          className="ml-0.5 hover:text-danger"
-                          aria-label="Retirer le filtre email"
+                          aria-label="Retirer le filtre ville"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>

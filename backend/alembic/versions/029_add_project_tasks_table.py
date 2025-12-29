@@ -1,7 +1,7 @@
 """add project tasks table
 
 Revision ID: 029_add_project_tasks
-Revises: 028_commercial_contacts_companies
+Revises: 028_commercial_contacts
 Create Date: 2025-12-30 14:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '029_add_project_tasks'
-down_revision = '028_commercial_contacts_companies'
+down_revision = '028_commercial_contacts'
 branch_labels = None
 depends_on = None
 
