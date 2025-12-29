@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, type CalendarEvent } from '@/components/ui/Calendar';
-import { Card, Button, Badge, Loading, Alert } from '@/components/ui';
-import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import Calendar, { type CalendarEvent } from '@/components/ui/Calendar';
+import { Card, Loading, Alert } from '@/components/ui';
+import { Filter } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useToast } from '@/components/ui';
 
