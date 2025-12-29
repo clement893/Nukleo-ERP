@@ -357,11 +357,14 @@ export default function CalendarView({ className }: CalendarViewProps) {
       // Extraire la date pour garantir le typage
       const eventDate = eventData.date;
       
+      // Convertir la date en format ISO string (YYYY-MM-DD)
+      const dateString = eventDate.toISOString().split('T')[0] as string;
+      
       // Convertir DayEvent en format API
       const apiEventData: CalendarEventCreate = {
         title: eventData.title,
         description: eventData.description,
-        date: eventDate.toISOString().split('T')[0],
+        date: dateString,
         end_date: eventData.endDate?.toISOString().split('T')[0],
         time: eventData.time,
         type: (eventData.type || 'other') as CalendarEventCreate['type'],

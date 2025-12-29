@@ -194,3 +194,167 @@ export function downloadContactTemplate(): void {
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
 }
+
+/**
+ * Generate ZIP template with Excel file and instructions for importing contacts with photos
+ * @returns Blob containing the ZIP file
+ */
+export async function generateContactZipTemplate(): Promise<Blob> {
+  // Import JSZip dynamically to avoid SSR issues
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+
+  // Generate Excel template
+  const excelBlob = generateContactTemplate();
+  const excelArrayBuffer = await excelBlob.arrayBuffer();
+  zip.file('contacts.xlsx', excelArrayBuffer);
+
+  // Create README with instructions
+  const readmeContent = `# Instructions pour l'import de contacts avec photos
+
+## Structure du fichier ZIP
+
+Votre fichier ZIP doit contenir :
+- \`contacts.xlsx\` : Fichier Excel avec les données des contacts
+- \`photos/\` : Dossier contenant les photos des contacts (optionnel)
+
+## Structure recommandée
+
+\`\`\`
+contacts_import.zip
+├── contacts.xlsx
+└── photos/
+    ├── jean_dupont.jpg
+    ├── marie_martin.png
+    └── ...
+\`\`\`
+
+## Format du fichier Excel
+
+Le fichier Excel doit contenir les colonnes suivantes :
+
+### Colonnes requises
+- **Prénom** (ou \`first_name\`) : Prénom du contact *REQUIS*
+- **Nom** (ou \`last_name\`) : Nom de famille du contact *REQUIS*
+
+### Colonnes optionnelles
+- **Courriel** (ou \`email\`) : Adresse email
+- **Téléphone** (ou \`phone\`) : Numéro de téléphone
+- **Poste** (ou \`position\`) : Poste occupé
+- **Cercle** (ou \`circle\`) : client, prospect, partenaire, fournisseur, autre
+- **Ville** (ou \`city\`) : Ville du contact
+- **Pays** (ou \`country\`) : Pays du contact
+- **LinkedIn** (ou \`linkedin\`) : URL du profil LinkedIn
+- **Anniversaire** (ou \`birthday\`) : Date au format YYYY-MM-DD (ex: 1980-05-15)
+- **Langue** (ou \`language\`) : Code langue (fr, en, es, etc.)
+- **ID Entreprise** (ou \`company_id\`) : Identifiant de l'entreprise
+- **ID Employé** (ou \`employee_id\`) : Identifiant de l'employé assigné
+- **Photo URL** (ou \`photo_url\`) : URL de la photo (alternative aux fichiers dans photos/)
+
+## Nommage des photos
+
+Les photos doivent être nommées selon l'un de ces formats :
+- \`prénom_nom.jpg\` (ex: \`jean_dupont.jpg\`)
+- \`prénom_nom.png\`
+- \`prénom_nom.jpeg\`
+
+**Exemples :**
+- Contact : Jean Dupont → Photo : \`jean_dupont.jpg\`
+- Contact : Marie Martin → Photo : \`marie_martin.png\`
+
+### Format alternatif
+
+Vous pouvez aussi spécifier le nom du fichier photo dans une colonne Excel :
+- **Nom fichier photo** (ou \`photo_filename\`) : Nom exact du fichier photo
+
+## Formats de photos supportés
+
+- .jpg / .jpeg
+- .png
+- .gif
+- .webp
+
+## Exemple de fichier Excel
+
+| Prénom | Nom     | Courriel              | Téléphone      | Poste              | Cercle  |
+|--------|---------|-----------------------|----------------|--------------------|---------|
+| Jean   | Dupont  | jean.dupont@ex.com    | +33 6 12 34 56 | Directeur          | client  |
+| Marie  | Martin  | marie.martin@ex.com   | +33 6 98 76 54 | Responsable        | prospect|
+
+## Processus d'import
+
+1. Téléchargez ce modèle ZIP
+2. Décompressez le fichier
+3. Remplissez le fichier \`contacts.xlsx\` avec vos données
+4. Ajoutez les photos dans le dossier \`photos/\` en suivant le format de nommage
+5. Recompressez le tout en ZIP
+6. Importez le fichier ZIP via l'interface
+
+## Notes importantes
+
+- Les colonnes marquées *REQUIS* doivent être remplies
+- Les photos sont automatiquement associées aux contacts par leur nom
+- Si une photo n'est pas trouvée, le contact sera créé sans photo
+- Vous pouvez utiliser soit des photos dans le ZIP, soit des URLs dans la colonne Photo URL
+- Les IDs (company_id, employee_id) doivent correspondre à des enregistrements existants dans le système
+
+## Support
+
+En cas de problème lors de l'import, vérifiez :
+- Le format du fichier Excel (doit être .xlsx ou .xls)
+- Le nommage des photos (doit correspondre au format prénom_nom)
+- Les colonnes requises sont présentes et remplies
+- Le format de date pour l'anniversaire (YYYY-MM-DD)
+`;
+
+  zip.file('README.txt', readmeContent);
+
+  // Create photos folder with a placeholder/instructions file
+  const photosInstructions = `# Dossier Photos
+
+Placez ici les photos de vos contacts.
+
+## Format de nommage
+
+Nommez vos photos selon le format : \`prénom_nom.extension\`
+
+Exemples :
+- jean_dupont.jpg
+- marie_martin.png
+- pierre_durand.jpeg
+
+## Formats acceptés
+
+- .jpg / .jpeg
+- .png
+- .gif
+- .webp
+
+## Important
+
+- Les noms de fichiers doivent être en minuscules
+- Utilisez des underscores (_) pour séparer le prénom et le nom
+- Le système associera automatiquement les photos aux contacts correspondants dans le fichier Excel
+`;
+
+  zip.folder('photos')?.file('INSTRUCTIONS.txt', photosInstructions);
+
+  // Generate ZIP file
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  return zipBlob;
+}
+
+/**
+ * Download the contact ZIP template (Excel + instructions)
+ */
+export async function downloadContactZipTemplate(): Promise<void> {
+  const blob = await generateContactZipTemplate();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `modele-import-contacts-avec-photos-${new Date().toISOString().split('T')[0]}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}

@@ -9,6 +9,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
+import zipfile
+import os
+from io import BytesIO
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -499,10 +502,16 @@ async def import_contacts(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Import contacts from Excel file
+    Import contacts from Excel file or ZIP file (Excel + photos)
+    
+    Supports two formats:
+    1. Excel file (.xlsx, .xls) - simple import with photo URLs
+    2. ZIP file (.zip) containing:
+       - contacts.xlsx or contacts.xls (Excel file with contact data)
+       - photos/ folder (optional) with images named as "firstname_lastname.jpg" or referenced in Excel
     
     Args:
-        file: Excel file with contacts data
+        file: Excel file or ZIP file with contacts data and photos
         current_user: Current authenticated user
         db: Database session
         
@@ -511,6 +520,55 @@ async def import_contacts(
     """
     # Read file content
     file_content = await file.read()
+    filename = file.filename or ""
+    file_ext = os.path.splitext(filename.lower())[1]
+    
+    # Dictionary to store photos from ZIP (filename -> file content)
+    photos_dict = {}
+    excel_content = None
+    
+    # Check if it's a ZIP file
+    if file_ext == '.zip':
+        try:
+            with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                # Extract Excel file and photos
+                for file_info in zip_ref.namelist():
+                    file_name_lower = file_info.lower()
+                    
+                    # Find Excel file
+                    if file_name_lower.endswith(('.xlsx', '.xls')):
+                        if excel_content is None:
+                            excel_content = zip_ref.read(file_info)
+                        else:
+                            logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
+                    
+                    # Find photos (in photos/ folder or root)
+                    elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                        photo_content = zip_ref.read(file_info)
+                        # Store with normalized filename (lowercase, no path)
+                        photo_filename = os.path.basename(file_info).lower()
+                        photos_dict[photo_filename] = photo_content
+                
+                if excel_content is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="No Excel file found in ZIP. Please include contacts.xlsx or contacts.xls"
+                    )
+                
+                file_content = excel_content
+                logger.info(f"Extracted Excel from ZIP with {len(photos_dict)} photos")
+                
+        except zipfile.BadZipFile:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid ZIP file format"
+            )
+        except Exception as e:
+            logger.error(f"Error extracting ZIP: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error processing ZIP file: {str(e)}"
+            )
     
     # Import from Excel
     result = ImportService.import_from_excel(
@@ -521,18 +579,73 @@ async def import_contacts(
     # Process imported data
     created_contacts = []
     errors = []
+    s3_service = S3Service() if S3Service.is_configured() else None
     
     for idx, row_data in enumerate(result['data']):
         try:
             # Map Excel columns to Contact fields
+            first_name = row_data.get('first_name') or row_data.get('prénom') or ''
+            last_name = row_data.get('last_name') or row_data.get('nom') or ''
+            
+            # Handle photo upload if ZIP contains photos
+            photo_url = row_data.get('photo_url') or row_data.get('photo') or None
+            
+            # If no photo_url but we have photos in ZIP, try to find matching photo
+            if not photo_url and photos_dict and s3_service:
+                # Try multiple naming patterns
+                photo_filename_patterns = [
+                    f"{first_name.lower()}_{last_name.lower()}.jpg",
+                    f"{first_name.lower()}_{last_name.lower()}.jpeg",
+                    f"{first_name.lower()}_{last_name.lower()}.png",
+                    f"{first_name}_{last_name}.jpg",
+                    f"{first_name}_{last_name}.jpeg",
+                    f"{first_name}_{last_name}.png",
+                    row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
+                ]
+                
+                uploaded_photo_url = None
+                for pattern in photo_filename_patterns:
+                    if pattern and pattern.lower() in photos_dict:
+                        try:
+                            # Upload photo to S3
+                            photo_content = photos_dict[pattern.lower()]
+                            
+                            # Create a temporary UploadFile-like object compatible with S3Service
+                            class TempUploadFile:
+                                def __init__(self, filename: str, content: bytes):
+                                    self.filename = filename
+                                    self.content = content
+                                    self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                    # Create a file-like object
+                                    self.file = BytesIO(content)
+                            
+                            temp_file = TempUploadFile(pattern, photo_content)
+                            
+                            # Upload to S3
+                            upload_result = s3_service.upload_file(
+                                file=temp_file,
+                                folder='contacts/photos',
+                                user_id=str(current_user.id)
+                            )
+                            
+                            uploaded_photo_url = upload_result.get('file_key') or upload_result.get('url')
+                            logger.info(f"Uploaded photo for {first_name} {last_name}: {pattern}")
+                            break
+                        except Exception as e:
+                            logger.warning(f"Failed to upload photo {pattern}: {e}")
+                            continue
+                
+                if uploaded_photo_url:
+                    photo_url = uploaded_photo_url
+            
             contact_data = ContactCreate(
-                first_name=row_data.get('first_name') or row_data.get('prénom') or '',
-                last_name=row_data.get('last_name') or row_data.get('nom') or '',
+                first_name=first_name,
+                last_name=last_name,
                 company_id=row_data.get('company_id') or None,
                 position=row_data.get('position') or row_data.get('poste') or None,
                 circle=row_data.get('circle') or row_data.get('cercle') or None,
                 linkedin=row_data.get('linkedin') or None,
-                photo_url=row_data.get('photo_url') or row_data.get('photo') or None,
+                photo_url=photo_url,
                 email=row_data.get('email') or row_data.get('courriel') or None,
                 phone=row_data.get('phone') or row_data.get('téléphone') or row_data.get('telephone') or None,
                 city=row_data.get('city') or row_data.get('ville') or None,
@@ -567,6 +680,7 @@ async def import_contacts(
         'invalid_rows': len(errors) + result['invalid_rows'],
         'errors': errors + result['errors'],
         'warnings': result['warnings'],
+        'photos_uploaded': len(photos_dict) if photos_dict else 0,
         'data': [ContactSchema.model_validate(c) for c in created_contacts]
     }
 

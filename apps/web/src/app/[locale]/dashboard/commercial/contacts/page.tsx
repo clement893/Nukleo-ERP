@@ -236,8 +236,9 @@ function ContactsContent() {
       if (result.valid_rows > 0) {
         // Reload contacts after import
         await loadContacts();
+        const photosMsg = result.photos_uploaded && result.photos_uploaded > 0 ? ` (${result.photos_uploaded} photo(s) uploadée(s))` : '';
         showToast({
-          message: `${result.valid_rows} contact(s) importé(s) avec succès`,
+          message: `${result.valid_rows} contact(s) importé(s) avec succès${photosMsg}`,
           type: 'success',
         });
       }
@@ -566,11 +567,33 @@ function ContactsContent() {
                               className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
                             >
                               <FileSpreadsheet className="w-3.5 h-3.5" />
-                              Télécharger le modèle
+                              Modèle Excel
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await contactsAPI.downloadZipTemplate();
+                                  setShowActionsMenu(false);
+                                  showToast({
+                                    message: 'Modèle ZIP téléchargé avec succès',
+                                    type: 'success',
+                                  });
+                                } catch (err) {
+                                  const appError = handleApiError(err);
+                                  showToast({
+                                    message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+                                    type: 'error',
+                                  });
+                                }
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
+                            >
+                              <FileSpreadsheet className="w-3.5 h-3.5" />
+                              Modèle ZIP (avec photos)
                             </button>
                             <input
                               type="file"
-                              accept=".xlsx,.xls"
+                              accept=".xlsx,.xls,.zip"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {

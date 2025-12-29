@@ -124,7 +124,7 @@ export const contactsAPI = {
   },
 
   /**
-   * Import contacts from Excel
+   * Import contacts from Excel or ZIP (Excel + photos)
    */
   import: async (file: File): Promise<{
     total_rows: number;
@@ -132,6 +132,7 @@ export const contactsAPI = {
     invalid_rows: number;
     errors: Array<{ row: number; data: unknown; error: string }>;
     data: Contact[];
+    photos_uploaded?: number;
   }> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -142,6 +143,7 @@ export const contactsAPI = {
       invalid_rows: number;
       errors: Array<{ row: number; data: unknown; error: string }>;
       data: Contact[];
+      photos_uploaded?: number;
     }>('/v1/commercial/contacts/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -154,6 +156,7 @@ export const contactsAPI = {
       invalid_rows: 0,
       errors: [],
       data: [],
+      photos_uploaded: 0,
     };
   },
 
@@ -231,12 +234,22 @@ export const contactsAPI = {
   },
 
   /**
-   * Download contact import template
+   * Download contact import template (Excel only)
    * This is a client-side function, not an API call
    */
   downloadTemplate: async (): Promise<void> => {
     // Import dynamically to avoid SSR issues
     const { downloadContactTemplate } = await import('@/lib/utils/generateContactTemplate');
     downloadContactTemplate();
+  },
+
+  /**
+   * Download contact import ZIP template (Excel + instructions + photos folder)
+   * This is a client-side function, not an API call
+   */
+  downloadZipTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadContactZipTemplate } = await import('@/lib/utils/generateContactTemplate');
+    await downloadContactZipTemplate();
   },
 };
