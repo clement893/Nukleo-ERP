@@ -10,6 +10,7 @@ import { activateTheme, deleteTheme } from '@/lib/api/theme';
 import { clearThemeCache } from '@/lib/theme/theme-cache';
 import { useGlobalTheme } from '@/lib/theme/global-theme-provider';
 import { Modal, Button, Alert } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import type { Theme } from '@modele/types';
 
 export function useThemeActions() {

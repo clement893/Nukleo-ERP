@@ -5,7 +5,7 @@
 
 'use client';
 
-import Link from '@/i18n/routing';
+import { Link } from '@/i18n/routing';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import Card from '@/components/ui/Card';
