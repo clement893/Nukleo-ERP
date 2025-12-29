@@ -146,6 +146,7 @@ export default function AdminOrganizationsContent() {
       
       if (!slug) {
         setError('Le nom doit contenir au moins un caractère alphanumérique');
+        setLoading(false);
         return;
       }
 
@@ -174,15 +175,24 @@ export default function AdminOrganizationsContent() {
         settings: Object.keys(settings).length > 0 ? (settings as unknown as TeamSettings) : undefined,
       });
       
+      // Always refresh the list to ensure UI is in sync with database
       await loadTeams();
+      
+      // Close modal and reset form on success
       setShowCreateModal(false);
       resetForm();
+      setError(null);
     } catch (err: unknown) {
       const errorDetail = getErrorDetail(err);
       const errorMessage = getErrorMessage(err, 'Erreur lors de la création de l\'organisation');
       
+      // Always refresh the list to show what's actually in the database
+      // This helps if the team was created in a previous attempt
+      // Note: Backend now returns existing team if it belongs to same user, so this shouldn't error in that case
+      await loadTeams();
+      
       if (errorDetail?.includes('slug') || errorDetail?.includes('already exists')) {
-        setError('Une organisation avec ce nom existe déjà. Veuillez choisir un autre nom.');
+        setError(`Une organisation avec le slug "${slug}" existe déjà dans la base de données. Si vous êtes le propriétaire, elle devrait apparaître dans la liste ci-dessous après rafraîchissement. Sinon, veuillez choisir un autre nom.`);
       } else {
         setError(errorDetail || errorMessage);
       }

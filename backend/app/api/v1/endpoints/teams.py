@@ -41,10 +41,64 @@ async def create_team(
     # Check if slug already exists
     existing = await team_service.get_team_by_slug(team_data.slug)
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Team slug already exists",
-        )
+        # If the existing team belongs to the same user, return it instead of erroring
+        # This handles cases where the team was created but UI didn't refresh
+        if existing.owner_id == current_user.id:
+            # Invalidate cache to ensure fresh data
+            await invalidate_cache_pattern_async("teams:*")
+            
+            # Reload team with relationships properly loaded
+            team = await team_service.get_team(existing.id)
+            if not team:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Team exists but could not be retrieved",
+                )
+            
+            # Parse settings if it's a JSON string
+            settings_dict = None
+            if team.settings:
+                if isinstance(team.settings, str):
+                    try:
+                        import json
+                        settings_dict = json.loads(team.settings)
+                    except (json.JSONDecodeError, TypeError):
+                        settings_dict = None
+                else:
+                    settings_dict = team.settings
+            
+            # Convert to response format
+            team_dict = {
+                "id": team.id,
+                "name": team.name,
+                "slug": team.slug,
+                "description": team.description,
+                "owner_id": team.owner_id,
+                "is_active": team.is_active,
+                "settings": settings_dict,
+                "created_at": team.created_at.isoformat() if hasattr(team.created_at, 'isoformat') else str(team.created_at),
+                "updated_at": team.updated_at.isoformat() if hasattr(team.updated_at, 'isoformat') else str(team.updated_at),
+                "owner": None,
+                "members": [],
+            }
+            
+            if team.owner:
+                team_dict["owner"] = {
+                    "id": team.owner.id,
+                    "email": team.owner.email,
+                    "first_name": team.owner.first_name,
+                    "last_name": team.owner.last_name,
+                }
+            
+            if team.members:
+                team_dict["members"] = [TeamMemberResponse.model_validate(m) for m in team.members]
+            
+            return TeamResponse.model_validate(team_dict)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Team slug already exists",
+            )
     
     created_team = await team_service.create_team(
         name=team_data.name,
