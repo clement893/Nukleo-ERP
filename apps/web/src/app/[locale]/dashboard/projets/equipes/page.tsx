@@ -10,7 +10,8 @@ import { PageHeader } from '@/components/layout';
 import { Card, Badge, Loading, Alert } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Users, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { teamsAPI, projectTasksAPI } from '@/lib/api';
+import { teamsAPI } from '@/lib/api';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import type { Team as TeamType, TeamMember } from '@/lib/api/teams';
@@ -120,15 +121,6 @@ function EquipesContent() {
     return statusConfig[status];
   };
 
-  const _getPriorityColor = (priority: ProjectTask['priority']) => {
-    const colors = {
-      low: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
-      medium: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
-      urgent: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
-    };
-    return colors[priority];
-  };
 
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">

@@ -11,7 +11,8 @@ import { Card, Badge, Button, Loading, Alert } from '@/components/ui';
 import KanbanBoard from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
-import { teamsAPI, projectTasksAPI } from '@/lib/api';
+import { teamsAPI } from '@/lib/api';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import type { Team, TeamMember } from '@/lib/api/teams';
@@ -34,7 +35,7 @@ function TeamProjectManagementContent() {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingTask, setUpdatingTask] = useState<string | null>(null);
+  const [_updatingTask, setUpdatingTask] = useState<string | null>(null);
 
   useEffect(() => {
     if (teamSlug) {
