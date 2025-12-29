@@ -62,11 +62,12 @@ export const contactsAPI = {
         limit,
         _t: Date.now(), // Cache-busting timestamp
       },
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
+      // Headers temporairement retirés jusqu'au redéploiement du backend avec la config CORS mise à jour
+      // headers: {
+      //   'Cache-Control': 'no-cache, no-store, must-revalidate',
+      //   'Pragma': 'no-cache',
+      //   'Expires': '0',
+      // },
     });
     
     const data = extractApiData<Contact[] | { items: Contact[] }>(response);
@@ -164,5 +165,15 @@ export const contactsAPI = {
       responseType: 'blob',
     });
     return response.data as Blob;
+  },
+
+  /**
+   * Download contact import template
+   * This is a client-side function, not an API call
+   */
+  downloadTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadContactTemplate } = await import('@/lib/utils/generateContactTemplate');
+    downloadContactTemplate();
   },
 };

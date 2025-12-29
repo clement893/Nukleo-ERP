@@ -80,13 +80,18 @@ def setup_cors(app: FastAPI) -> None:
         os.getenv("RAILWAY_ENVIRONMENT") is not None
     )
     
-    # Allowed headers - minimal set for security
+    # Allowed headers - minimal set for security + common HTTP headers
     allowed_headers = [
         "Content-Type",
         "Authorization",
         "X-Requested-With",
         "Accept",
         "Origin",
+        "Cache-Control",  # HTTP cache control header
+        "Pragma",  # HTTP cache control header (legacy)
+        "Expires",  # HTTP cache control header
+        "If-None-Match",  # HTTP conditional requests
+        "If-Modified-Since",  # HTTP conditional requests
         "X-API-Key",  # For API key authentication
         "X-Signature",  # For request signing
         "X-Timestamp",  # For request signing

@@ -407,3 +407,77 @@ class RBACService:
             "permissions": permissions,
             "roles": roles,
         }
+
+    async def add_custom_permission(self, user_id: int, permission_id: int) -> UserPermission:
+        """Add a custom permission to a user"""
+        # Check if already assigned
+        existing = await self.db.execute(
+            select(UserPermission)
+            .where(UserPermission.user_id == user_id)
+            .where(UserPermission.permission_id == permission_id)
+        )
+        if existing.scalar_one_or_none():
+            raise ValueError("Permission already assigned to user")
+
+        user_permission = UserPermission(user_id=user_id, permission_id=permission_id)
+        self.db.add(user_permission)
+        await self.db.commit()
+        await self.db.refresh(user_permission)
+        return user_permission
+
+    async def remove_custom_permission(self, user_id: int, permission_id: int) -> bool:
+        """Remove a custom permission from a user"""
+        result = await self.db.execute(
+            select(UserPermission)
+            .where(UserPermission.user_id == user_id)
+            .where(UserPermission.permission_id == permission_id)
+        )
+        user_permission = result.scalar_one_or_none()
+        if not user_permission:
+            return False
+
+        self.db.delete(user_permission)
+        await self.db.commit()
+        return True
+
+    async def update_user_roles(self, user_id: int, role_ids: List[int]) -> List[UserRole]:
+        """Update all roles for a user (bulk operation - replaces all existing roles)"""
+        # Remove all existing roles
+        existing_roles_result = await self.db.execute(
+            select(UserRole).where(UserRole.user_id == user_id)
+        )
+        existing_roles = existing_roles_result.scalars().all()
+        for user_role in existing_roles:
+            self.db.delete(user_role)
+        
+        # Add new roles
+        new_user_roles = []
+        for role_id in role_ids:
+            user_role = UserRole(user_id=user_id, role_id=role_id)
+            self.db.add(user_role)
+            new_user_roles.append(user_role)
+        
+        await self.db.commit()
+        
+        # Refresh all new roles
+        for user_role in new_user_roles:
+            await self.db.refresh(user_role)
+        
+        return new_user_roles
+
+    async def update_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
+        """Update all permissions for a role (bulk operation - replaces all existing permissions)"""
+        # Remove all existing permissions
+        existing_perms_result = await self.db.execute(
+            select(RolePermission).where(RolePermission.role_id == role_id)
+        )
+        existing_perms = existing_perms_result.scalars().all()
+        for role_permission in existing_perms:
+            self.db.delete(role_permission)
+        
+        # Add new permissions
+        for permission_id in permission_ids:
+            role_permission = RolePermission(role_id=role_id, permission_id=permission_id)
+            self.db.add(role_permission)
+        
+        await self.db.commit()

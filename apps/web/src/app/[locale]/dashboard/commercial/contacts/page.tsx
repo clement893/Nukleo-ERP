@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, Filter, X, ChevronDown, MoreVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, Filter, X, ChevronDown, MoreVertical, FileSpreadsheet } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -31,7 +31,10 @@ function ContactsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filterFirstName, setFilterFirstName] = useState<string>('');
+  const [filterLastName, setFilterLastName] = useState<string>('');
+  const [filterEmail, setFilterEmail] = useState<string>('');
+  const [filterPhone, setFilterPhone] = useState<string>('');
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
@@ -78,33 +81,63 @@ function ContactsContent() {
     };
   }, []);
 
+  // Extract unique values for dropdowns
+  const uniqueValues = useMemo(() => {
+    const firstNames = new Set<string>();
+    const lastNames = new Set<string>();
+    const emails = new Set<string>();
+    const phones = new Set<string>();
+    const companyNames = new Set<string>();
+
+    contacts.forEach((contact) => {
+      if (contact.first_name) firstNames.add(contact.first_name);
+      if (contact.last_name) lastNames.add(contact.last_name);
+      if (contact.email) emails.add(contact.email);
+      if (contact.phone) phones.add(contact.phone);
+      if (contact.company_name) companyNames.add(contact.company_name);
+    });
+
+    return {
+      firstNames: Array.from(firstNames).sort(),
+      lastNames: Array.from(lastNames).sort(),
+      emails: Array.from(emails).sort(),
+      phones: Array.from(phones).sort(),
+      companyNames: Array.from(companyNames).sort(),
+    };
+  }, [contacts]);
+
   // Filtered contacts
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
-      const matchesSearch =
-        !searchTerm ||
-        `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
-
+      const matchesFirstName = !filterFirstName || contact.first_name === filterFirstName;
+      const matchesLastName = !filterLastName || contact.last_name === filterLastName;
+      const matchesEmail = !filterEmail || contact.email === filterEmail;
+      const matchesPhone = !filterPhone || contact.phone === filterPhone;
       const matchesCircle = !filterCircle || contact.circle === filterCircle;
       const matchesCompany = !filterCompany || contact.company_id?.toString() === filterCompany;
 
-      return matchesSearch && matchesCircle && matchesCompany;
+      return matchesFirstName && matchesLastName && matchesEmail && matchesPhone && matchesCircle && matchesCompany;
     });
-  }, [contacts, searchTerm, filterCircle, filterCompany]);
+  }, [contacts, filterFirstName, filterLastName, filterEmail, filterPhone, filterCircle, filterCompany]);
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
+    if (filterFirstName) count++;
+    if (filterLastName) count++;
+    if (filterEmail) count++;
+    if (filterPhone) count++;
     if (filterCircle) count++;
     if (filterCompany) count++;
     return count;
-  }, [filterCircle, filterCompany]);
+  }, [filterFirstName, filterLastName, filterEmail, filterPhone, filterCircle, filterCompany]);
 
   // Clear all filters
   const clearFilters = () => {
+    setFilterFirstName('');
+    setFilterLastName('');
+    setFilterEmail('');
+    setFilterPhone('');
     setFilterCircle('');
     setFilterCompany('');
   };
@@ -368,21 +401,99 @@ function ContactsContent() {
       {/* Toolbar */}
       <Card>
         <div className="space-y-3">
-          {/* Top row: Search, View toggle, Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-            {/* Search */}
-            <div className="flex-1 w-full sm:w-auto min-w-0">
-              <input
-                type="text"
-                placeholder="Rechercher un contact..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+          {/* Top row: Filters, View toggle, Actions */}
+          <div className="flex flex-col gap-3">
+            {/* Filters row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Prénom */}
+              <select
+                value={filterFirstName}
+                onChange={(e) => setFilterFirstName(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
+              >
+                <option value="">Prénom</option>
+                {uniqueValues.firstNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Nom */}
+              <select
+                value={filterLastName}
+                onChange={(e) => setFilterLastName(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
+              >
+                <option value="">Nom</option>
+                {uniqueValues.lastNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Email */}
+              <select
+                value={filterEmail}
+                onChange={(e) => setFilterEmail(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[180px]"
+              >
+                <option value="">Email</option>
+                {uniqueValues.emails.map((email) => (
+                  <option key={email} value={email}>
+                    {email}
+                  </option>
+                ))}
+              </select>
+
+              {/* Téléphone */}
+              <select
+                value={filterPhone}
+                onChange={(e) => setFilterPhone(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[140px]"
+              >
+                <option value="">Téléphone</option>
+                {uniqueValues.phones.map((phone) => (
+                  <option key={phone} value={phone}>
+                    {phone}
+                  </option>
+                ))}
+              </select>
+
+              {/* Entreprise */}
+              {companies.length > 0 && (
+                <select
+                  value={filterCompany}
+                  onChange={(e) => setFilterCompany(e.target.value)}
+                  className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[150px]"
+                >
+                  <option value="">Entreprise</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id.toString()}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* Cercle */}
+              <select
+                value={filterCircle}
+                onChange={(e) => setFilterCircle(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
+              >
+                <option value="">Cercle</option>
+                {circles.map((circle) => (
+                  <option key={circle} value={circle}>
+                    {circle.charAt(0).toUpperCase() + circle.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Right side: View toggle, Circle filter, Actions */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Bottom row: View toggle, Actions */}
+            <div className="flex items-center justify-between">
               {/* View mode toggle */}
               <div className="flex border border-border rounded-md overflow-hidden">
                 <button
@@ -411,22 +522,8 @@ function ContactsContent() {
                 </button>
               </div>
 
-              {/* Circle filter - simplified */}
-              <select
-                value={filterCircle}
-                onChange={(e) => setFilterCircle(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Tous</option>
-                {circles.map((circle) => (
-                  <option key={circle} value={circle}>
-                    {circle.charAt(0).toUpperCase() + circle.slice(1)}
-                  </option>
-                ))}
-              </select>
-
               {/* Actions menu */}
-              <div className="relative ml-auto sm:ml-0">
+              <div className="relative ml-auto">
                 <div className="flex items-center gap-2">
                   {/* Primary action */}
                   <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto">
@@ -453,6 +550,24 @@ function ContactsContent() {
                         />
                         <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                           <div className="py-1">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await contactsAPI.downloadTemplate();
+                                  setShowActionsMenu(false);
+                                } catch (err) {
+                                  const appError = handleApiError(err);
+                                  showToast({
+                                    message: appError.message || 'Erreur lors du téléchargement du modèle',
+                                    type: 'error',
+                                  });
+                                }
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                            >
+                              <FileSpreadsheet className="w-3.5 h-3.5" />
+                              Télécharger le modèle
+                            </button>
                             <input
                               type="file"
                               accept=".xlsx,.xls"
@@ -530,27 +645,27 @@ function ContactsContent() {
                         ? foundCircle.charAt(0).toUpperCase() + foundCircle.slice(1)
                         : filterCircle;
                       return (
-                        <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                          Cercle: {displayName}
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                          {displayName}
                           <button
                             onClick={() => setFilterCircle('')}
-                            className="ml-1 hover:text-danger"
+                            className="ml-0.5 hover:text-danger"
                             aria-label="Retirer le filtre cercle"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-2.5 h-2.5" />
                           </button>
                         </Badge>
                       );
                     })()}
                     {filterCompany && companies.length > 0 && (
-                      <Badge variant="default" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                        Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name}
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                        {companies.find(c => c.id.toString() === filterCompany)?.name}
                         <button
                           onClick={() => setFilterCompany('')}
-                          className="ml-1 hover:text-danger"
+                          className="ml-0.5 hover:text-danger"
                           aria-label="Retirer le filtre entreprise"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-2.5 h-2.5" />
                         </button>
                       </Badge>
                     )}

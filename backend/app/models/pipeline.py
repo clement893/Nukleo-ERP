@@ -25,7 +25,7 @@ class Pipeline(Base):
     is_active: bool = Column(Boolean, default=True, nullable=False)
     
     # Relations
-    created_by_id: Optional[UUID] = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by_id: Optional[int] = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Timestamps
     created_at: datetime = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -80,8 +80,8 @@ class Opportunite(Base):
     stage_id: UUID = Column(PG_UUID(as_uuid=True), ForeignKey("pipeline_stages.id", ondelete="SET NULL"), nullable=True)
     contact_id: Optional[UUID] = Column(PG_UUID(as_uuid=True), ForeignKey("contacts.id"), nullable=True)
     company_id: Optional[UUID] = Column(PG_UUID(as_uuid=True), ForeignKey("companies.id"), nullable=True)
-    assigned_to_id: Optional[UUID] = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by_id: Optional[UUID] = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    assigned_to_id: Optional[int] = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by_id: Optional[int] = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Timestamps
     created_at: datetime = Column(DateTime, default=datetime.utcnow, nullable=False)

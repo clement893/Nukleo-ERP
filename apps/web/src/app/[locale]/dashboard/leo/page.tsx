@@ -6,6 +6,7 @@ import { Card, Button, Input } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { extractApiData } from '@/lib/api/utils';
 import { getErrorMessage } from '@/lib/errors';
+import { leoDocumentationAPI } from '@/lib/api/leo-documentation';
 import { Loader2, Send, User, Sparkles, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useToast } from '@/components/ui';
@@ -77,7 +78,21 @@ export default function LeoPage() {
         finish_reason: string;
       }
 
-      const systemPrompt = `Tu es Leo, l'assistant IA de l'ERP Nukleo. Tu es là pour aider les utilisateurs avec leurs questions sur l'ERP, les projets, les équipes, les clients, et toutes les fonctionnalités du système. Sois concis, précis, et amical. Réponds toujours en français sauf demande contraire.`;
+      // Load active documentation context for Leo
+      let documentationContext = '';
+      try {
+        const contextResponse = await leoDocumentationAPI.getActiveContext();
+        if (contextResponse.context) {
+          documentationContext = `\n\n=== DOCUMENTATION ET CONTEXTE ===\n${contextResponse.context}\n=== FIN DE LA DOCUMENTATION ===\n`;
+        }
+      } catch (err) {
+        // Log but don't fail if documentation loading fails
+        console.warn('Failed to load Leo documentation context:', err);
+      }
+
+      const baseSystemPrompt = `Tu es Leo, l'assistant IA de l'ERP Nukleo. Tu es là pour aider les utilisateurs avec leurs questions sur l'ERP, les projets, les équipes, les clients, et toutes les fonctionnalités du système. Sois concis, précis, et amical. Réponds toujours en français sauf demande contraire.`;
+      
+      const systemPrompt = baseSystemPrompt + documentationContext;
 
       const response = await apiClient.post<ChatResponse>('/v1/ai/chat', {
         messages: apiMessages,
@@ -85,10 +100,38 @@ export default function LeoPage() {
         system_prompt: systemPrompt,
       });
 
-      // FastAPI returns data directly, extract it properly
-      const chatResponse = extractApiData<ChatResponse>(response);
+      // apiClient.post returns response.data from axios, which is the FastAPI response
+      // FastAPI returns ChatResponse directly, so response is already ChatResponse
+      // But apiClient.post has return type ApiResponse<T>, so we extract to handle both cases
+      let chatResponse: ChatResponse;
+      
+      // Try to extract data - handle both direct response and wrapped response
+      const extracted = extractApiData<ChatResponse>(response);
+      
+      // Check if extracted data has the expected structure
+      if (extracted && typeof extracted === 'object' && 'content' in extracted) {
+        chatResponse = extracted;
+      } else if (response && typeof response === 'object' && 'content' in response) {
+        // Response is already ChatResponse
+        chatResponse = response as ChatResponse;
+      } else {
+        // Last resort: try to find content in nested structure
+        const anyResponse = response as any;
+        if (anyResponse?.data?.content) {
+          chatResponse = anyResponse.data as ChatResponse;
+        } else {
+          console.error('AI Response structure:', { 
+            response, 
+            extracted,
+            responseType: typeof response,
+            responseKeys: response && typeof response === 'object' ? Object.keys(response) : [],
+          });
+          throw new Error('Aucune réponse reçue du service IA');
+        }
+      }
 
       if (!chatResponse || !chatResponse.content) {
+        console.error('AI Response missing content:', { chatResponse });
         throw new Error('Aucune réponse reçue du service IA');
       }
 

@@ -87,10 +87,11 @@ export function AIChat({
         system_prompt: systemPrompt,
       });
 
-      // FastAPI returns data directly, extract it properly
-      const chatResponse = extractApiData<ChatResponse>(response);
+      // FastAPI returns data directly, apiClient.post returns response.data from axios
+      const chatResponse = extractApiData<ChatResponse>(response) as ChatResponse;
 
-      if (!chatResponse || !chatResponse.content) {
+      if (!chatResponse || typeof chatResponse !== 'object' || !('content' in chatResponse) || !chatResponse.content) {
+        console.error('AI Response structure:', { response, chatResponse });
         throw new Error('No data received from AI service');
       }
 

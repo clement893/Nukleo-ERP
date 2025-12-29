@@ -15,7 +15,7 @@ import { Column } from '@/components/ui/DataTable';
 import UserRolesEditor from '@/components/admin/UserRolesEditor';
 import UserPermissionsEditor from '@/components/admin/UserPermissionsEditor';
 import RoleDefaultPermissionsEditor from '@/components/admin/RoleDefaultPermissionsEditor';
-import { useUserRoles } from '@/hooks/useRBAC';
+import { useUserRoles, useUserPermissions } from '@/hooks/useRBAC';
 
 interface User extends Record<string, unknown> {
   id: string;
@@ -121,8 +121,14 @@ export default function AdminUsersContent() {
       key: 'roles',
       label: 'Rôles',
       render: (_value, row) => {
-        // This will be populated by UserRolesDisplay component
         return <UserRolesDisplay userId={parseInt(row.id)} />;
+      },
+    },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      render: (_value, row) => {
+        return <UserPermissionsDisplay userId={parseInt(row.id)} />;
       },
     },
     {
@@ -293,25 +299,80 @@ function UserRolesDisplay({ userId }: { userId: number }) {
   const { roles, loading } = useUserRoles(userId);
 
   if (loading) {
-    return <span className="text-muted-foreground">Chargement...</span>;
+    return <span className="text-muted-foreground text-xs">Chargement...</span>;
   }
 
   if (roles.length === 0) {
-    return <span className="text-muted-foreground">Aucun rôle</span>;
+    return <span className="text-muted-foreground text-xs">Aucun rôle</span>;
   }
 
   return (
-    <div className="flex flex-wrap gap-1">
-      {roles.slice(0, 2).map((role) => (
-        <Badge key={role.id} variant="default" className="text-xs">
+    <div className="flex flex-wrap gap-1 max-w-md">
+      {roles.map((role) => (
+        <Badge 
+          key={role.id} 
+          variant={role.is_active ? "default" : "secondary"} 
+          className="text-xs"
+          title={role.description || role.name}
+        >
           {role.name}
+          {!role.is_active && ' (inactif)'}
         </Badge>
       ))}
-      {roles.length > 2 && (
-        <Badge variant="default" className="text-xs">
-          +{roles.length - 2}
-        </Badge>
-      )}
+    </div>
+  );
+}
+
+// Component to display user permissions in table
+function UserPermissionsDisplay({ userId }: { userId: number }) {
+  const { permissions, customPermissions, loading } = useUserPermissions(userId);
+
+  if (loading) {
+    return <span className="text-muted-foreground text-xs">Chargement...</span>;
+  }
+
+  // Get custom permission names
+  const customPermNames = new Set(customPermissions.map(p => p.permission.name));
+  
+  // Get unique permissions from roles (permissions is an array of strings)
+  const rolePermissions = Array.from(new Set(permissions));
+  
+  // Combine all permissions
+  const allPermissions = [...rolePermissions];
+  
+  // Add custom permissions that might not be in role permissions
+  customPermissions.forEach(cp => {
+    if (!allPermissions.includes(cp.permission.name)) {
+      allPermissions.push(cp.permission.name);
+    }
+  });
+
+  if (allPermissions.length === 0) {
+    return <span className="text-muted-foreground text-xs">Aucune permission</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 max-w-md max-h-32 overflow-y-auto">
+      {allPermissions.map((perm, index) => {
+        const isCustom = customPermNames.has(perm);
+        // Find the custom permission object for tooltip
+        const customPerm = customPermissions.find(cp => cp.permission.name === perm);
+        const tooltip = customPerm 
+          ? (customPerm.permission.description || customPerm.permission.name)
+          : perm;
+        
+        return (
+          <Badge 
+            key={`${perm}-${index}`} 
+            variant={isCustom ? "info" : "default"} 
+            className="text-xs"
+            title={tooltip}
+          >
+            {perm}
+            {isCustom && ' (custom)'}
+          </Badge>
+        );
+      })}
     </div>
   );
 }

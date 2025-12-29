@@ -664,9 +664,6 @@ async def get_user_custom_permissions(
     if user_id != current_user.id:
         await require_permission("users:read", current_user, db, request)
     
-    rbac_service = RBACService(db)
-    custom_permissions = await rbac_service.get_user_custom_permissions(user_id)
-    
     # Convert to response format
     result = await db.execute(
         select(UserPermission)
