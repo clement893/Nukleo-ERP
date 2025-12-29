@@ -332,8 +332,8 @@ async def validate_media(
         # Sanitize filename
         sanitized_name = sanitize_filename(validation_data.name)
         
-        # Check file size (max 10MB by default, can be configured)
-        max_size = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))  # 10MB default
+        # Check file size (max 100MB by default, can be configured)
+        max_size = int(os.getenv("MAX_FILE_SIZE", 100 * 1024 * 1024))  # 100MB default
         if validation_data.size > max_size:
             return MediaValidationResponse(
                 valid=False,
