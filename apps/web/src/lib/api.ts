@@ -291,75 +291,76 @@ export const usersAPI = {
     return apiClient.put('/v1/users/me', data);
   },
   uploadAvatar: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Use the /api/upload/file endpoint which returns FileUploadResponse with url field
+    // This endpoint is more reliable for avatar uploads
+    const uploadClient = axios.create({
+      baseURL: getApiUrl(),
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      withCredentials: true,
+    });
+    
+    // Add auth token
+    if (typeof window !== 'undefined') {
+      const token = TokenStorage.getToken();
+      if (token) {
+        uploadClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    
     try {
-      // Use mediaAPI for consistent upload handling
-      const { mediaAPI } = await import('./media');
-      
-      // Upload file to media API with avatars folder
-      const media = await mediaAPI.upload(file, { 
-        folder: 'avatars',
-        is_public: true 
+      const response = await uploadClient.post('/api/upload/file', formData, {
+        params: {
+          folder: 'avatars',
+        },
       });
       
-      // MediaResponse returns file_path which should be the URL
-      // But if it's a relative path, we might need to construct the full URL
-      if (media.file_path) {
-        // If file_path is already a full URL, return it
-        if (media.file_path.startsWith('http://') || media.file_path.startsWith('https://')) {
-          return media.file_path;
-        }
-        // Otherwise, it might be a file_key - we'll need to use the upload endpoint response
-        // For now, try to use it as-is (backend should return full URL)
-        return media.file_path;
+      // FileUploadResponse has: id, filename, original_filename, size, url, content_type, uploaded_at
+      // Handle both direct response and wrapped response
+      const responseData = response.data?.data || response.data;
+      
+      if (responseData?.url) {
+        return responseData.url;
       }
       
-      throw new Error('Media upload succeeded but no file path returned');
-    } catch (error) {
-      // If mediaAPI fails, try the legacy upload endpoint as fallback
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        // Create a separate client for file uploads (multipart/form-data)
-        // The upload endpoint is at /api/upload/file (not under /v1)
-        const uploadClient = axios.create({
-          baseURL: getApiUrl(),
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          withCredentials: true,
+      // Fallback: try to use mediaAPI if upload endpoint doesn't return url
+      if (!responseData?.url) {
+        const { mediaAPI } = await import('./media');
+        const media = await mediaAPI.upload(file, { 
+          folder: 'avatars',
+          is_public: true 
         });
         
-        // Add auth token
-        if (typeof window !== 'undefined') {
-          const token = TokenStorage.getToken();
-          if (token) {
-            uploadClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          }
+        // Try file_path first, then construct URL from file_key if needed
+        if (media.file_path && (media.file_path.startsWith('http://') || media.file_path.startsWith('https://'))) {
+          return media.file_path;
         }
         
-        const response = await uploadClient.post('/api/upload/file', formData, {
-          params: {
-            folder: 'avatars',
-          },
-        });
-        
-        // Handle both direct response and wrapped response
-        const responseData = response.data?.data || response.data;
-        if (responseData?.url) {
-          return responseData.url;
+        // If file_path is a key, we need to get the URL from the media endpoint
+        // For now, return file_path and let the backend handle it
+        if (media.file_path) {
+          return media.file_path;
         }
-        if (typeof responseData === 'string') {
-          return responseData;
-        }
-        
-        throw new Error('Upload succeeded but no URL returned in response');
-      } catch (fallbackError) {
-        // If both methods fail, throw the original error with better message
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-        throw new Error(`Avatar upload failed: ${errorMessage}. Fallback also failed: ${fallbackMessage}`);
       }
+      
+      throw new Error('Upload succeeded but no URL returned in response');
+    } catch (error) {
+      // Better error message for debugging
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const axiosError = error as any;
+      
+      if (axiosError?.response) {
+        const status = axiosError.response.status;
+        const data = axiosError.response.data;
+        const detail = data?.detail || data?.error || data?.message || 'Unknown error';
+        throw new Error(`Avatar upload failed (${status}): ${detail}`);
+      }
+      
+      throw new Error(`Avatar upload failed: ${errorMessage}`);
     }
   },
   getUser: (userId: string) => {
