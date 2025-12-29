@@ -324,17 +324,16 @@ function PipelineDetailContent() {
   }
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <PageHeader
-        title={pipeline.name}
-        description={pipeline.description || 'Gérez vos opportunités dans ce pipeline'}
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Commercial', href: '/dashboard/commercial' },
-          { label: 'Pipelines', href: '/dashboard/commercial/pipeline-client' },
-          { label: pipeline.name },
-        ]}
-        actions={
+    <div className="flex flex-col h-[calc(100vh-4rem)] -mx-6 -my-6">
+      {/* Header fixe en haut */}
+      <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-border bg-background">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{pipeline.name}</h1>
+            {pipeline.description && (
+              <p className="text-sm text-muted-foreground mt-1">{pipeline.description}</p>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleAddStage}>
               <Settings className="w-4 h-4 mr-2" />
@@ -345,31 +344,32 @@ function PipelineDetailContent() {
               Retour
             </Button>
           </div>
-        }
-      />
+        </div>
+        {error && (
+          <Alert variant="error" className="mt-2">{error}</Alert>
+        )}
+      </div>
 
-      {error && (
-        <Alert variant="error">{error}</Alert>
-      )}
-
-      {/* Kanban Board - Full width */}
-      <div className="w-full">
-        <Card className="p-6">
-          <div className="mb-4 flex items-center justify-between">
+      {/* Kanban Board - Prend tout l'espace restant */}
+      <div className="flex-1 overflow-hidden px-6 py-4">
+        <div className="h-full flex flex-col">
+          <div className="flex-shrink-0 mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold">{pipeline.name}</h3>
             <Button size="sm" onClick={() => handleCardAdd('')}>
               <Plus className="w-4 h-4 mr-2" />
               Nouvelle opportunité
             </Button>
           </div>
-          <KanbanBoard
-            columns={kanbanColumns}
-            cards={kanbanCards}
-            onCardMove={handleCardMove}
-            onCardClick={handleCardClick}
-            onCardAdd={handleCardAdd}
-          />
-        </Card>
+          <div className="flex-1 overflow-auto">
+            <KanbanBoard
+              columns={kanbanColumns}
+              cards={kanbanCards}
+              onCardMove={handleCardMove}
+              onCardClick={handleCardClick}
+              onCardAdd={handleCardAdd}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Opportunity Modal */}
