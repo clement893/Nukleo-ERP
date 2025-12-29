@@ -37,16 +37,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity"
-          onClick={handleMobileMenuClose}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar - handles mobile/desktop internally */}
+      {/* Sidebar - handles mobile/desktop internally and its own overlay */}
       <MemoizedSidebar
         isOpen={mobileMenuOpen}
         onClose={handleMobileMenuClose}

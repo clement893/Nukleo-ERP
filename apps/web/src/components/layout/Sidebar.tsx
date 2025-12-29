@@ -218,10 +218,10 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - only show on mobile when sidebar is open */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 dark:bg-black/70 md:hidden animate-fade-in"
+          className="fixed inset-0 z-30 bg-black/50 dark:bg-black/70 md:hidden"
           onClick={handleClose}
           aria-hidden="true"
         />
