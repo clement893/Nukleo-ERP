@@ -190,11 +190,6 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
         icon: <CalendarDays className="w-5 h-5" />,
         items: [
           {
-            name: 'Accueil',
-            href: '/dashboard/agenda',
-            icon: <CalendarDays className="w-5 h-5" />,
-          },
-          {
             name: 'Calendrier',
             href: '/dashboard/agenda/calendrier',
             icon: <Calendar className="w-5 h-5" />,
