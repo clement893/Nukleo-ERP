@@ -29,6 +29,26 @@ from app.services.team_service import TeamService
 router = APIRouter(prefix="/teams", tags=["teams"])
 
 
+def parse_team_settings(settings_value):
+    """
+    Parse team settings from database (JSON string) to dict.
+    Handles None, dict, and JSON string formats.
+    """
+    if not settings_value:
+        return None
+    if isinstance(settings_value, dict):
+        return settings_value
+    if isinstance(settings_value, str):
+        try:
+            import json
+            parsed = json.loads(settings_value)
+            # Ensure parsed value is a dict
+            return parsed if isinstance(parsed, dict) else None
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return None
+    return None
+
+
 @router.post("", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 async def create_team(
     team_data: TeamCreate,
@@ -56,16 +76,7 @@ async def create_team(
                 )
             
             # Parse settings if it's a JSON string
-            settings_dict = None
-            if team.settings:
-                if isinstance(team.settings, str):
-                    try:
-                        import json
-                        settings_dict = json.loads(team.settings)
-                    except (json.JSONDecodeError, TypeError):
-                        settings_dict = None
-                else:
-                    settings_dict = team.settings
+            settings_dict = parse_team_settings(team.settings)
             
             # Convert to response format
             team_dict = {
@@ -120,16 +131,7 @@ async def create_team(
         )
     
     # Parse settings if it's a JSON string
-    settings_dict = None
-    if team.settings:
-        if isinstance(team.settings, str):
-            try:
-                import json
-                settings_dict = json.loads(team.settings)
-            except (json.JSONDecodeError, TypeError):
-                settings_dict = None
-        else:
-            settings_dict = team.settings
+    settings_dict = parse_team_settings(team.settings)
     
     # Convert to response format - ensure we access loaded relationships safely
     team_dict = {
@@ -216,7 +218,7 @@ async def list_teams(
             "description": team.description,
             "owner_id": team.owner_id,
             "is_active": team.is_active,
-            "settings": team.settings,
+            "settings": parse_team_settings(team.settings),
             "created_at": team.created_at,
             "updated_at": team.updated_at,
             "owner": {
@@ -255,7 +257,7 @@ async def get_team(
         "description": team.description,
         "owner_id": team.owner_id,
         "is_active": team.is_active,
-        "settings": team.settings,
+        "settings": parse_team_settings(team.settings),
         "created_at": team.created_at,
         "updated_at": team.updated_at,
         "owner": {
@@ -304,7 +306,7 @@ async def update_team(
         "description": team.description,
         "owner_id": team.owner_id,
         "is_active": team.is_active,
-        "settings": team.settings,
+        "settings": parse_team_settings(team.settings),
         "created_at": team.created_at,
         "updated_at": team.updated_at,
         "owner": {

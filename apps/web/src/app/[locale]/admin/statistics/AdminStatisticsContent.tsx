@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api';
 import { rbacAPI } from '@/lib/api/rbac';
 import { getErrorMessage } from '@/lib/errors';
 import { extractApiData } from '@/lib/api/utils';
+import { logger } from '@/lib/logger';
 import { Card, Badge, Alert, Loading } from '@/components/ui';
 
 interface Statistics {
@@ -132,7 +133,12 @@ export default function AdminStatisticsContent() {
           totalOrgs = Array.isArray(teamsData) ? teamsData.length : (teamsResponse.data.total || 0);
         }
       } catch (e) {
-        // Ignore if teams API is not available
+        // Log 422 validation errors but don't block the page
+        const errorMessage = getErrorMessage(e);
+        if (errorMessage?.includes('422') || errorMessage?.includes('settings') || errorMessage?.includes('dictionary')) {
+          logger.warn('Teams API validation error in statistics', e instanceof Error ? e : new Error(String(e)));
+        }
+        // Ignore other errors if teams API is not available
       }
 
       setStats({

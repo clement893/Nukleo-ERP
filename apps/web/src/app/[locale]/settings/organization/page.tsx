@@ -188,7 +188,14 @@ export default function OrganizationSettingsPage() {
       setIsLoading(false);
     } catch (error: unknown) {
       logger.error('Failed to load organization settings', error instanceof Error ? error : new Error(String(error)));
-      setError(t('errors.loadFailed') || 'Failed to load organization settings. Please try again.');
+      
+      // Check for 422 validation error specifically (settings field issue)
+      const errorMessage = getErrorMessage(error);
+      if (errorMessage?.includes('settings') || errorMessage?.includes('dictionary') || errorMessage?.includes('validation')) {
+        setError('Erreur de validation des paramètres de l\'organisation. Veuillez contacter le support si le problème persiste.');
+      } else {
+        setError(t('errors.loadFailed') || 'Failed to load organization settings. Please try again.');
+      }
       setIsLoading(false);
     }
   };

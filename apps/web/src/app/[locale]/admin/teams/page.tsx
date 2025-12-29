@@ -101,11 +101,17 @@ export default function TeamsPage() {
         })));
       }
     } catch (err: unknown) {
-      // If API returns 404 or endpoint doesn't exist yet, use empty array
-      if (getErrorDetail(err)?.includes('404') || getErrorDetail(err)?.includes('not found')) {
+      const errorDetail = getErrorDetail(err);
+      const errorMessage = getErrorMessage(err);
+      
+      // Handle 422 validation errors (settings field issue)
+      if (errorMessage?.includes('422') || errorMessage?.includes('settings') || errorMessage?.includes('dictionary') || errorMessage?.includes('validation')) {
+        setError('Erreur de validation des données d\'équipe. Veuillez contacter le support. Détails: ' + (errorDetail || errorMessage));
+      } else if (errorDetail?.includes('404') || errorDetail?.includes('not found')) {
+        // If API returns 404 or endpoint doesn't exist yet, use empty array
         setTeams([]);
       } else {
-        setError(getErrorDetail(err) || getErrorMessage(err, 'Error loading teams'));
+        setError(errorDetail || errorMessage || 'Error loading teams');
       }
     } finally {
       setLoading(false);

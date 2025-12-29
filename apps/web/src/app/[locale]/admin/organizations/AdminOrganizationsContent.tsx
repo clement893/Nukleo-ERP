@@ -116,10 +116,16 @@ export default function AdminOrganizationsContent() {
         }));
       }
     } catch (err: unknown) {
-      if (getErrorDetail(err)?.includes('404') || getErrorDetail(err)?.includes('not found')) {
+      const errorDetail = getErrorDetail(err);
+      const errorMessage = getErrorMessage(err);
+      
+      // Handle 422 validation errors (settings field issue)
+      if (errorMessage?.includes('422') || errorMessage?.includes('settings') || errorMessage?.includes('dictionary') || errorMessage?.includes('validation')) {
+        setError('Erreur de validation des données d\'organisation. Veuillez contacter le support. Détails: ' + (errorDetail || errorMessage));
+      } else if (errorDetail?.includes('404') || errorDetail?.includes('not found')) {
         setTeams([]);
       } else {
-        setError(getErrorDetail(err) || getErrorMessage(err, 'Erreur lors du chargement des organisations'));
+        setError(errorDetail || errorMessage || 'Erreur lors du chargement des organisations');
       }
     } finally {
       setLoading(false);

@@ -89,7 +89,13 @@ export default function TeamManagement({ className }: TeamManagementProps) {
         }
       }
     } catch (err) {
-      setError(getErrorMessage(err, 'Erreur lors du chargement des équipes'));
+      const errorMessage = getErrorMessage(err);
+      // Handle 422 validation errors (settings field issue)
+      if (errorMessage?.includes('422') || errorMessage?.includes('settings') || errorMessage?.includes('dictionary') || errorMessage?.includes('validation')) {
+        setError('Erreur de validation des données d\'équipe. Veuillez contacter le support.');
+      } else {
+        setError(errorMessage || 'Erreur lors du chargement des équipes');
+      }
     } finally {
       setLoading(false);
     }
