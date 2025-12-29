@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, Filter, X, ChevronDown, MoreVertical, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, X, MoreVertical, FileSpreadsheet } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -35,7 +35,6 @@ function ContactsContent() {
   const [filterPhone, setFilterPhone] = useState<string>('');
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
-  const [showFilters, setShowFilters] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   // Mock data pour les entreprises et employés (à remplacer par des appels API réels)
@@ -110,23 +109,6 @@ function ContactsContent() {
     });
   }, [contacts, filterCity, filterPhone, filterCircle, filterCompany]);
 
-  // Count active filters
-  const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    if (filterCity) count++;
-    if (filterPhone) count++;
-    if (filterCircle) count++;
-    if (filterCompany) count++;
-    return count;
-  }, [filterCity, filterPhone, filterCircle, filterCompany]);
-
-  // Clear all filters
-  const clearFilters = () => {
-    setFilterCity('');
-    setFilterPhone('');
-    setFilterCircle('');
-    setFilterCompany('');
-  };
 
   // Handle create
   const handleCreate = async (data: ContactCreate | ContactUpdate) => {
@@ -589,96 +571,6 @@ function ContactsContent() {
             </div>
           </div>
 
-          {/* Filters section - collapsible */}
-          {(activeFiltersCount > 0 || showFilters) && (
-            <div className="pt-3 border-t border-border">
-              <div className="flex items-center justify-between mb-2">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 text-xs font-medium text-foreground hover:text-primary"
-                >
-                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>Filtres avancés</span>
-                  {activeFiltersCount > 0 && (
-                    <Badge variant="default" className="text-xs px-1.5 py-0.5">
-                      {activeFiltersCount}
-                    </Badge>
-                  )}
-                  <ChevronDown className={clsx('w-3 h-3 transition-transform', showFilters && 'rotate-180')} />
-                </button>
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                  >
-                    <X className="w-3 h-3" />
-                    Réinitialiser
-                  </button>
-                )}
-              </div>
-              {showFilters && (
-                <div className="space-y-2">
-                  {/* Active filters badges */}
-                  <div className="flex flex-wrap gap-2">
-                    {filterCity && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                        {filterCity}
-                        <button
-                          onClick={() => setFilterCity('')}
-                          className="ml-0.5 hover:text-danger"
-                          aria-label="Retirer le filtre ville"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </Badge>
-                    )}
-                    {filterPhone && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                        {filterPhone}
-                        <button
-                          onClick={() => setFilterPhone('')}
-                          className="ml-0.5 hover:text-danger"
-                          aria-label="Retirer le filtre téléphone"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </Badge>
-                    )}
-                    {filterCircle && (() => {
-                      const foundCircle = circles.find(c => c === filterCircle);
-                      const displayName = foundCircle 
-                        ? foundCircle.charAt(0).toUpperCase() + foundCircle.slice(1)
-                        : filterCircle;
-                      return (
-                        <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                          {displayName}
-                          <button
-                            onClick={() => setFilterCircle('')}
-                            className="ml-0.5 hover:text-danger"
-                            aria-label="Retirer le filtre cercle"
-                          >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </Badge>
-                      );
-                    })()}
-                    {filterCompany && companies.length > 0 && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                        {companies.find(c => c.id.toString() === filterCompany)?.name}
-                        <button
-                          onClick={() => setFilterCompany('')}
-                          className="ml-0.5 hover:text-danger"
-                          aria-label="Retirer le filtre entreprise"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </Card>
 

@@ -146,24 +146,21 @@ class CalendarEvent(CalendarEventBase):
     @classmethod
     def handle_type_field(cls, data: Any) -> Any:
         """Convert 'type' field from database model to 'event_type'"""
-        if hasattr(data, 'type') and not hasattr(data, 'event_type'):
-            # If data is a SQLAlchemy model instance
-            data_dict = {
-                'id': data.id,
-                'user_id': data.user_id,
-                'title': data.title,
-                'description': data.description,
-                'date': data.date,
-                'end_date': data.end_date,
-                'time': data.time,
-                'event_type': data.type,  # Convert 'type' to 'event_type'
-                'location': data.location,
-                'attendees': data.attendees,
-                'color': data.color,
-                'created_at': data.created_at,
-                'updated_at': data.updated_at,
-            }
-            return data_dict
+        # Handle SQLAlchemy model instance
+        if hasattr(data, '__dict__') and hasattr(data, 'type'):
+            # Convert SQLAlchemy model to dict with event_type
+            if not isinstance(data, dict):
+                # Create a dict from the model attributes
+                result = {}
+                for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
+                           'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
+                    if hasattr(data, key):
+                        result[key] = getattr(data, key)
+                # Convert 'type' to 'event_type'
+                if hasattr(data, 'type'):
+                    result['event_type'] = getattr(data, 'type')
+                return result
+        # Handle dict input
         elif isinstance(data, dict):
             if 'type' in data and 'event_type' not in data:
                 data['event_type'] = data.pop('type')
