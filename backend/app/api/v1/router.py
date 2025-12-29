@@ -4,6 +4,7 @@ API v1 router registration.
 from fastapi import APIRouter
 from app.api.v1.endpoints import themes, theme_fonts, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings, organization_settings, general_settings, pages, forms, menus, support_tickets, seo, teams, invitations, rbac, notifications, api_connection_check, reports, media, insights, analytics, posts, subscriptions, project_tasks, leo_documentation
 from app.api.v1.endpoints.commercial import contacts as commercial_contacts
+from app.api.v1.endpoints.agenda import events as agenda_events
 from app.api.v1.endpoints.finances import facturations_router, rapport_router, compte_depenses_router
 from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
 from app.api.v1.endpoints.erp import invoices_router as erp_invoices_router, clients_router, orders_router, inventory_router, reports_router, dashboard_router as erp_dashboard_router
@@ -423,6 +424,13 @@ api_router.include_router(
 )
 
 # Register commercial module endpoints
+# Register agenda events endpoints
+api_router.include_router(
+    agenda_events.router,
+    prefix="/v1",
+    tags=["agenda-events"]
+)
+
 api_router.include_router(
     commercial_contacts.router,
     tags=["commercial"]

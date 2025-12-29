@@ -109,11 +109,16 @@ class ExportService:
         if not PANDAS_AVAILABLE:
             raise ImportError("pandas is required for Excel export. Install with: pip install pandas openpyxl")
         
+        # Handle empty data - create empty DataFrame with headers if provided
         if not data:
-            raise ValueError("No data to export")
-
-        # Convert to DataFrame
-        df = pd.DataFrame(data)
+            if headers:
+                df = pd.DataFrame(columns=headers)
+            else:
+                # Create empty DataFrame - will have no columns
+                df = pd.DataFrame()
+        else:
+            # Convert to DataFrame
+            df = pd.DataFrame(data)
         
         # Reorder columns if headers provided
         if headers:
@@ -121,10 +126,15 @@ class ExportService:
             available_headers = [h for h in headers if h in df.columns]
             df = df[available_headers]
         
-        # Convert complex types
+        # Convert complex types and handle None values
         for col in df.columns:
             if df[col].dtype == 'object':
-                df[col] = df[col].apply(lambda x: json.dumps(x) if isinstance(x, (dict, list)) else x)
+                df[col] = df[col].apply(lambda x: (
+                    json.dumps(x) if isinstance(x, (dict, list)) 
+                    else '' if x is None 
+                    else str(x) if not isinstance(x, (str, int, float, bool))
+                    else x
+                ))
         
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:

@@ -586,46 +586,104 @@ async def export_contacts(
     Returns:
         Excel file with contacts data
     """
-    # Get all contacts
-    result = await db.execute(
-        select(Contact)
-        .options(
-            selectinload(Contact.company),
-            selectinload(Contact.employee)
+    try:
+        # Get all contacts
+        result = await db.execute(
+            select(Contact)
+            .options(
+                selectinload(Contact.company),
+                selectinload(Contact.employee)
+            )
+            .order_by(Contact.created_at.desc())
         )
-        .order_by(Contact.created_at.desc())
-    )
-    contacts = result.scalars().all()
-    
-    # Convert to dict format for export
-    export_data = []
-    for contact in contacts:
-        export_data.append({
-            'Prénom': contact.first_name,
-            'Nom': contact.last_name,
-            'Entreprise': contact.company.name if contact.company else '',
-            'Poste': contact.position or '',
-            'Cercle': contact.circle or '',
-            'LinkedIn': contact.linkedin or '',
-            'Photo URL': contact.photo_url or '',
-            'Courriel': contact.email or '',
-            'Téléphone': contact.phone or '',
-            'Ville': contact.city or '',
-            'Pays': contact.country or '',
-            'Anniversaire': contact.birthday.isoformat() if contact.birthday else '',
-            'Langue': contact.language or '',
-            'Employé': f"{contact.employee.first_name} {contact.employee.last_name}" if contact.employee else '',
-        })
-    
-    # Export to Excel
-    from datetime import datetime
-    buffer, filename = ExportService.export_to_excel(
-        data=export_data,
-        filename=f"contacts_export_{datetime.now().strftime('%Y%m%d')}.xlsx" if contacts else "contacts_export.xlsx"
-    )
-    
-    return StreamingResponse(
-        buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+        contacts = result.scalars().all()
+        
+        # Convert to dict format for export
+        export_data = []
+        for contact in contacts:
+            try:
+                # Safely handle all fields that might be None
+                employee_name = ''
+                if contact.employee:
+                    first_name = contact.employee.first_name or ''
+                    last_name = contact.employee.last_name or ''
+                    employee_name = f"{first_name} {last_name}".strip()
+                
+                birthday_str = ''
+                if contact.birthday:
+                    try:
+                        birthday_str = contact.birthday.isoformat()
+                    except Exception:
+                        birthday_str = str(contact.birthday)
+                
+                export_data.append({
+                    'Prénom': contact.first_name or '',
+                    'Nom': contact.last_name or '',
+                    'Entreprise': contact.company.name if contact.company and contact.company.name else '',
+                    'Poste': contact.position or '',
+                    'Cercle': contact.circle or '',
+                    'LinkedIn': contact.linkedin or '',
+                    'Photo URL': contact.photo_url or '',
+                    'Courriel': contact.email or '',
+                    'Téléphone': contact.phone or '',
+                    'Ville': contact.city or '',
+                    'Pays': contact.country or '',
+                    'Anniversaire': birthday_str,
+                    'Langue': contact.language or '',
+                    'Employé': employee_name,
+                })
+            except Exception as e:
+                logger.error(f"Error processing contact {contact.id} for export: {e}")
+                # Continue with other contacts even if one fails
+                continue
+        
+        # Handle empty data case
+        if not export_data:
+            # Return empty Excel file with headers
+            export_data = [{
+                'Prénom': '',
+                'Nom': '',
+                'Entreprise': '',
+                'Poste': '',
+                'Cercle': '',
+                'LinkedIn': '',
+                'Photo URL': '',
+                'Courriel': '',
+                'Téléphone': '',
+                'Ville': '',
+                'Pays': '',
+                'Anniversaire': '',
+                'Langue': '',
+                'Employé': '',
+            }]
+        
+        # Export to Excel
+        from datetime import datetime
+        buffer, filename = ExportService.export_to_excel(
+            data=export_data,
+            filename=f"contacts_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        )
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        logger.error(f"Export validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Erreur lors de l'export: {str(e)}"
+        )
+    except ImportError as e:
+        logger.error(f"Export dependency error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le service d'export Excel n'est pas disponible. Veuillez contacter l'administrateur."
+        )
+    except Exception as e:
+        logger.error(f"Unexpected export error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur inattendue lors de l'export: {str(e)}"
+        )
