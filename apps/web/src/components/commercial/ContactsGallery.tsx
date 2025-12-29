@@ -26,65 +26,70 @@ export default function ContactsGallery({
   }
 
   return (
-    <div className={clsx('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4', className)}>
+    <div className={clsx('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6', className)}>
       {contacts.map((contact) => (
         <Card
           key={contact.id}
-          className="cursor-pointer hover:shadow-lg transition-shadow"
+          className="cursor-pointer hover:shadow-xl transition-all duration-200 overflow-hidden group"
           onClick={() => onContactClick?.(contact)}
         >
-          <div className="p-4">
-            {/* Photo ou avatar */}
-            <div className="flex items-center gap-4 mb-4">
+          <div className="flex flex-col">
+            {/* Photo rectangulaire en haut */}
+            <div className="w-full h-48 bg-muted overflow-hidden">
               {contact.photo_url ? (
                 <img
                   src={contact.photo_url}
                   alt={`${contact.first_name} ${contact.last_name}`}
-                  className="w-24 h-24 rounded-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                  <UserCircle className="w-12 h-12 text-primary-600 dark:text-primary-400" />
+                <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center">
+                  <UserCircle className="w-20 h-20 text-primary-600 dark:text-primary-400" />
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground truncate">
+            </div>
+
+            {/* Contenu de la carte */}
+            <div className="p-5">
+              {/* Nom et position */}
+              <div className="mb-4">
+                <h3 className="font-semibold text-lg text-foreground mb-1">
                   {contact.first_name} {contact.last_name}
                 </h3>
                 {contact.position && (
-                  <p className="text-sm text-muted-foreground truncate">{contact.position}</p>
+                  <p className="text-sm text-muted-foreground">{contact.position}</p>
                 )}
               </div>
-            </div>
 
-            {/* Informations clés */}
-            <div className="space-y-2">
-              {contact.company_name && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Building2 className="w-4 h-4" />
-                  <span className="truncate">{contact.company_name}</span>
-                </div>
-              )}
-              {contact.email && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="w-4 h-4" />
-                  <span className="truncate">{contact.email}</span>
-                </div>
-              )}
-              {contact.phone && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="w-4 h-4" />
-                  <span className="truncate">{contact.phone}</span>
-                </div>
-              )}
-              {(contact.city || contact.country) && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate">
-                    {[contact.city, contact.country].filter(Boolean).join(', ')}
-                  </span>
-                </div>
-              )}
+              {/* Informations clés */}
+              <div className="space-y-2.5">
+                {contact.company_name && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Building2 className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{contact.company_name}</span>
+                  </div>
+                )}
+                {contact.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{contact.email}</span>
+                  </div>
+                )}
+                {contact.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{contact.phone}</span>
+                  </div>
+                )}
+                {(contact.city || contact.country) && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {[contact.city, contact.country].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </Card>
