@@ -199,14 +199,28 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
               logger.debug('Checking superadmin status', {
                 hasToken: !!authToken,
                 tokenLength: authToken.length,
-                userEmail: userForAdminCheck?.email
+                userEmail: userForAdminCheck?.email,
+                is_admin: userForAdminCheck?.is_admin
               });
               const status = await checkMySuperAdminStatus(authToken);
-              isAdmin = status.is_superadmin;
-              if (status.is_superadmin) {
-                logger.debug('User is superadmin, granting admin access');
+              logger.debug('Superadmin status check result', {
+                is_superadmin: status.is_superadmin,
+                email: status.email,
+                user_id: status.user_id,
+                is_active: status.is_active,
+                userEmail: userForAdminCheck?.email
+              });
+              isAdmin = status.is_superadmin === true;
+              if (isAdmin) {
+                logger.info('User is superadmin, granting admin access', { 
+                  email: status.email || userForAdminCheck?.email 
+                });
               } else {
-                logger.debug('User is not superadmin', { userEmail: userForAdminCheck?.email });
+                logger.warn('User is not superadmin', { 
+                  userEmail: userForAdminCheck?.email,
+                  is_admin: userForAdminCheck?.is_admin,
+                  apiResponse: status
+                });
               }
             } else {
               logger.warn('No token available for superadmin check', {
@@ -218,14 +232,15 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
           } catch (err: unknown) {
             // If superadmin check fails with 401/422, token might be invalid or expired
             const statusCode = getErrorStatus(err);
+            logger.warn('Superadmin check failed', {
+              status: statusCode,
+              hasToken: !!authToken,
+              error: err instanceof Error ? err.message : String(err),
+              userEmail: userForAdminCheck?.email
+            });
+            
             if (statusCode === 401 || statusCode === 422) {
-              logger.warn('Superadmin check failed due to authentication error', {
-                status: statusCode,
-                hasToken: !!authToken,
-                error: err instanceof Error ? err.message : String(err)
-              });
-              
-              // Try to get fresh token from storage one more time
+              // Authentication error - try to refresh token
               const freshToken = TokenStorage.getToken();
               if (freshToken && freshToken !== authToken) {
                 logger.debug('Found fresh token, retrying superadmin check');
@@ -234,9 +249,16 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
                   isAdmin = retryStatus.is_superadmin;
                   if (retryStatus.is_superadmin) {
                     logger.debug('User is superadmin after retry, granting admin access');
+                  } else {
+                    logger.debug('User is not superadmin after retry', { 
+                      userEmail: userForAdminCheck?.email,
+                      is_admin: userForAdminCheck?.is_admin 
+                    });
                   }
                 } catch (retryErr: unknown) {
-                  logger.warn('Retry also failed, redirecting to login', { error: retryErr instanceof Error ? retryErr.message : String(retryErr) });
+                  logger.warn('Retry also failed, redirecting to login', { 
+                    error: retryErr instanceof Error ? retryErr.message : String(retryErr) 
+                  });
                   checkingRef.current = false;
                   setIsChecking(false);
                   setIsAuthorized(false);
@@ -251,9 +273,24 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
                 router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}&error=unauthorized`);
                 return;
               }
+            } else if (statusCode === 403) {
+              // 403 means user is authenticated but doesn't have permission
+              // This shouldn't happen for check-my-superadmin-status endpoint, but handle it
+              logger.warn('Access forbidden (403) - user authenticated but not superadmin', {
+                userEmail: userForAdminCheck?.email,
+                is_admin: userForAdminCheck?.is_admin
+              });
+              // Don't fall back to is_admin - 403 is definitive
+              isAdmin = false;
             } else {
-              // For other errors, fallback to is_admin check
-              logger.warn('Failed to check superadmin status, using is_admin fallback', { error: String(err) });
+              // For network errors or other errors, log but allow fallback to is_admin
+              // This handles cases where API is temporarily unavailable
+              logger.warn('Superadmin check failed with non-auth error, using is_admin fallback', { 
+                status: statusCode,
+                error: err instanceof Error ? err.message : String(err),
+                is_admin: userForAdminCheck?.is_admin
+              });
+              // Keep isAdmin as is (from is_admin field check above)
             }
           }
         }
