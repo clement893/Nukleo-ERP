@@ -77,23 +77,25 @@ async def list_contacts(
                 
                 # If it's a presigned URL, try to extract the file_key from it
                 if photo_url.startswith('http'):
-                    # Try to extract file_key from presigned URL (format: .../contacts/photos/...)
-                    # Parse URL to get the key parameter or path
-                    from urllib.parse import urlparse, parse_qs
+                    # Try to extract file_key from presigned URL
+                    from urllib.parse import urlparse, parse_qs, unquote
                     parsed = urlparse(photo_url)
-                    # Check if it's an S3 presigned URL - the key is usually in the path or query params
-                    path_parts = parsed.path.strip('/').split('/')
-                    if 'contacts/photos' in photo_url or any('contacts' in part for part in path_parts):
-                        # Reconstruct file_key from path
-                        # Remove bucket name if present, keep the rest
-                        key_parts = []
-                        found_contacts = False
-                        for part in path_parts:
-                            if part == 'contacts' or found_contacts:
-                                found_contacts = True
-                                key_parts.append(part)
-                        if key_parts:
-                            file_key = '/'.join(key_parts)
+                    
+                    # Check query params for 'key' parameter (some S3 presigned URLs have it)
+                    query_params = parse_qs(parsed.query)
+                    if 'key' in query_params:
+                        file_key = unquote(query_params['key'][0])
+                    else:
+                        # Extract from path - remove bucket name if present
+                        path = parsed.path.strip('/')
+                        # Look for 'contacts/photos' in the path
+                        if 'contacts/photos' in path:
+                            # Find the position of 'contacts/photos' and take everything after
+                            idx = path.find('contacts/photos')
+                            if idx != -1:
+                                file_key = path[idx:]
+                        elif path.startswith('contacts/'):
+                            file_key = path
                 else:
                     # It's likely already a file_key
                     file_key = photo_url
