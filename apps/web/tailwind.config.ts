@@ -206,6 +206,18 @@ const config: Config = {
           'sans-serif',
         ],
       },
+      fontSize: {
+        // Standardized typography hierarchy (UX/UI improvements - Batch 2)
+        // Fixed pixel values with line heights and font weights
+        display: ['48px', { lineHeight: '56px', fontWeight: '700' }],  // Very large titles
+        h1: ['32px', { lineHeight: '40px', fontWeight: '700' }],      // Main title
+        h2: ['24px', { lineHeight: '32px', fontWeight: '600' }],       // Secondary title
+        h3: ['20px', { lineHeight: '28px', fontWeight: '600' }],      // Tertiary title
+        subtitle: ['16px', { lineHeight: '24px', fontWeight: '500' }], // Subtitle
+        body: ['14px', { lineHeight: '22px', fontWeight: '400' }],     // Body text
+        small: ['12px', { lineHeight: '18px', fontWeight: '400' }],   // Small text
+        caption: ['11px', { lineHeight: '16px', fontWeight: '400' }],  // Caption/legend
+      },
       boxShadow: {
         // Custom shadows for depth
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
