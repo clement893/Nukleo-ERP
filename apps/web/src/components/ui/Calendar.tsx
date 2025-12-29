@@ -8,6 +8,7 @@ export interface CalendarEvent {
   id: string;
   title: string;
   date: Date;
+  endDate?: Date;
   time?: string;
   color?: string;
   description?: string;
@@ -58,11 +59,24 @@ export default function Calendar({
   const getEventsForDate = (date: Date) => {
     return events.filter((event) => {
       const eventDate = new Date(event.date);
-      return (
-        eventDate.getDate() === date.getDate() &&
-        eventDate.getMonth() === date.getMonth() &&
-        eventDate.getFullYear() === date.getFullYear()
-      );
+      eventDate.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      
+      if (!event.endDate) {
+        // Événement d'un seul jour
+        return (
+          eventDate.getDate() === checkDate.getDate() &&
+          eventDate.getMonth() === checkDate.getMonth() &&
+          eventDate.getFullYear() === checkDate.getFullYear()
+        );
+      }
+      
+      // Événement multi-jours
+      const eventEndDate = new Date(event.endDate);
+      eventEndDate.setHours(23, 59, 59, 999);
+      
+      return checkDate >= eventDate && checkDate <= eventEndDate;
     });
   };
 
