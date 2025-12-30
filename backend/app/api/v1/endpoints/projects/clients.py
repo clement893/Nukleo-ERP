@@ -4,7 +4,7 @@ API endpoints for managing project clients
 """
 
 from typing import List, Optional, Dict
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, delete
@@ -165,7 +165,6 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 @router.get("/", response_model=List[ClientResponse])
 @cache_query(expire=60, tags=["clients"])
 async def list_clients(
-    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0),
@@ -325,7 +324,6 @@ async def get_client(
 
 @router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 async def create_client(
-    request: Request,
     client_data: ClientCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -482,7 +480,6 @@ async def create_client(
 
 @router.put("/{client_id}", response_model=ClientResponse)
 async def update_client(
-    request: Request,
     client_id: int,
     client_data: ClientUpdate,
     db: AsyncSession = Depends(get_db),
@@ -578,7 +575,6 @@ async def update_client(
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_client(
-    request: Request,
     client_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -634,4 +630,684 @@ async def delete_client(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete client: {str(e)}"
+        )
+
+
+@router.get("/import/{import_id}/logs")
+async def stream_import_logs(
+    import_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Stream import logs via Server-Sent Events (SSE)
+    """
+    async def event_generator():
+        last_index = 0
+        
+        while True:
+            # Check if import is complete
+            if import_id in import_status:
+                status_info = import_status[import_id]
+                if status_info.get("status") == "completed" or status_info.get("status") == "failed":
+                    # Send final logs
+                    if import_id in import_logs:
+                        logs = import_logs[import_id]
+                        for log in logs[last_index:]:
+                            yield f"data: {json.dumps(log)}\n\n"
+                    
+                    # Send final status
+                    yield f"data: {json.dumps({'type': 'status', 'data': status_info})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                    break
+            
+            # Send new logs
+            if import_id in import_logs:
+                logs = import_logs[import_id]
+                if len(logs) > last_index:
+                    for log in logs[last_index:]:
+                        yield f"data: {json.dumps(log)}\n\n"
+                    last_index = len(logs)
+            
+            # Send status update
+            if import_id in import_status:
+                status_info = import_status[import_id]
+                yield f"data: {json.dumps({'type': 'status', 'data': status_info})}\n\n"
+            
+            await asyncio.sleep(0.5)  # Check every 500ms
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
+@router.post("/import")
+async def import_clients(
+    file: UploadFile = File(...),
+    import_id: Optional[str] = Query(None, description="Optional import ID for tracking logs"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Import clients from Excel file or ZIP file (Excel + logos)
+    
+    Supported column names (case-insensitive, accent-insensitive):
+    - Company Name: company_name, company, entreprise, entreprise_name, nom_entreprise, société, societe, organisation, organization, firme, business, client
+    - Company ID: company_id, id_entreprise, entreprise_id, company id, id company, id entreprise
+    - Status: status, statut, état, etat, state
+    - Responsible ID: responsible_id, responsable_id, employee_id, id_employé, id_employe, employé_id, employe_id, employee id, id employee, responsable id, assigned_to_id, assigned to id
+    - Notes: notes, note, commentaires, commentaire, comments, comment
+    - Comments: comments, commentaires, commentaire, comment, notes, note
+    - Portal URL: portal_url, portal url, url_portail, url portail, portail, portal
+    
+    Features:
+    - Automatic company matching by name (exact, without legal form, or partial match)
+    - Create company if not found (if company_name provided)
+    - Mark company as client (is_client=True)
+    
+    Args:
+        file: Excel file or ZIP file with clients data and logos
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Import results with data, errors, and warnings
+    """
+    # Generate import_id if not provided
+    if not import_id:
+        import_id = str(uuid.uuid4())
+    
+    # Initialize logs and status
+    import_logs[import_id] = []
+    import_status[import_id] = {
+        "status": "started",
+        "progress": 0,
+        "total": 0,
+        "created_at": dt.now().isoformat()
+    }
+    
+    add_import_log(import_id, f"Début de l'import du fichier: {file.filename}", "info")
+    
+    try:
+        # Read file content
+        file_content = await file.read()
+        filename = file.filename or ""
+        file_ext = os.path.splitext(filename.lower())[1]
+        
+        add_import_log(import_id, f"Fichier lu: {len(file_content)} bytes, extension: {file_ext}", "info")
+        
+        # Dictionary to store logos from ZIP (filename -> file content)
+        logos_dict = {}
+        excel_content = None
+        
+        # Check if it's a ZIP file
+        if file_ext == '.zip':
+            add_import_log(import_id, "Détection d'un fichier ZIP, extraction en cours...", "info")
+            try:
+                with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                    logo_count = 0
+                    # Extract Excel file and logos
+                    for file_info in zip_ref.namelist():
+                        file_name_lower = file_info.lower()
+                        
+                        # Find Excel file
+                        if file_name_lower.endswith(('.xlsx', '.xls')):
+                            if excel_content is None:
+                                excel_content = zip_ref.read(file_info)
+                                add_import_log(import_id, f"Fichier Excel trouvé dans le ZIP: {file_info}", "info")
+                            else:
+                                logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
+                                add_import_log(import_id, f"Plusieurs fichiers Excel trouvés, utilisation du premier: {file_info}", "warning")
+                        
+                        # Find logos (in logos/ folder or root)
+                        elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                            logo_content = zip_ref.read(file_info)
+                            logo_filename = os.path.basename(file_info)
+                            logo_filename_normalized = normalize_filename(logo_filename)
+                            logos_dict[logo_filename.lower()] = logo_content
+                            if logo_filename_normalized != logo_filename.lower():
+                                logos_dict[logo_filename_normalized] = logo_content
+                            logo_count += 1
+                    
+                    add_import_log(import_id, f"Extraction ZIP terminée: {logo_count} logo(s) trouvé(s)", "info")
+                
+                if excel_content is None:
+                    add_import_log(import_id, "ERREUR: Aucun fichier Excel trouvé dans le ZIP", "error")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="No Excel file found in ZIP. Please include clients.xlsx or clients.xls"
+                    )
+                
+                file_content = excel_content
+                logger.info(f"Extracted Excel from ZIP with {len(logos_dict)} logos")
+                
+            except zipfile.BadZipFile:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid ZIP file format"
+                )
+            except Exception as e:
+                logger.error(f"Error extracting ZIP: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Error processing ZIP file: {str(e)}"
+                )
+        
+        # Import from Excel
+        add_import_log(import_id, "Lecture du fichier Excel...", "info")
+        try:
+            result = ImportService.import_from_excel(
+                file_content=file_content,
+                has_headers=True
+            )
+        except Exception as e:
+            add_import_log(import_id, f"ERREUR lors de la lecture Excel: {str(e)}", "error")
+            logger.error(f"Error importing Excel file: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error reading Excel file: {str(e)}"
+            )
+        
+        # Validate result structure
+        if not result or 'data' not in result:
+            add_import_log(import_id, "ERREUR: Format de fichier Excel invalide ou fichier vide", "error")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Excel file format or empty file"
+            )
+        
+        if not isinstance(result['data'], list):
+            add_import_log(import_id, "ERREUR: Le fichier Excel ne contient pas de lignes de données valides", "error")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Excel file does not contain valid data rows"
+            )
+        
+        total_rows = len(result['data'])
+        add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
+        update_import_status(import_id, "processing", progress=0, total=total_rows)
+        
+        # Load all companies once to create a name -> ID mapping
+        add_import_log(import_id, "Chargement des entreprises existantes...", "info")
+        try:
+            companies_result = await db.execute(select(Company))
+            all_companies = companies_result.scalars().all()
+            company_name_to_id = {}
+            for company in all_companies:
+                if company.name:
+                    company_name_to_id[company.name.lower().strip()] = company.id
+            add_import_log(import_id, f"{len(company_name_to_id)} entreprise(s) chargée(s) pour le matching", "info")
+        except Exception as e:
+            add_import_log(import_id, f"ERREUR lors du chargement des entreprises: {str(e)}", "error")
+            logger.error(f"Error loading companies: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error loading companies from database"
+            )
+        
+        # Load all existing clients once to check for duplicates
+        add_import_log(import_id, "Chargement des clients existants pour détecter les doublons...", "info")
+        try:
+            clients_result = await db.execute(select(Client))
+            all_existing_clients = clients_result.scalars().all()
+            clients_by_company_id = {c.company_id: c for c in all_existing_clients}
+            add_import_log(import_id, f"{len(all_existing_clients)} client(s) existant(s) chargé(s)", "info")
+        except Exception as e:
+            logger.error(f"Error loading existing clients: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error loading existing clients from database"
+            )
+        
+        # Helper function to normalize column names
+        def normalize_key(key: str) -> str:
+            """Normalize column name for matching"""
+            if not key:
+                return ''
+            normalized = str(key).lower().strip()
+            normalized = unicodedata.normalize('NFD', normalized)
+            normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+            return normalized
+        
+        # Helper function to get value from row with multiple possible column names
+        def get_field_value(row: dict, possible_names: list) -> Optional[str]:
+            """Get field value trying multiple possible column names"""
+            for name in possible_names:
+                if name in row and row[name] is not None:
+                    value = str(row[name]).strip()
+                    if value:
+                        return value
+            
+            normalized_row = {normalize_key(k): v for k, v in row.items()}
+            for name in possible_names:
+                normalized_name = normalize_key(name)
+                if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
+                    value = str(normalized_row[normalized_name]).strip()
+                    if value:
+                        return value
+            
+            return None
+        
+        # Process imported data
+        created_clients = []
+        errors = []
+        warnings = []
+        stats = {
+            "total_processed": 0,
+            "created_new": 0,
+            "matched_existing": 0,
+            "errors": 0,
+        }
+        
+        # Initialize S3 service for logo uploads
+        s3_service = None
+        s3_configured = S3Service.is_configured()
+        
+        if s3_configured:
+            try:
+                s3_service = S3Service()
+                logger.info("S3Service initialized successfully for client logo uploads")
+            except Exception as e:
+                logger.error(f"Failed to initialize S3Service: {e}", exc_info=True)
+                warnings.append({
+                    'row': 0,
+                    'type': 's3_init_failed',
+                    'message': f"⚠️ Impossible d'initialiser le service S3 pour l'upload des logos. Les clients seront créés sans logos. Erreur: {str(e)}",
+                })
+        
+        for idx, row_data in enumerate(result['data']):
+            try:
+                stats["total_processed"] += 1
+                update_import_status(import_id, "processing", progress=idx + 1, total=total_rows)
+                
+                # Get company name or ID
+                company_name = get_field_value(row_data, [
+                    'company_name', 'company', 'entreprise', 'entreprise_name', 'nom_entreprise',
+                    'société', 'societe', 'organisation', 'organization', 'firme', 'business', 'client'
+                ])
+                company_id_raw = get_field_value(row_data, [
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company', 'id entreprise'
+                ])
+                company_id = None
+                if company_id_raw:
+                    try:
+                        company_id = int(float(str(company_id_raw)))
+                    except (ValueError, TypeError):
+                        warnings.append({
+                            'row': idx + 2,
+                            'type': 'invalid_company_id',
+                            'message': f"ID entreprise invalide: '{company_id_raw}'",
+                            'data': {'company_id_raw': company_id_raw}
+                        })
+                
+                # Find or create company
+                if company_id:
+                    # Verify company exists
+                    company_result = await db.execute(
+                        select(Company).where(Company.id == company_id)
+                    )
+                    company = company_result.scalar_one_or_none()
+                    if not company:
+                        errors.append({
+                            'row': idx + 2,
+                            'data': row_data,
+                            'error': f"Company ID {company_id} not found"
+                        })
+                        continue
+                elif company_name:
+                    # Try to find existing company
+                    matched_company_id = await find_company_by_name(
+                        company_name=company_name,
+                        db=db,
+                        all_companies=all_companies,
+                        company_name_to_id=company_name_to_id
+                    )
+                    if matched_company_id:
+                        company_id = matched_company_id
+                        logger.info(f"Auto-matched company '{company_name}' to company ID {matched_company_id}")
+                    else:
+                        # Create new company
+                        company = Company(
+                            name=company_name,
+                            is_client=True,
+                        )
+                        db.add(company)
+                        await db.flush()
+                        company_id = company.id
+                        # Update mappings
+                        all_companies.append(company)
+                        company_name_to_id[company_name.lower().strip()] = company_id
+                        logger.info(f"Created new company '{company_name}' with ID {company_id}")
+                else:
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Company name or ID is required'
+                    })
+                    continue
+                
+                # Check if client already exists for this company
+                existing_client = clients_by_company_id.get(company_id)
+                
+                # Get status
+                status_raw = get_field_value(row_data, [
+                    'status', 'statut', 'état', 'etat', 'state'
+                ])
+                client_status = ClientStatus.ACTIVE
+                if status_raw:
+                    status_lower = status_raw.lower().strip()
+                    if status_lower in ['inactive', 'inactif', 'inactif']:
+                        client_status = ClientStatus.INACTIVE
+                    elif status_lower in ['maintenance', 'maintenance']:
+                        client_status = ClientStatus.MAINTENANCE
+                
+                # Get responsible_id
+                responsible_id = None
+                responsible_id_raw = get_field_value(row_data, [
+                    'responsible_id', 'responsable_id', 'employee_id', 'id_employé', 'id_employe',
+                    'employé_id', 'employe_id', 'employee id', 'id employee', 'responsable id',
+                    'assigned_to_id', 'assigned to id'
+                ])
+                if responsible_id_raw:
+                    try:
+                        responsible_id = int(float(str(responsible_id_raw)))
+                    except (ValueError, TypeError):
+                        warnings.append({
+                            'row': idx + 2,
+                            'type': 'invalid_responsible_id',
+                            'message': f"ID responsable invalide: '{responsible_id_raw}'",
+                            'data': {'responsible_id_raw': responsible_id_raw}
+                        })
+                
+                # Get notes
+                notes = get_field_value(row_data, [
+                    'notes', 'note', 'commentaires', 'commentaire', 'comments', 'comment'
+                ])
+                
+                # Get comments
+                comments = get_field_value(row_data, [
+                    'comments', 'commentaires', 'commentaire', 'comment', 'notes', 'note'
+                ])
+                
+                # Get portal_url
+                portal_url = get_field_value(row_data, [
+                    'portal_url', 'portal url', 'url_portail', 'url portail', 'portail', 'portal'
+                ])
+                
+                # Handle logo upload from ZIP
+                logo_url = None
+                if logos_dict and s3_service:
+                    # Try to match logo by company name
+                    company_name_normalized = normalize_filename(company_name) if company_name else None
+                    if company_name_normalized:
+                        # Try various patterns
+                        patterns = [
+                            company_name_normalized,
+                            company_name.lower().strip() if company_name else None,
+                            f"{company_name_normalized}.jpg",
+                            f"{company_name_normalized}.png",
+                            f"{company_name_normalized}.jpeg",
+                        ]
+                        
+                        for pattern in patterns:
+                            if pattern and pattern in logos_dict:
+                                try:
+                                    logo_content = logos_dict[pattern]
+                                    file_key = f"clients/logos/{company_id}_{company_name_normalized}_{uuid.uuid4().hex[:8]}.{pattern.split('.')[-1] if '.' in pattern else 'jpg'}"
+                                    upload_result = s3_service.upload_file(
+                                        file_content=logo_content,
+                                        file_key=file_key,
+                                        content_type='image/jpeg'
+                                    )
+                                    if upload_result and 'file_key' in upload_result:
+                                        logo_url = upload_result['file_key']
+                                        # Update company logo_url
+                                        company_result = await db.execute(
+                                            select(Company).where(Company.id == company_id)
+                                        )
+                                        company = company_result.scalar_one_or_none()
+                                        if company:
+                                            company.logo_url = logo_url
+                                        break
+                                except Exception as e:
+                                    logger.error(f"Failed to upload logo {pattern}: {e}", exc_info=True)
+                                    warnings.append({
+                                        'row': idx + 2,
+                                        'type': 'logo_upload_error',
+                                        'message': f"Erreur lors de l'upload du logo '{pattern}': {str(e)}",
+                                    })
+                
+                # Prepare client data
+                if existing_client:
+                    # Update existing client
+                    update_data = {
+                        'status': client_status,
+                        'responsible_id': responsible_id,
+                        'notes': notes,
+                        'comments': comments,
+                        'portal_url': portal_url,
+                    }
+                    for field, value in update_data.items():
+                        if value is not None:
+                            setattr(existing_client, field, value)
+                    created_clients.append(existing_client)
+                    stats["matched_existing"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: Client mis à jour - {company_name} (ID: {existing_client.id})", "info")
+                else:
+                    # Create new client
+                    client = Client(
+                        company_id=company_id,
+                        status=client_status,
+                        responsible_id=responsible_id,
+                        notes=notes,
+                        comments=comments,
+                        portal_url=portal_url,
+                    )
+                    db.add(client)
+                    created_clients.append(client)
+                    stats["created_new"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: Nouveau client créé - {company_name}", "info")
+                    
+                    # Mark company as client
+                    company_result = await db.execute(
+                        select(Company).where(Company.id == company_id)
+                    )
+                    company = company_result.scalar_one_or_none()
+                    if company and not company.is_client:
+                        company.is_client = True
+                
+            except Exception as e:
+                stats["errors"] += 1
+                error_msg = f"Ligne {idx + 2}: ❌ Erreur lors de l'import - {str(e)}"
+                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e)})
+                errors.append({
+                    'row': idx + 2,
+                    'data': row_data,
+                    'error': str(e)
+                })
+                logger.error(f"Error importing client row {idx + 2}: {str(e)}", exc_info=True)
+        
+        # Commit all clients
+        add_import_log(import_id, f"Sauvegarde de {len(created_clients)} client(s) dans la base de données...", "info")
+        try:
+            if created_clients:
+                await db.commit()
+                for client in created_clients:
+                    await db.refresh(client, ["company", "responsible"])
+                
+                add_import_log(import_id, f"Sauvegarde réussie: {len(created_clients)} client(s) traité(s)", "success")
+        except Exception as e:
+            add_import_log(import_id, f"ERREUR lors de la sauvegarde: {str(e)}", "error")
+            logger.error(f"Error committing clients to database: {e}", exc_info=True)
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error saving clients to database: {str(e)}"
+            )
+        
+        # Serialize clients
+        serialized_clients = []
+        for client in created_clients:
+            logo_url = client.company.logo_url if client.company else None
+            if logo_url and s3_service:
+                try:
+                    presigned_url = s3_service.generate_presigned_url(logo_url, expiration=604800)
+                    if presigned_url:
+                        logo_url = presigned_url
+                except Exception:
+                    pass
+            
+            client_dict = {
+                'id': client.id,
+                'company_id': client.company_id,
+                'company_name': client.company.name if client.company else None,
+                'company_logo_url': logo_url,
+                'status': client.status.value if isinstance(client.status, ClientStatus) else client.status,
+                'responsible_id': client.responsible_id,
+                'responsible_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
+                'notes': client.notes,
+                'comments': client.comments,
+                'portal_url': client.portal_url,
+                'created_at': client.created_at,
+                'updated_at': client.updated_at,
+            }
+            serialized_clients.append(ClientResponse(**client_dict))
+        
+        # Final summary
+        total_valid = len(created_clients)
+        total_errors = len(errors)
+        
+        add_import_log(import_id, f"✅ Import terminé: {total_valid} client(s) importé(s), {total_errors} erreur(s)", "success", {
+            "total_valid": total_valid,
+            "total_errors": total_errors,
+            "created_new": stats["created_new"],
+            "matched_existing": stats["matched_existing"],
+        })
+        update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
+        
+        return {
+            'total_rows': result.get('total_rows', 0),
+            'valid_rows': len(created_clients),
+            'created_rows': stats["created_new"],
+            'updated_rows': stats["matched_existing"],
+            'invalid_rows': len(errors),
+            'errors': errors,
+            'warnings': warnings,
+            'logos_uploaded': len(logos_dict) if logos_dict else 0,
+            'data': serialized_clients,
+            'import_id': import_id
+        }
+    except HTTPException:
+        if import_id:
+            update_import_status(import_id, "failed")
+        raise
+    except Exception as e:
+        if import_id:
+            add_import_log(import_id, f"ERREUR inattendue: {str(e)}", "error")
+            update_import_status(import_id, "failed")
+        logger.error(f"Unexpected error in import_clients: {e}", exc_info=True)
+        try:
+            await db.rollback()
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during import: {str(e)}"
+        )
+
+
+@router.get("/export")
+async def export_clients(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Export clients to Excel file
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Excel file with clients data
+    """
+    try:
+        # Get all clients
+        result = await db.execute(
+            select(Client)
+            .options(
+                selectinload(Client.company),
+                selectinload(Client.responsible)
+            )
+            .order_by(Client.created_at.desc())
+        )
+        clients = result.scalars().all()
+        
+        # Convert to dict format for export
+        export_data = []
+        for client in clients:
+            try:
+                responsible_name = ''
+                if client.responsible:
+                    first_name = client.responsible.first_name or ''
+                    last_name = client.responsible.last_name or ''
+                    responsible_name = f"{first_name} {last_name}".strip()
+                
+                export_data.append({
+                    'Nom de l\'entreprise': client.company.name if client.company and client.company.name else '',
+                    'Statut': client.status.value if isinstance(client.status, ClientStatus) else str(client.status),
+                    'Responsable': responsible_name,
+                    'Notes': client.notes or '',
+                    'Commentaires': client.comments or '',
+                    'URL Portail': client.portal_url or '',
+                })
+            except Exception as e:
+                logger.error(f"Error processing client {client.id} for export: {e}")
+                continue
+        
+        # Handle empty data case
+        if not export_data:
+            export_data = [{
+                'Nom de l\'entreprise': '',
+                'Statut': '',
+                'Responsable': '',
+                'Notes': '',
+                'Commentaires': '',
+                'URL Portail': '',
+            }]
+        
+        # Export to Excel
+        from datetime import datetime
+        buffer, filename = ExportService.export_to_excel(
+            data=export_data,
+            filename=f"clients_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        )
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        logger.error(f"Export validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Erreur lors de l'export: {str(e)}"
+        )
+    except ImportError as e:
+        logger.error(f"Export dependency error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le service d'export Excel n'est pas disponible. Veuillez contacter l'administrateur."
+        )
+    except Exception as e:
+        logger.error(f"Unexpected export error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during export: {str(e)}"
         )

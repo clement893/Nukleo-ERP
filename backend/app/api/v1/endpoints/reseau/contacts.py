@@ -118,13 +118,26 @@ async def delete_contact(
 @router.post("/import")
 async def import_contacts(
     file: UploadFile = File(...),
+    import_id: Optional[str] = Query(None, description="Optional import ID for tracking logs"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Import contacts from Excel or ZIP for network module"""
     return await commercial_contacts.import_contacts(
         file=file,
+        import_id=import_id,
         db=db,
+        current_user=current_user,
+    )
+
+@router.get("/import/{import_id}/logs")
+async def stream_import_logs(
+    import_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Stream import logs via Server-Sent Events (SSE) for network module"""
+    return await commercial_contacts.stream_import_logs(
+        import_id=import_id,
         current_user=current_user,
     )
 

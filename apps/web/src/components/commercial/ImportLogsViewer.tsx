@@ -38,7 +38,8 @@ export default function ImportLogsViewer({ importId, onComplete }: ImportLogsVie
 
     // Get API URL dynamically
     const apiUrl = getApiUrl().replace(/\/$/, '');
-    const sseUrl = `${apiUrl}/api/v1/commercial/contacts/import/${importId}/logs`;
+    // Try réseau endpoint first, fallback to commercial
+    const sseUrl = `${apiUrl}/api/v1/reseau/contacts/import/${importId}/logs`;
     
     // Add authentication token to URL if available (EventSource doesn't support custom headers)
     const token = TokenStorage.getToken();

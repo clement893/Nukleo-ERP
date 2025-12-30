@@ -21,6 +21,7 @@
     "migrate:history": "python scripts/migrate.py history"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.13.13"
+    "@tanstack/react-virtual": "^3.13.13",
+    "pg": "^8.16.3"
   }
 }

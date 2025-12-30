@@ -163,3 +163,7 @@ export type {
   DocumentationCategory as LeoDocumentationCategoryType,
   DocumentationPriority as LeoDocumentationPriorityType,
 } from './leo';
+
+// Re-export clients API
+export { clientsAPI } from './clients';
+export type { Client, ClientCreate, ClientUpdate, ClientStatus } from './clients';

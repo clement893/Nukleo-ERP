@@ -26,6 +26,8 @@ class ClientBase(BaseModel):
 
 class ClientCreate(ClientBase):
     """Client creation schema"""
+    # Override company_id to make it optional (can be None if company_name is provided)
+    company_id: Optional[int] = Field(None, description="Company ID (optional if company_name is provided)")
     # When creating a client, we can optionally create a company
     company_name: Optional[str] = Field(None, max_length=255, description="Company name (if creating new company)")
     company_email: Optional[str] = Field(None, max_length=255, description="Company email")
