@@ -23,7 +23,8 @@ import {
   MoreVertical, 
   Trash2,
   Edit,
-  Star
+  Star,
+  HelpCircle
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -38,6 +39,7 @@ import {
 import { companiesAPI } from '@/lib/api/companies';
 import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
 import TestimonialForm from '@/components/reseau/TestimonialForm';
+import ImportTestimonialsInstructions from '@/components/reseau/ImportTestimonialsInstructions';
 
 function TemoignagesContent() {
   const { showToast } = useToast();
@@ -72,6 +74,7 @@ function TemoignagesContent() {
   const [filterPublished, setFilterPublished] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showImportInstructions, setShowImportInstructions] = useState(false);
   
   // Load companies and contacts for filters
   const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
@@ -478,6 +481,16 @@ function TemoignagesContent() {
                     />
                     <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                       <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setShowImportInstructions(true);
+                            setShowActionsMenu(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" />
+                          Instructions d'import
+                        </button>
                         <input
                           type="file"
                           accept=".xlsx,.xls,.zip"
@@ -504,7 +517,7 @@ function TemoignagesContent() {
                               });
                             }
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5" />
                           Modèle Excel
@@ -724,6 +737,27 @@ function TemoignagesContent() {
           />
         )}
       </Modal>
+
+      {/* Import Instructions Modal */}
+      <ImportTestimonialsInstructions
+        isOpen={showImportInstructions}
+        onClose={() => setShowImportInstructions(false)}
+        onDownloadTemplate={async () => {
+          try {
+            await reseauTestimonialsAPI.downloadZipTemplate();
+            showToast({
+              message: 'Modèle ZIP téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+              type: 'error',
+            });
+          }
+        }}
+      />
     </MotionDiv>
   );
 }

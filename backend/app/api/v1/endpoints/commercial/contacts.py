@@ -1191,9 +1191,9 @@ async def import_contacts(
                     'last_name', 'nom', 'name', 'lastname', 'last name',
                     'surname', 'family_name', 'family name', 'nom de famille'
                 ]) or ''
-                    
-                    # Debug: Log if both names are empty (likely empty row)
-                    if not first_name.strip() and not last_name.strip():
+                
+                # Debug: Log if both names are empty (likely empty row)
+                if not first_name.strip() and not last_name.strip():
                         # Check if row has any data at all
                         has_any_data = any(v and str(v).strip() for v in row_data.values() if v is not None)
                         if not has_any_data:
@@ -1203,57 +1203,69 @@ async def import_contacts(
                                 logger.debug(f"Skipped {stats.get('skipped_empty_row', 0)} empty rows so far")
                             continue
                         # Row has some data but no names - will be caught by validation below
-                    
-                    # Handle company matching by name or ID
-                    company_id = None
-                    # Try to get company_id directly (as integer or string)
-                    company_id_raw = get_field_value(row_data, [
-                        'company_id', 'id_entreprise', 'entreprise_id', 'company id',
-                        'id company', 'id entreprise'
-                    ])
-                    if company_id_raw:
-                        try:
-                            company_id = int(float(str(company_id_raw)))  # Handle float strings
-                        except (ValueError, TypeError):
-                            pass
-                    
-                    # If company_id is not provided, try to find company by name
-                    if not company_id:
-                        # Try multiple column names for company name
-                        company_name = get_field_value(row_data, [
+                
+                # Handle company matching by name or ID
+                company_id = None
+                # Try to get company_id directly (as integer or string)
+                company_id_raw = get_field_value(row_data, [
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id',
+                    'id company', 'id entreprise'
+                ])
+                if company_id_raw:
+                    try:
+                        company_id = int(float(str(company_id_raw)))  # Handle float strings
+                    except (ValueError, TypeError):
+                        pass
+                
+                # If company_id is not provided, try to find company by name
+                if not company_id:
+                    # Try multiple column names for company name
+                    company_name = get_field_value(row_data, [
                             'company_name', 'company', 'entreprise', 'entreprise_name',
                             'nom_entreprise', 'company name', 'nom entreprise',
                             'société', 'societe', 'organisation', 'organization',
                             'firme', 'business', 'client'
-                        ])
+                    ])
+                    
+                    if company_name and company_name.strip():
+                        company_name_normalized = company_name.strip().lower()
+                        # Remove common prefixes/suffixes for better matching
+                        company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
                         
-                        if company_name and company_name.strip():
-                            company_name_normalized = company_name.strip().lower()
-                            # Remove common prefixes/suffixes for better matching
-                            company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                        # Try exact match first
+                        if company_name_normalized in company_name_to_id:
+                            company_id = company_name_to_id[company_name_normalized]
+                        elif company_name_clean and company_name_clean in company_name_to_id:
+                            # Try match without legal form
+                            company_id = company_name_to_id[company_name_clean]
+                            warnings.append({
+                                'row': idx + 2,
+                                'type': 'company_match_without_legal_form',
+                                'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
+                                'data': {'company_name': company_name, 'matched_company_id': company_id}
+                            })
+                        else:
+                            # Try partial match (contains) - check both original and cleaned
+                            matched_company_id = None
+                            matched_company_name = None
                             
-                            # Try exact match first
-                            if company_name_normalized in company_name_to_id:
-                                company_id = company_name_to_id[company_name_normalized]
-                            elif company_name_clean and company_name_clean in company_name_to_id:
-                                # Try match without legal form
-                                company_id = company_name_to_id[company_name_clean]
-                                warnings.append({
-                                    'row': idx + 2,
-                                    'type': 'company_match_without_legal_form',
-                                    'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
-                                    'data': {'company_name': company_name, 'matched_company_id': company_id}
-                                })
-                            else:
-                                # Try partial match (contains) - check both original and cleaned
-                                matched_company_id = None
-                                matched_company_name = None
-                                
-                                # First try with cleaned name
+                            # First try with cleaned name
+                            for stored_name, stored_id in company_name_to_id.items():
+                                stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                                if (company_name_clean and stored_clean and 
+                                    (company_name_clean in stored_clean or stored_clean in company_name_clean)):
+                                    matched_company_id = stored_id
+                                    # Find the original company name
+                                    for c in all_companies:
+                                        if c.id == stored_id:
+                                            matched_company_name = c.name
+                                            break
+                                    break
+                            
+                            # If no match with cleaned, try original normalized
+                            if not matched_company_id:
                                 for stored_name, stored_id in company_name_to_id.items():
-                                    stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
-                                    if (company_name_clean and stored_clean and 
-                                        (company_name_clean in stored_clean or stored_clean in company_name_clean)):
+                                    if (company_name_normalized in stored_name or stored_name in company_name_normalized):
                                         matched_company_id = stored_id
                                         # Find the original company name
                                         for c in all_companies:
@@ -1261,72 +1273,60 @@ async def import_contacts(
                                                 matched_company_name = c.name
                                                 break
                                         break
-                                
-                                # If no match with cleaned, try original normalized
-                                if not matched_company_id:
-                                    for stored_name, stored_id in company_name_to_id.items():
-                                        if (company_name_normalized in stored_name or stored_name in company_name_normalized):
-                                            matched_company_id = stored_id
-                                            # Find the original company name
-                                            for c in all_companies:
-                                                if c.id == stored_id:
-                                                    matched_company_name = c.name
-                                                    break
-                                            break
-                                
-                                if matched_company_id:
-                                    company_id = matched_company_id
-                                    warnings.append({
-                                        'row': idx + 2,
-                                        'type': 'company_partial_match',
-                                        'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
-                                        'data': {
-                                            'company_name': company_name,
-                                            'matched_company_name': matched_company_name,
-                                            'matched_company_id': matched_company_id,
-                                            'contact': f"{first_name} {last_name}".strip()
-                                        }
-                                    })
-                                else:
-                                    # No match found - add warning
-                                    warnings.append({
-                                        'row': idx + 2,
-                                        'type': 'company_not_found',
-                                        'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
-                                        'data': {
+                            
+                            if matched_company_id:
+                                company_id = matched_company_id
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'company_partial_match',
+                                    'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
+                                    'data': {
                                         'company_name': company_name,
+                                        'matched_company_name': matched_company_name,
+                                        'matched_company_id': matched_company_id,
                                         'contact': f"{first_name} {last_name}".strip()
                                     }
                                 })
+                            else:
+                                # No match found - add warning
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'company_not_found',
+                                    'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
+                                    'data': {
+                                    'company_name': company_name,
+                                    'contact': f"{first_name} {last_name}".strip()
+                                }
+                            })
+                
+                # Handle photo upload (simplified like employees import)
+                photo_url = get_field_value(row_data, [
+                    'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
+                    'image url', 'avatar', 'avatar_url', 'avatar url'
+                ])
+                photo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
+                
+                # Debug logging for photo upload
+                if photos_dict and not photo_url:
+                    logger.debug(f"Row {idx + 2}: Checking photo upload - photos_dict has {len(photos_dict)} photos, s3_service={s3_service is not None}, photo_filename={photo_filename}, first_name={first_name}, last_name={last_name}")
+                
+                # If no photo_url but we have photos in ZIP, try to find matching photo
+                if not photo_url and photos_dict and s3_service:
+                    photo_filename_to_match = photo_filename
+                    pattern_to_use = None
                     
-                    # Handle photo upload (simplified like employees import)
-                    photo_url = get_field_value(row_data, [
-                        'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
-                        'image url', 'avatar', 'avatar_url', 'avatar url'
-                    ])
-                    photo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
-                    
-                    # Debug logging for photo upload
-                    if photos_dict and not photo_url:
-                        logger.debug(f"Row {idx + 2}: Checking photo upload - photos_dict has {len(photos_dict)} photos, s3_service={s3_service is not None}, photo_filename={photo_filename}, first_name={first_name}, last_name={last_name}")
-                    
-                    # If no photo_url but we have photos in ZIP, try to find matching photo
-                    if not photo_url and photos_dict and s3_service:
-                        photo_filename_to_match = photo_filename
-                        pattern_to_use = None
+                    # If photo_filename is provided in Excel, use it
+                    if photo_filename:
+                        photo_filename_normalized = normalize_filename(photo_filename)
                         
-                        # If photo_filename is provided in Excel, use it
-                        if photo_filename:
-                            photo_filename_normalized = normalize_filename(photo_filename)
-                            
-                            if photo_filename.lower() in photos_dict:
-                                pattern_to_use = photo_filename.lower()
-                            elif photo_filename_normalized in photos_dict:
-                                pattern_to_use = photo_filename_normalized
-                        else:
-                            # Auto-match by first_name + last_name if photo_filename not provided
-                            # Try multiple patterns: firstname_lastname, firstname-lastname, etc.
-                            if first_name and last_name:
+                        if photo_filename.lower() in photos_dict:
+                            pattern_to_use = photo_filename.lower()
+                        elif photo_filename_normalized in photos_dict:
+                            pattern_to_use = photo_filename_normalized
+                    else:
+                        # Auto-match by first_name + last_name if photo_filename not provided
+                        # Try multiple patterns: firstname_lastname, firstname-lastname, etc.
+                        if first_name and last_name:
                                 # Generate possible photo filename patterns
                                 possible_patterns = [
                                     f"{normalize_filename(first_name)}_{normalize_filename(last_name)}",
@@ -1408,9 +1408,9 @@ async def import_contacts(
                                 logger.debug(f"Row {idx + 2}: Cannot match photo - no photo_filename and auto-match failed for {first_name} {last_name}")
                             else:
                                 logger.debug(f"Row {idx + 2}: Cannot match photo - photo_filename '{photo_filename}' not found in ZIP")
-                    
-                    # Get position
-                    position = get_field_value(row_data, [
+                
+                # Get position
+                position = get_field_value(row_data, [
                         'position', 'poste', 'job_title', 'job title', 'titre',
                         'fonction', 'role', 'titre du poste'
                     ])
