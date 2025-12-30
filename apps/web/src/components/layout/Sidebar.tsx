@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganizationLogo } from '@/hooks/useOrganizationLogo';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
@@ -20,6 +21,7 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
   const pathname = usePathname();
   const { user } = useAuthStore();
   const { logout } = useAuth();
+  const { logoUrl } = useOrganizationLogo();
   const [searchQuery, setSearchQuery] = useState('');
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -295,10 +297,20 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
       >
         {/* Header with Hamburger Menu */}
         <div className="flex items-center justify-between h-14 px-4 flex-shrink-0">
-          <Link href="/dashboard" className="flex items-center">
-            <span className="text-lg font-semibold text-primary">
-              MODELE
-            </span>
+          <Link href="/dashboard" className="flex items-center gap-2">
+            {logoUrl ? (
+              <div className="relative h-8 w-8 flex-shrink-0">
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="object-contain h-8 w-8"
+                />
+              </div>
+            ) : (
+              <span className="text-lg font-semibold text-primary">
+                MODELE
+              </span>
+            )}
           </Link>
           {/* Hamburger Menu Button (Mobile only) */}
           <button

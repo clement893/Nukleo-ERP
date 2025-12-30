@@ -26,7 +26,7 @@ export interface Submission {
 }
 
 export interface SubmissionCreate {
-  submission_number?: string;
+  submission_number: string;
   company_id?: number | null;
   title: string;
   type?: string | null;

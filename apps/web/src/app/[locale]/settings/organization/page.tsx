@@ -24,6 +24,7 @@ import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errors';
 import { teamsAPI, type Team, type TeamSettings, type TeamListResponse, type TeamCreate } from '@/lib/api/teams';
+import { settingsAPI } from '@/lib/api/settings';
 import { Plus } from 'lucide-react';
 
 export default function OrganizationSettingsPage() {
@@ -213,10 +214,29 @@ export default function OrganizationSettingsPage() {
         email: data.email,
         phone: data.phone,
         website: data.website,
+        logo_url: data.logo_url,
         address: data.address ? JSON.stringify(data.address) : undefined,
         timezone: data.timezone,
         locale: data.locale,
       };
+      
+      // Also save via settingsAPI for consistency
+      try {
+        await settingsAPI.updateOrganizationSettings({
+          name: data.name,
+          slug: data.slug,
+          email: data.email,
+          phone: data.phone,
+          website: data.website,
+          logo_url: data.logo_url,
+          address: data.address,
+          timezone: data.timezone,
+          locale: data.locale,
+        });
+      } catch (settingsError) {
+        // Log but don't fail - teams API is primary
+        logger.warn('Failed to save organization settings via settingsAPI:', settingsError);
+      }
       
       // Create the team
       const teamData: TeamCreate = {
@@ -318,10 +338,29 @@ export default function OrganizationSettingsPage() {
         email: data.email,
         phone: data.phone,
         website: data.website,
+        logo_url: data.logo_url,
         address: data.address ? JSON.stringify(data.address) : undefined,
         timezone: data.timezone,
         locale: data.locale,
       };
+      
+      // Also save via settingsAPI for consistency
+      try {
+        await settingsAPI.updateOrganizationSettings({
+          name: data.name,
+          slug: data.slug,
+          email: data.email,
+          phone: data.phone,
+          website: data.website,
+          logo_url: data.logo_url,
+          address: data.address,
+          timezone: data.timezone,
+          locale: data.locale,
+        });
+      } catch (settingsError) {
+        // Log but don't fail - teams API is primary
+        logger.warn('Failed to save organization settings via settingsAPI:', settingsError);
+      }
       
       // Get current team to preserve description
       const currentTeamResponse = await teamsAPI.getTeam(parseInt(organization.id, 10));

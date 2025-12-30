@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from '@/i18n/routing';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganizationLogo } from '@/hooks/useOrganizationLogo';
 import Button from '../ui/Button';
 import { ThemeToggleWithIcon } from '../ui/ThemeToggle';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
@@ -14,6 +15,7 @@ import { clsx } from 'clsx';
 export default function Header() {
   const { isAuthenticated, user } = useAuthStore();
   const { logout } = useAuth();
+  const { logoUrl } = useOrganizationLogo();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -42,8 +44,21 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl sm:text-2xl font-bold text-foreground">
-            MODELE<span className="text-primary">FULLSTACK</span>
+          <Link href="/" className="flex items-center gap-2">
+            {logoUrl ? (
+              <div className="relative h-8 w-auto max-w-[200px] flex-shrink-0">
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="object-contain h-8 w-auto max-h-8"
+                  style={{ maxHeight: '32px', width: 'auto' }}
+                />
+              </div>
+            ) : (
+              <span className="text-xl sm:text-2xl font-bold text-foreground">
+                MODELE<span className="text-primary">FULLSTACK</span>
+              </span>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

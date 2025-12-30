@@ -38,6 +38,7 @@ class OrganizationSettingsData(BaseModel):
     email: Optional[str] = Field(None, max_length=255, description="Organization email")
     phone: Optional[str] = Field(None, max_length=50, description="Organization phone")
     website: Optional[str] = Field(None, max_length=500, description="Organization website")
+    logo_url: Optional[str] = Field(None, max_length=500, description="Organization logo URL")
     address: Optional[AddressData] = Field(None, description="Organization address")
     timezone: Optional[str] = Field(default="UTC", max_length=50, description="Timezone")
     locale: Optional[str] = Field(default="en-US", max_length=10, description="Locale")

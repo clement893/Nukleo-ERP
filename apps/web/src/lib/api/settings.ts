@@ -86,6 +86,7 @@ export interface OrganizationSettings {
   email?: string;
   phone?: string;
   website?: string;
+  logo_url?: string;
   address?: {
     line1: string;
     line2?: string;

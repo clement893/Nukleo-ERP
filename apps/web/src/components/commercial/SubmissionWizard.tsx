@@ -153,12 +153,26 @@ export default function SubmissionWizard({
     }
   };
 
+  const generateSubmissionNumber = (): string => {
+    // Generate a temporary submission number
+    // Format: SUB-YYYYMMDD-HHMMSS or SUB-DRAFT-{timestamp}
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `SUB-${year}${month}${day}-${hours}${minutes}${seconds}`;
+  };
+
   const prepareSubmissionData = (): SubmissionCreate => {
     return {
+      submission_number: generateSubmissionNumber(),
       title: formData.coverTitle || 'Brouillon sans titre',
-      company_id: formData.companyId,
+      company_id: formData.companyId || null,
       type: formData.type || 'proposal',
-      description: formData.introduction,
+      description: formData.introduction || null,
       content: {
         cover: {
           title: formData.coverTitle,
@@ -182,7 +196,7 @@ export default function SubmissionWizard({
         team: formData.teamMembers,
       },
       status: 'draft',
-      deadline: formData.deadline,
+      deadline: formData.deadline || null,
     };
   };
 
