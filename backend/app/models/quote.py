@@ -28,6 +28,7 @@ class Quote(Base):
     description = Column(Text, nullable=True)
     amount = Column(Numeric(10, 2), nullable=True)  # Total amount
     currency = Column(String(3), default="EUR", nullable=False)  # EUR, USD, etc.
+    pricing_type = Column(String(20), default="fixed", nullable=False)  # fixed or hourly
     status = Column(String(50), default="draft", nullable=False, index=True)  # draft, sent, accepted, rejected, expired
     valid_until = Column(DateTime(timezone=True), nullable=True)  # Expiration date
     notes = Column(Text, nullable=True)

@@ -12,6 +12,8 @@ import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui';
+import { opportunitiesAPI } from '@/lib/api/opportunities';
+import { handleApiError } from '@/lib/api/utils';
 
 // Types temporaires - à remplacer par les types générés depuis l'API
 interface Pipeline {
@@ -55,6 +57,7 @@ function PipelineDetailContent() {
   const [opportunities, setOpportunities] = useState<Opportunite[]>([]);
   const [loading, setLoading] = useState(false);
   const [error] = useState<string | null>(null);
+  const [deletingOpportunityId, setDeletingOpportunityId] = useState<string | null>(null);
   
   // Modals
   const [showOpportunityModal, setShowOpportunityModal] = useState(false);
@@ -259,6 +262,34 @@ function PipelineDetailContent() {
     }
     setShowOpportunityModal(false);
     setSelectedStageStatus(null);
+  };
+
+  const handleDeleteOpportunity = async () => {
+    if (!editingOpportunity) return;
+    
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette opportunité ?')) {
+      return;
+    }
+
+    try {
+      setDeletingOpportunityId(editingOpportunity.id);
+      await opportunitiesAPI.delete(editingOpportunity.id);
+      setOpportunities(prev => prev.filter(opp => opp.id !== editingOpportunity.id));
+      showToast({ 
+        message: 'Opportunité supprimée avec succès', 
+        type: 'success' 
+      });
+      setShowOpportunityModal(false);
+      setEditingOpportunity(null);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    } finally {
+      setDeletingOpportunityId(null);
+    }
   };
 
   const handleManageStages = () => {
@@ -533,16 +564,29 @@ function PipelineDetailContent() {
               placeholder="Sélectionner une étape"
             />
           )}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => {
-              setShowOpportunityModal(false);
-              setSelectedStageStatus(null);
-            }}>
-              Annuler
-            </Button>
-            <Button onClick={handleSaveOpportunity} disabled={!opportunityForm.name}>
-              {editingOpportunity ? 'Modifier' : 'Créer'}
-            </Button>
+          <div className="flex justify-between items-center">
+            {editingOpportunity && (
+              <Button 
+                variant="outline" 
+                onClick={handleDeleteOpportunity}
+                disabled={deletingOpportunityId === editingOpportunity.id}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {deletingOpportunityId === editingOpportunity.id ? 'Suppression...' : 'Supprimer'}
+              </Button>
+            )}
+            <div className="flex justify-end gap-2 ml-auto">
+              <Button variant="outline" onClick={() => {
+                setShowOpportunityModal(false);
+                setSelectedStageStatus(null);
+              }}>
+                Annuler
+              </Button>
+              <Button onClick={handleSaveOpportunity} disabled={!opportunityForm.name}>
+                {editingOpportunity ? 'Modifier' : 'Créer'}
+              </Button>
+            </div>
           </div>
         </div>
       </Modal>

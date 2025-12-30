@@ -6,6 +6,18 @@
 import { apiClient } from './client';
 import { extractApiData } from './utils';
 
+export interface QuoteLineItem {
+  id?: number;
+  quote_id?: number;
+  description: string;
+  quantity?: number | null;
+  unit_price?: number | null;
+  total_price?: number | null;
+  line_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Quote {
   id: number;
   quote_number: string;
@@ -15,10 +27,12 @@ export interface Quote {
   description: string | null;
   amount: number | null;
   currency: string;
+  pricing_type?: string; // 'fixed' or 'hourly'
   status: string;
   valid_until: string | null;
   notes: string | null;
   user_name?: string;
+  line_items?: QuoteLineItem[];
   created_at: string;
   updated_at: string;
 }
@@ -30,9 +44,11 @@ export interface QuoteCreate {
   description?: string | null;
   amount?: number | null;
   currency?: string;
+  pricing_type?: string; // 'fixed' or 'hourly'
   status?: string;
   valid_until?: string | null;
   notes?: string | null;
+  line_items?: QuoteLineItem[];
 }
 
 export interface QuoteUpdate extends Partial<QuoteCreate> {}

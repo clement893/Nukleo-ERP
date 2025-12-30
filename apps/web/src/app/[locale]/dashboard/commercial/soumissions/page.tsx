@@ -449,7 +449,7 @@ function SoumissionsContent() {
         isOpen={showCreateQuoteModal}
         onClose={() => setShowCreateQuoteModal(false)}
         title="Créer un devis"
-        size="lg"
+        size="xl"
       >
         <QuoteForm
           onSubmit={handleCreateQuote}

@@ -13,10 +13,12 @@ from datetime import datetime
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.quote import Quote
+from app.models.quote_line_item import QuoteLineItem
 from app.models.company import Company
 from app.models.user import User
-from app.schemas.quote import QuoteCreate, QuoteUpdate, Quote as QuoteSchema
+from app.schemas.quote import QuoteCreate, QuoteUpdate, Quote as QuoteSchema, QuoteLineItemCreate
 from app.core.logging import logger
+from decimal import Decimal
 
 router = APIRouter(prefix="/commercial/quotes", tags=["commercial-quotes"])
 
@@ -79,7 +81,8 @@ async def list_quotes(
     
     query = query.options(
         selectinload(Quote.company),
-        selectinload(Quote.user)
+        selectinload(Quote.user),
+        selectinload(Quote.line_items)
     ).order_by(Quote.created_at.desc()).offset(skip).limit(limit)
     
     result = await db.execute(query)
@@ -97,10 +100,25 @@ async def list_quotes(
             "description": quote.description,
             "amount": float(quote.amount) if quote.amount else None,
             "currency": quote.currency,
+            "pricing_type": quote.pricing_type,
             "status": quote.status,
             "valid_until": quote.valid_until.isoformat() if quote.valid_until else None,
             "notes": quote.notes,
             "user_name": f"{quote.user.first_name} {quote.user.last_name}" if quote.user else None,
+            "line_items": [
+                {
+                    "id": item.id,
+                    "quote_id": item.quote_id,
+                    "description": item.description,
+                    "quantity": float(item.quantity) if item.quantity else None,
+                    "unit_price": float(item.unit_price) if item.unit_price else None,
+                    "total_price": float(item.total_price) if item.total_price else None,
+                    "line_order": item.line_order,
+                    "created_at": item.created_at,
+                    "updated_at": item.updated_at,
+                }
+                for item in sorted(quote.line_items, key=lambda x: x.line_order)
+            ] if quote.line_items else [],
             "created_at": quote.created_at,
             "updated_at": quote.updated_at,
         }
@@ -133,7 +151,8 @@ async def get_quote(
         select(Quote)
         .options(
             selectinload(Quote.company),
-            selectinload(Quote.user)
+            selectinload(Quote.user),
+            selectinload(Quote.line_items)
         )
         .where(Quote.id == quote_id)
     )
@@ -154,10 +173,25 @@ async def get_quote(
         "description": quote.description,
         "amount": float(quote.amount) if quote.amount else None,
         "currency": quote.currency,
+        "pricing_type": quote.pricing_type,
         "status": quote.status,
         "valid_until": quote.valid_until.isoformat() if quote.valid_until else None,
         "notes": quote.notes,
         "user_name": f"{quote.user.first_name} {quote.user.last_name}" if quote.user else None,
+        "line_items": [
+            {
+                "id": item.id,
+                "quote_id": item.quote_id,
+                "description": item.description,
+                "quantity": float(item.quantity) if item.quantity else None,
+                "unit_price": float(item.unit_price) if item.unit_price else None,
+                "total_price": float(item.total_price) if item.total_price else None,
+                "line_order": item.line_order,
+                "created_at": item.created_at,
+                "updated_at": item.updated_at,
+            }
+            for item in sorted(quote.line_items, key=lambda x: x.line_order)
+        ] if quote.line_items else [],
         "created_at": quote.created_at,
         "updated_at": quote.updated_at,
     }
@@ -206,6 +240,7 @@ async def create_quote(
         description=quote_data.description,
         amount=quote_data.amount,
         currency=quote_data.currency,
+        pricing_type=quote_data.pricing_type or "fixed",
         status=quote_data.status,
         valid_until=quote_data.valid_until,
         notes=quote_data.notes,
@@ -215,7 +250,39 @@ async def create_quote(
     db.add(quote)
     await db.commit()
     await db.refresh(quote)
-    await db.refresh(quote, ["company", "user"])
+    
+    # Create line items if provided
+    total_amount = Decimal(0)
+    if quote_data.line_items:
+        for idx, line_item_data in enumerate(quote_data.line_items):
+            # Calculate total_price if not provided
+            total_price = line_item_data.total_price
+            if not total_price and line_item_data.quantity and line_item_data.unit_price:
+                total_price = line_item_data.quantity * line_item_data.unit_price
+            
+            if total_price:
+                total_amount += total_price
+            
+            line_item = QuoteLineItem(
+                quote_id=quote.id,
+                description=line_item_data.description,
+                quantity=line_item_data.quantity,
+                unit_price=line_item_data.unit_price,
+                total_price=total_price,
+                line_order=idx,
+            )
+            db.add(line_item)
+        
+        # Update quote amount if not provided or if it's the sum of line items
+        if not quote.amount:
+            quote.amount = total_amount
+        elif quote_data.pricing_type == "hourly" and quote_data.line_items:
+            # For hourly quotes, recalculate from line items
+            quote.amount = total_amount
+        
+        await db.commit()
+    
+    await db.refresh(quote, ["company", "user", "line_items"])
     
     quote_dict = {
         "id": quote.id,
@@ -226,10 +293,25 @@ async def create_quote(
         "description": quote.description,
         "amount": float(quote.amount) if quote.amount else None,
         "currency": quote.currency,
+        "pricing_type": quote.pricing_type,
         "status": quote.status,
         "valid_until": quote.valid_until.isoformat() if quote.valid_until else None,
         "notes": quote.notes,
         "user_name": f"{quote.user.first_name} {quote.user.last_name}" if quote.user else None,
+        "line_items": [
+            {
+                "id": item.id,
+                "quote_id": item.quote_id,
+                "description": item.description,
+                "quantity": float(item.quantity) if item.quantity else None,
+                "unit_price": float(item.unit_price) if item.unit_price else None,
+                "total_price": float(item.total_price) if item.total_price else None,
+                "line_order": item.line_order,
+                "created_at": item.created_at,
+                "updated_at": item.updated_at,
+            }
+            for item in sorted(quote.line_items, key=lambda x: x.line_order)
+        ] if quote.line_items else [],
         "created_at": quote.created_at,
         "updated_at": quote.updated_at,
     }
@@ -282,14 +364,50 @@ async def update_quote(
                 detail="Company not found"
             )
     
-    # Update fields
-    update_data = quote_data.model_dump(exclude_unset=True)
+    # Update fields (excluding line_items which are handled separately)
+    update_data = quote_data.model_dump(exclude_unset=True, exclude={"line_items"})
     for field, value in update_data.items():
-        setattr(quote, field, value)
+        if field != "line_items":
+            setattr(quote, field, value)
+    
+    # Handle line items update
+    if quote_data.line_items is not None:
+        # Delete existing line items
+        result_items = await db.execute(
+            select(QuoteLineItem).where(QuoteLineItem.quote_id == quote_id)
+        )
+        existing_items = result_items.scalars().all()
+        for item in existing_items:
+            await db.delete(item)
+        
+        # Create new line items
+        total_amount = Decimal(0)
+        for idx, line_item_data in enumerate(quote_data.line_items):
+            # Calculate total_price if not provided
+            total_price = line_item_data.total_price
+            if not total_price and line_item_data.quantity and line_item_data.unit_price:
+                total_price = line_item_data.quantity * line_item_data.unit_price
+            
+            if total_price:
+                total_amount += total_price
+            
+            line_item = QuoteLineItem(
+                quote_id=quote.id,
+                description=line_item_data.description,
+                quantity=line_item_data.quantity,
+                unit_price=line_item_data.unit_price,
+                total_price=total_price,
+                line_order=idx,
+            )
+            db.add(line_item)
+        
+        # Update quote amount if not explicitly set
+        if not quote_data.amount and quote_data.line_items:
+            quote.amount = total_amount
     
     await db.commit()
     await db.refresh(quote)
-    await db.refresh(quote, ["company", "user"])
+    await db.refresh(quote, ["company", "user", "line_items"])
     
     quote_dict = {
         "id": quote.id,
@@ -300,10 +418,25 @@ async def update_quote(
         "description": quote.description,
         "amount": float(quote.amount) if quote.amount else None,
         "currency": quote.currency,
+        "pricing_type": quote.pricing_type,
         "status": quote.status,
         "valid_until": quote.valid_until.isoformat() if quote.valid_until else None,
         "notes": quote.notes,
         "user_name": f"{quote.user.first_name} {quote.user.last_name}" if quote.user else None,
+        "line_items": [
+            {
+                "id": item.id,
+                "quote_id": item.quote_id,
+                "description": item.description,
+                "quantity": float(item.quantity) if item.quantity else None,
+                "unit_price": float(item.unit_price) if item.unit_price else None,
+                "total_price": float(item.total_price) if item.total_price else None,
+                "line_order": item.line_order,
+                "created_at": item.created_at,
+                "updated_at": item.updated_at,
+            }
+            for item in sorted(quote.line_items, key=lambda x: x.line_order)
+        ] if quote.line_items else [],
         "created_at": quote.created_at,
         "updated_at": quote.updated_at,
     }

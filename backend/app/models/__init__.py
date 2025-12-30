@@ -43,6 +43,7 @@ from app.models.contact import Contact
 from app.models.company import Company
 from app.models.file import File
 from app.models.quote import Quote
+from app.models.quote_line_item import QuoteLineItem
 from app.models.submission import Submission
 from app.models.pipeline import Pipeline, PipelineStage, Opportunite
 from app.models.leo_documentation import LeoDocumentation, DocumentationCategory, DocumentationPriority
@@ -125,6 +126,7 @@ __all__ = [
     "Contact",
     "Company",
     "Quote",
+    "QuoteLineItem",
     "Submission",
     "ProjectTask",
     "TaskStatus",

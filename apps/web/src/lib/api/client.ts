@@ -252,7 +252,7 @@ export const apiClient = new Proxy({} as ApiClient, {
     if (typeof prop === 'symbol') {
       return (instance as any)[prop];
     }
-    const value = (instance as Record<string, unknown>)[prop];
+    const value = (instance as any)[prop];
     if (typeof value === 'function') {
       return value.bind(instance);
     }
