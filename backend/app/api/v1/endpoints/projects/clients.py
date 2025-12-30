@@ -167,11 +167,12 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    status: Optional[ClientStatus] = Query(None),
-    responsible_id: Optional[int] = Query(None),
-    search: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
+    responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
+    company_id: Optional[int] = Query(None, description="Filter by company ID"),
+    search: Optional[str] = Query(None, description="Search by company name or responsible employee name"),
 ) -> List[Client]:
     """
     Get list of clients
@@ -192,14 +193,18 @@ async def list_clients(
     
     if status:
         query = query.where(Client.status == status)
-    if responsible_id:
+    if responsible_id is not None:
         query = query.where(Client.responsible_id == responsible_id)
+    if company_id is not None:
+        query = query.where(Client.company_id == company_id)
     if search:
         search_term = f"%{search.lower()}%"
-        query = query.join(Company).where(
+        query = query.join(Company).join(User, Client.responsible_id == User.id, isouter=True).where(
             or_(
                 func.lower(Company.name).like(search_term),
                 func.lower(Company.email).like(search_term),
+                func.lower(User.first_name).like(search_term),
+                func.lower(User.last_name).like(search_term),
             )
         )
     

@@ -144,6 +144,16 @@ if [ -n "$DATABASE_URL" ]; then
         else
             python scripts/create_default_theme.py 2>&1 || echo "⚠️  Could not ensure default theme (will be created on first API call)"
         fi
+        
+        # Ensure MAIN pipeline exists (with timeout)
+        echo "=========================================="
+        echo "Ensuring MAIN pipeline exists..."
+        echo "=========================================="
+        if command -v timeout >/dev/null 2>&1; then
+            timeout 30 python scripts/seed_main_pipeline.py 2>&1 || echo "⚠️  Could not ensure MAIN pipeline (will be created manually if needed)"
+        else
+            python scripts/seed_main_pipeline.py 2>&1 || echo "⚠️  Could not ensure MAIN pipeline (will be created manually if needed)"
+        fi
     else
         echo "⚠️  Database migrations failed, timed out, or skipped!"
         echo "This may be due to:"

@@ -95,14 +95,20 @@ async def seed_main_pipeline():
             session.add(stage)
         
         await session.commit()
-        await session.refresh(pipeline, ["stages"])
+        
+        # Reload pipeline with stages
+        await session.refresh(pipeline)
+        result = await session.execute(
+            select(PipelineStage).where(PipelineStage.pipeline_id == pipeline.id)
+        )
+        stages = result.scalars().all()
         
         print(f"✅ Created MAIN pipeline (ID: {pipeline.id})")
         print(f"   Created by: {first_user.email}")
-        print(f"   Stages: {len(pipeline.stages)}")
+        print(f"   Stages: {len(stages)}")
         print()
         print("📋 Stages created:")
-        for stage in sorted(pipeline.stages, key=lambda s: s.order):
+        for stage in sorted(stages, key=lambda s: s.order):
             print(f"   {stage.order:2d}. {stage.name} ({stage.color})")
         
         return pipeline
@@ -111,4 +117,10 @@ async def seed_main_pipeline():
 
 
 if __name__ == "__main__":
-    asyncio.run(seed_main_pipeline())
+    try:
+        asyncio.run(seed_main_pipeline())
+    except Exception as e:
+        print(f"❌ Error creating MAIN pipeline: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

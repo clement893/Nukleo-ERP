@@ -66,9 +66,15 @@ export const clientsAPI = {
     responsible_id?: number,
     search?: string
   ): Promise<Client[]> => {
-    const params: Record<string, any> = { skip, limit, _t: Date.now() };
+    const params: Record<string, any> = { 
+      skip: Number(skip), 
+      limit: Number(limit),
+      _t: Date.now() 
+    };
     if (status) params.status = status;
-    if (responsible_id) params.responsible_id = responsible_id;
+    if (responsible_id !== undefined && responsible_id !== null) {
+      params.responsible_id = Number(responsible_id);
+    }
     if (search) params.search = search;
 
     const response = await apiClient.get<Client[]>('/v1/projects/clients', { params });
