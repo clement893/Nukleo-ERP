@@ -37,7 +37,7 @@ export default function ContactAvatar({
   onError,
 }: ContactAvatarProps) {
   const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!!contact.photo_url); // Only loading if photo_url exists
   const [retryCount, setRetryCount] = useState(0);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(contact.photo_url);
 
@@ -55,6 +55,7 @@ export default function ContactAvatar({
   useEffect(() => {
     if (!contact.photo_url) {
       setIsLoading(false);
+      setCurrentPhotoUrl(null);
       return;
     }
 
@@ -69,6 +70,7 @@ export default function ContactAvatar({
           // If cache is still valid (more than 1 day remaining), use it
           if (expiresAt > Date.now() + 86400000) {
             setCurrentPhotoUrl(url);
+            // Don't set isLoading to false here - let the image load handler do it
             return;
           } else {
             // Cache expired, remove it
@@ -81,7 +83,10 @@ export default function ContactAvatar({
       }
     }
 
+    // Set the photo URL and allow image to load
     setCurrentPhotoUrl(contact.photo_url);
+    setIsLoading(true); // Reset loading state when URL changes
+    setImageError(false); // Reset error state
   }, [contact.id, contact.photo_url]);
 
   // Cache successful loads
@@ -145,15 +150,7 @@ export default function ContactAvatar({
     }, delay);
   };
 
-  // Reset error state when photo_url changes
-  useEffect(() => {
-    if (contact.photo_url && contact.photo_url !== currentPhotoUrl) {
-      setImageError(false);
-      setRetryCount(0);
-      setIsLoading(true);
-      setCurrentPhotoUrl(contact.photo_url);
-    }
-  }, [contact.photo_url, currentPhotoUrl]);
+  // This effect is now handled in the main useEffect above
 
   // Show placeholder/skeleton while loading
   if (isLoading && currentPhotoUrl && !imageError) {

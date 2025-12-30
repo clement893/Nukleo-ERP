@@ -34,6 +34,7 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
   useEffect(() => {
     if (!contact.photo_url) {
       setIsLoading(false);
+      setCurrentPhotoUrl(null);
       return;
     }
 
@@ -47,6 +48,8 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
           const { url, expiresAt } = JSON.parse(cached);
           if (expiresAt > Date.now() + 86400000) {
             setCurrentPhotoUrl(url);
+            setIsLoading(true); // Allow image to load
+            setImageError(false);
             return;
           } else {
             localStorage.removeItem(cacheKey);
@@ -57,7 +60,10 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
       }
     }
 
+    // Set the photo URL and allow image to load
     setCurrentPhotoUrl(contact.photo_url);
+    setIsLoading(true); // Reset loading state when URL changes
+    setImageError(false); // Reset error state
   }, [contact.id, contact.photo_url]);
 
   const handleImageLoad = () => {
@@ -107,14 +113,7 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
     }, 1000 * (retryCount + 1));
   };
 
-  useEffect(() => {
-    if (contact.photo_url && contact.photo_url !== currentPhotoUrl) {
-      setImageError(false);
-      setRetryCount(0);
-      setIsLoading(true);
-      setCurrentPhotoUrl(contact.photo_url);
-    }
-  }, [contact.photo_url, currentPhotoUrl]);
+  // This effect is now handled in the main useEffect above
 
   // Loading skeleton
   if (isLoading && currentPhotoUrl && !imageError) {
