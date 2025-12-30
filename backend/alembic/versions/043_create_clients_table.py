@@ -27,29 +27,40 @@ def upgrade() -> None:
         END $$;
     """)
     
-    # Create clients table
-    op.create_table(
-        'clients',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('company_id', sa.Integer(), nullable=False),
-        sa.Column('status', postgresql.ENUM('active', 'inactive', 'maintenance', name='clientstatus', create_type=False), nullable=False, server_default='active'),
-        sa.Column('responsible_id', sa.Integer(), nullable=True),
-        sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('comments', sa.Text(), nullable=True),
-        sa.Column('portal_url', sa.String(length=500), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['responsible_id'], ['users.id'], ondelete='SET NULL'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('company_id')
-    )
+    # Create clients table (if it doesn't exist)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TABLE IF NOT EXISTS clients (
+                id SERIAL NOT NULL,
+                company_id INTEGER NOT NULL,
+                status clientstatus DEFAULT 'active' NOT NULL,
+                responsible_id INTEGER,
+                notes TEXT,
+                comments TEXT,
+                portal_url VARCHAR(500),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY(company_id) REFERENCES companies (id) ON DELETE CASCADE,
+                FOREIGN KEY(responsible_id) REFERENCES users (id) ON DELETE SET NULL,
+                UNIQUE (company_id)
+            );
+        EXCEPTION
+            WHEN duplicate_table THEN null;
+        END $$;
+    """)
     
-    # Create indexes
-    op.create_index('idx_clients_company_id', 'clients', ['company_id'])
-    op.create_index('idx_clients_responsible_id', 'clients', ['responsible_id'])
-    op.create_index('idx_clients_status', 'clients', ['status'])
-    op.create_index('idx_clients_created_at', 'clients', ['created_at'])
+    # Create indexes (if they don't exist)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE INDEX IF NOT EXISTS idx_clients_company_id ON clients (company_id);
+            CREATE INDEX IF NOT EXISTS idx_clients_responsible_id ON clients (responsible_id);
+            CREATE INDEX IF NOT EXISTS idx_clients_status ON clients (status);
+            CREATE INDEX IF NOT EXISTS idx_clients_created_at ON clients (created_at);
+        EXCEPTION
+            WHEN duplicate_table THEN null;
+        END $$;
+    """)
 
 
 def downgrade() -> None:
