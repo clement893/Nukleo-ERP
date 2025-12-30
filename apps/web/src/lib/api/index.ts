@@ -137,6 +137,14 @@ export { projectsAPI } from './projects';
 // Re-export management module API (unified)
 export { managementAPI, teamsAPI, employeesAPI } from './management';
 
+// Re-export agenda module API (unified)
+export { agendaModuleAPI } from './agenda-unified';
+export type {
+  CalendarEvent as AgendaEventType,
+  CalendarEventCreate as AgendaEventCreateType,
+  CalendarEventUpdate as AgendaEventUpdateType,
+} from './agenda-unified';
+
 // Re-export Leo module API (unified)
 export { leoAPI, leoAgentAPI, leoDocumentationAPI } from './leo';
 export type {
