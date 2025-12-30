@@ -431,6 +431,10 @@ api_router.include_router(
     tags=["erp-portal"]
 )
 
+# Register ERP module unified router (alternative to individual routers above)
+# Uncomment to use unified router instead:
+# api_router.include_router(erp_module_router)
+
 # Register commercial module endpoints
 # Register agenda events endpoints
 api_router.include_router(

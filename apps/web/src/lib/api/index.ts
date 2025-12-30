@@ -77,6 +77,26 @@ export * from './theme-errors';
 export { contactsAPI } from './contacts';
 export type { Contact, ContactCreate, ContactUpdate } from './contacts';
 
+// Re-export commercial module API (unified)
+export { commercialAPI } from './commercial';
+export type {
+  Contact as CommercialContact,
+  ContactCreate as CommercialContactCreate,
+  ContactUpdate as CommercialContactUpdate,
+  Company as CommercialCompany,
+  CompanyCreate as CommercialCompanyCreate,
+  CompanyUpdate as CommercialCompanyUpdate,
+  Opportunity as CommercialOpportunity,
+  OpportunityCreate as CommercialOpportunityCreate,
+  OpportunityUpdate as CommercialOpportunityUpdate,
+  Quote as CommercialQuote,
+  QuoteCreate as CommercialQuoteCreate,
+  QuoteUpdate as CommercialQuoteUpdate,
+  Submission as CommercialSubmission,
+  SubmissionCreate as CommercialSubmissionCreate,
+  SubmissionUpdate as CommercialSubmissionUpdate,
+} from './commercial';
+
 // Re-export réseau contacts API
 export { reseauContactsAPI } from './reseau-contacts';
 export type { Contact as ReseauContact, ContactCreate as ReseauContactCreate, ContactUpdate as ReseauContactUpdate } from './reseau-contacts';
