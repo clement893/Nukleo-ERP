@@ -997,22 +997,15 @@ async def import_contacts(
                 detail="Invalid Excel file format or empty file"
             )
         
-        # CRITICAL: Convert to list IMMEDIATELY to avoid consuming generator multiple times
-        # Some iterables (like generators) can only be consumed once
-        if not isinstance(result['data'], list):
-            data_list_raw = list(result['data'])
-        else:
-            data_list_raw = result['data']
-        
-        if not isinstance(data_list_raw, list) or len(data_list_raw) == 0:
+        # Validate and get data list (simple approach like employees import)
+        if not isinstance(result['data'], list) or len(result['data']) == 0:
             add_import_log(import_id, "ERREUR: Le fichier Excel ne contient pas de lignes de données valides", "error")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Excel file does not contain valid data rows"
             )
         
-        # Now we can safely use data_list_raw everywhere
-        total_rows = len(data_list_raw)
+        total_rows = len(result['data'])
         add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
         update_import_status(import_id, "processing", progress=0, total=total_rows)
         
@@ -1128,12 +1121,12 @@ async def import_contacts(
         # Initialize statistics tracking
         stats = {
             "total_processed": 0,
-            "skipped_missing_name": 0,
             "skipped_missing_firstname": 0,
             "skipped_missing_lastname": 0,
             "matched_existing": 0,
             "created_new": 0,
-            "errors": 0
+            "errors": 0,
+            "photos_uploaded": 0
         }
         
         # Initialize S3 service for photo uploads
@@ -1172,70 +1165,16 @@ async def import_contacts(
                 })
         
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
-        logger.info(f"Starting import loop: {total_rows} rows to process")
         
-        # Use the already-converted list (data_list_raw from above)
-        # CRITICAL: Create a fresh copy to avoid any iterator consumption issues
-        if not isinstance(data_list_raw, list):
-            data_list = list(data_list_raw)
-        else:
-            # Create a copy to ensure we have a fresh list that can't be consumed
-            data_list = data_list_raw.copy() if hasattr(data_list_raw, 'copy') else list(data_list_raw)
-        
-        add_import_log(import_id, f"🔍 DEBUG: Utilisation de la liste convertie, nombre d'éléments: {len(data_list)}, type: {type(data_list)}", "info")
-        logger.info(f"DEBUG: Using converted list, length: {len(data_list)}, type: {type(data_list)}")
-        
-        # Verify we can access all items - test both beginning and end
-        try:
-            first_few = data_list[:10] if len(data_list) >= 10 else data_list
-            last_few = data_list[-10:] if len(data_list) >= 10 else data_list
-            add_import_log(import_id, f"🔍 DEBUG: Premiers éléments accessibles: {len(first_few)}, derniers éléments accessibles: {len(last_few)}", "info")
-            logger.info(f"DEBUG: First few items accessible: {len(first_few)}, last few items accessible: {len(last_few)}")
-            
-            # Verify we can access the last item
-            if len(data_list) > 0:
-                last_item = data_list[-1]
-                logger.info(f"DEBUG: Last item accessible: {type(last_item)}, keys: {list(last_item.keys()) if isinstance(last_item, dict) else 'not a dict'}")
-        except Exception as e:
-            add_import_log(import_id, f"❌ ERREUR lors de l'accès aux éléments: {str(e)}", "error")
-            logger.error(f"ERROR accessing items: {e}", exc_info=True)
-        
-        # Wrap entire loop in try/except to catch any unhandled exceptions
-        try:
-            iteration_count = 0
-            # CRITICAL: Create a fresh copy of the list to ensure it's not consumed
-            # Convert to list and create a copy to avoid any iterator consumption issues
-            if not isinstance(data_list, list):
-                data_list = list(data_list)
-            else:
-                # Create a copy to ensure we have a fresh list that can't be consumed
-                data_list = list(data_list)
-            
-            logger.info(f"DEBUG: Starting loop with data_list type={type(data_list)}, length={len(data_list)}")
-            
-            # Verify the list is complete before starting the loop
-            list_length = len(data_list)
-            if list_length != total_rows:
-                logger.warning(f"WARNING: data_list length ({list_length}) doesn't match total_rows ({total_rows})")
-                add_import_log(import_id, f"⚠️ ATTENTION: Longueur de la liste ({list_length}) ne correspond pas au nombre de lignes attendu ({total_rows})", "warning")
-            
-            # CRITICAL: Use range-based iteration instead of enumerate to avoid iterator consumption issues
-            # This ensures we iterate over all items even if data_list has iterator-like behavior
-            logger.info(f"DEBUG: Starting iteration over {list_length} items using range-based loop")
-            for idx in range(list_length):
-                try:
-                    # Get the row data by index to ensure we access all items
-                    row_data = data_list[idx]
-                    iteration_count += 1
-                    stats["total_processed"] += 1
-                    
-                    # Log every iteration for first 10 rows
-                    if idx < 10:
-                        add_import_log(import_id, f"🔍 DEBUG: Itération {idx + 1}: début du traitement", "info", {"iteration": idx + 1, "iteration_count": iteration_count})
-                    
-                    # Log every row for debugging (temporarily)
-                    if idx < 10 or (idx + 1) % 10 == 0:
-                        add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, ignorés: {stats['skipped_missing_firstname'] + stats['skipped_missing_lastname']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
+        # Simple loop like employees import - use enumerate directly
+        for idx, row_data in enumerate(result['data']):
+            try:
+                stats["total_processed"] += 1
+                update_import_status(import_id, "processing", progress=idx + 1, total=total_rows)
+                
+                # Log progress every 10 rows
+                if (idx + 1) % 10 == 0 or idx < 5:
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
                     
                     # Map Excel columns to Contact fields with multiple possible column names
                     first_name = get_field_value(row_data, [
@@ -1343,239 +1282,56 @@ async def import_contacts(
                                     }
                                 })
                     
-                    # Handle photo upload if ZIP contains photos
+                    # Handle photo upload (simplified like employees import)
                     photo_url = get_field_value(row_data, [
                         'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
                         'image url', 'avatar', 'avatar_url', 'avatar url'
                     ])
+                    photo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
                     
                     # If no photo_url but we have photos in ZIP, try to find matching photo
-                    if not photo_url and photos_dict:
-                        if not s3_service:
-                            logger.warning(f"Photo found for {first_name} {last_name} but S3 service is not available. Skipping photo upload.")
-                            warnings.append({
-                                'row': idx + 2,
-                                'type': 'photo_upload_skipped',
-                                'message': f"Photo trouvée pour {first_name} {last_name} mais S3 n'est pas disponible. La photo n'a pas été uploadée.",
-                                'data': {'contact': f"{first_name} {last_name}"}
-                            })
-                        else:
-                            # Normalize names for filename matching
-                            first_name_normalized = normalize_filename(first_name)
-                            last_name_normalized = normalize_filename(last_name)
-                            
-                            # Try multiple naming patterns
-                            photo_filename_patterns = [
-                                # Normalized patterns (without accents)
-                                f"{first_name_normalized}_{last_name_normalized}.jpg",
-                                f"{first_name_normalized}_{last_name_normalized}.jpeg",
-                                f"{first_name_normalized}_{last_name_normalized}.png",
-                                f"{first_name_normalized}_{last_name_normalized}.gif",
-                                f"{first_name_normalized}_{last_name_normalized}.webp",
-                                # Original patterns (with accents)
-                                f"{first_name.lower()}_{last_name.lower()}.jpg",
-                                f"{first_name.lower()}_{last_name.lower()}.jpeg",
-                                f"{first_name.lower()}_{last_name.lower()}.png",
-                                f"{first_name.lower()}_{last_name.lower()}.gif",
-                                f"{first_name.lower()}_{last_name.lower()}.webp",
-                                # Without underscores
-                                f"{first_name_normalized}{last_name_normalized}.jpg",
-                                f"{first_name_normalized}{last_name_normalized}.jpeg",
-                                f"{first_name_normalized}{last_name_normalized}.png",
-                                # From Excel column (logo_filename, photo_filename, nom_fichier_photo)
-                                get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']),
-                            ]
-                            
-                            uploaded_photo_url = None
-                            logger.info(f"Attempting to upload photo for {first_name} {last_name}. Available photos in ZIP: {list(photos_dict.keys())[:5]}...")
-                            logger.debug(f"Normalized names: first='{first_name_normalized}', last='{last_name_normalized}'")
-                            logger.debug(f"Trying patterns: {photo_filename_patterns[:5]}...")
-                            
-                            # First, try exact match from Excel column if provided
-                            excel_photo_filename = (
-                                get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']) or
-                                row_data.get('logo_filename') or 
-                                row_data.get('photo_filename') or 
-                                row_data.get('nom_fichier_photo')
-                            )
-                            if excel_photo_filename:
-                                excel_photo_normalized = normalize_filename(excel_photo_filename)
-                                if excel_photo_filename.lower() in photos_dict:
-                                    pattern_to_use = excel_photo_filename.lower()
-                                elif excel_photo_normalized in photos_dict:
-                                    pattern_to_use = excel_photo_normalized
-                                else:
-                                    pattern_to_use = None
+                    if not photo_url and photos_dict and photo_filename and s3_service:
+                        photo_filename_normalized = normalize_filename(photo_filename)
+                        pattern_to_use = None
+                        
+                        if photo_filename.lower() in photos_dict:
+                            pattern_to_use = photo_filename.lower()
+                        elif photo_filename_normalized in photos_dict:
+                            pattern_to_use = photo_filename_normalized
+                        
+                        if pattern_to_use and pattern_to_use in photos_dict:
+                            try:
+                                photo_content = photos_dict[pattern_to_use]
                                 
-                                if pattern_to_use and pattern_to_use in photos_dict:
-                                    try:
-                                        photo_content = photos_dict[pattern_to_use]
-                                        logger.info(f"Found photo from Excel column '{excel_photo_filename}' -> '{pattern_to_use}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
-                                        
-                                        # Create a temporary UploadFile-like object compatible with S3Service
-                                        class TempUploadFile:
-                                            def __init__(self, filename: str, content: bytes):
-                                                self.filename = filename
-                                                self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                                # Create BytesIO and ensure it's at position 0
-                                                self.file = BytesIO(content)
-                                                self.file.seek(0)
-                                        
-                                        temp_file = TempUploadFile(pattern_to_use, photo_content)
-                                        
-                                        # Upload to S3
-                                        logger.info(f"Uploading photo '{pattern_to_use}' to S3 for {first_name} {last_name} (size: {len(photo_content)} bytes)...")
-                                        try:
-                                            upload_result = s3_service.upload_file(
-                                                file=temp_file,
-                                                folder='contacts/photos',
-                                                user_id=str(current_user.id)
-                                            )
-                                            logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
-                                        except Exception as upload_error:
-                                            logger.error(f"Exception during upload_file call for {first_name} {last_name}: {upload_error}", exc_info=True)
-                                            raise
-                                        
-                                        uploaded_photo_url = upload_result.get('file_key')
-                                        if uploaded_photo_url:
-                                            if not uploaded_photo_url.startswith('contacts/photos'):
-                                                if uploaded_photo_url.startswith('contacts/'):
-                                                    uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
-                                                else:
-                                                    uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
-                                            
-                                            try:
-                                                metadata = s3_service.get_file_metadata(uploaded_photo_url)
-                                                logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
-                                            except Exception as e:
-                                                logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
-                                                uploaded_photo_url = None
-                                        
-                                        if uploaded_photo_url:
-                                            logger.info(f"Photo ready for {first_name} {last_name}: {pattern_to_use} -> file_key: {uploaded_photo_url}")
-                                            break
-                                    except Exception as e:
-                                        logger.error(f"Failed to upload photo {pattern_to_use} for {first_name} {last_name}: {e}", exc_info=True)
-                                        warnings.append({
-                                            'row': idx + 2,
-                                            'type': 'photo_upload_error',
-                                            'message': f"Erreur lors de l'upload de la photo '{pattern_to_use}' pour {first_name} {last_name}: {str(e)}",
-                                            'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern_to_use, 'error': str(e)}
-                                        })
-                            
-                            # If no match from Excel column, try name-based patterns
-                            if not uploaded_photo_url:
-                                for pattern in photo_filename_patterns:
-                                    if not pattern or pattern == excel_photo_filename:
-                                        continue  # Skip if already tried
-                                    
-                                    pattern_normalized = normalize_filename(pattern)
-                                    # Try both original pattern and normalized pattern
-                                    if pattern.lower() in photos_dict:
-                                        pattern_to_use = pattern.lower()
-                                    elif pattern_normalized in photos_dict:
-                                        pattern_to_use = pattern_normalized
-                                    else:
-                                        continue
-                                    
-                                    if pattern_to_use in photos_dict:
-                                        try:
-                                            # Upload photo to S3
-                                            photo_content = photos_dict[pattern_to_use]
-                                            logger.info(f"Found matching photo '{pattern}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
-                                            
-                                            # Create a temporary UploadFile-like object compatible with S3Service
-                                            # S3Service.upload_file uses file.file.read() (synchronous)
-                                            class TempUploadFile:
-                                                def __init__(self, filename: str, content: bytes):
-                                                    self.filename = filename
-                                                    self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                                    # Create a BytesIO object that S3Service can read from
-                                                    # Reset position to start for each read
-                                                    self.file = BytesIO(content)
-                                                    self.file.seek(0)
-                                            
-                                            temp_file = TempUploadFile(pattern, photo_content)
-                                            
-                                            # Upload to S3
-                                            logger.info(f"Uploading photo '{pattern}' to S3 for {first_name} {last_name} (size: {len(photo_content)} bytes)...")
-                                            try:
-                                                upload_result = s3_service.upload_file(
-                                                    file=temp_file,
-                                                    folder='contacts/photos',
-                                                    user_id=str(current_user.id)
-                                                )
-                                                logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
-                                            except Exception as upload_error:
-                                                logger.error(f"Exception during upload_file call for {first_name} {last_name}: {upload_error}", exc_info=True)
-                                                raise
-                                            
-                                            # Always store the file_key (not the presigned URL) for persistence
-                                            # Presigned URLs expire, but file_key is permanent
-                                            uploaded_photo_url = upload_result.get('file_key')
-                                            
-                                            # Validate file_key format
-                                            if uploaded_photo_url:
-                                                # Ensure file_key is in correct format: contacts/photos/...
-                                                if not uploaded_photo_url.startswith('contacts/photos'):
-                                                    logger.warning(f"Invalid file_key format from upload_result for {first_name} {last_name}: {uploaded_photo_url}")
-                                                    # Try to fix if it's missing the prefix
-                                                    if uploaded_photo_url.startswith('contacts/'):
-                                                        uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
-                                                    else:
-                                                        uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
-                                                
-                                                # Verify the file was actually uploaded by checking metadata
-                                                try:
-                                                    metadata = s3_service.get_file_metadata(uploaded_photo_url)
-                                                    logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
-                                                except Exception as e:
-                                                    logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
-                                                    uploaded_photo_url = None
-                                            else:
-                                                # Fallback to URL if file_key not available, but extract key from URL
-                                                url = upload_result.get('url', '')
-                                                logger.warning(f"No file_key in upload_result for {first_name} {last_name}, trying to extract from URL: {url}")
-                                                if url and 'contacts/photos' in url:
-                                                    # Extract file_key from URL
-                                                    from urllib.parse import urlparse
-                                                    parsed = urlparse(url)
-                                                    path = parsed.path.strip('/')
-                                                    if 'contacts/photos' in path:
-                                                        path_idx = path.find('contacts/photos')
-                                                        uploaded_photo_url = path[path_idx:]
-                                                        logger.info(f"Extracted file_key from URL for {first_name} {last_name}: {uploaded_photo_url}")
-                                                    else:
-                                                        uploaded_photo_url = url
-                                                else:
-                                                    uploaded_photo_url = url
-                                            
-                                            if uploaded_photo_url:
-                                                logger.info(f"Photo ready for {first_name} {last_name}: {pattern} -> file_key: {uploaded_photo_url}")
-                                                break
-                                            else:
-                                                logger.error(f"Failed to get valid file_key for {first_name} {last_name} after upload. Upload result: {upload_result}")
-                                                warnings.append({
-                                                    'row': idx + 2,
-                                                    'type': 'photo_upload_failed',
-                                                    'message': f"Échec de l'upload de la photo pour {first_name} {last_name}. Le contact sera créé sans photo.",
-                                                    'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern}
-                                                })
-                                        except Exception as e:
-                                            logger.error(f"Failed to upload photo {pattern} for {first_name} {last_name}: {e}", exc_info=True)
-                                            warnings.append({
-                                                'row': idx + 2,
-                                                'type': 'photo_upload_error',
-                                                'message': f"Erreur lors de l'upload de la photo '{pattern}' pour {first_name} {last_name}: {str(e)}",
-                                                'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern, 'error': str(e)}
-                                            })
-                                            continue
-                            
-                            if uploaded_photo_url:
-                                photo_url = uploaded_photo_url
-                                logger.info(f"Photo successfully assigned to {first_name} {last_name}: {photo_url}")
-                            else:
-                                logger.warning(f"No photo uploaded for {first_name} {last_name} despite photos being available in ZIP")
+                                class TempUploadFile:
+                                    def __init__(self, filename: str, content: bytes):
+                                        self.filename = filename
+                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                        self.file = BytesIO(content)
+                                        self.file.seek(0)
+                                
+                                temp_file = TempUploadFile(photo_filename, photo_content)
+                                
+                                upload_result = s3_service.upload_file(
+                                    file=temp_file,
+                                    folder='contacts/photos',
+                                    user_id=str(current_user.id)
+                                )
+                                
+                                photo_url = upload_result.get('file_key')
+                                if photo_url and not photo_url.startswith('contacts/photos'):
+                                    photo_url = f"contacts/photos/{photo_url}" if not photo_url.startswith('contacts/') else photo_url
+                                
+                                if photo_url:
+                                    stats["photos_uploaded"] = stats.get("photos_uploaded", 0) + 1
+                            except Exception as e:
+                                logger.error(f"Failed to upload photo for {first_name} {last_name}: {e}", exc_info=True)
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'photo_upload_error',
+                                    'message': f"Erreur lors de l'upload de la photo: {str(e)}",
+                                    'data': {'contact': f"{first_name} {last_name}"}
+                                })
                     
                     # Get position
                     position = get_field_value(row_data, [
@@ -1787,49 +1543,15 @@ async def import_contacts(
                         add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
                         logger.info(f"Created new contact: {first_name} {last_name}")
                 
-                except Exception as e:
-                    stats["errors"] += 1
-                    error_msg = f"Ligne {idx + 2}: ❌ Erreur lors de l'import - {str(e)}"
-                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e), "row_data_keys": list(row_data.keys()) if isinstance(row_data, dict) else "not_a_dict"})
-                    errors.append({
-                        'row': idx + 2,  # +2 because Excel is 1-indexed and has header
-                        'data': row_data,
-                        'error': str(e)
-                    })
-                    logger.error(f"Error importing contact row {idx + 2}: {str(e)}", exc_info=True)
-                    # Continue processing other rows even if one fails
-                    continue
-            
-            # Log after loop completes normally
-            add_import_log(import_id, f"🔍 DEBUG: Boucle terminée normalement après {iteration_count} itérations", "info", {"iteration_count": iteration_count, "expected_iterations": len(data_list)})
-            logger.info(f"DEBUG: Loop completed normally after {iteration_count} iterations, expected {len(data_list)}")
-            
-        except StopIteration as stop_error:
-            # Catch StopIteration if something consumes the iterator prematurely
-            last_idx = idx if 'idx' in locals() else -1
-            add_import_log(import_id, f"❌ ERREUR CRITIQUE: StopIteration - itérateur consommé prématurément à la ligne {last_idx + 2}: {str(stop_error)}", "error", {"error": str(stop_error), "last_processed_row": last_idx + 2, "iteration_count": iteration_count if 'iteration_count' in locals() else 0, "total_expected": len(data_list), "stats": stats.copy()})
-            logger.error(f"CRITICAL: StopIteration at row {last_idx + 2}, iteration_count={iteration_count if 'iteration_count' in locals() else 0}: {stop_error}", exc_info=True)
-            # Re-raise to ensure error is visible
-            raise
-        except Exception as loop_error:
-            # Catch any exception that stops the loop prematurely
-            last_idx = idx if 'idx' in locals() else -1
-            add_import_log(import_id, f"❌ ERREUR CRITIQUE: La boucle s'est arrêtée prématurément à la ligne {last_idx + 2}: {str(loop_error)}", "error", {"error": str(loop_error), "last_processed_row": last_idx + 2, "iteration_count": iteration_count if 'iteration_count' in locals() else 0, "total_expected": len(data_list), "stats": stats.copy()})
-            logger.error(f"CRITICAL: Loop stopped prematurely at row {last_idx + 2}, iteration_count={iteration_count if 'iteration_count' in locals() else 0}: {loop_error}", exc_info=True)
-            # Re-raise to ensure error is visible
-            raise
-        
-        # Log completion of loop
-        add_import_log(import_id, f"✅ Boucle de traitement terminée: {len(data_list)} ligne(s) dans la liste, {stats['total_processed']} ligne(s) réellement traitée(s)", "info", {"total_rows_in_list": len(data_list), "total_rows_processed": stats['total_processed'], "stats": stats.copy()})
-        logger.info(f"Import loop completed: {len(data_list)} rows in list, {stats['total_processed']} rows actually processed, created_contacts={len(created_contacts)}, stats: {stats}")
-        
-        # Check if loop stopped prematurely
-        if len(data_list) > stats['total_processed']:
-            add_import_log(import_id, f"⚠️ ATTENTION: La boucle s'est arrêtée prématurément ! {len(data_list) - stats['total_processed']} ligne(s) n'ont pas été traitées.", "warning", {"expected": len(data_list), "processed": stats['total_processed'], "missing": len(data_list) - stats['total_processed']})
-            logger.warning(f"Loop stopped prematurely: expected {len(data_list)} rows, but only processed {stats['total_processed']}")
-        
-        # Log final statistics
-        add_import_log(import_id, f"📊 Statistiques du traitement: {stats['total_processed']} lignes traitées, {stats['created_new']} nouveaux contacts, {stats['matched_existing']} contacts mis à jour, {stats['skipped_missing_firstname']} sans prénom, {stats['skipped_missing_lastname']} sans nom, {stats['errors']} erreurs", "info", stats)
+            except Exception as e:
+                stats["errors"] += 1
+                logger.error(f"Error processing row {idx + 2}: {e}", exc_info=True)
+                errors.append({
+                    'row': idx + 2,
+                    'data': row_data,
+                    'error': str(e)
+                })
+                continue
         
         # Track which contacts were updated vs created
         existing_contact_ids = {c.id for c in all_existing_contacts}
@@ -1838,23 +1560,18 @@ async def import_contacts(
         
         # Commit all contacts
         add_import_log(import_id, f"Sauvegarde de {len(created_contacts)} contact(s) dans la base de données...", "info")
-        logger.info(f"DEBUG: About to commit {len(created_contacts)} contacts (total processed: {stats['total_processed']})")
         try:
             if created_contacts:
-                logger.info(f"DEBUG: Committing {len(created_contacts)} contacts to database")
                 await db.commit()
-                logger.info(f"DEBUG: Successfully committed {len(created_contacts)} contacts")
+                # Refresh contacts with relationships loaded
                 for contact in created_contacts:
-                    await db.refresh(contact)
+                    await db.refresh(contact, ["company", "employee"])
                     
                     # Categorize as updated or new
                     if contact.id in existing_contact_ids:
                         updated_contacts.append(contact)
                     else:
                         new_contacts.append(contact)
-                    
-                    # Note: Photo URLs will be regenerated during serialization via ContactSchema
-                    # The contact.photo_url contains the file_key which is permanent
                 
                 add_import_log(import_id, f"Sauvegarde réussie: {len(new_contacts)} nouveau(x) contact(s), {len(updated_contacts)} contact(s) mis à jour", "success")
         except Exception as e:
@@ -1899,30 +1616,20 @@ async def import_contacts(
                 serialized_contacts.append(ContactSchema(**contact_dict))
             
             # Final summary
-            total_valid = len(created_contacts)
-            total_errors = len(errors) + result.get('invalid_rows', 0)
-            photos_count = len(photos_dict) if photos_dict else 0
-            
-            add_import_log(import_id, f"✅ Import terminé: {total_valid} contact(s) importé(s), {total_errors} erreur(s)", "success", {
-                "total_valid": total_valid,
-                "total_errors": total_errors,
-                "new_contacts": len(new_contacts),
-                "updated_contacts": len(updated_contacts),
-                "photos_uploaded": photos_count
-            })
+            add_import_log(import_id, f"✅ Import terminé: {len(created_contacts)} contact(s) importé(s), {len(errors)} erreur(s)", "success")
             update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
             
             return {
-                'total_rows': result.get('total_rows', 0),
+                'total_rows': total_rows,
                 'valid_rows': len(created_contacts),
                 'created_rows': len(new_contacts),
                 'updated_rows': len(updated_contacts),
-                'invalid_rows': len(errors) + result.get('invalid_rows', 0),
-                'errors': errors + (result.get('errors') or []),
+                'invalid_rows': len(errors),
+                'errors': errors,
                 'warnings': all_warnings,
-                'photos_uploaded': len(photos_dict) if photos_dict else 0,
+                'photos_uploaded': stats.get("photos_uploaded", 0),
                 'data': serialized_contacts,
-                'import_id': import_id  # Return import_id for log tracking
+                'import_id': import_id
             }
         except Exception as e:
             add_import_log(import_id, f"ERREUR lors de la sérialisation: {str(e)}", "error")
