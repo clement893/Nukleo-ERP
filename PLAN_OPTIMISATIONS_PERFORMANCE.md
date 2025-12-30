@@ -47,21 +47,27 @@
 
 ---
 
-### Batch 3: Cache Côté Client avec React Query (Critique)
+### Batch 3: Cache Côté Client avec React Query (Critique) ✅ COMPLÉTÉ
 **Objectif**: Éliminer les requêtes réseau inutiles  
 **Temps estimé**: 2-3 heures  
-**Impact**: 🔴 Critique
+**Impact**: 🔴 Critique  
+**Statut**: ✅ Terminé et pushé (commit: a4114661)
 
-- [ ] 3.1 Vérifier installation React Query (déjà dans package.json)
-- [ ] 3.2 Configurer QueryClient avec cache approprié
-- [ ] 3.3 Migrer `contactsAPI.list` vers `useQuery`
-- [ ] 3.4 Migrer autres endpoints critiques vers React Query
-- [ ] 3.5 Tests et validation
+- [x] 3.1 Vérifier installation React Query (déjà dans package.json)
+- [x] 3.2 Configurer QueryClient avec cache approprié (déjà configuré)
+- [x] 3.3 Migrer `contactsAPI.list` vers `useInfiniteQuery`
+- [x] 3.4 Migrer autres endpoints critiques vers React Query (CRUD complet)
+- [x] 3.5 Tests et validation
 
-**Fichiers à modifier**:
-- `apps/web/src/lib/query/queryClient.ts` (créer/configurer)
-- `apps/web/src/app/[locale]/dashboard/reseau/contacts/page.tsx`
-- `apps/web/src/lib/api/contacts.ts`
+**Fichiers modifiés**:
+- `apps/web/src/lib/query/contacts.ts` (nouveau fichier avec hooks)
+- `apps/web/src/app/[locale]/dashboard/reseau/contacts/page.tsx` (migré vers React Query)
+
+**Résultats**:
+- Hooks React Query créés pour tous les endpoints contacts
+- Infinite scroll avec `useInfiniteQuery`
+- Cache automatique avec invalidation intelligente
+- Mutations avec mise à jour automatique du cache
 
 ---
 
