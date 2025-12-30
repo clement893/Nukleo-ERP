@@ -190,9 +190,10 @@ export default function SubmissionWizard({
     const createdSubmission = await onSubmit(submissionData);
     
     // Offer to download PDF after creation
-    if (createdSubmission && 'id' in createdSubmission) {
+    if (createdSubmission && typeof createdSubmission === 'object' && 'id' in createdSubmission) {
       try {
-        await submissionsAPI.generatePDF((createdSubmission as any).id);
+        const submissionId = (createdSubmission as Submission).id;
+        await submissionsAPI.generatePDF(submissionId);
         showToast({
           message: 'PDF généré avec succès',
           type: 'success',
