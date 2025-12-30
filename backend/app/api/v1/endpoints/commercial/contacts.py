@@ -1112,8 +1112,16 @@ async def import_contacts(
                     'data': {'photos_count': len(photos_dict)}
                 })
         
+        add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
+        
         for idx, row_data in enumerate(result['data']):
             try:
+                stats["total_processed"] += 1
+                
+                # Log progress every 50 rows
+                if (idx + 1) % 50 == 0:
+                    add_import_log(import_id, f"📊 Progression: {idx + 1}/{total_rows} lignes traitées... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, ignorés: {stats['skipped_missing_firstname'] + stats['skipped_missing_lastname']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
+                
                 # Map Excel columns to Contact fields with multiple possible column names
                 first_name = get_field_value(row_data, [
                     'first_name', 'prénom', 'prenom', 'firstname', 'first name',
