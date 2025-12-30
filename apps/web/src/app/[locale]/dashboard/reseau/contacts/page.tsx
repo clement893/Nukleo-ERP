@@ -23,6 +23,7 @@ import ViewModeToggle from '@/components/commercial/ViewModeToggle';
 import ContactActionLink from '@/components/commercial/ContactActionLink';
 import ContactRowActions from '@/components/commercial/ContactRowActions';
 import SearchBar from '@/components/ui/SearchBar';
+import MultiSelectFilter from '@/components/commercial/MultiSelectFilter';
 import { 
   Plus, 
   Download, 
@@ -73,10 +74,10 @@ function ContactsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [filterCity, setFilterCity] = useState<string>('');
-  const [filterPhone, setFilterPhone] = useState<string>('');
-  const [filterCircle, setFilterCircle] = useState<string>('');
-  const [filterCompany, setFilterCompany] = useState<string>('');
+  const [filterCity, setFilterCity] = useState<string[]>([]);
+  const [filterPhone, setFilterPhone] = useState<string[]>([]);
+  const [filterCircle, setFilterCircle] = useState<string[]>([]);
+  const [filterCompany, setFilterCompany] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   
@@ -123,11 +124,18 @@ function ContactsContent() {
   // Filtered contacts with debounced search
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
-      const matchesCity = !filterCity || contact.city === filterCity;
-      const matchesPhone = !filterPhone || contact.phone === filterPhone;
-      const matchesCircle = !filterCircle || contact.circle === filterCircle;
-      // Fix: Compare with company_id correctly
-      const matchesCompany = !filterCompany || (contact.company_id && contact.company_id.toString() === filterCompany);
+      // City filter: match if no filter or contact city is in filter array
+      const matchesCity = filterCity.length === 0 || (contact.city && filterCity.includes(contact.city));
+      
+      // Phone filter: match if no filter or contact phone is in filter array
+      const matchesPhone = filterPhone.length === 0 || (contact.phone && filterPhone.includes(contact.phone));
+      
+      // Circle filter: match if no filter or contact circle is in filter array
+      const matchesCircle = filterCircle.length === 0 || (contact.circle && filterCircle.includes(contact.circle));
+      
+      // Company filter: match if no filter or contact company_id is in filter array
+      const matchesCompany = filterCompany.length === 0 || 
+        (contact.company_id && filterCompany.includes(contact.company_id.toString()));
       
       // Search filter: search in name, email, phone, company (using debounced query)
       const matchesSearch = !debouncedSearchQuery || 
@@ -141,14 +149,14 @@ function ContactsContent() {
   }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, debouncedSearchQuery]);
   
   // Check if any filters are active (use debounced search for display)
-  const hasActiveFilters = !!(filterCity || filterPhone || filterCircle || filterCompany || debouncedSearchQuery);
+  const hasActiveFilters = !!(filterCity.length > 0 || filterPhone.length > 0 || filterCircle.length > 0 || filterCompany.length > 0 || debouncedSearchQuery);
   
   // Clear all filters function
   const clearAllFilters = useCallback(() => {
-    setFilterCity('');
-    setFilterPhone('');
-    setFilterCircle('');
-    setFilterCompany('');
+    setFilterCity([]);
+    setFilterPhone([]);
+    setFilterCircle([]);
+    setFilterCompany([]);
     setSearchQuery('');
   }, []);
 
@@ -496,12 +504,18 @@ function ContactsContent() {
               company: filterCompany,
               search: searchQuery,
             }}
-            onRemoveFilter={(key) => {
-              if (key === 'city') setFilterCity('');
-              if (key === 'phone') setFilterPhone('');
-              if (key === 'circle') setFilterCircle('');
-              if (key === 'company') setFilterCompany('');
-              if (key === 'search') setSearchQuery('');
+            onRemoveFilter={(key, value) => {
+              if (key === 'city' && value) {
+                setFilterCity(filterCity.filter(v => v !== value));
+              } else if (key === 'phone' && value) {
+                setFilterPhone(filterPhone.filter(v => v !== value));
+              } else if (key === 'circle' && value) {
+                setFilterCircle(filterCircle.filter(v => v !== value));
+              } else if (key === 'company' && value) {
+                setFilterCompany(filterCompany.filter(v => v !== value));
+              } else if (key === 'search') {
+                setSearchQuery('');
+              }
             }}
             onClearAll={clearAllFilters}
             companies={companies}
@@ -513,61 +527,53 @@ function ContactsContent() {
             <div className="flex flex-wrap items-center gap-2">
               {/* Entreprise */}
               {companies.length > 0 && (
-                <select
-                  value={filterCompany}
-                  onChange={(e) => setFilterCompany(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[150px]"
-                >
-                  <option value="">Entreprise</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id.toString()}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+                <MultiSelectFilter
+                  label="Entreprise"
+                  options={companies.map((company) => ({
+                    value: company.id.toString(),
+                    label: company.name,
+                  }))}
+                  selectedValues={filterCompany}
+                  onSelectionChange={setFilterCompany}
+                  className="min-w-[150px]"
+                />
               )}
 
               {/* Ville */}
-              <select
-                value={filterCity}
-                onChange={(e) => setFilterCity(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
-              >
-                <option value="">Ville</option>
-                {uniqueValues.cities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
+              <MultiSelectFilter
+                label="Ville"
+                options={uniqueValues.cities.map((city) => ({
+                  value: city,
+                  label: city,
+                }))}
+                selectedValues={filterCity}
+                onSelectionChange={setFilterCity}
+                className="min-w-[120px]"
+              />
 
               {/* Téléphone */}
-              <select
-                value={filterPhone}
-                onChange={(e) => setFilterPhone(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[140px]"
-              >
-                <option value="">Téléphone</option>
-                {uniqueValues.phones.map((phone) => (
-                  <option key={phone} value={phone}>
-                    {phone}
-                  </option>
-                ))}
-              </select>
+              <MultiSelectFilter
+                label="Téléphone"
+                options={uniqueValues.phones.map((phone) => ({
+                  value: phone,
+                  label: phone,
+                }))}
+                selectedValues={filterPhone}
+                onSelectionChange={setFilterPhone}
+                className="min-w-[140px]"
+              />
 
               {/* Cercle */}
-              <select
-                value={filterCircle}
-                onChange={(e) => setFilterCircle(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[120px]"
-              >
-                <option value="">Cercle</option>
-                {circles.map((circle) => (
-                  <option key={circle} value={circle}>
-                    {circle.charAt(0).toUpperCase() + circle.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <MultiSelectFilter
+                label="Cercle"
+                options={circles.map((circle) => ({
+                  value: circle,
+                  label: circle.charAt(0).toUpperCase() + circle.slice(1),
+                }))}
+                selectedValues={filterCircle}
+                onSelectionChange={setFilterCircle}
+                className="min-w-[120px]"
+              />
             </div>
 
             {/* Bottom row: View toggle, Actions */}
@@ -721,8 +727,8 @@ function ContactsContent() {
             filterable={false}
             emptyMessage="Aucun contact trouvé"
             loading={loading}
-            infiniteScroll={!filterCity && !filterPhone && !filterCircle && !filterCompany}
-            hasMore={hasMore && !filterCity && !filterPhone && !filterCircle && !filterCompany}
+            infiniteScroll={filterCity.length === 0 && filterPhone.length === 0 && filterCircle.length === 0 && filterCompany.length === 0}
+            hasMore={hasMore && filterCity.length === 0 && filterPhone.length === 0 && filterCircle.length === 0 && filterCompany.length === 0}
             loadingMore={loadingMore}
             onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Contact)}
@@ -732,7 +738,7 @@ function ContactsContent() {
         <ContactsGallery
           contacts={filteredContacts}
           onContactClick={openDetailPage}
-          hasMore={hasMore && !filterCity && !filterPhone && !filterCircle && !filterCompany}
+          hasMore={hasMore && filterCity.length === 0 && filterPhone.length === 0 && filterCircle.length === 0 && filterCompany.length === 0}
           loadingMore={loadingMore}
           onLoadMore={loadMore}
         />
