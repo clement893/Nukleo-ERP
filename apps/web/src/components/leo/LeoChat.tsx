@@ -7,7 +7,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Card, Button, Input } from '@/components/ui';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, Sparkles, User } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { LeoMessage } from '@/lib/api/leo-agent';
 
@@ -58,6 +58,12 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
               message.role === 'user' ? 'justify-end' : 'justify-start'
             )}
           >
+            {message.role === 'assistant' && (
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              </div>
+            )}
+            
             <div
               className={clsx(
                 'max-w-[80%] rounded-lg px-4 py-3',
@@ -83,6 +89,12 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
                 })}
               </div>
             </div>
+
+            {message.role === 'user' && (
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <User className="w-5 h-5 text-muted-foreground" />
+              </div>
+            )}
           </div>
         ))}
 

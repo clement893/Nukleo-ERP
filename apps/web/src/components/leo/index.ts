@@ -5,3 +5,4 @@
 
 export { LeoChat } from './LeoChat';
 export { LeoSidebar } from './LeoSidebar';
+export { LeoContainer } from './LeoContainer';
