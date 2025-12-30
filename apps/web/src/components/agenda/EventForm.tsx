@@ -49,6 +49,7 @@ export default function EventForm({
     location: string;
     color: string;
     attendees: string;
+    endDate: string;
   }>({
     title: event?.title || '',
     description: event?.description || '',
@@ -57,6 +58,7 @@ export default function EventForm({
     location: event?.location || '',
     color: event?.color || '#3B82F6',
     attendees: event?.attendees?.join(', ') || '',
+    endDate: event?.endDate ? event.endDate.toISOString().split('T')[0] : '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,6 +76,7 @@ export default function EventForm({
       const eventData: Omit<DayEvent, 'id'> = {
         title: formData.title.trim(),
         date: date,
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
         description: formData.description.trim() || undefined,
         type: formData.type as DayEvent['type'],
         time: formData.time.trim() || undefined,
@@ -141,6 +144,18 @@ export default function EventForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
+            Date de fin (optionnel)
+          </label>
+          <Input
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            disabled={loading}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1">
             Heure
           </label>
           <Input
@@ -150,16 +165,16 @@ export default function EventForm({
             disabled={loading}
           />
         </div>
+      </div>
 
-        <div>
-          <Select
-            label="Couleur"
-            options={COLORS}
-            value={formData.color}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            disabled={loading}
-          />
-        </div>
+      <div>
+        <Select
+          label="Couleur"
+          options={COLORS}
+          value={formData.color}
+          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+          disabled={loading}
+        />
       </div>
 
       <div>

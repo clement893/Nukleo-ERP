@@ -25,6 +25,7 @@ import {
   Trash2
 } from 'lucide-react';
 import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
+import ImportProjectsInstructions from '@/components/projets/ImportProjectsInstructions';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -67,6 +68,7 @@ function ProjectsContent() {
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [currentImportId, setCurrentImportId] = useState<string | null>(null);
   const [showImportLogs, setShowImportLogs] = useState(false);
+  const [showImportInstructions, setShowImportInstructions] = useState(false);
   
   // Debounce search query to avoid excessive re-renders (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -430,6 +432,16 @@ function ProjectsContent() {
                       <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                         <div className="py-1">
                           <button
+                            onClick={() => {
+                              setShowImportInstructions(true);
+                              setShowActionsMenu(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                            Instructions d'import
+                          </button>
+                          <button
                             onClick={async () => {
                               try {
                                 await projectsAPI.downloadTemplate();
@@ -442,7 +454,7 @@ function ProjectsContent() {
                                 });
                               }
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
                           >
                             <FileSpreadsheet className="w-3.5 h-3.5" />
                             Modèle Excel
@@ -595,6 +607,27 @@ function ProjectsContent() {
         )}
       </Modal>
       
+      {/* Import Instructions Modal */}
+      <ImportProjectsInstructions
+        isOpen={showImportInstructions}
+        onClose={() => setShowImportInstructions(false)}
+        onDownloadTemplate={async () => {
+          try {
+            await projectsAPI.downloadTemplate();
+            showToast({
+              message: 'Modèle téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle',
+              type: 'error',
+            });
+          }
+        }}
+      />
+
       {/* Import Logs Modal */}
       {showImportLogs && (
         <Modal
