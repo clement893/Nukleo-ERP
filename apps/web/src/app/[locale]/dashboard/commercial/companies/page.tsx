@@ -15,7 +15,8 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import CompaniesGallery from '@/components/commercial/CompaniesGallery';
 import CompanyForm from '@/components/commercial/CompanyForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Search } from 'lucide-react';
+import ImportCompaniesInstructions from '@/components/commercial/ImportCompaniesInstructions';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Search, HelpCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -35,6 +36,7 @@ function CompaniesContent() {
   const [filterIsClient, setFilterIsClient] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showImportInstructions, setShowImportInstructions] = useState(false);
   
   // Pagination pour le scroll infini
   const [skip, setSkip] = useState(0);
@@ -552,6 +554,16 @@ function CompaniesContent() {
                         <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                           <div className="py-1">
                             <button
+                              onClick={() => {
+                                setShowImportInstructions(true);
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                              Instructions d'import
+                            </button>
+                            <button
                               onClick={async () => {
                                 try {
                                   await companiesAPI.downloadTemplate();
@@ -743,8 +755,29 @@ function CompaniesContent() {
             loading={loading}
             parentCompanies={parentCompanies}
           />
-        )}
-      </Modal>
+          )}
+        </Modal>
+
+      {/* Import Instructions Modal */}
+      <ImportCompaniesInstructions
+        isOpen={showImportInstructions}
+        onClose={() => setShowImportInstructions(false)}
+        onDownloadTemplate={async () => {
+          try {
+            await companiesAPI.downloadZipTemplate();
+            showToast({
+              message: 'Modèle ZIP téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+              type: 'error',
+            });
+          }
+        }}
+      />
     </MotionDiv>
   );
 }

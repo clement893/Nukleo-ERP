@@ -155,25 +155,67 @@ export function generateCompanyTemplate(): Blob {
   // Add worksheet to workbook
   XLSX.utils.book_append_sheet(wb, ws, 'Entreprises');
 
-  // Create instructions sheet
+  // Create instructions sheet with detailed information
   const instructionsData = [
     ['Instructions pour l\'import d\'entreprises'],
     [''],
-    ['Colonnes requises:'],
-    ['- Nom de l\'entreprise'],
+    ['=== COLONNES REQUISES ==='],
+    ['- Nom de l\'entreprise (name, nom, nom de l\'entreprise) *REQUIS*'],
     [''],
-    ['Colonnes optionnelles:'],
-    ['- Site web, Logo URL (S3), Pays, Client (Y/N), Description, Courriel, Téléphone, Adresse, Ville'],
-    ['- ID Entreprise parente, Facebook, Instagram, LinkedIn'],
+    ['=== COLONNES OPTIONNELLES ==='],
     [''],
-    ['Format Client (Y/N):'],
-    ['- Oui, Yes, True, 1 pour client'],
-    ['- Non, No, False, 0 pour non-client'],
+    ['Informations principales:'],
+    ['- Description (description)'],
+    ['- Site web (website, site web, site internet, url)'],
+    ['- Logo URL (S3) (logo_url, logo, logo url, image_url)'],
     [''],
-    ['Pour les logos dans un ZIP:'],
-    ['- Placez les logos dans un dossier "logos/"'],
-    ['- Nommez les fichiers selon le nom de l\'entreprise (ex: acme.jpg)'],
-    ['- Ou référencez le nom du fichier dans la colonne "Logo URL (S3)"'],
+    ['Contact:'],
+    ['- Courriel (email, courriel, e-mail, mail)'],
+    ['- Téléphone (phone, téléphone, telephone, tel)'],
+    ['- Adresse (address, adresse)'],
+    ['- Ville (city, ville)'],
+    ['- Pays (country, pays)'],
+    [''],
+    ['Statut et relations:'],
+    ['- Client (Y/N) (is_client, client, est client, is client)'],
+    ['- ID Entreprise parente (parent_company_id, id entreprise parente)'],
+    [''],
+    ['Réseaux sociaux:'],
+    ['- Facebook (facebook, facebook_url, page facebook)'],
+    ['- Instagram (instagram, instagram_url, profil instagram)'],
+    ['- LinkedIn (linkedin, linkedin_url, profil linkedin)'],
+    [''],
+    ['=== FORMAT CLIENT (Y/N) ==='],
+    ['Valeurs acceptées pour "Oui" (client):'],
+    ['- Oui, Yes, True, 1, Vrai, O'],
+    [''],
+    ['Valeurs acceptées pour "Non" (non-client):'],
+    ['- Non, No, False, 0, Faux, N'],
+    [''],
+    ['=== LOGOS ==='],
+    ['Option 1: Logo dans le ZIP'],
+    ['- Placez les logos dans un dossier "logos/" dans le ZIP'],
+    ['- Nommez les fichiers selon le nom de l\'entreprise (normalisé)'],
+    ['- Exemple: logos/acme_corporation.jpg'],
+    [''],
+    ['Option 2: Logo URL S3'],
+    ['- Indiquez l\'URL S3 dans la colonne "Logo URL (S3)"'],
+    ['- Format: companies/logos/acme.jpg ou URL complète'],
+    [''],
+    ['Option 3: Nom de fichier explicite'],
+    ['- Ajoutez une colonne "logo_filename" ou "nom_fichier_logo"'],
+    ['- Indiquez le nom exact du fichier logo'],
+    [''],
+    ['=== ENTREPRISES PARENTES (FILIALES) ==='],
+    ['- Utilisez la colonne "ID Entreprise parente" pour créer une filiale'],
+    ['- L\'entreprise parente doit exister dans la base de données'],
+    ['- Trouvez l\'ID dans la liste des entreprises'],
+    [''],
+    ['=== NOTES IMPORTANTES ==='],
+    ['- Les noms de colonnes sont insensibles à la casse et aux accents'],
+    ['- Les entreprises existantes seront mises à jour si le nom correspond'],
+    ['- Les logos seront automatiquement uploadés vers S3 si présents dans le ZIP'],
+    ['- Si Client (Y/N) = Oui, l\'entreprise sera créée dans la liste des clients'],
   ];
 
   const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
@@ -214,73 +256,169 @@ export async function generateCompanyZipTemplate(): Promise<Blob> {
   const excelArrayBuffer = await excelBlob.arrayBuffer();
   zip.file('entreprises.xlsx', excelArrayBuffer);
 
-  // Create README with instructions
+  // Create README with comprehensive instructions
   const readmeContent = `# Instructions pour l'import d'entreprises avec logos
 
-## Structure du fichier ZIP
+## 📦 Structure du fichier ZIP
 
 Votre fichier ZIP doit contenir :
 - \`entreprises.xlsx\` : Fichier Excel avec les données des entreprises
 - \`logos/\` : Dossier contenant les logos des entreprises (optionnel)
 
-## Structure recommandée
+## 📁 Structure recommandée
 
 \`\`\`
 entreprises_import.zip
 ├── entreprises.xlsx
 └── logos/
-    ├── acme.jpg
-    ├── example.png
-    └── ...
+    ├── acme_corporation.jpg
+    ├── tech_solutions.png
+    └── example_company.jpeg
 \`\`\`
 
-## Format du fichier Excel
-
-Le fichier Excel doit contenir les colonnes suivantes :
+## 📊 Format du fichier Excel
 
 ### Colonnes requises
-- **Nom de l'entreprise** (ou \`name\`) : Nom de l'entreprise *REQUIS*
+- **Nom de l'entreprise** (ou \`name\`, \`nom\`) : Nom de l'entreprise *REQUIS*
 
 ### Colonnes optionnelles
-- **Site web** (ou \`website\`) : URL du site web
-- **Logo URL (S3)** (ou \`logo_url\`) : URL S3 du logo ou nom du fichier dans le ZIP
-- **Pays** (ou \`country\`) : Pays de l'entreprise
-- **Client (Y/N)** (ou \`is_client\`) : Oui/Non pour indiquer si c'est un client
-- **Description** : Description de l'entreprise
-- **Courriel** (ou \`email\`) : Adresse email
-- **Téléphone** (ou \`phone\`) : Numéro de téléphone
-- **Adresse** (ou \`address\`) : Adresse complète
-- **Ville** (ou \`city\`) : Ville
-- **ID Entreprise parente** (ou \`parent_company_id\`) : ID de l'entreprise parente (si filiale)
-- **Facebook** : URL Facebook
-- **Instagram** : URL Instagram
-- **LinkedIn** : URL LinkedIn
 
-## Format Client (Y/N)
+#### Informations principales
+- **Description** (ou \`description\`) : Description de l'entreprise
+- **Site web** (ou \`website\`, \`site web\`, \`site internet\`, \`url\`) : URL du site web
+- **Logo URL (S3)** (ou \`logo_url\`, \`logo\`, \`logo url\`, \`image_url\`) : URL S3 ou nom du fichier
+
+#### Contact
+- **Courriel** (ou \`email\`, \`courriel\`, \`e-mail\`, \`mail\`) : Adresse email
+- **Téléphone** (ou \`phone\`, \`téléphone\`, \`telephone\`, \`tel\`) : Numéro de téléphone
+- **Adresse** (ou \`address\`, \`adresse\`) : Adresse complète
+- **Ville** (ou \`city\`, \`ville\`) : Ville
+- **Pays** (ou \`country\`, \`pays\`) : Pays de l'entreprise
+
+#### Statut et relations
+- **Client (Y/N)** (ou \`is_client\`, \`client\`, \`est client\`, \`is client\`) : Oui/Non
+- **ID Entreprise parente** (ou \`parent_company_id\`, \`id entreprise parente\`) : ID de l'entreprise parente (si filiale)
+
+#### Réseaux sociaux
+- **Facebook** (ou \`facebook\`, \`facebook_url\`, \`page facebook\`) : URL Facebook
+- **Instagram** (ou \`instagram\`, \`instagram_url\`, \`profil instagram\`) : URL Instagram
+- **LinkedIn** (ou \`linkedin\`, \`linkedin_url\`, \`profil linkedin\`) : URL LinkedIn
+
+## ✅ Format Client (Y/N)
 
 Les valeurs acceptées pour "Client (Y/N)" sont :
-- **Oui** : Oui, Yes, True, 1, Vrai, O
-- **Non** : Non, No, False, 0, Faux, N
 
-## Logos
+**Pour "Oui" (client):**
+- Oui, Yes, True, 1, Vrai, O
 
-### Option 1 : Logo dans le ZIP
+**Pour "Non" (non-client):**
+- Non, No, False, 0, Faux, N
+
+## 🖼️ Logos
+
+### Option 1 : Logo dans le ZIP (recommandé)
 1. Placez les logos dans un dossier \`logos/\` dans le ZIP
-2. Nommez les fichiers selon le nom de l'entreprise (normalisé, sans accents, espaces remplacés par _)
+2. Nommez les fichiers selon le nom de l'entreprise (normalisé : minuscules, sans accents, espaces remplacés par _)
 3. Exemple : \`logos/acme_corporation.jpg\`
+4. Formats acceptés : .jpg, .jpeg, .png, .gif, .webp
 
-### Option 2 : Logo URL S3
+### Option 2 : Nom de fichier explicite
+1. Ajoutez une colonne \`logo_filename\` ou \`nom_fichier_logo\` dans l'Excel
+2. Indiquez le nom exact du fichier logo (ex: \`acme_corporation.jpg\`)
+3. Le fichier doit être présent dans le dossier \`logos/\` du ZIP
+
+### Option 3 : Logo URL S3
 1. Indiquez l'URL S3 complète dans la colonne "Logo URL (S3)"
-2. Format : \`companies/logos/acme.jpg\` ou URL complète
+2. Format : \`companies/logos/acme.jpg\` ou URL complète S3
 
-## Notes importantes
+**Exemple de nommage automatique:**
+- Entreprise : "Acme Corporation" → Logo : \`acme_corporation.jpg\`
+- Entreprise : "Tech Solutions Inc." → Logo : \`tech_solutions_inc.jpg\`
 
-- Les noms de colonnes sont insensibles à la casse et aux accents
-- Les entreprises existantes seront mises à jour si le nom correspond
-- Les logos seront automatiquement uploadés vers S3 si présents dans le ZIP
+## 🏢 Entreprises parentes (filiales)
+
+Pour créer une filiale :
+1. L'entreprise parente doit exister dans la base de données
+2. Trouvez l'ID de l'entreprise parente dans la liste des entreprises
+3. Utilisez la colonne "ID Entreprise parente" avec cet ID
+4. La filiale sera automatiquement liée à l'entreprise parente
+
+**Exemple:**
+- Entreprise parente : "Acme Corporation" (ID: 1)
+- Filiale : "Acme France" avec "ID Entreprise parente" = 1
+
+## 📝 Exemple de fichier Excel
+
+| Nom de l'entreprise | Site web | Pays | Client (Y/N) | logo_filename |
+|---------------------|----------|------|-------------|---------------|
+| Acme Corporation | https://www.acme.com | France | Oui | acme_corporation.jpg |
+| Tech Solutions | https://tech-solutions.com | Canada | Non | tech_solutions.png |
+
+## ⚠️ Notes importantes
+
+- **Noms de colonnes** : Insensibles à la casse et aux accents (ex: "Nom", "nom", "NOM" sont acceptés)
+- **Mise à jour** : Les entreprises existantes seront mises à jour si le nom correspond exactement
+- **Upload automatique** : Les logos seront automatiquement uploadés vers S3 si présents dans le ZIP
+- **Création client** : Si Client (Y/N) = Oui, l'entreprise sera automatiquement créée dans la liste des clients
+- **Entreprises parentes** : L'entreprise parente doit exister avant l'import de la filiale
+- **S3 requis** : Assurez-vous que S3 est configuré pour que les logos soient uploadés correctement
+
+## 🔄 Processus d'import
+
+1. Téléchargez ce modèle ZIP
+2. Décompressez le fichier
+3. Remplissez le fichier \`entreprises.xlsx\` avec vos données
+4. Ajoutez les logos dans le dossier \`logos/\` en suivant le format de nommage
+5. Recompressez le tout en ZIP
+6. Importez le fichier ZIP via l'interface
+
+## 🆘 Support
+
+En cas de problème lors de l'import, vérifiez :
+- Le format du fichier Excel (doit être .xlsx ou .xls)
+- Le nommage des logos (doit correspondre au format nom_entreprise)
+- Les colonnes requises sont présentes et remplies
+- L'entreprise parente existe si vous créez une filiale
+- S3 est configuré correctement pour l'upload des logos
 `;
 
   zip.file('README.md', readmeContent);
+
+  // Create logos folder with instructions file
+  const logosInstructions = `# Dossier Logos
+
+Placez ici les logos de vos entreprises.
+
+## Format de nommage
+
+Nommez vos logos selon le format : \`nom_entreprise.extension\`
+
+Le nom de l'entreprise sera normalisé automatiquement :
+- Accents supprimés
+- Espaces remplacés par des underscores (_)
+- Converti en minuscules
+
+Exemples :
+- Entreprise : "Acme Corporation" → Logo : acme_corporation.jpg
+- Entreprise : "Tech Solutions Inc." → Logo : tech_solutions_inc.jpg
+- Entreprise : "Éxample & Co" → Logo : example_co.jpg
+
+## Formats acceptés
+
+- .jpg / .jpeg
+- .png
+- .gif
+- .webp
+
+## Important
+
+- Les noms de fichiers doivent être en minuscules
+- Utilisez des underscores (_) pour séparer les mots
+- Le système associera automatiquement les logos aux entreprises correspondantes dans le fichier Excel
+- Vous pouvez aussi spécifier le nom du fichier dans une colonne Excel : \`logo_filename\` ou \`nom_fichier_logo\`
+`;
+  
+  zip.folder('logos')?.file('INSTRUCTIONS.txt', logosInstructions);
 
   // Generate ZIP blob
   const zipBlob = await zip.generateAsync({ type: 'blob' });
