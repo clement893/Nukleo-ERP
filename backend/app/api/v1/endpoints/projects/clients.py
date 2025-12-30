@@ -228,11 +228,11 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: str = Query("0", description="Number of records to skip"),
-    limit: str = Query("100", description="Maximum number of records to return"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
-    responsible_id: Optional[str] = Query(None, description="Filter by responsible employee ID"),
-    company_id: Optional[str] = Query(None, description="Filter by company ID"),
+    responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
+    company_id: Optional[int] = Query(None, description="Filter by company ID"),
     search: Optional[str] = Query(None, description="Search by company name or responsible employee name"),
 ) -> List[Client]:
     """
@@ -243,6 +243,7 @@ async def list_clients(
         limit: Maximum number of records to return
         status: Optional status filter
         responsible_id: Optional responsible filter
+        company_id: Optional company filter
         search: Optional search term
         current_user: Current authenticated user
         db: Database session
@@ -250,44 +251,13 @@ async def list_clients(
     Returns:
         List of clients
     """
-    # Convert string parameters to integers
-    try:
-        skip_int = int(skip.strip()) if skip and skip.strip() else 0
-        limit_int = int(limit.strip()) if limit and limit.strip() else 100
-    except (ValueError, TypeError, AttributeError):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="skip and limit must be valid integers"
-        )
+    # Validate ranges (already validated by FastAPI Query, but ensure defaults)
+    skip_int = max(0, skip)
+    limit_int = min(max(1, limit), 1000)
     
-    # Validate ranges
-    if skip_int < 0:
-        skip_int = 0
-    if limit_int < 1:
-        limit_int = 100
-    elif limit_int > 1000:
-        limit_int = 1000
-    
-    # Convert optional integer parameters
-    responsible_id_int = None
-    if responsible_id is not None and responsible_id.strip():
-        try:
-            responsible_id_int = int(responsible_id)
-        except (ValueError, TypeError):
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="responsible_id must be a valid integer"
-            )
-    
-    company_id_int = None
-    if company_id is not None and company_id.strip():
-        try:
-            company_id_int = int(company_id)
-        except (ValueError, TypeError):
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="company_id must be a valid integer"
-            )
+    # Use integer parameters directly
+    responsible_id_int = responsible_id
+    company_id_int = company_id
     
     query = select(Client)
     
