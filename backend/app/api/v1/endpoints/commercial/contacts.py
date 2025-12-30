@@ -11,7 +11,9 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 import zipfile
 import os
+import unicodedata
 from io import BytesIO
+from datetime import datetime as dt
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -510,6 +512,32 @@ async def import_contacts(
        - contacts.xlsx or contacts.xls (Excel file with contact data)
        - photos/ folder (optional) with images named as "firstname_lastname.jpg" or referenced in Excel
     
+    Supported column names (case-insensitive, accent-insensitive):
+    - First Name: first_name, prénom, prenom, firstname, first name, given_name, given name
+    - Last Name: last_name, nom, name, lastname, last name, surname, family_name, family name, nom de famille
+    - Company: company_name, company, entreprise, entreprise_name, nom_entreprise, société, societe, organisation, organization, firme, business, client
+    - Company ID: company_id, id_entreprise, entreprise_id, company id, id company, id entreprise
+    - Position: position, poste, job_title, job title, titre, fonction, role, titre du poste
+    - Circle: circle, cercle, network, réseau, reseau
+    - LinkedIn: linkedin, linkedin_url, linkedin url, profil linkedin
+    - Email: email, courriel, e-mail, mail, adresse email, adresse courriel, email address
+    - Phone: phone, téléphone, telephone, tel, tél, phone_number, phone number, numéro de téléphone, numero de telephone, mobile, portable
+    - City: city, ville, cité, cite, localité, localite
+    - Country: country, pays, nation, nationalité, nationalite
+    - Region: region, région, zone, area, location, localisation (can be parsed to extract city/country if separated by comma, dash, or slash)
+    - Birthday: birthday, anniversaire, date de naissance, birth_date, birth date, dob
+    - Language: language, langue, lang, idioma
+    - Employee ID: employee_id, id_employé, id_employe, employé_id, employe_id, employee id, id employee, responsable_id, responsable id, assigned_to_id, assigned to id
+    - Photo URL: photo_url, photo, photo url, url photo, image_url, image url, avatar, avatar_url, avatar url
+    
+    Features:
+    - Automatic company matching by name (exact, without legal form, or partial match)
+    - Automatic extraction of city/country from region field if city/country columns are missing
+    - Case-insensitive and accent-insensitive column name matching
+    - Automatic type conversion for IDs (handles float strings)
+    - Date parsing for birthday field (multiple formats supported)
+    - Warnings for companies not found, partial matches, and invalid IDs
+    
     Args:
         file: Excel file or ZIP file with contacts data and photos
         current_user: Current authenticated user
@@ -585,6 +613,60 @@ async def import_contacts(
         if company.name:
             company_name_to_id[company.name.lower().strip()] = company.id
     
+    # Helper function to normalize column names (case-insensitive, handle accents)
+    def normalize_key(key: str) -> str:
+        """Normalize column name for matching"""
+        if not key:
+            return ''
+        # Convert to lowercase and strip whitespace
+        normalized = str(key).lower().strip()
+        # Remove accents and special characters for better matching
+        normalized = unicodedata.normalize('NFD', normalized)
+        normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+        return normalized
+    
+    # Helper function to get value from row with multiple possible column names
+    def get_field_value(row: dict, possible_names: list) -> Optional[str]:
+        """Get field value trying multiple possible column names"""
+        # First try exact match (case-sensitive)
+        for name in possible_names:
+            if name in row and row[name] is not None:
+                value = str(row[name]).strip()
+                if value:
+                    return value
+        
+        # Then try normalized match (case-insensitive, accent-insensitive)
+        normalized_row = {normalize_key(k): v for k, v in row.items()}
+        for name in possible_names:
+            normalized_name = normalize_key(name)
+            if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
+                value = str(normalized_row[normalized_name]).strip()
+                if value:
+                    return value
+        
+        return None
+    
+    # Helper function to parse region and extract city/country if possible
+    def parse_region(region: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+        """Try to extract city and country from region field"""
+        if not region:
+            return None, None
+        
+        region_str = str(region).strip()
+        if not region_str:
+            return None, None
+        
+        # Common patterns: "City, Country" or "City - Country" or "City/Country"
+        separators = [',', '-', '/', '|']
+        for sep in separators:
+            if sep in region_str:
+                parts = [p.strip() for p in region_str.split(sep, 1)]
+                if len(parts) == 2:
+                    return parts[0] if parts[0] else None, parts[1] if parts[1] else None
+        
+        # If no separator, assume it's a city
+        return region_str, None
+    
     # Process imported data
     created_contacts = []
     errors = []
@@ -593,24 +675,39 @@ async def import_contacts(
     
     for idx, row_data in enumerate(result['data']):
         try:
-            # Map Excel columns to Contact fields
-            first_name = row_data.get('first_name') or row_data.get('prénom') or ''
-            last_name = row_data.get('last_name') or row_data.get('nom') or ''
+            # Map Excel columns to Contact fields with multiple possible column names
+            first_name = get_field_value(row_data, [
+                'first_name', 'prénom', 'prenom', 'firstname', 'first name',
+                'nom', 'name', 'given_name', 'given name'
+            ]) or ''
             
-            # Handle company matching by name
-            company_id = row_data.get('company_id') or None
+            last_name = get_field_value(row_data, [
+                'last_name', 'nom', 'name', 'lastname', 'last name',
+                'surname', 'family_name', 'family name', 'nom de famille'
+            ]) or ''
+            
+            # Handle company matching by name or ID
+            company_id = None
+            # Try to get company_id directly (as integer or string)
+            company_id_raw = get_field_value(row_data, [
+                'company_id', 'id_entreprise', 'entreprise_id', 'company id',
+                'id company', 'id entreprise'
+            ])
+            if company_id_raw:
+                try:
+                    company_id = int(float(str(company_id_raw)))  # Handle float strings
+                except (ValueError, TypeError):
+                    pass
             
             # If company_id is not provided, try to find company by name
             if not company_id:
                 # Try multiple column names for company name
-                company_name = (
-                    row_data.get('company_name') or 
-                    row_data.get('company') or 
-                    row_data.get('entreprise') or 
-                    row_data.get('entreprise_name') or
-                    row_data.get('nom_entreprise') or
-                    None
-                )
+                company_name = get_field_value(row_data, [
+                    'company_name', 'company', 'entreprise', 'entreprise_name',
+                    'nom_entreprise', 'company name', 'nom entreprise',
+                    'société', 'societe', 'organisation', 'organization',
+                    'firme', 'business', 'client'
+                ])
                 
                 if company_name and company_name.strip():
                     company_name_normalized = company_name.strip().lower()
@@ -685,7 +782,10 @@ async def import_contacts(
                             })
             
             # Handle photo upload if ZIP contains photos
-            photo_url = row_data.get('photo_url') or row_data.get('photo') or None
+            photo_url = get_field_value(row_data, [
+                'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
+                'image url', 'avatar', 'avatar_url', 'avatar url'
+            ])
             
             # If no photo_url but we have photos in ZIP, try to find matching photo
             if not photo_url and photos_dict and s3_service:
@@ -735,21 +835,124 @@ async def import_contacts(
                 if uploaded_photo_url:
                     photo_url = uploaded_photo_url
             
+            # Get position
+            position = get_field_value(row_data, [
+                'position', 'poste', 'job_title', 'job title', 'titre',
+                'fonction', 'role', 'titre du poste'
+            ])
+            
+            # Get circle
+            circle = get_field_value(row_data, [
+                'circle', 'cercle', 'network', 'réseau', 'reseau'
+            ])
+            
+            # Get LinkedIn
+            linkedin = get_field_value(row_data, [
+                'linkedin', 'linkedin_url', 'linkedin url', 'profil linkedin'
+            ])
+            
+            # Get email
+            email = get_field_value(row_data, [
+                'email', 'courriel', 'e-mail', 'mail', 'adresse email',
+                'adresse courriel', 'email address'
+            ])
+            
+            # Get phone
+            phone = get_field_value(row_data, [
+                'phone', 'téléphone', 'telephone', 'tel', 'tél',
+                'phone_number', 'phone number', 'numéro de téléphone',
+                'numero de telephone', 'mobile', 'portable'
+            ])
+            
+            # Get city and country - try direct fields first, then parse region
+            city = get_field_value(row_data, [
+                'city', 'ville', 'cité', 'cite', 'localité', 'localite'
+            ])
+            country = get_field_value(row_data, [
+                'country', 'pays', 'nation', 'nationalité', 'nationalite'
+            ])
+            
+            # If city or country not found, try to parse from region
+            if not city or not country:
+                region = get_field_value(row_data, [
+                    'region', 'région', 'zone', 'area', 'location', 'localisation'
+                ])
+                if region:
+                    parsed_city, parsed_country = parse_region(region)
+                    if parsed_city and not city:
+                        city = parsed_city
+                    if parsed_country and not country:
+                        country = parsed_country
+            
+            # Get birthday
+            birthday_raw = get_field_value(row_data, [
+                'birthday', 'anniversaire', 'date de naissance',
+                'date de naissance', 'birth_date', 'birth date', 'dob'
+            ])
+            birthday = None
+            if birthday_raw:
+                try:
+                    # Try to parse various date formats
+                    try:
+                        from dateutil import parser
+                        birthday = parser.parse(str(birthday_raw)).date()
+                    except ImportError:
+                        # Fallback to datetime.strptime for common formats
+                        date_str = str(birthday_raw).strip()
+                        # Try common date formats
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%d.%m.%Y']:
+                            try:
+                                birthday = dt.strptime(date_str, fmt).date()
+                                break
+                            except ValueError:
+                                continue
+                except (ValueError, TypeError):
+                    try:
+                        # Try pandas datetime if available
+                        import pandas as pd
+                        if isinstance(birthday_raw, (pd.Timestamp,)):
+                            birthday = birthday_raw.date()
+                    except (ImportError, AttributeError, TypeError):
+                        pass
+            
+            # Get language
+            language = get_field_value(row_data, [
+                'language', 'langue', 'lang', 'idioma'
+            ])
+            
+            # Get employee_id
+            employee_id = None
+            employee_id_raw = get_field_value(row_data, [
+                'employee_id', 'id_employé', 'id_employe', 'employé_id',
+                'employe_id', 'employee id', 'id employee', 'responsable_id',
+                'responsable id', 'assigned_to_id', 'assigned to id'
+            ])
+            if employee_id_raw:
+                try:
+                    employee_id = int(float(str(employee_id_raw)))  # Handle float strings
+                except (ValueError, TypeError):
+                    warnings.append({
+                        'row': idx + 2,
+                        'type': 'invalid_employee_id',
+                        'message': f"ID employé invalide: '{employee_id_raw}'",
+                        'data': {'employee_id_raw': employee_id_raw}
+                    })
+            
             contact_data = ContactCreate(
                 first_name=first_name,
                 last_name=last_name,
                 company_id=company_id,
-                position=row_data.get('position') or row_data.get('poste') or None,
-                circle=row_data.get('circle') or row_data.get('cercle') or None,
-                linkedin=row_data.get('linkedin') or None,
+                position=position,
+                circle=circle,
+                linkedin=linkedin,
                 photo_url=photo_url,
-                email=row_data.get('email') or row_data.get('courriel') or None,
-                phone=row_data.get('phone') or row_data.get('téléphone') or row_data.get('telephone') or None,
-                city=row_data.get('city') or row_data.get('ville') or None,
-                country=row_data.get('country') or row_data.get('pays') or None,
-                birthday=row_data.get('birthday') or row_data.get('anniversaire') or None,
-                language=row_data.get('language') or row_data.get('langue') or None,
-                employee_id=row_data.get('employee_id') or None,
+                email=email,
+                phone=phone,
+                city=city,
+                country=country,
+                birthday=birthday,
+                language=language,
+                employee_id=employee_id,
             )
             
             # Create contact
