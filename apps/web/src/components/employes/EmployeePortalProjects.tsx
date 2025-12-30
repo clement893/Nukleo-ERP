@@ -7,7 +7,6 @@ import { useToast } from '@/components/ui';
 import { Card, Loading, Alert } from '@/components/ui';
 import { FolderKanban, CheckCircle, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRouter } from 'next/navigation';
 
 interface EmployeePortalProjectsProps {
   employeeId: number;

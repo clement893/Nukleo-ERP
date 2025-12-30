@@ -8,7 +8,7 @@ interface EmployeePortalLeoProps {
   employeeId: number;
 }
 
-export default function EmployeePortalLeo({ _employeeId }: EmployeePortalLeoProps) {
+export default function EmployeePortalLeo({ employeeId: _employeeId }: EmployeePortalLeoProps) {
   return (
     <div className="space-y-4 mt-4">
       <div className="flex items-center justify-between">
