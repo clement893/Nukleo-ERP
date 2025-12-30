@@ -44,9 +44,9 @@ export default function AdminMediaLibraryPage() {
       setIsLoading(true);
       setError(null);
       
-      // Fetch media from S3 bucket with reasonable limit to avoid freezing
-      // Load in batches to prevent UI freezing
-      const mediaFiles = await mediaAPI.list(0, 500, undefined, true);
+      // Fetch media from database (not S3) to get proper UUID IDs for deletion
+      // Loading from S3 gives MD5 hash IDs which can't be used for deletion
+      const mediaFiles = await mediaAPI.list(0, 500, undefined, false);
       
       // Convert API Media to MediaItem format
       const convertedMedia: MediaItem[] = mediaFiles.map((file) => {
@@ -123,17 +123,9 @@ export default function AdminMediaLibraryPage() {
       setError(null);
       logger.info('Deleting media', { id });
       
-      // For S3 files (string IDs), we can't delete via the normal API
-      // We'll need to reload the list instead
-      // TODO: Implement S3 file deletion if needed
-      if (typeof id === 'string') {
-        logger.warn('Cannot delete S3 file via API - file_key needed', { id });
-        // Just reload the list for now
-        await loadMedia();
-        return;
-      }
-      
-      await mediaAPI.delete(id as number);
+      // Pass ID as string (UUID from database)
+      // Backend expects UUID format
+      await mediaAPI.delete(String(id));
       
       // Reload media list
       await loadMedia();

@@ -175,6 +175,7 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     """User response schema"""
     id: int
+    avatar: Optional[str] = Field(None, max_length=500, description="Avatar URL")
     created_at: datetime
     updated_at: datetime
 

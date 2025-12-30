@@ -101,12 +101,14 @@ export default function MediaLibraryPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number | string) => {
     try {
       setError(null);
       logger.info('Deleting media', { id });
       
-      await mediaAPI.delete(id);
+      // Pass ID as string (UUID from database)
+      // Backend expects UUID format
+      await mediaAPI.delete(String(id));
       
       // Reload media list
       await loadMedia();

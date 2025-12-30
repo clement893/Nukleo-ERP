@@ -77,6 +77,54 @@ export default function ProfileSettingsPage() {
     }
   };
 
+  const handleAvatarChange = async (file: File) => {
+    try {
+      setError(null);
+      logger.info('Uploading avatar', { fileName: file.name, size: file.size });
+      
+      // Upload avatar file
+      const avatarUrl = await usersAPI.uploadAvatar(file);
+      
+      // Immediately update user profile with new avatar URL
+      const response = await usersAPI.updateMe({ avatar: avatarUrl });
+      
+      if (response.data) {
+        setUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            ...response.data,
+            avatar: avatarUrl,
+            name: [response.data.first_name, response.data.last_name]
+              .filter(Boolean)
+              .join(' ') || response.data.email?.split('@')[0] || '',
+          };
+        });
+        
+        // Update auth store
+        const { setUser: setAuthUser } = useAuthStore.getState();
+        const authUser = useAuthStore.getState().user;
+        if (authUser) {
+          setAuthUser({
+            ...authUser,
+            ...response.data,
+            avatar: avatarUrl,
+            name: [response.data.first_name, response.data.last_name]
+              .filter(Boolean)
+              .join(' ') || response.data.email?.split('@')[0] || '',
+          });
+        }
+        
+        logger.info('Avatar uploaded and saved successfully', { avatarUrl });
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to upload avatar', error instanceof Error ? error : new Error(String(error)));
+      const errorMessage = getErrorMessage(error) || 'Failed to upload avatar. Please try again.';
+      setError(errorMessage);
+      throw error;
+    }
+  };
+
   const handleUserSettingsSave = async (data: {
     name: string;
     email: string;
@@ -91,10 +139,14 @@ export default function ProfileSettingsPage() {
       const first_name = nameParts[0] || '';
       const last_name = nameParts.slice(1).join(' ') || '';
 
-      const updateData: { first_name?: string; last_name?: string; email?: string } = {};
+      const updateData: { first_name?: string; last_name?: string; email?: string; avatar?: string } = {};
       if (first_name) updateData.first_name = first_name;
       if (last_name) updateData.last_name = last_name;
       if (data.email) updateData.email = data.email;
+      // Include current avatar if it exists
+      if (user?.avatar) {
+        updateData.avatar = user.avatar;
+      }
 
       const response = await usersAPI.updateMe(updateData);
 
@@ -190,6 +242,7 @@ export default function ProfileSettingsPage() {
                       website: user.website || undefined,
                     }}
                     onSave={handleUserSettingsSave}
+                    onAvatarChange={handleAvatarChange}
                   />
                 </Section>
               </TabPanel>

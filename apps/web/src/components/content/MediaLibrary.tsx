@@ -30,7 +30,7 @@ export type ViewMode = 'grid' | 'gallery' | 'list';
 export interface MediaLibraryProps {
   media?: MediaItem[];
   onUpload?: (files: File[]) => Promise<void>;
-  onDelete?: (id: number) => Promise<void>;
+  onDelete?: (id: number | string) => Promise<void>;
   onSelect?: (media: MediaItem) => void;
   className?: string;
 }
@@ -99,12 +99,8 @@ export default function MediaLibrary({
 
     try {
       if (onDelete) {
-        // Convert string ID to number if needed
-        const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-        if (isNaN(numericId)) {
-          throw new Error('Invalid media ID');
-        }
-        await onDelete(numericId);
+        // Pass ID as-is (can be UUID string or number)
+        await onDelete(id);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to delete media');

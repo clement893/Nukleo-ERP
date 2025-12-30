@@ -439,6 +439,14 @@ async def update_current_user(
         
     except HTTPException:
         raise
+    except ValueError as e:
+        # Pydantic validation errors
+        logger.error(f"Validation error updating user profile: {e}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data: {str(e)}"
+        )
     except Exception as e:
         logger.error(f"Error updating user profile: {e}", exc_info=True)
         await db.rollback()
@@ -448,6 +456,8 @@ async def update_current_user(
             error_detail = "One or more required fields are missing"
         elif "duplicate" in error_detail.lower() or "unique" in error_detail.lower():
             error_detail = "Email is already taken"
+        elif "value too long" in error_detail.lower() or "string length" in error_detail.lower():
+            error_detail = "One or more fields exceed maximum length"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update user profile: {error_detail}"
