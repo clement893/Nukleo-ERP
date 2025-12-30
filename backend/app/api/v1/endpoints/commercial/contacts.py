@@ -1472,19 +1472,26 @@ async def import_contacts(
             
                 # Check if contact already exists (for reimport/update)
                 existing_contact = None
+                match_reason = None
                 if email_lower and email_lower in contacts_by_email:
                     # Match by email (most reliable)
                     existing_contact = contacts_by_email[email_lower]
+                    match_reason = f"email: {email_lower}"
                 elif email_lower:
                     # Match by name + email
                     name_email_key = (first_name_lower, last_name_lower, email_lower)
                     if name_email_key in contacts_by_name_email:
                         existing_contact = contacts_by_name_email[name_email_key]
+                        match_reason = f"name+email: {first_name} {last_name} + {email_lower}"
                 elif company_id:
                     # Match by name + company_id (if no email)
                     name_company_key = (first_name_lower, last_name_lower, company_id)
                     if name_company_key in contacts_by_name_company:
                         existing_contact = contacts_by_name_company[name_company_key]
+                        match_reason = f"name+company: {first_name} {last_name} + company_id:{company_id}"
+                
+                if existing_contact:
+                    add_import_log(import_id, f"Ligne {idx + 2}: Contact existant trouvé ({match_reason}) - sera mis à jour", "info", {"row": idx + 2, "match_reason": match_reason, "existing_id": existing_contact.id})
             
                 # Get phone
                 phone = get_field_value(row_data, [
@@ -1569,25 +1576,27 @@ async def import_contacts(
             
                 # Validate required fields before creating contact
                 if not first_name or not first_name.strip():
-                    error_msg = f"Ligne {idx + 2}: Prénom manquant - contact ignoré"
-                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}"})
+                    stats["skipped_missing_firstname"] += 1
+                    error_msg = f"Ligne {idx + 2}: ⚠️ Prénom manquant - contact ignoré (first_name='{first_name}', last_name='{last_name}')"
+                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "row_data_keys": list(row_data.keys())})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
                         'error': 'Le prénom est obligatoire'
                     })
-                    logger.warning(f"Row {idx + 2}: Skipping contact - missing first_name")
+                    logger.warning(f"Row {idx + 2}: Skipping contact - missing first_name. Row keys: {list(row_data.keys())}")
                     continue
                 
                 if not last_name or not last_name.strip():
-                    error_msg = f"Ligne {idx + 2}: Nom manquant - contact ignoré"
-                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}"})
+                    stats["skipped_missing_lastname"] += 1
+                    error_msg = f"Ligne {idx + 2}: ⚠️ Nom manquant - contact ignoré (first_name='{first_name}', last_name='{last_name}')"
+                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "row_data_keys": list(row_data.keys())})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
                         'error': 'Le nom est obligatoire'
                     })
-                    logger.warning(f"Row {idx + 2}: Skipping contact - missing last_name")
+                    logger.warning(f"Row {idx + 2}: Skipping contact - missing last_name. Row keys: {list(row_data.keys())}")
                     continue
                 
                 # Get photo_filename for photo matching (from Excel column logo_filename, photo_filename, or nom_fichier_photo)
@@ -1643,14 +1652,18 @@ async def import_contacts(
                     logger.info(f"Created new contact: {first_name} {last_name}")
             
             except Exception as e:
-                error_msg = f"Ligne {idx + 2}: Erreur lors de l'import - {str(e)}"
-                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e)})
+                stats["errors"] += 1
+                error_msg = f"Ligne {idx + 2}: ❌ Erreur lors de l'import - {str(e)}"
+                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e), "row_data_keys": list(row_data.keys()) if isinstance(row_data, dict) else "not_a_dict"})
                 errors.append({
                     'row': idx + 2,  # +2 because Excel is 1-indexed and has header
                     'data': row_data,
                     'error': str(e)
                 })
-                logger.error(f"Error importing contact row {idx + 2}: {str(e)}")
+                logger.error(f"Error importing contact row {idx + 2}: {str(e)}", exc_info=True)
+        
+        # Log final statistics
+        add_import_log(import_id, f"📊 Statistiques du traitement: {stats['total_processed']} lignes traitées, {stats['created_new']} nouveaux contacts, {stats['matched_existing']} contacts mis à jour, {stats['skipped_missing_firstname']} sans prénom, {stats['skipped_missing_lastname']} sans nom, {stats['errors']} erreurs", "info", stats)
         
         # Track which contacts were updated vs created
         existing_contact_ids = {c.id for c in all_existing_contacts}
