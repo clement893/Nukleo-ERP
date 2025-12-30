@@ -52,7 +52,7 @@ function OpportunitiesContent() {
   // Mutations
   const createOpportunityMutation = useCreateOpportunity();
   const updateOpportunityMutation = useUpdateOpportunity();
-  const deleteOpportunityMutation = useDeleteOpportunity();
+  // const deleteOpportunityMutation = useDeleteOpportunity(); // Currently unused but kept for future use
   
   // Flatten pages into single array
   const opportunities = useMemo(() => {
