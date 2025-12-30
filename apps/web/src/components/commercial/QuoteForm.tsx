@@ -99,16 +99,13 @@ export default function QuoteForm({
     }, 0);
   };
 
-  // Update formData when pricingType or lineItems change (but avoid infinite loop)
+  // Update formData when pricingType changes
   useEffect(() => {
-    const total = calculateTotal();
     setFormData(prev => ({
       ...prev,
       pricing_type: pricingType,
-      line_items: lineItems,
-      amount: total > 0 ? total : prev.amount,
     }));
-  }, [pricingType, lineItems.length]); // Only depend on length to avoid infinite loop
+  }, [pricingType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
