@@ -1,7 +1,6 @@
 'use client';
 
 import { SubmissionWizardData } from '../SubmissionWizard';
-import Input from '@/components/ui/Input';
 
 interface ContextProps {
   data: SubmissionWizardData;

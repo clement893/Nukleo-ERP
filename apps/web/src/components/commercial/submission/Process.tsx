@@ -25,7 +25,14 @@ export default function SubmissionProcess({
 
   const updateStep = (index: number, field: 'title' | 'description' | 'duration', value: string) => {
     const newSteps = [...data.processSteps];
-    newSteps[index] = { ...newSteps[index], [field]: value };
+    const currentStep = newSteps[index] || { title: '', description: '', duration: '' };
+    newSteps[index] = { 
+      ...currentStep,
+      [field]: value 
+    };
+    // Ensure required fields are strings
+    if (!newSteps[index].title) newSteps[index].title = '';
+    if (!newSteps[index].description) newSteps[index].description = '';
     onChange({ processSteps: newSteps });
   };
 

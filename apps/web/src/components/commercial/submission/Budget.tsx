@@ -44,10 +44,20 @@ export default function SubmissionBudget({
       item.unitPrice = Number(value);
     }
     
-    item.total = item.quantity * item.unitPrice;
-    newItems[index] = item;
+    // Ensure quantity and unitPrice are numbers
+    const quantity = item.quantity ?? 0;
+    const unitPrice = item.unitPrice ?? 0;
+    item.total = quantity * unitPrice;
     
-    const total = newItems.reduce((sum, item) => sum + item.total, 0);
+    // Ensure all required fields are present
+    newItems[index] = {
+      description: item.description || '',
+      quantity: quantity,
+      unitPrice: unitPrice,
+      total: item.total,
+    };
+    
+    const total = newItems.reduce((sum, item) => sum + (item.total || 0), 0);
     
     onChange({
       budgetItems: newItems,
@@ -57,7 +67,7 @@ export default function SubmissionBudget({
 
   const removeBudgetItem = (index: number) => {
     const newItems = data.budgetItems.filter((_, i) => i !== index);
-    const total = newItems.reduce((sum, item) => sum + item.total, 0);
+    const total = newItems.reduce((sum, item) => sum + (item.total || 0), 0);
     onChange({
       budgetItems: newItems,
       budgetTotal: total,

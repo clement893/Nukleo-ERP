@@ -93,7 +93,7 @@ export default function SubmissionWizard({
   const [formData, setFormData] = useState<SubmissionWizardData>({
     coverTitle: '',
     coverSubtitle: '',
-    coverDate: new Date().toISOString().split('T')[0],
+    coverDate: new Date().toISOString().split('T')[0] || '',
     coverClient: '',
     coverCompany: '',
     context: '',

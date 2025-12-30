@@ -25,7 +25,15 @@ export default function SubmissionTeam({
 
   const updateTeamMember = (index: number, field: 'name' | 'role' | 'bio', value: string) => {
     const newMembers = [...data.teamMembers];
-    newMembers[index] = { ...newMembers[index], [field]: value };
+    const currentMember = newMembers[index] || { name: '', role: '', bio: '' };
+    newMembers[index] = { 
+      ...currentMember,
+      [field]: value 
+    };
+    // Ensure required fields are strings
+    if (!newMembers[index].name) newMembers[index].name = '';
+    if (!newMembers[index].role) newMembers[index].role = '';
+    if (!newMembers[index].bio) newMembers[index].bio = '';
     onChange({ teamMembers: newMembers });
   };
 
