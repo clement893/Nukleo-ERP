@@ -43,6 +43,13 @@ export const CONTACT_TEMPLATE_COLUMNS: ContactTemplateColumn[] = [
     required: false,
   },
   {
+    key: 'company_name',
+    label: 'Compagnie',
+    description: 'Nom de l\'entreprise',
+    example: 'Acme Corporation',
+    required: false,
+  },
+  {
     key: 'company_id',
     label: 'ID Entreprise',
     description: 'Identifiant de l\'entreprise (optionnel)',
@@ -96,6 +103,13 @@ export const CONTACT_TEMPLATE_COLUMNS: ContactTemplateColumn[] = [
     label: 'Langue',
     description: 'Code langue (fr, en, es, etc.)',
     example: 'fr',
+    required: false,
+  },
+  {
+    key: 'photo_filename',
+    label: 'Photo',
+    description: 'Nom du fichier photo (ex: jean_dupont.jpg)',
+    example: 'jean_dupont.jpg',
     required: false,
   },
   {
@@ -167,8 +181,8 @@ export function generateContactTemplate(): Blob {
     ['- Vous pouvez utiliser les noms de colonnes en français ou en anglais'],
     [''],
     ['Format des colonnes acceptées:'],
-    ['Français: Prénom, Nom, Courriel, Téléphone, Poste, Cercle, Ville, Pays, LinkedIn, Anniversaire, Langue'],
-    ['Anglais: first_name, last_name, email, phone, position, circle, city, country, linkedin, birthday, language'],
+    ['Français: Prénom, Nom, Courriel, Téléphone, Compagnie, ID Entreprise, Poste, Cercle, Ville, Pays, LinkedIn, Anniversaire, Langue, Photo'],
+    ['Anglais: first_name, last_name, email, phone, company_name, company_id, position, circle, city, country, linkedin, birthday, language, photo_filename'],
   ];
 
   const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
@@ -243,6 +257,8 @@ Le fichier Excel doit contenir les colonnes suivantes :
 ### Colonnes optionnelles
 - **Courriel** (ou \`email\`) : Adresse email
 - **Téléphone** (ou \`phone\`) : Numéro de téléphone
+- **Compagnie** (ou \`company_name\`) : Nom de l'entreprise
+- **ID Entreprise** (ou \`company_id\`) : Identifiant de l'entreprise
 - **Poste** (ou \`position\`) : Poste occupé
 - **Cercle** (ou \`circle\`) : client, prospect, partenaire, fournisseur, autre
 - **Ville** (ou \`city\`) : Ville du contact
@@ -250,9 +266,9 @@ Le fichier Excel doit contenir les colonnes suivantes :
 - **LinkedIn** (ou \`linkedin\`) : URL du profil LinkedIn
 - **Anniversaire** (ou \`birthday\`) : Date au format YYYY-MM-DD (ex: 1980-05-15)
 - **Langue** (ou \`language\`) : Code langue (fr, en, es, etc.)
-- **ID Entreprise** (ou \`company_id\`) : Identifiant de l'entreprise
-- **ID Employé** (ou \`employee_id\`) : Identifiant de l'employé assigné
+- **Photo** (ou \`photo_filename\`) : Nom du fichier photo (ex: jean_dupont.jpg)
 - **Photo URL** (ou \`photo_url\`) : URL de la photo (alternative aux fichiers dans photos/)
+- **ID Employé** (ou \`employee_id\`) : Identifiant de l'employé assigné
 
 ## Nommage des photos
 
@@ -265,10 +281,12 @@ Les photos doivent être nommées selon l'un de ces formats :
 - Contact : Jean Dupont → Photo : \`jean_dupont.jpg\`
 - Contact : Marie Martin → Photo : \`marie_martin.png\`
 
-### Format alternatif
+### Format alternatif (recommandé)
 
 Vous pouvez aussi spécifier le nom du fichier photo dans une colonne Excel :
-- **Nom fichier photo** (ou \`photo_filename\`) : Nom exact du fichier photo
+- **Photo** (ou \`photo_filename\`, \`nom_fichier_photo\`) : Nom exact du fichier photo
+
+Cette méthode a la priorité la plus élevée et permet un matching précis même si le nom du contact ne correspond pas exactement au nom du fichier.
 
 ## Formats de photos supportés
 
@@ -279,10 +297,10 @@ Vous pouvez aussi spécifier le nom du fichier photo dans une colonne Excel :
 
 ## Exemple de fichier Excel
 
-| Prénom | Nom     | Courriel              | Téléphone      | Poste              | Cercle  |
-|--------|---------|-----------------------|----------------|--------------------|---------|
-| Jean   | Dupont  | jean.dupont@ex.com    | +33 6 12 34 56 | Directeur          | client  |
-| Marie  | Martin  | marie.martin@ex.com   | +33 6 98 76 54 | Responsable        | prospect|
+| Prénom | Nom     | Courriel              | Téléphone      | Compagnie        | ID Entreprise | Poste              | Cercle  | Ville | Pays   | LinkedIn                    | Anniversaire | Langue | Photo            |
+|--------|---------|-----------------------|----------------|------------------|---------------|--------------------|---------|-------|--------|-----------------------------|--------------|--------|------------------|
+| Jean   | Dupont  | jean.dupont@ex.com    | +33 6 12 34 56 | Acme Corporation | 1             | Directeur          | client  | Paris | France | https://linkedin.com/in/... | 1980-05-15   | fr     | jean_dupont.jpg  |
+| Marie  | Martin  | marie.martin@ex.com   | +33 6 98 76 54 | Tech Solutions   | 2             | Responsable        | prospect| Lyon  | France | https://linkedin.com/in/... | 1985-08-20   | fr     | marie_martin.png |
 
 ## Processus d'import
 
