@@ -502,7 +502,7 @@ function PipelineDetailContent() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Montant (€)"
+              label="Montant ($)"
               type="number"
               value={opportunityForm.amount}
               onChange={(e) => setOpportunityForm({ ...opportunityForm, amount: e.target.value })}
