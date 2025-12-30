@@ -679,9 +679,12 @@ function EmployeesContent() {
       {showImportLogs && (
         <Modal
           isOpen={showImportLogs}
-          onClose={() => setShowImportLogs(false)}
-          title="Logs d'import"
-          size="lg"
+          onClose={() => {
+            setShowImportLogs(false);
+            setCurrentImportId(null);
+          }}
+          title="Logs d'import en temps réel"
+          size="xl"
         >
           {currentImportId ? (
             <ImportLogsViewer
