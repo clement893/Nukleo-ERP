@@ -6,9 +6,8 @@ export const dynamicParams = true;
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
-import { Card, Badge, Button, LoadingSkeleton, Grid, Stack } from '@/components/ui';
+import { Card, Badge, LoadingSkeleton, Grid, Stack } from '@/components/ui';
 import { PageHeader } from '@/components/layout';
-import { Link } from '@/i18n/routing';
 import dynamicImport from 'next/dynamic';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -17,7 +16,6 @@ import {
   Mail, 
   CheckCircle2, 
   XCircle, 
-  Settings, 
   Activity,
   Sparkles,
   Zap,
@@ -186,30 +184,6 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
-            </Stack>
-          </Card>
-
-          {/* Quick Actions Card */}
-          <Card className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-950/60 dark:to-primary-900/60 border-primary-200 dark:border-primary-800 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-primary-600 dark:bg-primary-500 rounded-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-foreground">Quick Actions</h3>
-                <p className="text-sm text-muted-foreground">Access frequently used features</p>
-              </div>
-            </div>
-            <Stack gap="normal">
-              <Link href="/settings/profile">
-                <Button variant="primary" className="w-full justify-start gap-3 h-auto py-3 hover:scale-[1.02] transition-transform">
-                  <Settings className="w-5 h-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">Paramètres</div>
-                    <div className="text-xs opacity-90">Manage your settings</div>
-                  </div>
-                </Button>
-              </Link>
             </Stack>
           </Card>
         </Grid>

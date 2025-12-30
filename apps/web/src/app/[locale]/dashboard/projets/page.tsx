@@ -52,7 +52,6 @@ function ProjectsContent() {
   // Mutations
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
-  const deleteProjectMutation = useDeleteProject();
   const deleteAllProjectsMutation = useDeleteAllProjects();
   
   // Flatten pages into single array
