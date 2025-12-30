@@ -24,7 +24,7 @@ export default function CompanyDetail({
   const locale = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] || 'fr' : 'fr';
 
   const handleViewContacts = () => {
-    router.push(`/${locale}/dashboard/commercial/contacts?company_id=${company.id}`);
+    router.push(`/${locale}/dashboard/reseau/contacts?company_id=${company.id}`);
   };
 
   const handleViewProjects = () => {

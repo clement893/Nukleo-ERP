@@ -145,6 +145,12 @@ export default function SubmissionWizard({
     }
   };
 
+  const goToStep = (stepIndex: number) => {
+    if (stepIndex >= 0 && stepIndex < STEPS.length) {
+      setCurrentStep(stepIndex);
+    }
+  };
+
   const handleSubmit = async () => {
     // Validate required fields
     const missingFields: string[] = [];
@@ -292,14 +298,17 @@ export default function SubmissionWizard({
           
           return (
             <div key={step.id} className="flex items-center flex-1">
-              <div className="flex flex-col items-center flex-1">
+              <div 
+                className="flex flex-col items-center flex-1 cursor-pointer group"
+                onClick={() => goToStep(index)}
+              >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
                     isActive
                       ? 'border-primary bg-primary text-white'
                       : isCompleted
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-border bg-background text-muted-foreground'
+                      ? 'border-primary bg-primary text-white group-hover:scale-110'
+                      : 'border-border bg-background text-muted-foreground group-hover:border-primary group-hover:bg-primary/10'
                   }`}
                 >
                   {isCompleted ? (
@@ -309,8 +318,8 @@ export default function SubmissionWizard({
                   )}
                 </div>
                 <span
-                  className={`mt-2 text-xs text-center ${
-                    isActive ? 'text-primary font-medium' : 'text-muted-foreground'
+                  className={`mt-2 text-xs text-center transition-colors ${
+                    isActive ? 'text-primary font-medium' : 'text-muted-foreground group-hover:text-primary'
                   }`}
                 >
                   {step.label}
