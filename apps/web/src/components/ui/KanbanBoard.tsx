@@ -13,6 +13,8 @@ export interface KanbanCard {
   assignee?: string;
   dueDate?: Date;
   tags?: string[];
+  // Additional data for custom use cases (e.g., amount for totals)
+  data?: Record<string, unknown>;
 }
 
 export interface KanbanColumn {
@@ -29,6 +31,9 @@ export interface KanbanBoardProps {
   onCardClick?: (card: KanbanCard) => void;
   onCardAdd?: (status: string) => void;
   className?: string;
+  showColumnTotals?: boolean;
+  getCardValue?: (card: KanbanCard) => number;
+  formatValue?: (value: number) => string;
 }
 
 export default function KanbanBoard({
@@ -38,6 +43,9 @@ export default function KanbanBoard({
   onCardClick,
   onCardAdd,
   className,
+  showColumnTotals = false,
+  getCardValue,
+  formatValue = (value) => value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }),
 }: KanbanBoardProps) {
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
@@ -81,6 +89,11 @@ export default function KanbanBoard({
     <div className={clsx('flex gap-4 overflow-x-auto h-full', className)}>
       {columns.map((column) => {
         const columnCards = cards.filter((card) => card.status === column.status);
+        
+        // Calculate total for this column
+        const columnTotal = showColumnTotals && getCardValue
+          ? columnCards.reduce((sum, card) => sum + (getCardValue(card) || 0), 0)
+          : 0;
         
         return (
           <div
@@ -169,6 +182,20 @@ export default function KanbanBoard({
                 </div>
               ))}
             </div>
+
+            {/* Column Footer with Total */}
+            {showColumnTotals && getCardValue && (
+              <div className="flex-shrink-0 mt-4 pt-4 border-t border-border dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground dark:text-white">
+                    Total:
+                  </span>
+                  <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                    {formatValue(columnTotal)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}

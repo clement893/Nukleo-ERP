@@ -43,7 +43,113 @@ export interface CalendarViewProps {
   className?: string;
 }
 
-// Jours fériés français (année 2025)
+// Fonction pour calculer Pâques (algorithme de Meeus/Jones/Butcher)
+function calculateEaster(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+// Fonction pour obtenir le dernier lundi de mai
+function getLastMondayOfMay(year: number): Date {
+  const lastDayOfMay = new Date(year, 4, 31); // 31 mai
+  const dayOfWeek = lastDayOfMay.getDay(); // 0 = dimanche, 1 = lundi, etc.
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Nombre de jours à soustraire pour obtenir le lundi
+  return new Date(year, 4, 31 - daysToSubtract);
+}
+
+// Fonction pour obtenir le premier lundi de septembre
+function getFirstMondayOfSeptember(year: number): Date {
+  const firstDayOfSeptember = new Date(year, 8, 1); // 1er septembre
+  const dayOfWeek = firstDayOfSeptember.getDay(); // 0 = dimanche, 1 = lundi, etc.
+  // Si c'est dimanche (0), on ajoute 1 jour. Sinon, on calcule les jours jusqu'au lundi suivant
+  const daysToAdd = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+  return new Date(year, 8, 1 + daysToAdd - 1);
+}
+
+// Fonction pour obtenir le deuxième lundi d'octobre
+function getSecondMondayOfOctober(year: number): Date {
+  const firstDayOfOctober = new Date(year, 9, 1); // 1er octobre
+  const dayOfWeek = firstDayOfOctober.getDay(); // 0 = dimanche, 1 = lundi, etc.
+  // Calculer le premier lundi
+  const daysToFirstMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+  // Ajouter 7 jours pour obtenir le deuxième lundi
+  const daysToSecondMonday = daysToFirstMonday + 7;
+  return new Date(year, 9, 1 + daysToSecondMonday - 1);
+}
+
+// Fonction pour obtenir les jours fériés du Québec pour une année donnée
+function getQuebecHolidays(year: number): Array<{ date: string; name: string }> {
+  const holidays: Array<{ date: string; name: string }> = [];
+  
+  // Jour de l'An (1er janvier)
+  holidays.push({ date: `${year}-01-01`, name: 'Jour de l\'an' });
+  
+  // Calculer Pâques
+  const easter = calculateEaster(year);
+  
+  // Vendredi saint (2 jours avant Pâques)
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+  holidays.push({ 
+    date: `${year}-${String(goodFriday.getMonth() + 1).padStart(2, '0')}-${String(goodFriday.getDate()).padStart(2, '0')}`, 
+    name: 'Vendredi saint' 
+  });
+  
+  // Lundi de Pâques (le lundi suivant Pâques)
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easter.getDate() + 1);
+  holidays.push({ 
+    date: `${year}-${String(easterMonday.getMonth() + 1).padStart(2, '0')}-${String(easterMonday.getDate()).padStart(2, '0')}`, 
+    name: 'Lundi de Pâques' 
+  });
+  
+  // Fête des Patriotes (dernier lundi de mai)
+  const patriotsDay = getLastMondayOfMay(year);
+  holidays.push({ 
+    date: `${year}-${String(patriotsDay.getMonth() + 1).padStart(2, '0')}-${String(patriotsDay.getDate()).padStart(2, '0')}`, 
+    name: 'Fête des Patriotes' 
+  });
+  
+  // Fête nationale du Québec / Saint-Jean-Baptiste (24 juin)
+  holidays.push({ date: `${year}-06-24`, name: 'Fête nationale du Québec' });
+  
+  // Fête du Canada (1er juillet)
+  holidays.push({ date: `${year}-07-01`, name: 'Fête du Canada' });
+  
+  // Fête du travail (premier lundi de septembre)
+  const labourDay = getFirstMondayOfSeptember(year);
+  holidays.push({ 
+    date: `${year}-${String(labourDay.getMonth() + 1).padStart(2, '0')}-${String(labourDay.getDate()).padStart(2, '0')}`, 
+    name: 'Fête du travail' 
+  });
+  
+  // Action de grâce (deuxième lundi d'octobre)
+  const thanksgiving = getSecondMondayOfOctober(year);
+  holidays.push({ 
+    date: `${year}-${String(thanksgiving.getMonth() + 1).padStart(2, '0')}-${String(thanksgiving.getDate()).padStart(2, '0')}`, 
+    name: 'Action de grâce' 
+  });
+  
+  // Noël (25 décembre)
+  holidays.push({ date: `${year}-12-25`, name: 'Noël' });
+  
+  return holidays;
+}
+
+// Jours fériés français (année 2025) - conservés pour compatibilité
 const FRENCH_HOLIDAYS_2025 = [
   { date: '2025-01-01', name: 'Jour de l\'an' },
   { date: '2025-04-21', name: 'Lundi de Pâques' },
@@ -173,16 +279,21 @@ export default function CalendarView({ className }: CalendarViewProps) {
   const calendarEvents: CalendarEvent[] = useMemo(() => {
     const eventsList: CalendarEvent[] = [];
 
-    // Jours fériés
+    // Jours fériés du Québec (calculés dynamiquement pour l'année courante et les années suivantes)
     if (showHolidays) {
-      FRENCH_HOLIDAYS_2025.forEach((holiday) => {
-        eventsList.push({
-          id: `holiday-${holiday.date}`,
-          title: holiday.name,
-          date: new Date(holiday.date),
-          color: '#EF4444', // Rouge pour les jours fériés
+      const currentYear = new Date().getFullYear();
+      // Calculer pour l'année courante et les 2 années suivantes
+      for (let year = currentYear; year <= currentYear + 2; year++) {
+        const quebecHolidays = getQuebecHolidays(year);
+        quebecHolidays.forEach((holiday) => {
+          eventsList.push({
+            id: `holiday-qc-${holiday.date}`,
+            title: holiday.name,
+            date: new Date(holiday.date),
+            color: '#EF4444', // Rouge pour les jours fériés
+          });
         });
-      });
+      }
     }
 
     // Vacances d'été (un seul événement avec date de fin)

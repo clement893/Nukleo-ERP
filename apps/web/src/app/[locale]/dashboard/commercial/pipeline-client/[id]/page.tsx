@@ -90,7 +90,11 @@ function PipelineDetailContent() {
         status: opp.stage_id || '',
         priority: opp.probability && opp.probability >= 70 ? 'high' : opp.probability && opp.probability >= 40 ? 'medium' : 'low',
         dueDate: opp.expected_close_date ? new Date(opp.expected_close_date) : undefined,
-        tags: opp.amount ? [`${opp.amount}€`] : [],
+        tags: opp.amount ? [`${opp.amount.toLocaleString('fr-FR')}€`] : [],
+        // Store amount in data for total calculation
+        data: {
+          amount: opp.amount || 0,
+        },
       }));
   }, [opportunities, pipeline, pipelineId]);
 
@@ -458,6 +462,12 @@ function PipelineDetailContent() {
             onCardClick={handleCardClick}
             onCardAdd={handleCardAdd}
             className="h-full"
+            showColumnTotals={true}
+            getCardValue={(card) => {
+              // Extract amount from card data
+              return (card.data?.amount as number) || 0;
+            }}
+            formatValue={(value) => `${value.toLocaleString('fr-FR')}€`}
           />
         </div>
       </div>
