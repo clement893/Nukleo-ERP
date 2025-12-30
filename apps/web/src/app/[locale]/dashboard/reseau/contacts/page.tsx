@@ -19,6 +19,7 @@ import ContactAvatar from '@/components/commercial/ContactAvatar';
 import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Search, Mail, Phone, X, Users, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type ViewMode = 'list' | 'gallery';
 
@@ -38,6 +39,9 @@ function ContactsContent() {
   const [filterCompany, setFilterCompany] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  
+  // Debounce search query to avoid excessive re-renders (300ms delay)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   // Pagination pour le scroll infini
   const [skip, setSkip] = useState(0);
@@ -110,25 +114,27 @@ function ContactsContent() {
     loadContacts(true);
   }, [loadContacts]);
 
-  // Revalidate contacts when window regains focus (with debounce to avoid excessive reloads)
-  useEffect(() => {
-    let lastReloadTime = Date.now();
-    const RELOAD_COOLDOWN = 30000; // 30 seconds minimum between reloads
+  // Disabled: Revalidate contacts when window regains focus
+  // This was causing unnecessary network requests and degraded UX
+  // Users can manually refresh if needed, or we can implement a smarter cache strategy
+  // useEffect(() => {
+  //   let lastReloadTime = Date.now();
+  //   const RELOAD_COOLDOWN = 30000; // 30 seconds minimum between reloads
 
-    const handleFocus = () => {
-      const now = Date.now();
-      // Only reload if more than 30 seconds have passed since last reload
-      if (now - lastReloadTime > RELOAD_COOLDOWN) {
-        lastReloadTime = now;
-        loadContacts(true);
-      }
-    };
+  //   const handleFocus = () => {
+  //     const now = Date.now();
+  //     // Only reload if more than 30 seconds have passed since last reload
+  //     if (now - lastReloadTime > RELOAD_COOLDOWN) {
+  //       lastReloadTime = now;
+  //       loadContacts(true);
+  //     }
+  //   };
 
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [loadContacts]);
+  //   window.addEventListener('focus', handleFocus);
+  //   return () => {
+  //     window.removeEventListener('focus', handleFocus);
+  //   };
+  // }, [loadContacts]);
 
   // Extract unique values for dropdowns
   const uniqueValues = useMemo(() => {
@@ -149,7 +155,7 @@ function ContactsContent() {
     };
   }, [contacts]);
 
-  // Filtered contacts with search
+  // Filtered contacts with debounced search
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
       const matchesCity = !filterCity || contact.city === filterCity;
@@ -158,19 +164,19 @@ function ContactsContent() {
       // Fix: Compare with company_id correctly
       const matchesCompany = !filterCompany || (contact.company_id && contact.company_id.toString() === filterCompany);
       
-      // Search filter: search in name, email, phone, company
-      const matchesSearch = !searchQuery || 
-        `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.phone?.includes(searchQuery) ||
-        contact.company_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      // Search filter: search in name, email, phone, company (using debounced query)
+      const matchesSearch = !debouncedSearchQuery || 
+        `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        contact.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        contact.phone?.includes(debouncedSearchQuery) ||
+        contact.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       return matchesCity && matchesPhone && matchesCircle && matchesCompany && matchesSearch;
     });
-  }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, searchQuery]);
+  }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, debouncedSearchQuery]);
   
-  // Check if any filters are active
-  const hasActiveFilters = filterCity || filterPhone || filterCircle || filterCompany || searchQuery;
+  // Check if any filters are active (use debounced search for display)
+  const hasActiveFilters = filterCity || filterPhone || filterCircle || filterCompany || debouncedSearchQuery;
   
   // Clear all filters function
   const clearAllFilters = useCallback(() => {
