@@ -1,8 +1,9 @@
 'use client';
 
 import { Employee } from '@/lib/api/employees';
-import { MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical, Eye, Edit, Trash2, UserCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface EmployeeRowActionsProps {
   employee: Employee;
@@ -12,13 +13,14 @@ interface EmployeeRowActionsProps {
 }
 
 export default function EmployeeRowActions({
-  employee: _employee, // Not used yet but required by interface
+  employee,
   onView,
   onEdit,
   onDelete,
 }: EmployeeRowActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -48,13 +50,24 @@ export default function EmployeeRowActions({
       {isOpen && (
         <div className="absolute right-0 top-8 w-48 bg-background border border-border rounded-md shadow-lg z-10">
           <div className="py-1">
+            <button
+              onClick={() => {
+                const locale = window.location.pathname.split('/')[1] || 'fr';
+                router.push(`/${locale}/dashboard/management/employes/${employee.id}/portail`);
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              <UserCircle className="w-4 h-4" />
+              Portail
+            </button>
             {onView && (
               <button
                 onClick={() => {
                   onView();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted border-t border-border"
               >
                 <Eye className="w-4 h-4" />
                 Voir
@@ -66,7 +79,7 @@ export default function EmployeeRowActions({
                   onEdit();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted border-t border-border"
               >
                 <Edit className="w-4 h-4" />
                 Modifier
@@ -78,7 +91,7 @@ export default function EmployeeRowActions({
                   onDelete();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 border-t border-border"
               >
                 <Trash2 className="w-4 h-4" />
                 Supprimer
