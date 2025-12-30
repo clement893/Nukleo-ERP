@@ -5,6 +5,7 @@ API endpoints for managing commercial submissions (soumissions complexes)
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -16,6 +17,7 @@ from app.models.submission import Submission
 from app.models.company import Company
 from app.models.user import User
 from app.schemas.submission import SubmissionCreate, SubmissionUpdate, Submission as SubmissionSchema
+from app.services.submission_pdf_service import SubmissionPDFService
 from app.core.logging import logger
 
 router = APIRouter(prefix="/commercial/submissions", tags=["commercial-submissions"])
@@ -354,5 +356,73 @@ async def delete_submission(
             detail="Submission not found"
         )
     
-    await db.delete(submission)
+    db.delete(submission)
     await db.commit()
+
+
+@router.get("/{submission_id}/pdf")
+async def generate_submission_pdf(
+    submission_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """
+    Generate PDF document for a submission
+    
+    Args:
+        submission_id: Submission ID
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        PDF file as streaming response
+        
+    Raises:
+        HTTPException: If submission not found or PDF generation fails
+    """
+    result = await db.execute(
+        select(Submission)
+        .options(
+            selectinload(Submission.company),
+            selectinload(Submission.user)
+        )
+        .where(Submission.id == submission_id)
+    )
+    submission = result.scalar_one_or_none()
+    
+    if not submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Submission not found"
+        )
+    
+    try:
+        # Prepare submission data for PDF generation
+        submission_dict = {
+            "id": submission.id,
+            "submission_number": submission.submission_number,
+            "title": submission.title,
+            "company_name": submission.company.name if submission.company else None,
+            "content": submission.content or {},
+        }
+        
+        # Generate PDF
+        pdf_service = SubmissionPDFService()
+        pdf_buffer = pdf_service.generate_pdf(submission_dict)
+        
+        # Generate filename
+        filename = f"soumission_{submission.submission_number}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error generating PDF for submission {submission_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating PDF: {str(e)}"
+        )

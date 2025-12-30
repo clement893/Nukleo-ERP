@@ -22,6 +22,7 @@ import { Plus, FileText, FileCheck, Eye, Trash2 } from 'lucide-react';
 import type { DropdownItem } from '@/components/ui/Dropdown';
 import MotionDiv from '@/components/motion/MotionDiv';
 import QuoteForm from '@/components/commercial/QuoteForm';
+import SubmissionWizard from '@/components/commercial/SubmissionWizard';
 
 type TabType = 'quotes' | 'submissions';
 
@@ -111,13 +112,14 @@ function SoumissionsContent() {
     try {
       setLoading(true);
       setError(null);
-      await submissionsAPI.create(submissionData);
+      const createdSubmission = await submissionsAPI.create(submissionData);
       await loadSubmissions();
       setShowCreateSubmissionModal(false);
       showToast({
         message: 'Soumission créée avec succès',
         type: 'success',
       });
+      return createdSubmission;
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la création de la soumission');
@@ -125,6 +127,7 @@ function SoumissionsContent() {
         message: appError.message || 'Erreur lors de la création de la soumission',
         type: 'error',
       });
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -463,75 +466,15 @@ function SoumissionsContent() {
         isOpen={showCreateSubmissionModal}
         onClose={() => setShowCreateSubmissionModal(false)}
         title="Créer une soumission"
+        size="xl"
       >
-        <SubmissionForm
+        <SubmissionWizard
           onSubmit={handleCreateSubmission}
           onCancel={() => setShowCreateSubmissionModal(false)}
+          loading={loading}
         />
       </Modal>
     </MotionDiv>
-  );
-}
-
-
-// Simple Submission Form Component
-function SubmissionForm({ onSubmit, onCancel }: { onSubmit: (data: SubmissionCreate) => void; onCancel: () => void }) {
-  const [formData, setFormData] = useState<SubmissionCreate>({
-    title: '',
-    description: '',
-    type: '',
-    status: 'draft',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Titre *</label>
-        <input
-          type="text"
-          required
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-md"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Type</label>
-        <select
-          value={formData.type || ''}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-md"
-        >
-          <option value="">Sélectionner un type</option>
-          <option value="rfp">RFP (Request for Proposal)</option>
-          <option value="tender">Appel d'offres</option>
-          <option value="proposal">Proposition</option>
-          <option value="other">Autre</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Description</label>
-        <textarea
-          value={formData.description || ''}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-md"
-          rows={4}
-        />
-      </div>
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annuler
-        </Button>
-        <Button type="submit">
-          Créer
-        </Button>
-      </div>
-    </form>
   );
 }
 

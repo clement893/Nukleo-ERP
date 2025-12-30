@@ -106,4 +106,39 @@ export const submissionsAPI = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/v1/commercial/submissions/${id}`);
   },
+
+  /**
+   * Generate and download PDF for a submission
+   */
+  generatePDF: async (submissionId: number): Promise<void> => {
+    try {
+      const axios = (await import('axios')).default;
+      const { getApiUrl } = await import('../api');
+      const apiUrl = getApiUrl();
+      const TokenStorage = (await import('../auth/tokenStorage')).TokenStorage;
+
+      const response = await axios.get(
+        `${apiUrl}/api/v1/commercial/submissions/${submissionId}/pdf`,
+        {
+          responseType: 'blob',
+          headers: {
+            'Authorization': `Bearer ${typeof window !== 'undefined' ? TokenStorage.getToken() || '' : ''}`,
+          },
+        }
+      );
+
+      // Create download link
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `soumission_${submissionId}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      throw new Error('Failed to generate PDF');
+    }
+  },
 };
