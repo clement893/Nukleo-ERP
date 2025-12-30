@@ -7,82 +7,67 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Loading, Badge } from '@/components/ui';
+import { Card, Button, Loading, Badge, Modal } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui';
-
-// Types temporaires - à remplacer par les types générés depuis l'API
-interface Pipeline {
-  id: string;
-  name: string;
-  description?: string;
-  is_default: boolean;
-  is_active: boolean;
-  stages: PipelineStage[];
-  opportunity_count?: number;
-}
-
-interface PipelineStage {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  order: number;
-}
+import { pipelinesAPI, Pipeline, PipelineCreate } from '@/lib/api/pipelines';
+import PipelineForm from '@/components/commercial/PipelineForm';
+import { handleApiError } from '@/lib/errors/api';
 
 function PipelinesListContent() {
   const router = useRouter();
   const { showToast } = useToast();
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
 
-  // Load pipelines (mock data pour l'instant)
-  useEffect(() => {
-    // TODO: Remplacer par un appel API réel
-    setLoading(true);
-    setTimeout(() => {
-      const mockPipelines: Pipeline[] = [
-        {
-          id: '1',
-          name: 'Pipeline Ventes',
-          description: 'Pipeline principal pour les ventes',
-          is_default: true,
-          is_active: true,
-          stages: [
-            { id: 'stage-1', name: 'Prospection', description: '', color: '#EF4444', order: 0 },
-            { id: 'stage-2', name: 'Qualification', description: '', color: '#F59E0B', order: 1 },
-            { id: 'stage-3', name: 'Proposition', description: '', color: '#3B82F6', order: 2 },
-            { id: 'stage-4', name: 'Négociation', description: '', color: '#8B5CF6', order: 3 },
-            { id: 'stage-5', name: 'Fermeture', description: '', color: '#10B981', order: 4 },
-          ],
-          opportunity_count: 12,
-        },
-        {
-          id: '2',
-          name: 'Pipeline Partenaires',
-          description: 'Pipeline pour les partenariats stratégiques',
-          is_default: false,
-          is_active: true,
-          stages: [
-            { id: 'stage-6', name: 'Contact initial', description: '', color: '#EF4444', order: 0 },
-            { id: 'stage-7', name: 'Évaluation', description: '', color: '#F59E0B', order: 1 },
-            { id: 'stage-8', name: 'Accord', description: '', color: '#10B981', order: 2 },
-          ],
-          opportunity_count: 5,
-        },
-      ];
-      setPipelines(mockPipelines);
+  // Load pipelines
+  const loadPipelines = async () => {
+    try {
+      setLoading(true);
+      const data = await pipelinesAPI.list(0, 1000);
+      setPipelines(data);
+    } catch (error) {
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des pipelines',
+        type: 'error',
+      });
+    } finally {
       setLoading(false);
-    }, 500);
+    }
+  };
+
+  useEffect(() => {
+    loadPipelines();
   }, []);
 
   const handleCreatePipeline = () => {
-    // TODO: Ouvrir modal de création
-    showToast({
-      message: 'Fonctionnalité de création à venir',
-      type: 'info',
-    });
+    setShowCreateModal(true);
+  };
+
+  const handleSubmitPipeline = async (pipelineData: PipelineCreate) => {
+    try {
+      setCreating(true);
+      await pipelinesAPI.create(pipelineData);
+      await loadPipelines();
+      setShowCreateModal(false);
+      showToast({
+        message: 'Pipeline créé avec succès',
+        type: 'success',
+      });
+    } catch (error) {
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors de la création du pipeline',
+        type: 'error',
+      });
+      throw error;
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleOpenPipeline = (pipelineId: string) => {
@@ -213,6 +198,20 @@ function PipelinesListContent() {
           ))}
         </div>
       )}
+
+      {/* Create Pipeline Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Créer un pipeline"
+        size="lg"
+      >
+        <PipelineForm
+          onSubmit={handleSubmitPipeline}
+          onCancel={() => setShowCreateModal(false)}
+          loading={creating}
+        />
+      </Modal>
     </MotionDiv>
   );
 }

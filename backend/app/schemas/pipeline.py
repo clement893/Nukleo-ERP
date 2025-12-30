@@ -71,6 +71,7 @@ class PipelineResponse(PipelineBase):
     created_at: datetime
     updated_at: datetime
     stages: List[PipelineStageResponse] = []
+    opportunity_count: Optional[int] = Field(None, description="Number of opportunities in this pipeline")
 
     class Config:
         from_attributes = True
