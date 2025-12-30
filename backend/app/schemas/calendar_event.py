@@ -21,7 +21,7 @@ class CalendarEventBase(BaseModel):
     description: Optional[str] = Field(None, description="Event description")
     date: date = Field(..., description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    time: Optional[dt_time] = Field(None, alias='time', description="Event time")
+    event_time: Optional[dt_time] = Field(None, alias='time', description="Event time")
     # Use event_type internally, but accept 'type' from API via alias
     # This avoids conflict with Python's 'type' keyword while maintaining API compatibility
     event_type: str = Field(
@@ -48,6 +48,9 @@ class CalendarEventBase(BaseModel):
             # Map 'type' to 'type' (which will be read via alias as 'event_type')
             if hasattr(data, 'type'):
                 result['type'] = getattr(data, 'type')
+            # Map 'time' to 'time' (which will be read via alias as 'event_time')
+            if hasattr(data, 'time'):
+                result['time'] = getattr(data, 'time')
             return result
         return data
     
@@ -87,7 +90,7 @@ class CalendarEventUpdate(BaseModel):
     description: Optional[str] = Field(None, description="Event description")
     date: Optional[date] = Field(None, description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    time: Optional[dt_time] = Field(None, alias='time', description="Event time")
+    event_time: Optional[dt_time] = Field(None, alias='time', description="Event time")
     # Use event_type internally, but accept 'type' from API via alias
     event_type: Optional[str] = Field(
         None,
@@ -146,6 +149,9 @@ class CalendarEvent(CalendarEventBase):
             # Map 'type' attribute to 'type' key (which will be read via alias as 'event_type')
             if hasattr(data, 'type'):
                 result['type'] = getattr(data, 'type')
+            # Map 'time' to 'time' (which will be read via alias as 'event_time')
+            if hasattr(data, 'time'):
+                result['time'] = getattr(data, 'time')
             return result
         return data
 

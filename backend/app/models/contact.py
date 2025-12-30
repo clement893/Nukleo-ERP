@@ -47,7 +47,7 @@ class Contact(Base):
     )
 
     # Relationships
-    company = relationship("Company", backref="contacts", lazy="select")
+    company = relationship("Company", back_populates="contacts", lazy="select")
     employee = relationship("User", foreign_keys=[employee_id], backref="assigned_contacts", lazy="select")
 
     def __repr__(self) -> str:
