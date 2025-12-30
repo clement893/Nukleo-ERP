@@ -7,7 +7,7 @@ import Select from '@/components/ui/Select';
 import DatePicker from '@/components/ui/DatePicker';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui';
-import { Upload, FileText, X, Loader2 } from 'lucide-react';
+import { Upload, FileText, X, Loader2, Sparkles } from 'lucide-react';
 import { type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate, expenseAccountsAPI } from '@/lib/api/finances/expenseAccounts';
 
 interface ExpenseAccountFormProps {
@@ -89,11 +89,22 @@ export default function ExpenseAccountForm({
     } else {
       setFilePreview(null);
     }
+  };
 
-    // Extract data automatically
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleExtractWithAI = async () => {
+    if (!uploadedFile) return;
+
     setIsExtracting(true);
     try {
-      const extracted = await expenseAccountsAPI.extractFromDocument(file);
+      const extracted = await expenseAccountsAPI.extractFromDocument(uploadedFile);
       
       // Update form with extracted data
       if (extracted.title) {
@@ -135,14 +146,6 @@ export default function ExpenseAccountForm({
       });
     } finally {
       setIsExtracting(false);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setUploadedFile(null);
-    setFilePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -230,40 +233,61 @@ export default function ExpenseAccountForm({
               </label>
             </div>
           ) : (
-            <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {filePreview ? (
-                  <img
-                    src={filePreview}
-                    alt="Preview"
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-muted-foreground" />
+            <div className="space-y-3">
+              <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {filePreview ? (
+                    <img
+                      src={filePreview}
+                      alt="Preview"
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">{uploadedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
                   </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium">{uploadedFile.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveFile}
+                  disabled={isExtracting}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleRemoveFile}
+                variant="primary"
+                onClick={handleExtractWithAI}
                 disabled={isExtracting}
+                className="w-full"
               >
-                <X className="w-4 h-4" />
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Extraction en cours...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Importer avec IA
+                  </>
+                )}
               </Button>
             </div>
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Les détails seront extraits automatiquement via OCR + IA
+          Téléversez un fichier puis cliquez sur "Importer avec IA" pour extraire automatiquement les détails
         </p>
       </div>
 
