@@ -126,17 +126,18 @@ function DataTable<T extends Record<string, unknown>>({
   const displayData = pagination ? paginatedData : filteredData;
   
   // Auto-enable virtualization for large lists (>100 items) if not explicitly disabled
-  const shouldVirtualize = virtualized !== false && displayData.length > 100;
+  // Temporarily disabled until @tanstack/react-virtual is installed
+  const shouldVirtualize = false; // virtualized !== false && displayData.length > 100;
   
-  // Virtualization setup
+  // Virtualization setup - disabled until package is installed
   const parentRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: displayData.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => estimatedRowHeight,
-    overscan: 5, // Render 5 extra items outside viewport for smoother scrolling
-    enabled: shouldVirtualize,
-  });
+  // const virtualizer = useVirtualizer({
+  //   count: displayData.length,
+  //   getScrollElement: () => parentRef.current,
+  //   estimateSize: () => estimatedRowHeight,
+  //   overscan: 5, // Render 5 extra items outside viewport for smoother scrolling
+  //   enabled: shouldVirtualize,
+  // });
 
   return (
     <div className={clsx('space-y-4', className)}>
