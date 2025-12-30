@@ -70,6 +70,7 @@ interface SubmissionWizardProps {
   onCancel: () => void;
   onSaveDraft?: (data: SubmissionCreate) => Promise<Submission | void>;
   loading?: boolean;
+  initialData?: SubmissionWizardData;
 }
 
 const STEPS = [
@@ -87,13 +88,14 @@ export default function SubmissionWizard({
   onCancel,
   onSaveDraft,
   loading = false,
+  initialData,
 }: SubmissionWizardProps) {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   
-  const [formData, setFormData] = useState<SubmissionWizardData>({
+  const [formData, setFormData] = useState<SubmissionWizardData>(initialData || {
     coverTitle: '',
     coverSubtitle: '',
     coverDate: new Date().toISOString().split('T')[0] || '',
@@ -112,6 +114,13 @@ export default function SubmissionWizard({
     type: '',
     deadline: null,
   });
+
+  // Load initial data if provided
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   // Load companies
   useEffect(() => {

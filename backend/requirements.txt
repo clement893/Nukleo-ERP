@@ -53,6 +53,7 @@ python-magic>=0.4.27
 pandas>=2.0.0  # For Excel export/import
 openpyxl>=3.1.0  # Excel file support
 reportlab>=4.0.0  # For PDF export
+PyMuPDF>=1.23.0  # For PDF to image conversion
 
 # Testing
 pytest>=7.4.0

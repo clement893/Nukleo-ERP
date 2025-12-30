@@ -61,17 +61,38 @@ export function LeoSidebar({
     }
   };
 
-  return (
-    <div className="w-64 border-r border-border p-4 flex flex-col h-full">
-      <Button
-        onClick={onNewConversation}
-        className="w-full mb-4 flex items-center gap-2"
-      >
-        <Plus className="w-4 h-4" />
-        Nouvelle conversation
-      </Button>
+  const [searchQuery, setSearchQuery] = useState('');
 
-      <div className="flex-1 overflow-y-auto space-y-2">
+  const filteredConversations = conversations.filter((conv) =>
+    conv.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="w-64 border-r border-border bg-muted/30 flex flex-col h-full">
+      <div className="p-4 border-b border-border">
+        <Button
+          onClick={onNewConversation}
+          className="w-full flex items-center gap-2"
+          size="sm"
+        >
+          <Plus className="w-4 h-4" />
+          Nouvelle conversation
+        </Button>
+        
+        {conversations.length > 0 && (
+          <div className="mt-3">
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {isLoading && conversations.length === 0 && (
           <div className="text-sm text-muted-foreground text-center py-4">
             Chargement...
@@ -84,7 +105,13 @@ export function LeoSidebar({
           </div>
         )}
 
-        {conversations.map((conv) => (
+        {!isLoading && conversations.length > 0 && filteredConversations.length === 0 && (
+          <div className="text-sm text-muted-foreground text-center py-4">
+            Aucune conversation trouvée
+          </div>
+        )}
+
+        {filteredConversations.map((conv) => (
           <div
             key={conv.id}
             className={clsx(

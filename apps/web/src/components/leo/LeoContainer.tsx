@@ -143,7 +143,7 @@ export function LeoContainer() {
   const isLoading = useMemo(() => isSending || isLoadingMessages, [isSending, isLoadingMessages]);
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full gap-4">
       <LeoSidebar
         conversations={conversations}
         selectedConversationId={selectedConversationId}
@@ -153,7 +153,7 @@ export function LeoContainer() {
         onRenameConversation={handleRenameConversation}
         isLoading={isLoadingConversations}
       />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <LeoChat
           conversationId={selectedConversationId}
           messages={messages}

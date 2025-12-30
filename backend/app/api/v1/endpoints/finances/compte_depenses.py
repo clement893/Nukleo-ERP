@@ -11,6 +11,7 @@ from typing import List, Optional
 from datetime import datetime
 import base64
 import json
+from io import BytesIO
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -26,6 +27,13 @@ from app.core.logging import logger
 from app.services.openai_service import OpenAIService
 from app.services.s3_service import S3Service
 from pydantic import BaseModel
+
+# Try to import PyMuPDF for PDF to image conversion
+try:
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
+except ImportError:
+    PYMUPDF_AVAILABLE = False
 
 router = APIRouter(prefix="/finances/compte-depenses", tags=["finances-compte-depenses"])
 
@@ -724,9 +732,51 @@ async def extract_expense_from_document(
         openai_service = OpenAIService()
         
         # Prepare image for OpenAI Vision API
-        # For PDFs, we'll need to convert them to images first (simplified: assume image for now)
-        image_base64 = base64.b64encode(file_content).decode('utf-8')
-        image_url = f"data:{file.content_type};base64,{image_base64}"
+        # Convert PDFs to images if needed (OpenAI Vision API only accepts images)
+        image_content = file_content
+        image_mime_type = file.content_type
+        
+        if file.content_type == 'application/pdf':
+            if not PYMUPDF_AVAILABLE:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="PDF processing is not available. Please install PyMuPDF: pip install PyMuPDF"
+                )
+            
+            try:
+                # Convert PDF to image using PyMuPDF
+                pdf_document = fitz.open(stream=file_content, filetype="pdf")
+                
+                # Get the first page (most receipts/invoices are single page)
+                if len(pdf_document) == 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="PDF file appears to be empty or corrupted"
+                    )
+                
+                # Render first page as image (use 2x zoom for better quality)
+                page = pdf_document[0]
+                num_pages = len(pdf_document)
+                mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better quality
+                pix = page.get_pixmap(matrix=mat)
+                
+                # Convert to PNG bytes
+                image_content = pix.tobytes("png")
+                image_mime_type = "image/png"
+                
+                pdf_document.close()
+                logger.info(f"Converted PDF to image (page 1 of {num_pages})")
+                
+            except Exception as e:
+                logger.error(f"Error converting PDF to image: {str(e)}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to convert PDF to image: {str(e)}"
+                )
+        
+        # Encode image as base64 for OpenAI Vision API
+        image_base64 = base64.b64encode(image_content).decode('utf-8')
+        image_url = f"data:{image_mime_type};base64,{image_base64}"
         
         # Create system prompt for extraction
         system_prompt = """You are an expert at extracting expense/receipt information from images.
@@ -777,14 +827,52 @@ If information is not found, use null. Be precise with amounts and dates."""
         ]
         
         # Call OpenAI with vision model
-        response = await openai_service.client.chat.completions.create(
-            model="gpt-4o",  # Use vision-capable model
-            messages=messages,
-            max_tokens=2000,
-            temperature=0.1,  # Low temperature for accuracy
-        )
-        
-        content = response.choices[0].message.content
+        try:
+            response = await openai_service.client.chat.completions.create(
+                model="gpt-4o",  # Use vision-capable model
+                messages=messages,
+                max_tokens=2000,
+                temperature=0.1,  # Low temperature for accuracy
+            )
+            
+            if not response.choices or not response.choices[0].message.content:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="OpenAI API returned an empty response. Please try again."
+                )
+            
+            content = response.choices[0].message.content
+        except Exception as openai_error:
+            # Handle OpenAI API errors specifically
+            error_str = str(openai_error)
+            logger.error(f"OpenAI API error: {error_str}", exc_info=True)
+            
+            # Check for specific error types
+            if "invalid_image_format" in error_str or "Invalid MIME type" in error_str:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="The uploaded file format is not supported by the vision API. Please ensure the file is a valid image or PDF."
+                )
+            elif "400" in error_str or "Bad Request" in error_str:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid request to OpenAI API: {error_str}"
+                )
+            elif "401" in error_str or "authentication" in error_str.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="OpenAI API authentication failed. Please check API key configuration."
+                )
+            elif "429" in error_str or "rate limit" in error_str.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="OpenAI API rate limit exceeded. Please try again later."
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"OpenAI API error: {error_str}"
+                )
         
         # Parse JSON response
         try:

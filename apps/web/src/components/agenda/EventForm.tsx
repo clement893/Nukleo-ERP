@@ -58,7 +58,7 @@ export default function EventForm({
     location: event?.location || '',
     color: event?.color || '#3B82F6',
     attendees: event?.attendees?.join(', ') || '',
-    endDate: event?.endDate ? event.endDate.toISOString().split('T')[0] : '',
+    endDate: event?.endDate instanceof Date ? event.endDate.toISOString().split('T')[0] : '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

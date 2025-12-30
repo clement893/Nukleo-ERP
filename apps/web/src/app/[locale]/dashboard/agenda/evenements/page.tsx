@@ -16,7 +16,6 @@ import { useToast } from '@/components/ui';
 import EventForm from '@/components/agenda/EventForm';
 import { DayEvent } from '@/components/agenda/DayEventsModal';
 import { Plus, Edit, Trash2, Calendar, MapPin, Users, Clock } from 'lucide-react';
-import { clsx } from 'clsx';
 
 function EvenementsContent() {
   const { showToast } = useToast();
@@ -39,7 +38,6 @@ function EvenementsContent() {
     try {
       setLoading(true);
       setError(null);
-      const today = new Date().toISOString().split('T')[0];
       
       // Load all events, we'll filter them client-side
       const allEvents = await agendaAPI.list({
@@ -117,7 +115,7 @@ function EvenementsContent() {
       const createData: CalendarEventCreate = {
         title: eventData.title,
         description: eventData.description,
-        date: eventData.date.toISOString().split('T')[0],
+        date: eventData.date ? eventData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         end_date: eventData.endDate?.toISOString().split('T')[0],
         time: eventData.time,
         type: eventData.type || 'other',
@@ -144,7 +142,7 @@ function EvenementsContent() {
   };
 
   // Handle update
-  const handleUpdate = async (eventId: string, eventData: Partial<DayEvent>) => {
+  const handleUpdate = async (_eventId: string, eventData: Partial<DayEvent>) => {
     if (!selectedEvent) return;
 
     try {
@@ -241,7 +239,7 @@ function EvenementsContent() {
       key: 'date',
       label: 'Date',
       sortable: true,
-      render: (value, event) => (
+      render: (_value, event) => (
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <div>

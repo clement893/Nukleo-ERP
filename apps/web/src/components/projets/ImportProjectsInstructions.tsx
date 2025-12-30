@@ -1,6 +1,6 @@
 'use client';
 
-import { X, FileSpreadsheet, CheckCircle2, Download, Building2, User } from 'lucide-react';
+import { X, FileSpreadsheet, CheckCircle2, Download, Building2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Modal from '@/components/ui/Modal';
