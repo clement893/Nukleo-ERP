@@ -451,45 +451,6 @@ async def update_company(
     return CompanySchema(**company_dict)
 
 
-@router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_company(
-    company_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """
-    Delete a company
-    
-    Args:
-        company_id: Company ID
-        current_user: Current authenticated user
-        db: Database session
-    """
-    query = select(Company).where(Company.id == company_id)
-    result = await db.execute(query)
-    company = result.scalar_one_or_none()
-    
-    if not company:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Company not found: {company_id}"
-        )
-    
-    # Check if company has contacts
-    contacts_query = select(func.count(Contact.id)).where(Contact.company_id == company_id)
-    contacts_result = await db.execute(contacts_query)
-    contacts_count = contacts_result.scalar()
-    
-    if contacts_count > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete company with {contacts_count} associated contact(s)"
-        )
-    
-    await db.delete(company)
-    await db.commit()
-
-
 @router.delete("/bulk", status_code=status.HTTP_200_OK)
 async def delete_all_companies(
     request: Request,
