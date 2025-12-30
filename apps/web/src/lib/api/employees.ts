@@ -3,7 +3,8 @@
  * API client for managing employees and linking them to users
  */
 
-import { apiClient, type ApiResponse } from './api';
+import { apiClient } from './client';
+import type { ApiResponse } from '@modele/types';
 
 export interface Employee {
   id: string;
