@@ -41,6 +41,7 @@ from app.models.calendar_event import CalendarEvent
 from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
 from app.models.contact import Contact
 from app.models.company import Company
+from app.models.employee import Employee
 from app.models.file import File
 from app.models.quote import Quote
 from app.models.quote_line_item import QuoteLineItem
@@ -126,6 +127,7 @@ __all__ = [
     "SecurityAuditLog",
     "Contact",
     "Company",
+    "Employee",
     "Quote",
     "QuoteLineItem",
     "Submission",
