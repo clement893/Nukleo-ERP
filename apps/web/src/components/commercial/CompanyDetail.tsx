@@ -201,7 +201,7 @@ export default function CompanyDetail({
                 {company.contacts_count} contact{company.contacts_count !== 1 ? 's' : ''} associé{company.contacts_count !== 1 ? 's' : ''}
               </p>
               <Link
-                href={`/dashboard/commercial/contacts?company_id=${company.id}`}
+                href={`/dashboard/reseau/contacts?company_id=${company.id}`}
                 className="text-primary hover:underline text-sm"
               >
                 Voir les contacts

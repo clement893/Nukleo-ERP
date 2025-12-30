@@ -93,16 +93,6 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             icon: <Briefcase className="w-5 h-5" />,
           },
           {
-            name: 'Contacts',
-            href: '/dashboard/commercial/contacts',
-            icon: <UserCircle className="w-5 h-5" />,
-          },
-          {
-            name: 'Entreprises',
-            href: '/dashboard/commercial/entreprises',
-            icon: <Building2 className="w-5 h-5" />,
-          },
-          {
             name: 'Opportunités',
             href: '/dashboard/commercial/opportunites',
             icon: <Target className="w-5 h-5" />,
@@ -112,9 +102,33 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             href: '/dashboard/commercial/pipeline-client',
             icon: <TrendingUp className="w-5 h-5" />,
           },
+        ],
+        collapsible: true,
+        defaultOpen: false,
+      },
+      // Module Réseau (collapsible group)
+      {
+        name: 'Module Réseau',
+        icon: <Users className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Aperçu',
+            href: '/dashboard/reseau',
+            icon: <LayoutDashboard className="w-5 h-5" />,
+          },
+          {
+            name: 'Contacts',
+            href: '/dashboard/reseau/contacts',
+            icon: <UserCircle className="w-5 h-5" />,
+          },
+          {
+            name: 'Entreprises',
+            href: '/dashboard/reseau/entreprises',
+            icon: <Building2 className="w-5 h-5" />,
+          },
           {
             name: 'Témoignages',
-            href: '/dashboard/commercial/temoignages',
+            href: '/dashboard/reseau/temoignages',
             icon: <MessageSquare className="w-5 h-5" />,
           },
         ],
