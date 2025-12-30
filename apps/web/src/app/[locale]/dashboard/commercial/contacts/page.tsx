@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
@@ -36,19 +36,44 @@ function ContactsContent() {
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  
+  // Pagination pour le scroll infini
+  const [skip, setSkip] = useState(0);
+  const [limit] = useState(20); // Nombre de contacts par page
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Mock data pour les entreprises et employés (à remplacer par des appels API réels)
   const [companies] = useState<Array<{ id: number; name: string }>>([]);
   const [employees] = useState<Array<{ id: number; name: string }>>([]);
   const circles = ['client', 'prospect', 'partenaire', 'fournisseur', 'autre'];
 
-  // Load contacts
-  const loadContacts = async () => {
-    setLoading(true);
+  // Load contacts avec pagination
+  const loadContacts = async (reset = false) => {
+    if (reset) {
+      setSkip(0);
+      setContacts([]);
+      setHasMore(true);
+    }
+    
+    setLoading(reset);
+    setLoadingMore(!reset);
     setError(null);
+    
     try {
-      const data = await contactsAPI.list();
-      setContacts(data);
+      const currentSkip = reset ? 0 : skip;
+      const data = await contactsAPI.list(currentSkip, limit);
+      
+      if (reset) {
+        setContacts(data);
+        setSkip(data.length);
+      } else {
+        setContacts((prev) => [...prev, ...data]);
+        setSkip((prevSkip) => prevSkip + data.length);
+      }
+      
+      // Si on reçoit moins de contacts que la limite, il n'y a plus de données
+      setHasMore(data.length === limit);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors du chargement des contacts');
@@ -58,18 +83,27 @@ function ContactsContent() {
       });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  // Charger plus de contacts pour le scroll infini
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      loadContacts(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingMore, hasMore, skip]);
+
   useEffect(() => {
-    loadContacts();
+    loadContacts(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Revalidate contacts when window regains focus
   useEffect(() => {
     const handleFocus = () => {
-      loadContacts();
+      loadContacts(true);
     };
 
     window.addEventListener('focus', handleFocus);
@@ -657,6 +691,9 @@ function ContactsContent() {
         <ContactsGallery
           contacts={filteredContacts}
           onContactClick={openDetailPage}
+          hasMore={hasMore && !filterCity && !filterPhone && !filterCircle && !filterCompany}
+          loadingMore={loadingMore}
+          onLoadMore={loadMore}
         />
       )}
 

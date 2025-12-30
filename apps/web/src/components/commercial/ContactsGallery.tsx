@@ -2,21 +2,53 @@
 
 import { Contact } from '@/lib/api/contacts';
 import Card from '@/components/ui/Card';
-import { UserCircle, Building2, Mail, Phone, MapPin } from 'lucide-react';
+import { UserCircle, Building2, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useEffect, useRef } from 'react';
 
 interface ContactsGalleryProps {
   contacts: Contact[];
   onContactClick?: (contact: Contact) => void;
   className?: string;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export default function ContactsGallery({
   contacts,
   onContactClick,
   className,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }: ContactsGalleryProps) {
-  if (contacts.length === 0) {
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer pour le scroll infini
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && onLoadMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, onLoadMore]);
+
+  if (contacts.length === 0 && !loadingMore) {
     return (
       <div className={clsx('text-center py-12', className)}>
         <UserCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
@@ -26,8 +58,9 @@ export default function ContactsGallery({
   }
 
   return (
-    <div className={clsx('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6', className)}>
-      {contacts.map((contact) => (
+    <div className={clsx('space-y-6', className)}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {contacts.map((contact) => (
         <Card
           key={contact.id}
           className="cursor-pointer hover:shadow-xl transition-all duration-200 overflow-hidden group"
@@ -94,6 +127,19 @@ export default function ContactsGallery({
           </div>
         </Card>
       ))}
+      </div>
+      
+      {/* Intersection Observer target pour le scroll infini */}
+      {hasMore && (
+        <div ref={observerTarget} className="flex justify-center py-8">
+          {loadingMore && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Chargement...</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

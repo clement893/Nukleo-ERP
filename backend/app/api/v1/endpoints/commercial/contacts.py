@@ -107,11 +107,20 @@ async def list_contacts(
                 
                 # Regenerate presigned URL if we have a file_key
                 if file_key:
-                    photo_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                    try:
+                        presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                        if presigned_url:
+                            photo_url = presigned_url
+                        else:
+                            logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
+                            photo_url = None  # Set to None if generation fails
+                    except Exception as e:
+                        logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
+                        photo_url = None  # Set to None if generation fails
             except Exception as e:
-                logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
-                # Keep original URL if regeneration fails
-                pass
+                logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
+                # Set to None if regeneration fails to avoid showing invalid file_key
+                photo_url = None
         
         contact_dict = {
             "id": contact.id,
@@ -210,11 +219,21 @@ async def get_contact(
             
             # Regenerate presigned URL if we have a file_key
             if file_key:
-                photo_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                try:
+                    presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                    if presigned_url:
+                        photo_url = presigned_url
+                        logger.info(f"Generated presigned URL for contact {contact.id} with file_key: {file_key[:50]}...")
+                    else:
+                        logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
+                        photo_url = None  # Set to None if generation fails
+                except Exception as e:
+                    logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
+                    photo_url = None  # Set to None if generation fails
         except Exception as e:
-            logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
-            # Keep original URL if regeneration fails
-            pass
+            logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
+            # Set to None if regeneration fails to avoid showing invalid file_key
+            photo_url = None
     
     # Convert to response format
     contact_dict = {
@@ -341,11 +360,21 @@ async def create_contact(
             
             # Regenerate presigned URL if we have a file_key
             if file_key:
-                photo_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                try:
+                    presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                    if presigned_url:
+                        photo_url = presigned_url
+                        logger.info(f"Generated presigned URL for contact {contact.id} with file_key: {file_key[:50]}...")
+                    else:
+                        logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
+                        photo_url = None  # Set to None if generation fails
+                except Exception as e:
+                    logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
+                    photo_url = None  # Set to None if generation fails
         except Exception as e:
-            logger.warning(f"Failed to regenerate presigned URL for contact {contact.id}: {e}")
-            # Keep original URL if regeneration fails
-            pass
+            logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
+            # Set to None if regeneration fails to avoid showing invalid file_key
+            photo_url = None
     
     # Convert to response format
     contact_dict = {
@@ -438,6 +467,57 @@ async def update_contact(
     await db.refresh(contact)
     await db.refresh(contact, ["company", "employee"])
     
+    # Regenerate presigned URL for photo if it exists and S3 is configured
+    photo_url = contact.photo_url
+    if photo_url and S3Service.is_configured():
+        try:
+            s3_service = S3Service()
+            # Try to extract file_key from presigned URL or use photo_url as file_key
+            file_key = None
+            
+            # If it's a presigned URL, try to extract the file_key from it
+            if photo_url.startswith('http'):
+                # Try to extract file_key from presigned URL
+                from urllib.parse import urlparse, parse_qs, unquote
+                parsed = urlparse(photo_url)
+                
+                # Check query params for 'key' parameter (some S3 presigned URLs have it)
+                query_params = parse_qs(parsed.query)
+                if 'key' in query_params:
+                    file_key = unquote(query_params['key'][0])
+                else:
+                    # Extract from path - remove bucket name if present
+                    path = parsed.path.strip('/')
+                    # Look for 'contacts/photos' in the path
+                    if 'contacts/photos' in path:
+                        # Find the position of 'contacts/photos' and take everything after
+                        idx = path.find('contacts/photos')
+                        if idx != -1:
+                            file_key = path[idx:]
+                    elif path.startswith('contacts/'):
+                        file_key = path
+            else:
+                # It's likely already a file_key
+                file_key = photo_url
+            
+            # Regenerate presigned URL if we have a file_key
+            if file_key:
+                try:
+                    presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                    if presigned_url:
+                        photo_url = presigned_url
+                        logger.info(f"Generated presigned URL for contact {contact.id} with file_key: {file_key[:50]}...")
+                    else:
+                        logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
+                        photo_url = None  # Set to None if generation fails
+                except Exception as e:
+                    logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
+                    photo_url = None  # Set to None if generation fails
+        except Exception as e:
+            logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
+            # Set to None if regeneration fails to avoid showing invalid file_key
+            photo_url = None
+    
     # Convert to response format
     contact_dict = {
         "id": contact.id,
@@ -448,7 +528,7 @@ async def update_contact(
         "position": contact.position,
         "circle": contact.circle,
         "linkedin": contact.linkedin,
-        "photo_url": contact.photo_url,
+        "photo_url": photo_url,
         "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -758,53 +838,41 @@ async def import_contacts(
                 
                 # If company_id is not provided, try to find company by name
                 if not company_id:
-                # Try multiple column names for company name
-                company_name = get_field_value(row_data, [
-                    'company_name', 'company', 'entreprise', 'entreprise_name',
-                    'nom_entreprise', 'company name', 'nom entreprise',
-                    'société', 'societe', 'organisation', 'organization',
-                    'firme', 'business', 'client'
-                ])
-                
-                if company_name and company_name.strip():
-                    company_name_normalized = company_name.strip().lower()
-                    # Remove common prefixes/suffixes for better matching
-                    company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                    # Try multiple column names for company name
+                    company_name = get_field_value(row_data, [
+                        'company_name', 'company', 'entreprise', 'entreprise_name',
+                        'nom_entreprise', 'company name', 'nom entreprise',
+                        'société', 'societe', 'organisation', 'organization',
+                        'firme', 'business', 'client'
+                    ])
                     
-                    # Try exact match first
-                    if company_name_normalized in company_name_to_id:
-                        company_id = company_name_to_id[company_name_normalized]
-                    elif company_name_clean and company_name_clean in company_name_to_id:
-                        # Try match without legal form
-                        company_id = company_name_to_id[company_name_clean]
-                        warnings.append({
-                            'row': idx + 2,
-                            'type': 'company_match_without_legal_form',
-                            'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
-                            'data': {'company_name': company_name, 'matched_company_id': company_id}
-                        })
-                    else:
-                        # Try partial match (contains) - check both original and cleaned
-                        matched_company_id = None
-                        matched_company_name = None
+                    if company_name and company_name.strip():
+                        company_name_normalized = company_name.strip().lower()
+                        # Remove common prefixes/suffixes for better matching
+                        company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
                         
-                        # First try with cleaned name
-                        for stored_name, stored_id in company_name_to_id.items():
-                            stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
-                            if (company_name_clean and stored_clean and 
-                                (company_name_clean in stored_clean or stored_clean in company_name_clean)):
-                                matched_company_id = stored_id
-                                # Find the original company name
-                                for c in all_companies:
-                                    if c.id == stored_id:
-                                        matched_company_name = c.name
-                                        break
-                                break
-                        
-                        # If no match with cleaned, try original normalized
-                        if not matched_company_id:
+                        # Try exact match first
+                        if company_name_normalized in company_name_to_id:
+                            company_id = company_name_to_id[company_name_normalized]
+                        elif company_name_clean and company_name_clean in company_name_to_id:
+                            # Try match without legal form
+                            company_id = company_name_to_id[company_name_clean]
+                            warnings.append({
+                                'row': idx + 2,
+                                'type': 'company_match_without_legal_form',
+                                'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
+                                'data': {'company_name': company_name, 'matched_company_id': company_id}
+                            })
+                        else:
+                            # Try partial match (contains) - check both original and cleaned
+                            matched_company_id = None
+                            matched_company_name = None
+                            
+                            # First try with cleaned name
                             for stored_name, stored_id in company_name_to_id.items():
-                                if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                                stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                                if (company_name_clean and stored_clean and 
+                                    (company_name_clean in stored_clean or stored_clean in company_name_clean)):
                                     matched_company_id = stored_id
                                     # Find the original company name
                                     for c in all_companies:
@@ -812,103 +880,118 @@ async def import_contacts(
                                             matched_company_name = c.name
                                             break
                                     break
-                        
-                        if matched_company_id:
-                            company_id = matched_company_id
-                            warnings.append({
-                                'row': idx + 2,
-                                'type': 'company_partial_match',
-                                'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
-                                'data': {
-                                    'company_name': company_name,
-                                    'matched_company_name': matched_company_name,
-                                    'matched_company_id': matched_company_id,
-                                    'contact': f"{first_name} {last_name}".strip()
-                                }
-                            })
-                        else:
-                            # No match found - add warning
-                            warnings.append({
-                                'row': idx + 2,
-                                'type': 'company_not_found',
-                                'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
-                                'data': {
-                                    'company_name': company_name,
-                                    'contact': f"{first_name} {last_name}".strip()
-                                }
-                            })
+                            
+                            # If no match with cleaned, try original normalized
+                            if not matched_company_id:
+                                for stored_name, stored_id in company_name_to_id.items():
+                                    if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                                        matched_company_id = stored_id
+                                        # Find the original company name
+                                        for c in all_companies:
+                                            if c.id == stored_id:
+                                                matched_company_name = c.name
+                                                break
+                                        break
+                            
+                            if matched_company_id:
+                                company_id = matched_company_id
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'company_partial_match',
+                                    'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
+                                    'data': {
+                                        'company_name': company_name,
+                                        'matched_company_name': matched_company_name,
+                                        'matched_company_id': matched_company_id,
+                                        'contact': f"{first_name} {last_name}".strip()
+                                    }
+                                })
+                            else:
+                                # No match found - add warning
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'company_not_found',
+                                    'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
+                                    'data': {
+                                        'company_name': company_name,
+                                        'contact': f"{first_name} {last_name}".strip()
+                                    }
+                                })
             
                 # Handle photo upload if ZIP contains photos
                 photo_url = get_field_value(row_data, [
-                'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
-                'image url', 'avatar', 'avatar_url', 'avatar url'
+                    'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
+                    'image url', 'avatar', 'avatar_url', 'avatar url'
                 ])
             
                 # If no photo_url but we have photos in ZIP, try to find matching photo
                 if not photo_url and photos_dict and s3_service:
-                # Try multiple naming patterns
-                photo_filename_patterns = [
-                    f"{first_name.lower()}_{last_name.lower()}.jpg",
-                    f"{first_name.lower()}_{last_name.lower()}.jpeg",
-                    f"{first_name.lower()}_{last_name.lower()}.png",
-                    f"{first_name}_{last_name}.jpg",
-                    f"{first_name}_{last_name}.jpeg",
-                    f"{first_name}_{last_name}.png",
-                    row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
-                ]
-                
-                uploaded_photo_url = None
-                for pattern in photo_filename_patterns:
-                    if pattern and pattern.lower() in photos_dict:
-                        try:
-                            # Upload photo to S3
-                            photo_content = photos_dict[pattern.lower()]
-                            
-                            # Create a temporary UploadFile-like object compatible with S3Service
-                            class TempUploadFile:
-                                def __init__(self, filename: str, content: bytes):
-                                    self.filename = filename
-                                    self.content = content
-                                    self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                    # Create a file-like object
-                                    self.file = BytesIO(content)
-                            
-                            temp_file = TempUploadFile(pattern, photo_content)
-                            
-                            # Upload to S3
-                            upload_result = s3_service.upload_file(
-                                file=temp_file,
-                                folder='contacts/photos',
-                                user_id=str(current_user.id)
-                            )
-                            
-                            # Always store the file_key (not the presigned URL) for persistence
-                            # Presigned URLs expire, but file_key is permanent
-                            uploaded_photo_url = upload_result.get('file_key')
-                            if not uploaded_photo_url:
-                                # Fallback to URL if file_key not available, but extract key from URL
-                                url = upload_result.get('url', '')
-                                if url and 'contacts/photos' in url:
-                                    # Extract file_key from URL
-                                    from urllib.parse import urlparse
-                                    parsed = urlparse(url)
-                                    path = parsed.path.strip('/')
-                                    if 'contacts/photos' in path:
-                                        idx = path.find('contacts/photos')
-                                        uploaded_photo_url = path[idx:]
+                    # Try multiple naming patterns
+                    photo_filename_patterns = [
+                        f"{first_name.lower()}_{last_name.lower()}.jpg",
+                        f"{first_name.lower()}_{last_name.lower()}.jpeg",
+                        f"{first_name.lower()}_{last_name.lower()}.png",
+                        f"{first_name}_{last_name}.jpg",
+                        f"{first_name}_{last_name}.jpeg",
+                        f"{first_name}_{last_name}.png",
+                        row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
+                    ]
+                    
+                    uploaded_photo_url = None
+                    for pattern in photo_filename_patterns:
+                        if pattern and pattern.lower() in photos_dict:
+                            try:
+                                # Upload photo to S3
+                                photo_content = photos_dict[pattern.lower()]
+                                
+                                # Create a temporary UploadFile-like object compatible with S3Service
+                                class TempUploadFile:
+                                    def __init__(self, filename: str, content: bytes):
+                                        self.filename = filename
+                                        self.content = content
+                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                        # Create a file-like object
+                                        self.file = BytesIO(content)
+                                
+                                temp_file = TempUploadFile(pattern, photo_content)
+                                
+                                # Upload to S3
+                                upload_result = s3_service.upload_file(
+                                    file=temp_file,
+                                    folder='contacts/photos',
+                                    user_id=str(current_user.id)
+                                )
+                                
+                                # Always store the file_key (not the presigned URL) for persistence
+                                # Presigned URLs expire, but file_key is permanent
+                                uploaded_photo_url = upload_result.get('file_key')
+                                logger.info(f"Upload result for {first_name} {last_name}: file_key={upload_result.get('file_key')}, url={upload_result.get('url')}")
+                                
+                                if not uploaded_photo_url:
+                                    # Fallback to URL if file_key not available, but extract key from URL
+                                    url = upload_result.get('url', '')
+                                    logger.warning(f"No file_key in upload_result for {first_name} {last_name}, trying to extract from URL: {url}")
+                                    if url and 'contacts/photos' in url:
+                                        # Extract file_key from URL
+                                        from urllib.parse import urlparse
+                                        parsed = urlparse(url)
+                                        path = parsed.path.strip('/')
+                                        if 'contacts/photos' in path:
+                                            idx = path.find('contacts/photos')
+                                            uploaded_photo_url = path[idx:]
+                                        else:
+                                            uploaded_photo_url = url
                                     else:
                                         uploaded_photo_url = url
-                                else:
-                                    uploaded_photo_url = url
-                            
-                            logger.info(f"Uploaded photo for {first_name} {last_name}: {pattern} -> {uploaded_photo_url}")
-                            break
-                        except Exception as e:
-                            logger.warning(f"Failed to upload photo {pattern}: {e}")
-                            continue
-                
-                if uploaded_photo_url:
-                    photo_url = uploaded_photo_url
+                                
+                                logger.info(f"Uploaded photo for {first_name} {last_name}: {pattern} -> file_key stored: {uploaded_photo_url}")
+                                break
+                            except Exception as e:
+                                logger.warning(f"Failed to upload photo {pattern}: {e}")
+                                continue
+                    
+                    if uploaded_photo_url:
+                        photo_url = uploaded_photo_url
             
                 # Get position
                 position = get_field_value(row_data, [
@@ -940,97 +1023,97 @@ async def import_contacts(
                 # Check if contact already exists (for reimport/update)
                 existing_contact = None
                 if email_lower and email_lower in contacts_by_email:
-                # Match by email (most reliable)
-                existing_contact = contacts_by_email[email_lower]
+                    # Match by email (most reliable)
+                    existing_contact = contacts_by_email[email_lower]
                 elif email_lower:
-                # Match by name + email
-                name_email_key = (first_name_lower, last_name_lower, email_lower)
-                if name_email_key in contacts_by_name_email:
-                    existing_contact = contacts_by_name_email[name_email_key]
+                    # Match by name + email
+                    name_email_key = (first_name_lower, last_name_lower, email_lower)
+                    if name_email_key in contacts_by_name_email:
+                        existing_contact = contacts_by_name_email[name_email_key]
                 elif company_id:
-                # Match by name + company_id (if no email)
-                name_company_key = (first_name_lower, last_name_lower, company_id)
-                if name_company_key in contacts_by_name_company:
-                    existing_contact = contacts_by_name_company[name_company_key]
+                    # Match by name + company_id (if no email)
+                    name_company_key = (first_name_lower, last_name_lower, company_id)
+                    if name_company_key in contacts_by_name_company:
+                        existing_contact = contacts_by_name_company[name_company_key]
             
                 # Get phone
                 phone = get_field_value(row_data, [
-                'phone', 'téléphone', 'telephone', 'tel', 'tél',
-                'phone_number', 'phone number', 'numéro de téléphone',
-                'numero de telephone', 'mobile', 'portable'
+                    'phone', 'téléphone', 'telephone', 'tel', 'tél',
+                    'phone_number', 'phone number', 'numéro de téléphone',
+                    'numero de telephone', 'mobile', 'portable'
                 ])
             
                 # Get city and country - try direct fields first, then parse region
                 city = get_field_value(row_data, [
-                'city', 'ville', 'cité', 'cite', 'localité', 'localite'
+                    'city', 'ville', 'cité', 'cite', 'localité', 'localite'
                 ])
                 country = get_field_value(row_data, [
-                'country', 'pays', 'nation', 'nationalité', 'nationalite'
+                    'country', 'pays', 'nation', 'nationalité', 'nationalite'
                 ])
             
                 # If city or country not found, try to parse from region
                 if not city or not country:
-                region = get_field_value(row_data, [
-                    'region', 'région', 'zone', 'area', 'location', 'localisation'
-                ])
-                if region:
-                    parsed_city, parsed_country = parse_region(region)
-                    if parsed_city and not city:
-                        city = parsed_city
-                    if parsed_country and not country:
-                        country = parsed_country
+                    region = get_field_value(row_data, [
+                        'region', 'région', 'zone', 'area', 'location', 'localisation'
+                    ])
+                    if region:
+                        parsed_city, parsed_country = parse_region(region)
+                        if parsed_city and not city:
+                            city = parsed_city
+                        if parsed_country and not country:
+                            country = parsed_country
             
                 # Get birthday
                 birthday_raw = get_field_value(row_data, [
-                'birthday', 'anniversaire', 'date de naissance',
-                'date de naissance', 'birth_date', 'birth date', 'dob'
+                    'birthday', 'anniversaire', 'date de naissance',
+                    'date de naissance', 'birth_date', 'birth date', 'dob'
                 ])
                 birthday = None
                 if birthday_raw:
-                try:
-                    # Try to parse various date formats
                     try:
-                        from dateutil import parser
-                        birthday = parser.parse(str(birthday_raw)).date()
-                    except ImportError:
-                        # Fallback to datetime.strptime for common formats
-                        date_str = str(birthday_raw).strip()
-                        # Try common date formats
-                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%d.%m.%Y']:
-                            try:
-                                birthday = dt.strptime(date_str, fmt).date()
-                                break
-                            except ValueError:
-                                continue
-                except (ValueError, TypeError):
-                    try:
-                        # Try pandas datetime if available
-                        import pandas as pd
-                        if isinstance(birthday_raw, (pd.Timestamp,)):
-                            birthday = birthday_raw.date()
-                    except (ImportError, AttributeError, TypeError):
-                        pass
+                        # Try to parse various date formats
+                        try:
+                            from dateutil import parser
+                            birthday = parser.parse(str(birthday_raw)).date()
+                        except ImportError:
+                            # Fallback to datetime.strptime for common formats
+                            date_str = str(birthday_raw).strip()
+                            # Try common date formats
+                            for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%d.%m.%Y']:
+                                try:
+                                    birthday = dt.strptime(date_str, fmt).date()
+                                    break
+                                except ValueError:
+                                    continue
+                    except (ValueError, TypeError):
+                        try:
+                            # Try pandas datetime if available
+                            import pandas as pd
+                            if isinstance(birthday_raw, (pd.Timestamp,)):
+                                birthday = birthday_raw.date()
+                        except (ImportError, AttributeError, TypeError):
+                            pass
             
                 # Get language
                 language = get_field_value(row_data, [
-                'language', 'langue', 'lang', 'idioma'
+                    'language', 'langue', 'lang', 'idioma'
                 ])
             
                 # Get employee_id
                 employee_id = None
                 employee_id_raw = get_field_value(row_data, [
-                'employee_id', 'id_employé', 'id_employe', 'employé_id',
-                'employe_id', 'employee id', 'id employee', 'responsable_id',
-                'responsable id', 'assigned_to_id', 'assigned to id'
+                    'employee_id', 'id_employé', 'id_employe', 'employé_id',
+                    'employe_id', 'employee id', 'id employee', 'responsable_id',
+                    'responsable id', 'assigned_to_id', 'assigned to id'
                 ])
                 if employee_id_raw:
-                try:
-                    employee_id = int(float(str(employee_id_raw)))  # Handle float strings
-                except (ValueError, TypeError):
-                    warnings.append({
-                        'row': idx + 2,
-                        'type': 'invalid_employee_id',
-                        'message': f"ID employé invalide: '{employee_id_raw}'",
+                    try:
+                        employee_id = int(float(str(employee_id_raw)))  # Handle float strings
+                    except (ValueError, TypeError):
+                        warnings.append({
+                            'row': idx + 2,
+                            'type': 'invalid_employee_id',
+                            'message': f"ID employé invalide: '{employee_id_raw}'",
                         'data': {'employee_id_raw': employee_id_raw}
                     })
             
@@ -1054,36 +1137,36 @@ async def import_contacts(
             
                 # Update existing contact or create new one
                 if existing_contact:
-                # Update existing contact
-                update_data = contact_data.model_dump(exclude_none=True)
-                for field, value in update_data.items():
-                    # Only update photo_url if a new photo was uploaded (photo_url is not None and not empty)
-                    if field == 'photo_url':
-                        if value:  # New photo provided
+                    # Update existing contact
+                    update_data = contact_data.model_dump(exclude_none=True)
+                    for field, value in update_data.items():
+                        # Only update photo_url if a new photo was uploaded (photo_url is not None and not empty)
+                        if field == 'photo_url':
+                            if value:  # New photo provided
+                                setattr(existing_contact, field, value)
+                                logger.info(f"Updated photo for contact {existing_contact.id}")
+                            # If no new photo provided, keep existing photo (don't update field)
+                        else:
+                            # Update all other fields
                             setattr(existing_contact, field, value)
-                            logger.info(f"Updated photo for contact {existing_contact.id}")
-                        # If no new photo provided, keep existing photo (don't update field)
-                    else:
-                        # Update all other fields
-                        setattr(existing_contact, field, value)
-                
-                contact = existing_contact
-                created_contacts.append(contact)  # Track as processed contact
-                logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
+                    
+                    contact = existing_contact
+                    created_contacts.append(contact)  # Track as processed contact
+                    logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
                 else:
-                # Create new contact
-                contact = Contact(**contact_data.model_dump(exclude_none=True))
-                db.add(contact)
-                created_contacts.append(contact)
-                logger.info(f"Created new contact: {first_name} {last_name}")
+                    # Create new contact
+                    contact = Contact(**contact_data.model_dump(exclude_none=True))
+                    db.add(contact)
+                    created_contacts.append(contact)
+                    logger.info(f"Created new contact: {first_name} {last_name}")
             
-        except Exception as e:
-            errors.append({
-                'row': idx + 2,  # +2 because Excel is 1-indexed and has header
-                'data': row_data,
-                'error': str(e)
-            })
-            logger.error(f"Error importing contact row {idx + 2}: {str(e)}")
+            except Exception as e:
+                errors.append({
+                    'row': idx + 2,  # +2 because Excel is 1-indexed and has header
+                    'data': row_data,
+                    'error': str(e)
+                })
+                logger.error(f"Error importing contact row {idx + 2}: {str(e)}")
         
         # Track which contacts were updated vs created
         existing_contact_ids = {c.id for c in all_existing_contacts}
