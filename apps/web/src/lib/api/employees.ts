@@ -17,6 +17,7 @@ export interface Employee {
   photo_filename?: string | null;
   hire_date?: string | null; // ISO date string
   birthday?: string | null; // ISO date string
+  user_id?: number | null; // ID of linked user
   created_at: string;
   updated_at: string;
 }
@@ -246,5 +247,34 @@ export const employeesAPI = {
   downloadZipTemplate: async (): Promise<void> => {
     const { downloadEmployeeZipTemplate } = await import('@/lib/utils/generateEmployeeTemplate');
     await downloadEmployeeZipTemplate();
+  },
+
+  /**
+   * Link an employee to a user
+   */
+  linkToUser: async (employeeId: number, userId: number): Promise<Employee> => {
+    const response = await apiClient.post<Employee>(
+      `/v1/employes/employees/${employeeId}/link-user`,
+      { user_id: userId }
+    );
+    const data = extractApiData<Employee>(response);
+    if (!data) {
+      throw new Error('Failed to link employee to user: no data returned');
+    }
+    return data;
+  },
+
+  /**
+   * Unlink an employee from its user
+   */
+  unlinkFromUser: async (employeeId: number): Promise<Employee> => {
+    const response = await apiClient.post<Employee>(
+      `/v1/employes/employees/${employeeId}/unlink-user`
+    );
+    const data = extractApiData<Employee>(response);
+    if (!data) {
+      throw new Error('Failed to unlink employee from user: no data returned');
+    }
+    return data;
   },
 };
