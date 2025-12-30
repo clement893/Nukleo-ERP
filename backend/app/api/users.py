@@ -21,7 +21,18 @@ async def get_current_user_profile(
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
     """Get current user profile."""
-    return current_user
+    # Build UserResponse manually to avoid lazy loading issues with SQLAlchemy relationships
+    # This prevents greenlet_spawn errors when Pydantic tries to serialize the model
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        avatar=getattr(current_user, 'avatar', None),
+        is_active=current_user.is_active,
+        created_at=current_user.created_at,
+        updated_at=current_user.updated_at,
+    )
 
 
 @router.put("/me", response_model=UserResponse)

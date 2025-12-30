@@ -227,6 +227,40 @@ async def list_users(
                 )
 
 
+@router.get("/me", response_model=UserResponse)
+@rate_limit_decorator("100/hour")
+async def get_current_user(
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> UserResponse:
+    """
+    Get current user profile
+    
+    Returns the authenticated user's profile information.
+    """
+    try:
+        logger.info(f"Getting current user profile for: {current_user.email}")
+        # Build UserResponse manually to avoid lazy loading issues with SQLAlchemy relationships
+        # This prevents greenlet_spawn errors when Pydantic tries to serialize the model
+        return UserResponse(
+            id=current_user.id,
+            email=current_user.email,
+            first_name=current_user.first_name,
+            last_name=current_user.last_name,
+            avatar=getattr(current_user, 'avatar', None),
+            is_active=current_user.is_active,
+            created_at=current_user.created_at,
+            updated_at=current_user.updated_at,
+        )
+    except Exception as e:
+        logger.error(f"Error getting current user profile: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve user profile: {str(e)}"
+        )
+
+
 @router.get("/{user_id}", response_model=UserResponse)
 @rate_limit_decorator("200/hour")
 @cache_query(expire=600, tags=["users"])
@@ -435,7 +469,19 @@ async def update_current_user(
         
         logger.info(f"User profile updated successfully for: {current_user.email}")
         
-        return current_user
+        # Build UserResponse manually to avoid lazy loading issues with SQLAlchemy relationships
+        # This prevents greenlet_spawn errors when Pydantic tries to serialize the model
+        # Note: UserResponse from schemas.user expects datetime objects, not strings
+        return UserResponse(
+            id=current_user.id,
+            email=current_user.email,
+            first_name=current_user.first_name,
+            last_name=current_user.last_name,
+            avatar=getattr(current_user, 'avatar', None),
+            is_active=current_user.is_active,
+            created_at=current_user.created_at,
+            updated_at=current_user.updated_at,
+        )
         
     except HTTPException:
         raise

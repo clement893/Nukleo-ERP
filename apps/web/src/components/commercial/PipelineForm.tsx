@@ -73,7 +73,8 @@ export default function PipelineForm({
 
     // Validate stages
     for (let i = 0; i < stages.length; i++) {
-      if (!stages[i].name?.trim()) {
+      const stage = stages[i];
+      if (!stage || !stage.name?.trim()) {
         showToast({
           message: `L'étape ${i + 1} doit avoir un nom`,
           type: 'error',
@@ -130,8 +131,14 @@ export default function PipelineForm({
 
     const newStages = [...stages];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [newStages[index], newStages[targetIndex]] = [newStages[targetIndex], newStages[index]];
-    setStages(newStages);
+    const currentStage = newStages[index];
+    const targetStage = newStages[targetIndex];
+    
+    if (currentStage && targetStage) {
+      newStages[index] = targetStage;
+      newStages[targetIndex] = currentStage;
+      setStages(newStages);
+    }
   };
 
   return (

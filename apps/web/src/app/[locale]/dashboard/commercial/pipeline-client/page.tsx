@@ -11,7 +11,7 @@ import { Card, Button, Loading, Badge, Modal } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui';
-import { pipelinesAPI, Pipeline, PipelineCreate } from '@/lib/api/pipelines';
+import { pipelinesAPI, Pipeline, PipelineCreate, PipelineUpdate } from '@/lib/api/pipelines';
 import PipelineForm from '@/components/commercial/PipelineForm';
 import { handleApiError } from '@/lib/errors/api';
 
@@ -48,10 +48,16 @@ function PipelinesListContent() {
     setShowCreateModal(true);
   };
 
-  const handleSubmitPipeline = async (pipelineData: PipelineCreate) => {
+  const handleSubmitPipeline = async (pipelineData: PipelineCreate | PipelineUpdate) => {
     try {
       setCreating(true);
-      await pipelinesAPI.create(pipelineData);
+      // For creation, we need PipelineCreate with required fields
+      // The form always submits PipelineCreate, so we can safely cast
+      const createData = pipelineData as PipelineCreate;
+      if (!createData.name) {
+        throw new Error('Le nom du pipeline est requis');
+      }
+      await pipelinesAPI.create(createData);
       await loadPipelines();
       setShowCreateModal(false);
       showToast({
