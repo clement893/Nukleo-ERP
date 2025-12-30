@@ -1169,9 +1169,8 @@ async def import_contacts(
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
         
         # Simple loop like employees import - use enumerate directly
-        # Commit in batches to avoid session issues with large imports
-        BATCH_SIZE = 50
-        batch_count = 0
+        # Note: We commit all contacts at the end (like companies import) instead of batching
+        # This ensures all contacts are saved properly
         
         for idx, row_data in enumerate(result['data']):
             try:
@@ -1632,17 +1631,8 @@ async def import_contacts(
                         add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
                         logger.info(f"Created new contact: {first_name} {last_name}")
                     
-                    # Commit in batches to avoid session timeout/memory issues
-                    if len(created_contacts) > 0 and len(created_contacts) % BATCH_SIZE == 0:
-                        try:
-                            await db.commit()
-                            batch_count += 1
-                            add_import_log(import_id, f"✅ Batch {batch_count}: {BATCH_SIZE} contact(s) sauvegardé(s) (total: {len(created_contacts)})", "info")
-                            logger.info(f"Committed batch {batch_count}: {len(created_contacts)} contacts so far")
-                        except Exception as batch_error:
-                            logger.error(f"Error committing batch {batch_count}: {batch_error}", exc_info=True)
-                            add_import_log(import_id, f"⚠️ Erreur lors du commit du batch {batch_count}: {str(batch_error)}", "warning")
-                            # Continue processing but log the error
+                    # Note: No batch commits here - we commit all contacts at the end (like companies import)
+                    # This ensures all contacts remain in the session and are saved together
                 
             except Exception as e:
                 stats["errors"] += 1
@@ -1686,16 +1676,15 @@ async def import_contacts(
         updated_contacts = []
         new_contacts = []
         
-        # Commit remaining contacts (if any not committed in batches)
-        remaining_to_commit = len(created_contacts) % BATCH_SIZE if len(created_contacts) > 0 else 0
-        if remaining_to_commit > 0 or len(created_contacts) == 0:
-            add_import_log(import_id, f"Sauvegarde finale de {remaining_to_commit if remaining_to_commit > 0 else len(created_contacts)} contact(s) restant(s)...", "info")
+        # Commit all contacts at once (like companies import)
+        # This ensures all contacts are saved properly without batch expiration issues
+        add_import_log(import_id, f"Sauvegarde de {len(created_contacts)} contact(s) dans la base de données...", "info")
         
         try:
             if created_contacts:
-                # Final commit for any remaining contacts
+                # Commit all contacts at once (no batching to avoid session expiration issues)
                 await db.commit()
-                logger.info(f"Final commit: {len(created_contacts)} total contacts")
+                logger.info(f"Committed {len(created_contacts)} contacts to database")
                 
                 # Refresh contacts with relationships loaded (in batches to avoid issues)
                 refresh_batch_size = 50
