@@ -4,9 +4,8 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -35,7 +34,7 @@ import {
   contactsAPI 
 } from '@/lib/query/contacts';
 
-type ViewMode = 'list' | 'gallery';
+import type { ViewMode } from '@/components/commercial/ViewModeToggle';
 
 function ContactsContent() {
   const router = useRouter();
@@ -415,22 +414,7 @@ function ContactsContent() {
       label: 'Courriel',
       sortable: true,
       render: (value, contact) => (
-        value ? (
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{String(value)}</span>
-            <a
-              href={`mailto:${value}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-primary hover:text-primary-600 transition-colors"
-              title="Envoyer un email"
-              aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
-            >
-              <Mail className="w-4 h-4" />
-            </a>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
+        <ContactActionLink type="email" value={String(value)} contact={contact} />
       ),
     },
     {
@@ -438,22 +422,7 @@ function ContactsContent() {
       label: 'Téléphone',
       sortable: true,
       render: (value, contact) => (
-        value ? (
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{String(value)}</span>
-            <a
-              href={`tel:${value}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-primary hover:text-primary-600 transition-colors"
-              title="Appeler"
-              aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
-            >
-              <Phone className="w-4 h-4" />
-            </a>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
+        <ContactActionLink type="phone" value={String(value)} contact={contact} />
       ),
     },
     {
@@ -485,128 +454,40 @@ function ContactsContent() {
         <div className="space-y-3">
           {/* Contact count with improved visual */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 dark:bg-primary/20 rounded-lg">
-                <Users className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">
-                  {filteredContacts.length > 0 ? (
-                    <>
-                      <span className="text-primary">{filteredContacts.length}</span>
-                      {filteredContacts.length !== contacts.length && (
-                        <> / <span className="text-muted-foreground">{contacts.length}</span></>
-                      )}
-                      {' '}contact{filteredContacts.length > 1 ? 's' : ''}
-                    </>
-                  ) : (
-                    <>Aucun contact</>
-                  )}
-                </span>
-              </div>
-              {filteredContacts.length !== contacts.length && hasActiveFilters && (
-                <Badge variant="default" className="text-xs">
-                  Filtré{filteredContacts.length !== contacts.length ? 's' : ''}
-                </Badge>
-              )}
-            </div>
+            <ContactCounter
+              filtered={filteredContacts.length}
+              total={contacts.length}
+              showFilteredBadge={hasActiveFilters}
+            />
           </div>
           
           {/* Search bar */}
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par nom, email, téléphone, entreprise..."
-              className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Effacer la recherche"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Rechercher par nom, email, téléphone, entreprise..."
+            className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
           
           {/* Active filters badges */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">Filtres actifs:</span>
-              {filterCity && (
-                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
-                  <span>Ville: {filterCity}</span>
-                  <button
-                    onClick={() => setFilterCity('')}
-                    className="hover:text-destructive transition-colors"
-                    aria-label={`Supprimer le filtre ville: ${filterCity}`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              {filterPhone && (
-                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
-                  <span>Téléphone: {filterPhone}</span>
-                  <button
-                    onClick={() => setFilterPhone('')}
-                    className="hover:text-destructive transition-colors"
-                    aria-label={`Supprimer le filtre téléphone: ${filterPhone}`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              {filterCircle && (
-                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
-                  <span>Cercle: {filterCircle.charAt(0).toUpperCase() + filterCircle.slice(1)}</span>
-                  <button
-                    onClick={() => setFilterCircle('')}
-                    className="hover:text-destructive transition-colors"
-                    aria-label={`Supprimer le filtre cercle: ${filterCircle}`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              {filterCompany && (
-                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
-                  <Building2 className="w-3 h-3" />
-                  <span>Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name || filterCompany}</span>
-                  <button
-                    onClick={() => setFilterCompany('')}
-                    className="hover:text-destructive transition-colors"
-                    aria-label="Supprimer le filtre entreprise"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              {searchQuery && (
-                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
-                  <Search className="w-3 h-3" />
-                  <span>Recherche: "{searchQuery}"</span>
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="hover:text-destructive transition-colors"
-                    aria-label="Supprimer la recherche"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              <button
-                onClick={clearAllFilters}
-                className="text-xs text-primary hover:text-primary-600 hover:underline transition-colors"
-              >
-                Effacer tous les filtres
-              </button>
-            </div>
-          )}
+          <FilterBadges
+            filters={{
+              city: filterCity,
+              phone: filterPhone,
+              circle: filterCircle,
+              company: filterCompany,
+              search: searchQuery,
+            }}
+            onRemoveFilter={(key) => {
+              if (key === 'city') setFilterCity('');
+              if (key === 'phone') setFilterPhone('');
+              if (key === 'circle') setFilterCircle('');
+              if (key === 'company') setFilterCompany('');
+              if (key === 'search') setSearchQuery('');
+            }}
+            onClearAll={clearAllFilters}
+            companies={companies}
+          />
           
           {/* Top row: Filters, View toggle, Actions */}
           <div className="flex flex-col gap-3">
@@ -674,32 +555,7 @@ function ContactsContent() {
             {/* Bottom row: View toggle, Actions */}
             <div className="flex items-center justify-between">
               {/* View mode toggle */}
-              <div className="flex border border-border rounded-md overflow-hidden">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={clsx(
-                    'px-2 py-1.5 transition-colors text-xs',
-                    viewMode === 'list'
-                      ? 'bg-primary text-white'
-                      : 'bg-background text-foreground hover:bg-muted'
-                  )}
-                  aria-label="Vue liste"
-                >
-                  <List className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('gallery')}
-                  className={clsx(
-                    'px-2 py-1.5 transition-colors text-xs',
-                    viewMode === 'gallery'
-                      ? 'bg-primary text-white'
-                      : 'bg-background text-foreground hover:bg-muted'
-                  )}
-                  aria-label="Vue galerie"
-                >
-                  <Grid className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <ViewModeToggle value={viewMode} onChange={setViewMode} />
 
               {/* Actions menu */}
               <div className="relative ml-auto">
