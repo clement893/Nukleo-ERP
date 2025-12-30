@@ -96,8 +96,8 @@ function DataTable<T extends Record<string, unknown>>({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
-  virtualized,
-  estimatedRowHeight = 60,
+  virtualized: _virtualized,
+  estimatedRowHeight: _estimatedRowHeight = 60,
 }: DataTableProps<T>) {
   // Use shared hook for all table data management
   const {
@@ -250,13 +250,16 @@ function DataTable<T extends Record<string, unknown>>({
                       key={index}
                       onClick={onRowClick ? () => onRowClick(row) : undefined}
                     >
-                      {columns.map((column) => (
-                        <TableCell key={column.key}>
-                          {column.render
-                            ? column.render(row[column.key], row)
-                            : row[column.key]?.toString() || '-'}
-                        </TableCell>
-                      ))}
+                      {columns.map((column) => {
+                        const cellValue = row[column.key];
+                        return (
+                          <TableCell key={column.key}>
+                            {column.render
+                              ? column.render(cellValue, row)
+                              : cellValue?.toString() || '-'}
+                          </TableCell>
+                        );
+                      })}
                       {actions && (
                         <TableCell 
                           onClick={(e) => e.stopPropagation()} 

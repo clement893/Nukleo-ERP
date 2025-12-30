@@ -144,6 +144,7 @@ def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = N
 
 
 @router.get("/", response_model=List[ContactSchema])
+@cache_query(expire=60, tags=["contacts"])  # Cache for 60 seconds, invalidate on contact changes
 async def list_contacts(
     request: Request,
     db: AsyncSession = Depends(get_db),
