@@ -5,12 +5,8 @@ Pydantic v2 models for calendar events
 
 from __future__ import annotations
 
-from datetime import datetime, date
 from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator, model_serializer
-
-# Import time type directly to avoid conflicts
-from datetime import time as _TimeType
 
 
 class CalendarEventBase(BaseModel):
@@ -22,15 +18,14 @@ class CalendarEventBase(BaseModel):
     
     title: str = Field(..., min_length=1, max_length=200, description="Event title", strip_whitespace=True)
     description: Optional[str] = Field(None, description="Event description")
-    date: date = Field(..., description="Event date")
-    end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    event_time: Optional[_TimeType] = Field(None, alias='time', description="Event time")
-    # Use event_type internally, but accept 'type' from API via alias
-    # This avoids conflict with Python's 'type' keyword while maintaining API compatibility
-    event_type: str = Field(
+    event_date: 'date' = Field(..., alias='date', description="Event date")
+    end_date: Optional['date'] = Field(None, description="End date for multi-day events")
+    event_time: Optional[str] = Field(None, description="Event time (HH:MM format)")
+    # Use event_category internally - accept 'type' from API via model_validator
+    # This avoids conflict with Python's 'type' keyword
+    event_category: str = Field(
         default='other',
-        alias='type',  # Accept 'type' from API input
-        description="Event type: meeting, appointment, reminder, deadline, vacation, holiday, other"
+        description="Event category: meeting, appointment, reminder, deadline, vacation, holiday, other"
     )
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
@@ -39,7 +34,7 @@ class CalendarEventBase(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def convert_sqlalchemy_type_to_event_type(cls, data: Any) -> Any:
-        """Convert 'type' attribute from SQLAlchemy model to 'event_type' for Pydantic"""
+        """Convert 'type' attribute from SQLAlchemy model or API input to 'event_type' for Pydantic"""
         # Handle SQLAlchemy model instance (when from_attributes=True is used)
         if hasattr(data, 'type') and not isinstance(data, dict):
             # Convert SQLAlchemy model to dict
@@ -48,18 +43,32 @@ class CalendarEventBase(BaseModel):
                        'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
                 if hasattr(data, key):
                     result[key] = getattr(data, key)
-            # Map 'type' to 'type' (which will be read via alias as 'event_type')
+            # Map 'type' to 'event_category'
             if hasattr(data, 'type'):
-                result['type'] = getattr(data, 'type')
-            # Map 'time' to 'time' (which will be read via alias as 'event_time')
+                result['event_category'] = getattr(data, 'type')
+            # Map 'time' to 'event_time'
             if hasattr(data, 'time'):
-                result['time'] = getattr(data, 'time')
+                result['event_time'] = getattr(data, 'time')
+            # Map 'date' to 'event_date'
+            if hasattr(data, 'date'):
+                result['event_date'] = getattr(data, 'date')
             return result
+        # Handle dict input (from API)
+        if isinstance(data, dict):
+            # Convert 'type' key to 'event_category'
+            if 'type' in data and 'event_category' not in data:
+                data['event_category'] = data.pop('type')
+            # Convert 'time' key to 'event_time'
+            if 'time' in data and 'event_time' not in data:
+                data['event_time'] = data.pop('time')
+            # Convert 'date' key to 'event_date'
+            if 'date' in data and 'event_date' not in data:
+                data['event_date'] = data.pop('date')
         return data
     
-    @field_validator('event_type', mode='before')
+    @field_validator('event_category', mode='before')
     @classmethod
-    def validate_event_type(cls, v: Any) -> str:
+    def validate_event_category_field(cls, v: Any) -> str:
         """Validate event type"""
         if v is None:
             return 'other'
@@ -91,22 +100,34 @@ class CalendarEventUpdate(BaseModel):
     
     title: Optional[str] = Field(None, min_length=1, max_length=200, description="Event title")
     description: Optional[str] = Field(None, description="Event description")
-    date: Optional[date] = Field(None, description="Event date")
-    end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    event_time: Optional[_TimeType] = Field(None, alias='time', description="Event time")
-    # Use event_type internally, but accept 'type' from API via alias
-    event_type: Optional[str] = Field(
+    event_date: Optional['date'] = Field(None, alias='date', description="Event date")
+    end_date: Optional['date'] = Field(None, description="End date for multi-day events")
+    event_time: Optional[str] = Field(None, description="Event time (HH:MM format)")
+    # Use event_type internally - accept 'type' from API via model_validator
+    event_category: Optional[str] = Field(
         None,
-        alias='type',  # Accept 'type' from API input
-        description="Event type"
+        description="Event category"
     )
+    
+    @model_validator(mode='before')
+    @classmethod
+    def convert_api_input(cls, data: Any) -> Any:
+        """Convert 'type' and 'time' keys from API input to 'event_type' and 'event_time'"""
+        if isinstance(data, dict):
+            # Convert 'type' key to 'event_category'
+            if 'type' in data and 'event_category' not in data:
+                data['event_category'] = data.pop('type')
+            # Convert 'time' key to 'event_time'
+            if 'time' in data and 'event_time' not in data:
+                data['event_time'] = data.pop('time')
+        return data
     location: Optional[str] = Field(None, max_length=500, description="Event location")
     attendees: Optional[List[str]] = Field(None, description="List of attendee names/emails")
     color: Optional[str] = Field(None, description="Hex color code for the event")
     
-    @field_validator('event_type', mode='before')
+    @field_validator('event_category', mode='before')
     @classmethod
-    def validate_event_type(cls, v: Any) -> Optional[str]:
+    def validate_event_category_field(cls, v: Any) -> Optional[str]:
         """Validate event type"""
         if v is None:
             return v
@@ -128,19 +149,33 @@ class CalendarEvent(CalendarEventBase):
     """Calendar event response schema"""
     id: int
     user_id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: 'datetime'
+    updated_at: 'datetime'
 
     model_config = ConfigDict(
         from_attributes=True,
-        populate_by_name=True,
-        serialize_by_alias=True  # Serialize 'event_type' as 'type' in JSON responses
+        populate_by_name=True
     )
+    
+    @model_serializer
+    def serialize_model(self):
+        """Serialize model with 'type' and 'time' keys for API compatibility"""
+        data = self.model_dump()
+        # Convert 'event_category' to 'type' for API response
+        if 'event_category' in data:
+            data['type'] = data.pop('event_category')
+        # Convert 'event_time' to 'time' for API response
+        if 'event_time' in data:
+            data['time'] = data.pop('event_time')
+        # Convert 'event_date' to 'date' for API response
+        if 'event_date' in data:
+            data['date'] = data.pop('event_date')
+        return data
     
     @model_validator(mode='before')
     @classmethod
     def handle_sqlalchemy_type_field(cls, data: Any) -> Any:
-        """Convert 'type' attribute from SQLAlchemy model to dict with 'type' key for alias mapping"""
+        """Convert 'type' and 'time' attributes from SQLAlchemy model to 'event_type' and 'event_time'"""
         # Handle SQLAlchemy model instance (when from_attributes=True is used)
         if hasattr(data, 'type') and not isinstance(data, dict):
             # Convert SQLAlchemy model to dict
@@ -149,13 +184,27 @@ class CalendarEvent(CalendarEventBase):
                        'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
                 if hasattr(data, key):
                     result[key] = getattr(data, key)
-            # Map 'type' attribute to 'type' key (which will be read via alias as 'event_type')
+            # Map 'type' to 'event_category'
             if hasattr(data, 'type'):
-                result['type'] = getattr(data, 'type')
-            # Map 'time' to 'time' (which will be read via alias as 'event_time')
+                result['event_category'] = getattr(data, 'type')
+            # Map 'time' to 'event_time'
             if hasattr(data, 'time'):
-                result['time'] = getattr(data, 'time')
+                result['event_time'] = getattr(data, 'time')
+            # Map 'date' to 'event_date'
+            if hasattr(data, 'date'):
+                result['event_date'] = getattr(data, 'date')
             return result
+        # Handle dict input (from API)
+        if isinstance(data, dict):
+            # Convert 'type' key to 'event_category'
+            if 'type' in data and 'event_category' not in data:
+                data['event_category'] = data.pop('type')
+            # Convert 'time' key to 'event_time'
+            if 'time' in data and 'event_time' not in data:
+                data['event_time'] = data.pop('time')
+            # Convert 'date' key to 'event_date'
+            if 'date' in data and 'event_date' not in data:
+                data['event_date'] = data.pop('date')
         return data
 
 

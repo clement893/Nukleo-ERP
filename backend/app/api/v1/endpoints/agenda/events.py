@@ -140,7 +140,7 @@ async def create_event(
         Created calendar event
     """
     # Validate end_date is after date
-    if event_data.end_date and event_data.end_date < event_data.date:
+    if event_data.end_date and event_data.end_date < event_data.event_date:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="End date must be after or equal to start date"
@@ -149,10 +149,10 @@ async def create_event(
     event = CalendarEvent(
         title=event_data.title,
         description=event_data.description,
-        date=event_data.date,
+        date=event_data.event_date,
         end_date=event_data.end_date,
-        time=event_data.time,
-        type=event_data.event_type,  # Use event_type from schema (mapped from 'type' via alias)
+        time=event_data.event_time,
+        type=event_data.event_category,  # Use event_category from schema (mapped from 'type' via model_validator)
         location=event_data.location,
         attendees=event_data.attendees,
         color=event_data.color,
@@ -205,9 +205,15 @@ async def update_event(
     # Update fields
     update_data = event_data.model_dump(exclude_unset=True, by_alias=False)
     
-    # Map event_type back to type for database model
-    if 'event_type' in update_data:
-        update_data['type'] = update_data.pop('event_type')
+    # Map event_category back to type for database model
+    if 'event_category' in update_data:
+        update_data['type'] = update_data.pop('event_category')
+    # Map event_time back to time for database model
+    if 'event_time' in update_data:
+        update_data['time'] = update_data.pop('event_time')
+    # Map event_date back to date for database model
+    if 'event_date' in update_data:
+        update_data['date'] = update_data.pop('event_date')
     
     # Validate end_date if provided
     if 'end_date' in update_data and 'date' in update_data:
