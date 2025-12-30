@@ -5,7 +5,6 @@ import Card from '@/components/ui/Card';
 import { UserCircle, Building2, Mail, Phone, MapPin, Loader2, Linkedin } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useRef, useState } from 'react';
-import ContactAvatar from './ContactAvatar';
 
 interface ContactsGalleryProps {
   contacts: Contact[];
