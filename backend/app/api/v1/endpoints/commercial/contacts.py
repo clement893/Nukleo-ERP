@@ -427,40 +427,7 @@ async def update_contact(
     return ContactSchema(**contact_dict)
 
 
-@router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_contact(
-    request: Request,
-    contact_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> None:
-    """
-    Delete a contact
-    
-    Args:
-        contact_id: Contact ID
-        current_user: Current authenticated user
-        db: Database session
-        
-    Raises:
-        HTTPException: If contact not found
-    """
-    result = await db.execute(
-        select(Contact).where(Contact.id == contact_id)
-    )
-    contact = result.scalar_one_or_none()
-    
-    if not contact:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Contact not found"
-        )
-    
-    await db.delete(contact)
-    await db.commit()
-
-
-@router.delete("/all", status_code=status.HTTP_200_OK)
+@router.delete("/bulk", status_code=status.HTTP_200_OK)
 async def delete_all_contacts(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -496,6 +463,39 @@ async def delete_all_contacts(
         "message": f"Successfully deleted {count} contact(s)",
         "deleted_count": count
     }
+
+
+@router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_contact(
+    request: Request,
+    contact_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """
+    Delete a contact
+    
+    Args:
+        contact_id: Contact ID
+        current_user: Current authenticated user
+        db: Database session
+        
+    Raises:
+        HTTPException: If contact not found
+    """
+    result = await db.execute(
+        select(Contact).where(Contact.id == contact_id)
+    )
+    contact = result.scalar_one_or_none()
+    
+    if not contact:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contact not found"
+        )
+    
+    await db.delete(contact)
+    await db.commit()
 
 
 @router.post("/import")

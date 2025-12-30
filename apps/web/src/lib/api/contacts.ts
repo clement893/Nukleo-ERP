@@ -127,7 +127,7 @@ export const contactsAPI = {
    * Delete all contacts
    */
   deleteAll: async (): Promise<{ message: string; deleted_count: number }> => {
-    const response = await apiClient.delete<{ message: string; deleted_count: number }>('/v1/commercial/contacts/all');
+    const response = await apiClient.delete<{ message: string; deleted_count: number }>('/v1/commercial/contacts/bulk');
     return extractApiData(response) || { message: 'No contacts deleted', deleted_count: 0 };
   },
 
