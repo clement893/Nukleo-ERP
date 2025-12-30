@@ -17,7 +17,6 @@ import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/reseau/ContactsGallery';
 import ContactForm from '@/components/reseau/ContactForm';
 import ContactAvatar from '@/components/reseau/ContactAvatar';
-import FilterBadges from '@/components/reseau/FilterBadges';
 import ContactCounter from '@/components/reseau/ContactCounter';
 import ViewModeToggle from '@/components/reseau/ViewModeToggle';
 import ContactActionLink from '@/components/reseau/ContactActionLink';
@@ -31,7 +30,8 @@ import {
   FileSpreadsheet, 
   MoreVertical, 
   Trash2,
-  HelpCircle
+  HelpCircle,
+  X
 } from 'lucide-react';
 import ImportContacts2Instructions from '@/components/reseau/ImportContacts2Instructions';
 import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
@@ -464,9 +464,21 @@ function Contacts2Content() {
       key: 'linkedin',
       label: 'LinkedIn',
       sortable: true,
-      render: (value, contact) => (
-        <ContactActionLink type="linkedin" value={value ? String(value) : ''} contact={contact} />
-      ),
+      render: (value) => {
+        if (!value) return <span className="text-muted-foreground">-</span>;
+        const url = String(value);
+        return (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-primary hover:text-primary-600 transition-colors"
+          >
+            {url}
+          </a>
+        );
+      },
     },
     {
       key: 'birthday',
@@ -475,7 +487,11 @@ function Contacts2Content() {
       render: (value) => {
         if (!value) return <span className="text-muted-foreground">-</span>;
         try {
-          const date = new Date(value);
+          const dateStr = String(value);
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) {
+            return <span className="text-muted-foreground">{dateStr}</span>;
+          }
           return <span className="text-muted-foreground">{date.toLocaleDateString('fr-FR')}</span>;
         } catch {
           return <span className="text-muted-foreground">{String(value)}</span>;
@@ -525,26 +541,43 @@ function Contacts2Content() {
           />
           
           {/* Active filters badges */}
-          <FilterBadges
-            filters={{
-              country: filterCountry,
-              circle: filterCircle,
-              company: filterCompany,
-              search: searchQuery,
-            }}
-            onRemoveFilter={(key: string, value?: string) => {
-              if (key === 'country' && value) {
-                setFilterCountry(filterCountry.filter(v => v !== value));
-              } else if (key === 'circle' && value) {
-                setFilterCircle(filterCircle.filter(v => v !== value));
-              } else if (key === 'company' && value) {
-                setFilterCompany(filterCompany.filter(v => v !== value));
-              } else if (key === 'search') {
-                setSearchQuery('');
-              }
-            }}
-            onClearAll={clearAllFilters}
-          />
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filtres actifs:</span>
+              {filterCountry.map((country) => (
+                <Badge key={`country-${country}`} variant="default" className="flex items-center gap-1.5 px-2 py-1 cursor-pointer" onClick={() => setFilterCountry(filterCountry.filter(v => v !== country))}>
+                  <span>Pays: {country}</span>
+                  <X className="w-3 h-3" />
+                </Badge>
+              ))}
+              {filterCircle.map((circle) => (
+                <Badge key={`circle-${circle}`} variant="default" className="flex items-center gap-1.5 px-2 py-1 cursor-pointer" onClick={() => setFilterCircle(filterCircle.filter(v => v !== circle))}>
+                  <span>Cercle: {circle.charAt(0).toUpperCase() + circle.slice(1)}</span>
+                  <X className="w-3 h-3" />
+                </Badge>
+              ))}
+              {filterCompany.map((companyId) => {
+                const company = companies.find(c => c.id.toString() === companyId);
+                return (
+                  <Badge key={`company-${companyId}`} variant="default" className="flex items-center gap-1.5 px-2 py-1 cursor-pointer" onClick={() => setFilterCompany(filterCompany.filter(v => v !== companyId))}>
+                    <span>Compagnie: {company?.name || companyId}</span>
+                    <X className="w-3 h-3" />
+                  </Badge>
+                );
+              })}
+              {debouncedSearchQuery && (
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1 cursor-pointer" onClick={() => setSearchQuery('')}>
+                  <span>Recherche: {debouncedSearchQuery}</span>
+                  <X className="w-3 h-3" />
+                </Badge>
+              )}
+              {(filterCountry.length > 0 || filterCircle.length > 0 || filterCompany.length > 0 || debouncedSearchQuery) && (
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1 cursor-pointer" onClick={clearAllFilters}>
+                  <span>Tout effacer</span>
+                </Badge>
+              )}
+            </div>
+          )}
           
           {/* Top row: Filters, View toggle, Actions */}
           <div className="flex flex-col gap-3">
