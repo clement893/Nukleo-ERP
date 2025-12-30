@@ -51,6 +51,10 @@ export interface LeoQueryResponse {
   usage?: Record<string, number> | null;
 }
 
+export interface LeoConversationUpdate {
+  title?: string;
+}
+
 /**
  * Leo Agent API client
  */
@@ -100,5 +104,30 @@ export const leoAgentAPI = {
       throw new Error('Failed to get response from Leo: no data returned');
     }
     return result;
+  },
+
+  /**
+   * Update a conversation (e.g., rename it)
+   */
+  updateConversation: async (
+    conversationId: number,
+    updateData: LeoConversationUpdate
+  ): Promise<LeoConversation> => {
+    const response = await apiClient.put<LeoConversation>(
+      `/v1/ai/leo/conversations/${conversationId}`,
+      updateData
+    );
+    const data = extractApiData(response);
+    if (!data) {
+      throw new Error(`Failed to update conversation ${conversationId}`);
+    }
+    return data;
+  },
+
+  /**
+   * Delete a conversation and all its messages
+   */
+  deleteConversation: async (conversationId: number): Promise<void> => {
+    await apiClient.delete(`/v1/ai/leo/conversations/${conversationId}`);
   },
 };

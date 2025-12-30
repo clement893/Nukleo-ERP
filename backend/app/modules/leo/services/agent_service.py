@@ -409,3 +409,60 @@ class LeoAgentService:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
+    
+    async def update_conversation(
+        self,
+        conversation_id: int,
+        user_id: int,
+        title: Optional[str] = None
+    ) -> Optional[LeoConversation]:
+        """
+        Update a conversation (title)
+        
+        Args:
+            conversation_id: Conversation ID
+            user_id: User ID (for security check)
+            title: New title for the conversation
+            
+        Returns:
+            Updated conversation or None if not found
+        """
+        conversation = await self.get_conversation(conversation_id, user_id)
+        if not conversation:
+            return None
+        
+        if title:
+            conversation.title = title
+        
+        await self.db.commit()
+        await self.db.refresh(conversation)
+        return conversation
+    
+    async def delete_conversation(self, conversation_id: int, user_id: int) -> bool:
+        """
+        Delete a conversation and all its messages
+        
+        Args:
+            conversation_id: Conversation ID
+            user_id: User ID (for security check)
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        conversation = await self.get_conversation(conversation_id, user_id)
+        if not conversation:
+            return False
+        
+        # Delete all messages first (cascade should handle this, but being explicit)
+        messages_query = select(LeoMessage).where(
+            LeoMessage.conversation_id == conversation_id
+        )
+        messages_result = await self.db.execute(messages_query)
+        messages = messages_result.scalars().all()
+        for message in messages:
+            await self.db.delete(message)
+        
+        # Delete conversation
+        await self.db.delete(conversation)
+        await self.db.commit()
+        return True

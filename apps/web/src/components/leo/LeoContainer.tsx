@@ -72,6 +72,40 @@ export function LeoContainer() {
     setSelectedConversationId(conversationId);
   }, []);
 
+  const handleDeleteConversation = useCallback(async (conversationId: number) => {
+    try {
+      await leoAgentAPI.deleteConversation(conversationId);
+      
+      // Remove from local state
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+      
+      // If deleted conversation was selected, clear selection
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null);
+        setMessages([]);
+      }
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
+      showError(errorMessage);
+      console.error('Failed to delete conversation:', err);
+    }
+  }, [selectedConversationId, showError]);
+
+  const handleRenameConversation = useCallback(async (conversationId: number, newTitle: string) => {
+    try {
+      const updated = await leoAgentAPI.updateConversation(conversationId, { title: newTitle });
+      
+      // Update local state
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conversationId ? updated : c))
+      );
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
+      showError(errorMessage);
+      console.error('Failed to rename conversation:', err);
+    }
+  }, [showError]);
+
   const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isSending) return;
 
@@ -115,6 +149,8 @@ export function LeoContainer() {
         selectedConversationId={selectedConversationId}
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
+        onDeleteConversation={handleDeleteConversation}
+        onRenameConversation={handleRenameConversation}
         isLoading={isLoadingConversations}
       />
       <div className="flex-1 flex flex-col">
