@@ -4,21 +4,18 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
+import { Card, Alert, Loading } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Plus, Edit, Trash2, Eye, Linkedin, Mail, Phone, Calendar, Briefcase } from 'lucide-react';
-import { clsx } from 'clsx';
+import { Edit, Trash2, Eye, Linkedin, Mail, Phone, Calendar, Briefcase } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { agendaAPI, type CalendarEventCreate } from '@/lib/api/agenda';
 
 function EmployesContent() {
-  const router = useRouter();
   const { showToast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,7 +74,7 @@ function EmployesContent() {
               const eventData: CalendarEventCreate = {
                 title: `Anniversaire - ${employee.first_name} ${employee.last_name}`,
                 description: `Anniversaire de ${employee.first_name} ${employee.last_name}`,
-                date: thisYearBirthday.toISOString().split('T')[0],
+                date: thisYearBirthday.toISOString().split('T')[0] as string,
                 type: 'reminder',
                 color: '#EC4899', // Pink color for birthdays
               };
@@ -262,8 +259,7 @@ function EmployesContent() {
             filterable={false}
             emptyMessage="Aucun employé trouvé"
             loading={loading}
-            actions={(row) => {
-              const employee = row as unknown as Employee;
+            actions={() => {
               return [
                 {
                   label: 'Voir',

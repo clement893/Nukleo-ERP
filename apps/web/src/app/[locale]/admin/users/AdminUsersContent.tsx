@@ -53,10 +53,8 @@ export default function AdminUsersContent() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await employeesAPI.list(0, 1000);
-      if (response.data) {
-        setEmployees(response.data);
-      }
+      const employees = await employeesAPI.list(0, 1000);
+      setEmployees(employees);
     } catch (err) {
       // Silently fail if employees API is not available
       console.warn('Failed to fetch employees:', err);
