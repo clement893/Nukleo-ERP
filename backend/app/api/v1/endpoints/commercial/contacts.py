@@ -29,6 +29,80 @@ from app.core.logging import logger
 router = APIRouter(prefix="/commercial/contacts", tags=["commercial-contacts"])
 
 
+def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = None) -> Optional[str]:
+    """
+    Regenerate presigned URL for a contact photo.
+    
+    Args:
+        photo_url: The photo URL (can be a file_key or presigned URL)
+        contact_id: Optional contact ID for logging
+        
+    Returns:
+        Presigned URL if successful, original file_key if generation fails, None if no photo_url
+    """
+    if not photo_url:
+        return None
+    
+    if not S3Service.is_configured():
+        # If S3 is not configured, return the original URL (might be a direct URL)
+        return photo_url
+    
+    try:
+        s3_service = S3Service()
+        file_key = None
+        
+        # If it's a presigned URL, try to extract the file_key from it
+        if photo_url.startswith('http'):
+            # Try to extract file_key from presigned URL
+            from urllib.parse import urlparse, parse_qs, unquote
+            parsed = urlparse(photo_url)
+            
+            # Check query params for 'key' parameter (some S3 presigned URLs have it)
+            query_params = parse_qs(parsed.query)
+            if 'key' in query_params:
+                file_key = unquote(query_params['key'][0])
+            else:
+                # Extract from path - remove bucket name if present
+                path = parsed.path.strip('/')
+                # Look for 'contacts/photos' in the path
+                if 'contacts/photos' in path:
+                    # Find the position of 'contacts/photos' and take everything after
+                    idx = path.find('contacts/photos')
+                    if idx != -1:
+                        file_key = path[idx:]
+                elif path.startswith('contacts/'):
+                    file_key = path
+        else:
+            # It's likely already a file_key
+            file_key = photo_url
+        
+        # Regenerate presigned URL if we have a file_key
+        if file_key:
+            try:
+                presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                if presigned_url:
+                    if contact_id:
+                        logger.debug(f"Generated presigned URL for contact {contact_id} with file_key: {file_key[:50]}...")
+                    return presigned_url
+                else:
+                    logger.warning(f"Failed to generate presigned URL{' for contact ' + str(contact_id) if contact_id else ''}: generate_presigned_url returned None for file_key: {file_key}")
+                    # Keep the original file_key instead of setting to None, so frontend can try to generate URL
+                    return file_key
+            except Exception as e:
+                logger.error(f"Failed to generate presigned URL{' for contact ' + str(contact_id) if contact_id else ''} with file_key '{file_key}': {e}", exc_info=True)
+                # Keep the original file_key instead of setting to None, so frontend can try to generate URL
+                return file_key
+        else:
+            # Could not extract file_key, return original URL
+            logger.warning(f"Could not extract file_key from photo_url{' for contact ' + str(contact_id) if contact_id else ''}: {photo_url}")
+            return photo_url
+    except Exception as e:
+        logger.error(f"Failed to regenerate presigned URL{' for contact ' + str(contact_id) if contact_id else ''}: {e}", exc_info=True)
+        # Keep the original photo_url instead of setting to None
+        # This allows the frontend to handle the URL appropriately
+        return photo_url
+
+
 @router.get("/", response_model=List[ContactSchema])
 async def list_contacts(
     request: Request,
@@ -70,57 +144,10 @@ async def list_contacts(
     
     # Convert to response format with company and employee names
     contact_list = []
-    s3_service = S3Service() if S3Service.is_configured() else None
     
     for contact in contacts:
-        # Regenerate presigned URL for photo if it exists and S3 is configured
-        photo_url = contact.photo_url
-        if photo_url and s3_service:
-            try:
-                # Try to extract file_key from presigned URL or use photo_url as file_key
-                file_key = None
-                
-                # If it's a presigned URL, try to extract the file_key from it
-                if photo_url.startswith('http'):
-                    # Try to extract file_key from presigned URL
-                    from urllib.parse import urlparse, parse_qs, unquote
-                    parsed = urlparse(photo_url)
-                    
-                    # Check query params for 'key' parameter (some S3 presigned URLs have it)
-                    query_params = parse_qs(parsed.query)
-                    if 'key' in query_params:
-                        file_key = unquote(query_params['key'][0])
-                    else:
-                        # Extract from path - remove bucket name if present
-                        path = parsed.path.strip('/')
-                        # Look for 'contacts/photos' in the path
-                        if 'contacts/photos' in path:
-                            # Find the position of 'contacts/photos' and take everything after
-                            idx = path.find('contacts/photos')
-                            if idx != -1:
-                                file_key = path[idx:]
-                        elif path.startswith('contacts/'):
-                            file_key = path
-                else:
-                    # It's likely already a file_key
-                    file_key = photo_url
-                
-                # Regenerate presigned URL if we have a file_key
-                if file_key:
-                    try:
-                        presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
-                        if presigned_url:
-                            photo_url = presigned_url
-                        else:
-                            logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
-                            photo_url = None  # Set to None if generation fails
-                    except Exception as e:
-                        logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
-                        photo_url = None  # Set to None if generation fails
-            except Exception as e:
-                logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
-                # Set to None if regeneration fails to avoid showing invalid file_key
-                photo_url = None
+        # Regenerate presigned URL for photo if it exists
+        photo_url = regenerate_photo_url(contact.photo_url, contact.id)
         
         contact_dict = {
             "id": contact.id,
@@ -184,56 +211,8 @@ async def get_contact(
             detail="Contact not found"
         )
     
-    # Regenerate presigned URL for photo if it exists and S3 is configured
-    photo_url = contact.photo_url
-    if photo_url and S3Service.is_configured():
-        try:
-            s3_service = S3Service()
-            # Try to extract file_key from presigned URL or use photo_url as file_key
-            file_key = None
-            
-            # If it's a presigned URL, try to extract the file_key from it
-            if photo_url.startswith('http'):
-                # Try to extract file_key from presigned URL
-                from urllib.parse import urlparse, parse_qs, unquote
-                parsed = urlparse(photo_url)
-                
-                # Check query params for 'key' parameter (some S3 presigned URLs have it)
-                query_params = parse_qs(parsed.query)
-                if 'key' in query_params:
-                    file_key = unquote(query_params['key'][0])
-                else:
-                    # Extract from path - remove bucket name if present
-                    path = parsed.path.strip('/')
-                    # Look for 'contacts/photos' in the path
-                    if 'contacts/photos' in path:
-                        # Find the position of 'contacts/photos' and take everything after
-                        idx = path.find('contacts/photos')
-                        if idx != -1:
-                            file_key = path[idx:]
-                    elif path.startswith('contacts/'):
-                        file_key = path
-            else:
-                # It's likely already a file_key
-                file_key = photo_url
-            
-            # Regenerate presigned URL if we have a file_key
-            if file_key:
-                try:
-                    presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
-                    if presigned_url:
-                        photo_url = presigned_url
-                        logger.info(f"Generated presigned URL for contact {contact.id} with file_key: {file_key[:50]}...")
-                    else:
-                        logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
-                        photo_url = None  # Set to None if generation fails
-                except Exception as e:
-                    logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
-                    photo_url = None  # Set to None if generation fails
-        except Exception as e:
-            logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
-            # Set to None if regeneration fails to avoid showing invalid file_key
-            photo_url = None
+    # Regenerate presigned URL for photo if it exists
+    photo_url = regenerate_photo_url(contact.photo_url, contact.id)
     
     # Convert to response format
     contact_dict = {
@@ -325,56 +304,8 @@ async def create_contact(
     # Load relationships
     await db.refresh(contact, ["company", "employee"])
     
-    # Regenerate presigned URL for photo if it exists and S3 is configured
-    photo_url = contact.photo_url
-    if photo_url and S3Service.is_configured():
-        try:
-            s3_service = S3Service()
-            # Try to extract file_key from presigned URL or use photo_url as file_key
-            file_key = None
-            
-            # If it's a presigned URL, try to extract the file_key from it
-            if photo_url.startswith('http'):
-                # Try to extract file_key from presigned URL
-                from urllib.parse import urlparse, parse_qs, unquote
-                parsed = urlparse(photo_url)
-                
-                # Check query params for 'key' parameter (some S3 presigned URLs have it)
-                query_params = parse_qs(parsed.query)
-                if 'key' in query_params:
-                    file_key = unquote(query_params['key'][0])
-                else:
-                    # Extract from path - remove bucket name if present
-                    path = parsed.path.strip('/')
-                    # Look for 'contacts/photos' in the path
-                    if 'contacts/photos' in path:
-                        # Find the position of 'contacts/photos' and take everything after
-                        idx = path.find('contacts/photos')
-                        if idx != -1:
-                            file_key = path[idx:]
-                    elif path.startswith('contacts/'):
-                        file_key = path
-            else:
-                # It's likely already a file_key
-                file_key = photo_url
-            
-            # Regenerate presigned URL if we have a file_key
-            if file_key:
-                try:
-                    presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
-                    if presigned_url:
-                        photo_url = presigned_url
-                        logger.info(f"Generated presigned URL for contact {contact.id} with file_key: {file_key[:50]}...")
-                    else:
-                        logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
-                        photo_url = None  # Set to None if generation fails
-                except Exception as e:
-                    logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
-                    photo_url = None  # Set to None if generation fails
-        except Exception as e:
-            logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
-            # Set to None if regeneration fails to avoid showing invalid file_key
-            photo_url = None
+    # Regenerate presigned URL for photo if it exists
+    photo_url = regenerate_photo_url(contact.photo_url, contact.id)
     
     # Convert to response format
     contact_dict = {
@@ -467,56 +398,8 @@ async def update_contact(
     await db.refresh(contact)
     await db.refresh(contact, ["company", "employee"])
     
-    # Regenerate presigned URL for photo if it exists and S3 is configured
-    photo_url = contact.photo_url
-    if photo_url and S3Service.is_configured():
-        try:
-            s3_service = S3Service()
-            # Try to extract file_key from presigned URL or use photo_url as file_key
-            file_key = None
-            
-            # If it's a presigned URL, try to extract the file_key from it
-            if photo_url.startswith('http'):
-                # Try to extract file_key from presigned URL
-                from urllib.parse import urlparse, parse_qs, unquote
-                parsed = urlparse(photo_url)
-                
-                # Check query params for 'key' parameter (some S3 presigned URLs have it)
-                query_params = parse_qs(parsed.query)
-                if 'key' in query_params:
-                    file_key = unquote(query_params['key'][0])
-                else:
-                    # Extract from path - remove bucket name if present
-                    path = parsed.path.strip('/')
-                    # Look for 'contacts/photos' in the path
-                    if 'contacts/photos' in path:
-                        # Find the position of 'contacts/photos' and take everything after
-                        idx = path.find('contacts/photos')
-                        if idx != -1:
-                            file_key = path[idx:]
-                    elif path.startswith('contacts/'):
-                        file_key = path
-            else:
-                # It's likely already a file_key
-                file_key = photo_url
-            
-            # Regenerate presigned URL if we have a file_key
-            if file_key:
-                try:
-                    presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
-                    if presigned_url:
-                        photo_url = presigned_url
-                        logger.info(f"Generated presigned URL for contact {contact.id} with file_key: {file_key[:50]}...")
-                    else:
-                        logger.warning(f"Failed to generate presigned URL for contact {contact.id}: generate_presigned_url returned None for file_key: {file_key}")
-                        photo_url = None  # Set to None if generation fails
-                except Exception as e:
-                    logger.error(f"Failed to generate presigned URL for contact {contact.id} with file_key '{file_key}': {e}", exc_info=True)
-                    photo_url = None  # Set to None if generation fails
-        except Exception as e:
-            logger.error(f"Failed to regenerate presigned URL for contact {contact.id}: {e}", exc_info=True)
-            # Set to None if regeneration fails to avoid showing invalid file_key
-            photo_url = None
+    # Regenerate presigned URL for photo if it exists
+    photo_url = regenerate_photo_url(contact.photo_url, contact.id)
     
     # Convert to response format
     contact_dict = {
@@ -1186,35 +1069,8 @@ async def import_contacts(
                     else:
                         new_contacts.append(contact)
                     
-                    # Regenerate presigned URL for photo if it exists and S3 is configured
-                    # This ensures photos are accessible even after import
-                    if contact.photo_url and s3_service:
-                        try:
-                            # Extract file_key from photo_url (it should be a file_key, not a presigned URL)
-                            file_key = contact.photo_url
-                            
-                            # If it's already a presigned URL, try to extract file_key
-                            if file_key.startswith('http'):
-                                from urllib.parse import urlparse
-                                parsed = urlparse(file_key)
-                                path = parsed.path.strip('/')
-                                if 'contacts/photos' in path:
-                                    idx = path.find('contacts/photos')
-                                    file_key = path[idx:]
-                                else:
-                                    # Keep original if we can't extract
-                                    continue
-                            
-                            # Generate presigned URL for display (but keep file_key in DB)
-                            presigned_url = s3_service.generate_presigned_url(file_key, expiration=3600 * 24 * 7)  # 7 days
-                            if presigned_url:
-                                # Temporarily set presigned URL for response (but don't save it to DB)
-                                # The DB still has the file_key, which is permanent
-                                contact.photo_url = presigned_url
-                                logger.info(f"Generated presigned URL for contact {contact.id}")
-                        except Exception as e:
-                            logger.warning(f"Failed to generate presigned URL for contact {contact.id}: {e}")
-                            # Keep original file_key if presigned URL generation fails
+                    # Note: Photo URLs will be regenerated during serialization via ContactSchema
+                    # The contact.photo_url contains the file_key which is permanent
         except Exception as e:
             logger.error(f"Error committing contacts to database: {e}", exc_info=True)
             await db.rollback()
@@ -1227,6 +1083,33 @@ async def import_contacts(
         all_warnings = (result.get('warnings') or []) + warnings
         
         try:
+            # Regenerate presigned URLs for all contacts before serialization
+            serialized_contacts = []
+            for contact in created_contacts:
+                # Create a copy of contact data with regenerated photo URL
+                contact_dict = {
+                    "id": contact.id,
+                    "first_name": contact.first_name,
+                    "last_name": contact.last_name,
+                    "company_id": contact.company_id,
+                    "company_name": contact.company.name if contact.company else None,
+                    "position": contact.position,
+                    "circle": contact.circle,
+                    "linkedin": contact.linkedin,
+                    "photo_url": regenerate_photo_url(contact.photo_url, contact.id),
+                    "email": contact.email,
+                    "phone": contact.phone,
+                    "city": contact.city,
+                    "country": contact.country,
+                    "birthday": contact.birthday.isoformat() if contact.birthday else None,
+                    "language": contact.language,
+                    "employee_id": contact.employee_id,
+                    "employee_name": f"{contact.employee.first_name} {contact.employee.last_name}" if contact.employee else None,
+                    "created_at": contact.created_at,
+                    "updated_at": contact.updated_at,
+                }
+                serialized_contacts.append(ContactSchema(**contact_dict))
+            
             return {
                 'total_rows': result.get('total_rows', 0),
                 'valid_rows': len(created_contacts),
@@ -1236,7 +1119,7 @@ async def import_contacts(
                 'errors': errors + (result.get('errors') or []),
                 'warnings': all_warnings,
                 'photos_uploaded': len(photos_dict) if photos_dict else 0,
-                'data': [ContactSchema.model_validate(c) for c in created_contacts]
+                'data': serialized_contacts
             }
         except Exception as e:
             logger.error(f"Error serializing response: {e}", exc_info=True)
