@@ -7,7 +7,7 @@ import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import { submissionsAPI, type Submission, type SubmissionUpdate } from '@/lib/api/submissions';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { ArrowLeft, Edit, Save, FileText } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import SubmissionWizard, { type SubmissionWizardData } from '@/components/commercial/SubmissionWizard';
 import Modal from '@/components/ui/Modal';
@@ -366,13 +366,13 @@ export default function SubmissionDetailPage() {
         >
           <SubmissionWizard
             initialData={wizardData}
-            onSubmit={async (data) => {
-              const updateData = wizardDataToSubmissionUpdate(data);
+            onSubmit={async (data: SubmissionCreate) => {
+              const updateData: SubmissionUpdate = data;
               await handleUpdate(updateData);
             }}
             onCancel={() => setShowEditModal(false)}
-            onSaveDraft={async (data) => {
-              const updateData = wizardDataToSubmissionUpdate(data);
+            onSaveDraft={async (data: SubmissionCreate) => {
+              const updateData: SubmissionUpdate = data;
               await handleSaveDraft(updateData);
             }}
             loading={saving}

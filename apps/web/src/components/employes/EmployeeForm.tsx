@@ -76,18 +76,38 @@ export default function EmployeeForm({
       
       // Always save file_key (S3 key) instead of file_path (presigned URL that expires)
       // The backend will regenerate presigned URLs when needed
-      const photoUrlToSave = uploadedMedia.file_key;
+      // According to MediaResponse schema: file_key is the S3 key, file_path might be presigned URL or key
+      const photoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
       if (!photoUrlToSave) {
-        throw new Error('file_key not returned from upload');
+        throw new Error('Neither file_key nor file_path returned from upload');
       }
       
       URL.revokeObjectURL(localPreviewUrl);
-      // Use file_path for preview (presigned URL), but save file_key to database
-      setPreviewUrl(uploadedMedia.file_path);
-      setFormData({ ...formData, photo_url: photoUrlToSave });
+      
+      // Use file_path for preview if it's a presigned URL (starts with http)
+      // Otherwise, use file_key if available, or file_path as fallback
+      // The backend will regenerate presigned URLs when loading the employee
+      const previewUrl = uploadedMedia.file_path?.startsWith('http') 
+        ? uploadedMedia.file_path 
+        : (uploadedMedia.file_key || uploadedMedia.file_path);
+      
+      setPreviewUrl(previewUrl);
+      
+      // Update formData with the S3 key (not the presigned URL)
+      // The backend expects the S3 key in photo_url field
+      const updatedFormData = { ...formData, photo_url: photoUrlToSave };
+      setFormData(updatedFormData);
+      
+      // Log for debugging
+      console.log('Photo uploaded:', {
+        file_key: uploadedMedia.file_key,
+        file_path: uploadedMedia.file_path,
+        photoUrlToSave,
+        previewUrl,
+      });
       
       showToast({
-        message: 'Photo uploadée avec succès',
+        message: 'Photo uploadée avec succès. N\'oubliez pas d\'enregistrer les modifications.',
         type: 'success',
       });
     } catch (error) {
