@@ -17,7 +17,7 @@ from io import BytesIO
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
-from app.models.pipeline import Opportunite, Pipeline, PipelineStage, opportunity_contacts
+from app.models.pipeline import Opportunite, Pipeline, PipelineStage
 from app.models.company import Company
 from app.models.contact import Contact
 from app.models.user import User
