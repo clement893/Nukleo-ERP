@@ -225,4 +225,14 @@ export const companiesAPI = {
       throw error;
     }
   },
+
+  /**
+   * Download company import template (Excel only)
+   * This is a client-side function, not an API call
+   */
+  downloadTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadCompanyTemplate } = await import('@/lib/utils/generateCompanyTemplate');
+    downloadCompanyTemplate();
+  },
 };

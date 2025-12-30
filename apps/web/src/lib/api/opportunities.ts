@@ -254,4 +254,14 @@ export const opportunitiesAPI = {
       throw error;
     }
   },
+
+  /**
+   * Download opportunity import template (Excel only)
+   * This is a client-side function, not an API call
+   */
+  downloadTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadOpportunityTemplate } = await import('@/lib/utils/generateOpportunityTemplate');
+    downloadOpportunityTemplate();
+  },
 };

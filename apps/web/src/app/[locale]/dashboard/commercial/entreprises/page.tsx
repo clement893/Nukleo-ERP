@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import CompaniesGallery from '@/components/commercial/CompaniesGallery';
 import CompanyForm from '@/components/commercial/CompanyForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, Filter, X, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, Filter, X, Building2, FileSpreadsheet } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -463,6 +463,28 @@ function CompaniesContent() {
                           >
                             <Download className="w-3.5 h-3.5" />
                             Exporter
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await companiesAPI.downloadTemplate();
+                                setShowActionsMenu(false);
+                                showToast({
+                                  message: 'Modèle téléchargé avec succès',
+                                  type: 'success',
+                                });
+                              } catch (err) {
+                                const appError = handleApiError(err);
+                                showToast({
+                                  message: appError.message || 'Erreur lors du téléchargement du modèle',
+                                  type: 'error',
+                                });
+                              }
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                            Télécharger modèle Excel
                           </button>
                         </div>
                       </div>

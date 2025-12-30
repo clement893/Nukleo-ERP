@@ -546,19 +546,20 @@ async def import_contacts(
     Returns:
         Import results with data, errors, and warnings
     """
-    # Read file content
-    file_content = await file.read()
-    filename = file.filename or ""
-    file_ext = os.path.splitext(filename.lower())[1]
-    
-    # Dictionary to store photos from ZIP (filename -> file content)
-    photos_dict = {}
-    excel_content = None
-    
-    # Check if it's a ZIP file
-    if file_ext == '.zip':
-        try:
-            with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+    try:
+        # Read file content
+        file_content = await file.read()
+        filename = file.filename or ""
+        file_ext = os.path.splitext(filename.lower())[1]
+        
+        # Dictionary to store photos from ZIP (filename -> file content)
+        photos_dict = {}
+        excel_content = None
+        
+        # Check if it's a ZIP file
+        if file_ext == '.zip':
+            try:
+                with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
                 # Extract Excel file and photos
                 for file_info in zip_ref.namelist():
                     file_name_lower = file_info.lower()
@@ -586,94 +587,150 @@ async def import_contacts(
                 file_content = excel_content
                 logger.info(f"Extracted Excel from ZIP with {len(photos_dict)} photos")
                 
-        except zipfile.BadZipFile:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid ZIP file format"
+            except zipfile.BadZipFile:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid ZIP file format"
+                )
+            except Exception as e:
+                logger.error(f"Error extracting ZIP: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Error processing ZIP file: {str(e)}"
+                )
+        
+        # Import from Excel
+        try:
+            result = ImportService.import_from_excel(
+                file_content=file_content,
+                has_headers=True
             )
         except Exception as e:
-            logger.error(f"Error extracting ZIP: {e}")
+            logger.error(f"Error importing Excel file: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error processing ZIP file: {str(e)}"
+                detail=f"Error reading Excel file: {str(e)}"
             )
-    
-    # Import from Excel
-    result = ImportService.import_from_excel(
-        file_content=file_content,
-        has_headers=True
-    )
-    
-    # Load all companies once to create a name -> ID mapping (case-insensitive)
-    companies_result = await db.execute(select(Company))
-    all_companies = companies_result.scalars().all()
-    # Create a case-insensitive mapping: company_name_lower -> company_id
-    company_name_to_id = {}
-    for company in all_companies:
-        if company.name:
-            company_name_to_id[company.name.lower().strip()] = company.id
-    
-    # Helper function to normalize column names (case-insensitive, handle accents)
-    def normalize_key(key: str) -> str:
-        """Normalize column name for matching"""
-        if not key:
-            return ''
-        # Convert to lowercase and strip whitespace
-        normalized = str(key).lower().strip()
-        # Remove accents and special characters for better matching
-        normalized = unicodedata.normalize('NFD', normalized)
-        normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
-        return normalized
-    
-    # Helper function to get value from row with multiple possible column names
-    def get_field_value(row: dict, possible_names: list) -> Optional[str]:
-        """Get field value trying multiple possible column names"""
-        # First try exact match (case-sensitive)
-        for name in possible_names:
-            if name in row and row[name] is not None:
-                value = str(row[name]).strip()
-                if value:
-                    return value
         
-        # Then try normalized match (case-insensitive, accent-insensitive)
-        normalized_row = {normalize_key(k): v for k, v in row.items()}
-        for name in possible_names:
-            normalized_name = normalize_key(name)
-            if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
-                value = str(normalized_row[normalized_name]).strip()
-                if value:
-                    return value
+        # Validate result structure
+        if not result or 'data' not in result:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Excel file format or empty file"
+            )
         
-        return None
-    
-    # Helper function to parse region and extract city/country if possible
-    def parse_region(region: Optional[str]) -> tuple[Optional[str], Optional[str]]:
-        """Try to extract city and country from region field"""
-        if not region:
-            return None, None
+        if not isinstance(result['data'], list):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Excel file does not contain valid data rows"
+            )
         
-        region_str = str(region).strip()
-        if not region_str:
-            return None, None
+        # Load all companies once to create a name -> ID mapping (case-insensitive)
+        try:
+            companies_result = await db.execute(select(Company))
+            all_companies = companies_result.scalars().all()
+            # Create a case-insensitive mapping: company_name_lower -> company_id
+            company_name_to_id = {}
+            for company in all_companies:
+                if company.name:
+                    company_name_to_id[company.name.lower().strip()] = company.id
+        except Exception as e:
+            logger.error(f"Error loading companies: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error loading companies from database"
+            )
         
-        # Common patterns: "City, Country" or "City - Country" or "City/Country"
-        separators = [',', '-', '/', '|']
-        for sep in separators:
-            if sep in region_str:
-                parts = [p.strip() for p in region_str.split(sep, 1)]
-                if len(parts) == 2:
-                    return parts[0] if parts[0] else None, parts[1] if parts[1] else None
+        # Load all existing contacts once to check for duplicates
+        try:
+            contacts_result = await db.execute(select(Contact))
+            all_existing_contacts = contacts_result.scalars().all()
+            # Create mappings for duplicate detection:
+            # 1. By email (if email exists)
+            # 2. By first_name + last_name + email (if email exists)
+            # 3. By first_name + last_name + company_id (if company_id exists)
+            contacts_by_email = {}  # email.lower() -> Contact
+            contacts_by_name_email = {}  # (first_name.lower(), last_name.lower(), email.lower()) -> Contact
+            contacts_by_name_company = {}  # (first_name.lower(), last_name.lower(), company_id) -> Contact
+            
+            for contact in all_existing_contacts:
+                if contact.email:
+                    email_lower = contact.email.lower().strip()
+                    contacts_by_email[email_lower] = contact
+                    name_key = (contact.first_name.lower().strip(), contact.last_name.lower().strip(), email_lower)
+                    contacts_by_name_email[name_key] = contact
+                
+                if contact.company_id:
+                    name_company_key = (contact.first_name.lower().strip(), contact.last_name.lower().strip(), contact.company_id)
+                    contacts_by_name_company[name_company_key] = contact
+        except Exception as e:
+            logger.error(f"Error loading existing contacts: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error loading existing contacts from database"
+            )
         
-        # If no separator, assume it's a city
-        return region_str, None
-    
-    # Process imported data
-    created_contacts = []
-    errors = []
-    warnings = []
-    s3_service = S3Service() if S3Service.is_configured() else None
-    
-    for idx, row_data in enumerate(result['data']):
+        # Helper function to normalize column names (case-insensitive, handle accents)
+        def normalize_key(key: str) -> str:
+            """Normalize column name for matching"""
+            if not key:
+                return ''
+            # Convert to lowercase and strip whitespace
+            normalized = str(key).lower().strip()
+            # Remove accents and special characters for better matching
+            normalized = unicodedata.normalize('NFD', normalized)
+            normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+            return normalized
+        
+        # Helper function to get value from row with multiple possible column names
+        def get_field_value(row: dict, possible_names: list) -> Optional[str]:
+            """Get field value trying multiple possible column names"""
+            # First try exact match (case-sensitive)
+            for name in possible_names:
+                if name in row and row[name] is not None:
+                    value = str(row[name]).strip()
+                    if value:
+                        return value
+            
+            # Then try normalized match (case-insensitive, accent-insensitive)
+            normalized_row = {normalize_key(k): v for k, v in row.items()}
+            for name in possible_names:
+                normalized_name = normalize_key(name)
+                if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
+                    value = str(normalized_row[normalized_name]).strip()
+                    if value:
+                        return value
+            
+            return None
+        
+        # Helper function to parse region and extract city/country if possible
+        def parse_region(region: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+            """Try to extract city and country from region field"""
+            if not region:
+                return None, None
+            
+            region_str = str(region).strip()
+            if not region_str:
+                return None, None
+            
+            # Common patterns: "City, Country" or "City - Country" or "City/Country"
+            separators = [',', '-', '/', '|']
+            for sep in separators:
+                if sep in region_str:
+                    parts = [p.strip() for p in region_str.split(sep, 1)]
+                    if len(parts) == 2:
+                        return parts[0] if parts[0] else None, parts[1] if parts[1] else None
+            
+            # If no separator, assume it's a city
+            return region_str, None
+        
+        # Process imported data
+        created_contacts = []
+        errors = []
+        warnings = []
+        s3_service = S3Service() if S3Service.is_configured() else None
+        
+        for idx, row_data in enumerate(result['data']):
         try:
             # Map Excel columns to Contact fields with multiple possible column names
             first_name = get_field_value(row_data, [
@@ -825,8 +882,26 @@ async def import_contacts(
                                 user_id=str(current_user.id)
                             )
                             
-                            uploaded_photo_url = upload_result.get('file_key') or upload_result.get('url')
-                            logger.info(f"Uploaded photo for {first_name} {last_name}: {pattern}")
+                            # Always store the file_key (not the presigned URL) for persistence
+                            # Presigned URLs expire, but file_key is permanent
+                            uploaded_photo_url = upload_result.get('file_key')
+                            if not uploaded_photo_url:
+                                # Fallback to URL if file_key not available, but extract key from URL
+                                url = upload_result.get('url', '')
+                                if url and 'contacts/photos' in url:
+                                    # Extract file_key from URL
+                                    from urllib.parse import urlparse
+                                    parsed = urlparse(url)
+                                    path = parsed.path.strip('/')
+                                    if 'contacts/photos' in path:
+                                        idx = path.find('contacts/photos')
+                                        uploaded_photo_url = path[idx:]
+                                    else:
+                                        uploaded_photo_url = url
+                                else:
+                                    uploaded_photo_url = url
+                            
+                            logger.info(f"Uploaded photo for {first_name} {last_name}: {pattern} -> {uploaded_photo_url}")
                             break
                         except Exception as e:
                             logger.warning(f"Failed to upload photo {pattern}: {e}")
@@ -856,6 +931,27 @@ async def import_contacts(
                 'email', 'courriel', 'e-mail', 'mail', 'adresse email',
                 'adresse courriel', 'email address'
             ])
+            
+            # Normalize email for matching
+            email_lower = email.lower().strip() if email else None
+            first_name_lower = first_name.lower().strip() if first_name else ''
+            last_name_lower = last_name.lower().strip() if last_name else ''
+            
+            # Check if contact already exists (for reimport/update)
+            existing_contact = None
+            if email_lower and email_lower in contacts_by_email:
+                # Match by email (most reliable)
+                existing_contact = contacts_by_email[email_lower]
+            elif email_lower:
+                # Match by name + email
+                name_email_key = (first_name_lower, last_name_lower, email_lower)
+                if name_email_key in contacts_by_name_email:
+                    existing_contact = contacts_by_name_email[name_email_key]
+            elif company_id:
+                # Match by name + company_id (if no email)
+                name_company_key = (first_name_lower, last_name_lower, company_id)
+                if name_company_key in contacts_by_name_company:
+                    existing_contact = contacts_by_name_company[name_company_key]
             
             # Get phone
             phone = get_field_value(row_data, [
@@ -938,6 +1034,7 @@ async def import_contacts(
                         'data': {'employee_id_raw': employee_id_raw}
                     })
             
+            # Prepare contact data
             contact_data = ContactCreate(
                 first_name=first_name,
                 last_name=last_name,
@@ -945,7 +1042,7 @@ async def import_contacts(
                 position=position,
                 circle=circle,
                 linkedin=linkedin,
-                photo_url=photo_url,
+                photo_url=photo_url,  # Store file_key, not presigned URL
                 email=email,
                 phone=phone,
                 city=city,
@@ -955,10 +1052,30 @@ async def import_contacts(
                 employee_id=employee_id,
             )
             
-            # Create contact
-            contact = Contact(**contact_data.model_dump(exclude_none=True))
-            db.add(contact)
-            created_contacts.append(contact)
+            # Update existing contact or create new one
+            if existing_contact:
+                # Update existing contact
+                update_data = contact_data.model_dump(exclude_none=True)
+                for field, value in update_data.items():
+                    # Only update photo_url if a new photo was uploaded (photo_url is not None and not empty)
+                    if field == 'photo_url':
+                        if value:  # New photo provided
+                            setattr(existing_contact, field, value)
+                            logger.info(f"Updated photo for contact {existing_contact.id}")
+                        # If no new photo provided, keep existing photo (don't update field)
+                    else:
+                        # Update all other fields
+                        setattr(existing_contact, field, value)
+                
+                contact = existing_contact
+                created_contacts.append(contact)  # Track as processed contact
+                logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
+            else:
+                # Create new contact
+                contact = Contact(**contact_data.model_dump(exclude_none=True))
+                db.add(contact)
+                created_contacts.append(contact)
+                logger.info(f"Created new contact: {first_name} {last_name}")
             
         except Exception as e:
             errors.append({
@@ -967,25 +1084,97 @@ async def import_contacts(
                 'error': str(e)
             })
             logger.error(f"Error importing contact row {idx + 2}: {str(e)}")
-    
-    # Commit all contacts
-    if created_contacts:
-        await db.commit()
-        for contact in created_contacts:
-            await db.refresh(contact)
-    
-    # Merge warnings from import service with our company matching warnings
-    all_warnings = (result.get('warnings') or []) + warnings
-    
-    return {
-        'total_rows': result['total_rows'],
-        'valid_rows': len(created_contacts),
-        'invalid_rows': len(errors) + result['invalid_rows'],
-        'errors': errors + result['errors'],
-        'warnings': all_warnings,
-        'photos_uploaded': len(photos_dict) if photos_dict else 0,
-        'data': [ContactSchema.model_validate(c) for c in created_contacts]
-    }
+        
+        # Track which contacts were updated vs created
+        existing_contact_ids = {c.id for c in all_existing_contacts}
+        updated_contacts = []
+        new_contacts = []
+        
+        # Commit all contacts
+        try:
+            if created_contacts:
+                await db.commit()
+                for contact in created_contacts:
+                    await db.refresh(contact)
+                    
+                    # Categorize as updated or new
+                    if contact.id in existing_contact_ids:
+                        updated_contacts.append(contact)
+                    else:
+                        new_contacts.append(contact)
+                    
+                    # Regenerate presigned URL for photo if it exists and S3 is configured
+                    # This ensures photos are accessible even after import
+                    if contact.photo_url and s3_service:
+                        try:
+                            # Extract file_key from photo_url (it should be a file_key, not a presigned URL)
+                            file_key = contact.photo_url
+                            
+                            # If it's already a presigned URL, try to extract file_key
+                            if file_key.startswith('http'):
+                                from urllib.parse import urlparse
+                                parsed = urlparse(file_key)
+                                path = parsed.path.strip('/')
+                                if 'contacts/photos' in path:
+                                    idx = path.find('contacts/photos')
+                                    file_key = path[idx:]
+                                else:
+                                    # Keep original if we can't extract
+                                    continue
+                            
+                            # Generate presigned URL for display (but keep file_key in DB)
+                            presigned_url = s3_service.generate_presigned_url(file_key, expiration=3600 * 24 * 7)  # 7 days
+                            if presigned_url:
+                                # Temporarily set presigned URL for response (but don't save it to DB)
+                                # The DB still has the file_key, which is permanent
+                                contact.photo_url = presigned_url
+                                logger.info(f"Generated presigned URL for contact {contact.id}")
+                        except Exception as e:
+                            logger.warning(f"Failed to generate presigned URL for contact {contact.id}: {e}")
+                            # Keep original file_key if presigned URL generation fails
+        except Exception as e:
+            logger.error(f"Error committing contacts to database: {e}", exc_info=True)
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error saving contacts to database: {str(e)}"
+            )
+        
+        # Merge warnings from import service with our company matching warnings
+        all_warnings = (result.get('warnings') or []) + warnings
+        
+        try:
+            return {
+                'total_rows': result.get('total_rows', 0),
+                'valid_rows': len(created_contacts),
+                'created_rows': len(new_contacts),
+                'updated_rows': len(updated_contacts),
+                'invalid_rows': len(errors) + result.get('invalid_rows', 0),
+                'errors': errors + (result.get('errors') or []),
+                'warnings': all_warnings,
+                'photos_uploaded': len(photos_dict) if photos_dict else 0,
+                'data': [ContactSchema.model_validate(c) for c in created_contacts]
+            }
+        except Exception as e:
+            logger.error(f"Error serializing response: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error processing import results: {str(e)}"
+            )
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        # Catch any other unexpected errors that weren't caught above
+        logger.error(f"Unexpected error in import_contacts: {e}", exc_info=True)
+        try:
+            await db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during import: {str(e)}"
+        )
 
 
 @router.get("/export")
