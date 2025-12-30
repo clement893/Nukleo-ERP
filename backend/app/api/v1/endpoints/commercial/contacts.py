@@ -1133,6 +1133,7 @@ async def import_contacts(
         s3_service = None
         s3_configured = S3Service.is_configured()
         logger.info(f"S3 configuration check: is_configured={s3_configured}, photos_dict has {len(photos_dict)} photos")
+        add_import_log(import_id, f"Configuration S3: {'✅ Configuré' if s3_configured else '❌ Non configuré'} - {len(photos_dict)} photo(s) trouvée(s) dans le ZIP", "info" if s3_configured else "warning")
         
         if s3_configured:
             try:
@@ -1293,19 +1294,63 @@ async def import_contacts(
                     ])
                     photo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
                     
+                    # Debug logging for photo upload
+                    if photos_dict and not photo_url:
+                        logger.debug(f"Row {idx + 2}: Checking photo upload - photos_dict has {len(photos_dict)} photos, s3_service={s3_service is not None}, photo_filename={photo_filename}, first_name={first_name}, last_name={last_name}")
+                    
                     # If no photo_url but we have photos in ZIP, try to find matching photo
-                    if not photo_url and photos_dict and photo_filename and s3_service:
-                        photo_filename_normalized = normalize_filename(photo_filename)
+                    if not photo_url and photos_dict and s3_service:
+                        photo_filename_to_match = photo_filename
                         pattern_to_use = None
                         
-                        if photo_filename.lower() in photos_dict:
-                            pattern_to_use = photo_filename.lower()
-                        elif photo_filename_normalized in photos_dict:
-                            pattern_to_use = photo_filename_normalized
+                        # If photo_filename is provided in Excel, use it
+                        if photo_filename:
+                            photo_filename_normalized = normalize_filename(photo_filename)
+                            
+                            if photo_filename.lower() in photos_dict:
+                                pattern_to_use = photo_filename.lower()
+                            elif photo_filename_normalized in photos_dict:
+                                pattern_to_use = photo_filename_normalized
+                        else:
+                            # Auto-match by first_name + last_name if photo_filename not provided
+                            # Try multiple patterns: firstname_lastname, firstname-lastname, etc.
+                            if first_name and last_name:
+                                # Generate possible photo filename patterns
+                                possible_patterns = [
+                                    f"{normalize_filename(first_name)}_{normalize_filename(last_name)}",
+                                    f"{first_name.lower().strip()}_{last_name.lower().strip()}",
+                                    f"{normalize_filename(first_name)}-{normalize_filename(last_name)}",
+                                    f"{first_name.lower().strip()}-{last_name.lower().strip()}",
+                                ]
+                                
+                                # Try each pattern with common extensions
+                                for pattern_base in possible_patterns:
+                                    for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                                        pattern_with_ext = pattern_base + ext
+                                        if pattern_with_ext in photos_dict:
+                                            pattern_to_use = pattern_with_ext
+                                            photo_filename_to_match = pattern_with_ext
+                                            break
+                                    if pattern_to_use:
+                                        break
+                                
+                                # Also try exact matches in photos_dict keys (fuzzy matching)
+                                if not pattern_to_use:
+                                    first_name_clean = normalize_filename(first_name)
+                                    last_name_clean = normalize_filename(last_name)
+                                    for key in photos_dict.keys():
+                                        key_lower = key.lower()
+                                        # Check if key contains both first and last name
+                                        if (first_name_clean in key_lower or first_name.lower().strip() in key_lower) and \
+                                           (last_name_clean in key_lower or last_name.lower().strip() in key_lower):
+                                            pattern_to_use = key
+                                            photo_filename_to_match = key
+                                            break
                         
                         if pattern_to_use and pattern_to_use in photos_dict:
                             try:
                                 photo_content = photos_dict[pattern_to_use]
+                                logger.info(f"Row {idx + 2}: Photo found and matched: {pattern_to_use} for {first_name} {last_name}")
                                 
                                 class TempUploadFile:
                                     def __init__(self, filename: str, content: bytes):
@@ -1314,8 +1359,11 @@ async def import_contacts(
                                         self.file = BytesIO(content)
                                         self.file.seek(0)
                                 
-                                temp_file = TempUploadFile(photo_filename, photo_content)
+                                # Use the matched filename or fallback to a generated name
+                                upload_filename = photo_filename_to_match or f"{normalize_filename(first_name)}_{normalize_filename(last_name)}.jpg"
+                                temp_file = TempUploadFile(upload_filename, photo_content)
                                 
+                                logger.debug(f"Row {idx + 2}: Uploading photo to S3: {upload_filename}")
                                 upload_result = s3_service.upload_file(
                                     file=temp_file,
                                     folder='contacts/photos',
@@ -1328,14 +1376,26 @@ async def import_contacts(
                                 
                                 if photo_url:
                                     stats["photos_uploaded"] = stats.get("photos_uploaded", 0) + 1
+                                    logger.info(f"✅ Photo uploaded successfully for {first_name} {last_name}: {photo_url}")
+                                    add_import_log(import_id, f"Ligne {idx + 2}: Photo uploadée - {first_name} {last_name}", "info", {"row": idx + 2, "photo_url": photo_url})
+                                else:
+                                    logger.warning(f"Row {idx + 2}: Upload succeeded but no file_key returned for {first_name} {last_name}")
                             except Exception as e:
                                 logger.error(f"Failed to upload photo for {first_name} {last_name}: {e}", exc_info=True)
                                 warnings.append({
                                     'row': idx + 2,
                                     'type': 'photo_upload_error',
                                     'message': f"Erreur lors de l'upload de la photo: {str(e)}",
-                                    'data': {'contact': f"{first_name} {last_name}"}
+                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e)}
                                 })
+                        elif photos_dict and s3_service:
+                            # Log why photo wasn't matched
+                            if not first_name or not last_name:
+                                logger.debug(f"Row {idx + 2}: Cannot match photo - missing first_name or last_name")
+                            elif not photo_filename:
+                                logger.debug(f"Row {idx + 2}: Cannot match photo - no photo_filename and auto-match failed for {first_name} {last_name}")
+                            else:
+                                logger.debug(f"Row {idx + 2}: Cannot match photo - photo_filename '{photo_filename}' not found in ZIP")
                     
                     # Get position
                     position = get_field_value(row_data, [
