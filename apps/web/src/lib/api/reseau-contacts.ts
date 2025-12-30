@@ -106,6 +106,7 @@ export const reseauContactsAPI = {
     }>;
     data: Contact[];
     photos_uploaded?: number;
+    import_id?: string;
   }> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -123,6 +124,7 @@ export const reseauContactsAPI = {
       }>;
       data: Contact[];
       photos_uploaded?: number;
+      import_id?: string;
     }>('/v1/reseau/contacts/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

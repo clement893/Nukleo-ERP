@@ -34,6 +34,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import ImportContactsInstructions from '@/components/commercial/ImportContactsInstructions';
+import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -83,6 +84,8 @@ function ContactsContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showImportInstructions, setShowImportInstructions] = useState(false);
+  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
+  const [showImportLogs, setShowImportLogs] = useState(false);
   
   // Debounce search query to avoid excessive re-renders (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -280,7 +283,15 @@ function ContactsContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
+      // Show logs viewer
+      setShowImportLogs(true);
+      
       const result = await reseauContactsAPI.import(file);
+      
+      // Set import_id for log tracking
+      if (result.import_id) {
+        setCurrentImportId(result.import_id);
+      }
       
       if (result.valid_rows > 0) {
         // Invalidate contacts query to refetch after import
@@ -820,6 +831,30 @@ function ContactsContent() {
           }
         }}
       />
+
+      {/* Import Logs Modal */}
+      {showImportLogs && currentImportId && (
+        <Modal
+          isOpen={showImportLogs}
+          onClose={() => {
+            setShowImportLogs(false);
+            setCurrentImportId(null);
+          }}
+          title="Logs d'import en temps réel"
+          size="large"
+        >
+          <ImportLogsViewer
+            importId={currentImportId}
+            onComplete={() => {
+              // Optionally close modal after completion
+              setTimeout(() => {
+                setShowImportLogs(false);
+                setCurrentImportId(null);
+              }, 3000);
+            }}
+          />
+        </Modal>
+      )}
     </MotionDiv>
   );
 }

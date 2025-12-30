@@ -3,7 +3,7 @@ Commercial Contacts Endpoints
 API endpoints for managing commercial contacts
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,9 @@ import os
 import unicodedata
 from io import BytesIO
 from datetime import datetime as dt
+import json
+import uuid
+import asyncio
 
 from app.core.database import get_db
 from app.core.cache_enhanced import cache_query
@@ -30,6 +33,10 @@ import unicodedata
 import re
 
 router = APIRouter(prefix="/commercial/contacts", tags=["commercial-contacts"])
+
+# In-memory store for import logs (in production, use Redis)
+import_logs: Dict[str, List[Dict[str, any]]] = {}
+import_status: Dict[str, Dict[str, any]] = {}
 
 
 def normalize_filename(name: str) -> str:
@@ -695,9 +702,97 @@ async def delete_contact(
     await db.commit()
 
 
+def add_import_log(import_id: str, message: str, level: str = "info", data: Optional[Dict] = None):
+    """Add a log entry to the import logs"""
+    if import_id not in import_logs:
+        import_logs[import_id] = []
+    
+    log_entry = {
+        "timestamp": dt.now().isoformat(),
+        "level": level,
+        "message": message,
+        "data": data or {}
+    }
+    import_logs[import_id].append(log_entry)
+    
+    # Keep only last 1000 logs per import
+    if len(import_logs[import_id]) > 1000:
+        import_logs[import_id] = import_logs[import_id][-1000:]
+
+
+def update_import_status(import_id: str, status: str, progress: Optional[int] = None, total: Optional[int] = None):
+    """Update import status"""
+    if import_id not in import_status:
+        import_status[import_id] = {}
+    
+    import_status[import_id].update({
+        "status": status,
+        "updated_at": dt.now().isoformat()
+    })
+    
+    if progress is not None:
+        import_status[import_id]["progress"] = progress
+    if total is not None:
+        import_status[import_id]["total"] = total
+
+
+@router.get("/import/{import_id}/logs")
+async def stream_import_logs(
+    import_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Stream import logs via Server-Sent Events (SSE)
+    """
+    async def event_generator():
+        last_index = 0
+        
+        while True:
+            # Check if import is complete
+            if import_id in import_status:
+                status_info = import_status[import_id]
+                if status_info.get("status") == "completed" or status_info.get("status") == "failed":
+                    # Send final logs
+                    if import_id in import_logs:
+                        logs = import_logs[import_id]
+                        for log in logs[last_index:]:
+                            yield f"data: {json.dumps(log)}\n\n"
+                    
+                    # Send final status
+                    yield f"data: {json.dumps({'type': 'status', 'data': status_info})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                    break
+            
+            # Send new logs
+            if import_id in import_logs:
+                logs = import_logs[import_id]
+                if len(logs) > last_index:
+                    for log in logs[last_index:]:
+                        yield f"data: {json.dumps(log)}\n\n"
+                    last_index = len(logs)
+            
+            # Send status update
+            if import_id in import_status:
+                status_info = import_status[import_id]
+                yield f"data: {json.dumps({'type': 'status', 'data': status_info})}\n\n"
+            
+            await asyncio.sleep(0.5)  # Check every 500ms
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
 @router.post("/import")
 async def import_contacts(
     file: UploadFile = File(...),
+    import_id: Optional[str] = Query(None, description="Optional import ID for tracking logs"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -745,11 +840,28 @@ async def import_contacts(
     Returns:
         Import results with data, errors, and warnings
     """
+    # Generate import_id if not provided
+    if not import_id:
+        import_id = str(uuid.uuid4())
+    
+    # Initialize logs and status
+    import_logs[import_id] = []
+    import_status[import_id] = {
+        "status": "started",
+        "progress": 0,
+        "total": 0,
+        "created_at": dt.now().isoformat()
+    }
+    
+    add_import_log(import_id, f"Début de l'import du fichier: {file.filename}", "info")
+    
     try:
         # Read file content
         file_content = await file.read()
         filename = file.filename or ""
         file_ext = os.path.splitext(filename.lower())[1]
+        
+        add_import_log(import_id, f"Fichier lu: {len(file_content)} bytes, extension: {file_ext}", "info")
         
         # Dictionary to store photos from ZIP (filename -> file content)
         photos_dict = {}
@@ -757,8 +869,10 @@ async def import_contacts(
         
         # Check if it's a ZIP file
         if file_ext == '.zip':
+            add_import_log(import_id, "Détection d'un fichier ZIP, extraction en cours...", "info")
             try:
                 with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                    photo_count = 0
                     # Extract Excel file and photos
                     for file_info in zip_ref.namelist():
                         file_name_lower = file_info.lower()
@@ -767,8 +881,10 @@ async def import_contacts(
                         if file_name_lower.endswith(('.xlsx', '.xls')):
                             if excel_content is None:
                                 excel_content = zip_ref.read(file_info)
+                                add_import_log(import_id, f"Fichier Excel trouvé dans le ZIP: {file_info}", "info")
                             else:
                                 logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
+                                add_import_log(import_id, f"Plusieurs fichiers Excel trouvés, utilisation du premier: {file_info}", "warning")
                         
                         # Find photos (in photos/ folder or root)
                         elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
@@ -781,8 +897,12 @@ async def import_contacts(
                             photos_dict[photo_filename.lower()] = photo_content
                             if photo_filename_normalized != photo_filename.lower():
                                 photos_dict[photo_filename_normalized] = photo_content
+                            photo_count += 1
+                    
+                    add_import_log(import_id, f"Extraction ZIP terminée: {photo_count} photo(s) trouvée(s)", "info")
                 
                 if excel_content is None:
+                    add_import_log(import_id, "ERREUR: Aucun fichier Excel trouvé dans le ZIP", "error")
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="No Excel file found in ZIP. Please include contacts.xlsx or contacts.xls"
@@ -804,12 +924,14 @@ async def import_contacts(
                 )
         
         # Import from Excel
+        add_import_log(import_id, "Lecture du fichier Excel...", "info")
         try:
             result = ImportService.import_from_excel(
                 file_content=file_content,
                 has_headers=True
             )
         except Exception as e:
+            add_import_log(import_id, f"ERREUR lors de la lecture Excel: {str(e)}", "error")
             logger.error(f"Error importing Excel file: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -818,18 +940,25 @@ async def import_contacts(
         
         # Validate result structure
         if not result or 'data' not in result:
+            add_import_log(import_id, "ERREUR: Format de fichier Excel invalide ou fichier vide", "error")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid Excel file format or empty file"
             )
         
         if not isinstance(result['data'], list):
+            add_import_log(import_id, "ERREUR: Le fichier Excel ne contient pas de lignes de données valides", "error")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Excel file does not contain valid data rows"
             )
         
+        total_rows = len(result['data'])
+        add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
+        update_import_status(import_id, "processing", progress=0, total=total_rows)
+        
         # Load all companies once to create a name -> ID mapping (case-insensitive)
+        add_import_log(import_id, "Chargement des entreprises existantes...", "info")
         try:
             companies_result = await db.execute(select(Company))
             all_companies = companies_result.scalars().all()
@@ -838,7 +967,9 @@ async def import_contacts(
             for company in all_companies:
                 if company.name:
                     company_name_to_id[company.name.lower().strip()] = company.id
+            add_import_log(import_id, f"{len(company_name_to_id)} entreprise(s) chargée(s) pour le matching", "info")
         except Exception as e:
+            add_import_log(import_id, f"ERREUR lors du chargement des entreprises: {str(e)}", "error")
             logger.error(f"Error loading companies: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -846,9 +977,11 @@ async def import_contacts(
             )
         
         # Load all existing contacts once to check for duplicates
+        add_import_log(import_id, "Chargement des contacts existants pour détecter les doublons...", "info")
         try:
             contacts_result = await db.execute(select(Contact))
             all_existing_contacts = contacts_result.scalars().all()
+            add_import_log(import_id, f"{len(all_existing_contacts)} contact(s) existant(s) chargé(s)", "info")
             # Create mappings for duplicate detection:
             # 1. By email (if email exists)
             # 2. By first_name + last_name + email (if email exists)
@@ -1436,6 +1569,8 @@ async def import_contacts(
             
                 # Validate required fields before creating contact
                 if not first_name or not first_name.strip():
+                    error_msg = f"Ligne {idx + 2}: Prénom manquant - contact ignoré"
+                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}"})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
@@ -1445,6 +1580,8 @@ async def import_contacts(
                     continue
                 
                 if not last_name or not last_name.strip():
+                    error_msg = f"Ligne {idx + 2}: Nom manquant - contact ignoré"
+                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}"})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
@@ -1495,15 +1632,19 @@ async def import_contacts(
                     
                     contact = existing_contact
                     created_contacts.append(contact)  # Track as processed contact
+                    add_import_log(import_id, f"Ligne {idx + 2}: Contact mis à jour - {first_name} {last_name} (ID: {existing_contact.id})", "info", {"row": idx + 2, "action": "updated", "contact_id": existing_contact.id})
                     logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
                 else:
                     # Create new contact
                     contact = Contact(**contact_data.model_dump(exclude_none=True))
                     db.add(contact)
                     created_contacts.append(contact)
+                    add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
                     logger.info(f"Created new contact: {first_name} {last_name}")
             
             except Exception as e:
+                error_msg = f"Ligne {idx + 2}: Erreur lors de l'import - {str(e)}"
+                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e)})
                 errors.append({
                     'row': idx + 2,  # +2 because Excel is 1-indexed and has header
                     'data': row_data,
@@ -1517,6 +1658,7 @@ async def import_contacts(
         new_contacts = []
         
         # Commit all contacts
+        add_import_log(import_id, f"Sauvegarde de {len(created_contacts)} contact(s) dans la base de données...", "info")
         try:
             if created_contacts:
                 await db.commit()
@@ -1531,7 +1673,10 @@ async def import_contacts(
                     
                     # Note: Photo URLs will be regenerated during serialization via ContactSchema
                     # The contact.photo_url contains the file_key which is permanent
+                
+                add_import_log(import_id, f"Sauvegarde réussie: {len(new_contacts)} nouveau(x) contact(s), {len(updated_contacts)} contact(s) mis à jour", "success")
         except Exception as e:
+            add_import_log(import_id, f"ERREUR lors de la sauvegarde: {str(e)}", "error")
             logger.error(f"Error committing contacts to database: {e}", exc_info=True)
             await db.rollback()
             raise HTTPException(
@@ -1571,6 +1716,20 @@ async def import_contacts(
                 }
                 serialized_contacts.append(ContactSchema(**contact_dict))
             
+            # Final summary
+            total_valid = len(created_contacts)
+            total_errors = len(errors) + result.get('invalid_rows', 0)
+            photos_count = len(photos_dict) if photos_dict else 0
+            
+            add_import_log(import_id, f"✅ Import terminé: {total_valid} contact(s) importé(s), {total_errors} erreur(s)", "success", {
+                "total_valid": total_valid,
+                "total_errors": total_errors,
+                "new_contacts": len(new_contacts),
+                "updated_contacts": len(updated_contacts),
+                "photos_uploaded": photos_count
+            })
+            update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
+            
             return {
                 'total_rows': result.get('total_rows', 0),
                 'valid_rows': len(created_contacts),
@@ -1580,9 +1739,12 @@ async def import_contacts(
                 'errors': errors + (result.get('errors') or []),
                 'warnings': all_warnings,
                 'photos_uploaded': len(photos_dict) if photos_dict else 0,
-                'data': serialized_contacts
+                'data': serialized_contacts,
+                'import_id': import_id  # Return import_id for log tracking
             }
         except Exception as e:
+            add_import_log(import_id, f"ERREUR lors de la sérialisation: {str(e)}", "error")
+            update_import_status(import_id, "failed")
             logger.error(f"Error serializing response: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1590,9 +1752,14 @@ async def import_contacts(
             )
     except HTTPException:
         # Re-raise HTTP exceptions as-is
+        if import_id:
+            update_import_status(import_id, "failed")
         raise
     except Exception as e:
         # Catch any other unexpected errors that weren't caught above
+        if import_id:
+            add_import_log(import_id, f"ERREUR inattendue: {str(e)}", "error")
+            update_import_status(import_id, "failed")
         logger.error(f"Unexpected error in import_contacts: {e}", exc_info=True)
         try:
             await db.rollback()

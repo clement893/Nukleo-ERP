@@ -75,6 +75,7 @@ class Opportunity(OpportunityBase):
     """Opportunity response schema"""
     id: UUID
     company_name: Optional[str] = None
+    company_logo_url: Optional[str] = None
     pipeline_name: Optional[str] = None
     stage_name: Optional[str] = None
     assigned_to_name: Optional[str] = None

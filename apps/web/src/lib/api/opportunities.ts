@@ -24,6 +24,7 @@ export interface Opportunity {
   stage_name?: string | null;
   company_id?: number | null;
   company_name?: string | null;
+  company_logo_url?: string | null;
   assigned_to_id?: number | null;
   assigned_to_name?: string | null;
   created_by_name?: string | null;
