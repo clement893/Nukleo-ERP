@@ -1407,44 +1407,80 @@ async def import_contacts(
                         if pattern_to_use and pattern_to_use in photos_dict:
                             try:
                                 photo_content = photos_dict[pattern_to_use]
-                                logger.info(f"Row {idx + 2}: Photo filename '{photo_filename_clean}' matched to '{pattern_to_use}' in ZIP")
                                 
-                                class TempUploadFile:
-                                    def __init__(self, filename: str, content: bytes):
-                                        self.filename = filename
-                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                        self.file = BytesIO(content)
-                                        self.file.seek(0)
-                                
-                                # Use the matched filename or the original photo_filename
-                                upload_filename = pattern_to_use if '.' in pattern_to_use else (photo_filename_clean if '.' in photo_filename_clean else f"{photo_filename_clean}.jpg")
-                                temp_file = TempUploadFile(upload_filename, photo_content)
-                                
-                                logger.debug(f"Row {idx + 2}: Uploading photo to S3: {upload_filename}")
-                                upload_result = s3_service.upload_file(
-                                    file=temp_file,
-                                    folder='contacts/photos',
-                                    user_id=str(current_user.id)
-                                )
-                                
-                                photo_url = upload_result.get('file_key')
-                                if photo_url and not photo_url.startswith('contacts/photos'):
-                                    photo_url = f"contacts/photos/{photo_url}" if not photo_url.startswith('contacts/') else photo_url
-                                
-                                if photo_url:
-                                    stats["photos_uploaded"] = stats.get("photos_uploaded", 0) + 1
-                                    logger.info(f"✅ Photo uploaded successfully for {first_name} {last_name}: {photo_url}")
-                                    add_import_log(import_id, f"Ligne {idx + 2}: Photo uploadée - {first_name} {last_name} ({pattern_to_use})", "info", {"row": idx + 2, "photo_url": photo_url, "matched_filename": pattern_to_use})
+                                # Validate photo content
+                                if not photo_content or len(photo_content) == 0:
+                                    logger.warning(f"Row {idx + 2}: Photo content is empty for {first_name} {last_name} (pattern: {pattern_to_use})")
+                                    add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Photo vide pour {first_name} {last_name}", "warning", {"row": idx + 2, "pattern": pattern_to_use})
+                                    photo_url = None  # Ensure photo_url is None if upload fails
                                 else:
-                                    logger.warning(f"Row {idx + 2}: Upload succeeded but no file_key returned for {first_name} {last_name}")
-                            except Exception as e:
-                                logger.error(f"Failed to upload photo for {first_name} {last_name}: {e}", exc_info=True)
+                                    logger.info(f"Row {idx + 2}: Photo filename '{photo_filename_clean}' matched to '{pattern_to_use}' in ZIP (size: {len(photo_content)} bytes)")
+                                    
+                                    class TempUploadFile:
+                                        def __init__(self, filename: str, content: bytes):
+                                            self.filename = filename
+                                            self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                            self.file = BytesIO(content)
+                                            self.file.seek(0)
+                                    
+                                    # Use the matched filename or the original photo_filename
+                                    upload_filename = pattern_to_use if '.' in pattern_to_use else (photo_filename_clean if '.' in photo_filename_clean else f"{photo_filename_clean}.jpg")
+                                    temp_file = TempUploadFile(upload_filename, photo_content)
+                                    
+                                    logger.info(f"Row {idx + 2}: Uploading photo to S3: {upload_filename} (size: {len(photo_content)} bytes, content_type: {temp_file.content_type})")
+                                    
+                                    # Upload to S3
+                                    upload_result = s3_service.upload_file(
+                                        file=temp_file,
+                                        folder='contacts/photos',
+                                        user_id=str(current_user.id)
+                                    )
+                                    
+                                    # Validate upload result
+                                    if not upload_result:
+                                        logger.error(f"Row {idx + 2}: Upload returned None for {first_name} {last_name}")
+                                        photo_url = None
+                                    elif not isinstance(upload_result, dict):
+                                        logger.error(f"Row {idx + 2}: Upload returned invalid type: {type(upload_result)} for {first_name} {last_name}")
+                                        photo_url = None
+                                    else:
+                                        photo_url = upload_result.get('file_key')
+                                        
+                                        # Log upload result details
+                                        logger.debug(f"Row {idx + 2}: Upload result: file_key={photo_url}, size={upload_result.get('size')}, url={upload_result.get('url', 'N/A')[:50]}...")
+                                        
+                                        if not photo_url:
+                                            logger.error(f"Row {idx + 2}: Upload succeeded but no file_key in result for {first_name} {last_name}. Result keys: {list(upload_result.keys())}")
+                                            photo_url = None
+                                        else:
+                                            # Ensure photo_url has correct prefix
+                                            if not photo_url.startswith('contacts/photos'):
+                                                photo_url = f"contacts/photos/{photo_url}" if not photo_url.startswith('contacts/') else photo_url
+                                            
+                                            stats["photos_uploaded"] = stats.get("photos_uploaded", 0) + 1
+                                            logger.info(f"✅ Photo uploaded successfully for {first_name} {last_name}: {photo_url} (size: {upload_result.get('size', 'unknown')} bytes)")
+                                            add_import_log(import_id, f"Ligne {idx + 2}: ✅ Photo uploadée - {first_name} {last_name} ({pattern_to_use}) -> {photo_url}", "info", {"row": idx + 2, "photo_url": photo_url, "matched_filename": pattern_to_use, "file_size": upload_result.get('size')})
+                            except ValueError as e:
+                                # S3Service raises ValueError on upload failure
+                                logger.error(f"Row {idx + 2}: S3 upload failed for {first_name} {last_name}: {e}", exc_info=True)
+                                photo_url = None  # Ensure photo_url is None on error
                                 warnings.append({
                                     'row': idx + 2,
                                     'type': 'photo_upload_error',
-                                    'message': f"Erreur lors de l'upload de la photo: {str(e)}",
-                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e)}
+                                    'message': f"Erreur S3 lors de l'upload de la photo: {str(e)}",
+                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e), 'pattern': pattern_to_use}
                                 })
+                                add_import_log(import_id, f"Ligne {idx + 2}: ❌ Erreur S3 lors de l'upload de la photo pour {first_name} {last_name}: {str(e)}", "error", {"row": idx + 2, "error": str(e)})
+                            except Exception as e:
+                                logger.error(f"Row {idx + 2}: Unexpected error uploading photo for {first_name} {last_name}: {e}", exc_info=True)
+                                photo_url = None  # Ensure photo_url is None on error
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'photo_upload_error',
+                                    'message': f"Erreur inattendue lors de l'upload de la photo: {str(e)}",
+                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e), 'pattern': pattern_to_use}
+                                })
+                                add_import_log(import_id, f"Ligne {idx + 2}: ❌ Erreur inattendue lors de l'upload de la photo pour {first_name} {last_name}: {str(e)}", "error", {"row": idx + 2, "error": str(e)})
                         else:
                             # Log available photos for debugging
                             available_samples = list(photos_dict.keys())[:5]
@@ -1489,44 +1525,80 @@ async def import_contacts(
                         if pattern_to_use and pattern_to_use in photos_dict:
                             try:
                                 photo_content = photos_dict[pattern_to_use]
-                                logger.info(f"Row {idx + 2}: Photo found and matched: {pattern_to_use} for {first_name} {last_name}")
                                 
-                                class TempUploadFile:
-                                    def __init__(self, filename: str, content: bytes):
-                                        self.filename = filename
-                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                        self.file = BytesIO(content)
-                                        self.file.seek(0)
-                                
-                                # Use the matched filename or fallback to a generated name
-                                upload_filename = photo_filename_to_match or f"{normalize_filename(first_name)}_{normalize_filename(last_name)}.jpg"
-                                temp_file = TempUploadFile(upload_filename, photo_content)
-                                
-                                logger.debug(f"Row {idx + 2}: Uploading photo to S3: {upload_filename}")
-                                upload_result = s3_service.upload_file(
-                                    file=temp_file,
-                                    folder='contacts/photos',
-                                    user_id=str(current_user.id)
-                                )
-                                
-                                photo_url = upload_result.get('file_key')
-                                if photo_url and not photo_url.startswith('contacts/photos'):
-                                    photo_url = f"contacts/photos/{photo_url}" if not photo_url.startswith('contacts/') else photo_url
-                                
-                                if photo_url:
-                                    stats["photos_uploaded"] = stats.get("photos_uploaded", 0) + 1
-                                    logger.info(f"✅ Photo uploaded successfully for {first_name} {last_name}: {photo_url}")
-                                    add_import_log(import_id, f"Ligne {idx + 2}: Photo uploadée - {first_name} {last_name}", "info", {"row": idx + 2, "photo_url": photo_url})
+                                # Validate photo content
+                                if not photo_content or len(photo_content) == 0:
+                                    logger.warning(f"Row {idx + 2}: Photo content is empty for {first_name} {last_name} (pattern: {pattern_to_use})")
+                                    add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Photo vide pour {first_name} {last_name}", "warning", {"row": idx + 2, "pattern": pattern_to_use})
+                                    photo_url = None  # Ensure photo_url is None if upload fails
                                 else:
-                                    logger.warning(f"Row {idx + 2}: Upload succeeded but no file_key returned for {first_name} {last_name}")
-                            except Exception as e:
-                                logger.error(f"Failed to upload photo for {first_name} {last_name}: {e}", exc_info=True)
+                                    logger.info(f"Row {idx + 2}: Photo found and matched: {pattern_to_use} for {first_name} {last_name} (size: {len(photo_content)} bytes)")
+                                    
+                                    class TempUploadFile:
+                                        def __init__(self, filename: str, content: bytes):
+                                            self.filename = filename
+                                            self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                            self.file = BytesIO(content)
+                                            self.file.seek(0)
+                                    
+                                    # Use the matched filename or fallback to a generated name
+                                    upload_filename = photo_filename_to_match or f"{normalize_filename(first_name)}_{normalize_filename(last_name)}.jpg"
+                                    temp_file = TempUploadFile(upload_filename, photo_content)
+                                    
+                                    logger.info(f"Row {idx + 2}: Uploading photo to S3 (auto-match): {upload_filename} (size: {len(photo_content)} bytes, content_type: {temp_file.content_type})")
+                                    
+                                    # Upload to S3
+                                    upload_result = s3_service.upload_file(
+                                        file=temp_file,
+                                        folder='contacts/photos',
+                                        user_id=str(current_user.id)
+                                    )
+                                    
+                                    # Validate upload result
+                                    if not upload_result:
+                                        logger.error(f"Row {idx + 2}: Upload returned None for {first_name} {last_name} (auto-match)")
+                                        photo_url = None
+                                    elif not isinstance(upload_result, dict):
+                                        logger.error(f"Row {idx + 2}: Upload returned invalid type: {type(upload_result)} for {first_name} {last_name} (auto-match)")
+                                        photo_url = None
+                                    else:
+                                        photo_url = upload_result.get('file_key')
+                                        
+                                        # Log upload result details
+                                        logger.debug(f"Row {idx + 2}: Upload result (auto-match): file_key={photo_url}, size={upload_result.get('size')}, url={upload_result.get('url', 'N/A')[:50]}...")
+                                        
+                                        if not photo_url:
+                                            logger.error(f"Row {idx + 2}: Upload succeeded but no file_key in result for {first_name} {last_name} (auto-match). Result keys: {list(upload_result.keys())}")
+                                            photo_url = None
+                                        else:
+                                            # Ensure photo_url has correct prefix
+                                            if not photo_url.startswith('contacts/photos'):
+                                                photo_url = f"contacts/photos/{photo_url}" if not photo_url.startswith('contacts/') else photo_url
+                                            
+                                            stats["photos_uploaded"] = stats.get("photos_uploaded", 0) + 1
+                                            logger.info(f"✅ Photo uploaded successfully (auto-match) for {first_name} {last_name}: {photo_url} (size: {upload_result.get('size', 'unknown')} bytes)")
+                                            add_import_log(import_id, f"Ligne {idx + 2}: ✅ Photo uploadée (auto-match) - {first_name} {last_name} ({pattern_to_use}) -> {photo_url}", "info", {"row": idx + 2, "photo_url": photo_url, "matched_filename": pattern_to_use, "file_size": upload_result.get('size')})
+                            except ValueError as e:
+                                # S3Service raises ValueError on upload failure
+                                logger.error(f"Row {idx + 2}: S3 upload failed (auto-match) for {first_name} {last_name}: {e}", exc_info=True)
+                                photo_url = None  # Ensure photo_url is None on error
                                 warnings.append({
                                     'row': idx + 2,
                                     'type': 'photo_upload_error',
-                                    'message': f"Erreur lors de l'upload de la photo: {str(e)}",
-                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e)}
+                                    'message': f"Erreur S3 lors de l'upload de la photo (auto-match): {str(e)}",
+                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e), 'pattern': pattern_to_use}
                                 })
+                                add_import_log(import_id, f"Ligne {idx + 2}: ❌ Erreur S3 lors de l'upload de la photo (auto-match) pour {first_name} {last_name}: {str(e)}", "error", {"row": idx + 2, "error": str(e)})
+                            except Exception as e:
+                                logger.error(f"Row {idx + 2}: Unexpected error uploading photo (auto-match) for {first_name} {last_name}: {e}", exc_info=True)
+                                photo_url = None  # Ensure photo_url is None on error
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'photo_upload_error',
+                                    'message': f"Erreur inattendue lors de l'upload de la photo (auto-match): {str(e)}",
+                                    'data': {'contact': f"{first_name} {last_name}", 'error': str(e), 'pattern': pattern_to_use}
+                                })
+                                add_import_log(import_id, f"Ligne {idx + 2}: ❌ Erreur inattendue lors de l'upload de la photo (auto-match) pour {first_name} {last_name}: {str(e)}", "error", {"row": idx + 2, "error": str(e)})
                         elif photos_dict and s3_service:
                             # Log why photo wasn't matched with more details
                             if not first_name or not last_name:
