@@ -1179,18 +1179,18 @@ async def import_contacts(
                 
                 # Log progress every 10 rows
                 if (idx + 1) % 10 == 0 or idx < 5:
-                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, erreurs: {stats['errors']}, dans created_contacts: {len(created_contacts)})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy(), "created_contacts_count": len(created_contacts)})
                 
                 # Map Excel columns to Contact fields with multiple possible column names
-                    first_name = get_field_value(row_data, [
-                        'first_name', 'prénom', 'prenom', 'firstname', 'first name',
-                        'nom', 'name', 'given_name', 'given name'
-                    ]) or ''
-                    
-                    last_name = get_field_value(row_data, [
-                        'last_name', 'nom', 'name', 'lastname', 'last name',
-                        'surname', 'family_name', 'family name', 'nom de famille'
-                    ]) or ''
+                first_name = get_field_value(row_data, [
+                    'first_name', 'prénom', 'prenom', 'firstname', 'first name',
+                    'nom', 'name', 'given_name', 'given name'
+                ]) or ''
+                
+                last_name = get_field_value(row_data, [
+                    'last_name', 'nom', 'name', 'lastname', 'last name',
+                    'surname', 'family_name', 'family name', 'nom de famille'
+                ]) or ''
                     
                     # Debug: Log if both names are empty (likely empty row)
                     if not first_name.strip() and not last_name.strip():
