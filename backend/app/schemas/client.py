@@ -4,10 +4,12 @@ Pydantic v2 models for project clients
 """
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 from app.models.client import ClientStatus
+from app.models.invoice import InvoiceStatus
 
 
 class ClientBase(BaseModel):
@@ -60,3 +62,30 @@ class ClientListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+class ClientInvoiceResponse(BaseModel):
+    """Client invoice response schema"""
+    id: int
+    invoice_number: Optional[str] = None
+    amount_due: Decimal
+    amount_paid: Decimal = Field(default=Decimal("0.00"))
+    currency: str = "usd"
+    status: InvoiceStatus
+    due_date: Optional[datetime] = None
+    paid_at: Optional[datetime] = None
+    invoice_pdf_url: Optional[str] = None
+    hosted_invoice_url: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ClientInvoiceListResponse(BaseModel):
+    """Client invoice list response schema"""
+    items: List[ClientInvoiceResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

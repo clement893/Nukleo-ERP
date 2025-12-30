@@ -101,7 +101,7 @@ class ClientService:
         
         # Get paginated results with eager loading to prevent N+1 queries
         query = query.options(selectinload(Invoice.user), selectinload(Invoice.subscription))
-        query = query.order_by(Invoice.invoice_date.desc()).offset(skip).limit(limit)
+        query = query.order_by(Invoice.created_at.desc()).offset(skip).limit(limit)
         result = await self.db.execute(query)
         invoices = result.scalars().all()
         

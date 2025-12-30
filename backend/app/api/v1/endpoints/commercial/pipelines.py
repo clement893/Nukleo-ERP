@@ -217,7 +217,7 @@ async def create_pipeline(
         # Count opportunities for the pipeline
         from app.models.pipeline import Opportunite
         opp_count_result = await db.execute(
-            select(func.count(Opportunite.id)).where(Opportunite.pipeline_id == pipeline_id)
+            select(func.count(Opportunite.id)).where(Opportunite.pipeline_id == pipeline.id)
         )
         opportunity_count = opp_count_result.scalar() or 0
         
