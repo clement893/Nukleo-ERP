@@ -119,20 +119,25 @@
 
 ---
 
-### Batch 6: Optimisations Backend Avancées (Moyen)
+### Batch 6: Optimisations Backend Avancées (Moyen) ✅ COMPLÉTÉ
 **Objectif**: Réduire les requêtes DB et améliorer le cache  
 **Temps estimé**: 2-3 heures  
-**Impact**: 🟢 Moyen
+**Impact**: 🟢 Moyen  
+**Statut**: ✅ Terminé et pushé (commit: 6b4582c8)
 
-- [ ] 6.1 Implémenter cache Redis pour requêtes fréquentes
-- [ ] 6.2 Optimiser requêtes avec `selectinload` systématique
-- [ ] 6.3 Ajouter cache sur endpoints critiques
-- [ ] 6.4 Tests et validation
+- [x] 6.1 Implémenter cache Redis pour requêtes fréquentes (déjà configuré)
+- [x] 6.2 Optimiser requêtes avec `selectinload` systématique (déjà fait)
+- [x] 6.3 Ajouter cache sur endpoints critiques
+- [x] 6.4 Tests et validation
 
-**Fichiers à modifier**:
-- `backend/app/core/cache.py` (créer/configurer)
-- `backend/app/api/v1/endpoints/commercial/contacts.py`
-- `backend/requirements.txt` (ajout redis si nécessaire)
+**Fichiers modifiés**:
+- `backend/app/api/v1/endpoints/commercial/contacts.py` (cache + invalidation)
+
+**Résultats**:
+- Cache Redis activé sur `list_contacts` (60s expiration)
+- Invalidation automatique sur create/update/delete
+- Réduction charge base de données pour requêtes fréquentes
+- Note: Redis doit être configuré via REDIS_URL pour activer le cache
 
 ---
 
