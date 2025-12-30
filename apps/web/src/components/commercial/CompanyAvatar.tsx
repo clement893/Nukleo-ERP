@@ -195,9 +195,8 @@ export default function CompanyAvatar({
       src={currentLogoUrl}
       alt={`Logo de ${company.name}`}
       className={clsx(
-        'rounded object-cover transition-opacity duration-300',
+        'rounded object-cover transition-opacity duration-300 w-full h-full',
         isLoading ? 'opacity-0' : 'opacity-100',
-        sizeClassesFull[size],
         className
       )}
       loading="lazy"

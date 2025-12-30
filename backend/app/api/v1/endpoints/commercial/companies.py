@@ -492,6 +492,7 @@ async def delete_company(
 
 @router.delete("/bulk", status_code=status.HTTP_200_OK)
 async def delete_all_companies(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -585,6 +586,7 @@ async def import_companies(
     - Facebook: facebook, facebook_url, facebook url, page facebook
     - Instagram: instagram, instagram_url, instagram url, profil instagram
     - Logo URL: logo_url, logo, logo url, url logo, image_url, image url
+    - Logo Filename: logo_filename, nom_fichier_logo, logo filename, nom fichier logo
     
     Features:
     - Automatic matching of existing companies by name (for reimport/update)
@@ -763,6 +765,11 @@ async def import_companies(
                     'logo_url', 'logo', 'logo url', 'url logo', 'image_url', 'image url'
                 ])
                 
+                # Get explicit logo filename from Excel (highest priority)
+                logo_filename_explicit = get_field_value(row_data, [
+                    'logo_filename', 'nom_fichier_logo', 'logo filename', 'nom fichier logo'
+                ])
+                
                 # If no logo_url but we have logos in ZIP, try to find matching logo
                 if not logo_url and logos_dict and s3_service:
                     # Try multiple naming patterns based on company name
@@ -772,33 +779,62 @@ async def import_companies(
                     import re
                     company_name_clean = re.sub(r'[^a-z0-9_]', '', company_name_normalized)
                     
-                    logo_filename_patterns = [
+                    # Build logo filename patterns (explicit filename has highest priority)
+                    logo_filename_patterns = []
+                    
+                    # 1. Explicit filename from Excel column (highest priority)
+                    if logo_filename_explicit:
+                        logo_filename_patterns.append(logo_filename_explicit.lower())
+                        # Also try with path variations
+                        logo_filename_patterns.append(os.path.basename(logo_filename_explicit).lower())
+                    
+                    # 2. Patterns based on company name
+                    logo_filename_patterns.extend([
                         f"{company_name_clean}.jpg",
                         f"{company_name_clean}.jpeg",
                         f"{company_name_clean}.png",
+                        f"{company_name_clean}.gif",
+                        f"{company_name_clean}.webp",
                         f"{company_name_normalized}.jpg",
                         f"{company_name_normalized}.jpeg",
                         f"{company_name_normalized}.png",
-                        get_field_value(row_data, ['logo_filename', 'nom_fichier_logo']),  # Try explicit filename from Excel
-                    ]
+                        f"{company_name_normalized}.gif",
+                        f"{company_name_normalized}.webp",
+                    ])
                     
                     uploaded_logo_url = None
                     for pattern in logo_filename_patterns:
-                        if pattern and pattern.lower() in logos_dict:
+                        if not pattern:
+                            continue
+                        pattern_lower = pattern.lower().strip()
+                        # Try exact match first
+                        matched_filename = None
+                        if pattern_lower in logos_dict:
+                            matched_filename = pattern_lower
+                        else:
+                            # Try partial match (filename without extension)
+                            pattern_no_ext = os.path.splitext(pattern_lower)[0]
+                            for stored_filename in logos_dict.keys():
+                                stored_no_ext = os.path.splitext(stored_filename)[0]
+                                if stored_no_ext == pattern_no_ext:
+                                    matched_filename = stored_filename
+                                    break
+                        
+                        if matched_filename:
                             try:
                                 # Upload logo to S3
-                                logo_content = logos_dict[pattern.lower()]
+                                logo_content = logos_dict[matched_filename]
                                 
                                 # Create a temporary UploadFile-like object compatible with S3Service
                                 class TempUploadFile:
                                     def __init__(self, filename: str, content: bytes):
                                         self.filename = filename
                                         self.content = content
-                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else ('image/gif' if filename.lower().endswith('.gif') else 'image/webp'))
                                         # Create a file-like object
                                         self.file = BytesIO(content)
                                 
-                                temp_file = TempUploadFile(pattern, logo_content)
+                                temp_file = TempUploadFile(matched_filename, logo_content)
                                 
                                 # Upload to S3
                                 upload_result = s3_service.upload_file(
@@ -824,10 +860,10 @@ async def import_companies(
                                     else:
                                         uploaded_logo_url = url
                                 
-                                logger.info(f"Uploaded logo for {name}: {pattern} -> {uploaded_logo_url}")
+                                logger.info(f"Uploaded logo for {name}: {matched_filename} -> {uploaded_logo_url}")
                                 break
                             except Exception as e:
-                                logger.warning(f"Failed to upload logo {pattern}: {e}")
+                                logger.warning(f"Failed to upload logo {matched_filename}: {e}")
                                 continue
                     
                     if uploaded_logo_url:

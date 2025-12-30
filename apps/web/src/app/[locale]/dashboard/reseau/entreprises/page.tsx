@@ -351,8 +351,10 @@ function CompaniesContent() {
       label: '',
       sortable: false,
       render: (_value, company) => (
-        <div className="flex items-center">
-          <CompanyAvatar company={company} size="md" />
+        <div className="flex items-center w-10 h-10">
+          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+            <CompanyAvatar company={company} size="md" className="w-full h-full object-cover" />
+          </div>
         </div>
       ),
     },

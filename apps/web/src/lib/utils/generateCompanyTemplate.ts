@@ -36,6 +36,13 @@ export const COMPANY_TEMPLATE_COLUMNS: CompanyTemplateColumn[] = [
     required: false,
   },
   {
+    key: 'logo_filename',
+    label: 'Nom fichier logo',
+    description: 'Nom exact du fichier logo dans le ZIP (alternative à logo_url)',
+    example: 'acme_corporation.jpg',
+    required: false,
+  },
+  {
     key: 'country',
     label: 'Pays',
     description: 'Pays de l\'entreprise',
@@ -322,10 +329,11 @@ Les valeurs acceptées pour "Client (Y/N)" sont :
 3. Exemple : \`logos/acme_corporation.jpg\`
 4. Formats acceptés : .jpg, .jpeg, .png, .gif, .webp
 
-### Option 2 : Nom de fichier explicite
-1. Ajoutez une colonne \`logo_filename\` ou \`nom_fichier_logo\` dans l'Excel
+### Option 2 : Nom de fichier explicite (recommandé)
+1. Ajoutez une colonne **"Nom fichier logo"** (ou \`logo_filename\`, \`nom_fichier_logo\`) dans l'Excel
 2. Indiquez le nom exact du fichier logo (ex: \`acme_corporation.jpg\`)
 3. Le fichier doit être présent dans le dossier \`logos/\` du ZIP
+4. Cette méthode a la priorité la plus élevée et permet un matching précis
 
 ### Option 3 : Logo URL S3
 1. Indiquez l'URL S3 complète dans la colonne "Logo URL (S3)"

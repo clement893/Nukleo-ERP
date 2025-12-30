@@ -174,10 +174,11 @@ export default function ImportCompaniesInstructions({
                 </p>
               </div>
               <div>
-                <p className="font-medium mb-2">Méthode 2: Colonne Excel</p>
+                <p className="font-medium mb-2">Méthode 2: Colonne Excel (recommandé)</p>
                 <p className="text-muted-foreground">
                   Ajoutez une colonne <code className="bg-background px-1 py-0.5 rounded">logo_filename</code> ou 
                   <code className="bg-background px-1 py-0.5 rounded">nom_fichier_logo</code> avec le nom exact du fichier logo.
+                  Cette méthode a la priorité la plus élevée et permet un matching précis même si le nom de l'entreprise ne correspond pas exactement au nom du fichier.
                 </p>
               </div>
               <div>
