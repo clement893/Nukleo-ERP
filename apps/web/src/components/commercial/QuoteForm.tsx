@@ -156,16 +156,32 @@ export default function QuoteForm({
 
   const updateLineItem = (index: number, field: keyof QuoteLineItem, value: any) => {
     const updated = [...lineItems];
-    updated[index] = { ...updated[index], [field]: value };
+    const currentItem = updated[index];
+    
+    if (!currentItem) {
+      return; // Safety check
+    }
+    
+    // Ensure description is always a string
+    if (field === 'description') {
+      updated[index] = { ...currentItem, [field]: value ?? '' };
+    } else {
+      updated[index] = { ...currentItem, [field]: value };
+    }
     
     // Calculate total_price if quantity and unit_price are provided
     if (field === 'quantity' || field === 'unit_price') {
-      const quantity = field === 'quantity' ? value : updated[index].quantity;
-      const unitPrice = field === 'unit_price' ? value : updated[index].unit_price;
+      const updatedItem = updated[index];
+      if (!updatedItem) {
+        return; // Safety check
+      }
+      
+      const quantity = field === 'quantity' ? value : updatedItem.quantity;
+      const unitPrice = field === 'unit_price' ? value : updatedItem.unit_price;
       if (quantity && unitPrice) {
-        updated[index].total_price = quantity * unitPrice;
+        updatedItem.total_price = quantity * unitPrice;
       } else {
-        updated[index].total_price = null;
+        updatedItem.total_price = null;
       }
     }
     
