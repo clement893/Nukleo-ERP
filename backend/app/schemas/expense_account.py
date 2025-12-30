@@ -17,7 +17,7 @@ class ExpenseAccountBase(BaseModel):
     expense_period_end: Optional[datetime] = Field(None, description="Date de fin de la période")
     total_amount: Decimal = Field(0, ge=0, description="Montant total")
     currency: str = Field("EUR", max_length=3, description="Devise")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Métadonnées supplémentaires")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Métadonnées supplémentaires", alias="account_metadata")
 
 
 class ExpenseAccountCreate(ExpenseAccountBase):
@@ -33,7 +33,7 @@ class ExpenseAccountUpdate(BaseModel):
     expense_period_end: Optional[datetime] = None
     total_amount: Optional[Decimal] = Field(None, ge=0)
     currency: Optional[str] = Field(None, max_length=3)
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = Field(None, alias="account_metadata")
 
 
 class ExpenseAccountAction(BaseModel):
@@ -62,3 +62,4 @@ class ExpenseAccountResponse(ExpenseAccountBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True  # Allow both 'metadata' and 'account_metadata' in API

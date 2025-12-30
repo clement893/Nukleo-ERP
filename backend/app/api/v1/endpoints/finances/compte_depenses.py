@@ -25,11 +25,11 @@ from app.core.logging import logger
 router = APIRouter(prefix="/finances/compte-depenses", tags=["finances-compte-depenses"])
 
 
-def generate_account_number(db: AsyncSession) -> str:
+async def generate_account_number(db: AsyncSession) -> str:
     """Generate a unique account number"""
     year = datetime.now().year
     # Get the last account number for this year
-    result = db.execute(
+    result = await db.execute(
         select(func.max(ExpenseAccount.account_number))
         .where(ExpenseAccount.account_number.like(f"EXP-{year}-%"))
     )
@@ -121,7 +121,7 @@ async def list_compte_depenses(
             "review_notes": account.review_notes,
             "clarification_request": account.clarification_request,
             "rejection_reason": account.rejection_reason,
-            "metadata": account.metadata,
+            "metadata": account.account_metadata,
             "created_at": account.created_at,
             "updated_at": account.updated_at,
         }
@@ -176,7 +176,7 @@ async def get_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
@@ -194,7 +194,7 @@ async def create_compte_depenses(
     Create a new expense account
     """
     # Generate account number
-    account_number = generate_account_number(db)
+    account_number = await generate_account_number(db)
     
     # Create expense account
     new_account = ExpenseAccount(
@@ -206,7 +206,7 @@ async def create_compte_depenses(
         expense_period_end=expense_account.expense_period_end,
         total_amount=expense_account.total_amount,
         currency=expense_account.currency,
-        metadata=expense_account.metadata,
+        account_metadata=expense_account.metadata,
         status=ExpenseAccountStatus.DRAFT.value,
     )
     
@@ -233,7 +233,7 @@ async def create_compte_depenses(
         "review_notes": new_account.review_notes,
         "clarification_request": new_account.clarification_request,
         "rejection_reason": new_account.rejection_reason,
-        "metadata": new_account.metadata,
+        "metadata": new_account.account_metadata,
         "created_at": new_account.created_at,
         "updated_at": new_account.updated_at,
     }
@@ -297,7 +297,7 @@ async def update_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
@@ -357,7 +357,7 @@ async def submit_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
@@ -420,7 +420,7 @@ async def approve_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
@@ -490,7 +490,7 @@ async def reject_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
@@ -560,7 +560,7 @@ async def request_clarification_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
@@ -619,7 +619,7 @@ async def set_under_review_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-        "metadata": account.metadata,
+            "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }

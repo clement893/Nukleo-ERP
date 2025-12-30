@@ -62,8 +62,8 @@ class ExpenseAccount(Base):
     clarification_request = Column(Text, nullable=True)  # Demande de précisions
     rejection_reason = Column(Text, nullable=True)  # Raison du rejet
     
-    # Metadata
-    metadata = Column(JSON, nullable=True)  # Données supplémentaires (lignes de dépenses, etc.)
+    # Metadata (renamed from 'metadata' to avoid SQLAlchemy reserved name conflict)
+    account_metadata = Column("metadata", JSON, nullable=True)  # Données supplémentaires (lignes de dépenses, etc.)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
