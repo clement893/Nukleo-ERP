@@ -228,11 +228,11 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    skip: str = Query("0", description="Number of records to skip"),
+    limit: str = Query("100", description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
-    responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
-    company_id: Optional[int] = Query(None, description="Filter by company ID"),
+    responsible_id: Optional[str] = Query(None, description="Filter by responsible employee ID"),
+    company_id: Optional[str] = Query(None, description="Filter by company ID"),
     search: Optional[str] = Query(None, description="Search by company name or responsible employee name"),
 ) -> List[Client]:
     """
@@ -250,14 +250,53 @@ async def list_clients(
     Returns:
         List of clients
     """
+    # Convert string parameters to integers
+    try:
+        skip_int = int(skip.strip()) if skip and skip.strip() else 0
+        limit_int = int(limit.strip()) if limit and limit.strip() else 100
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="skip and limit must be valid integers"
+        )
+    
+    # Validate ranges
+    if skip_int < 0:
+        skip_int = 0
+    if limit_int < 1:
+        limit_int = 100
+    elif limit_int > 1000:
+        limit_int = 1000
+    
+    # Convert optional integer parameters
+    responsible_id_int = None
+    if responsible_id is not None and responsible_id.strip():
+        try:
+            responsible_id_int = int(responsible_id)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="responsible_id must be a valid integer"
+            )
+    
+    company_id_int = None
+    if company_id is not None and company_id.strip():
+        try:
+            company_id_int = int(company_id)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="company_id must be a valid integer"
+            )
+    
     query = select(Client)
     
     if status:
         query = query.where(Client.status == status)
-    if responsible_id is not None:
-        query = query.where(Client.responsible_id == responsible_id)
-    if company_id is not None:
-        query = query.where(Client.company_id == company_id)
+    if responsible_id_int is not None:
+        query = query.where(Client.responsible_id == responsible_id_int)
+    if company_id_int is not None:
+        query = query.where(Client.company_id == company_id_int)
     if search:
         search_term = f"%{search.lower()}%"
         query = query.join(Company).join(User, Client.responsible_id == User.id, isouter=True).where(
@@ -272,7 +311,7 @@ async def list_clients(
     query = query.options(
         selectinload(Client.company),
         selectinload(Client.responsible)
-    ).order_by(Client.created_at.desc()).offset(skip).limit(limit)
+    ).order_by(Client.created_at.desc()).offset(skip_int).limit(limit_int)
     
     try:
         result = await db.execute(query)
