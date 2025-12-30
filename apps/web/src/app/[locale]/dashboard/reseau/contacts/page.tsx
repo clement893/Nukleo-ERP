@@ -15,6 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
+import ContactAvatar from '@/components/commercial/ContactAvatar';
 import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Search, Mail, Phone, X, Users, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -621,7 +622,7 @@ function ContactsContent() {
                 </span>
               </div>
               {filteredContacts.length !== contacts.length && hasActiveFilters && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="default" className="text-xs">
                   Filtré{filteredContacts.length !== contacts.length ? 's' : ''}
                 </Badge>
               )}
@@ -656,7 +657,7 @@ function ContactsContent() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">Filtres actifs:</span>
               {filterCity && (
-                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
                   <span>Ville: {filterCity}</span>
                   <button
                     onClick={() => setFilterCity('')}
@@ -668,7 +669,7 @@ function ContactsContent() {
                 </Badge>
               )}
               {filterPhone && (
-                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
                   <span>Téléphone: {filterPhone}</span>
                   <button
                     onClick={() => setFilterPhone('')}
@@ -680,7 +681,7 @@ function ContactsContent() {
                 </Badge>
               )}
               {filterCircle && (
-                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
                   <span>Cercle: {filterCircle.charAt(0).toUpperCase() + filterCircle.slice(1)}</span>
                   <button
                     onClick={() => setFilterCircle('')}
@@ -692,7 +693,7 @@ function ContactsContent() {
                 </Badge>
               )}
               {filterCompany && (
-                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
                   <Building2 className="w-3 h-3" />
                   <span>Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name || filterCompany}</span>
                   <button
@@ -705,7 +706,7 @@ function ContactsContent() {
                 </Badge>
               )}
               {searchQuery && (
-                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                <Badge variant="default" className="flex items-center gap-1.5 px-2 py-1">
                   <Search className="w-3 h-3" />
                   <span>Recherche: "{searchQuery}"</span>
                   <button
