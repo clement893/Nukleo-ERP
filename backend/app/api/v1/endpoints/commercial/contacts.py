@@ -1175,31 +1175,58 @@ async def import_contacts(
         logger.info(f"Starting import loop: {total_rows} rows to process")
         
         # Use the already-converted list (data_list_raw from above)
-        data_list = data_list_raw
+        # CRITICAL: Create a fresh copy to avoid any iterator consumption issues
+        if not isinstance(data_list_raw, list):
+            data_list = list(data_list_raw)
+        else:
+            # Create a copy to ensure we have a fresh list that can't be consumed
+            data_list = data_list_raw.copy() if hasattr(data_list_raw, 'copy') else list(data_list_raw)
+        
         add_import_log(import_id, f"🔍 DEBUG: Utilisation de la liste convertie, nombre d'éléments: {len(data_list)}, type: {type(data_list)}", "info")
         logger.info(f"DEBUG: Using converted list, length: {len(data_list)}, type: {type(data_list)}")
         
-        # Verify we can access all items
+        # Verify we can access all items - test both beginning and end
         try:
             first_few = data_list[:10] if len(data_list) >= 10 else data_list
-            add_import_log(import_id, f"🔍 DEBUG: Premiers éléments accessibles: {len(first_few)}", "info")
-            logger.info(f"DEBUG: First few items accessible: {len(first_few)}")
+            last_few = data_list[-10:] if len(data_list) >= 10 else data_list
+            add_import_log(import_id, f"🔍 DEBUG: Premiers éléments accessibles: {len(first_few)}, derniers éléments accessibles: {len(last_few)}", "info")
+            logger.info(f"DEBUG: First few items accessible: {len(first_few)}, last few items accessible: {len(last_few)}")
+            
+            # Verify we can access the last item
+            if len(data_list) > 0:
+                last_item = data_list[-1]
+                logger.info(f"DEBUG: Last item accessible: {type(last_item)}, keys: {list(last_item.keys()) if isinstance(last_item, dict) else 'not a dict'}")
         except Exception as e:
-            add_import_log(import_id, f"❌ ERREUR lors de l'accès aux premiers éléments: {str(e)}", "error")
-            logger.error(f"ERROR accessing first items: {e}", exc_info=True)
+            add_import_log(import_id, f"❌ ERREUR lors de l'accès aux éléments: {str(e)}", "error")
+            logger.error(f"ERROR accessing items: {e}", exc_info=True)
         
         # Wrap entire loop in try/except to catch any unhandled exceptions
         try:
             iteration_count = 0
-            # Ensure data_list is actually a list and not consumed
+            # CRITICAL: Create a fresh copy of the list to ensure it's not consumed
+            # Convert to list and create a copy to avoid any iterator consumption issues
             if not isinstance(data_list, list):
+                data_list = list(data_list)
+            else:
+                # Create a copy to ensure we have a fresh list that can't be consumed
                 data_list = list(data_list)
             
             logger.info(f"DEBUG: Starting loop with data_list type={type(data_list)}, length={len(data_list)}")
             
-            for idx, row_data in enumerate(data_list):
-                iteration_count += 1
+            # Verify the list is complete before starting the loop
+            list_length = len(data_list)
+            if list_length != total_rows:
+                logger.warning(f"WARNING: data_list length ({list_length}) doesn't match total_rows ({total_rows})")
+                add_import_log(import_id, f"⚠️ ATTENTION: Longueur de la liste ({list_length}) ne correspond pas au nombre de lignes attendu ({total_rows})", "warning")
+            
+            # CRITICAL: Use range-based iteration instead of enumerate to avoid iterator consumption issues
+            # This ensures we iterate over all items even if data_list has iterator-like behavior
+            logger.info(f"DEBUG: Starting iteration over {list_length} items using range-based loop")
+            for idx in range(list_length):
                 try:
+                    # Get the row data by index to ensure we access all items
+                    row_data = data_list[idx]
+                    iteration_count += 1
                     stats["total_processed"] += 1
                     
                     # Log every iteration for first 10 rows
