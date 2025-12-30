@@ -13,11 +13,9 @@ export {
   authAPI,
   usersAPI,
   resourcesAPI,
-  projectsAPI,
   aiAPI,
   emailAPI,
   subscriptionsAPI,
-  teamsAPI,
   invitationsAPI,
   integrationsAPI,
   apiSettingsAPI,
@@ -31,6 +29,16 @@ export {
 
 // Re-export client portal API
 export { clientPortalAPI } from './client-portal';
+
+// Re-export client portal module API (unified)
+export { clientPortalModuleAPI } from './client-portal-unified';
+export type {
+  ClientDashboardStats as ClientDashboardStatsType,
+  ClientInvoice as ClientInvoiceType,
+  ClientProject as ClientProjectType,
+  ClientTicket as ClientTicketType,
+  ClientOrder as ClientOrderType,
+} from './client-portal-unified';
 
 // Re-export ERP portal API
 export { erpPortalAPI } from './erp-portal';

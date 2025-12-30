@@ -15,6 +15,8 @@ from app.modules.finances.api import router as finances_module_router
 from app.modules.projects.api import router as projects_module_router
 from app.modules.management.api import router as management_module_router
 from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
+from app.modules.client_portal.api import router as client_portal_module_router
+from app.modules.agenda.api import router as agenda_module_router
 from app.api.v1.endpoints.erp import invoices_router as erp_invoices_router, clients_router, orders_router, inventory_router, reports_router, dashboard_router as erp_dashboard_router
 from app.api import ai as ai_router
 
