@@ -77,6 +77,10 @@ if [ -n "$DATABASE_URL" ]; then
         echo "$MIGRATION_RESULT"
         if [ $MIGRATION_EXIT_CODE -eq 0 ]; then
             MIGRATION_STATUS="success"
+        elif echo "$MIGRATION_RESULT" | grep -q "Multiple head revisions"; then
+            echo "⚠️  Multiple head revisions detected. Upgrading all heads..."
+            # Use 'heads' (plural) to upgrade all heads
+            timeout 60 alembic upgrade heads 2>&1 && MIGRATION_STATUS="success" || MIGRATION_STATUS="timeout_or_failed"
         elif echo "$MIGRATION_RESULT" | grep -q "overlaps with other requested revisions"; then
             echo "⚠️  Migration overlap detected. Attempting to resolve..."
             # Try to merge heads again
@@ -98,6 +102,10 @@ if [ -n "$DATABASE_URL" ]; then
         echo "$MIGRATION_RESULT"
         if [ $MIGRATION_EXIT_CODE -eq 0 ]; then
             MIGRATION_STATUS="success"
+        elif echo "$MIGRATION_RESULT" | grep -q "Multiple head revisions"; then
+            echo "⚠️  Multiple head revisions detected. Upgrading all heads..."
+            # Use 'heads' (plural) to upgrade all heads
+            alembic upgrade heads 2>&1 && MIGRATION_STATUS="success" || MIGRATION_STATUS="failed"
         elif echo "$MIGRATION_RESULT" | grep -q "overlaps with other requested revisions"; then
             echo "⚠️  Migration overlap detected. Attempting to resolve..."
             # Try to merge heads again
