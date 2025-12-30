@@ -59,7 +59,7 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
   const handleChange = (key: string, value: unknown) => {
     setEditedPreferences({
       ...editedPreferences,
-      [key]: value,
+      [key]: value as string | number | boolean | object | null | undefined,
     });
   };
 
