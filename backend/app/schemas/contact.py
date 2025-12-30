@@ -18,7 +18,8 @@ class ContactBase(BaseModel):
     circle: Optional[str] = Field(None, max_length=50, description="Contact circle (client, prospect, etc.)")
     linkedin: Optional[str] = Field(None, max_length=500, description="LinkedIn URL")
     photo_url: Optional[str] = Field(None, max_length=1000, description="Photo URL (S3)")
-    logo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
+    # logo_filename will be added via migration 040 - commented out until migration is executed
+    # logo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
     email: Optional[EmailStr] = Field(None, description="Email address")
     phone: Optional[str] = Field(None, max_length=50, description="Phone number")
     city: Optional[str] = Field(None, max_length=100, description="City")
@@ -59,7 +60,8 @@ class ContactUpdate(BaseModel):
     circle: Optional[str] = Field(None, max_length=50, description="Contact circle")
     linkedin: Optional[str] = Field(None, max_length=500, description="LinkedIn URL")
     photo_url: Optional[str] = Field(None, max_length=1000, description="Photo URL (S3)")
-    logo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
+    # logo_filename will be added via migration 040 - commented out until migration is executed
+    # logo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
     email: Optional[EmailStr] = Field(None, description="Email address")
     phone: Optional[str] = Field(None, max_length=50, description="Phone number")
     city: Optional[str] = Field(None, max_length=100, description="City")

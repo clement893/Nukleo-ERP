@@ -16,7 +16,8 @@ export interface Contact {
   circle: string | null;
   linkedin: string | null;
   photo_url: string | null;
-  logo_filename: string | null;
+  // logo_filename will be added after migration 040 is executed
+  // logo_filename: string | null;
   email: string | null;
   phone: string | null;
   city: string | null;
@@ -38,7 +39,8 @@ export interface ContactCreate {
   circle?: string | null;
   linkedin?: string | null;
   photo_url?: string | null;
-  logo_filename?: string | null;
+  // logo_filename will be added after migration 040 is executed
+  // logo_filename?: string | null;
   email?: string | null;
   phone?: string | null;
   city?: string | null;

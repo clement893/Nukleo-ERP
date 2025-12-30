@@ -300,7 +300,8 @@ async def list_contacts(
             "circle": contact.circle,
             "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            # logo_filename will be added after migration 040 is executed
+            # "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
             "phone": contact.phone,
             "city": contact.city,
@@ -374,7 +375,8 @@ async def get_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            # logo_filename will be added after migration 040 is executed
+            # "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -445,23 +447,26 @@ async def create_contact(
                 detail="Employee not found"
             )
     
-    contact = Contact(
-        first_name=contact_data.first_name,
-        last_name=contact_data.last_name,
-        company_id=final_company_id,
-        position=contact_data.position,
-        circle=contact_data.circle,
-        linkedin=contact_data.linkedin,
-        photo_url=contact_data.photo_url,
-        logo_filename=getattr(contact_data, 'logo_filename', None),
-        email=contact_data.email,
-        phone=contact_data.phone,
-        city=contact_data.city,
-        country=contact_data.country,
-        birthday=contact_data.birthday,
-        language=contact_data.language,
-        employee_id=contact_data.employee_id,
-    )
+    # Build contact dict, excluding logo_filename until migration 040 is executed
+    contact_dict = {
+        'first_name': contact_data.first_name,
+        'last_name': contact_data.last_name,
+        'company_id': final_company_id,
+        'position': contact_data.position,
+        'circle': contact_data.circle,
+        'linkedin': contact_data.linkedin,
+        'photo_url': contact_data.photo_url,
+        'email': contact_data.email,
+        'phone': contact_data.phone,
+        'city': contact_data.city,
+        'country': contact_data.country,
+        'birthday': contact_data.birthday,
+        'language': contact_data.language,
+        'employee_id': contact_data.employee_id,
+    }
+    # Only add logo_filename if it exists in the model (after migration 040)
+    # For now, skip it to avoid database errors
+    contact = Contact(**contact_dict)
     
     db.add(contact)
     await db.commit()
@@ -484,7 +489,8 @@ async def create_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            # logo_filename will be added after migration 040 is executed
+            # "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -599,7 +605,8 @@ async def update_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            # logo_filename will be added after migration 040 is executed
+            # "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -1425,32 +1432,36 @@ async def import_contacts(
                         'data': {'employee_id_raw': employee_id_raw}
                     })
             
-                # Get logo_filename for photo matching
+                # Get logo_filename for photo matching (will be stored after migration 040 is executed)
                 logo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
                 
                 # Prepare contact data
-                contact_data = ContactCreate(
-                first_name=first_name,
-                last_name=last_name,
-                company_id=company_id,
-                position=position,
-                circle=circle,
-                linkedin=linkedin,
-                photo_url=photo_url,  # Store file_key, not presigned URL
-                logo_filename=logo_filename,  # Store filename for photo matching
-                email=email,
-                phone=phone,
-                city=city,
-                country=country,
-                birthday=birthday,
-                language=language,
-                employee_id=employee_id,
-                )
+                contact_data_dict = {
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'company_id': company_id,
+                    'position': position,
+                    'circle': circle,
+                    'linkedin': linkedin,
+                    'photo_url': photo_url,  # Store file_key, not presigned URL
+                    'email': email,
+                    'phone': phone,
+                    'city': city,
+                    'country': country,
+                    'birthday': birthday,
+                    'language': language,
+                    'employee_id': employee_id,
+                }
+                # Only add logo_filename if the column exists (after migration 040)
+                # For now, we'll store it in a separate field or skip it until migration is executed
+                contact_data = ContactCreate(**contact_data_dict)
             
                 # Update existing contact or create new one
                 if existing_contact:
                     # Update existing contact
                     update_data = contact_data.model_dump(exclude_none=True)
+                    # Remove logo_filename from update_data until migration 040 is executed
+                    update_data.pop('logo_filename', None)
                     for field, value in update_data.items():
                         # Only update photo_url if a new photo was uploaded (photo_url is not None and not empty)
                         if field == 'photo_url':
@@ -1467,7 +1478,10 @@ async def import_contacts(
                     logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
                 else:
                     # Create new contact
-                    contact = Contact(**contact_data.model_dump(exclude_none=True))
+                    create_data = contact_data.model_dump(exclude_none=True)
+                    # Remove logo_filename from create_data until migration 040 is executed
+                    create_data.pop('logo_filename', None)
+                    contact = Contact(**create_data)
                     db.add(contact)
                     created_contacts.append(contact)
                     logger.info(f"Created new contact: {first_name} {last_name}")
@@ -1526,7 +1540,8 @@ async def import_contacts(
                     "circle": contact.circle,
                     "linkedin": contact.linkedin,
                     "photo_url": regenerate_photo_url(contact.photo_url, contact.id),
-                    "logo_filename": getattr(contact, 'logo_filename', None),
+                    # logo_filename will be added after migration 040 is executed
+            # "logo_filename": getattr(contact, 'logo_filename', None),
                     "email": contact.email,
                     "phone": contact.phone,
                     "city": contact.city,
