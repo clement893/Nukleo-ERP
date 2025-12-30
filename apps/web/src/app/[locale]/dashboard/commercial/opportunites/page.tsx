@@ -21,9 +21,7 @@ import {
   Download, 
   Upload, 
   FileSpreadsheet, 
-  MoreVertical, 
-  Trash2,
-  HelpCircle
+  MoreVertical
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -112,21 +110,21 @@ function OpportunitiesContent() {
     }
   }, [loadingMore, hasMore, fetchNextPage]);
 
-  // Extract unique values for dropdowns
-  const uniqueValues = useMemo(() => {
-    const pipelineNames = new Set<string>();
-    const companyNames = new Set<string>();
+  // Extract unique values for dropdowns (currently unused but kept for future use)
+  // const uniqueValues = useMemo(() => {
+  //   const pipelineNames = new Set<string>();
+  //   const companyNames = new Set<string>();
 
-    opportunities.forEach((opp) => {
-      if (opp.pipeline_name) pipelineNames.add(opp.pipeline_name);
-      if (opp.company_name) companyNames.add(opp.company_name);
-    });
+  //   opportunities.forEach((opp) => {
+  //     if (opp.pipeline_name) pipelineNames.add(opp.pipeline_name);
+  //     if (opp.company_name) companyNames.add(opp.company_name);
+  //   });
 
-    return {
-      pipelineNames: Array.from(pipelineNames).sort(),
-      companyNames: Array.from(companyNames).sort(),
-    };
-  }, [opportunities]);
+  //   return {
+  //     pipelineNames: Array.from(pipelineNames).sort(),
+  //     companyNames: Array.from(companyNames).sort(),
+  //   };
+  // }, [opportunities]);
 
   // Filtered opportunities with debounced search
   const filteredOpportunities = useMemo(() => {
@@ -205,29 +203,29 @@ function OpportunitiesContent() {
     }
   };
 
-  // Handle delete with React Query mutation
-  const handleDelete = async (opportunityId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette opportunité ?')) {
-      return;
-    }
+  // Handle delete with React Query mutation (currently unused but kept for future use)
+  // const handleDelete = async (opportunityId: string) => {
+  //   if (!confirm('Êtes-vous sûr de vouloir supprimer cette opportunité ?')) {
+  //     return;
+  //   }
 
-    try {
-      await deleteOpportunityMutation.mutateAsync(opportunityId);
-      if (selectedOpportunity?.id === opportunityId) {
-        setSelectedOpportunity(null);
-      }
-      showToast({
-        message: 'Opportunité supprimée avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression de l\'opportunité',
-        type: 'error',
-      });
-    }
-  };
+  //   try {
+  //     await deleteOpportunityMutation.mutateAsync(opportunityId);
+  //     if (selectedOpportunity?.id === opportunityId) {
+  //       setSelectedOpportunity(null);
+  //     }
+  //     showToast({
+  //       message: 'Opportunité supprimée avec succès',
+  //       type: 'success',
+  //     });
+  //   } catch (err) {
+  //     const appError = handleApiError(err);
+  //     showToast({
+  //       message: appError.message || 'Erreur lors de la suppression de l\'opportunité',
+  //       type: 'error',
+  //     });
+  //   }
+  // };
 
   // Get query client for cache invalidation
   const queryClient = useQueryClient();

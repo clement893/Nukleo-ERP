@@ -841,7 +841,7 @@ function ContactsContent() {
             setCurrentImportId(null);
           }}
           title="Logs d'import en temps réel"
-          size="large"
+          size="xl"
         >
           <ImportLogsViewer
             importId={currentImportId}
