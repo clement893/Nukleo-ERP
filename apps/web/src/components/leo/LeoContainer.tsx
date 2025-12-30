@@ -19,6 +19,7 @@ export function LeoContainer() {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { error: showError } = useToast();
 
   // Load conversations on mount
@@ -141,8 +142,6 @@ export function LeoContainer() {
 
   // Memoize loading state
   const isLoading = useMemo(() => isSending || isLoadingMessages, [isSending, isLoadingMessages]);
-
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-full w-full">

@@ -356,7 +356,7 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
       
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {showSuggestions && messages.length === 0 && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] py-12">
             <div className="flex-shrink-0 w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-8">
@@ -400,7 +400,7 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
             
             <div
               className={clsx(
-                'max-w-[85%] rounded-2xl px-5 py-4 group relative',
+                'max-w-[90%] rounded-2xl px-6 py-5 group relative',
                 message.role === 'user'
                   ? 'bg-primary-600 text-white shadow-sm'
                   : 'bg-muted text-foreground shadow-sm'
@@ -473,7 +473,7 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
 
       {/* Input Area */}
       <div className="border-t border-border bg-background">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex gap-3 items-end">
             <div className="flex-1 relative">
               <Input
