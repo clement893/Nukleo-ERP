@@ -1170,7 +1170,12 @@ async def import_contacts(
         add_import_log(import_id, f"🔍 DEBUG: Nombre total de lignes dans result['data']: {len(result['data'])}", "info")
         logger.info(f"DEBUG: Starting import loop with {len(result['data'])} rows")
         
-        for idx, row_data in enumerate(result['data']):
+        # Convert to list to ensure we iterate over all items
+        data_list = list(result['data']) if not isinstance(result['data'], list) else result['data']
+        add_import_log(import_id, f"🔍 DEBUG: Liste convertie, nombre d'éléments: {len(data_list)}", "info")
+        logger.info(f"DEBUG: Converted to list, length: {len(data_list)}")
+        
+        for idx, row_data in enumerate(data_list):
             try:
                 stats["total_processed"] += 1
                 
