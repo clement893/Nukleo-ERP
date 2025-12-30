@@ -1175,9 +1175,11 @@ async def import_contacts(
         add_import_log(import_id, f"🔍 DEBUG: Liste convertie, nombre d'éléments: {len(data_list)}", "info")
         logger.info(f"DEBUG: Converted to list, length: {len(data_list)}")
         
-        for idx, row_data in enumerate(data_list):
-            try:
-                stats["total_processed"] += 1
+        # Wrap entire loop in try/except to catch any unhandled exceptions
+        try:
+            for idx, row_data in enumerate(data_list):
+                try:
+                    stats["total_processed"] += 1
                 
                 # Log every row for debugging (temporarily)
                 if idx < 10 or (idx + 1) % 10 == 0:
