@@ -2,6 +2,7 @@
 
 import { InputHTMLAttributes, useState } from 'react';
 import { clsx } from 'clsx';
+import { Search, X } from 'lucide-react';
 
 interface SearchBarProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'> {
   onSearch?: (value: string) => void;
