@@ -271,7 +271,7 @@ export default function AdminUsersContent() {
             onClick={() => {
               setSelectedUser(row);
               const linkedEmployee = getLinkedEmployee(row.id);
-              setSelectedEmployeeId(linkedEmployee?.id || '');
+              setSelectedEmployeeId(linkedEmployee ? String(linkedEmployee.id) : '');
               setEmployeeLinkModalOpen(true);
             }}
           >

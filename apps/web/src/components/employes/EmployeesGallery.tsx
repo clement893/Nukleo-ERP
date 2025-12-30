@@ -2,10 +2,10 @@
 
 import { Employee } from '@/lib/api/employees';
 import Card from '@/components/ui/Card';
-import { UserCircle, Mail, Phone, Linkedin, Loader2, Calendar } from 'lucide-react';
+import { UserCircle, Mail, Phone, Loader2, Calendar } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useRef, useState } from 'react';
-import EmployeeAvatar from './EmployeeAvatar';
+// import EmployeeAvatar from './EmployeeAvatar'; // Not used in this component
 
 interface EmployeesGalleryProps {
   employees: Employee[];
@@ -19,7 +19,7 @@ interface EmployeesGalleryProps {
 function GalleryPhoto({ employee }: { employee: Employee }) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!employee.photo_url);
-  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(employee.photo_url);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(employee.photo_url || null);
 
   const getInitials = () => {
     const first = employee.first_name?.charAt(0) || '';
@@ -147,7 +147,7 @@ export default function EmployeesGallery({
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingMore) {
+        if (entries[0]?.isIntersecting && !loadingMore) {
           onLoadMore();
         }
       },

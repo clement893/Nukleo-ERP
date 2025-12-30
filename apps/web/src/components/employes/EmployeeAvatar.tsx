@@ -34,7 +34,7 @@ export default function EmployeeAvatar({
 }: EmployeeAvatarProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!employee.photo_url);
-  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(employee.photo_url);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(employee.photo_url || null);
 
   const getInitials = () => {
     const first = employee.first_name?.charAt(0) || '';

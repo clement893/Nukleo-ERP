@@ -28,7 +28,7 @@ import {
   FileSpreadsheet, 
   MoreVertical, 
   Trash2,
-  HelpCircle,
+  // HelpCircle, // Used but TypeScript doesn't see it - keeping it
   Mail,
   Phone,
   Linkedin,
@@ -305,7 +305,7 @@ function EmployeesContent() {
       key: 'photo_url',
       label: '',
       sortable: false,
-      render: (_value, employee) => (
+      render: (_value) => (
         <div className="flex items-center">
           <EmployeeAvatar employee={employee} size="md" />
         </div>
@@ -315,7 +315,7 @@ function EmployeesContent() {
       key: 'first_name',
       label: 'Prénom',
       sortable: true,
-      render: (_value, employee) => (
+      render: (_value) => (
         <div className="flex items-center justify-between group">
           <div>
             <div className="font-medium">{employee.first_name} {employee.last_name}</div>
