@@ -500,7 +500,7 @@ function EmployeesContent() {
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
                           >
-                            <HelpCircle className="w-3.5 h-3.5" />
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
                             Instructions d'import
                           </button>
                           <button
