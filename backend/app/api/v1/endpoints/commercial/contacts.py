@@ -1115,13 +1115,17 @@ async def import_contacts(
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
         logger.info(f"Starting import loop: {total_rows} rows to process, result['data'] has {len(result['data'])} items")
         
+        # DEBUG: Log total rows before loop
+        add_import_log(import_id, f"🔍 DEBUG: Nombre total de lignes dans result['data']: {len(result['data'])}", "info")
+        logger.info(f"DEBUG: Starting import loop with {len(result['data'])} rows")
+        
         for idx, row_data in enumerate(result['data']):
             try:
                 stats["total_processed"] += 1
                 
-                # Log progress every 10 rows for debugging (changed from 50)
-                if (idx + 1) % 10 == 0 or idx == 0:
-                    add_import_log(import_id, f"📊 Progression: {idx + 1}/{total_rows} lignes traitées... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, ignorés: {stats['skipped_missing_firstname'] + stats['skipped_missing_lastname']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
+                # Log every row for debugging (temporarily)
+                if idx < 10 or (idx + 1) % 10 == 0:
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, ignorés: {stats['skipped_missing_firstname'] + stats['skipped_missing_lastname']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
                 
                 # Map Excel columns to Contact fields with multiple possible column names
                 first_name = get_field_value(row_data, [
