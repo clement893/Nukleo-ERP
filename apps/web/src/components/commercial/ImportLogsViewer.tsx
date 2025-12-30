@@ -156,8 +156,8 @@ export default function ImportLogsViewer({ importId, onComplete }: ImportLogsVie
           </div>
         )}
 
-        {/* Logs Container */}
-        <div className="max-h-96 overflow-y-auto space-y-2 border rounded-lg p-3 bg-background">
+        {/* Logs Container - Increased height to show more logs */}
+        <div className="max-h-[600px] overflow-y-auto space-y-2 border rounded-lg p-3 bg-background">
           {logs.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               En attente des logs...

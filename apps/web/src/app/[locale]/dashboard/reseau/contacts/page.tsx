@@ -849,11 +849,8 @@ function ContactsContent() {
             <ImportLogsViewer
               importId={currentImportId}
               onComplete={() => {
-                // Optionally close modal after completion
-                setTimeout(() => {
-                  setShowImportLogs(false);
-                  setCurrentImportId(null);
-                }, 3000);
+                // Don't auto-close - let user close manually to review logs
+                // User can close the modal manually using the X button
               }}
             />
           ) : (
