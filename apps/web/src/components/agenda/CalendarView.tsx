@@ -193,6 +193,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
   const [showDeadlines, setShowDeadlines] = useState(true);
   const [showEvents, setShowEvents] = useState(true);
   const [showBirthdays, setShowBirthdays] = useState(true);
+  const [showHireDates, setShowHireDates] = useState(true);
 
   // Modal pour les événements d'une journée
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -415,8 +416,40 @@ export default function CalendarView({ className }: CalendarViewProps) {
       }
     }
 
+    // Dates d'embauche des employés avec nombre d'années de service
+    if (showHireDates) {
+      const currentYear = new Date().getFullYear();
+      // Calculer pour l'année courante et les 2 années suivantes
+      for (let year = currentYear; year <= currentYear + 2; year++) {
+        employees.forEach((employee) => {
+          if (employee.hire_date) {
+            // Parser la date d'embauche
+            const hireDate = new Date(employee.hire_date);
+            if (!isNaN(hireDate.getTime())) {
+              // Créer la date d'embauche pour cette année (anniversaire d'embauche)
+              const hireDateThisYear = new Date(year, hireDate.getMonth(), hireDate.getDate());
+              
+              // Calculer le nombre d'années de service
+              const yearsOfService = year - hireDate.getFullYear();
+              
+              // Ne créer l'événement que si c'est un anniversaire d'embauche (même mois et jour)
+              if (yearsOfService >= 0) {
+              eventsList.push({
+                id: `hire-date-${employee.id}-${year}`,
+                title: `🎉 ${employee.first_name} ${employee.last_name}${yearsOfService > 0 ? ` (${yearsOfService} an${yearsOfService > 1 ? 's' : ''} de service)` : ' (Nouvel employé)'}`,
+                date: hireDateThisYear,
+                color: '#06B6D4', // Cyan pour les dates d'embauche (différent du vert des vacances)
+                description: `Date d'embauche de ${employee.first_name} ${employee.last_name}${employee.email ? ` (${employee.email})` : ''} - ${yearsOfService} an${yearsOfService > 1 ? 's' : ''} de service`,
+              });
+              }
+            }
+          }
+        });
+      }
+    }
+
     return eventsList;
-  }, [vacations, deadlines, events, apiEvents, employees, showVacations, showHolidays, showSummerVacation, showDeadlines, showEvents, showBirthdays]);
+  }, [vacations, deadlines, events, apiEvents, employees, showVacations, showHolidays, showSummerVacation, showDeadlines, showEvents, showBirthdays, showHireDates]);
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
@@ -460,6 +493,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
         else if (event.id.startsWith('deadline-')) type = 'deadline';
         else if (event.id.startsWith('holiday-')) type = 'holiday';
         else if (event.id.startsWith('birthday-')) type = 'other'; // Anniversaires comme événements spéciaux
+        else if (event.id.startsWith('hire-date-')) type = 'other'; // Dates d'embauche comme événements spéciaux
         else if (event.id.startsWith('event-')) {
           // Pour les événements de l'API, chercher dans les apiEvents chargés
           const eventIdStr = event.id.replace('event-', '');
@@ -637,19 +671,19 @@ export default function CalendarView({ className }: CalendarViewProps) {
   }
 
   return (
-    <div className={clsx('space-y-4', className)}>
+    <div className={clsx('flex flex-col h-full', className)}>
       {error && (
-        <Alert variant="error">{error}</Alert>
+        <Alert variant="error" className="mb-4">{error}</Alert>
       )}
 
       {/* Filtres et légende */}
-      <Card>
+      <Card className="mb-4 flex-shrink-0">
         <div className="p-4">
           <div className="flex items-center gap-4 mb-4">
             <Filter className="w-5 h-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Filtres</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -704,6 +738,15 @@ export default function CalendarView({ className }: CalendarViewProps) {
               />
               <span className="text-sm text-foreground">Anniversaires</span>
             </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showHireDates}
+                onChange={(e) => setShowHireDates(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-sm text-foreground">Dates d'embauche</span>
+            </label>
           </div>
 
           {/* Légende */}
@@ -734,18 +777,25 @@ export default function CalendarView({ className }: CalendarViewProps) {
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EC4899' }} />
                 <span className="text-muted-foreground">Anniversaires</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#06B6D4' }} />
+                <span className="text-muted-foreground">Dates d'embauche</span>
+              </div>
             </div>
           </div>
         </div>
       </Card>
 
       {/* Calendrier */}
-      <Card>
-        <Calendar
-          events={calendarEvents}
-          onDateClick={handleDateClick}
-          onEventClick={handleEventClick}
-        />
+      <Card className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-auto">
+          <Calendar
+            events={calendarEvents}
+            onDateClick={handleDateClick}
+            onEventClick={handleEventClick}
+            className="h-full"
+          />
+        </div>
       </Card>
 
       {/* Modal pour les événements d'une journée */}

@@ -95,7 +95,7 @@ export default function Calendar({
     // Empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(
-        <div key={`empty-${i}`} className="aspect-square" />
+        <div key={`empty-${i}`} className="min-h-[80px] md:min-h-[120px]" />
       );
     }
 
@@ -109,24 +109,24 @@ export default function Calendar({
         <div
           key={day}
           className={clsx(
-            'aspect-square border border-gray-200 dark:border-gray-700 p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors',
+            'min-h-[80px] md:min-h-[120px] border border-gray-200 dark:border-gray-700 p-1 md:p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex flex-col',
             isCurrentDay && 'bg-primary-50 dark:bg-primary-900/40 border-primary-500 dark:border-primary-400'
           )}
           onClick={() => onDateClick?.(date)}
         >
           <div className={clsx(
-            'text-sm font-medium mb-1',
+            'text-xs md:text-sm font-medium mb-1 flex-shrink-0',
             isCurrentDay ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-gray-100'
           )}>
             {day}
           </div>
-          <div className="space-y-1">
-            {dayEvents.slice(0, 3).map((event) => (
+          <div className="space-y-0.5 md:space-y-1 flex-1 overflow-y-auto min-h-0">
+            {dayEvents.slice(0, 5).map((event) => (
               <div
                 key={event.id}
                 className={clsx(
-                  'text-xs px-1 py-0.5 rounded truncate cursor-pointer',
-                  event.color || 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'
+                  'text-[10px] md:text-xs px-1 py-0.5 rounded truncate cursor-pointer flex-shrink-0',
+                  event.color ? 'text-white' : 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'
                 )}
                 style={event.color ? { backgroundColor: event.color } : undefined}
                 onClick={(e) => {
@@ -138,9 +138,9 @@ export default function Calendar({
                 {event.title}
               </div>
             ))}
-            {dayEvents.length > 3 && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                +{dayEvents.length - 3} autres
+            {dayEvents.length > 5 && (
+              <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                +{dayEvents.length - 5} autres
               </div>
             )}
           </div>
@@ -152,17 +152,17 @@ export default function Calendar({
   };
 
   return (
-    <div className={clsx('bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6', className)}>
+    <div className={clsx('bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 md:p-6 h-full flex flex-col', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="flex items-center justify-between mb-4 md:mb-6 flex-shrink-0">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
           {monthNames[month]} {year}
         </h2>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={goToPreviousMonth}>
             ‹
           </Button>
-          <Button variant="ghost" size="sm" onClick={goToToday}>
+          <Button variant="ghost" size="sm" onClick={goToToday} className="hidden sm:inline-flex">
             Aujourd'hui
           </Button>
           <Button variant="ghost" size="sm" onClick={goToNextMonth}>
@@ -172,11 +172,11 @@ export default function Calendar({
       </div>
 
       {/* Day names */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
         {dayNames.map((day) => (
           <div
             key={day}
-            className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2"
+            className="text-center text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 py-2"
           >
             {day}
           </div>
@@ -184,7 +184,7 @@ export default function Calendar({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 flex-1 auto-rows-fr min-h-0">
         {renderCalendarDays()}
       </div>
     </div>
