@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Card, Button, Input } from '@/components/ui';
 import { Loader2, Send, Sparkles, User } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -119,15 +119,31 @@ interface LeoChatProps {
   onSendMessage: (message: string) => void;
 }
 
-export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
+// Quick suggestions for new conversations
+const QUICK_SUGGESTIONS = [
+  "Quels sont mes projets en cours ?",
+  "Montre-moi mes tâches à faire",
+  "Combien de factures ai-je ?",
+  "Quels sont mes contacts clients ?",
+  "Comment créer un nouveau projet ?",
+  "Aide-moi avec les permissions",
+];
+
+export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, messages, isLoading, onSendMessage }: LeoChatProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showSuggestions, setShowSuggestions] = useState(messages.length === 0);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Show suggestions when conversation is empty
+  useEffect(() => {
+    setShowSuggestions(messages.length === 0);
+  }, [messages.length]);
 
   // Focus input on mount
   useEffect(() => {
@@ -138,6 +154,12 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
     if (!input.trim() || isLoading) return;
     onSendMessage(input.trim());
     setInput('');
+    setShowSuggestions(false);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    onSendMessage(suggestion);
+    setShowSuggestions(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -151,13 +173,40 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
     <Card className="flex flex-col h-[calc(100vh-280px)] min-h-[600px] p-0 overflow-hidden">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.map((message) => (
+        {showSuggestions && messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full py-12">
+            <div className="flex-shrink-0 w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-6">
+              <Sparkles className="w-8 h-8 text-primary-600 dark:text-primary-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Bonjour ! Je suis Leo, votre assistant IA
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+              Posez-moi une question ou choisissez une suggestion ci-dessous pour commencer
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-2xl">
+              {QUICK_SUGGESTIONS.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  disabled={isLoading}
+                  className="text-left px-4 py-3 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {messages.map((message, index) => (
           <div
             key={message.id}
             className={clsx(
-              'flex gap-4',
+              'flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300',
               message.role === 'user' ? 'justify-end' : 'justify-start'
             )}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
             {message.role === 'assistant' && (
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
@@ -206,7 +255,10 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
         ))}
 
         {isLoading && (
-          <div className="flex gap-4 justify-start">
+          <div className="flex gap-4 justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            </div>
             <div className="bg-muted rounded-lg px-4 py-3">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -255,4 +307,4 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
       </div>
     </Card>
   );
-}
+});

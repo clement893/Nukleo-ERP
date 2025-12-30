@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui';
 import { getErrorMessage } from '@/lib/errors';
 import { leoAgentAPI, type LeoConversation, type LeoMessage } from '@/lib/api/leo-agent';
@@ -81,7 +81,7 @@ export function LeoContainer() {
       // Send query to Leo
       const response = await leoAgentAPI.query({
         message,
-        conversation_id: selectedConversationId,
+        conversation_id: selectedConversationId || undefined,
         provider: 'auto',
       });
 
@@ -105,6 +105,9 @@ export function LeoContainer() {
     }
   }, [selectedConversationId, isSending, showError, loadConversations, loadMessages]);
 
+  // Memoize loading state
+  const isLoading = useMemo(() => isSending || isLoadingMessages, [isSending, isLoadingMessages]);
+
   return (
     <div className="flex h-full">
       <LeoSidebar
@@ -118,7 +121,7 @@ export function LeoContainer() {
         <LeoChat
           conversationId={selectedConversationId}
           messages={messages}
-          isLoading={isSending || isLoadingMessages}
+          isLoading={isLoading}
           onSendMessage={handleSendMessage}
         />
       </div>
