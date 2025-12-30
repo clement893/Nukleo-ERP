@@ -7,7 +7,6 @@ import { useToast } from '@/components/ui';
 import { Card, Loading, Alert } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
@@ -37,7 +36,6 @@ const priorityLabels = {
 };
 
 export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksProps) {
-  const router = useRouter();
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);

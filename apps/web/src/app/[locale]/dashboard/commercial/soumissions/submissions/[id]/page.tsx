@@ -113,10 +113,26 @@ export default function SubmissionDetailPage() {
     if (typeof value === 'string') {
       return value;
     }
-    if (value && typeof value === 'object') {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'object') {
       // If it's an object with a 'description' property, use that
       if ('description' in value && typeof value.description === 'string') {
         return value.description;
+      }
+      // If it's an object with 'description' and 'objectives' (like wizardData structure)
+      // Try to extract a meaningful string representation
+      if ('description' in value || 'objectives' in value) {
+        if ('description' in value && value.description) {
+          return String(value.description);
+        }
+        // If only objectives, stringify it
+        return JSON.stringify(value, null, 2);
+      }
+      // For arrays, join them or stringify
+      if (Array.isArray(value)) {
+        return value.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join(', ');
       }
       // Otherwise, stringify it
       return JSON.stringify(value, null, 2);
@@ -309,6 +325,65 @@ export default function SubmissionDetailPage() {
             <div>
               <label className="text-sm font-medium text-muted-foreground">Notes</label>
               <p className="text-lg whitespace-pre-wrap">{renderTextValue(submission.notes)}</p>
+            </div>
+          )}
+
+          {/* Safely render content if it exists and is an object */}
+          {submission.content && typeof submission.content === 'object' && !Array.isArray(submission.content) && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Contenu détaillé</h3>
+              <div className="space-y-4">
+                {Object.entries(submission.content as Record<string, any>).map(([key, value]) => {
+                  // Skip if value is null, undefined, or empty
+                  if (value === null || value === undefined || value === '') {
+                    return null;
+                  }
+                  // Skip if it's an object that we're already handling elsewhere
+                  if (typeof value === 'object' && !Array.isArray(value)) {
+                    // Render object as JSON string
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </label>
+                        <pre className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
+                          {JSON.stringify(value, null, 2)}
+                        </pre>
+                      </div>
+                    );
+                  }
+                  // Render arrays
+                  if (Array.isArray(value)) {
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </label>
+                        <div className="text-lg">
+                          {value.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-1">
+                              {value.map((item, idx) => (
+                                <li key={idx}>{renderTextValue(item)}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-muted-foreground">Aucun élément</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  // Render primitive values
+                  return (
+                    <div key={key}>
+                      <label className="text-sm font-medium text-muted-foreground capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
+                      <p className="text-lg whitespace-pre-wrap">{renderTextValue(value)}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

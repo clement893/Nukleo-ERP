@@ -7,7 +7,7 @@ import type { Employee } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert, Card } from '@/components/ui';
+import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import EmployeePortalTabs from '@/components/employes/EmployeePortalTabs';

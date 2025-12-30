@@ -6,14 +6,12 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert } from '@/components/ui';
 import { Calendar, AlertCircle, Clock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface EmployeePortalDeadlinesProps {
   employeeId: number;
 }
 
 export default function EmployeePortalDeadlines({ employeeId }: EmployeePortalDeadlinesProps) {
-  const router = useRouter();
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);

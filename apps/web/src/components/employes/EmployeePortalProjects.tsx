@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
-import { teamsAPI } from '@/lib/api/teams';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert } from '@/components/ui';
-import { FolderKanban, Users, CheckCircle, Clock } from 'lucide-react';
+import { FolderKanban, CheckCircle, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
 interface EmployeePortalProjectsProps {
