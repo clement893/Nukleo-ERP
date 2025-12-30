@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import type { DropdownItem } from '@/components/ui/Dropdown';
