@@ -49,7 +49,7 @@ function ContactsContent() {
   const circles = ['client', 'prospect', 'partenaire', 'fournisseur', 'autre'];
 
   // Load contacts avec pagination
-  const loadContacts = async (reset = false) => {
+  const loadContacts = useCallback(async (reset = false) => {
     if (reset) {
       setSkip(0);
       setContacts([]);
@@ -66,10 +66,10 @@ function ContactsContent() {
       
       if (reset) {
         setContacts(data);
-        setSkip(data.length);
+        setSkip(limit); // Fix: Always increment by limit, not data.length
       } else {
         setContacts((prev) => [...prev, ...data]);
-        setSkip((prevSkip) => prevSkip + data.length);
+        setSkip((prevSkip) => prevSkip + limit); // Fix: Always increment by limit
       }
       
       // Si on reçoit moins de contacts que la limite, il n'y a plus de données
@@ -85,20 +85,18 @@ function ContactsContent() {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [skip, limit, showToast]);
 
   // Charger plus de contacts pour le scroll infini
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
       loadContacts(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingMore, hasMore, skip]);
+  }, [loadingMore, hasMore, loadContacts]);
 
   useEffect(() => {
     loadContacts(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadContacts]);
 
   // Revalidate contacts when window regains focus
   useEffect(() => {
