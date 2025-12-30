@@ -33,6 +33,8 @@ from app.models import form  # noqa: F401
 from app.models import menu  # noqa: F401
 from app.models import support_ticket  # noqa: F401
 from app.core.security_audit import SecurityAuditLog  # noqa: F401
+# Import Leo module models for Alembic autogenerate
+from app.modules.leo.models import LeoConversation, LeoMessage, LeoDocumentation  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
