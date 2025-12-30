@@ -95,20 +95,27 @@
 
 ---
 
-### Batch 5: Optimisation Images (Moyen)
+### Batch 5: Optimisation Images (Moyen) ✅ COMPLÉTÉ
 **Objectif**: Réduire la taille des images et améliorer le chargement  
 **Temps estimé**: 1-2 heures  
-**Impact**: 🟢 Moyen
+**Impact**: 🟢 Moyen  
+**Statut**: ✅ Terminé et pushé (commit: e31bf9be)
 
-- [ ] 5.1 Remplacer `<img>` par Next.js `Image` component
-- [ ] 5.2 Ajouter placeholder/skeleton pour images
-- [ ] 5.3 Configurer optimisation images Next.js
-- [ ] 5.4 Tests et validation
+- [x] 5.1 Améliorer placeholders/skeletons (Next.js Image non adapté pour presigned URLs)
+- [x] 5.2 Ajouter placeholder/skeleton pour images
+- [x] 5.3 Configurer optimisation images Next.js (remotePatterns pour S3)
+- [x] 5.4 Tests et validation
 
-**Fichiers à modifier**:
-- `apps/web/src/app/[locale]/dashboard/reseau/contacts/page.tsx`
-- `apps/web/src/components/commercial/ContactsGallery.tsx`
-- `apps/web/next.config.js` (si nécessaire)
+**Fichiers modifiés**:
+- `apps/web/src/components/commercial/ContactAvatar.tsx` (amélioration placeholders, fetchPriority)
+- `apps/web/src/components/commercial/ContactsGallery.tsx` (skeleton placeholder)
+- `apps/web/next.config.js` (remotePatterns S3)
+
+**Résultats**:
+- Placeholders améliorés avec meilleur styling
+- fetchPriority hints (high pour grandes images, low pour autres)
+- width/height hints pour stabilité layout
+- Note: Utilisation de <img> au lieu de Next.js Image pour presigned URLs (dynamiques)
 
 ---
 

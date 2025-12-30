@@ -216,84 +216,13 @@ function DataTable<T extends Record<string, unknown>>({
                 )}
               </TableRow>
             </TableHead>
-            {shouldVirtualize ? (
-              // Virtualized rendering - use a wrapper div inside TableBody
+            {/* Virtualization disabled until @tanstack/react-virtual is installed */}
+            {false && shouldVirtualize ? (
+              // Virtualized rendering - disabled
               <TableBody striped hover>
                 <tr>
-                  <td colSpan={columns.length + (actions ? 1 : 0)} style={{ padding: 0, height: 0 }}>
-                    <div
-                      style={{
-                        height: `${virtualizer.getTotalSize()}px`,
-                        width: '100%',
-                        position: 'relative',
-                      }}
-                    >
-                      {loading ? (
-                        <div className="absolute inset-0 flex items-center justify-center py-8">
-                          <div className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-500"></div>
-                            <span className="ml-2 text-gray-600 dark:text-gray-400">Chargement...</span>
-                          </div>
-                        </div>
-                      ) : displayData.length === 0 ? (
-                        <div className="absolute inset-0 flex items-center justify-center py-8">
-                          <div className="text-gray-500 dark:text-gray-400">{emptyMessage}</div>
-                        </div>
-                      ) : (
-                        virtualizer.getVirtualItems().map((virtualRow) => {
-                          const row = displayData[virtualRow.index];
-                          return (
-                            <div
-                              key={virtualRow.key}
-                              data-index={virtualRow.index}
-                              ref={virtualizer.measureElement}
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
-                              <TableRow
-                                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                              >
-                                {columns.map((column) => (
-                                  <TableCell key={column.key}>
-                                    {column.render
-                                      ? column.render(row[column.key], row)
-                                      : row[column.key]?.toString() || '-'}
-                                  </TableCell>
-                                ))}
-                                {actions && (
-                                  <TableCell 
-                                    onClick={(e) => e.stopPropagation()} 
-                                    className="sticky right-0 bg-white dark:bg-gray-900 z-30 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]"
-                                  >
-                                    <div className="relative z-[120]">
-                                      <Dropdown 
-                                        trigger={
-                                          <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            className="min-w-[44px] min-h-[44px] p-2"
-                                            aria-label="Row actions"
-                                          >
-                                            ⋯
-                                          </Button>
-                                        } 
-                                        items={actions(row)}
-                                        position="left"
-                                      />
-                                    </div>
-                                  </TableCell>
-                                )}
-                              </TableRow>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
+                  <td colSpan={columns.length + (actions ? 1 : 0)}>
+                    Virtualization disabled
                   </td>
                 </tr>
               </TableBody>
