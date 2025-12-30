@@ -1,0 +1,139 @@
+/**
+ * Leo Chat Component
+ * Main chat interface for Leo AI assistant
+ */
+
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { Card, Button, Input } from '@/components/ui';
+import { Loader2, Send } from 'lucide-react';
+import { clsx } from 'clsx';
+import type { LeoMessage } from '@/lib/api/leo-agent';
+
+interface LeoChatProps {
+  conversationId: number | null;
+  messages: LeoMessage[];
+  isLoading: boolean;
+  onSendMessage: (message: string) => void;
+}
+
+export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
+  const [input, setInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSend = () => {
+    if (!input.trim() || isLoading) return;
+    onSendMessage(input.trim());
+    setInput('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <Card className="flex flex-col h-[calc(100vh-280px)] min-h-[600px] p-0 overflow-hidden">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={clsx(
+              'flex gap-4',
+              message.role === 'user' ? 'justify-end' : 'justify-start'
+            )}
+          >
+            <div
+              className={clsx(
+                'max-w-[80%] rounded-lg px-4 py-3',
+                message.role === 'user'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-muted text-foreground'
+              )}
+            >
+              <div className="text-sm whitespace-pre-wrap break-words">
+                {message.content}
+              </div>
+              <div
+                className={clsx(
+                  'text-xs mt-2',
+                  message.role === 'user'
+                    ? 'text-primary-100'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {new Date(message.created_at).toLocaleTimeString('fr-FR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {isLoading && (
+          <div className="flex gap-4 justify-start">
+            <div className="bg-muted rounded-lg px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Leo réfléchit...</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t border-border p-4 bg-background">
+        <div className="flex gap-2">
+          <Input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Posez votre question à Leo..."
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            className="flex items-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Envoi...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Envoyer
+              </>
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne
+        </p>
+      </div>
+    </Card>
+  );
+}
