@@ -222,14 +222,14 @@ async def import_projects(
                 if desc_col and pd.notna(row.get(desc_col)):
                     project_data['description'] = str(row[desc_col]).strip()
                 
-                # Status
+                # Status - store as string to avoid enum conversion issues in bulk insert
                 status_col = next((col for col, key in normalized_columns.items() if key == 'status'), None)
                 if status_col and pd.notna(row.get(status_col)):
                     status_str = str(row[status_col]).strip().lower()
                     if status_str in ['active', 'archived', 'completed']:
-                        project_data['status'] = ProjectStatus(status_str)
+                        project_data['status'] = status_str  # Store as string, not enum
                     else:
-                        project_data['status'] = ProjectStatus.ACTIVE
+                        project_data['status'] = 'active'  # Store as string
                         warnings.append({
                             "row": idx + 2,
                             "type": "invalid_status",
@@ -237,7 +237,7 @@ async def import_projects(
                             "data": {"status": status_str}
                         })
                 else:
-                    project_data['status'] = ProjectStatus.ACTIVE
+                    project_data['status'] = 'active'  # Store as string
                 
                 # Client ID or Client Name
                 client_id_col = next((col for col, key in normalized_columns.items() if key == 'client_id'), None)
@@ -294,11 +294,18 @@ async def import_projects(
                     project_data['responsable_id'] = responsable_id
                 
                 # Create project
+                # Convert status string to enum for ProjectCreate validation
+                if isinstance(project_data.get('status'), str):
+                    project_data['status'] = ProjectStatus(project_data['status'])
+                
                 project_create = ProjectCreate(**project_data)
+                
+                # For bulk insert with asyncpg, we need to pass the enum value directly
+                # SQLAlchemy's Enum column will handle the conversion
                 project = Project(
                     name=project_create.name,
                     description=project_create.description,
-                    status=project_create.status,
+                    status=project_create.status,  # ProjectStatus enum - SQLAlchemy will convert to string
                     user_id=current_user.id,
                     client_id=project_create.client_id,
                     responsable_id=project_create.responsable_id,
