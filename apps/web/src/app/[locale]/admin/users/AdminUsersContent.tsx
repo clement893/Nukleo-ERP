@@ -142,7 +142,7 @@ export default function AdminUsersContent() {
     }
   };
 
-  const handleUnlinkEmployee = async (employeeId: string) => {
+  const handleUnlinkEmployee = async (_employeeId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir délier cet employé ?')) {
       return;
     }
@@ -150,7 +150,7 @@ export default function AdminUsersContent() {
     try {
       setError(null);
       // TODO: Implement employee-user unlinking when backend endpoint is available
-      // await employeesAPI.unlinkFromUser(employeeId);
+      // await employeesAPI.unlinkFromUser(_employeeId);
       
       showToast({
         message: 'Fonctionnalité de déliaison employé-utilisateur à venir',
@@ -168,8 +168,8 @@ export default function AdminUsersContent() {
 
   // Get employee linked to a user
   // TODO: Implement when user_id field is added to Employee model
-  const getLinkedEmployee = (userId: string): Employee | undefined => {
-    // return employees.find(emp => emp.user_id === userId);
+  const getLinkedEmployee = (_userId: string): Employee | undefined => {
+    // return employees.find(emp => emp.user_id === _userId);
     return undefined;
   };
 

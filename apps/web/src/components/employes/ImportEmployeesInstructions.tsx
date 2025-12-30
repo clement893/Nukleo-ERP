@@ -157,7 +157,7 @@ export default function ImportEmployeesInstructions({
                 onClick={() => {
                   onDownloadTemplate?.();
                 }}
-                variant="default"
+                variant="primary"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
