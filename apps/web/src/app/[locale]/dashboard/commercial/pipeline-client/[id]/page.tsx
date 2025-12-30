@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
@@ -35,6 +35,12 @@ function PipelineDetailContent() {
   const router = useRouter();
   const { showToast } = useToast();
   const pipelineId = params.id as string;
+  
+  // Use ref to stabilize showToast reference and prevent infinite re-renders
+  const showToastRef = useRef(showToast);
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
   
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [opportunities, setOpportunities] = useState<Opportunite[]>([]);
@@ -112,7 +118,7 @@ function PipelineDetailContent() {
       } catch (err) {
         const appError = handleApiError(err);
         setError(appError.message || 'Erreur lors du chargement du pipeline');
-        showToast({
+        showToastRef.current({
           message: appError.message || 'Erreur lors du chargement du pipeline',
           type: 'error',
         });
@@ -122,14 +128,14 @@ function PipelineDetailContent() {
     };
     
     loadPipeline();
-  }, [pipelineId, showToast]);
+  }, [pipelineId]);
 
   // Load opportunities (mock data pour l'instant)
   useEffect(() => {
     if (!pipelineId) return;
     
     // TODO: Remplacer par un appel API réel
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       const mockOpportunities: Opportunite[] = [
         {
           id: 'opp-1',
@@ -152,6 +158,8 @@ function PipelineDetailContent() {
       ];
       setOpportunities(mockOpportunities);
     }, 300);
+    
+    return () => clearTimeout(timeoutId);
   }, [pipelineId]);
 
   const handleBack = () => {
