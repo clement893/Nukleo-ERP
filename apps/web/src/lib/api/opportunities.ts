@@ -30,6 +30,7 @@ export interface Opportunity {
   opened_at?: string | null;
   closed_at?: string | null;
   contact_names: string[];
+  contact_ids: number[];
   created_at: string;
   updated_at: string;
 }

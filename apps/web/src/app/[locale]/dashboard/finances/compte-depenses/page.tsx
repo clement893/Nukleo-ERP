@@ -122,8 +122,10 @@ function CompteDepensesContent() {
     return Array.from(monthSet)
       .sort((a, b) => b.localeCompare(a))
       .map((monthKey) => {
-        const [year, month] = monthKey.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const parts = monthKey.split('-');
+        const year = parts[0] || '2024';
+        const month = parts[1] || '01';
+        const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
         const monthLabel = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
         const capitalizedLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
         return {

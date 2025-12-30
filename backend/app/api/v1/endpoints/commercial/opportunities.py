@@ -252,8 +252,9 @@ async def list_opportunities(
     # Convert to response format
     opportunity_list = []
     for opp in opportunities:
-        # Get contact names
+        # Get contact names and IDs
         contact_names = [f"{c.first_name} {c.last_name}" for c in opp.contacts] if opp.contacts else []
+        contact_ids = [c.id for c in opp.contacts] if opp.contacts else []
         
         opportunity_dict = {
             "id": opp.id,
@@ -279,6 +280,7 @@ async def list_opportunities(
             "opened_at": opp.opened_at,
             "closed_at": opp.closed_at,
             "contact_names": contact_names,
+            "contact_ids": contact_ids,
             "created_at": opp.created_at,
             "updated_at": opp.updated_at,
         }
@@ -327,8 +329,9 @@ async def get_opportunity(
             detail="Opportunity not found"
         )
     
-    # Get contact names
+    # Get contact names and IDs
     contact_names = [f"{c.first_name} {c.last_name}" for c in opportunity.contacts] if opportunity.contacts else []
+    contact_ids = [c.id for c in opportunity.contacts] if opportunity.contacts else []
     
     # Convert to response format
     opportunity_dict = {
@@ -356,6 +359,7 @@ async def get_opportunity(
         "opened_at": opportunity.opened_at,
         "closed_at": opportunity.closed_at,
         "contact_names": contact_names,
+        "contact_ids": contact_ids,
         "created_at": opportunity.created_at,
         "updated_at": opportunity.updated_at,
     }
@@ -461,8 +465,9 @@ async def create_opportunity(
     # Load relationships
     await db.refresh(opportunity, ["pipeline", "stage", "company", "assigned_to", "created_by", "contacts"])
     
-    # Get contact names
+    # Get contact names and IDs
     contact_names = [f"{c.first_name} {c.last_name}" for c in opportunity.contacts] if opportunity.contacts else []
+    contact_ids = [c.id for c in opportunity.contacts] if opportunity.contacts else []
     
     # Convert to response format
     opportunity_dict = {
@@ -490,6 +495,7 @@ async def create_opportunity(
         "opened_at": opportunity.opened_at,
         "closed_at": opportunity.closed_at,
         "contact_names": contact_names,
+        "contact_ids": contact_ids,
         "created_at": opportunity.created_at,
         "updated_at": opportunity.updated_at,
     }
@@ -594,8 +600,9 @@ async def update_opportunity(
     await db.refresh(opportunity)
     await db.refresh(opportunity, ["pipeline", "stage", "company", "assigned_to", "created_by", "contacts"])
     
-    # Get contact names
+    # Get contact names and IDs
     contact_names = [f"{c.first_name} {c.last_name}" for c in opportunity.contacts] if opportunity.contacts else []
+    contact_ids = [c.id for c in opportunity.contacts] if opportunity.contacts else []
     
     # Convert to response format
     opportunity_dict = {
@@ -623,6 +630,7 @@ async def update_opportunity(
         "opened_at": opportunity.opened_at,
         "closed_at": opportunity.closed_at,
         "contact_names": contact_names,
+        "contact_ids": contact_ids,
         "created_at": opportunity.created_at,
         "updated_at": opportunity.updated_at,
     }

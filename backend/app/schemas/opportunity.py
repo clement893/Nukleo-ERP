@@ -80,6 +80,7 @@ class Opportunity(OpportunityBase):
     assigned_to_name: Optional[str] = None
     created_by_name: Optional[str] = None
     contact_names: List[str] = Field(default_factory=list)
+    contact_ids: List[int] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

@@ -14,6 +14,8 @@ import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 
 import { useToast } from '@/components/ui';
 import { opportunitiesAPI } from '@/lib/api/opportunities';
 import { pipelinesAPI, type Pipeline, type PipelineStage } from '@/lib/api/pipelines';
+import { contactsAPI, type Contact } from '@/lib/api/contacts';
+import { companiesAPI, type Company } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 
 interface Opportunite {
@@ -25,9 +27,12 @@ interface Opportunite {
   expected_close_date?: string;
   pipeline_id: string;
   stage_id?: string;
-  contact_id?: string;
-  company_id?: string;
-  assigned_to_id?: string;
+  contact_ids?: number[];
+  company_id?: number;
+  assigned_to_id?: number;
+  contact_names?: string[];
+  company_name?: string;
+  company_logo_url?: string;
 }
 
 function PipelineDetailContent() {
@@ -47,6 +52,10 @@ function PipelineDetailContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingOpportunityId, setDeletingOpportunityId] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
   
   // Modals
   const [showOpportunityModal, setShowOpportunityModal] = useState(false);
@@ -63,7 +72,7 @@ function PipelineDetailContent() {
     amount: '',
     probability: '',
     expected_close_date: '',
-    contact_id: '',
+    contact_ids: [] as number[],
     company_id: '',
     assigned_to_id: '',
   });
@@ -130,37 +139,56 @@ function PipelineDetailContent() {
     loadPipeline();
   }, [pipelineId]);
 
-  // Load opportunities (mock data pour l'instant)
+  // Load opportunities
   useEffect(() => {
     if (!pipelineId) return;
     
-    // TODO: Remplacer par un appel API réel
-    const timeoutId = setTimeout(() => {
-      const mockOpportunities: Opportunite[] = [
-        {
-          id: 'opp-1',
-          name: 'Nouveau client potentiel',
-          description: 'Client intéressé par nos services',
-          amount: 50000,
-          probability: 60,
-          pipeline_id: pipelineId,
-          stage_id: 'stage-2',
-        },
-        {
-          id: 'opp-2',
-          name: 'Renouvellement contrat',
-          description: 'Renouvellement annuel',
-          amount: 30000,
-          probability: 80,
-          pipeline_id: pipelineId,
-          stage_id: 'stage-4',
-        },
-      ];
-      setOpportunities(mockOpportunities);
-    }, 300);
+    const loadOpportunities = async () => {
+      try {
+        const opps = await opportunitiesAPI.list(0, 1000, { pipeline_id: pipelineId });
+        setOpportunities(opps);
+      } catch (err) {
+        const appError = handleApiError(err);
+        setError(appError.message || 'Erreur lors du chargement des opportunités');
+      }
+    };
     
-    return () => clearTimeout(timeoutId);
+    loadOpportunities();
   }, [pipelineId]);
+
+  // Load contacts
+  useEffect(() => {
+    const loadContacts = async () => {
+      try {
+        setLoadingContacts(true);
+        const contactsList = await contactsAPI.list(0, 1000);
+        setContacts(contactsList);
+      } catch (err) {
+        console.error('Error loading contacts:', err);
+      } finally {
+        setLoadingContacts(false);
+      }
+    };
+    
+    loadContacts();
+  }, []);
+
+  // Load companies
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        setLoadingCompanies(true);
+        const companiesList = await companiesAPI.list(0, 1000);
+        setCompanies(companiesList);
+      } catch (err) {
+        console.error('Error loading companies:', err);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+    
+    loadCompanies();
+  }, []);
 
   const handleBack = () => {
     const locale = window.location.pathname.split('/')[1] || 'fr';
@@ -180,22 +208,32 @@ function PipelineDetailContent() {
     });
   };
 
-  const handleCardClick = (card: KanbanCard) => {
+  const handleCardClick = async (card: KanbanCard) => {
     const opportunity = opportunities.find(opp => opp.id === card.id);
     if (opportunity) {
-      setEditingOpportunity(opportunity);
-      setSelectedStageStatus(opportunity.stage_id || null);
-      setOpportunityForm({
-        name: opportunity.name,
-        description: opportunity.description || '',
-        amount: opportunity.amount?.toString() || '',
-        probability: opportunity.probability?.toString() || '',
-        expected_close_date: opportunity.expected_close_date || '',
-        contact_id: opportunity.contact_id || '',
-        company_id: opportunity.company_id || '',
-        assigned_to_id: opportunity.assigned_to_id || '',
-      });
-      setShowOpportunityModal(true);
+      // Load full opportunity details to get contact_ids
+      try {
+        const fullOpp = await opportunitiesAPI.get(opportunity.id);
+        setEditingOpportunity(fullOpp);
+        setSelectedStageStatus(fullOpp.stage_id || null);
+        setOpportunityForm({
+          name: fullOpp.name,
+          description: fullOpp.description || '',
+          amount: fullOpp.amount?.toString() || '',
+          probability: fullOpp.probability?.toString() || '',
+          expected_close_date: fullOpp.expected_close_date ? new Date(fullOpp.expected_close_date).toISOString().split('T')[0] : '',
+          contact_ids: fullOpp.contact_ids || [],
+          company_id: fullOpp.company_id?.toString() || '',
+          assigned_to_id: fullOpp.assigned_to_id?.toString() || '',
+        });
+        setShowOpportunityModal(true);
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({
+          message: appError.message || 'Erreur lors du chargement de l\'opportunité',
+          type: 'error',
+        });
+      }
     }
   };
 
@@ -207,7 +245,7 @@ function PipelineDetailContent() {
       amount: '',
       probability: '',
       expected_close_date: '',
-      contact_id: '',
+      contact_ids: [],
       company_id: '',
       assigned_to_id: '',
     });
@@ -218,43 +256,58 @@ function PipelineDetailContent() {
   const handleSaveOpportunity = async () => {
     if (!pipelineId) return;
     
-    // TODO: Appel API pour créer/modifier l'opportunité
-    if (editingOpportunity) {
-      // Update
-      setOpportunities(prev => prev.map(opp => 
-        opp.id === editingOpportunity.id 
-          ? {
-              ...opp,
-              name: opportunityForm.name,
-              description: opportunityForm.description,
-              amount: opportunityForm.amount ? parseFloat(opportunityForm.amount) : undefined,
-              probability: opportunityForm.probability ? parseInt(opportunityForm.probability) : undefined,
-              expected_close_date: opportunityForm.expected_close_date || undefined,
-              stage_id: selectedStageStatus || opp.stage_id,
-            }
-          : opp
-      ));
-      showToast({ message: 'Opportunité modifiée avec succès', type: 'success' });
-    } else {
-      // Create
-      const newOpportunity: Opportunite = {
-        id: Date.now().toString(),
-        name: opportunityForm.name,
-        description: opportunityForm.description,
-        amount: opportunityForm.amount ? parseFloat(opportunityForm.amount) : undefined,
-        probability: opportunityForm.probability ? parseInt(opportunityForm.probability) : undefined,
-        expected_close_date: opportunityForm.expected_close_date || undefined,
-        pipeline_id: pipelineId,
-        stage_id: selectedStageStatus || undefined,
-        contact_id: opportunityForm.contact_id || undefined,
-        company_id: opportunityForm.company_id || undefined,
-        assigned_to_id: opportunityForm.assigned_to_id || undefined,
-      };
-      setOpportunities(prev => [...prev, newOpportunity]);
-      showToast({ message: 'Opportunité créée avec succès', type: 'success' });
+    try {
+      if (editingOpportunity) {
+        // Update
+        const updateData = {
+          name: opportunityForm.name,
+          description: opportunityForm.description || null,
+          amount: opportunityForm.amount ? parseFloat(opportunityForm.amount) : null,
+          probability: opportunityForm.probability ? parseInt(opportunityForm.probability) : null,
+          expected_close_date: opportunityForm.expected_close_date ? new Date(opportunityForm.expected_close_date).toISOString() : null,
+          stage_id: selectedStageStatus || null,
+          company_id: opportunityForm.company_id ? parseInt(opportunityForm.company_id) : null,
+          assigned_to_id: opportunityForm.assigned_to_id ? parseInt(opportunityForm.assigned_to_id) : null,
+          contact_ids: opportunityForm.contact_ids.length > 0 ? opportunityForm.contact_ids : null,
+        };
+        
+        await opportunitiesAPI.update(editingOpportunity.id, updateData);
+        showToast({ message: 'Opportunité modifiée avec succès', type: 'success' });
+        
+        // Reload opportunities
+        const opps = await opportunitiesAPI.list(0, 1000, { pipeline_id: pipelineId });
+        setOpportunities(opps);
+      } else {
+        // Create
+        const createData = {
+          name: opportunityForm.name,
+          description: opportunityForm.description || null,
+          amount: opportunityForm.amount ? parseFloat(opportunityForm.amount) : null,
+          probability: opportunityForm.probability ? parseInt(opportunityForm.probability) : null,
+          expected_close_date: opportunityForm.expected_close_date ? new Date(opportunityForm.expected_close_date).toISOString() : null,
+          pipeline_id: pipelineId,
+          stage_id: selectedStageStatus || null,
+          company_id: opportunityForm.company_id ? parseInt(opportunityForm.company_id) : null,
+          assigned_to_id: opportunityForm.assigned_to_id ? parseInt(opportunityForm.assigned_to_id) : null,
+          contact_ids: opportunityForm.contact_ids.length > 0 ? opportunityForm.contact_ids : undefined,
+        };
+        
+        await opportunitiesAPI.create(createData);
+        showToast({ message: 'Opportunité créée avec succès', type: 'success' });
+        
+        // Reload opportunities
+        const opps = await opportunitiesAPI.list(0, 1000, { pipeline_id: pipelineId });
+        setOpportunities(opps);
+      }
+      setShowOpportunityModal(false);
+      setSelectedStageStatus(null);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la sauvegarde',
+        type: 'error',
+      });
     }
-    setShowOpportunityModal(false);
-    setSelectedStageStatus(null);
   };
 
   const handleDeleteOpportunity = async () => {
@@ -562,6 +615,49 @@ function PipelineDetailContent() {
               placeholder="Sélectionner une étape"
             />
           )}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Entreprise
+            </label>
+            <select
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+              value={opportunityForm.company_id}
+              onChange={(e) => setOpportunityForm({ ...opportunityForm, company_id: e.target.value })}
+              disabled={loadingCompanies}
+            >
+              <option value="">Aucune entreprise</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id.toString()}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Contacts
+            </label>
+            <select
+              multiple
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[100px]"
+              value={opportunityForm.contact_ids.map(id => id.toString())}
+              onChange={(e) => {
+                const selectedIds = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+                setOpportunityForm({ ...opportunityForm, contact_ids: selectedIds });
+              }}
+              disabled={loadingContacts}
+            >
+              {contacts.map((contact) => (
+                <option key={contact.id} value={contact.id.toString()}>
+                  {contact.first_name} {contact.last_name}
+                  {contact.company_name && ` - ${contact.company_name}`}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs contacts
+            </p>
+          </div>
           <div className="flex justify-between items-center">
             {editingOpportunity && (
               <Button 
