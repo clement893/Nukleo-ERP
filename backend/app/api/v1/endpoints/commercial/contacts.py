@@ -293,6 +293,7 @@ async def list_contacts(
             "circle": contact.circle,
             "linkedin": contact.linkedin,
             "photo_url": photo_url,
+            "logo_filename": contact.logo_filename,
             "email": contact.email,
             "phone": contact.phone,
             "city": contact.city,
@@ -358,8 +359,9 @@ async def get_contact(
         "position": contact.position,
         "circle": contact.circle,
         "linkedin": contact.linkedin,
-        "photo_url": photo_url,
-        "email": contact.email,
+            "photo_url": photo_url,
+            "logo_filename": contact.logo_filename,
+            "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
         "country": contact.country,
@@ -466,8 +468,9 @@ async def create_contact(
         "position": contact.position,
         "circle": contact.circle,
         "linkedin": contact.linkedin,
-        "photo_url": photo_url,
-        "email": contact.email,
+            "photo_url": photo_url,
+            "logo_filename": contact.logo_filename,
+            "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
         "country": contact.country,
@@ -580,8 +583,9 @@ async def update_contact(
         "position": contact.position,
         "circle": contact.circle,
         "linkedin": contact.linkedin,
-        "photo_url": photo_url,
-        "email": contact.email,
+            "photo_url": photo_url,
+            "logo_filename": contact.logo_filename,
+            "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
         "country": contact.country,
@@ -699,6 +703,7 @@ async def import_contacts(
     - Language: language, langue, lang, idioma
     - Employee ID: employee_id, id_employé, id_employe, employé_id, employe_id, employee id, id employee, responsable_id, responsable id, assigned_to_id, assigned to id
     - Photo URL: photo_url, photo, photo url, url photo, image_url, image url, avatar, avatar_url, avatar url
+    - Logo Filename: logo_filename, photo_filename, nom_fichier_photo (for matching photos in ZIP during import)
     
     Features:
     - Automatic company matching by name (exact, without legal form, or partial match)
@@ -1086,8 +1091,8 @@ async def import_contacts(
                             f"{first_name_normalized}{last_name_normalized}.jpg",
                             f"{first_name_normalized}{last_name_normalized}.jpeg",
                             f"{first_name_normalized}{last_name_normalized}.png",
-                            # From Excel column
-                            row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
+                            # From Excel column (logo_filename, photo_filename, nom_fichier_photo)
+                            get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']),
                         ]
                         
                         uploaded_photo_url = None
@@ -1096,7 +1101,12 @@ async def import_contacts(
                         logger.debug(f"Trying patterns: {photo_filename_patterns[:5]}...")
                         
                         # First, try exact match from Excel column if provided
-                        excel_photo_filename = row_data.get('photo_filename') or row_data.get('nom_fichier_photo')
+                        excel_photo_filename = (
+                            get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']) or
+                            row_data.get('logo_filename') or 
+                            row_data.get('photo_filename') or 
+                            row_data.get('nom_fichier_photo')
+                        )
                         if excel_photo_filename:
                             excel_photo_normalized = normalize_filename(excel_photo_filename)
                             if excel_photo_filename.lower() in photos_dict:
@@ -1400,6 +1410,9 @@ async def import_contacts(
                         'data': {'employee_id_raw': employee_id_raw}
                     })
             
+                # Get logo_filename for photo matching
+                logo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
+                
                 # Prepare contact data
                 contact_data = ContactCreate(
                 first_name=first_name,
@@ -1409,6 +1422,7 @@ async def import_contacts(
                 circle=circle,
                 linkedin=linkedin,
                 photo_url=photo_url,  # Store file_key, not presigned URL
+                logo_filename=logo_filename,  # Store filename for photo matching
                 email=email,
                 phone=phone,
                 city=city,
@@ -1497,6 +1511,7 @@ async def import_contacts(
                     "circle": contact.circle,
                     "linkedin": contact.linkedin,
                     "photo_url": regenerate_photo_url(contact.photo_url, contact.id),
+                    "logo_filename": contact.logo_filename,
                     "email": contact.email,
                     "phone": contact.phone,
                     "city": contact.city,

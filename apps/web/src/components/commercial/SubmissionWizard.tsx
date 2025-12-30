@@ -6,7 +6,7 @@ import { Company } from '@/lib/api/companies';
 import { companiesAPI } from '@/lib/api/companies';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui';
-import { ChevronLeft, ChevronRight, Check, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, FileText, Save } from 'lucide-react';
 import SubmissionCoverPage from './submission/CoverPage';
 import SubmissionContext from './submission/Context';
 import SubmissionIntroduction from './submission/Introduction';
@@ -67,6 +67,7 @@ export interface SubmissionWizardData {
 interface SubmissionWizardProps {
   onSubmit: (data: SubmissionCreate) => Promise<Submission | void>;
   onCancel: () => void;
+  onSaveDraft?: (data: SubmissionCreate) => Promise<Submission | void>;
   loading?: boolean;
 }
 
@@ -83,6 +84,7 @@ const STEPS = [
 export default function SubmissionWizard({
   onSubmit,
   onCancel,
+  onSaveDraft,
   loading = false,
 }: SubmissionWizardProps) {
   const { showToast } = useToast();
@@ -151,35 +153,9 @@ export default function SubmissionWizard({
     }
   };
 
-  const handleSubmit = async () => {
-    // Validate required fields
-    const missingFields: string[] = [];
-    
-    if (!formData.coverTitle || formData.coverTitle.trim() === '') {
-      missingFields.push('Titre principal');
-    }
-    
-    if (!formData.companyId) {
-      missingFields.push('Client');
-    }
-    
-    if (missingFields.length > 0) {
-      // Navigate to cover page if missing fields are there
-      if (!formData.coverTitle || !formData.companyId) {
-        setCurrentStep(0);
-      }
-      
-      const fieldsList = missingFields.join(', ');
-      showToast({
-        message: `Veuillez remplir les champs obligatoires suivants : ${fieldsList}`,
-        type: 'error',
-      });
-      return;
-    }
-
-    // Prepare submission data
-    const submissionData: SubmissionCreate = {
-      title: formData.coverTitle,
+  const prepareSubmissionData = (): SubmissionCreate => {
+    return {
+      title: formData.coverTitle || 'Brouillon sans titre',
       company_id: formData.companyId,
       type: formData.type || 'proposal',
       description: formData.introduction,
@@ -208,6 +184,61 @@ export default function SubmissionWizard({
       status: 'draft',
       deadline: formData.deadline,
     };
+  };
+
+  const handleSaveDraft = async () => {
+    if (!onSaveDraft) {
+      showToast({
+        message: 'La sauvegarde de brouillon n\'est pas disponible',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      const submissionData = prepareSubmissionData();
+      await onSaveDraft(submissionData);
+      showToast({
+        message: 'Brouillon sauvegardé avec succès',
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        message: 'Erreur lors de la sauvegarde du brouillon',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validate required fields
+    const missingFields: string[] = [];
+    
+    if (!formData.coverTitle || formData.coverTitle.trim() === '') {
+      missingFields.push('Titre principal');
+    }
+    
+    if (!formData.companyId) {
+      missingFields.push('Client');
+    }
+    
+    if (missingFields.length > 0) {
+      // Navigate to cover page if missing fields are there
+      if (!formData.coverTitle || !formData.companyId) {
+        setCurrentStep(0);
+      }
+      
+      const fieldsList = missingFields.join(', ');
+      showToast({
+        message: `Veuillez remplir les champs obligatoires suivants : ${fieldsList}`,
+        type: 'error',
+      });
+      return;
+    }
+
+    // Prepare submission data
+    const submissionData = prepareSubmissionData();
+    submissionData.status = 'draft'; // Keep as draft initially
 
     const createdSubmission = await onSubmit(submissionData);
     
@@ -288,7 +319,7 @@ export default function SubmissionWizard({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Progress Steps */}
       <div className="flex items-center justify-between border-b border-border pb-4">
         {STEPS.map((step, index) => {
@@ -355,6 +386,17 @@ export default function SubmissionWizard({
         </Button>
         
         <div className="flex gap-2">
+          {onSaveDraft && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={loading}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Sauvegarder le brouillon
+            </Button>
+          )}
           {currentStep < STEPS.length - 1 ? (
             <Button
               type="button"

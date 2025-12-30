@@ -69,7 +69,7 @@ const sizeClasses = {
   md: 'md:max-w-lg',
   lg: 'md:max-w-2xl',
   xl: 'md:max-w-4xl',
-  full: 'md:max-w-full md:mx-4',
+  full: 'md:max-w-[calc(100%-2rem)] md:w-full',
 };
 
 function Modal({
@@ -228,7 +228,7 @@ function Modal({
           hasEffect('glassmorphism') ? '' : 'bg-background',
           'shadow-xl',
           'w-full h-full',
-          'md:w-auto md:h-auto md:rounded-lg',
+          size === 'full' ? 'md:w-full md:h-full md:rounded-none' : 'md:w-auto md:h-auto md:rounded-lg',
           sizeClasses[size],
           'md:max-h-[90vh] flex flex-col',
           'animate-scale-in', // Modal scale-in animation (UX/UI improvements - Batch 16)

@@ -133,6 +133,33 @@ function SoumissionsContent() {
     }
   };
 
+  // Handle save draft submission
+  const handleSaveDraftSubmission = async (submissionData: SubmissionCreate) => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Ensure status is draft
+      const draftData = { ...submissionData, status: 'draft' };
+      const createdSubmission = await submissionsAPI.create(draftData);
+      await loadSubmissions();
+      showToast({
+        message: 'Brouillon sauvegardé avec succès',
+        type: 'success',
+      });
+      return createdSubmission;
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la sauvegarde du brouillon');
+      showToast({
+        message: appError.message || 'Erreur lors de la sauvegarde du brouillon',
+        type: 'error',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle delete quote - used in DataTable actions callback (line 399)
   const handleDeleteQuote = async (quoteId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce devis ?')) {
@@ -466,11 +493,12 @@ function SoumissionsContent() {
         isOpen={showCreateSubmissionModal}
         onClose={() => setShowCreateSubmissionModal(false)}
         title="Créer une soumission"
-        size="xl"
+        size="full"
       >
         <SubmissionWizard
           onSubmit={handleCreateSubmission}
           onCancel={() => setShowCreateSubmissionModal(false)}
+          onSaveDraft={handleSaveDraftSubmission}
           loading={loading}
         />
       </Modal>

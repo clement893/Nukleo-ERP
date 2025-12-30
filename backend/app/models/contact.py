@@ -30,6 +30,7 @@ class Contact(Base):
     circle = Column(String(50), nullable=True, index=True)  # client, prospect, partenaire, fournisseur, autre
     linkedin = Column(String(500), nullable=True)
     photo_url = Column(String(1000), nullable=True)  # S3 URL
+    logo_filename = Column(String(500), nullable=True)  # Filename for photo matching during import
     email = Column(String(255), nullable=True, index=True)
     phone = Column(String(50), nullable=True)
     city = Column(String(100), nullable=True)
