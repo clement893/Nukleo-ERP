@@ -150,8 +150,8 @@ function getQuebecHolidays(year: number): Array<{ date: string; name: string }> 
 }
 
 // Jours fériés français (année 2025) - conservés pour compatibilité
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const FRENCH_HOLIDAYS_2025 = [
+// @ts-expect-error - Variable conservée pour compatibilité future
+const _FRENCH_HOLIDAYS_2025 = [
   { date: '2025-01-01', name: 'Jour de l\'an' },
   { date: '2025-04-21', name: 'Lundi de Pâques' },
   { date: '2025-05-01', name: 'Fête du Travail' },
