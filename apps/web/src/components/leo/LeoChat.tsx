@@ -11,6 +11,107 @@ import { Loader2, Send, Sparkles, User } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { LeoMessage } from '@/lib/api/leo-agent';
 
+/**
+ * Simple Markdown Content Component
+ * Renders basic markdown formatting without external dependencies
+ */
+function MarkdownContent({ content }: { content: string }) {
+  // Simple markdown rendering for basic formatting
+  // For full markdown support, consider installing react-markdown
+  const formatMarkdown = (text: string): React.ReactNode => {
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    
+    lines.forEach((line, index) => {
+      // Headers
+      if (line.startsWith('### ')) {
+        elements.push(
+          <h3 key={index} className="text-base font-semibold mt-4 mb-2">
+            {line.replace('### ', '')}
+          </h3>
+        );
+      } else if (line.startsWith('## ')) {
+        elements.push(
+          <h2 key={index} className="text-lg font-semibold mt-4 mb-2">
+            {line.replace('## ', '')}
+          </h2>
+        );
+      } else if (line.startsWith('# ')) {
+        elements.push(
+          <h1 key={index} className="text-xl font-bold mt-4 mb-2">
+            {line.replace('# ', '')}
+          </h1>
+        );
+      }
+      // Code blocks
+      else if (line.startsWith('```')) {
+        // Skip code block markers for now
+        return;
+      }
+      // Lists
+      else if (line.match(/^[-*]\s/)) {
+        elements.push(
+          <li key={index} className="ml-4 list-disc">
+            {line.replace(/^[-*]\s/, '')}
+          </li>
+        );
+      }
+      // Bold
+      else if (line.includes('**')) {
+        const parts = line.split('**');
+        const formatted = parts.map((part, i) => 
+          i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+        );
+        elements.push(<p key={index} className="mb-2">{formatted}</p>);
+      }
+      // Links
+      else if (line.match(/\[([^\]]+)\]\(([^)]+)\)/)) {
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        const parts: React.ReactNode[] = [];
+        let lastIndex = 0;
+        let match;
+        let key = 0;
+        
+        while ((match = linkRegex.exec(line)) !== null) {
+          if (match.index > lastIndex) {
+            parts.push(line.substring(lastIndex, match.index));
+          }
+          parts.push(
+            <a
+              key={key++}
+              href={match[2]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 dark:text-primary-400 underline"
+            >
+              {match[1]}
+            </a>
+          );
+          lastIndex = linkRegex.lastIndex;
+        }
+        if (lastIndex < line.length) {
+          parts.push(line.substring(lastIndex));
+        }
+        elements.push(<p key={index} className="mb-2">{parts}</p>);
+      }
+      // Regular paragraphs
+      else if (line.trim()) {
+        elements.push(
+          <p key={index} className="mb-2">
+            {line}
+          </p>
+        );
+      } else {
+        elements.push(<br key={index} />);
+      }
+    });
+    
+    return <>{elements}</>;
+  };
+  
+  return <div>{formatMarkdown(content)}</div>;
+}
+
 interface LeoChatProps {
   conversationId: number | null;
   messages: LeoMessage[];
@@ -72,9 +173,15 @@ export function LeoChat({ messages, isLoading, onSendMessage }: LeoChatProps) {
                   : 'bg-muted text-foreground'
               )}
             >
-              <div className="text-sm whitespace-pre-wrap break-words">
-                {message.content}
-              </div>
+              {message.role === 'assistant' ? (
+                <div className="text-sm prose prose-sm dark:prose-invert max-w-none break-words">
+                  <MarkdownContent content={message.content} />
+                </div>
+              ) : (
+                <div className="text-sm whitespace-pre-wrap break-words">
+                  {message.content}
+                </div>
+              )}
               <div
                 className={clsx(
                   'text-xs mt-2',
