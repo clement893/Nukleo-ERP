@@ -11,8 +11,8 @@
  * - Dashboard
  */
 
-// Re-export ERP Portal API as unified ERP API
-export {
+// Import ERP Portal API
+import {
   erpPortalAPI,
   type ERPDashboardStats,
   type ERPInvoice,
@@ -28,6 +28,26 @@ export {
   type ERPReport,
   type ERPReportListResponse,
 } from './erp-portal';
+
+// Re-export types
+export type {
+  ERPDashboardStats,
+  ERPInvoice,
+  ERPInvoiceListResponse,
+  ERPClient,
+  ERPClientListResponse,
+  ERPOrder,
+  ERPOrderListResponse,
+  ERPInventoryProduct,
+  ERPInventoryProductListResponse,
+  ERPInventoryMovement,
+  ERPInventoryMovementListResponse,
+  ERPReport,
+  ERPReportListResponse,
+};
+
+// Re-export API
+export { erpPortalAPI };
 
 // Alias for convenience
 export const erpAPI = erpPortalAPI;
