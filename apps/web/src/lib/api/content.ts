@@ -12,17 +12,18 @@
  * - Tags (Tags and categories)
  */
 
+// Import for unified interface
+import { pagesAPI } from './pages';
+import { postsAPI } from './posts';
+import { formsAPI, menusAPI } from '../api';
+import { mediaAPI } from './media';
+
 // Re-export individual APIs
 export { pagesAPI } from './pages';
+export { postsAPI } from './posts';
 export { formsAPI } from '../api'; // From main api.ts
 export { menusAPI } from '../api'; // From main api.ts
 export { mediaAPI } from './media';
-
-// Import for unified interface
-import { pagesAPI } from './pages';
-import { formsAPI, menusAPI } from '../api';
-import { mediaAPI } from './media';
-import { postsAPI } from '../api'; // From main api.ts
 
 /**
  * Unified Content API
