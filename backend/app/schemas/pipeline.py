@@ -90,9 +90,9 @@ class OpportuniteCreate(OpportuniteBase):
     """Schema pour création de Opportunite"""
     pipeline_id: UUID
     stage_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
-    company_id: Optional[UUID] = None
-    assigned_to_id: Optional[UUID] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_to_id: Optional[int] = None
 
 
 class OpportuniteUpdate(BaseModel):
@@ -104,9 +104,9 @@ class OpportuniteUpdate(BaseModel):
     expected_close_date: Optional[datetime] = None
     pipeline_id: Optional[UUID] = None
     stage_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
-    company_id: Optional[UUID] = None
-    assigned_to_id: Optional[UUID] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_to_id: Optional[int] = None
 
 
 class OpportuniteResponse(OpportuniteBase):
