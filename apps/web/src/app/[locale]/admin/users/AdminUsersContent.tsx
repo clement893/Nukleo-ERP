@@ -17,6 +17,8 @@ import UserRolesEditor from '@/components/admin/UserRolesEditor';
 import UserPermissionsEditor from '@/components/admin/UserPermissionsEditor';
 import RoleDefaultPermissionsEditor from '@/components/admin/RoleDefaultPermissionsEditor';
 import { useUserRoles, useUserPermissions } from '@/hooks/useRBAC';
+import { employeesAPI, type Employee } from '@/lib/api/employees';
+import { useToast } from '@/components/ui';
 
 interface User extends Record<string, unknown> {
   id: string;
@@ -26,21 +28,40 @@ interface User extends Record<string, unknown> {
   is_verified: boolean;
   is_admin?: boolean;
   created_at: string;
+  employee?: Employee;
 }
 
 export default function AdminUsersContent() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [rolesModalOpen, setRolesModalOpen] = useState(false);
   const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
+  const [employeeLinkModalOpen, setEmployeeLinkModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const [linking, setLinking] = useState(false);
 
   useEffect(() => {
     fetchUsers();
+    fetchEmployees();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await employeesAPI.list(0, 1000);
+      if (response.data) {
+        setEmployees(response.data);
+      }
+    } catch (err) {
+      // Silently fail if employees API is not available
+      console.warn('Failed to fetch employees:', err);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -93,6 +114,71 @@ export default function AdminUsersContent() {
     }
   };
 
+  const handleLinkEmployee = async () => {
+    if (!selectedUser || !selectedEmployeeId) return;
+
+    try {
+      setLinking(true);
+      setError(null);
+      
+      await employeesAPI.linkToUser(selectedEmployeeId, parseInt(selectedUser.id));
+      
+      // Refresh users and employees
+      await fetchUsers();
+      await fetchEmployees();
+      
+      setEmployeeLinkModalOpen(false);
+      setSelectedUser(null);
+      setSelectedEmployeeId('');
+      
+      showToast({
+        message: 'Employé lié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, 'Erreur lors de la liaison de l\'employé');
+      setError(errorMessage);
+      showToast({
+        message: errorMessage,
+        type: 'error',
+      });
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const handleUnlinkEmployee = async (employeeId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir délier cet employé ?')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      await employeesAPI.unlinkFromUser(employeeId);
+      
+      // Refresh users and employees
+      await fetchUsers();
+      await fetchEmployees();
+      
+      showToast({
+        message: 'Employé délié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, 'Erreur lors de la déliaison de l\'employé');
+      setError(errorMessage);
+      showToast({
+        message: errorMessage,
+        type: 'error',
+      });
+    }
+  };
+
+  // Get employee linked to a user
+  const getLinkedEmployee = (userId: string): Employee | undefined => {
+    return employees.find(emp => emp.user_id === userId);
+  };
+
   const filteredUsers = users.filter((user) =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -133,6 +219,39 @@ export default function AdminUsersContent() {
       },
     },
     {
+      key: 'employee',
+      label: 'Employé',
+      render: (_value, row) => {
+        const employee = getLinkedEmployee(row.id);
+        if (employee) {
+          return (
+            <div className="flex items-center gap-2">
+              <Badge variant="info">
+                {employee.first_name} {employee.last_name}
+              </Badge>
+              {employee.job_title && (
+                <span className="text-xs text-muted-foreground">
+                  ({employee.job_title})
+                </span>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleUnlinkEmployee(employee.id)}
+                className="ml-2 text-xs h-6 px-2"
+                title="Délier l'employé"
+              >
+                ✕
+              </Button>
+            </div>
+          );
+        }
+        return (
+          <span className="text-muted-foreground text-xs">Aucun employé lié</span>
+        );
+      },
+    },
+    {
       key: 'actions',
       label: 'Actions',
       render: (_value, row) => (
@@ -156,6 +275,18 @@ export default function AdminUsersContent() {
             }}
           >
             Permissions
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedUser(row);
+              const linkedEmployee = getLinkedEmployee(row.id);
+              setSelectedEmployeeId(linkedEmployee?.id || '');
+              setEmployeeLinkModalOpen(true);
+            }}
+          >
+            Employé
           </Button>
           <Button
             size="sm"
@@ -260,6 +391,63 @@ export default function AdminUsersContent() {
               fetchUsers();
             }}
           />
+        )}
+      </Modal>
+
+      {/* Employee Link Modal */}
+      <Modal
+        isOpen={employeeLinkModalOpen}
+        onClose={() => {
+          setEmployeeLinkModalOpen(false);
+          setSelectedUser(null);
+          setSelectedEmployeeId('');
+        }}
+        title={`Lier un employé - ${selectedUser?.email}`}
+        size="md"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Sélectionner un employé
+              </label>
+              <select
+                value={selectedEmployeeId}
+                onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">-- Aucun employé --</option>
+                {employees
+                  .filter(emp => !emp.user_id || emp.user_id === selectedUser.id)
+                  .map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.first_name} {emp.last_name}
+                      {emp.job_title && ` - ${emp.job_title}`}
+                      {emp.user_id === selectedUser.id && ' (déjà lié)'}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEmployeeLinkModalOpen(false);
+                  setSelectedUser(null);
+                  setSelectedEmployeeId('');
+                }}
+                disabled={linking}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleLinkEmployee}
+                disabled={linking || !selectedEmployeeId}
+              >
+                {linking ? 'Liaison...' : 'Lier'}
+              </Button>
+            </div>
+          </div>
         )}
       </Modal>
 

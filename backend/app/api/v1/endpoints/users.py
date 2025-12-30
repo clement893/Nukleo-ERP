@@ -26,6 +26,26 @@ from typing import Annotated
 router = APIRouter()
 
 
+# Helper function to convert UUID user_id to integer
+def uuid_to_user_id(uuid_value: Optional[str]) -> Optional[int]:
+    """Convert UUID-formatted user_id back to integer"""
+    if not uuid_value:
+        return None
+    try:
+        from uuid import UUID
+        uuid_obj = UUID(uuid_value)
+        # Extract integer from UUID format: 00000000-0000-0000-0000-{user_id:012d}
+        uuid_str = str(uuid_obj)
+        parts = uuid_str.split('-')
+        if len(parts) == 5:
+            # Last part contains the user_id as zero-padded string
+            user_id_str = parts[-1].lstrip('0') or '0'
+            return int(user_id_str)
+    except Exception:
+        pass
+    return None
+
+
 @router.get("/", response_model=PaginatedResponse[UserResponse])
 @rate_limit_decorator("100/hour")
 @cache_query(expire=300, tags=["users"])

@@ -270,11 +270,6 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             href: '/admin/teams',
             icon: <UserCog className="w-5 h-5" />,
           },
-          {
-            name: 'Rôles',
-            href: '/admin/roles',
-            icon: <Shield className="w-5 h-5" />,
-          },
         ],
         collapsible: true,
         defaultOpen: false,
