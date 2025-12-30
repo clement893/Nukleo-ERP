@@ -23,7 +23,14 @@ import ViewModeToggle from '@/components/commercial/ViewModeToggle';
 import ContactActionLink from '@/components/commercial/ContactActionLink';
 import ContactRowActions from '@/components/commercial/ContactRowActions';
 import SearchBar from '@/components/ui/SearchBar';
-import { Plus, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import { 
+  Plus, 
+  Download, 
+  Upload, 
+  FileSpreadsheet, 
+  MoreVertical, 
+  Trash2 
+} from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
