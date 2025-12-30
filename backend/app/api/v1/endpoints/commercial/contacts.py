@@ -1704,9 +1704,12 @@ async def import_contacts(
         
         # Commit all contacts
         add_import_log(import_id, f"Sauvegarde de {len(created_contacts)} contact(s) dans la base de données...", "info")
+        logger.info(f"DEBUG: About to commit {len(created_contacts)} contacts (total processed: {stats['total_processed']})")
         try:
             if created_contacts:
+                logger.info(f"DEBUG: Committing {len(created_contacts)} contacts to database")
                 await db.commit()
+                logger.info(f"DEBUG: Successfully committed {len(created_contacts)} contacts")
                 for contact in created_contacts:
                     await db.refresh(contact)
                     
