@@ -1066,6 +1066,17 @@ async def import_contacts(
         errors = []
         warnings = []
         
+        # Initialize statistics tracking
+        stats = {
+            "total_processed": 0,
+            "skipped_missing_name": 0,
+            "skipped_missing_firstname": 0,
+            "skipped_missing_lastname": 0,
+            "matched_existing": 0,
+            "created_new": 0,
+            "errors": 0
+        }
+        
         # Initialize S3 service for photo uploads
         s3_service = None
         s3_configured = S3Service.is_configured()
