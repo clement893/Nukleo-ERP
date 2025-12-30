@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Contact, ContactCreate, ContactUpdate } from '@/lib/api/contacts';
 import { mediaAPI } from '@/lib/api/media';
 import Input from '@/components/ui/Input';
@@ -47,6 +47,7 @@ export default function ContactForm({
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(contact?.photo_url || null);
   const [formData, setFormData] = useState<ContactCreate>({
     first_name: contact?.first_name || '',
     last_name: contact?.last_name || '',
@@ -72,6 +73,25 @@ export default function ContactForm({
       : ''
   );
 
+  // Sync previewUrl with contact photo_url when contact changes
+  useEffect(() => {
+    if (contact?.photo_url) {
+      setPreviewUrl(contact.photo_url);
+    } else if (!contact) {
+      // Reset preview when creating new contact
+      setPreviewUrl(null);
+    }
+  }, [contact?.photo_url, contact]);
+
+  // Cleanup local preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -85,6 +105,10 @@ export default function ContactForm({
       return;
     }
 
+    // Create local preview immediately
+    const localPreviewUrl = URL.createObjectURL(file);
+    setPreviewUrl(localPreviewUrl);
+
     setUploadingPhoto(true);
     try {
       const uploadedMedia = await mediaAPI.upload(file, {
@@ -95,12 +119,20 @@ export default function ContactForm({
       // Save file_key if available, otherwise use file_path (URL)
       // The backend will regenerate presigned URLs when needed
       const photoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
+      
+      // Revoke the local preview URL and use the server URL
+      URL.revokeObjectURL(localPreviewUrl);
+      setPreviewUrl(uploadedMedia.file_path);
       setFormData({ ...formData, photo_url: photoUrlToSave });
+      
       showToast({
         message: 'Photo uploadée avec succès',
         type: 'success',
       });
     } catch (error) {
+      // On error, remove the preview
+      URL.revokeObjectURL(localPreviewUrl);
+      setPreviewUrl(null);
       showToast({
         message: 'Erreur lors de l\'upload de la photo',
         type: 'error',
@@ -114,6 +146,11 @@ export default function ContactForm({
   };
 
   const handleRemovePhoto = () => {
+    // Revoke preview URL if it's a local object URL
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
     setFormData({ ...formData, photo_url: null });
   };
 
@@ -143,10 +180,10 @@ export default function ContactForm({
           Photo
         </label>
         <div className="flex items-center gap-4">
-          {formData.photo_url ? (
+          {previewUrl ? (
             <div className="relative">
               <img
-                src={formData.photo_url}
+                src={previewUrl}
                 alt="Contact photo"
                 className="w-20 h-20 rounded-full object-cover"
               />
@@ -179,7 +216,7 @@ export default function ContactForm({
               disabled={uploadingPhoto}
             >
               <Upload className="w-4 h-4 mr-1.5" />
-              {uploadingPhoto ? 'Upload...' : formData.photo_url ? 'Changer' : 'Ajouter'}
+              {uploadingPhoto ? 'Upload...' : previewUrl ? 'Changer' : 'Ajouter'}
             </Button>
           </div>
         </div>

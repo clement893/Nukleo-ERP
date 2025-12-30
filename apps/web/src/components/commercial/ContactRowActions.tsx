@@ -47,15 +47,14 @@ export default function ContactRowActions({
     <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
       <Dropdown
         trigger={
-          <button
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
+          <div
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted cursor-pointer"
             aria-label={`Actions pour ${contact.first_name} ${contact.last_name}`}
+            role="button"
+            tabIndex={0}
           >
             <span className="text-lg leading-none">⋯</span>
-          </button>
+          </div>
         }
         items={items}
         position="left"
