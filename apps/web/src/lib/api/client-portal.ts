@@ -119,6 +119,32 @@ export interface ClientTicketListResponse {
 }
 
 /**
+ * Client Order
+ */
+export interface ClientOrder {
+  id: number;
+  order_number: string;
+  status: string;
+  total_amount: string; // Decimal as string
+  order_date: string;
+  delivery_date?: string;
+  items_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Client Order List Response
+ */
+export interface ClientOrderListResponse {
+  items: ClientOrder[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+/**
  * Client Portal API
  * 
  * Provides methods to interact with client portal endpoints.
@@ -269,6 +295,41 @@ export const clientPortalAPI = {
     const response = await apiClient.post<ClientTicket>('/v1/client/tickets', ticketData);
     if (!response.data) {
       throw new Error('Failed to create ticket: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get list of client orders
+   * 
+   * @param params Query parameters for pagination and filtering
+   * @returns Paginated list of orders
+   * @requires CLIENT_VIEW_ORDERS permission
+   */
+  getOrders: async (params?: {
+    skip?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ClientOrderListResponse> => {
+    const response = await apiClient.get<ClientOrderListResponse>('/v1/client/orders', { params });
+    if (!response.data) {
+      throw new Error('Failed to fetch orders: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get a specific order by ID
+   * 
+   * @param orderId Order ID
+   * @returns Order details
+   * @requires CLIENT_VIEW_ORDERS permission
+   * @throws 404 if order not found or doesn't belong to client
+   */
+  getOrder: async (orderId: number): Promise<ClientOrder> => {
+    const response = await apiClient.get<ClientOrder>(`/v1/client/orders/${orderId}`);
+    if (!response.data) {
+      throw new Error('Failed to fetch order: no data returned');
     }
     return response.data;
   },

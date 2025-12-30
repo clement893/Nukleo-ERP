@@ -10,8 +10,8 @@
  * - Orders
  */
 
-// Re-export Client Portal API as unified interface
-export {
+// Import Client Portal API
+import {
   clientPortalAPI,
   type ClientDashboardStats,
   type ClientInvoice,
@@ -23,6 +23,22 @@ export {
   type ClientOrder,
   type ClientOrderListResponse,
 } from './client-portal';
+
+// Re-export types
+export type {
+  ClientDashboardStats,
+  ClientInvoice,
+  ClientInvoiceListResponse,
+  ClientProject,
+  ClientProjectListResponse,
+  ClientTicket,
+  ClientTicketListResponse,
+  ClientOrder,
+  ClientOrderListResponse,
+};
+
+// Re-export API
+export { clientPortalAPI };
 
 // Alias for convenience
 export const clientPortalModuleAPI = clientPortalAPI;
