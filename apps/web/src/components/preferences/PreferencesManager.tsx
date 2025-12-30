@@ -8,7 +8,8 @@ import { Settings, Save, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
-import { apiClient } from '@/lib/api/client';
+import Select from '@/components/ui/Select';
+import { preferencesAPI, type UserPreferences } from '@/lib/api/preferences';
 import { useToast } from '@/components/ui';
 import { getErrorMessage } from '@/lib/errors';
 import type { Locale } from '@/i18n/routing';
@@ -17,16 +18,12 @@ interface PreferencesManagerProps {
   className?: string;
 }
 
-// User preferences can have various value types (string, number, boolean, object, etc.)
-export type UserPreferenceValue = string | number | boolean | object | null | undefined | unknown;
-export type UserPreferences = Record<string, UserPreferenceValue>;
-
 export function PreferencesManager({ className = '' }: PreferencesManagerProps) {
   const pathname = usePathname();
   const currentLocale = useLocale() as Locale;
   const [preferences, setPreferences] = useState<UserPreferences>({});
   const [editedPreferences, setEditedPreferences] = useState<UserPreferences>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
 
@@ -37,23 +34,20 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
   const fetchPreferences = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<UserPreferences>('/v1/users/preferences');
-      // FastAPI returns data directly, not wrapped in ApiResponse
-      // apiClient.get returns response.data from axios, which is already the FastAPI response
-      // So response is already the data, or response.data if wrapped
-      const { extractApiData } = await import('@/lib/api/utils');
-      const data = extractApiData<UserPreferences>(response as unknown as UserPreferences | import('@modele/types').ApiResponse<UserPreferences>);
-      if (data && typeof data === 'object') {
-        // Normalize language preference key (could be 'language' or 'locale')
-        const normalizedData = { ...data };
-        if (data.locale && !data.language) {
-          normalizedData.language = data.locale;
-        }
-        setPreferences(normalizedData);
-        setEditedPreferences(normalizedData);
+      const data = await preferencesAPI.getAll();
+      // Normalize language preference key (could be 'language' or 'locale')
+      const normalizedData = { ...data };
+      if (data.locale && !data.language) {
+        normalizedData.language = data.locale;
       }
+      setPreferences(normalizedData);
+      setEditedPreferences(normalizedData);
     } catch (error) {
-      logger.error('', 'Failed to fetch preferences:', error);
+      logger.error('Failed to fetch preferences:', error instanceof Error ? error : new Error(String(error)));
+      showToast({
+        message: 'Failed to load preferences',
+        type: 'error',
+      });
       // Set empty preferences on error to prevent UI issues
       setPreferences({});
       setEditedPreferences({});
@@ -72,7 +66,7 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await apiClient.put('/v1/users/preferences', editedPreferences);
+      await preferencesAPI.setAll(editedPreferences);
       setPreferences(editedPreferences);
       
       // Check if language changed and redirect to new locale
@@ -112,6 +106,7 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
         });
       }
     } catch (error: unknown) {
+      logger.error('Failed to save preferences:', error instanceof Error ? error : new Error(String(error)));
       showToast({
         message: getErrorMessage(error) || 'Failed to save preferences',
         type: 'error',
@@ -130,7 +125,7 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
   if (isLoading) {
     return (
       <Card className={className}>
-        <div className="text-center py-8 text-gray-500">Loading preferences...</div>
+        <div className="text-center py-8 text-muted-foreground">Chargement des préférences...</div>
       </Card>
     );
   }
@@ -140,53 +135,55 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Settings className="h-5 w-5" />
-          Preferences
+          Préférences utilisateur
         </h3>
         {hasChanges && (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleReset}>
               <X className="h-4 w-4 mr-2" />
-              Reset
+              Réinitialiser
             </Button>
             <Button variant="primary" size="sm" onClick={handleSave} disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Enregistrement...' : 'Enregistrer'}
             </Button>
           </div>
         )}
       </div>
 
       <div className="space-y-4">
-        {/* Theme Preference */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Theme</label>
-          <select
-            value={(editedPreferences.theme as string) || 'system'}
-            onChange={(e) => handleChange('theme', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-            <option value="system">System</option>
-          </select>
-        </div>
-
         {/* Language Preference */}
         <div>
-          <label className="block text-sm font-medium mb-2">Language</label>
-          <select
-            value={(editedPreferences.language as string) || 'en'}
+          <label className="block text-sm font-medium mb-2">Langue</label>
+          <Select
+            label=""
+            value={(editedPreferences.language as string) || currentLocale || 'fr'}
             onChange={(e) => handleChange('language', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
-          >
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-          </select>
+            options={[
+              { value: 'fr', label: 'Français' },
+              { value: 'en', label: 'English' },
+            ]}
+          />
         </div>
 
-        {/* Notifications */}
+        {/* Theme Preference */}
         <div>
-          <label className="block text-sm font-medium mb-2">Email Notifications</label>
+          <label className="block text-sm font-medium mb-2">Thème</label>
+          <Select
+            label=""
+            value={(editedPreferences.theme as string) || 'system'}
+            onChange={(e) => handleChange('theme', e.target.value)}
+            options={[
+              { value: 'light', label: 'Clair' },
+              { value: 'dark', label: 'Sombre' },
+              { value: 'system', label: 'Système' },
+            ]}
+          />
+        </div>
+
+        {/* Email Notifications */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Notifications par email</label>
           <div className="space-y-2">
             <label className="flex items-center gap-2">
               <input
@@ -195,14 +192,31 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
                 onChange={(e) => handleChange('email_notifications', e.target.checked)}
                 className="rounded"
               />
-              <span className="text-sm">Enable email notifications</span>
+              <span className="text-sm">Activer les notifications par email</span>
             </label>
           </div>
         </div>
 
+        {/* Timezone Preference */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Fuseau horaire</label>
+          <Select
+            label=""
+            value={(editedPreferences.timezone as string) || 'America/Montreal'}
+            onChange={(e) => handleChange('timezone', e.target.value)}
+            options={[
+              { value: 'America/Montreal', label: 'Montréal (EST/EDT)' },
+              { value: 'America/Toronto', label: 'Toronto (EST/EDT)' },
+              { value: 'America/New_York', label: 'New York (EST/EDT)' },
+              { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+              { value: 'UTC', label: 'UTC' },
+            ]}
+          />
+        </div>
+
         {/* Custom Preferences */}
         {Object.entries(editedPreferences).map(([key, value]) => {
-          if (['theme', 'language', 'email_notifications'].includes(key)) {
+          if (['theme', 'language', 'email_notifications', 'timezone'].includes(key)) {
             return null;
           }
           return (
@@ -218,7 +232,7 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
                     onChange={(e) => handleChange(key, e.target.checked)}
                     className="rounded"
                   />
-                  <span className="text-sm">Enabled</span>
+                  <span className="text-sm">Activé</span>
                 </label>
               ) : typeof value === 'number' ? (
                 <Input
@@ -228,7 +242,7 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
                 />
               ) : (
                 <Input
-                  value={String(value)}
+                  value={String(value || '')}
                   onChange={(e) => handleChange(key, e.target.value)}
                 />
               )}
@@ -239,7 +253,3 @@ export function PreferencesManager({ className = '' }: PreferencesManagerProps) 
     </Card>
   );
 }
-
-
-
-

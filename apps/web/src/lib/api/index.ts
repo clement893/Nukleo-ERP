@@ -76,3 +76,7 @@ export type { Contact, ContactCreate, ContactUpdate } from './contacts';
 // Re-export project tasks API
 export { projectTasksAPI } from './project-tasks';
 export type { ProjectTask, ProjectTaskCreate, ProjectTaskUpdate, TaskStatus, TaskPriority } from './project-tasks';
+
+// Re-export preferences API
+export { preferencesAPI } from './preferences';
+export type { UserPreferences, PreferenceResponse } from './preferences';
