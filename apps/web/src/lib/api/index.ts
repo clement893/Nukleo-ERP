@@ -145,6 +145,13 @@ export type {
 // Re-export content module API (unified)
 export { contentAPI, pagesAPI, mediaAPI, formsAPI, menusAPI } from './content';
 
+// Re-export themes module API (unified)
+export { themesAPI } from './themes';
+export * from './theme';
+
+// Re-export analytics module API (unified)
+export { analyticsModuleAPI, analyticsAPI, insightsAPI, reportsAPI } from './analytics-unified';
+
 // Re-export Leo module API (unified)
 export { leoAPI, leoAgentAPI, leoDocumentationAPI } from './leo';
 export type {

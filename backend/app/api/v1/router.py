@@ -15,6 +15,8 @@ from app.modules.finances.api import router as finances_module_router
 from app.modules.projects.api import router as projects_module_router
 from app.modules.management.api import router as management_module_router
 from app.modules.content.api import router as content_module_router
+from app.modules.themes.api import router as themes_module_router
+from app.modules.analytics.api import router as analytics_module_router
 from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
 from app.modules.client_portal.api import router as client_portal_module_router
 from app.modules.agenda.api import router as agenda_module_router
@@ -89,6 +91,10 @@ api_router.include_router(
     prefix="/theme-fonts",
     tags=["theme-fonts"]
 )
+
+# Register themes module unified router (alternative to individual routers above)
+# Uncomment to use unified router instead:
+# api_router.include_router(themes_module_router)
 
 # Register project endpoints
 api_router.include_router(
@@ -381,6 +387,10 @@ api_router.include_router(
     analytics.router,
     tags=["analytics"]
 )
+
+# Register analytics module unified router (alternative to individual routers above)
+# Uncomment to use unified router instead:
+# api_router.include_router(analytics_module_router)
 
 # Register posts endpoints
 api_router.include_router(
