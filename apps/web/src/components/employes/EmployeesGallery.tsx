@@ -96,7 +96,7 @@ function GalleryPhoto({ employee }: { employee: Employee }) {
 
   if (isLoading && currentPhotoUrl && !imageError) {
     return (
-      <div className="w-full h-48 bg-gradient-to-br from-muted to-muted/50 animate-pulse rounded-lg flex items-center justify-center">
+      <div className="w-full aspect-[3/4] bg-gradient-to-br from-muted to-muted/50 animate-pulse rounded-lg flex items-center justify-center border-2 border-border shadow-sm">
         <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
       </div>
     );
@@ -104,7 +104,7 @@ function GalleryPhoto({ employee }: { employee: Employee }) {
 
   if (imageError || !currentPhotoUrl) {
     return (
-      <div className="w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-lg flex items-center justify-center">
+      <div className="w-full aspect-[3/4] bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-lg flex items-center justify-center border-2 border-border shadow-sm">
         {getInitials() !== '?' ? (
           <span className="text-4xl font-bold text-primary-700 dark:text-primary-300">
             {getInitials()}
@@ -117,17 +117,19 @@ function GalleryPhoto({ employee }: { employee: Employee }) {
   }
 
   return (
-    <img
-      src={currentPhotoUrl}
-      alt={`${employee.first_name} ${employee.last_name}`}
-      className={clsx(
-        'w-full h-48 object-cover rounded-lg transition-opacity duration-300',
-        isLoading ? 'opacity-0' : 'opacity-100'
-      )}
-      loading="lazy"
-      onLoad={handleImageLoad}
-      onError={() => setImageError(true)}
-    />
+    <div className="w-full aspect-[3/4] rounded-lg border-2 border-border shadow-sm overflow-hidden bg-muted">
+      <img
+        src={currentPhotoUrl}
+        alt={`${employee.first_name} ${employee.last_name}`}
+        className={clsx(
+          'w-full h-full object-cover object-center transition-opacity duration-300',
+          isLoading ? 'opacity-0' : 'opacity-100'
+        )}
+        loading="lazy"
+        onLoad={handleImageLoad}
+        onError={() => setImageError(true)}
+      />
+    </div>
   );
 }
 

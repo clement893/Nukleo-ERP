@@ -20,6 +20,7 @@ from app.models.user import User
 from app.models.company import Company
 from app.models.employee import Employee
 from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
+from sqlalchemy.orm import aliased
 from app.core.logging import logger
 from . import import_export
 
@@ -53,44 +54,42 @@ async def get_projects(
     Returns:
         List of projects
     """
-    query = select(Project).where(Project.user_id == current_user.id)
+    # Use explicit joins to avoid lazy loading issues
+    client_alias = aliased(Company)
+    responsable_alias = aliased(Employee)
+    
+    query = select(
+        Project,
+        client_alias.name.label('client_name'),
+        responsable_alias.first_name.label('responsable_first_name'),
+        responsable_alias.last_name.label('responsable_last_name')
+    ).outerjoin(client_alias, Project.client_id == client_alias.id)\
+     .outerjoin(responsable_alias, Project.responsable_id == responsable_alias.id)\
+     .where(Project.user_id == current_user.id)
     
     if status:
         query = query.where(Project.status == status)
     
     # Apply tenant scoping if tenancy is enabled
+    # Note: This works because scope_query adds a where clause on Project.team_id
     query = apply_tenant_scope(query, Project)
-    
-    # Load relationships
-    query = query.options(
-        selectinload(Project.client),
-        selectinload(Project.responsable)
-    )
     
     query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
     
     result = await db.execute(query)
-    projects = result.scalars().all()
+    rows = result.all()
     
     # Convert to response format with client and responsable names
     project_list = []
-    for project in projects:
-        # Safely access relationships - check if they exist before accessing attributes
-        client_name = None
-        if project.client:
-            try:
-                client_name = project.client.name
-            except Exception:
-                # If lazy load fails, client_name remains None
-                pass
+    for row in rows:
+        project = row[0]  # Project object
+        client_name = row[1]  # client_name from join
+        responsable_first_name = row[2]  # responsable_first_name from join
+        responsable_last_name = row[3]  # responsable_last_name from join
         
         responsable_name = None
-        if project.responsable:
-            try:
-                responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
-            except Exception:
-                # If lazy load fails or attributes don't exist, responsable_name remains None
-                pass
+        if responsable_first_name and responsable_last_name:
+            responsable_name = f"{responsable_first_name} {responsable_last_name}"
         
         project_dict = {
             "id": project.id,
