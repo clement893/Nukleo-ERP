@@ -146,17 +146,59 @@ async def list_employees(
     """
     Get list of employees
     """
-    query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
-    
+    # Handle case where user_id column might not exist yet (migration not applied)
+    # Try normal query first, fallback to explicit column selection if user_id is missing
     try:
+        query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(query)
         employees = result.scalars().all()
     except Exception as e:
-        logger.error(f"Database error in list_employees: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"A database error occurred: {str(e)}"
-        )
+        error_str = str(e).lower()
+        # Check if error is due to missing user_id column
+        if 'user_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
+            logger.warning(f"user_id column not found in database. Please run migration: alembic upgrade head. Error: {e}")
+            # Fallback: select columns explicitly excluding user_id
+            from types import SimpleNamespace
+            query = select(
+                Employee.id,
+                Employee.first_name,
+                Employee.last_name,
+                Employee.email,
+                Employee.phone,
+                Employee.linkedin,
+                Employee.photo_url,
+                Employee.photo_filename,
+                Employee.hire_date,
+                Employee.birthday,
+                Employee.created_at,
+                Employee.updated_at
+            ).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
+            result = await db.execute(query)
+            # Convert result tuples to simple objects with Employee attributes
+            employees = []
+            for row in result.all():
+                emp = SimpleNamespace(
+                    id=row[0],
+                    first_name=row[1],
+                    last_name=row[2],
+                    email=row[3],
+                    phone=row[4],
+                    linkedin=row[5],
+                    photo_url=row[6],
+                    photo_filename=row[7],
+                    hire_date=row[8],
+                    birthday=row[9],
+                    created_at=row[10],
+                    updated_at=row[11],
+                    user_id=None  # Column doesn't exist yet
+                )
+                employees.append(emp)
+        else:
+            logger.error(f"Database error in list_employees: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"A database error occurred: {str(e)}"
+            )
     
     employee_list = []
     for employee in employees:
@@ -190,17 +232,60 @@ async def get_employee(
     """
     Get a specific employee by ID
     """
+    # Handle case where user_id column might not exist yet (migration not applied)
     try:
         result = await db.execute(
             select(Employee).where(Employee.id == employee_id)
         )
         employee = result.scalar_one_or_none()
     except Exception as e:
-        logger.error(f"Database error in get_employee: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"A database error occurred: {str(e)}"
-        )
+        error_str = str(e).lower()
+        # Check if error is due to missing user_id column
+        if 'user_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
+            logger.warning(f"user_id column not found in database. Please run migration: alembic upgrade head. Error: {e}")
+            # Fallback: select columns explicitly excluding user_id
+            from types import SimpleNamespace
+            result = await db.execute(
+                select(
+                    Employee.id,
+                    Employee.first_name,
+                    Employee.last_name,
+                    Employee.email,
+                    Employee.phone,
+                    Employee.linkedin,
+                    Employee.photo_url,
+                    Employee.photo_filename,
+                    Employee.hire_date,
+                    Employee.birthday,
+                    Employee.created_at,
+                    Employee.updated_at
+                ).where(Employee.id == employee_id)
+            )
+            row = result.first()
+            if not row:
+                employee = None
+            else:
+                employee = SimpleNamespace(
+                    id=row[0],
+                    first_name=row[1],
+                    last_name=row[2],
+                    email=row[3],
+                    phone=row[4],
+                    linkedin=row[5],
+                    photo_url=row[6],
+                    photo_filename=row[7],
+                    hire_date=row[8],
+                    birthday=row[9],
+                    created_at=row[10],
+                    updated_at=row[11],
+                    user_id=None  # Column doesn't exist yet
+                )
+        else:
+            logger.error(f"Database error in get_employee: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"A database error occurred: {str(e)}"
+            )
     
     if not employee:
         raise HTTPException(

@@ -60,7 +60,7 @@ export default function EventForm({
     attendees: event?.attendees?.join(', ') || '',
     endDate: ((): string => {
       if (event?.endDate instanceof Date) {
-        return event.endDate.toISOString().split('T')[0];
+        return event.endDate.toISOString().split('T')[0] ?? '';
       }
       if (event?.endDate) {
         return String(event.endDate);

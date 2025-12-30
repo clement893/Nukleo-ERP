@@ -133,6 +133,72 @@ function CompteDepensesContent() {
     });
   }, [expenseAccounts, filterStatus, filterEmployee, debouncedSearchQuery]);
   
+  // Group expense accounts by month and employee
+  interface GroupedExpenseAccount {
+    monthKey: string; // Format: "YYYY-MM"
+    monthLabel: string; // Format: "Janvier 2024"
+    employeeId: number;
+    employeeName: string;
+    accounts: ExpenseAccount[];
+    totalAmount: number;
+    currency: string;
+  }
+  
+  const groupedExpenseAccounts = useMemo(() => {
+    const groups = new Map<string, GroupedExpenseAccount>();
+    
+    filteredExpenseAccounts.forEach((account) => {
+      // Get month from expense_period_start or created_at
+      const dateStr = account.expense_period_start || account.created_at;
+      const date = new Date(dateStr);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const monthLabelCapitalized = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+      
+      const employeeId = account.employee_id;
+      const employeeName = account.employee_name || `Employé #${employeeId}`;
+      const groupKey = `${monthKey}-${employeeId}`;
+      
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          monthKey,
+          monthLabel: monthLabelCapitalized,
+          employeeId,
+          employeeName,
+          accounts: [],
+          totalAmount: 0,
+          currency: account.currency || 'EUR',
+        });
+      }
+      
+      const group = groups.get(groupKey)!;
+      group.accounts.push(account);
+      const amount = parseFloat(account.total_amount) || 0;
+      group.totalAmount += amount;
+      // Use the most common currency or first one
+      if (!group.currency || group.currency === 'EUR') {
+        group.currency = account.currency || 'EUR';
+      }
+    });
+    
+    // Sort accounts within each group by date (most recent first)
+    groups.forEach((group) => {
+      group.accounts.sort((a, b) => {
+        const dateA = a.expense_period_start || a.created_at;
+        const dateB = b.expense_period_start || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+    });
+    
+    // Sort groups: most recent month first, then by employee name
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.monthKey !== b.monthKey) {
+        return b.monthKey.localeCompare(a.monthKey); // Descending (newest first)
+      }
+      return a.employeeName.localeCompare(b.employeeName);
+    });
+  }, [filteredExpenseAccounts]);
+  
   // Check if any filters are active
   const hasActiveFilters = !!(filterStatus.length > 0 || filterEmployee.length > 0 || debouncedSearchQuery);
   
@@ -488,26 +554,77 @@ function CompteDepensesContent() {
             <Loading />
           </div>
         </Card>
-      ) : (
+      ) : groupedExpenseAccounts.length === 0 ? (
         <Card>
-          <DataTable
-            data={filteredExpenseAccounts as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            filterable={false}
-            emptyMessage="Aucun compte de dépenses trouvé"
-            loading={loading}
-            infiniteScroll={!hasActiveFilters}
-            hasMore={hasMore && !hasActiveFilters}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-            onRowClick={(row) => {
-              setSelectedExpenseAccount(row as unknown as ExpenseAccount);
-              setShowViewModal(true);
-            }}
-          />
+          <div className="py-12 text-center text-muted-foreground">
+            Aucun compte de dépenses trouvé
+          </div>
         </Card>
+      ) : (
+        <div className="space-y-6">
+          {groupedExpenseAccounts.map((group) => (
+            <Card key={`${group.monthKey}-${group.employeeId}`} className="overflow-hidden">
+              {/* Group Header */}
+              <div className="bg-gradient-to-r from-muted/80 to-muted/50 px-6 py-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-bold text-lg">
+                          {group.accounts.length}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {group.monthLabel}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {group.employeeName}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total du mois</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">
+                      {formatCurrency(group.totalAmount.toString(), group.currency)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Group Content */}
+              <div className="p-0">
+                <DataTable
+                  data={group.accounts as unknown as Record<string, unknown>[]}
+                  columns={columns as unknown as Column<Record<string, unknown>>[]}
+                  pagination={false}
+                  searchable={false}
+                  filterable={false}
+                  emptyMessage=""
+                  loading={false}
+                  onRowClick={(row) => {
+                    setSelectedExpenseAccount(row as unknown as ExpenseAccount);
+                    setShowViewModal(true);
+                  }}
+                />
+              </div>
+            </Card>
+          ))}
+          
+          {/* Load More Button */}
+          {!hasActiveFilters && hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? 'Chargement...' : 'Charger plus'}
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Create Modal */}
