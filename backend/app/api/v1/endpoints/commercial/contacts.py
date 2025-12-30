@@ -966,67 +966,67 @@ async def import_contacts(
                                         user_id=str(current_user.id)
                                     )
                                     logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
-                                
-                                # Always store the file_key (not the presigned URL) for persistence
-                                # Presigned URLs expire, but file_key is permanent
-                                uploaded_photo_url = upload_result.get('file_key')
-                                
-                                # Validate file_key format
-                                if uploaded_photo_url:
-                                    # Ensure file_key is in correct format: contacts/photos/...
-                                    if not uploaded_photo_url.startswith('contacts/photos'):
-                                        logger.warning(f"Invalid file_key format from upload_result for {first_name} {last_name}: {uploaded_photo_url}")
-                                        # Try to fix if it's missing the prefix
-                                        if uploaded_photo_url.startswith('contacts/'):
-                                            uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
-                                        else:
-                                            uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
                                     
-                                    # Verify the file was actually uploaded by checking metadata
-                                    try:
-                                        metadata = s3_service.get_file_metadata(uploaded_photo_url)
-                                        logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
-                                    except Exception as e:
-                                        logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
-                                        uploaded_photo_url = None
-                                else:
-                                    # Fallback to URL if file_key not available, but extract key from URL
-                                    url = upload_result.get('url', '')
-                                    logger.warning(f"No file_key in upload_result for {first_name} {last_name}, trying to extract from URL: {url}")
-                                    if url and 'contacts/photos' in url:
-                                        # Extract file_key from URL
-                                        from urllib.parse import urlparse
-                                        parsed = urlparse(url)
-                                        path = parsed.path.strip('/')
-                                        if 'contacts/photos' in path:
-                                            idx = path.find('contacts/photos')
-                                            uploaded_photo_url = path[idx:]
-                                            logger.info(f"Extracted file_key from URL for {first_name} {last_name}: {uploaded_photo_url}")
+                                    # Always store the file_key (not the presigned URL) for persistence
+                                    # Presigned URLs expire, but file_key is permanent
+                                    uploaded_photo_url = upload_result.get('file_key')
+                                    
+                                    # Validate file_key format
+                                    if uploaded_photo_url:
+                                        # Ensure file_key is in correct format: contacts/photos/...
+                                        if not uploaded_photo_url.startswith('contacts/photos'):
+                                            logger.warning(f"Invalid file_key format from upload_result for {first_name} {last_name}: {uploaded_photo_url}")
+                                            # Try to fix if it's missing the prefix
+                                            if uploaded_photo_url.startswith('contacts/'):
+                                                uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
+                                            else:
+                                                uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
+                                        
+                                        # Verify the file was actually uploaded by checking metadata
+                                        try:
+                                            metadata = s3_service.get_file_metadata(uploaded_photo_url)
+                                            logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
+                                        except Exception as e:
+                                            logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
+                                            uploaded_photo_url = None
+                                    else:
+                                        # Fallback to URL if file_key not available, but extract key from URL
+                                        url = upload_result.get('url', '')
+                                        logger.warning(f"No file_key in upload_result for {first_name} {last_name}, trying to extract from URL: {url}")
+                                        if url and 'contacts/photos' in url:
+                                            # Extract file_key from URL
+                                            from urllib.parse import urlparse
+                                            parsed = urlparse(url)
+                                            path = parsed.path.strip('/')
+                                            if 'contacts/photos' in path:
+                                                path_idx = path.find('contacts/photos')
+                                                uploaded_photo_url = path[path_idx:]
+                                                logger.info(f"Extracted file_key from URL for {first_name} {last_name}: {uploaded_photo_url}")
+                                            else:
+                                                uploaded_photo_url = url
                                         else:
                                             uploaded_photo_url = url
+                                    
+                                    if uploaded_photo_url:
+                                        logger.info(f"Photo ready for {first_name} {last_name}: {pattern} -> file_key: {uploaded_photo_url}")
+                                        break
                                     else:
-                                        uploaded_photo_url = url
-                                
-                                if uploaded_photo_url:
-                                    logger.info(f"Photo ready for {first_name} {last_name}: {pattern} -> file_key: {uploaded_photo_url}")
-                                    break
-                                else:
-                                    logger.error(f"Failed to get valid file_key for {first_name} {last_name} after upload. Upload result: {upload_result}")
+                                        logger.error(f"Failed to get valid file_key for {first_name} {last_name} after upload. Upload result: {upload_result}")
+                                        warnings.append({
+                                            'row': idx + 2,
+                                            'type': 'photo_upload_failed',
+                                            'message': f"Échec de l'upload de la photo pour {first_name} {last_name}. Le contact sera créé sans photo.",
+                                            'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern}
+                                        })
+                                except Exception as e:
+                                    logger.error(f"Failed to upload photo {pattern} for {first_name} {last_name}: {e}", exc_info=True)
                                     warnings.append({
                                         'row': idx + 2,
-                                        'type': 'photo_upload_failed',
-                                        'message': f"Échec de l'upload de la photo pour {first_name} {last_name}. Le contact sera créé sans photo.",
-                                        'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern}
+                                        'type': 'photo_upload_error',
+                                        'message': f"Erreur lors de l'upload de la photo '{pattern}' pour {first_name} {last_name}: {str(e)}",
+                                        'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern, 'error': str(e)}
                                     })
-                            except Exception as e:
-                                logger.error(f"Failed to upload photo {pattern} for {first_name} {last_name}: {e}", exc_info=True)
-                                warnings.append({
-                                    'row': idx + 2,
-                                    'type': 'photo_upload_error',
-                                    'message': f"Erreur lors de l'upload de la photo '{pattern}' pour {first_name} {last_name}: {str(e)}",
-                                    'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern, 'error': str(e)}
-                                })
-                                continue
+                                    continue
                     
                         if uploaded_photo_url:
                             photo_url = uploaded_photo_url
