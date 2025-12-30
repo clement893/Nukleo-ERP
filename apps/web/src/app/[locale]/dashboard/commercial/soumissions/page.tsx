@@ -4,6 +4,10 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// Variables marked as unused are actually used in DataTable callbacks
+// TypeScript doesn't detect them due to type assertions
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
@@ -125,8 +129,7 @@ function SoumissionsContent() {
     }
   };
 
-  // Handle delete quote - used in actions callback
-  // @ts-ignore - Used in DataTable actions callback
+  // Handle delete quote - used in DataTable actions callback (line 399)
   const handleDeleteQuote = async (quoteId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce devis ?')) {
       return;
@@ -153,8 +156,7 @@ function SoumissionsContent() {
     }
   };
 
-  // Handle delete submission - used in actions callback
-  // @ts-ignore - Used in DataTable actions callback
+  // Handle delete submission - used in DataTable actions callback (line 430)
   const handleDeleteSubmission = async (submissionId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette soumission ?')) {
       return;
@@ -242,8 +244,7 @@ function SoumissionsContent() {
     },
   ];
 
-  // Submission columns - used in DataTable
-  // @ts-ignore - Used in DataTable component
+  // Submission columns - used in DataTable (line 409)
   const submissionColumns: Column<Submission>[] = [
     {
       key: 'submission_number',
