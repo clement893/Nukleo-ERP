@@ -122,7 +122,7 @@ function PipelineDetailContent() {
     };
     
     loadPipeline();
-  }, [pipelineId]);
+  }, [pipelineId, showToast]);
 
   // Load opportunities (mock data pour l'instant)
   useEffect(() => {

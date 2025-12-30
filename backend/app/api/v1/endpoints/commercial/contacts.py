@@ -1762,10 +1762,23 @@ async def import_contacts(
                     logger.error(f"Error importing contact row {idx + 2}: {str(e)}", exc_info=True)
                     # Continue processing other rows even if one fails
                     continue
+            
+            # Log after loop completes normally
+            add_import_log(import_id, f"🔍 DEBUG: Boucle terminée normalement après {iteration_count} itérations", "info", {"iteration_count": iteration_count, "expected_iterations": len(data_list)})
+            logger.info(f"DEBUG: Loop completed normally after {iteration_count} iterations, expected {len(data_list)}")
+            
+        except StopIteration as stop_error:
+            # Catch StopIteration if something consumes the iterator prematurely
+            last_idx = idx if 'idx' in locals() else -1
+            add_import_log(import_id, f"❌ ERREUR CRITIQUE: StopIteration - itérateur consommé prématurément à la ligne {last_idx + 2}: {str(stop_error)}", "error", {"error": str(stop_error), "last_processed_row": last_idx + 2, "iteration_count": iteration_count if 'iteration_count' in locals() else 0, "total_expected": len(data_list), "stats": stats.copy()})
+            logger.error(f"CRITICAL: StopIteration at row {last_idx + 2}, iteration_count={iteration_count if 'iteration_count' in locals() else 0}: {stop_error}", exc_info=True)
+            # Re-raise to ensure error is visible
+            raise
         except Exception as loop_error:
             # Catch any exception that stops the loop prematurely
-            add_import_log(import_id, f"❌ ERREUR CRITIQUE: La boucle s'est arrêtée prématurément à la ligne {idx + 2}: {str(loop_error)}", "error", {"error": str(loop_error), "last_processed_row": idx + 2, "total_expected": len(data_list), "stats": stats.copy()})
-            logger.error(f"CRITICAL: Loop stopped prematurely at row {idx + 2}: {loop_error}", exc_info=True)
+            last_idx = idx if 'idx' in locals() else -1
+            add_import_log(import_id, f"❌ ERREUR CRITIQUE: La boucle s'est arrêtée prématurément à la ligne {last_idx + 2}: {str(loop_error)}", "error", {"error": str(loop_error), "last_processed_row": last_idx + 2, "iteration_count": iteration_count if 'iteration_count' in locals() else 0, "total_expected": len(data_list), "stats": stats.copy()})
+            logger.error(f"CRITICAL: Loop stopped prematurely at row {last_idx + 2}, iteration_count={iteration_count if 'iteration_count' in locals() else 0}: {loop_error}", exc_info=True)
             # Re-raise to ensure error is visible
             raise
         
