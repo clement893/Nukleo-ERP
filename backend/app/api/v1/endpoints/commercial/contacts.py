@@ -273,8 +273,15 @@ async def list_contacts(
         selectinload(Contact.employee)
     ).order_by(Contact.created_at.desc()).offset(skip).limit(limit)
     
-    result = await db.execute(query)
-    contacts = result.scalars().all()
+    try:
+        result = await db.execute(query)
+        contacts = result.scalars().all()
+    except Exception as e:
+        logger.error(f"Database error in list_contacts: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
     
     # Convert to response format with company and employee names
     contact_list = []
@@ -293,7 +300,7 @@ async def list_contacts(
             "circle": contact.circle,
             "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": contact.logo_filename,
+            "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
             "phone": contact.phone,
             "city": contact.city,
@@ -330,15 +337,22 @@ async def get_contact(
     Raises:
         HTTPException: If contact not found
     """
-    result = await db.execute(
-        select(Contact)
-        .options(
-            selectinload(Contact.company),
-            selectinload(Contact.employee)
+    try:
+        result = await db.execute(
+            select(Contact)
+            .options(
+                selectinload(Contact.company),
+                selectinload(Contact.employee)
+            )
+            .where(Contact.id == contact_id)
         )
-        .where(Contact.id == contact_id)
-    )
-    contact = result.scalar_one_or_none()
+        contact = result.scalar_one_or_none()
+    except Exception as e:
+        logger.error(f"Database error in get_contact: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
     
     if not contact:
         raise HTTPException(
@@ -360,7 +374,7 @@ async def get_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": contact.logo_filename,
+            "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -439,6 +453,7 @@ async def create_contact(
         circle=contact_data.circle,
         linkedin=contact_data.linkedin,
         photo_url=contact_data.photo_url,
+        logo_filename=getattr(contact_data, 'logo_filename', None),
         email=contact_data.email,
         phone=contact_data.phone,
         city=contact_data.city,
@@ -469,7 +484,7 @@ async def create_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": contact.logo_filename,
+            "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -584,7 +599,7 @@ async def update_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": contact.logo_filename,
+            "logo_filename": getattr(contact, 'logo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -1511,7 +1526,7 @@ async def import_contacts(
                     "circle": contact.circle,
                     "linkedin": contact.linkedin,
                     "photo_url": regenerate_photo_url(contact.photo_url, contact.id),
-                    "logo_filename": contact.logo_filename,
+                    "logo_filename": getattr(contact, 'logo_filename', None),
                     "email": contact.email,
                     "phone": contact.phone,
                     "city": contact.city,

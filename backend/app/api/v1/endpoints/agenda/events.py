@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
+from datetime import time as dt_time
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -18,6 +19,32 @@ from app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate,
 from app.core.logging import logger
 
 router = APIRouter(prefix="/agenda/events", tags=["agenda-events"])
+
+
+def event_to_dict(event: CalendarEvent) -> dict:
+    """Convert SQLAlchemy CalendarEvent model to dict for Pydantic validation"""
+    time_str = None
+    if event.time is not None:
+        if isinstance(event.time, str):
+            time_str = event.time
+        else:
+            time_str = event.time.strftime('%H:%M:%S')
+    
+    return {
+        'id': event.id,
+        'user_id': event.user_id,
+        'title': event.title or '',
+        'description': event.description,
+        'date': event.date,
+        'end_date': event.end_date,
+        'time': time_str,
+        'type': event.type if event.type else 'other',
+        'location': event.location,
+        'attendees': event.attendees if isinstance(event.attendees, list) else None,
+        'color': event.color if event.color else '#3B82F6',
+        'created_at': event.created_at,
+        'updated_at': event.updated_at,
+    }
 
 
 @router.get("/", response_model=List[CalendarEventSchema])
@@ -75,9 +102,7 @@ async def list_events(
     if event_type:
         query = query.where(CalendarEvent.type == event_type)
     
-    query = query.options(
-        selectinload(CalendarEvent.user)
-    ).order_by(CalendarEvent.date.asc(), CalendarEvent.time.asc()).offset(skip).limit(limit)
+    query = query.order_by(CalendarEvent.date.asc(), CalendarEvent.time.asc()).offset(skip).limit(limit)
     
     try:
         result = await db.execute(query)
@@ -87,14 +112,17 @@ async def list_events(
         event_list = []
         for event in events:
             try:
-                # Use model_validate with from_attributes=True to handle SQLAlchemy model
-                # The schema's model_validator will handle the conversion of 'type' to 'event_category'
-                event_schema = CalendarEventSchema.model_validate(event, from_attributes=True)
+                # Convert SQLAlchemy model to dict first to avoid issues with relationships
+                event_dict = event_to_dict(event)
+                
+                # Use model_validate with dict to avoid SQLAlchemy relationship issues
+                event_schema = CalendarEventSchema.model_validate(event_dict)
                 event_list.append(event_schema)
             except Exception as e:
                 logger.error(f"Error validating event {event.id}: {e}", exc_info=True)
-                logger.error(f"Event data: id={event.id}, title={event.title}, date={event.date}, type={getattr(event, 'type', None)}")
-                logger.error(f"Event attributes: {dir(event)}")
+                logger.error(f"Event data: id={event.id}, title={getattr(event, 'title', None)}, date={getattr(event, 'date', None)}, type={getattr(event, 'type', None)}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 # Skip invalid events instead of failing the entire request
                 # This allows the API to return valid events even if some are corrupted
                 continue
@@ -135,8 +163,6 @@ async def get_event(
             CalendarEvent.user_id == current_user.id
         )
     )
-    query = query.options(selectinload(CalendarEvent.user))
-    
     result = await db.execute(query)
     event = result.scalar_one_or_none()
     
@@ -146,7 +172,9 @@ async def get_event(
             detail="Event not found"
         )
     
-    return CalendarEventSchema.model_validate(event)
+    # Convert SQLAlchemy model to dict first to avoid issues with relationships
+    event_dict = event_to_dict(event)
+    return CalendarEventSchema.model_validate(event_dict)
 
 
 @router.post("/", response_model=CalendarEventSchema, status_code=status.HTTP_201_CREATED)
@@ -192,7 +220,9 @@ async def create_event(
     
     logger.info(f"User {current_user.id} created calendar event {event.id}")
     
-    return CalendarEventSchema.model_validate(event)
+    # Convert SQLAlchemy model to dict first to avoid issues with relationships
+    event_dict = event_to_dict(event)
+    return CalendarEventSchema.model_validate(event_dict)
 
 
 @router.put("/{event_id}", response_model=CalendarEventSchema)
@@ -270,7 +300,9 @@ async def update_event(
     
     logger.info(f"User {current_user.id} updated calendar event {event_id}")
     
-    return CalendarEventSchema.model_validate(event)
+    # Convert SQLAlchemy model to dict first to avoid issues with relationships
+    event_dict = event_to_dict(event)
+    return CalendarEventSchema.model_validate(event_dict)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

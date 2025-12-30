@@ -19,6 +19,8 @@ class Company(Base):
         Index("idx_companies_is_client", "is_client"),
         Index("idx_companies_parent_company_id", "parent_company_id"),
         Index("idx_companies_country", "country"),
+        # Index on city will be added via migration 041
+        # Index("idx_companies_city", "city"),
     )
 
     id = Column(Integer, primary_key=True, index=True)

@@ -39,6 +39,7 @@ async def list_companies(
     limit: int = Query(100, ge=1, le=1000),
     is_client: Optional[bool] = Query(None),
     country: Optional[str] = Query(None),
+    city: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
 ) -> List[Company]:
     """
@@ -49,6 +50,7 @@ async def list_companies(
         limit: Maximum number of records to return
         is_client: Optional client filter
         country: Optional country filter
+        city: Optional city filter
         search: Optional search term
         current_user: Current authenticated user
         db: Database session
@@ -62,6 +64,8 @@ async def list_companies(
         query = query.where(Company.is_client == is_client)
     if country:
         query = query.where(Company.country == country)
+    if city:
+        query = query.where(Company.city == city)
     if search:
         search_term = f"%{search.lower()}%"
         query = query.where(
@@ -77,8 +81,15 @@ async def list_companies(
         selectinload(Company.contacts)
     ).order_by(Company.created_at.desc()).offset(skip).limit(limit)
     
-    result = await db.execute(query)
-    companies = result.scalars().all()
+    try:
+        result = await db.execute(query)
+        companies = result.scalars().all()
+    except Exception as e:
+        logger.error(f"Database error in list_companies: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
     
     # Convert to response format with additional data
     company_list = []
