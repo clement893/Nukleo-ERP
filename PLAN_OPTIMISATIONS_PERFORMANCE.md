@@ -5,35 +5,45 @@
 
 ## Structure des Batches
 
-### Batch 1: Quick Wins Backend (Critique)
+### Batch 1: Quick Wins Backend (Critique) ✅ COMPLÉTÉ
 **Objectif**: Réduire la latence backend de 50-70%  
 **Temps estimé**: 1-2 heures  
-**Impact**: 🔴 Critique
+**Impact**: 🔴 Critique  
+**Statut**: ✅ Terminé et pushé (commit: 3aac0d43)
 
-- [ ] 1.1 Supprimer vérification S3 systématique dans `regenerate_photo_url`
-- [ ] 1.2 Implémenter cache pour presigned URLs (LRU cache)
-- [ ] 1.3 Optimiser la régénération des URLs (vérifier expiration avant régénération)
-- [ ] 1.4 Tests et validation
+- [x] 1.1 Supprimer vérification S3 systématique dans `regenerate_photo_url`
+- [x] 1.2 Implémenter cache pour presigned URLs (LRU cache)
+- [x] 1.3 Optimiser la régénération des URLs (vérifier expiration avant régénération)
+- [x] 1.4 Tests et validation
 
-**Fichiers à modifier**:
+**Fichiers modifiés**:
 - `backend/app/api/v1/endpoints/commercial/contacts.py`
-- `backend/app/services/s3_service.py`
+
+**Résultats**:
+- Cache LRU avec max 1000 entrées
+- Régénération seulement si expiration < 1h
+- Suppression vérification S3 (économie 50-100ms par photo)
 
 ---
 
-### Batch 2: Quick Wins Frontend (Important)
+### Batch 2: Quick Wins Frontend (Important) ✅ COMPLÉTÉ
 **Objectif**: Améliorer l'expérience utilisateur immédiate  
 **Temps estimé**: 1 heure  
-**Impact**: 🟡 Important
+**Impact**: 🟡 Important  
+**Statut**: ✅ Terminé et pushé (commit: 33b9a451)
 
-- [ ] 2.1 Ajouter debounce sur la recherche (300ms)
-- [ ] 2.2 Désactiver rechargement automatique sur window focus
-- [ ] 2.3 Améliorer la gestion d'erreur des images (onError handler)
-- [ ] 2.4 Tests et validation
+- [x] 2.1 Ajouter debounce sur la recherche (300ms)
+- [x] 2.2 Désactiver rechargement automatique sur window focus
+- [x] 2.3 Améliorer la gestion d'erreur des images (onError handler)
+- [x] 2.4 Tests et validation
 
-**Fichiers à modifier**:
+**Fichiers modifiés**:
 - `apps/web/src/app/[locale]/dashboard/reseau/contacts/page.tsx`
-- `apps/web/src/hooks/useDebounce.ts` (vérifier existence)
+
+**Résultats**:
+- Debounce 300ms sur recherche (réduit re-renders)
+- Rechargement sur focus désactivé (évite requêtes inutiles)
+- ContactAvatar a déjà gestion d'erreur complète avec retry
 
 ---
 
