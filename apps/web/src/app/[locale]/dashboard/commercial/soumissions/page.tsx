@@ -21,6 +21,7 @@ import { useToast } from '@/components/ui';
 import { Plus, FileText, FileCheck, Eye, Trash2 } from 'lucide-react';
 import type { DropdownItem } from '@/components/ui/Dropdown';
 import MotionDiv from '@/components/motion/MotionDiv';
+import QuoteForm from '@/components/commercial/QuoteForm';
 
 type TabType = 'quotes' | 'submissions';
 
@@ -448,10 +449,12 @@ function SoumissionsContent() {
         isOpen={showCreateQuoteModal}
         onClose={() => setShowCreateQuoteModal(false)}
         title="Créer un devis"
+        size="lg"
       >
         <QuoteForm
           onSubmit={handleCreateQuote}
           onCancel={() => setShowCreateQuoteModal(false)}
+          loading={loading}
         />
       </Modal>
 
@@ -470,76 +473,6 @@ function SoumissionsContent() {
   );
 }
 
-// Simple Quote Form Component
-function QuoteForm({ onSubmit, onCancel }: { onSubmit: (data: QuoteCreate) => void; onCancel: () => void }) {
-  const [formData, setFormData] = useState<QuoteCreate>({
-    title: '',
-    description: '',
-    currency: 'EUR',
-    status: 'draft',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Titre *</label>
-        <input
-          type="text"
-          required
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-md"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Description</label>
-        <textarea
-          value={formData.description || ''}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-md"
-          rows={3}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Montant</label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.amount || ''}
-            onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || undefined })}
-            className="w-full px-3 py-2 border border-border rounded-md"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Devise</label>
-          <select
-            value={formData.currency}
-            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-            className="w-full px-3 py-2 border border-border rounded-md"
-          >
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-            <option value="CAD">CAD</option>
-          </select>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annuler
-        </Button>
-        <Button type="submit">
-          Créer
-        </Button>
-      </div>
-    </form>
-  );
-}
 
 // Simple Submission Form Component
 function SubmissionForm({ onSubmit, onCancel }: { onSubmit: (data: SubmissionCreate) => void; onCancel: () => void }) {
