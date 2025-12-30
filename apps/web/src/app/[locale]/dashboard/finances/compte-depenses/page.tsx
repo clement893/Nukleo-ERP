@@ -5,8 +5,6 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Textarea } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -20,7 +18,6 @@ import SearchBar from '@/components/ui/SearchBar';
 import MultiSelect from '@/components/ui/MultiSelect';
 import { 
   Plus, 
-  MoreVertical,
   Edit,
   Trash2,
   Send,
@@ -28,7 +25,6 @@ import {
   XCircle,
   MessageSquare,
   Eye,
-  FileText,
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -45,7 +41,6 @@ import {
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 
 function CompteDepensesContent() {
-  const router = useRouter();
   const { showToast } = useToast();
   
   // React Query hooks for expense accounts
@@ -82,7 +77,7 @@ function CompteDepensesContent() {
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterEmployee, setFilterEmployee] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showActionsMenu, setShowActionsMenu] = useState<number | null>(null);
+  const [_showActionsMenu, setShowActionsMenu] = useState<number | null>(null);
   
   // Load employees for filters and form
   const [employees, setEmployees] = useState<Employee[]>([]);

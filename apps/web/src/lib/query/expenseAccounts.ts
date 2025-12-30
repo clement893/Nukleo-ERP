@@ -3,7 +3,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate, type ExpenseAccountAction } from '../api/finances/expenseAccounts';
+import { expenseAccountsAPI, type ExpenseAccountCreate, type ExpenseAccountUpdate, type ExpenseAccountAction } from '../api/finances/expenseAccounts';
 
 // Re-export expenseAccountsAPI for convenience
 export { expenseAccountsAPI };
