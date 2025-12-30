@@ -151,14 +151,17 @@ export const clientsAPI = {
   import: async (file: File, importId?: string): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
+
+    const params: Record<string, string> = {};
     if (importId) {
-      formData.append('import_id', importId);
+      params.import_id = importId;
     }
 
     const response = await apiClient.post('/v1/projects/clients/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      params,
     });
     return extractApiData(response);
   },

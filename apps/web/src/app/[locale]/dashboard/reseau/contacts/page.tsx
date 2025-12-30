@@ -847,10 +847,10 @@ function ContactsContent() {
         >
           {currentImportId ? (
             <ImportLogsViewer
+              endpointUrl={`/v1/reseau/contacts/import/${currentImportId}/logs`}
               importId={currentImportId}
               onComplete={() => {
                 // Don't auto-close - let user close manually to review logs
-                // User can close the modal manually using the X button
               }}
             />
           ) : (

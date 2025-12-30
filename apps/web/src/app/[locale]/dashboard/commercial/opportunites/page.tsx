@@ -36,6 +36,7 @@ import {
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI } from '@/lib/api/companies';
 import ImportOpportunitiesInstructions from '@/components/commercial/ImportOpportunitiesInstructions';
+import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import { HelpCircle } from 'lucide-react';
 
 function OpportunitiesContent() {
@@ -71,6 +72,8 @@ function OpportunitiesContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showImportInstructions, setShowImportInstructions] = useState(false);
+  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
+  const [showImportLogs, setShowImportLogs] = useState(false);
   
   // Load pipelines and companies for filters
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -237,23 +240,21 @@ function OpportunitiesContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
-      const result = await opportunitiesAPI.import(file);
+      // Generate import_id before starting import
+      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentImportId(importId);
+      setShowImportLogs(true);
+      
+      const result = await opportunitiesAPI.import(file, importId);
+      
+      // Update import_id if backend returns a different one (should be the same)
+      if (result.import_id && result.import_id !== importId) {
+        setCurrentImportId(result.import_id);
+      }
       
       if (result.valid_rows > 0) {
         // Invalidate opportunities query to refetch after import
         queryClient.invalidateQueries({ queryKey: ['opportunities'] });
-        
-        showToast({
-          message: `${result.valid_rows} opportunité(s) importée(s) avec succès`,
-          type: 'success',
-        });
-      }
-      
-      if (result.invalid_rows > 0) {
-        showToast({
-          message: `${result.invalid_rows} ligne(s) avec erreur(s)`,
-          type: 'warning',
-        });
       }
     } catch (err) {
       const appError = handleApiError(err);
@@ -261,6 +262,7 @@ function OpportunitiesContent() {
         message: appError.message || 'Erreur lors de l\'import',
         type: 'error',
       });
+      setShowImportLogs(false);
     }
   };
 
@@ -717,6 +719,31 @@ function OpportunitiesContent() {
           }
         }}
       />
+      
+      {/* Import Logs Modal */}
+      {showImportLogs && (
+        <Modal
+          isOpen={showImportLogs}
+          onClose={() => setShowImportLogs(false)}
+          title="Logs d'import"
+          size="lg"
+        >
+          {currentImportId ? (
+            <ImportLogsViewer
+              endpointUrl={`/v1/commercial/opportunities/import/${currentImportId}/logs`}
+              importId={currentImportId}
+              onComplete={() => {
+                // Don't auto-close - let user close manually to review logs
+              }}
+            />
+          ) : (
+            <div className="p-4 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Initialisation de l'import...</p>
+            </div>
+          )}
+        </Modal>
+      )}
     </MotionDiv>
   );
 }

@@ -134,7 +134,7 @@ export const companiesAPI = {
   /**
    * Import companies from Excel or ZIP (Excel + logos)
    */
-  import: async (file: File): Promise<{
+  import: async (file: File, importId?: string): Promise<{
     total_rows: number;
     valid_rows: number;
     created_rows: number;
@@ -149,9 +149,15 @@ export const companiesAPI = {
     }>;
     data: Company[];
     logos_uploaded?: number;
+    import_id?: string;
   }> => {
     const formData = new FormData();
     formData.append('file', file);
+    
+    const params: Record<string, string> = {};
+    if (importId) {
+      params.import_id = importId;
+    }
     
     const response = await apiClient.post<{
       total_rows: number;
@@ -168,10 +174,12 @@ export const companiesAPI = {
       }>;
       data: Company[];
       logos_uploaded?: number;
+      import_id?: string;
     }>('/v1/commercial/companies/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      params,
     });
     
     return extractApiData(response) || {

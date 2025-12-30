@@ -24,22 +24,23 @@ interface ImportStatus {
 
 interface ImportLogsViewerProps {
   importId: string;
+  endpointUrl: string; // Full endpoint URL (e.g., '/v1/commercial/opportunities/import/{importId}/logs')
   onComplete?: () => void;
 }
 
-export default function ImportLogsViewer({ importId, onComplete }: ImportLogsViewerProps) {
+export default function ImportLogsViewer({ importId, endpointUrl, onComplete }: ImportLogsViewerProps) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    if (!importId) return;
+    if (!importId || !endpointUrl) return;
 
     // Get API URL dynamically
     const apiUrl = getApiUrl().replace(/\/$/, '');
-    // Try réseau endpoint first, fallback to commercial
-    const sseUrl = `${apiUrl}/api/v1/reseau/contacts/import/${importId}/logs`;
+    // Build SSE URL from endpointUrl prop (should already include importId in the path)
+    const sseUrl = `${apiUrl}/api${endpointUrl}`;
     
     // Add authentication token to URL if available (EventSource doesn't support custom headers)
     const token = TokenStorage.getToken();

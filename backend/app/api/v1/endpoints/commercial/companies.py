@@ -1077,8 +1077,6 @@ async def import_companies(
                         updated_companies.append(company)
                     else:
                         new_companies.append(company)
-                
-                add_import_log(import_id, f"Sauvegarde réussie: {len(new_companies)} nouvelle(s) entreprise(s), {len(updated_companies)} entreprise(s) mise(s) à jour", "success")
                     
                     # Regenerate presigned URL for logo if it exists and S3 is configured
                     if company.logo_url and s3_service:
@@ -1107,6 +1105,8 @@ async def import_companies(
                         except Exception as e:
                             logger.warning(f"Failed to generate presigned URL for company {company.id}: {e}")
                             # Keep original file_key if presigned URL generation fails
+                
+                add_import_log(import_id, f"Sauvegarde réussie: {len(new_companies)} nouvelle(s) entreprise(s), {len(updated_companies)} entreprise(s) mise(s) à jour", "success")
         except Exception as e:
             logger.error(f"Error committing companies to database: {e}", exc_info=True)
             await db.rollback()

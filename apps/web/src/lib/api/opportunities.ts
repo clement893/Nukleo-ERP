@@ -151,15 +151,21 @@ export const opportunitiesAPI = {
   /**
    * Import opportunities from Excel
    */
-  import: async (file: File): Promise<{
+  import: async (file: File, importId?: string): Promise<{
     total_rows: number;
     valid_rows: number;
     invalid_rows: number;
     errors: Array<{ row: number; data: unknown; error: string }>;
     data: Opportunity[];
+    import_id?: string;
   }> => {
     const formData = new FormData();
     formData.append('file', file);
+
+    const params: Record<string, string> = {};
+    if (importId) {
+      params.import_id = importId;
+    }
 
     const response = await apiClient.post<{
       total_rows: number;
@@ -167,10 +173,12 @@ export const opportunitiesAPI = {
       invalid_rows: number;
       errors: Array<{ row: number; data: unknown; error: string }>;
       data: Opportunity[];
+      import_id?: string;
     }>('/v1/commercial/opportunities/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      params,
     });
 
     return extractApiData(response) || {

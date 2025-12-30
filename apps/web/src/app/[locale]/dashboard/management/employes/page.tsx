@@ -34,6 +34,7 @@ import {
   Calendar
 } from 'lucide-react';
 import ImportEmployeesInstructions from '@/components/employes/ImportEmployeesInstructions';
+import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -230,25 +231,20 @@ function EmployeesContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
+      // Generate import_id before starting import
       const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentImportId(importId);
+      setShowImportLogs(true);
       
       const result = await employeesAPI.import(file, importId);
       
-      if (result.valid_rows > 0) {
-        queryClient.invalidateQueries({ queryKey: ['employees'] });
-        
-        const photosMsg = result.photos_uploaded && result.photos_uploaded > 0 ? ` (${result.photos_uploaded} photo(s) uploadée(s))` : '';
-        showToast({
-          message: `${result.valid_rows} employé(s) importé(s) avec succès${photosMsg}`,
-          type: 'success',
-        });
+      // Update import_id if backend returns a different one (should be the same)
+      if (result.import_id && result.import_id !== importId) {
+        setCurrentImportId(result.import_id);
       }
       
-      if (result.invalid_rows > 0) {
-        showToast({
-          message: `${result.invalid_rows} ligne(s) avec erreur(s)`,
-          type: 'warning',
-        });
+      if (result.valid_rows > 0) {
+        queryClient.invalidateQueries({ queryKey: ['employees'] });
       }
     } catch (err) {
       const appError = handleApiError(err);
@@ -256,6 +252,7 @@ function EmployeesContent() {
         message: appError.message || 'Erreur lors de l\'import',
         type: 'error',
       });
+      setShowImportLogs(false);
     }
   };
 
@@ -675,6 +672,31 @@ function EmployeesContent() {
           }
         }}
       />
+      
+      {/* Import Logs Modal */}
+      {showImportLogs && (
+        <Modal
+          isOpen={showImportLogs}
+          onClose={() => setShowImportLogs(false)}
+          title="Logs d'import"
+          size="lg"
+        >
+          {currentImportId ? (
+            <ImportLogsViewer
+              endpointUrl={`/v1/employes/employees/import/${currentImportId}/logs`}
+              importId={currentImportId}
+              onComplete={() => {
+                // Don't auto-close - let user close manually to review logs
+              }}
+            />
+          ) : (
+            <div className="p-4 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Initialisation de l'import...</p>
+            </div>
+          )}
+        </Modal>
+      )}
     </MotionDiv>
   );
 }

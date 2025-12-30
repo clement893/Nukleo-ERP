@@ -24,6 +24,7 @@ import {
   MoreVertical, 
   Trash2
 } from 'lucide-react';
+import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -203,33 +204,21 @@ function ProjectsContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
+      // Generate import_id before starting import
       const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentImportId(importId);
+      setShowImportLogs(true);
       
       const result = await projectsAPI.import(file, importId);
+      
+      // Update import_id if backend returns a different one (should be the same)
+      if (result.import_id && result.import_id !== importId) {
+        setCurrentImportId(result.import_id);
+      }
       
       if (result.valid_rows > 0) {
         // Invalidate projects query to refetch after import
         queryClient.invalidateQueries({ queryKey: ['projects'] });
-        
-        showToast({
-          message: `${result.valid_rows} projet(s) importé(s) avec succès`,
-          type: 'success',
-        });
-      }
-      
-      if (result.warnings && result.warnings.length > 0) {
-        showToast({
-          message: `${result.warnings.length} avertissement(s) lors de l'import`,
-          type: 'warning',
-          duration: 8000,
-        });
-      }
-      
-      if (result.invalid_rows > 0) {
-        showToast({
-          message: `${result.invalid_rows} ligne(s) avec erreur(s)`,
-          type: 'warning',
-        });
       }
     } catch (err) {
       const appError = handleApiError(err);
@@ -237,6 +226,7 @@ function ProjectsContent() {
         message: appError.message || 'Erreur lors de l\'import',
         type: 'error',
       });
+      setShowImportLogs(false);
     }
   };
 
@@ -602,6 +592,31 @@ function ProjectsContent() {
           />
         )}
       </Modal>
+      
+      {/* Import Logs Modal */}
+      {showImportLogs && (
+        <Modal
+          isOpen={showImportLogs}
+          onClose={() => setShowImportLogs(false)}
+          title="Logs d'import"
+          size="lg"
+        >
+          {currentImportId ? (
+            <ImportLogsViewer
+              endpointUrl={`/v1/projects/import/${currentImportId}/logs`}
+              importId={currentImportId}
+              onComplete={() => {
+                // Don't auto-close - let user close manually to review logs
+              }}
+            />
+          ) : (
+            <div className="p-4 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Initialisation de l'import...</p>
+            </div>
+          )}
+        </Modal>
+      )}
     </MotionDiv>
   );
 }
