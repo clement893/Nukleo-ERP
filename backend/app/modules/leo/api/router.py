@@ -5,10 +5,11 @@ Main router for Leo AI assistant module
 
 from fastapi import APIRouter
 
-from .endpoints import agent
+from .endpoints import agent, documentation
 
 # Create main router for Leo module
 router = APIRouter(prefix="/ai/leo", tags=["leo"])
 
 # Include endpoint routers
 router.include_router(agent.router)
+router.include_router(documentation.router)
