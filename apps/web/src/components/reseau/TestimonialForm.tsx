@@ -178,7 +178,7 @@ export default function TestimonialForm({
 
       {/* Published Status */}
       <div>
-        <Label htmlFor="is_published">Statut de publication</Label>
+        <label htmlFor="is_published" className="block text-sm font-medium mb-2">Statut de publication</label>
         <Select
           id="is_published"
           value={formData.is_published || 'draft'}
@@ -192,7 +192,7 @@ export default function TestimonialForm({
 
       {/* Logo URL */}
       <div>
-        <Label htmlFor="logo_url">URL du logo</Label>
+        <label htmlFor="logo_url" className="block text-sm font-medium mb-2">URL du logo</label>
         <Input
           id="logo_url"
           type="url"

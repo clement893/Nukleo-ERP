@@ -160,7 +160,18 @@ export const testimonialsAPI = {
       },
     });
     
-    return extractApiData(response) || {
+    const data = extractApiData<{
+      total_rows: number;
+      valid_rows: number;
+      invalid_rows: number;
+      errors: any[];
+      warnings: any[];
+      logos_uploaded: number;
+      import_id: string;
+      data: Testimonial[];
+    }>(response);
+    
+    return data || {
       total_rows: 0,
       valid_rows: 0,
       invalid_rows: 0,

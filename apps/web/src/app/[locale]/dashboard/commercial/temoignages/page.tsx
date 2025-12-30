@@ -580,8 +580,8 @@ function TemoignagesContent() {
       {!loading && (
         <Card>
           <DataTable
-            data={filteredTestimonials}
-            columns={columns}
+            data={filteredTestimonials as unknown as Record<string, unknown>[]}
+            columns={columns as unknown as Column<Record<string, unknown>>[]}
             emptyMessage="Aucun témoignage trouvé"
           />
         </Card>
