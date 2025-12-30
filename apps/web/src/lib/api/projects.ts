@@ -6,9 +6,9 @@
  * Projects API is already available via projectsAPI from the main API.
  */
 
-// Re-export projects API if it exists, or create unified interface
-// Note: Projects API might be exported from the main api.ts file
-export const projectsAPI = {
-  // This will be populated when projects API client is created
-  // For now, projects are accessed via the main API client
-};
+// Import projectsAPI from the main API (it's exported from '../api')
+// Note: We re-export it here for consistency with other modules
+import { projectsAPI as mainProjectsAPI } from '../api';
+
+// Re-export as unified projects API
+export const projectsAPI = mainProjectsAPI;
