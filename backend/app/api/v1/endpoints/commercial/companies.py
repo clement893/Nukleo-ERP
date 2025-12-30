@@ -570,6 +570,7 @@ async def delete_company(
 @router.post("/import", response_model=dict)
 async def import_companies(
     file: UploadFile = File(...),
+    import_id: Optional[str] = Query(None, description="Unique ID for this import process"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -704,8 +705,12 @@ async def import_companies(
                 if company.name:
                     name_lower = company.name.lower().strip()
                     companies_by_name[name_lower] = company
+            
+            add_import_log(import_id, f"{len(all_existing_companies)} entreprise(s) chargée(s) pour le matching", "info")
         except Exception as e:
             logger.error(f"Error loading existing companies: {e}", exc_info=True)
+            add_import_log(import_id, f"❌ Erreur lors du chargement des entreprises existantes: {str(e)}", "error")
+            update_import_status(import_id, "failed")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error loading existing companies from database"
@@ -750,7 +755,23 @@ async def import_companies(
         warnings = []
         s3_service = S3Service() if S3Service.is_configured() else None
         
+        add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
+        
+        stats = {
+            "total_processed": 0,
+            "created_new": 0,
+            "matched_existing": 0,
+            "errors": 0
+        }
+        
         for idx, row_data in enumerate(result['data']):
+            try:
+                stats["total_processed"] += 1
+                update_import_status(import_id, "processing", progress=idx + 1, total=total_rows)
+                
+                # Log progress every 10 rows
+                if (idx + 1) % 10 == 0 or idx < 5:
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
             try:
                 # Map Excel columns to Company fields
                 name = get_field_value(row_data, [
