@@ -5,8 +5,12 @@ Pydantic v2 models for calendar events
 
 from __future__ import annotations
 
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, TYPE_CHECKING
+from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator, model_serializer
+
+if TYPE_CHECKING:
+    pass  # For type checking only
 
 
 class CalendarEventBase(BaseModel):
@@ -18,8 +22,8 @@ class CalendarEventBase(BaseModel):
     
     title: str = Field(..., min_length=1, max_length=200, description="Event title", strip_whitespace=True)
     description: Optional[str] = Field(None, description="Event description")
-    event_date: 'date' = Field(..., alias='date', description="Event date")
-    end_date: Optional['date'] = Field(None, description="End date for multi-day events")
+    event_date: date = Field(..., alias='date', description="Event date")
+    end_date: Optional[date] = Field(None, description="End date for multi-day events")
     event_time: Optional[str] = Field(None, description="Event time (HH:MM format)")
     # Use event_category internally - accept 'type' from API via model_validator
     # This avoids conflict with Python's 'type' keyword
@@ -112,8 +116,8 @@ class CalendarEventUpdate(BaseModel):
     
     title: Optional[str] = Field(None, min_length=1, max_length=200, description="Event title")
     description: Optional[str] = Field(None, description="Event description")
-    event_date: Optional['date'] = Field(None, alias='date', description="Event date")
-    end_date: Optional['date'] = Field(None, description="End date for multi-day events")
+    event_date: Optional[date] = Field(None, alias='date', description="Event date")
+    end_date: Optional[date] = Field(None, description="End date for multi-day events")
     event_time: Optional[str] = Field(None, description="Event time (HH:MM format)")
     # Use event_type internally - accept 'type' from API via model_validator
     event_category: Optional[str] = Field(
@@ -161,8 +165,8 @@ class CalendarEvent(CalendarEventBase):
     """Calendar event response schema"""
     id: int
     user_id: int
-    created_at: 'datetime'
-    updated_at: 'datetime'
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(
         from_attributes=True,

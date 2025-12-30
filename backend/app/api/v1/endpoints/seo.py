@@ -17,6 +17,8 @@ router = APIRouter()
 
 
 class SEOSettings(BaseModel):
+    model_config = {"populate_by_name": True}
+    
     title: Optional[str] = Field(None, max_length=60)
     description: Optional[str] = Field(None, max_length=160)
     keywords: Optional[str] = None
@@ -30,7 +32,7 @@ class SEOSettings(BaseModel):
     twitter_title: Optional[str] = None
     twitter_description: Optional[str] = None
     twitter_image: Optional[str] = None
-    schema_json: Optional[str] = Field(None, alias='schema')
+    schema_json: Optional[str] = Field(None, serialization_alias='schema', validation_alias='schema')
 
 
 class SEOSettingsResponse(BaseModel):
