@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from app.models.client import ClientStatus
 from app.models.invoice import InvoiceStatus
+from app.models.support_ticket import TicketStatus, TicketPriority
+from app.schemas.project import ProjectStatus
 
 
 class ClientBase(BaseModel):
@@ -85,6 +87,61 @@ class ClientInvoiceResponse(BaseModel):
 class ClientInvoiceListResponse(BaseModel):
     """Client invoice list response schema"""
     items: List[ClientInvoiceResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class ClientProjectResponse(BaseModel):
+    """Client project response schema"""
+    id: int
+    name: str
+    description: Optional[str] = None
+    status: ProjectStatus
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ClientProjectListResponse(BaseModel):
+    """Client project list response schema"""
+    items: List[ClientProjectResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class ClientTicketCreate(BaseModel):
+    """Client ticket creation schema"""
+    subject: str = Field(..., min_length=1, max_length=200, description="Ticket subject")
+    description: str = Field(..., min_length=1, description="Ticket description/message")
+    priority: TicketPriority = Field(default=TicketPriority.MEDIUM, description="Ticket priority")
+    category: str = Field(..., description="Ticket category (technical, billing, feature, general, bug)")
+
+
+class ClientTicketResponse(BaseModel):
+    """Client ticket response schema"""
+    id: int
+    subject: str
+    category: str
+    status: TicketStatus
+    priority: TicketPriority
+    user_id: int
+    description: Optional[str] = None  # First message content
+    created_at: datetime
+    updated_at: datetime
+    last_reply_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ClientTicketListResponse(BaseModel):
+    """Client ticket list response schema"""
+    items: List[ClientTicketResponse]
     total: int
     page: int
     page_size: int
