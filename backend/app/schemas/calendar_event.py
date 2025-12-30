@@ -6,13 +6,11 @@ Pydantic v2 models for calendar events
 from __future__ import annotations
 
 from datetime import datetime, date
-from typing import Optional, List, Any, Dict, TYPE_CHECKING
+from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator, model_serializer
 
-if TYPE_CHECKING:
-    from datetime import time as dt_time
-else:
-    from datetime import time as dt_time
+# Import time type directly to avoid conflicts
+from datetime import time as _TimeType
 
 
 class CalendarEventBase(BaseModel):
@@ -26,7 +24,7 @@ class CalendarEventBase(BaseModel):
     description: Optional[str] = Field(None, description="Event description")
     date: date = Field(..., description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    event_time: Optional['dt_time'] = Field(None, alias='time', description="Event time")
+    event_time: Optional[_TimeType] = Field(None, alias='time', description="Event time")
     # Use event_type internally, but accept 'type' from API via alias
     # This avoids conflict with Python's 'type' keyword while maintaining API compatibility
     event_type: str = Field(
@@ -95,7 +93,7 @@ class CalendarEventUpdate(BaseModel):
     description: Optional[str] = Field(None, description="Event description")
     date: Optional[date] = Field(None, description="Event date")
     end_date: Optional[date] = Field(None, description="End date for multi-day events")
-    event_time: Optional['dt_time'] = Field(None, alias='time', description="Event time")
+    event_time: Optional[_TimeType] = Field(None, alias='time', description="Event time")
     # Use event_type internally, but accept 'type' from API via alias
     event_type: Optional[str] = Field(
         None,
