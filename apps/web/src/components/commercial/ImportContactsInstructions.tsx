@@ -2,7 +2,7 @@
 
 import { X, FileSpreadsheet, Image, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import Card from '@/components/ui/Card';
 import Modal from '@/components/ui/Modal';
 
 interface ImportContactsInstructionsProps {
