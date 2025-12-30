@@ -50,11 +50,10 @@ async def get_projects(
     if status:
         query = query.where(Project.status == status)
     
-    query = apply_tenant_scope(query, Project)
-    query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
-    
     # Apply tenant scoping if tenancy is enabled
     query = apply_tenant_scope(query, Project)
+    
+    query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
     
     result = await db.execute(query)
     projects = result.scalars().all()
