@@ -166,14 +166,24 @@ async def leo_query(
             logger.warning(f"Failed to load Leo documentation context: {e}")
         
         # 6. Build enriched system prompt
+        stats = user_context.get('statistics', {})
+        stats_text = (
+            f"- Projets: {stats.get('projects_count', 0)}\n"
+            f"- Factures: {stats.get('invoices_count', 0)}\n"
+            f"- Tâches assignées: {stats.get('tasks_count', 0)}\n"
+            f"- Contacts assignés: {stats.get('contacts_count', 0)}"
+        )
+        
         system_prompt = f"""Tu es Leo, l'assistant IA de l'ERP Nukleo.
 
 CONTEXTE UTILISATEUR:
 - Nom: {user_context['name']}
 - Email: {user_context['email']}
-- Rôles: {', '.join(user_context['roles'])}
-- Permissions: {', '.join(user_context['permissions'][:20])}  # Limiter pour éviter le dépassement
-- Équipes: {', '.join(user_context['teams'])}
+- Rôles: {', '.join(user_context['roles']) if user_context['roles'] else 'Aucun'}
+- Permissions: {', '.join(user_context['permissions'][:20]) if user_context['permissions'] else 'Aucune'}  # Limité pour éviter le dépassement
+- Équipes: {', '.join(user_context['teams']) if user_context['teams'] else 'Aucune'}
+- Statistiques:
+{stats_text}
 
 RÈGLES IMPORTANTES:
 1. Adapte tes réponses selon les permissions de l'utilisateur
@@ -181,6 +191,7 @@ RÈGLES IMPORTANTES:
 3. Utilise les données fournies pour répondre de manière précise
 4. Sois concis mais complet
 5. Réponds toujours en français sauf demande contraire
+6. Utilise les statistiques pour donner un contexte sur l'activité de l'utilisateur
 
 DONNÉES DISPONIBLES:
 {data_context}
