@@ -93,18 +93,22 @@ async def list_events(
                 event_list.append(event_schema)
             except Exception as e:
                 logger.error(f"Error validating event {event.id}: {e}", exc_info=True)
-                logger.error(f"Event data: id={event.id}, title={event.title}, date={event.date}, type={event.type}")
-                # Re-raise to see the actual error in logs
-                raise
+                logger.error(f"Event data: id={event.id}, title={event.title}, date={event.date}, type={getattr(event, 'type', None)}")
+                logger.error(f"Event attributes: {dir(event)}")
+                # Skip invalid events instead of failing the entire request
+                # This allows the API to return valid events even if some are corrupted
+                continue
         
         return event_list
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error fetching calendar events: {e}", exc_info=True)
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch calendar events: {str(e)}"
+            detail="An internal error occurred. Please contact support."
         )
 
 

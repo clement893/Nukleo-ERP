@@ -187,31 +187,73 @@ class CalendarEvent(CalendarEventBase):
     @model_validator(mode='before')
     @classmethod
     def handle_sqlalchemy_type_field(cls, data: Any) -> Any:
-        """Convert 'type' and 'time' attributes from SQLAlchemy model to 'event_type' and 'event_time'"""
+        """Convert 'type' and 'time' attributes from SQLAlchemy model to 'event_category' and 'event_time'"""
         # Handle SQLAlchemy model instance (when from_attributes=True is used)
-        if hasattr(data, 'type') and not isinstance(data, dict):
+        # Check if it's a SQLAlchemy model by looking for __table__ or checking if it has model attributes
+        is_sqlalchemy_model = (
+            hasattr(data, '__table__') or 
+            (hasattr(data, 'type') and hasattr(data, 'id') and not isinstance(data, dict))
+        )
+        
+        if is_sqlalchemy_model:
             # Convert SQLAlchemy model to dict
             result = {}
-            for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
-                       'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
+            # List of all possible attributes from the CalendarEvent model
+            attrs_to_check = [
+                'id', 'user_id', 'title', 'description', 'date', 'end_date', 
+                'time', 'location', 'attendees', 'color', 'created_at', 'updated_at', 'type'
+            ]
+            
+            for key in attrs_to_check:
                 if hasattr(data, key):
-                    value = getattr(data, key)
-                    # Convert Time object to string
-                    if key == 'time' and value is not None:
-                        from datetime import time as dt_time
-                        if isinstance(value, dt_time):
-                            value = value.strftime('%H:%M:%S')
-                    result[key] = value
-            # Map 'type' to 'event_category'
-            if hasattr(data, 'type'):
-                result['event_category'] = getattr(data, 'type')
+                    try:
+                        value = getattr(data, key)
+                        # Convert Time object to string
+                        if key == 'time' and value is not None:
+                            from datetime import time as dt_time
+                            if isinstance(value, dt_time):
+                                value = value.strftime('%H:%M:%S')
+                        # Handle None values
+                        if value is not None:
+                            result[key] = value
+                        else:
+                            # Include None values for optional fields
+                            if key in ['description', 'end_date', 'time', 'location', 'attendees', 'color']:
+                                result[key] = None
+                    except (AttributeError, TypeError) as e:
+                        # Skip attributes that can't be accessed (e.g., lazy-loaded relationships)
+                        continue
+            
+            # Map 'type' to 'event_category' (required field, must have a value)
+            if 'type' in result:
+                result['event_category'] = result.pop('type')
+            elif hasattr(data, 'type'):
+                # Fallback: try to get type directly
+                try:
+                    result['event_category'] = getattr(data, 'type', 'other')
+                except:
+                    result['event_category'] = 'other'
+            else:
+                result['event_category'] = 'other'
+            
             # Map 'time' to 'event_time' (already converted to string above)
             if 'time' in result:
                 result['event_time'] = result.pop('time')
-            # Map 'date' to 'event_date'
+            elif 'time' not in result:
+                result['event_time'] = None
+            
+            # Map 'date' to 'event_date' (required field)
             if 'date' in result:
                 result['event_date'] = result.pop('date')
+            elif hasattr(data, 'date'):
+                try:
+                    result['event_date'] = getattr(data, 'date')
+                except:
+                    # If we can't get date, this is a critical error
+                    raise ValueError("Event date is required")
+            
             return result
+        
         # Handle dict input (from API)
         if isinstance(data, dict):
             # Convert 'type' key to 'event_category'
@@ -229,6 +271,7 @@ class CalendarEvent(CalendarEventBase):
             # Convert 'date' key to 'event_date'
             if 'date' in data and 'event_date' not in data:
                 data['event_date'] = data.pop('date')
+        
         return data
 
 
