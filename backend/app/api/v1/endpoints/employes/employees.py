@@ -172,6 +172,7 @@ async def list_employees(
             "photo_filename": getattr(employee, 'photo_filename', None),
             "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
             "birthday": employee.birthday.isoformat() if employee.birthday else None,
+            "user_id": getattr(employee, 'user_id', None),
             "created_at": employee.created_at,
             "updated_at": employee.updated_at,
         }
@@ -220,6 +221,7 @@ async def get_employee(
         "photo_filename": getattr(employee, 'photo_filename', None),
         "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
+        "user_id": getattr(employee, 'user_id', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -266,6 +268,7 @@ async def create_employee(
         "photo_filename": getattr(employee, 'photo_filename', None),
         "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
+        "user_id": getattr(employee, 'user_id', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -316,6 +319,7 @@ async def update_employee(
         "photo_filename": getattr(employee, 'photo_filename', None),
         "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
+        "user_id": getattr(employee, 'user_id', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -350,6 +354,159 @@ async def delete_all_employees(
         "message": f"Successfully deleted {count} employee(s)",
         "deleted_count": count
     }
+
+
+@router.post("/{employee_id}/link-user/{user_id}", response_model=EmployeeSchema)
+async def link_employee_to_user(
+    request: Request,
+    employee_id: int,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Employee:
+    """
+    Link an employee to a user account
+    
+    Args:
+        employee_id: Employee ID
+        user_id: User ID to link
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Updated employee with user linked
+        
+    Raises:
+        HTTPException: If employee or user not found, or if user is already linked to another employee
+    """
+    # Get employee
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found"
+        )
+    
+    # Get user
+    user_result = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = user_result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Check if user is already linked to another employee
+    existing_employee_result = await db.execute(
+        select(Employee).where(Employee.user_id == user_id)
+    )
+    existing_employee = existing_employee_result.scalar_one_or_none()
+    
+    if existing_employee and existing_employee.id != employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User is already linked to employee {existing_employee.id} ({existing_employee.first_name} {existing_employee.last_name})"
+        )
+    
+    # Check if employee is already linked to another user (shouldn't happen with unique constraint, but check anyway)
+    if employee.user_id and employee.user_id != user_id:
+        # Unlink from previous user first
+        logger.info(f"Employee {employee_id} was linked to user {employee.user_id}, unlinking before linking to {user_id}")
+    
+    # Link employee to user
+    employee.user_id = user_id
+    await db.commit()
+    await db.refresh(employee)
+    
+    logger.info(f"User {current_user.id} linked employee {employee_id} to user {user_id}")
+    
+    photo_url = regenerate_photo_url(employee.photo_url, employee.id)
+    
+    employee_dict = {
+        "id": employee.id,
+        "first_name": employee.first_name,
+        "last_name": employee.last_name,
+        "email": employee.email,
+        "phone": employee.phone,
+        "linkedin": employee.linkedin,
+        "photo_url": photo_url,
+        "photo_filename": getattr(employee, 'photo_filename', None),
+        "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
+        "birthday": employee.birthday.isoformat() if employee.birthday else None,
+        "user_id": employee.user_id,
+        "created_at": employee.created_at,
+        "updated_at": employee.updated_at,
+    }
+    
+    return EmployeeSchema(**employee_dict)
+
+
+@router.delete("/{employee_id}/unlink-user", response_model=EmployeeSchema)
+async def unlink_employee_from_user(
+    request: Request,
+    employee_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Employee:
+    """
+    Unlink an employee from a user account
+    
+    Args:
+        employee_id: Employee ID
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Updated employee with user unlinked
+        
+    Raises:
+        HTTPException: If employee not found
+    """
+    # Get employee
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found"
+        )
+    
+    # Unlink employee from user
+    employee.user_id = None
+    await db.commit()
+    await db.refresh(employee)
+    
+    logger.info(f"User {current_user.id} unlinked employee {employee_id} from user")
+    
+    photo_url = regenerate_photo_url(employee.photo_url, employee.id)
+    
+    employee_dict = {
+        "id": employee.id,
+        "first_name": employee.first_name,
+        "last_name": employee.last_name,
+        "email": employee.email,
+        "phone": employee.phone,
+        "linkedin": employee.linkedin,
+        "photo_url": photo_url,
+        "photo_filename": getattr(employee, 'photo_filename', None),
+        "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
+        "birthday": employee.birthday.isoformat() if employee.birthday else None,
+        "user_id": employee.user_id,
+        "created_at": employee.created_at,
+        "updated_at": employee.updated_at,
+    }
+    
+    return EmployeeSchema(**employee_dict)
 
 
 @router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -748,6 +905,7 @@ async def import_employees(
                 "photo_filename": getattr(employee, 'photo_filename', None),
                 "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
                 "birthday": employee.birthday.isoformat() if employee.birthday else None,
+                "user_id": getattr(employee, 'user_id', None),
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             }

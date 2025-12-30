@@ -28,7 +28,12 @@ interface User extends Record<string, unknown> {
   is_verified: boolean;
   is_admin?: boolean;
   created_at: string;
-  employee?: Employee;
+  employee?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email?: string | null;
+  };
 }
 
 export default function AdminUsersContent() {
@@ -113,19 +118,50 @@ export default function AdminUsersContent() {
   };
 
   const handleLinkEmployee = async () => {
-    if (!selectedUser || !selectedEmployeeId) return;
+    if (!selectedUser) return;
 
     try {
       setLinking(true);
       setError(null);
       
-      // TODO: Implement employee-user linking when backend endpoint is available
-      // await employeesAPI.linkToUser(selectedEmployeeId, parseInt(selectedUser.id));
+      const userId = typeof selectedUser.id === 'string' ? parseInt(selectedUser.id) : selectedUser.id;
       
-      showToast({
-        message: 'Fonctionnalité de liaison employé-utilisateur à venir',
-        type: 'info',
-      });
+      // If no employee selected, unlink current employee if any
+      if (!selectedEmployeeId) {
+        // Find employee linked to this user
+        const linkedEmployee = employees.find(emp => {
+          const empUserId = typeof emp.user_id === 'string' ? parseInt(emp.user_id) : emp.user_id;
+          return empUserId === userId;
+        });
+        
+        if (linkedEmployee) {
+          await employeesAPI.unlinkFromUser(linkedEmployee.id);
+          showToast({
+            message: 'Employé délié avec succès',
+            type: 'success',
+          });
+        } else {
+          // No employee to unlink, just close modal
+          setEmployeeLinkModalOpen(false);
+          setSelectedUser(null);
+          setSelectedEmployeeId('');
+          return;
+        }
+      } else {
+        // Link selected employee to user
+        const employeeId = typeof selectedEmployeeId === 'string' ? parseInt(selectedEmployeeId) : selectedEmployeeId;
+        await employeesAPI.linkToUser(employeeId, userId);
+        
+        showToast({
+          message: 'Employé lié avec succès à l\'utilisateur',
+          type: 'success',
+        });
+      }
+      
+      // Refresh users to get updated employee info
+      await fetchUsers();
+      // Also refresh employees list
+      await fetchEmployees();
       
       setEmployeeLinkModalOpen(false);
       setSelectedUser(null);
@@ -142,20 +178,25 @@ export default function AdminUsersContent() {
     }
   };
 
-  const handleUnlinkEmployee = async (_employeeId: string) => {
+  const handleUnlinkEmployee = async (employeeId: number | string) => {
     if (!confirm('Êtes-vous sûr de vouloir délier cet employé ?')) {
       return;
     }
 
     try {
       setError(null);
-      // TODO: Implement employee-user unlinking when backend endpoint is available
-      // await employeesAPI.unlinkFromUser(_employeeId);
+      const empId = typeof employeeId === 'string' ? parseInt(employeeId) : employeeId;
+      await employeesAPI.unlinkFromUser(empId);
       
       showToast({
-        message: 'Fonctionnalité de déliaison employé-utilisateur à venir',
-        type: 'info',
+        message: 'Employé délié avec succès',
+        type: 'success',
       });
+      
+      // Refresh users to get updated employee info
+      await fetchUsers();
+      // Also refresh employees list
+      await fetchEmployees();
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Erreur lors de la déliaison de l\'employé');
       setError(errorMessage);
@@ -167,9 +208,10 @@ export default function AdminUsersContent() {
   };
 
   // Get employee linked to a user
-  // TODO: Implement when user_id field is added to Employee model
-  const getLinkedEmployee = (_userId: string): Employee | undefined => {
-    // return employees.find(emp => emp.user_id === _userId);
+  const getLinkedEmployee = (user: User): Employee | undefined => {
+    if (user.employee) {
+      return employees.find(emp => emp.id === user.employee!.id);
+    }
     return undefined;
   };
 
@@ -216,17 +258,16 @@ export default function AdminUsersContent() {
       key: 'employee',
       label: 'Employé',
       render: (_value, row) => {
-        const employee = getLinkedEmployee(row.id);
-        if (employee) {
+        if (row.employee) {
           return (
             <div className="flex items-center gap-2">
               <Badge variant="info">
-                {employee.first_name} {employee.last_name}
+                {row.employee.first_name} {row.employee.last_name}
               </Badge>
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => handleUnlinkEmployee(String(employee.id))}
+                onClick={() => handleUnlinkEmployee(row.employee!.id)}
                 className="ml-2 text-xs h-6 px-2"
                 title="Délier l'employé"
               >
@@ -270,12 +311,12 @@ export default function AdminUsersContent() {
             variant="outline"
             onClick={() => {
               setSelectedUser(row);
-              const linkedEmployee = getLinkedEmployee(row.id);
-              setSelectedEmployeeId(linkedEmployee ? String(linkedEmployee.id) : '');
+              // Pre-select the currently linked employee if any
+              setSelectedEmployeeId(row.employee ? String(row.employee.id) : '');
               setEmployeeLinkModalOpen(true);
             }}
           >
-            Employé
+            {row.employee ? 'Modifier employé' : 'Lier employé'}
           </Button>
           <Button
             size="sm"
@@ -407,11 +448,28 @@ export default function AdminUsersContent() {
               >
                 <option value="">-- Aucun employé --</option>
                 {employees
-                  .map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.first_name} {emp.last_name}
-                    </option>
-                  ))}
+                  .filter((emp) => {
+                    if (!selectedUser) return false;
+                    const userId = typeof selectedUser.id === 'string' ? parseInt(selectedUser.id) : selectedUser.id;
+                    const empUserId = typeof emp.user_id === 'string' ? parseInt(emp.user_id) : emp.user_id;
+                    // Show employee if:
+                    // 1. It's already linked to this user, OR
+                    // 2. It's not linked to any user (user_id is null/undefined)
+                    return !empUserId || empUserId === userId;
+                  })
+                  .map((emp) => {
+                    if (!selectedUser) return null;
+                    const userId = typeof selectedUser.id === 'string' ? parseInt(selectedUser.id) : selectedUser.id;
+                    const empUserId = typeof emp.user_id === 'string' ? parseInt(emp.user_id) : emp.user_id;
+                    const isLinkedToOther = empUserId && empUserId !== userId;
+                    return (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.first_name} {emp.last_name}
+                        {isLinkedToOther ? ' (déjà lié)' : ''}
+                      </option>
+                    );
+                  })
+                  .filter(Boolean)}
               </select>
             </div>
             <div className="flex gap-2 justify-end">
@@ -428,9 +486,9 @@ export default function AdminUsersContent() {
               </Button>
               <Button
                 onClick={handleLinkEmployee}
-                disabled={linking || !selectedEmployeeId}
+                disabled={linking}
               >
-                {linking ? 'Liaison...' : 'Lier'}
+                {linking ? 'Traitement...' : selectedEmployeeId ? 'Lier' : selectedUser?.employee ? 'Délier' : 'Annuler'}
               </Button>
             </div>
           </div>
