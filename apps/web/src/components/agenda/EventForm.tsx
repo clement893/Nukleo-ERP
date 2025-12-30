@@ -58,7 +58,7 @@ export default function EventForm({
     location: event?.location || '',
     color: event?.color || '#3B82F6',
     attendees: event?.attendees?.join(', ') || '',
-    endDate: (() => {
+    endDate: ((): string => {
       if (event?.endDate instanceof Date) {
         return event.endDate.toISOString().split('T')[0];
       }
