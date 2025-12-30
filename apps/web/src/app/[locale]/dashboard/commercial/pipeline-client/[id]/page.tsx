@@ -13,25 +13,8 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui';
 import { opportunitiesAPI } from '@/lib/api/opportunities';
+import { pipelinesAPI, type Pipeline, type PipelineStage } from '@/lib/api/pipelines';
 import { handleApiError } from '@/lib/errors/api';
-
-// Types temporaires - à remplacer par les types générés depuis l'API
-interface Pipeline {
-  id: string;
-  name: string;
-  description?: string;
-  is_default: boolean;
-  is_active: boolean;
-  stages: PipelineStage[];
-}
-
-interface PipelineStage {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  order: number;
-}
 
 interface Opportunite {
   id: string;
@@ -115,28 +98,30 @@ function PipelineDetailContent() {
       }));
   }, [pipeline]);
 
-  // Load pipeline (mock data pour l'instant)
+  // Load pipeline from API
   useEffect(() => {
-    // TODO: Remplacer par un appel API réel
-    setLoading(true);
-    setTimeout(() => {
-      const mockPipeline: Pipeline = {
-        id: pipelineId,
-        name: 'Pipeline Ventes',
-        description: 'Pipeline principal pour les ventes',
-        is_default: true,
-        is_active: true,
-        stages: [
-          { id: 'stage-1', name: 'Prospection', description: '', color: '#EF4444', order: 0 },
-          { id: 'stage-2', name: 'Qualification', description: '', color: '#F59E0B', order: 1 },
-          { id: 'stage-3', name: 'Proposition', description: '', color: '#3B82F6', order: 2 },
-          { id: 'stage-4', name: 'Négociation', description: '', color: '#8B5CF6', order: 3 },
-          { id: 'stage-5', name: 'Fermeture', description: '', color: '#10B981', order: 4 },
-        ],
-      };
-      setPipeline(mockPipeline);
-      setLoading(false);
-    }, 500);
+    const loadPipeline = async () => {
+      if (!pipelineId) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const pipelineData = await pipelinesAPI.get(pipelineId);
+        setPipeline(pipelineData);
+      } catch (err) {
+        const appError = handleApiError(err);
+        setError(appError.message || 'Erreur lors du chargement du pipeline');
+        showToast({
+          message: appError.message || 'Erreur lors du chargement du pipeline',
+          type: 'error',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadPipeline();
   }, [pipelineId]);
 
   // Load opportunities (mock data pour l'instant)

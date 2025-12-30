@@ -16,12 +16,16 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import OpportunityForm from '@/components/commercial/OpportunityForm';
 import SearchBar from '@/components/ui/SearchBar';
+import MultiSelect from '@/components/ui/MultiSelect';
 import { 
   Plus, 
   Download, 
   Upload, 
   FileSpreadsheet, 
-  MoreVertical
+  MoreVertical,
+  Info,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -67,6 +71,7 @@ function OpportunitiesContent() {
   const [filterCompany, setFilterCompany] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showImportInstructions, setShowImportInstructions] = useState(false);
   
   // Load pipelines and companies for filters
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -412,6 +417,70 @@ function OpportunitiesContent() {
         ]}
       />
 
+      {/* Import Instructions */}
+      <Card>
+        <div className="space-y-3">
+          <button
+            onClick={() => setShowImportInstructions(!showImportInstructions)}
+            className="w-full flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              <span className="font-medium text-foreground">Instructions pour l'import d'opportunités</span>
+            </div>
+            {showImportInstructions ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          
+          {showImportInstructions && (
+            <div className="pt-2 pb-3 px-3 space-y-3 border-t border-border">
+              <div className="space-y-2 text-sm text-foreground">
+                <div>
+                  <p className="font-semibold mb-2">Colonnes requises :</p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                    <li><strong>Nom de l'opportunité</strong> (ou <code className="text-xs bg-muted px-1 py-0.5 rounded">name</code>) : Nom de l'opportunité commerciale *REQUIS*</li>
+                    <li><strong>ID Pipeline</strong> (ou <code className="text-xs bg-muted px-1 py-0.5 rounded">pipeline_id</code>) : Identifiant UUID du pipeline *REQUIS*</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="font-semibold mb-2">Colonnes optionnelles principales :</p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                    <li><strong>Description</strong> : Description détaillée de l'opportunité</li>
+                    <li><strong>Montant</strong> : Montant en euros</li>
+                    <li><strong>Probabilité (%)</strong> : Probabilité de succès (0-100)</li>
+                    <li><strong>Statut</strong> : open, qualified, proposal, negotiation, won, lost, cancelled</li>
+                    <li><strong>ID Stade du pipeline</strong> : UUID du stade (doit appartenir au pipeline spécifié)</li>
+                    <li><strong>Nom Entreprise</strong> ou <strong>ID Entreprise</strong> : Entreprise cliente</li>
+                    <li><strong>Date de clôture prévue</strong> : Format YYYY-MM-DD</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="font-semibold mb-2">Notes importantes :</p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                    <li>L'ID Pipeline doit être un UUID valide d'un pipeline existant (trouvable dans Module Commercial &gt; Pipeline Client)</li>
+                    <li>L'ID Stade du pipeline doit appartenir au pipeline spécifié</li>
+                    <li>Les dates doivent être au format YYYY-MM-DD (ex: 2024-12-31)</li>
+                    <li>Pour les IDs Contacts, séparez plusieurs IDs par des virgules (ex: 1,2,3)</li>
+                    <li>Le fichier Excel téléchargé contient une feuille "Instructions" avec tous les détails</li>
+                  </ul>
+                </div>
+                
+                <div className="pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    💡 <strong>Astuce</strong> : Téléchargez le modèle Excel ou ZIP depuis le menu d'actions (⋮) pour voir toutes les colonnes disponibles et des exemples.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
       {/* Toolbar */}
       <Card>
         <div className="space-y-3">
@@ -441,64 +510,49 @@ function OpportunitiesContent() {
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Statut */}
-            <select
-              multiple
+            <MultiSelect
+              options={statusOptions.map((status) => ({
+                label: status === 'open' ? 'Ouverte' : 
+                       status === 'qualified' ? 'Qualifiée' :
+                       status === 'proposal' ? 'Proposition' :
+                       status === 'negotiation' ? 'Négociation' :
+                       status === 'won' ? 'Gagnée' :
+                       status === 'lost' ? 'Perdue' :
+                       status === 'cancelled' ? 'Annulée' : status,
+                value: status,
+              }))}
               value={filterStatus}
-              onChange={(e) => {
-                const values = Array.from(e.target.selectedOptions, option => option.value);
-                setFilterStatus(values);
-              }}
-              className="min-w-[150px] px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground"
-            >
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status === 'open' ? 'Ouverte' : 
-                   status === 'qualified' ? 'Qualifiée' :
-                   status === 'proposal' ? 'Proposition' :
-                   status === 'negotiation' ? 'Négociation' :
-                   status === 'won' ? 'Gagnée' :
-                   status === 'lost' ? 'Perdue' :
-                   status === 'cancelled' ? 'Annulée' : status}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterStatus}
+              placeholder="Filtrer par statut"
+              className="min-w-[180px]"
+            />
 
             {/* Pipeline */}
             {pipelines.length > 0 && (
-              <select
-                multiple
+              <MultiSelect
+                options={pipelines.map((pipeline) => ({
+                  label: pipeline.name,
+                  value: pipeline.id,
+                }))}
                 value={filterPipeline}
-                onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions, option => option.value);
-                  setFilterPipeline(values);
-                }}
-                className="min-w-[150px] px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground"
-              >
-                {pipelines.map((pipeline) => (
-                  <option key={pipeline.id} value={pipeline.id}>
-                    {pipeline.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setFilterPipeline}
+                placeholder="Filtrer par pipeline"
+                className="min-w-[180px]"
+              />
             )}
 
             {/* Entreprise */}
             {companies.length > 0 && (
-              <select
-                multiple
+              <MultiSelect
+                options={companies.map((company) => ({
+                  label: company.name,
+                  value: company.id.toString(),
+                }))}
                 value={filterCompany}
-                onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions, option => option.value);
-                  setFilterCompany(values);
-                }}
-                className="min-w-[150px] px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground"
-              >
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id.toString()}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setFilterCompany}
+                placeholder="Filtrer par entreprise"
+                className="min-w-[180px]"
+              />
             )}
 
             {hasActiveFilters && (
