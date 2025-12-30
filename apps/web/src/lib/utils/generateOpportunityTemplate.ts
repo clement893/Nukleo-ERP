@@ -203,12 +203,16 @@ export function generateOpportunityTemplate(): Blob {
     [''],
     ['Notes importantes:'],
     ['- Les colonnes "Nom de l\'opportunité" et "ID Pipeline" sont REQUISES'],
+    ['- ID Pipeline : Doit être un UUID valide d\'un pipeline existant (trouvable dans Module Commercial > Pipeline Client)'],
+    ['- ID Stade du pipeline : Doit être un UUID valide d\'un stade appartenant au pipeline spécifié'],
+    ['- Le stade doit appartenir au pipeline spécifié dans "ID Pipeline"'],
     ['- Pour "Statut", utilisez: open, qualified, proposal, negotiation, won, lost, cancelled'],
     ['- Les IDs (pipeline_id, stage_id, company_id, assigned_to_id) doivent correspondre à des enregistrements existants'],
     ['- Pour "IDs Contacts", séparez plusieurs IDs par des virgules (ex: 1,2,3)'],
     ['- Les dates doivent être au format YYYY-MM-DD'],
     ['- Vous pouvez utiliser soit "ID Entreprise" soit "Nom Entreprise" pour lier une entreprise'],
     ['- Si vous utilisez "Nom Entreprise", le système tentera de faire correspondre le nom'],
+    ['- Si vous ne spécifiez pas de stade, l\'opportunité sera créée sans stade assigné (vous pourrez l\'assigner plus tard)'],
     [''],
     ['Format des colonnes acceptées:'],
     ['Français: Nom de l\'opportunité, Description, Montant, Probabilité (%), Statut, ID Pipeline, ID Stade du pipeline, ID Entreprise, Nom Entreprise, IDs Contacts, ID Assigné à, Date de clôture prévue, Date d\'ouverture, Date de fermeture, Segment, Région, Lien offre de service, Notes internes, Commentaires publics'],
@@ -275,14 +279,14 @@ Le fichier Excel doit contenir les colonnes suivantes :
 
 ### Colonnes requises
 - **Nom de l'opportunité** (ou \`name\`) : Nom de l'opportunité commerciale *REQUIS*
-- **ID Pipeline** (ou \`pipeline_id\`) : Identifiant du pipeline *REQUIS*
+- **ID Pipeline** (ou \`pipeline_id\`) : Identifiant UUID du pipeline *REQUIS*
 
 ### Colonnes optionnelles
 - **Description** (ou \`description\`) : Description détaillée de l'opportunité
 - **Montant** (ou \`amount\`) : Montant en euros
 - **Probabilité (%)** (ou \`probability\`) : Probabilité de succès (0-100)
 - **Statut** (ou \`status\`) : open, qualified, proposal, negotiation, won, lost, cancelled
-- **ID Stade du pipeline** (ou \`stage_id\`) : Identifiant du stade du pipeline
+- **ID Stade du pipeline** (ou \`stage_id\`) : Identifiant UUID du stade du pipeline (le stade doit appartenir au pipeline spécifié)
 - **ID Entreprise** (ou \`company_id\`) : Identifiant de l'entreprise cliente
 - **Nom Entreprise** (ou \`company_name\`) : Nom de l'entreprise (alternative à ID Entreprise)
 - **IDs Contacts** (ou \`contact_ids\`) : IDs des contacts liés (séparés par virgule)
@@ -296,33 +300,75 @@ Le fichier Excel doit contenir les colonnes suivantes :
 - **Notes internes** (ou \`notes\`) : Notes internes sur l'opportunité
 - **Commentaires publics** (ou \`comments\`) : Commentaires publics ou remarques
 
+## Pipeline et Stade du Pipeline
+
+### Pipeline (REQUIS)
+
+Chaque opportunité doit être associée à un **pipeline**. Le pipeline représente le processus commercial que suit l'opportunité.
+
+**Comment trouver l'ID du pipeline :**
+1. Connectez-vous à l'application
+2. Allez dans "Module Commercial" > "Pipeline Client"
+3. Consultez la liste des pipelines disponibles
+4. L'ID du pipeline est un UUID (ex: \`550e8400-e29b-41d4-a716-446655440000\`)
+
+**Important :** L'ID Pipeline est **OBLIGATOIRE** pour chaque opportunité.
+
+### Stade du Pipeline (Optionnel)
+
+Le stade représente l'étape actuelle de l'opportunité dans le pipeline. Chaque pipeline contient plusieurs stades (ex: "Qualification", "Proposition", "Négociation", etc.).
+
+**Comment trouver l'ID du stade :**
+1. Ouvrez le pipeline concerné dans "Module Commercial" > "Pipeline Client"
+2. Consultez les stades disponibles dans ce pipeline
+3. L'ID du stade est un UUID (ex: \`660e8400-e29b-41d4-a716-446655440001\`)
+
+**Important :** 
+- Le stade doit appartenir au pipeline spécifié dans "ID Pipeline"
+- Si vous ne spécifiez pas de stade, l'opportunité sera créée sans stade assigné
+- Vous pouvez modifier le stade plus tard depuis l'interface
+
+**Relation Pipeline ↔ Stade :**
+- Un pipeline contient plusieurs stades
+- Chaque stade appartient à un seul pipeline
+- L'ID du stade doit correspondre à un stade du pipeline spécifié
+
 ## Exemple de fichier Excel
 
-| Nom de l'opportunité | Description | Montant | Probabilité (%) | Statut | ID Pipeline | Nom Entreprise |
-|---------------------|-------------|---------|-----------------|--------|-------------|----------------|
-| Projet Digital Transformation | Mise en place CRM | 50000 | 75 | qualified | uuid-pipeline | Acme Corporation |
-| Solution Cloud | Migration vers le cloud | 100000 | 60 | proposal | uuid-pipeline | Tech Solutions |
+| Nom de l'opportunité | Description | Montant | Probabilité (%) | Statut | ID Pipeline | ID Stade du pipeline | Nom Entreprise |
+|---------------------|-------------|---------|-----------------|--------|-------------|---------------------|----------------|
+| Projet Digital Transformation | Mise en place CRM | 50000 | 75 | qualified | 550e8400-e29b-41d4-a716-446655440000 | 660e8400-e29b-41d4-a716-446655440001 | Acme Corporation |
+| Solution Cloud | Migration vers le cloud | 100000 | 60 | proposal | 550e8400-e29b-41d4-a716-446655440000 | 660e8400-e29b-41d4-a716-446655440002 | Tech Solutions |
+
+**Note :** Dans cet exemple, les deux opportunités utilisent le même pipeline mais des stades différents.
 
 ## Processus d'import
 
 1. Téléchargez ce modèle ZIP
 2. Décompressez le fichier
-3. Modifiez le fichier \`opportunites.xlsx\` avec vos données
-4. Recompressez le tout en ZIP
-5. Importez le fichier ZIP via l'interface
+3. **Identifiez les IDs de vos pipelines et stades** depuis l'interface
+4. Modifiez le fichier \`opportunites.xlsx\` avec vos données
+5. Assurez-vous que chaque "ID Stade du pipeline" correspond bien à un stade du "ID Pipeline" spécifié
+6. Recompressez le tout en ZIP
+7. Importez le fichier ZIP via l'interface
 
 ## Notes importantes
 
 - Les colonnes marquées *REQUIS* doivent être remplies
+- **ID Pipeline** : Doit être un UUID valide d'un pipeline existant dans le système
+- **ID Stade du pipeline** : Doit être un UUID valide d'un stade appartenant au pipeline spécifié
 - Les IDs (pipeline_id, stage_id, company_id, assigned_to_id) doivent correspondre à des enregistrements existants dans le système
 - Pour "IDs Contacts", séparez plusieurs IDs par des virgules (ex: 1,2,3)
 - Les dates doivent être au format YYYY-MM-DD
+- Si vous ne connaissez pas l'ID d'un stade, vous pouvez laisser la colonne vide et l'assigner plus tard depuis l'interface
 
 ## Support
 
 En cas de problème lors de l'import, vérifiez :
 - Le format du fichier Excel (doit être .xlsx ou .xls)
 - Les colonnes requises sont présentes et remplies
+- L'ID Pipeline est valide et existe dans le système
+- L'ID Stade du pipeline (si fourni) appartient bien au pipeline spécifié
 - Le format de date (YYYY-MM-DD)
 - Les IDs correspondent à des enregistrements existants
 `;
