@@ -2,7 +2,7 @@
 
 import { Contact } from '@/lib/api/contacts';
 import Card from '@/components/ui/Card';
-import { UserCircle, Building2, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
+import { UserCircle, Building2, Mail, Phone, MapPin, Loader2, Linkedin } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useRef } from 'react';
 
@@ -72,8 +72,10 @@ export default function ContactsGallery({
               {contact.photo_url ? (
                 <img
                   src={contact.photo_url}
-                  alt={`${contact.first_name} ${contact.last_name}`}
+                  alt={`Photo de profil de ${contact.first_name} ${contact.last_name}`}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center">
@@ -103,15 +105,48 @@ export default function ContactsGallery({
                   </div>
                 )}
                 {contact.email && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground group/email">
                     <Mail className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{contact.email}</span>
+                    <span className="truncate flex-1">{contact.email}</span>
+                    <a
+                      href={`mailto:${contact.email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="opacity-0 group-hover/email:opacity-100 text-primary hover:text-primary-600 transition-all"
+                      title="Envoyer un email"
+                      aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
+                    >
+                      <Mail className="w-4 h-4" />
+                    </a>
                   </div>
                 )}
                 {contact.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground group/phone">
                     <Phone className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{contact.phone}</span>
+                    <span className="truncate flex-1">{contact.phone}</span>
+                    <a
+                      href={`tel:${contact.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="opacity-0 group-hover/phone:opacity-100 text-primary hover:text-primary-600 transition-all"
+                      title="Appeler"
+                      aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
+                    >
+                      <Phone className="w-4 h-4" />
+                    </a>
+                  </div>
+                )}
+                {contact.linkedin && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Linkedin className="w-4 h-4 flex-shrink-0" />
+                    <a
+                      href={contact.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="truncate text-primary hover:text-primary-600 transition-colors"
+                      title="Voir le profil LinkedIn"
+                    >
+                      Profil LinkedIn
+                    </a>
                   </div>
                 )}
                 {(contact.city || contact.country) && (

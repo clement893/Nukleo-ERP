@@ -15,7 +15,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Search, Mail, Phone, X, Users, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -35,6 +35,7 @@ function ContactsContent() {
   const [filterPhone, setFilterPhone] = useState<string>('');
   const [filterCircle, setFilterCircle] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   
   // Pagination pour le scroll infini
@@ -147,7 +148,7 @@ function ContactsContent() {
     };
   }, [contacts]);
 
-  // Filtered contacts
+  // Filtered contacts with search
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
       const matchesCity = !filterCity || contact.city === filterCity;
@@ -155,10 +156,29 @@ function ContactsContent() {
       const matchesCircle = !filterCircle || contact.circle === filterCircle;
       // Fix: Compare with company_id correctly
       const matchesCompany = !filterCompany || (contact.company_id && contact.company_id.toString() === filterCompany);
+      
+      // Search filter: search in name, email, phone, company
+      const matchesSearch = !searchQuery || 
+        `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.phone?.includes(searchQuery) ||
+        contact.company_name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesCity && matchesPhone && matchesCircle && matchesCompany;
+      return matchesCity && matchesPhone && matchesCircle && matchesCompany && matchesSearch;
     });
-  }, [contacts, filterCity, filterPhone, filterCircle, filterCompany]);
+  }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, searchQuery]);
+  
+  // Check if any filters are active
+  const hasActiveFilters = filterCity || filterPhone || filterCircle || filterCompany || searchQuery;
+  
+  // Clear all filters function
+  const clearAllFilters = useCallback(() => {
+    setFilterCity('');
+    setFilterPhone('');
+    setFilterCircle('');
+    setFilterCompany('');
+    setSearchQuery('');
+  }, []);
 
 
   // Handle create with optimistic update
@@ -487,28 +507,71 @@ function ContactsContent() {
       key: 'circle',
       label: 'Cercle',
       sortable: true,
-      render: (value) => (
+      render: (value) => {
+        if (!value) return <span className="text-muted-foreground">-</span>;
+        
+        const circleColors: Record<string, string> = {
+          client: 'bg-green-500 hover:bg-green-600',
+          prospect: 'bg-blue-500 hover:bg-blue-600',
+          partenaire: 'bg-purple-500 hover:bg-purple-600',
+          fournisseur: 'bg-orange-500 hover:bg-orange-600',
+          autre: 'bg-gray-500 hover:bg-gray-600',
+        };
+        
+        return (
+          <Badge 
+            variant="default" 
+            className={`capitalize text-white ${circleColors[String(value)] || 'bg-gray-500'}`}
+          >
+            {String(value)}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: 'email',
+      label: 'Courriel',
+      sortable: true,
+      render: (value, contact) => (
         value ? (
-          <Badge variant="default" className="capitalize">{String(value)}</Badge>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">{String(value)}</span>
+            <a
+              href={`mailto:${value}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary hover:text-primary-600 transition-colors"
+              title="Envoyer un email"
+              aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
+            >
+              <Mail className="w-4 h-4" />
+            </a>
+          </div>
         ) : (
           <span className="text-muted-foreground">-</span>
         )
       ),
     },
     {
-      key: 'email',
-      label: 'Courriel',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
-      ),
-    },
-    {
       key: 'phone',
       label: 'Téléphone',
       sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
+      render: (value, contact) => (
+        value ? (
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">{String(value)}</span>
+            <a
+              href={`tel:${value}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary hover:text-primary-600 transition-colors"
+              title="Appeler"
+              aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
+            >
+              <Phone className="w-4 h-4" />
+            </a>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )
       ),
     },
     {
@@ -538,23 +601,130 @@ function ContactsContent() {
       {/* Toolbar */}
       <Card>
         <div className="space-y-3">
-          {/* Contact count */}
+          {/* Contact count with improved visual */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {filteredContacts.length > 0 ? (
-                <>
-                  <span className="font-medium text-foreground">{filteredContacts.length}</span>
-                  {filteredContacts.length !== contacts.length && (
-                    <> sur <span className="font-medium text-foreground">{contacts.length}</span></>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                <Users className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">
+                  {filteredContacts.length > 0 ? (
+                    <>
+                      <span className="text-primary">{filteredContacts.length}</span>
+                      {filteredContacts.length !== contacts.length && (
+                        <> / <span className="text-muted-foreground">{contacts.length}</span></>
+                      )}
+                      {' '}contact{filteredContacts.length > 1 ? 's' : ''}
+                    </>
+                  ) : (
+                    <>Aucun contact</>
                   )}
-                  {' '}contact{filteredContacts.length > 1 ? 's' : ''}
-                  {(filterCity || filterPhone || filterCircle || filterCompany) && ' (filtré' + (filteredContacts.length !== contacts.length ? 's' : '') + ')'}
-                </>
-              ) : (
-                <>Aucun contact</>
+                </span>
+              </div>
+              {filteredContacts.length !== contacts.length && hasActiveFilters && (
+                <Badge variant="secondary" className="text-xs">
+                  Filtré{filteredContacts.length !== contacts.length ? 's' : ''}
+                </Badge>
               )}
             </div>
           </div>
+          
+          {/* Search bar */}
+          <div className="relative">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher par nom, email, téléphone, entreprise..."
+              className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Effacer la recherche"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          
+          {/* Active filters badges */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filtres actifs:</span>
+              {filterCity && (
+                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                  <span>Ville: {filterCity}</span>
+                  <button
+                    onClick={() => setFilterCity('')}
+                    className="hover:text-destructive transition-colors"
+                    aria-label={`Supprimer le filtre ville: ${filterCity}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {filterPhone && (
+                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                  <span>Téléphone: {filterPhone}</span>
+                  <button
+                    onClick={() => setFilterPhone('')}
+                    className="hover:text-destructive transition-colors"
+                    aria-label={`Supprimer le filtre téléphone: ${filterPhone}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {filterCircle && (
+                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                  <span>Cercle: {filterCircle.charAt(0).toUpperCase() + filterCircle.slice(1)}</span>
+                  <button
+                    onClick={() => setFilterCircle('')}
+                    className="hover:text-destructive transition-colors"
+                    aria-label={`Supprimer le filtre cercle: ${filterCircle}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {filterCompany && (
+                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                  <Building2 className="w-3 h-3" />
+                  <span>Entreprise: {companies.find(c => c.id.toString() === filterCompany)?.name || filterCompany}</span>
+                  <button
+                    onClick={() => setFilterCompany('')}
+                    className="hover:text-destructive transition-colors"
+                    aria-label="Supprimer le filtre entreprise"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {searchQuery && (
+                <Badge variant="secondary" className="flex items-center gap-1.5 px-2 py-1">
+                  <Search className="w-3 h-3" />
+                  <span>Recherche: "{searchQuery}"</span>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="hover:text-destructive transition-colors"
+                    aria-label="Supprimer la recherche"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              <button
+                onClick={clearAllFilters}
+                className="text-xs text-primary hover:text-primary-600 hover:underline transition-colors"
+              >
+                Effacer tous les filtres
+              </button>
+            </div>
+          )}
           
           {/* Top row: Filters, View toggle, Actions */}
           <div className="flex flex-col gap-3">
