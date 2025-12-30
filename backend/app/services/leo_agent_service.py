@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.models.user import User
 from app.modules.leo.models import LeoConversation, LeoMessage
 from app.models.project import Project
-from app.models.team import TeamMember
+from app.models.team import Team, TeamMember
 from app.models.invoice import Invoice
 from app.models.contact import Contact
 from app.models.company import Company
@@ -45,7 +45,6 @@ class LeoAgentService:
         permissions = await self.rbac_service.get_user_permissions(user.id)
         
         # Get teams (using join to avoid lazy loading issues in async context)
-        from app.models.team import Team
         teams_query = select(Team.name).join(TeamMember, Team.id == TeamMember.team_id).where(
             TeamMember.user_id == user.id
         ).where(Team.is_active == True).where(TeamMember.is_active == True)
