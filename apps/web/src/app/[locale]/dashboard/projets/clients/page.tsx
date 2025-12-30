@@ -38,7 +38,6 @@ import {
   useExportClients,
 } from '@/lib/query/clients';
 import { useQuery } from '@tanstack/react-query';
-import { getApiUrl } from '@/lib/api';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import ImportClientsInstructions from '@/components/projects/ImportClientsInstructions';
 
@@ -46,12 +45,10 @@ import ImportClientsInstructions from '@/components/projects/ImportClientsInstru
 function ClientImportLogsViewer({ importId, onComplete }: { importId: string; onComplete?: () => void }) {
   const [logs, setLogs] = useState<any[]>([]);
   const [status, setStatus] = useState<any>(null);
-  const [isConnected, setIsConnected] = useState(false);
   
   useEffect(() => {
     if (!importId) return;
     
-    const apiUrl = getApiUrl().replace(/\/$/, '');
     const sseUrl = clientsAPI.getImportLogsUrl(importId);
     
     // Add authentication token to URL if available
@@ -59,10 +56,6 @@ function ClientImportLogsViewer({ importId, onComplete }: { importId: string; on
     const urlWithAuth = token ? `${sseUrl}?token=${encodeURIComponent(token)}` : sseUrl;
     
     const eventSource = new EventSource(urlWithAuth);
-    
-    eventSource.onopen = () => {
-      setIsConnected(true);
-    };
     
     eventSource.onmessage = (event) => {
       try {
@@ -74,7 +67,6 @@ function ClientImportLogsViewer({ importId, onComplete }: { importId: string; on
           }
         } else if (data.type === 'done') {
           eventSource.close();
-          setIsConnected(false);
           onComplete?.();
         } else {
           setLogs((prev) => [...prev, data]);
@@ -85,7 +77,6 @@ function ClientImportLogsViewer({ importId, onComplete }: { importId: string; on
     };
     
     eventSource.onerror = () => {
-      setIsConnected(false);
       eventSource.close();
     };
     

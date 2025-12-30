@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { clientsAPI, Client } from '@/lib/api/clients';
 import { companiesAPI, Company } from '@/lib/api/companies';
 import { contactsAPI, Contact } from '@/lib/api/contacts';
 import { projectsAPI } from '@/lib/api/projects';
@@ -27,7 +26,6 @@ export default function ClientDetailPage() {
   
   // Fetch company
   const [company, setCompany] = useState<Company | null>(null);
-  const [loadingCompany, setLoadingCompany] = useState(false);
   
   // Fetch projects
   const [projects, setProjects] = useState<Array<{
@@ -36,27 +34,22 @@ export default function ClientDetailPage() {
     status: string;
     description?: string;
   }>>([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
   
   // Fetch contacts
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
   
   const deleteClientMutation = useDeleteClient();
 
   useEffect(() => {
     if (client?.company_id) {
       // Load company
-      setLoadingCompany(true);
       companiesAPI.get(client.company_id)
         .then((data) => setCompany(data))
         .catch((err) => {
           console.error('Error loading company:', err);
-        })
-        .finally(() => setLoadingCompany(false));
+        });
       
       // Load projects for this company
-      setLoadingProjects(true);
       projectsAPI.list()
         .then((response: any) => {
           const projectsData = response.data || response;
@@ -69,11 +62,9 @@ export default function ClientDetailPage() {
         })
         .catch((err) => {
           console.error('Error loading projects:', err);
-        })
-        .finally(() => setLoadingProjects(false));
+        });
       
       // Load contacts for this company
-      setLoadingContacts(true);
       contactsAPI.list(0, 1000)
         .then((allContacts) => {
           // Filter contacts by company_id
@@ -84,8 +75,7 @@ export default function ClientDetailPage() {
         })
         .catch((err) => {
           console.error('Error loading contacts:', err);
-        })
-        .finally(() => setLoadingContacts(false));
+        });
     }
   }, [client?.company_id]);
 

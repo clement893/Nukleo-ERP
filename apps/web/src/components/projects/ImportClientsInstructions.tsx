@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { FileSpreadsheet, Download, X, CheckCircle2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { clientsAPI } from '@/lib/api/clients';
 
 interface ImportClientsInstructionsProps {
   isOpen: boolean;
@@ -35,8 +34,12 @@ export default function ImportClientsInstructions({
       ];
       
       // Use a simple CSV format for template (can be opened in Excel)
+      const firstRow = templateData[0];
+      if (!firstRow) {
+        throw new Error('Template data is empty');
+      }
       const csvContent = [
-        Object.keys(templateData[0]).join(','),
+        Object.keys(firstRow).join(','),
         ...templateData.map(row => Object.values(row).map(v => `"${v}"`).join(','))
       ].join('\n');
       

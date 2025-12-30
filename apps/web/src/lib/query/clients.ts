@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { clientsAPI, Client, ClientCreate, ClientUpdate, ClientStatus } from '@/lib/api/clients';
+import { clientsAPI, ClientCreate, ClientUpdate, ClientStatus } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 
 const QUERY_KEY = 'clients';

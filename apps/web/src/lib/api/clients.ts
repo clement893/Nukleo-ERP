@@ -144,7 +144,7 @@ export const clientsAPI = {
     const response = await apiClient.get('/v1/projects/clients/export', {
       responseType: 'blob',
     });
-    return response.data;
+    return response.data as Blob;
   },
 
   /**

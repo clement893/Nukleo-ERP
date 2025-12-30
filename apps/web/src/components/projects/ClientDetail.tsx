@@ -7,7 +7,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import CompanyAvatar from '@/components/commercial/CompanyAvatar';
-import { Building2, User, ExternalLink, FileText, MessageSquare, Edit, Trash2, ArrowRight } from 'lucide-react';
+import { User, ExternalLink, FileText, MessageSquare, Edit, Trash2, ArrowRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
