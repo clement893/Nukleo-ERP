@@ -1323,45 +1323,45 @@ async def import_contacts(
                                 'data': {'contact': f"{first_name} {last_name}"}
                             })
                         else:
-                        # Normalize names for filename matching
-                        first_name_normalized = normalize_filename(first_name)
-                        last_name_normalized = normalize_filename(last_name)
-                        
-                        # Try multiple naming patterns
-                        photo_filename_patterns = [
-                            # Normalized patterns (without accents)
-                            f"{first_name_normalized}_{last_name_normalized}.jpg",
-                            f"{first_name_normalized}_{last_name_normalized}.jpeg",
-                            f"{first_name_normalized}_{last_name_normalized}.png",
-                            f"{first_name_normalized}_{last_name_normalized}.gif",
-                            f"{first_name_normalized}_{last_name_normalized}.webp",
-                            # Original patterns (with accents)
-                            f"{first_name.lower()}_{last_name.lower()}.jpg",
-                            f"{first_name.lower()}_{last_name.lower()}.jpeg",
-                            f"{first_name.lower()}_{last_name.lower()}.png",
-                            f"{first_name.lower()}_{last_name.lower()}.gif",
-                            f"{first_name.lower()}_{last_name.lower()}.webp",
-                            # Without underscores
-                            f"{first_name_normalized}{last_name_normalized}.jpg",
-                            f"{first_name_normalized}{last_name_normalized}.jpeg",
-                            f"{first_name_normalized}{last_name_normalized}.png",
-                            # From Excel column (logo_filename, photo_filename, nom_fichier_photo)
-                            get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']),
-                        ]
-                        
-                        uploaded_photo_url = None
-                        logger.info(f"Attempting to upload photo for {first_name} {last_name}. Available photos in ZIP: {list(photos_dict.keys())[:5]}...")
-                        logger.debug(f"Normalized names: first='{first_name_normalized}', last='{last_name_normalized}'")
-                        logger.debug(f"Trying patterns: {photo_filename_patterns[:5]}...")
-                        
-                        # First, try exact match from Excel column if provided
-                        excel_photo_filename = (
-                            get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']) or
-                            row_data.get('logo_filename') or 
-                            row_data.get('photo_filename') or 
-                            row_data.get('nom_fichier_photo')
-                        )
-                        if excel_photo_filename:
+                            # Normalize names for filename matching
+                            first_name_normalized = normalize_filename(first_name)
+                            last_name_normalized = normalize_filename(last_name)
+                            
+                            # Try multiple naming patterns
+                            photo_filename_patterns = [
+                                # Normalized patterns (without accents)
+                                f"{first_name_normalized}_{last_name_normalized}.jpg",
+                                f"{first_name_normalized}_{last_name_normalized}.jpeg",
+                                f"{first_name_normalized}_{last_name_normalized}.png",
+                                f"{first_name_normalized}_{last_name_normalized}.gif",
+                                f"{first_name_normalized}_{last_name_normalized}.webp",
+                                # Original patterns (with accents)
+                                f"{first_name.lower()}_{last_name.lower()}.jpg",
+                                f"{first_name.lower()}_{last_name.lower()}.jpeg",
+                                f"{first_name.lower()}_{last_name.lower()}.png",
+                                f"{first_name.lower()}_{last_name.lower()}.gif",
+                                f"{first_name.lower()}_{last_name.lower()}.webp",
+                                # Without underscores
+                                f"{first_name_normalized}{last_name_normalized}.jpg",
+                                f"{first_name_normalized}{last_name_normalized}.jpeg",
+                                f"{first_name_normalized}{last_name_normalized}.png",
+                                # From Excel column (logo_filename, photo_filename, nom_fichier_photo)
+                                get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']),
+                            ]
+                            
+                            uploaded_photo_url = None
+                            logger.info(f"Attempting to upload photo for {first_name} {last_name}. Available photos in ZIP: {list(photos_dict.keys())[:5]}...")
+                            logger.debug(f"Normalized names: first='{first_name_normalized}', last='{last_name_normalized}'")
+                            logger.debug(f"Trying patterns: {photo_filename_patterns[:5]}...")
+                            
+                            # First, try exact match from Excel column if provided
+                            excel_photo_filename = (
+                                get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo']) or
+                                row_data.get('logo_filename') or 
+                                row_data.get('photo_filename') or 
+                                row_data.get('nom_fichier_photo')
+                            )
+                            if excel_photo_filename:
                             excel_photo_normalized = normalize_filename(excel_photo_filename)
                             if excel_photo_filename.lower() in photos_dict:
                                 pattern_to_use = excel_photo_filename.lower()
@@ -1425,23 +1425,23 @@ async def import_contacts(
                                         'message': f"Erreur lors de l'upload de la photo '{pattern_to_use}' pour {first_name} {last_name}: {str(e)}",
                                         'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern_to_use, 'error': str(e)}
                                     })
-                        
-                        # If no match from Excel column, try name-based patterns
-                        if not uploaded_photo_url:
-                            for pattern in photo_filename_patterns:
-                                if not pattern or pattern == excel_photo_filename:
-                                    continue  # Skip if already tried
-                                
-                                pattern_normalized = normalize_filename(pattern)
-                                # Try both original pattern and normalized pattern
-                                if pattern.lower() in photos_dict:
-                                    pattern_to_use = pattern.lower()
-                                elif pattern_normalized in photos_dict:
-                                    pattern_to_use = pattern_normalized
-                                else:
-                                    continue
-                                
-                                if pattern_to_use in photos_dict:
+                            
+                            # If no match from Excel column, try name-based patterns
+                            if not uploaded_photo_url:
+                                for pattern in photo_filename_patterns:
+                                    if not pattern or pattern == excel_photo_filename:
+                                        continue  # Skip if already tried
+                                    
+                                    pattern_normalized = normalize_filename(pattern)
+                                    # Try both original pattern and normalized pattern
+                                    if pattern.lower() in photos_dict:
+                                        pattern_to_use = pattern.lower()
+                                    elif pattern_normalized in photos_dict:
+                                        pattern_to_use = pattern_normalized
+                                    else:
+                                        continue
+                                    
+                                    if pattern_to_use in photos_dict:
                                     try:
                                         # Upload photo to S3
                                         photo_content = photos_dict[pattern_to_use]
@@ -1533,12 +1533,12 @@ async def import_contacts(
                                             'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern, 'error': str(e)}
                                         })
                                         continue
-                    
-                        if uploaded_photo_url:
-                            photo_url = uploaded_photo_url
-                            logger.info(f"Photo successfully assigned to {first_name} {last_name}: {photo_url}")
-                        else:
-                            logger.warning(f"No photo uploaded for {first_name} {last_name} despite photos being available in ZIP")
+                            
+                            if uploaded_photo_url:
+                                photo_url = uploaded_photo_url
+                                logger.info(f"Photo successfully assigned to {first_name} {last_name}: {photo_url}")
+                            else:
+                                logger.warning(f"No photo uploaded for {first_name} {last_name} despite photos being available in ZIP")
                     
                     # Get position
                     position = get_field_value(row_data, [
