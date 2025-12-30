@@ -308,7 +308,7 @@ async def list_contacts(
             "circle": contact.circle,
             "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            "photo_filename": getattr(contact, 'photo_filename', None),
             "email": contact.email,
             "phone": contact.phone,
             "city": contact.city,
@@ -382,7 +382,7 @@ async def get_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            "photo_filename": getattr(contact, 'photo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -462,7 +462,7 @@ async def create_contact(
         circle=contact_data.circle,
         linkedin=contact_data.linkedin,
         photo_url=contact_data.photo_url,
-        logo_filename=getattr(contact_data, 'logo_filename', None),
+        photo_filename=getattr(contact_data, 'photo_filename', None),
         email=contact_data.email,
         phone=contact_data.phone,
         city=contact_data.city,
@@ -493,7 +493,7 @@ async def create_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            "photo_filename": getattr(contact, 'photo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -608,7 +608,7 @@ async def update_contact(
         "circle": contact.circle,
         "linkedin": contact.linkedin,
             "photo_url": photo_url,
-            "logo_filename": getattr(contact, 'logo_filename', None),
+            "photo_filename": getattr(contact, 'photo_filename', None),
             "email": contact.email,
         "phone": contact.phone,
         "city": contact.city,
@@ -1434,19 +1434,38 @@ async def import_contacts(
                         'data': {'employee_id_raw': employee_id_raw}
                     })
             
-                # Get logo_filename for photo matching
+                # Validate required fields before creating contact
+                if not first_name or not first_name.strip():
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Le prénom est obligatoire'
+                    })
+                    logger.warning(f"Row {idx + 2}: Skipping contact - missing first_name")
+                    continue
+                
+                if not last_name or not last_name.strip():
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Le nom est obligatoire'
+                    })
+                    logger.warning(f"Row {idx + 2}: Skipping contact - missing last_name")
+                    continue
+                
+                # Get photo_filename for photo matching (from Excel column logo_filename, photo_filename, or nom_fichier_photo)
                 logo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
                 
                 # Prepare contact data
                 contact_data = ContactCreate(
-                    first_name=first_name,
-                    last_name=last_name,
+                    first_name=first_name.strip(),
+                    last_name=last_name.strip(),
                     company_id=company_id,
                     position=position,
                     circle=circle,
                     linkedin=linkedin,
                     photo_url=photo_url,  # Store file_key, not presigned URL
-                    logo_filename=logo_filename,  # Store filename for photo matching
+                    photo_filename=logo_filename,  # Store filename for photo matching (using logo_filename variable name from Excel)
                     email=email,
                     phone=phone,
                     city=city,
@@ -1465,13 +1484,13 @@ async def import_contacts(
                         if field == 'photo_url':
                             if value:  # New photo provided
                                 setattr(existing_contact, field, value)
-                                # Also update logo_filename if photo_url is updated
-                                if 'logo_filename' in update_data and update_data['logo_filename']:
-                                    setattr(existing_contact, 'logo_filename', update_data['logo_filename'])
+                                # Also update photo_filename if photo_url is updated
+                                if 'photo_filename' in update_data and update_data['photo_filename']:
+                                    setattr(existing_contact, 'photo_filename', update_data['photo_filename'])
                                 logger.info(f"Updated photo for contact {existing_contact.id}")
                             # If no new photo provided, keep existing photo (don't update field)
                         else:
-                            # Update all other fields including logo_filename
+                            # Update all other fields including photo_filename
                             setattr(existing_contact, field, value)
                     
                     contact = existing_contact
@@ -1538,7 +1557,7 @@ async def import_contacts(
                     "circle": contact.circle,
                     "linkedin": contact.linkedin,
                     "photo_url": regenerate_photo_url(contact.photo_url, contact.id),
-                    "logo_filename": getattr(contact, 'logo_filename', None),
+                    "photo_filename": getattr(contact, 'photo_filename', None),
                     "email": contact.email,
                     "phone": contact.phone,
                     "city": contact.city,
