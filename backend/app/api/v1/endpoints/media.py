@@ -274,14 +274,16 @@ async def upload_media(
         )
         
         # Save file metadata to database
+        file_key = upload_result.get("file_key") or upload_result.get("url", "")
         file_record = FileModel(
             user_id=current_user.id,
-            file_key=upload_result.get("file_key") or upload_result.get("url", ""),
+            file_key=file_key,
             filename=upload_result.get("filename") or filename,
             original_filename=file.filename or filename,
             content_type=file.content_type or "application/octet-stream",
             size=file_size,
             url=upload_result.get("url", ""),
+            file_path=file_key,  # Use file_key as file_path (S3 key)
             folder=folder,
         )
         

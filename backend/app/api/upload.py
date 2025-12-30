@@ -202,6 +202,7 @@ async def upload_file(
             content_type=upload_result["content_type"],
             size=upload_result["size"],
             url=upload_result["url"],
+            file_path=upload_result["file_key"],  # Use file_key as file_path (S3 key)
             folder=folder,
         )
 

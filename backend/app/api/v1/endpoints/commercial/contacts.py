@@ -7,7 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, delete
 from sqlalchemy.orm import selectinload
 import zipfile
 import os
@@ -458,6 +458,44 @@ async def delete_contact(
     
     await db.delete(contact)
     await db.commit()
+
+
+@router.delete("/all", status_code=status.HTTP_200_OK)
+async def delete_all_contacts(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """
+    Delete all contacts from the database
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dictionary with count of deleted contacts
+    """
+    # Count contacts before deletion
+    count_result = await db.execute(select(func.count(Contact.id)))
+    count = count_result.scalar_one()
+    
+    if count == 0:
+        return {
+            "message": "No contacts found",
+            "deleted_count": 0
+        }
+    
+    # Delete all contacts
+    await db.execute(delete(Contact))
+    await db.commit()
+    
+    logger.info(f"User {current_user.id} deleted all {count} contacts")
+    
+    return {
+        "message": f"Successfully deleted {count} contact(s)",
+        "deleted_count": count
+    }
 
 
 @router.post("/import")

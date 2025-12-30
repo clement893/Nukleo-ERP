@@ -28,6 +28,7 @@ class File(Base):
     content_type = Column(String(100), nullable=False)
     size = Column(Integer, nullable=False)  # File size in bytes
     url = Column(String(1000), nullable=False)
+    file_path = Column(String(1000), nullable=False)  # File path (can be same as file_key or url)
     folder = Column(String(100), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(

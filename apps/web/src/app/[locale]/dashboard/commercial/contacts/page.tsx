@@ -228,6 +228,57 @@ function ContactsContent() {
     }
   };
 
+  // Handle delete all contacts
+  const handleDeleteAll = async () => {
+    const count = contacts.length;
+    if (count === 0) {
+      showToast({
+        message: 'Aucun contact à supprimer',
+        type: 'info',
+      });
+      return;
+    }
+
+    const confirmed = confirm(
+      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUS les ${count} contact(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Double confirmation
+    const doubleConfirmed = confirm(
+      '⚠️ DERNIÈRE CONFIRMATION: Tous les contacts seront définitivement supprimés. Tapez OK pour confirmer.'
+    );
+
+    if (!doubleConfirmed) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await contactsAPI.deleteAll();
+      // Reload contacts to ensure we have the latest data
+      await loadContacts(true);
+      setSelectedContact(null);
+      showToast({
+        message: result.message || `${result.deleted_count} contact(s) supprimé(s) avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la suppression des contacts');
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression des contacts',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle import
   const handleImport = async (file: File) => {
     try {
@@ -625,6 +676,17 @@ function ContactsContent() {
                             >
                               <Download className="w-3.5 h-3.5" />
                               Exporter
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDeleteAll();
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 border-t border-border"
+                              disabled={loading || contacts.length === 0}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Supprimer tous les contacts
                             </button>
                           </div>
                         </div>

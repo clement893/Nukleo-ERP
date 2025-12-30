@@ -124,6 +124,14 @@ export const contactsAPI = {
   },
 
   /**
+   * Delete all contacts
+   */
+  deleteAll: async (): Promise<{ message: string; deleted_count: number }> => {
+    const response = await apiClient.delete<{ message: string; deleted_count: number }>('/v1/commercial/contacts/all');
+    return extractApiData(response) || { message: 'No contacts deleted', deleted_count: 0 };
+  },
+
+  /**
    * Import contacts from Excel or ZIP (Excel + photos)
    */
   import: async (file: File): Promise<{
