@@ -15,6 +15,7 @@ import { useProject, useUpdateProject, useDeleteProject } from '@/lib/query/proj
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import type { ProjectUpdate } from '@/lib/api/projects';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -31,7 +32,7 @@ export default function ProjectDetailPage() {
 
   const error = queryError ? handleApiError(queryError).message : null;
 
-  const handleUpdate = async (data: any) => {
+  const handleUpdate = async (data: ProjectUpdate) => {
     try {
       await updateProjectMutation.mutateAsync({
         id: projectId,
