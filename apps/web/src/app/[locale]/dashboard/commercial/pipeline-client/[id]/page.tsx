@@ -107,7 +107,7 @@ function PipelineDetailContent() {
       .map(opp => ({
         id: opp.id,
         title: opp.name,
-        description: opp.description,
+        description: opp.description ?? undefined,
         status: opp.stage_id || '',
         priority: opp.probability && opp.probability >= 70 ? 'high' : opp.probability && opp.probability >= 40 ? 'medium' : 'low',
         dueDate: opp.expected_close_date ? new Date(opp.expected_close_date) : undefined,

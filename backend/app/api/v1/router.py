@@ -9,6 +9,7 @@ from app.api.v1.endpoints.commercial import contacts as commercial_contacts
 from app.api.v1.endpoints.commercial import companies as commercial_companies, opportunities as commercial_opportunities
 from app.api.v1.endpoints.commercial import quotes as commercial_quotes, submissions as commercial_submissions
 from app.api.v1.endpoints.commercial import pipelines as commercial_pipelines
+from app.api.v1.endpoints.commercial import testimonials as commercial_testimonials
 from app.api.v1.endpoints.projects.clients import router as project_clients
 from app.modules.commercial.api import router as commercial_module_router
 from app.api.v1.endpoints.agenda import events as agenda_events
@@ -496,6 +497,11 @@ api_router.include_router(
 
 api_router.include_router(
     commercial_pipelines.router,
+    tags=["commercial"]
+)
+
+api_router.include_router(
+    commercial_testimonials.router,
     tags=["commercial"]
 )
 

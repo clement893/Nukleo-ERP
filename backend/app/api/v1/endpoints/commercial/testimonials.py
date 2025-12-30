@@ -738,3 +738,467 @@ async def delete_testimonial(
     await db.delete(testimonial)
     await db.commit()
 
+
+@router.post("/import")
+async def import_testimonials(
+    file: UploadFile = File(...),
+    import_id: Optional[str] = Query(None, description="Optional import ID for tracking logs"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Import testimonials from Excel file or ZIP file (Excel + logos)
+    
+    Supports two formats:
+    1. Excel file (.xlsx, .xls) - simple import with logo URLs
+    2. ZIP file (.zip) containing:
+       - testimonials.xlsx or testimonials.xls (Excel file with testimonial data)
+       - logos/ folder (optional) with images named as referenced in Excel
+    
+    Supported column names (case-insensitive, accent-insensitive):
+    - Company Name: company_name, company, entreprise, nom_entreprise
+    - Company ID: company_id, id_entreprise, entreprise_id
+    - Contact First Name: contact_first_name, contact_prenom, contact_firstname
+    - Contact Last Name: contact_last_name, contact_nom, contact_lastname
+    - Contact ID: contact_id, id_contact
+    - Title: title, titre
+    - Testimonial FR: testimonial_fr, témoignage_fr, temoignage_fr, témoignage français
+    - Testimonial EN: testimonial_en, témoignage_en, temoignage_en, témoignage anglais
+    - Language: language, langue
+    - Logo Filename: logo_filename, nom_fichier_logo (for matching logos in ZIP)
+    - Logo URL: logo_url, logo, url_logo
+    - Is Published: is_published, publié, published
+    - Rating: rating, note, étoiles
+    
+    Args:
+        file: Excel file or ZIP file with testimonials data and logos
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Import results with data, errors, and warnings
+    """
+    # Generate import_id if not provided
+    if not import_id:
+        import_id = str(uuid.uuid4())
+    
+    # Initialize logs and status
+    import_logs[import_id] = []
+    import_status[import_id] = {
+        "status": "started",
+        "progress": 0,
+        "total": 0,
+        "created_at": dt.now().isoformat()
+    }
+    
+    add_import_log(import_id, f"Début de l'import du fichier: {file.filename}", "info")
+    
+    try:
+        # Read file content
+        file_content = await file.read()
+        filename = file.filename or ""
+        file_ext = os.path.splitext(filename.lower())[1]
+        
+        add_import_log(import_id, f"Fichier lu: {len(file_content)} bytes, extension: {file_ext}", "info")
+        
+        # Dictionary to store logos from ZIP
+        logos_dict = {}
+        excel_content = None
+        
+        # Check if it's a ZIP file
+        if file_ext == '.zip':
+            add_import_log(import_id, "Détection d'un fichier ZIP, extraction en cours...", "info")
+            try:
+                with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                    logo_count = 0
+                    for file_info in zip_ref.namelist():
+                        file_name_lower = file_info.lower()
+                        
+                        if file_name_lower.endswith(('.xlsx', '.xls')):
+                            if excel_content is None:
+                                excel_content = zip_ref.read(file_info)
+                                add_import_log(import_id, f"Fichier Excel trouvé dans le ZIP: {file_info}", "info")
+                        elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg')):
+                            logo_content = zip_ref.read(file_info)
+                            logo_filename = os.path.basename(file_info)
+                            logo_filename_normalized = normalize_filename(logo_filename)
+                            logos_dict[logo_filename.lower()] = logo_content
+                            if logo_filename_normalized != logo_filename.lower():
+                                logos_dict[logo_filename_normalized] = logo_content
+                            logo_count += 1
+                    
+                    add_import_log(import_id, f"Extraction ZIP terminée: {logo_count} logo(s) trouvé(s)", "info")
+                
+                if excel_content is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="No Excel file found in ZIP"
+                    )
+                
+                file_content = excel_content
+            except zipfile.BadZipFile:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid ZIP file format"
+                )
+        
+        # Import from Excel
+        add_import_log(import_id, "Lecture du fichier Excel...", "info")
+        try:
+            result = ImportService.import_from_excel(
+                file_content=file_content,
+                has_headers=True
+            )
+        except Exception as e:
+            add_import_log(import_id, f"ERREUR lors de la lecture Excel: {str(e)}", "error")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error reading Excel file: {str(e)}"
+            )
+        
+        if not result or 'data' not in result or not isinstance(result['data'], list) or len(result['data']) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Excel file does not contain valid data rows"
+            )
+        
+        total_rows = len(result['data'])
+        add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
+        update_import_status(import_id, "processing", progress=0, total=total_rows)
+        
+        # Load all companies and contacts
+        add_import_log(import_id, "Chargement des entreprises et contacts existants...", "info")
+        companies_result = await db.execute(select(Company))
+        all_companies = companies_result.scalars().all()
+        company_name_to_id = {company.name.lower().strip(): company.id for company in all_companies if company.name}
+        
+        contacts_result = await db.execute(select(Contact))
+        all_contacts = contacts_result.scalars().all()
+        contact_name_to_id = {}
+        for contact in all_contacts:
+            if contact.first_name and contact.last_name:
+                full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                contact_name_to_id[full_name] = contact.id
+        
+        add_import_log(import_id, f"{len(company_name_to_id)} entreprise(s) et {len(contact_name_to_id)} contact(s) chargé(s)", "info")
+        
+        # Initialize S3 service
+        s3_service = None
+        s3_configured = S3Service.is_configured()
+        if s3_configured:
+            try:
+                s3_service = S3Service()
+            except Exception as e:
+                logger.error(f"Failed to initialize S3Service: {e}", exc_info=True)
+                s3_service = None
+        
+        # Helper function to normalize column names
+        def normalize_key(key: str) -> str:
+            if not key:
+                return ''
+            normalized = str(key).lower().strip()
+            normalized = unicodedata.normalize('NFD', normalized)
+            normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+            return normalized
+        
+        # Helper function to get field value
+        def get_field_value(row: dict, possible_names: list) -> Optional[str]:
+            for name in possible_names:
+                if name in row and row[name] is not None:
+                    value = str(row[name]).strip()
+                    if value:
+                        return value
+            
+            normalized_row = {normalize_key(k): v for k, v in row.items()}
+            for name in possible_names:
+                normalized_name = normalize_key(name)
+                if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
+                    value = str(normalized_row[normalized_name]).strip()
+                    if value:
+                        return value
+            return None
+        
+        # Process imported data
+        created_testimonials = []
+        errors = []
+        warnings = []
+        stats = {
+            "total_processed": 0,
+            "created_new": 0,
+            "errors": 0,
+            "logos_uploaded": 0
+        }
+        
+        BATCH_SIZE = 50
+        
+        for idx, row_data in enumerate(result['data']):
+            try:
+                stats["total_processed"] += 1
+                update_import_status(import_id, "processing", progress=idx + 1, total=total_rows)
+                
+                if (idx + 1) % 10 == 0 or idx < 5:
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement... (créés: {stats['created_new']}, erreurs: {stats['errors']})", "info")
+                
+                # Get company
+                company_id = None
+                company_id_raw = get_field_value(row_data, ['company_id', 'id_entreprise', 'entreprise_id'])
+                company_name = get_field_value(row_data, ['company_name', 'company', 'entreprise', 'nom_entreprise'])
+                
+                if company_id_raw:
+                    try:
+                        company_id = int(float(str(company_id_raw)))
+                        company_result = await db.execute(select(Company).where(Company.id == company_id))
+                        if not company_result.scalar_one_or_none():
+                            errors.append({'row': idx + 2, 'data': row_data, 'error': f'Company ID {company_id} not found'})
+                            continue
+                    except (ValueError, TypeError):
+                        errors.append({'row': idx + 2, 'data': row_data, 'error': f'Invalid company ID: {company_id_raw}'})
+                        continue
+                elif company_name:
+                    matched_company_id = await find_company_by_name(company_name, db, all_companies, company_name_to_id)
+                    if matched_company_id:
+                        company_id = matched_company_id
+                    else:
+                        warnings.append({'row': idx + 2, 'type': 'company_not_found', 'message': f"Entreprise '{company_name}' non trouvée"})
+                
+                # Get contact
+                contact_id = None
+                contact_id_raw = get_field_value(row_data, ['contact_id', 'id_contact'])
+                contact_first_name = get_field_value(row_data, ['contact_first_name', 'contact_prenom', 'contact_firstname', 'prenom_contact'])
+                contact_last_name = get_field_value(row_data, ['contact_last_name', 'contact_nom', 'contact_lastname', 'nom_contact'])
+                
+                if contact_id_raw:
+                    try:
+                        contact_id = int(float(str(contact_id_raw)))
+                        contact_result = await db.execute(select(Contact).where(Contact.id == contact_id))
+                        if not contact_result.scalar_one_or_none():
+                            errors.append({'row': idx + 2, 'data': row_data, 'error': f'Contact ID {contact_id} not found'})
+                            continue
+                    except (ValueError, TypeError):
+                        errors.append({'row': idx + 2, 'data': row_data, 'error': f'Invalid contact ID: {contact_id_raw}'})
+                        continue
+                elif contact_first_name and contact_last_name:
+                    matched_contact_id = await find_contact_by_name(contact_first_name, contact_last_name, company_id, db, all_contacts, contact_name_to_id)
+                    if matched_contact_id:
+                        contact_id = matched_contact_id
+                    else:
+                        warnings.append({'row': idx + 2, 'type': 'contact_not_found', 'message': f"Contact '{contact_first_name} {contact_last_name}' non trouvé"})
+                
+                # Get other fields
+                title = get_field_value(row_data, ['title', 'titre'])
+                testimonial_fr = get_field_value(row_data, ['testimonial_fr', 'témoignage_fr', 'temoignage_fr', 'témoignage français', 'temoignage_francais'])
+                testimonial_en = get_field_value(row_data, ['testimonial_en', 'témoignage_en', 'temoignage_en', 'témoignage anglais', 'temoignage_anglais'])
+                language = get_field_value(row_data, ['language', 'langue']) or 'fr'
+                logo_filename = get_field_value(row_data, ['logo_filename', 'nom_fichier_logo'])
+                logo_url = get_field_value(row_data, ['logo_url', 'logo', 'url_logo'])
+                is_published = get_field_value(row_data, ['is_published', 'publié', 'published']) or 'false'
+                rating_raw = get_field_value(row_data, ['rating', 'note', 'étoiles', 'etoiles'])
+                rating = None
+                if rating_raw:
+                    try:
+                        rating = int(float(str(rating_raw)))
+                        if rating < 1 or rating > 5:
+                            rating = None
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Handle logo upload from ZIP
+                if logo_filename and logos_dict and s3_service:
+                    logo_filename_lower = logo_filename.lower()
+                    logo_filename_normalized = normalize_filename(logo_filename)
+                    
+                    logo_content = None
+                    if logo_filename_lower in logos_dict:
+                        logo_content = logos_dict[logo_filename_lower]
+                    elif logo_filename_normalized in logos_dict:
+                        logo_content = logos_dict[logo_filename_normalized]
+                    
+                    if logo_content:
+                        try:
+                            file_key = f"testimonials/logos/{uuid.uuid4().hex}_{logo_filename}"
+                            s3_service.upload_file(file_key, logo_content, content_type='image/jpeg')
+                            logo_url = file_key
+                            stats["logos_uploaded"] += 1
+                            add_import_log(import_id, f"Ligne {idx + 2}: Logo uploadé: {logo_filename}", "info")
+                        except Exception as e:
+                            logger.error(f"Error uploading logo for row {idx + 2}: {e}", exc_info=True)
+                            warnings.append({'row': idx + 2, 'type': 'logo_upload_failed', 'message': f"Erreur upload logo: {str(e)}"})
+                
+                # Create testimonial
+                testimonial = Testimonial(
+                    contact_id=contact_id,
+                    company_id=company_id,
+                    title=title,
+                    testimonial_fr=testimonial_fr,
+                    testimonial_en=testimonial_en,
+                    language=language,
+                    logo_url=logo_url,
+                    logo_filename=logo_filename,
+                    is_published=is_published,
+                    rating=rating,
+                )
+                
+                db.add(testimonial)
+                
+                if (idx + 1) % BATCH_SIZE == 0:
+                    await db.commit()
+                    add_import_log(import_id, f"Batch {idx + 1} sauvegardé", "info")
+                
+                created_testimonials.append(testimonial)
+                stats["created_new"] += 1
+                
+            except Exception as e:
+                stats["errors"] += 1
+                error_msg = f"Ligne {idx + 2}: Erreur - {str(e)}"
+                add_import_log(import_id, error_msg, "error")
+                errors.append({'row': idx + 2, 'data': row_data, 'error': str(e)})
+                logger.error(f"Error importing testimonial row {idx + 2}: {str(e)}", exc_info=True)
+        
+        # Final commit
+        if created_testimonials:
+            await db.commit()
+            for testimonial in created_testimonials:
+                await db.refresh(testimonial)
+            add_import_log(import_id, f"Sauvegarde réussie: {len(created_testimonials)} témoignage(s) créé(s)", "success")
+        
+        add_import_log(import_id, f"✅ Import terminé: {len(created_testimonials)} témoignage(s), {len(errors)} erreur(s)", "success")
+        update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
+        
+        return {
+            'total_rows': total_rows,
+            'valid_rows': len(created_testimonials),
+            'invalid_rows': len(errors),
+            'errors': errors,
+            'warnings': warnings,
+            'logos_uploaded': stats.get("logos_uploaded", 0),
+            'import_id': import_id,
+            'data': [TestimonialSchema.model_validate({
+                'id': t.id,
+                'contact_id': t.contact_id,
+                'company_id': t.company_id,
+                'title': t.title,
+                'testimonial_fr': t.testimonial_fr,
+                'testimonial_en': t.testimonial_en,
+                'language': t.language,
+                'logo_url': t.logo_url,
+                'logo_filename': t.logo_filename,
+                'is_published': t.is_published,
+                'rating': t.rating,
+                'created_at': t.created_at,
+                'updated_at': t.updated_at,
+            }) for t in created_testimonials]
+        }
+    except HTTPException:
+        if import_id:
+            update_import_status(import_id, "failed")
+        raise
+    except Exception as e:
+        if import_id:
+            add_import_log(import_id, f"ERREUR inattendue: {str(e)}", "error")
+            update_import_status(import_id, "failed")
+        logger.error(f"Unexpected error in import_testimonials: {e}", exc_info=True)
+        try:
+            await db.rollback()
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during import: {str(e)}"
+        )
+
+
+@router.get("/export")
+async def export_testimonials(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Export testimonials to Excel file
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Excel file with testimonials data
+    """
+    try:
+        # Get all testimonials
+        result = await db.execute(
+            select(Testimonial)
+            .options(
+                selectinload(Testimonial.company),
+                selectinload(Testimonial.contact)
+            )
+            .order_by(Testimonial.created_at.desc())
+        )
+        testimonials = result.scalars().all()
+        
+        # Convert to dict format for export
+        export_data = []
+        for testimonial in testimonials:
+            try:
+                contact_name = ''
+                if testimonial.contact:
+                    contact_name = f"{testimonial.contact.first_name or ''} {testimonial.contact.last_name or ''}".strip()
+                
+                export_data.append({
+                    'Entreprise': testimonial.company.name if testimonial.company and testimonial.company.name else '',
+                    'Nom du contact': contact_name,
+                    'Titre': testimonial.title or '',
+                    'Témoignage FR': testimonial.testimonial_fr or '',
+                    'Témoignage EN': testimonial.testimonial_en or '',
+                    'Langue': testimonial.language or 'fr',
+                    'Logo URL': testimonial.logo_url or '',
+                    'Publié': testimonial.is_published or 'false',
+                    'Note': testimonial.rating or '',
+                })
+            except Exception as e:
+                logger.error(f"Error processing testimonial {testimonial.id} for export: {e}")
+                continue
+        
+        # Handle empty data case
+        if not export_data:
+            export_data = [{
+                'Entreprise': '',
+                'Nom du contact': '',
+                'Titre': '',
+                'Témoignage FR': '',
+                'Témoignage EN': '',
+                'Langue': '',
+                'Logo URL': '',
+                'Publié': '',
+                'Note': '',
+            }]
+        
+        # Export to Excel
+        from datetime import datetime
+        buffer, filename = ExportService.export_to_excel(
+            data=export_data,
+            filename=f"testimonials_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        )
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        logger.error(f"Export validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Erreur lors de l'export: {str(e)}"
+        )
+    except ImportError as e:
+        logger.error(f"Export dependency error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le service d'export Excel n'est pas disponible. Veuillez contacter l'administrateur."
+        )
+    except Exception as e:
+        logger.error(f"Unexpected export error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur inattendue lors de l'export: {str(e)}"
+        )
+
