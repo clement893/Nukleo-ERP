@@ -17,16 +17,20 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Rename logo_filename column to photo_filename in contacts table"""
+    """Rename logo_filename column to photo_filename in contacts table, or create photo_filename if logo_filename doesn't exist"""
     # Check if column exists and rename it
     bind = op.get_bind()
     inspector = sa.inspect(bind)
     columns = [col['name'] for col in inspector.get_columns('contacts')]
     
-    if 'logo_filename' in columns and 'photo_filename' not in columns:
+    if 'photo_filename' in columns:
+        # Column already exists, nothing to do
+        pass
+    elif 'logo_filename' in columns:
+        # Rename logo_filename to photo_filename
         op.alter_column('contacts', 'logo_filename', new_column_name='photo_filename')
-    elif 'logo_filename' not in columns and 'photo_filename' not in columns:
-        # If neither exists, create photo_filename
+    else:
+        # Neither exists, create photo_filename directly
         op.add_column('contacts', sa.Column('photo_filename', sa.String(length=500), nullable=True))
 
 

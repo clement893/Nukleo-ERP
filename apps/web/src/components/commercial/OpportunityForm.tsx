@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Opportunity, OpportunityCreate, OpportunityUpdate } from '@/lib/api/opportunities';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui';
+import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
+import { companiesAPI, type Company } from '@/lib/api/companies';
+import { handleApiError } from '@/lib/errors/api';
 
 interface OpportunityFormProps {
   opportunity?: Opportunity | null;
@@ -32,6 +35,11 @@ export default function OpportunityForm({
   loading = false,
 }: OpportunityFormProps) {
   const { showToast } = useToast();
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
+  
   const [formData, setFormData] = useState<OpportunityCreate>({
     name: opportunity?.name || '',
     description: opportunity?.description || null,
@@ -51,6 +59,46 @@ export default function OpportunityForm({
     closed_at: opportunity?.closed_at || null,
     contact_ids: [],
   });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingData(true);
+        const [pipelinesData, companiesData] = await Promise.all([
+          pipelinesAPI.list(0, 1000, true),
+          companiesAPI.list(0, 1000)
+        ]);
+        setPipelines(pipelinesData);
+        setCompanies(companiesData);
+        
+        // Find selected pipeline
+        if (formData.pipeline_id) {
+          const pipeline = pipelinesData.find(p => p.id === formData.pipeline_id);
+          setSelectedPipeline(pipeline || null);
+        }
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({
+          message: appError.message || 'Erreur lors du chargement des données',
+          type: 'error',
+        });
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (formData.pipeline_id) {
+      const pipeline = pipelines.find(p => p.id === formData.pipeline_id);
+      setSelectedPipeline(pipeline || null);
+      // Reset stage if pipeline changes
+      if (!pipeline || !pipeline.stages.find(s => s.id === formData.stage_id)) {
+        setFormData(prev => ({ ...prev, stage_id: null }));
+      }
+    }
+  }, [formData.pipeline_id, pipelines]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,24 +178,31 @@ export default function OpportunityForm({
           options={STATUS_OPTIONS}
         />
 
-        <Input
-          label="Pipeline ID *"
+        <Select
+          label="Pipeline *"
           value={formData.pipeline_id}
-          onChange={(e) => setFormData({ ...formData, pipeline_id: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, pipeline_id: e.target.value, stage_id: null })}
           required
-          placeholder="UUID du pipeline"
+          options={[
+            { value: '', label: 'Sélectionner un pipeline' },
+            ...pipelines.map(p => ({ value: p.id, label: p.name }))
+          ]}
+          disabled={loadingData}
         />
 
-        <Input
-          label="Stage ID"
+        <Select
+          label="Stade du pipeline"
           value={formData.stage_id || ''}
           onChange={(e) => setFormData({ ...formData, stage_id: e.target.value || null })}
-          placeholder="UUID du stage"
+          options={[
+            { value: '', label: 'Aucun stade' },
+            ...(selectedPipeline?.stages.map(s => ({ value: s.id, label: s.name })) || [])
+          ]}
+          disabled={!selectedPipeline || loadingData}
         />
 
-        <Input
-          label="Company ID"
-          type="number"
+        <Select
+          label="Entreprise"
           value={formData.company_id?.toString() || ''}
           onChange={(e) =>
             setFormData({
@@ -155,6 +210,11 @@ export default function OpportunityForm({
               company_id: e.target.value ? parseInt(e.target.value) : null,
             })
           }
+          options={[
+            { value: '', label: 'Aucune entreprise' },
+            ...companies.map(c => ({ value: c.id.toString(), label: c.name }))
+          ]}
+          disabled={loadingData}
         />
 
         <Input

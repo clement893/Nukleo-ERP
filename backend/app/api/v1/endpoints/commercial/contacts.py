@@ -285,12 +285,12 @@ async def list_contacts(
         contacts = result.scalars().all()
     except Exception as e:
         error_str = str(e)
-        # Check if the error is about missing logo_filename column
-        if 'logo_filename' in error_str and 'does not exist' in error_str:
-            logger.error(f"Migration 040 not executed: logo_filename column missing. Please run: alembic upgrade head", exc_info=True)
+        # Check if the error is about missing photo_filename column
+        if ('photo_filename' in error_str or 'logo_filename' in error_str) and 'does not exist' in error_str:
+            logger.error(f"Migration 042 not executed: photo_filename column missing. Please run: alembic upgrade head", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="La colonne logo_filename n'existe pas encore. Veuillez exécuter la migration 040: alembic upgrade head"
+                detail="La colonne photo_filename n'existe pas encore. Veuillez exécuter la migration 042: alembic upgrade head"
             )
         logger.error(f"Database error in list_contacts: {e}", exc_info=True)
         raise HTTPException(
