@@ -22,6 +22,9 @@ class ProjectBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Project name", strip_whitespace=True)
     description: Optional[str] = Field(None, max_length=5000, description="Project description")
     status: ProjectStatus = Field(default=ProjectStatus.ACTIVE, description="Project status")
+    client_id: Optional[int] = Field(None, description="Client (company) ID")
+    client_name: Optional[str] = Field(None, max_length=255, description="Client name (will be matched to existing company if client_id not provided)")
+    responsable_id: Optional[int] = Field(None, description="Responsable (employee) ID")
     
     @field_validator('name')
     @classmethod
@@ -55,6 +58,9 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="Project name", strip_whitespace=True)
     description: Optional[str] = Field(None, max_length=5000, description="Project description")
     status: Optional[ProjectStatus] = Field(None, description="Project status")
+    client_id: Optional[int] = Field(None, description="Client (company) ID")
+    client_name: Optional[str] = Field(None, max_length=255, description="Client name (will be matched to existing company if client_id not provided)")
+    responsable_id: Optional[int] = Field(None, description="Responsable (employee) ID")
     
     @field_validator('name')
     @classmethod
@@ -83,6 +89,10 @@ class Project(ProjectBase):
     """Project response schema"""
     id: int
     user_id: int
+    client_id: Optional[int] = None
+    client_name: Optional[str] = None
+    responsable_id: Optional[int] = None
+    responsable_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

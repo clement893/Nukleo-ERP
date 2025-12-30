@@ -2,12 +2,13 @@
 Project Management Endpoints
 """
 
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func, delete
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.cache import cached, invalidate_cache_pattern
@@ -16,9 +17,16 @@ from app.core.tenancy_helpers import apply_tenant_scope
 from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
+from app.models.company import Company
+from app.models.employee import Employee
 from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
+from app.core.logging import logger
+from . import import_export
 
 router = APIRouter()
+
+# Include import/export routes
+router.include_router(import_export.router, tags=["projects-import-export"])
 
 
 @router.get("/", response_model=List[ProjectSchema])
@@ -31,7 +39,7 @@ async def get_projects(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records"),
     status: ProjectStatus | None = Query(None, description="Filter by status"),
-) -> List[Project]:
+) -> List[ProjectSchema]:
     """
     Get list of projects for the current user
     
@@ -53,17 +61,45 @@ async def get_projects(
     # Apply tenant scoping if tenancy is enabled
     query = apply_tenant_scope(query, Project)
     
+    # Load relationships
+    query = query.options(
+        selectinload(Project.client),
+        selectinload(Project.responsable)
+    )
+    
     query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
     
     result = await db.execute(query)
     projects = result.scalars().all()
     
-    # Convert to JSONResponse for slowapi compatibility
-    project_schemas = [ProjectSchema.model_validate(project) for project in projects]
-    return JSONResponse(
-        content=[project.model_dump(mode='json') for project in project_schemas],
-        status_code=200
-    )
+    # Convert to response format with client and responsable names
+    project_list = []
+    for project in projects:
+        project_dict = {
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "status": project.status,
+            "user_id": project.user_id,
+            "client_id": project.client_id,
+            "client_name": project.client.name if project.client else None,
+            "responsable_id": project.responsable_id,
+            "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+            "created_at": project.created_at,
+            "updated_at": project.updated_at,
+        }
+        project_list.append(ProjectSchema(**project_dict))
+    
+    return project_list
+
+
+@router.get("/{project_id}", response_model=ProjectSchema)
+@cached(expire=300, key_prefix="project")
+async def get_project(
+    project_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: User = Depends(get_current_user),
+) -> ProjectSchema:
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
@@ -94,6 +130,10 @@ async def get_project(
         )
     )
     query = apply_tenant_scope(query, Project)
+    query = query.options(
+        selectinload(Project.client),
+        selectinload(Project.responsable)
+    )
     
     result = await db.execute(query)
     project = result.scalar_one_or_none()
@@ -104,12 +144,56 @@ async def get_project(
             detail="Project not found"
         )
     
-    return project
+    # Convert to response format with client and responsable names
+    project_dict = {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "status": project.status,
+        "user_id": project.user_id,
+        "client_id": project.client_id,
+        "client_name": project.client.name if project.client else None,
+        "responsable_id": project.responsable_id,
+        "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+        "created_at": project.created_at,
+        "updated_at": project.updated_at,
+    }
+    
+    return ProjectSchema(**project_dict)
 
 
 @router.post("/", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
 @rate_limit_decorator("30/hour")
 @invalidate_cache_pattern("projects:*")
+async def find_company_by_name(
+    company_name: str,
+    db: AsyncSession,
+) -> Optional[int]:
+    """Find a company ID by name using intelligent matching"""
+    if not company_name or not company_name.strip():
+        return None
+    
+    company_name_normalized = company_name.strip().lower()
+    
+    # Try exact match first
+    result = await db.execute(
+        select(Company).where(func.lower(Company.name) == company_name_normalized)
+    )
+    company = result.scalar_one_or_none()
+    if company:
+        return company.id
+    
+    # Try partial match
+    result = await db.execute(
+        select(Company).where(func.lower(Company.name).contains(company_name_normalized))
+    )
+    company = result.scalar_one_or_none()
+    if company:
+        return company.id
+    
+    return None
+
+
 async def create_project(
     request: Request,
     project_data: ProjectCreate,
@@ -127,18 +211,47 @@ async def create_project(
     Returns:
         Created project object
     """
+    # Handle client matching: if client_name is provided but client_id is not, try to find the company
+    final_client_id = project_data.client_id
+    
+    if final_client_id is None and project_data.client_name:
+        matched_client_id = await find_company_by_name(
+            company_name=project_data.client_name,
+            db=db
+        )
+        if matched_client_id:
+            final_client_id = matched_client_id
+            logger.info(f"Auto-matched client '{project_data.client_name}' to company ID {matched_client_id}")
+    
     project = Project(
         name=project_data.name,
         description=project_data.description,
         status=project_data.status,
         user_id=current_user.id,
+        client_id=final_client_id,
+        responsable_id=project_data.responsable_id,
     )
     
     db.add(project)
     await db.commit()
-    await db.refresh(project)
+    await db.refresh(project, ["client", "responsable"])
     
-    return project
+    # Convert to response format
+    project_dict = {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "status": project.status,
+        "user_id": project.user_id,
+        "client_id": project.client_id,
+        "client_name": project.client.name if project.client else None,
+        "responsable_id": project.responsable_id,
+        "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+        "created_at": project.created_at,
+        "updated_at": project.updated_at,
+    }
+    
+    return ProjectSchema(**project_dict)
 
 
 @router.put("/{project_id}", response_model=ProjectSchema)
@@ -151,7 +264,7 @@ async def update_project(
     project_data: ProjectUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: User = Depends(get_current_user),
-) -> Project:
+) -> ProjectSchema:
     """
     Update an existing project
     
@@ -180,15 +293,48 @@ async def update_project(
             detail="Project not found"
         )
     
+    # Handle client matching: if client_name is provided but client_id is not, try to find the company
+    final_client_id = project_data.client_id
+    
+    if final_client_id is None and project_data.client_name:
+        matched_client_id = await find_company_by_name(
+            company_name=project_data.client_name,
+            db=db
+        )
+        if matched_client_id:
+            final_client_id = matched_client_id
+            logger.info(f"Auto-matched client '{project_data.client_name}' to company ID {matched_client_id} for project {project_id}")
+    
     # Update fields
     update_data = project_data.model_dump(exclude_unset=True)
+    if final_client_id is not None:
+        update_data["client_id"] = final_client_id
+    if "client_name" in update_data:
+        del update_data["client_name"]  # Remove client_name as it's not a database field
+    
     for field, value in update_data.items():
-        setattr(project, field, value)
+        if hasattr(project, field):
+            setattr(project, field, value)
     
     await db.commit()
-    await db.refresh(project)
+    await db.refresh(project, ["client", "responsable"])
     
-    return project
+    # Convert to response format
+    project_dict = {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "status": project.status,
+        "user_id": project.user_id,
+        "client_id": project.client_id,
+        "client_name": project.client.name if project.client else None,
+        "responsable_id": project.responsable_id,
+        "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+        "created_at": project.created_at,
+        "updated_at": project.updated_at,
+    }
+    
+    return ProjectSchema(**project_dict)
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -227,3 +373,45 @@ async def delete_project(
     
     await db.delete(project)
     await db.commit()
+
+
+@router.delete("/bulk", status_code=status.HTTP_200_OK)
+async def delete_all_projects(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """
+    Delete all projects from the database
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dictionary with count of deleted projects
+    """
+    # Count projects before deletion
+    count_result = await db.execute(
+        select(func.count(Project.id)).where(Project.user_id == current_user.id)
+    )
+    count = count_result.scalar_one()
+    
+    if count == 0:
+        return {
+            "message": "No projects found",
+            "deleted_count": 0
+        }
+    
+    # Delete all projects for the user
+    await db.execute(
+        delete(Project).where(Project.user_id == current_user.id)
+    )
+    await db.commit()
+    
+    logger.info(f"User {current_user.id} deleted all {count} projects")
+    
+    return {
+        "message": f"Successfully deleted {count} project(s)",
+        "deleted_count": count
+    }
