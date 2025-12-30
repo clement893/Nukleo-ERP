@@ -30,7 +30,6 @@ import {
   useInfiniteProjects, 
   useCreateProject, 
   useUpdateProject, 
-  useDeleteProject, 
   useDeleteAllProjects,
   projectsAPI 
 } from '@/lib/query/projects';
