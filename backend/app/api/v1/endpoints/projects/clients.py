@@ -739,6 +739,36 @@ async def delete_client(
 
 
 @router.get("/import/{import_id}/logs")
+async def get_import_logs(
+    import_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get import logs for a specific import ID
+    
+    Args:
+        import_id: Import ID to get logs for
+        current_user: Current authenticated user
+        
+    Returns:
+        Dictionary with logs and status
+    """
+    logs = import_logs.get(import_id, [])
+    status_info = import_status.get(import_id, {
+        "status": "unknown",
+        "progress": 0,
+        "total": 0,
+    })
+    
+    return {
+        "import_id": import_id,
+        "logs": logs,
+        "status": status_info,
+        "total_logs": len(logs),
+    }
+
+
+@router.get("/import/{import_id}/logs/stream")
 async def stream_import_logs(
     import_id: str,
     current_user: User = Depends(get_current_user),
@@ -1116,6 +1146,63 @@ async def import_clients(
                 # Check if client already exists for this company
                 existing_client = clients_by_company_id.get(company_id)
                 
+                # If client already exists, skip creation to avoid duplicate key error
+                if existing_client:
+                    stats["matched_existing"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Client existe déjà pour l'entreprise '{company_name}' (ID: {existing_client.id}) - ignoré", "warning")
+                    # Update existing client fields if provided
+                    update_data = {}
+                    # Get status
+                    status_raw = get_field_value(row_data, [
+                        'status', 'statut', 'état', 'etat', 'state'
+                    ])
+                    if status_raw:
+                        status_lower = status_raw.lower().strip()
+                        if status_lower in ['inactive', 'inactif', 'inactif']:
+                            update_data['status'] = ClientStatus.INACTIVE
+                        elif status_lower in ['maintenance', 'maintenance']:
+                            update_data['status'] = ClientStatus.MAINTENANCE
+                        else:
+                            update_data['status'] = ClientStatus.ACTIVE
+                    
+                    # Get responsible_id
+                    responsible_id_raw = get_field_value(row_data, [
+                        'responsible_id', 'responsable_id', 'employee_id', 'id_employé', 'id_employe',
+                        'employé_id', 'employe_id', 'employee id', 'id employee', 'responsable id',
+                        'assigned_to_id', 'assigned to id'
+                    ])
+                    if responsible_id_raw:
+                        try:
+                            update_data['responsible_id'] = int(float(str(responsible_id_raw)))
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Get notes and comments
+                    notes = get_field_value(row_data, [
+                        'notes', 'note', 'commentaires', 'commentaire', 'comments', 'comment'
+                    ])
+                    if notes:
+                        update_data['notes'] = notes
+                    
+                    comments = get_field_value(row_data, [
+                        'comments', 'commentaires', 'commentaire', 'comment', 'notes', 'note'
+                    ])
+                    if comments:
+                        update_data['comments'] = comments
+                    
+                    portal_url = get_field_value(row_data, [
+                        'portal_url', 'portal url', 'url_portail', 'url portail', 'portail', 'portal'
+                    ])
+                    if portal_url:
+                        update_data['portal_url'] = portal_url
+                    
+                    # Update existing client if there are changes
+                    if update_data:
+                        for field, value in update_data.items():
+                            setattr(existing_client, field, value)
+                        add_import_log(import_id, f"Ligne {idx + 2}: Client mis à jour - {company_name} (ID: {existing_client.id})", "info")
+                    continue
+                
                 # Handle contact matching by name
                 contact_name = get_field_value(row_data, [
                     'contact_name', 'contact', 'Contact', 'contact_nom', 'contact_name_full'
@@ -1241,44 +1328,29 @@ async def import_clients(
                                         'message': f"Erreur lors de l'upload du logo '{pattern}': {str(e)}",
                                     })
                 
-                # Prepare client data
-                if existing_client:
-                    # Update existing client
-                    update_data = {
-                        'status': client_status,
-                        'responsible_id': responsible_id,
-                        'notes': notes,
-                        'comments': comments,
-                        'portal_url': portal_url,
-                    }
-                    for field, value in update_data.items():
-                        if value is not None:
-                            setattr(existing_client, field, value)
-                    created_clients.append(existing_client)
-                    stats["matched_existing"] += 1
-                    add_import_log(import_id, f"Ligne {idx + 2}: Client mis à jour - {company_name} (ID: {existing_client.id})", "info")
-                else:
-                    # Create new client
-                    client = Client(
-                        company_id=company_id,
-                        status=client_status,
-                        responsible_id=responsible_id,
-                        notes=notes,
-                        comments=comments,
-                        portal_url=portal_url,
-                    )
-                    db.add(client)
-                    created_clients.append(client)
-                    stats["created_new"] += 1
-                    add_import_log(import_id, f"Ligne {idx + 2}: Nouveau client créé - {company_name}", "info")
-                    
-                    # Mark company as client
-                    company_result = await db.execute(
-                        select(Company).where(Company.id == company_id)
-                    )
-                    company = company_result.scalar_one_or_none()
-                    if company and not company.is_client:
-                        company.is_client = True
+                # Create new client (existing_client check already done above)
+                client = Client(
+                    company_id=company_id,
+                    status=client_status,
+                    responsible_id=responsible_id,
+                    notes=notes,
+                    comments=comments,
+                    portal_url=portal_url,
+                )
+                db.add(client)
+                created_clients.append(client)
+                # Add to clients_by_company_id to prevent duplicates in same import
+                clients_by_company_id[company_id] = client
+                stats["created_new"] += 1
+                add_import_log(import_id, f"Ligne {idx + 2}: Nouveau client créé - {company_name}", "info")
+                
+                # Mark company as client
+                company_result = await db.execute(
+                    select(Company).where(Company.id == company_id)
+                )
+                company = company_result.scalar_one_or_none()
+                if company and not company.is_client:
+                    company.is_client = True
                 
             except Exception as e:
                 stats["errors"] += 1
