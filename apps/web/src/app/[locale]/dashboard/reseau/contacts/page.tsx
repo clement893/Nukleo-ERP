@@ -463,23 +463,9 @@ function ContactsContent() {
       key: 'photo_url',
       label: '',
       sortable: false,
-      render: (value, contact) => (
+      render: (_value, contact) => (
         <div className="flex items-center">
-          {value ? (
-            <img
-              src={String(value)}
-              alt={`Photo de profil de ${contact.first_name} ${contact.last_name}`}
-              className="w-10 h-10 rounded-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-xs font-medium">
-                {contact.first_name.charAt(0)}{contact.last_name.charAt(0)}
-              </span>
-            </div>
-          )}
+          <ContactAvatar contact={contact} size="md" />
         </div>
       ),
     },
