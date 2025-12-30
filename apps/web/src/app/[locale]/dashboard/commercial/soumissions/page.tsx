@@ -379,16 +379,16 @@ function SoumissionsContent() {
             </div>
           ) : activeTab === 'quotes' ? (
             <DataTable
-              data={quotes as Record<string, unknown>[]}
-              columns={quoteColumns as Column<Record<string, unknown>>[]}
+              data={quotes as unknown as Record<string, unknown>[]}
+              columns={quoteColumns as unknown as Column<Record<string, unknown>>[]}
               onRowClick={(quote) => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                const quoteObj = quote as Quote;
+                const quoteObj = quote as unknown as Quote;
                 router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quoteObj.id}`);
               }}
               actions={(quote): DropdownItem[] => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                const quoteObj = quote as Quote;
+                const quoteObj = quote as unknown as Quote;
                 return [
                   {
                     label: 'Voir',
@@ -410,16 +410,16 @@ function SoumissionsContent() {
             />
           ) : (
             <DataTable
-              data={submissions as Record<string, unknown>[]}
-              columns={submissionColumns as Column<Record<string, unknown>>[]}
+              data={submissions as unknown as Record<string, unknown>[]}
+              columns={submissionColumns as unknown as Column<Record<string, unknown>>[]}
               onRowClick={(submission) => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                const submissionObj = submission as Submission;
+                const submissionObj = submission as unknown as Submission;
                 router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submissionObj.id}`);
               }}
               actions={(submission): DropdownItem[] => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                const submissionObj = submission as Submission;
+                const submissionObj = submission as unknown as Submission;
                 return [
                   {
                     label: 'Voir',
