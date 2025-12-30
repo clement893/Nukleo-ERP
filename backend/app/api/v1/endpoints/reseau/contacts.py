@@ -44,19 +44,6 @@ async def list_contacts(
         company_id=company_id,
     )
 
-@router.get("/{contact_id}", response_model=ContactSchema)
-async def get_contact(
-    contact_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Get a specific contact by ID for network module"""
-    return await commercial_contacts.get_contact(
-        contact_id=contact_id,
-        db=db,
-        current_user=current_user,
-    )
-
 @router.post("/", response_model=ContactSchema, status_code=commercial_contacts.status.HTTP_201_CREATED)
 async def create_contact(
     contact: ContactCreate,
@@ -66,6 +53,32 @@ async def create_contact(
     """Create a new contact for network module"""
     return await commercial_contacts.create_contact(
         contact=contact,
+        db=db,
+        current_user=current_user,
+    )
+
+@router.delete("/bulk", status_code=commercial_contacts.status.HTTP_200_OK)
+async def delete_all_contacts(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete all contacts for network module"""
+    return await commercial_contacts.delete_all_contacts(
+        request=request,
+        db=db,
+        current_user=current_user,
+    )
+
+@router.get("/{contact_id}", response_model=ContactSchema)
+async def get_contact(
+    contact_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a specific contact by ID for network module"""
+    return await commercial_contacts.get_contact(
+        contact_id=contact_id,
         db=db,
         current_user=current_user,
     )
@@ -94,17 +107,6 @@ async def delete_contact(
     """Delete a contact for network module"""
     return await commercial_contacts.delete_contact(
         contact_id=contact_id,
-        db=db,
-        current_user=current_user,
-    )
-
-@router.delete("/bulk", status_code=commercial_contacts.status.HTTP_200_OK)
-async def delete_all_contacts(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Delete all contacts for network module"""
-    return await commercial_contacts.delete_all_contacts(
         db=db,
         current_user=current_user,
     )
