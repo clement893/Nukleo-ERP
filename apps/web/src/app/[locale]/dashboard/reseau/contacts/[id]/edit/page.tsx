@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { contactsAPI, Contact, ContactCreate, ContactUpdate } from '@/lib/api/contacts';
+import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
+import type { Contact, ContactCreate, ContactUpdate } from '@/lib/api/reseau-contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import ContactForm from '@/components/commercial/ContactForm';
+import ContactForm from '@/components/reseau/ContactForm';
 import { Loading, Alert, Card } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -39,7 +40,7 @@ export default function ContactEditPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await contactsAPI.get(contactId);
+      const data = await reseauContactsAPI.get(contactId);
       setContact(data);
     } catch (err) {
       const appError = handleApiError(err);
@@ -59,7 +60,7 @@ export default function ContactEditPage() {
     try {
       setSaving(true);
       setError(null);
-      await contactsAPI.update(contactId, data as ContactUpdate);
+      await reseauContactsAPI.update(contactId, data as ContactUpdate);
       showToast({
         message: 'Contact modifié avec succès',
         type: 'success',

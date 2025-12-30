@@ -11,19 +11,19 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import { type Contact, type ContactCreate, type ContactUpdate } from '@/lib/api/contacts';
+import { type Contact, type ContactCreate, type ContactUpdate } from '@/lib/api/reseau-contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import ContactsGallery from '@/components/commercial/ContactsGallery';
-import ContactForm from '@/components/commercial/ContactForm';
-import ContactAvatar from '@/components/commercial/ContactAvatar';
-import FilterBadges from '@/components/commercial/FilterBadges';
-import ContactCounter from '@/components/commercial/ContactCounter';
-import ViewModeToggle from '@/components/commercial/ViewModeToggle';
-import ContactActionLink from '@/components/commercial/ContactActionLink';
-import ContactRowActions from '@/components/commercial/ContactRowActions';
+import ContactsGallery from '@/components/reseau/ContactsGallery';
+import ContactForm from '@/components/reseau/ContactForm';
+import ContactAvatar from '@/components/reseau/ContactAvatar';
+import FilterBadges from '@/components/reseau/FilterBadges';
+import ContactCounter from '@/components/reseau/ContactCounter';
+import ViewModeToggle from '@/components/reseau/ViewModeToggle';
+import ContactActionLink from '@/components/reseau/ContactActionLink';
+import ContactRowActions from '@/components/reseau/ContactRowActions';
 import SearchBar from '@/components/ui/SearchBar';
-import MultiSelectFilter from '@/components/commercial/MultiSelectFilter';
+import MultiSelectFilter from '@/components/reseau/MultiSelectFilter';
 import { 
   Plus, 
   Download, 
@@ -35,15 +35,15 @@ import {
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
-  useInfiniteContacts, 
-  useCreateContact, 
-  useUpdateContact, 
-  useDeleteContact, 
-  useDeleteAllContacts,
-  contactsAPI 
-} from '@/lib/query/contacts';
+  useInfiniteReseauContacts, 
+  useCreateReseauContact, 
+  useUpdateReseauContact, 
+  useDeleteReseauContact, 
+  useDeleteAllReseauContacts,
+  reseauContactsAPI 
+} from '@/lib/query/reseau-contacts';
 
-import type { ViewMode } from '@/components/commercial/ViewModeToggle';
+import type { ViewMode } from '@/components/reseau/ViewModeToggle';
 
 function ContactsContent() {
   const router = useRouter();
@@ -57,13 +57,13 @@ function ContactsContent() {
     isFetchingNextPage,
     isLoading,
     error: queryError,
-  } = useInfiniteContacts(20);
+  } = useInfiniteReseauContacts(20);
   
   // Mutations
-  const createContactMutation = useCreateContact();
-  const updateContactMutation = useUpdateContact();
-  const deleteContactMutation = useDeleteContact();
-  const deleteAllContactsMutation = useDeleteAllContacts();
+  const createContactMutation = useCreateReseauContact();
+  const updateContactMutation = useUpdateReseauContact();
+  const deleteContactMutation = useDeleteReseauContact();
+  const deleteAllContactsMutation = useDeleteAllReseauContacts();
   
   // Flatten pages into single array
   const contacts = useMemo(() => {
@@ -277,7 +277,7 @@ function ContactsContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
-      const result = await contactsAPI.import(file);
+      const result = await reseauContactsAPI.import(file);
       
       if (result.valid_rows > 0) {
         // Invalidate contacts query to refetch after import
@@ -333,7 +333,7 @@ function ContactsContent() {
   // Handle export
   const handleExport = async () => {
     try {
-      const blob = await contactsAPI.export();
+      const blob = await reseauContactsAPI.export();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -612,7 +612,7 @@ function ContactsContent() {
                             <button
                               onClick={async () => {
                                 try {
-                                  await contactsAPI.downloadTemplate();
+                                  await reseauContactsAPI.downloadTemplate();
                                   setShowActionsMenu(false);
                                 } catch (err) {
                                   const appError = handleApiError(err);
@@ -630,7 +630,7 @@ function ContactsContent() {
                             <button
                               onClick={async () => {
                                 try {
-                                  await contactsAPI.downloadZipTemplate();
+                                  await reseauContactsAPI.downloadZipTemplate();
                                   setShowActionsMenu(false);
                                   showToast({
                                     message: 'Modèle ZIP téléchargé avec succès',

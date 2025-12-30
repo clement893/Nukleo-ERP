@@ -77,6 +77,10 @@ export * from './theme-errors';
 export { contactsAPI } from './contacts';
 export type { Contact, ContactCreate, ContactUpdate } from './contacts';
 
+// Re-export réseau contacts API
+export { reseauContactsAPI } from './reseau-contacts';
+export type { Contact as ReseauContact, ContactCreate as ReseauContactCreate, ContactUpdate as ReseauContactUpdate } from './reseau-contacts';
+
 // Re-export project tasks API
 export { projectTasksAPI } from './project-tasks';
 export type { ProjectTask, ProjectTaskCreate, ProjectTaskUpdate, TaskStatus, TaskPriority } from './project-tasks';

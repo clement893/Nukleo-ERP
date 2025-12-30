@@ -6,7 +6,7 @@ import { companiesAPI, Company } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import CompanyDetail from '@/components/commercial/CompanyDetail';
+import CompanyDetail from '@/components/reseau/CompanyDetail';
 import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';

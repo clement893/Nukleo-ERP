@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { contactsAPI, Contact } from '@/lib/api/contacts';
+import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
+import type { Contact } from '@/lib/api/reseau-contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import ContactDetail from '@/components/commercial/ContactDetail';
+import ContactDetail from '@/components/reseau/ContactDetail';
 import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -38,7 +39,7 @@ export default function ContactDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await contactsAPI.get(contactId);
+      const data = await reseauContactsAPI.get(contactId);
       setContact(data);
     } catch (err) {
       const appError = handleApiError(err);
@@ -66,7 +67,7 @@ export default function ContactDetailPage() {
 
     try {
       setDeleting(true);
-      await contactsAPI.delete(contact.id);
+      await reseauContactsAPI.delete(contact.id);
       showToast({
         message: 'Contact supprimé avec succès',
         type: 'success',
