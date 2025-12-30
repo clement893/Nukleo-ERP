@@ -16,6 +16,7 @@ import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
 import SearchBar from '@/components/ui/SearchBar';
 import MultiSelect from '@/components/ui/MultiSelect';
+import Select from '@/components/ui/Select';
 import { 
   Plus, 
   Edit,
@@ -76,6 +77,7 @@ function CompteDepensesContent() {
   const [actionData, setActionData] = useState<ExpenseAccountAction>({ notes: null, rejection_reason: null, clarification_request: null });
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterEmployee, setFilterEmployee] = useState<string[]>([]);
+  const [filterMonth, setFilterMonth] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [_showActionsMenu, setShowActionsMenu] = useState<number | null>(null);
   
@@ -106,6 +108,31 @@ function CompteDepensesContent() {
 
   const statusOptions: ExpenseAccountStatus[] = ['draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'];
 
+  // Generate available months from expense accounts
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set<string>();
+    expenseAccounts.forEach((account) => {
+      const dateStr = account.expense_period_start || account.created_at;
+      const date = new Date(dateStr);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthSet.add(monthKey);
+    });
+    
+    // Convert to array and sort (newest first)
+    return Array.from(monthSet)
+      .sort((a, b) => b.localeCompare(a))
+      .map((monthKey) => {
+        const [year, month] = monthKey.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthLabel = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const capitalizedLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+        return {
+          value: monthKey,
+          label: capitalizedLabel,
+        };
+      });
+  }, [expenseAccounts]);
+
   // Load more expense accounts for infinite scroll
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
@@ -123,15 +150,24 @@ function CompteDepensesContent() {
       const matchesEmployee = filterEmployee.length === 0 || 
         filterEmployee.includes(account.employee_id.toString());
       
+      // Month filter
+      let matchesMonth = true;
+      if (filterMonth) {
+        const dateStr = account.expense_period_start || account.created_at;
+        const date = new Date(dateStr);
+        const accountMonthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        matchesMonth = accountMonthKey === filterMonth;
+      }
+      
       // Search filter
       const matchesSearch = !debouncedSearchQuery || 
         account.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         account.account_number.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         account.employee_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       
-      return matchesStatus && matchesEmployee && matchesSearch;
+      return matchesStatus && matchesEmployee && matchesMonth && matchesSearch;
     });
-  }, [expenseAccounts, filterStatus, filterEmployee, debouncedSearchQuery]);
+  }, [expenseAccounts, filterStatus, filterEmployee, filterMonth, debouncedSearchQuery]);
   
   // Group expense accounts by month and employee
   interface GroupedExpenseAccount {
@@ -200,12 +236,13 @@ function CompteDepensesContent() {
   }, [filteredExpenseAccounts]);
   
   // Check if any filters are active
-  const hasActiveFilters = !!(filterStatus.length > 0 || filterEmployee.length > 0 || debouncedSearchQuery);
+  const hasActiveFilters = !!(filterStatus.length > 0 || filterEmployee.length > 0 || filterMonth || debouncedSearchQuery);
   
   // Clear all filters function
   const clearAllFilters = useCallback(() => {
     setFilterStatus([]);
     setFilterEmployee([]);
+    setFilterMonth('');
     setSearchQuery('');
   }, []);
 
@@ -518,6 +555,20 @@ function CompteDepensesContent() {
                 onChange={setFilterEmployee}
                 placeholder="Filtrer par employé"
                 className="min-w-[180px]"
+              />
+            )}
+
+            {/* Mois */}
+            {availableMonths.length > 0 && (
+              <Select
+                options={[
+                  { label: 'Tous les mois', value: '' },
+                  ...availableMonths,
+                ]}
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                placeholder="Filtrer par mois"
+                className="min-w-[200px]"
               />
             )}
 
