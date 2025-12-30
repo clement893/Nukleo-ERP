@@ -30,8 +30,10 @@ import {
   Upload, 
   FileSpreadsheet, 
   MoreVertical, 
-  Trash2 
+  Trash2,
+  HelpCircle
 } from 'lucide-react';
+import ImportContactsInstructions from '@/components/commercial/ImportContactsInstructions';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -610,6 +612,16 @@ function ContactsContent() {
                         <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                           <div className="py-1">
                             <button
+                              onClick={() => {
+                                setShowImportInstructions(true);
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                              Instructions d'import
+                            </button>
+                            <button
                               onClick={async () => {
                                 try {
                                   await reseauContactsAPI.downloadTemplate();
@@ -622,7 +634,7 @@ function ContactsContent() {
                                   });
                                 }
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
                             >
                               <FileSpreadsheet className="w-3.5 h-3.5" />
                               Modèle Excel
@@ -786,6 +798,27 @@ function ContactsContent() {
           />
         )}
       </Modal>
+
+      {/* Import Instructions Modal */}
+      <ImportContactsInstructions
+        isOpen={showImportInstructions}
+        onClose={() => setShowImportInstructions(false)}
+        onDownloadTemplate={async () => {
+          try {
+            await reseauContactsAPI.downloadZipTemplate();
+            showToast({
+              message: 'Modèle ZIP téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+              type: 'error',
+            });
+          }
+        }}
+      />
     </MotionDiv>
   );
 }
