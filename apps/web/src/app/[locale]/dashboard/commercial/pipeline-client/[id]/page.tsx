@@ -39,7 +39,7 @@ function PipelineDetailContent() {
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [opportunities, setOpportunities] = useState<Opportunite[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [deletingOpportunityId, setDeletingOpportunityId] = useState<string | null>(null);
   
   // Modals
@@ -374,12 +374,17 @@ function PipelineDetailContent() {
       showToast({ message: 'Étape modifiée avec succès', type: 'success' });
     } else {
       // Create
+      if (!pipeline) return;
+      
       const newStage: PipelineStage = {
         id: Date.now().toString(),
+        pipeline_id: pipeline.id,
         name: stageForm.name,
         description: stageForm.description,
         color: stageForm.color,
         order: stageForm.order,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
       
       setPipeline(prev => prev ? { ...prev, stages: [...prev.stages, newStage] } : null);
