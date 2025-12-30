@@ -812,17 +812,24 @@ async def import_contacts(
             try:
                 s3_service = S3Service()
                 logger.info("S3Service initialized successfully for contact photo uploads")
+                # Log S3 bucket name for debugging (without exposing full credentials)
+                bucket_name = os.getenv("AWS_S3_BUCKET")
+                if bucket_name:
+                    logger.info(f"S3 bucket configured: {bucket_name}")
+                else:
+                    logger.warning("AWS_S3_BUCKET environment variable not set")
             except Exception as e:
                 logger.error(f"Failed to initialize S3Service: {e}", exc_info=True)
                 warnings.append({
                     'row': 0,
                     'type': 's3_init_failed',
                     'message': f"⚠️ Impossible d'initialiser le service S3 pour l'upload des photos. Les contacts seront créés sans photos. Erreur: {str(e)}",
-                    'data': {}
+                    'data': {'error_details': str(e)}
                 })
                 s3_service = None
         else:
             logger.warning("S3 is not configured. Photos from ZIP will not be uploaded to S3.")
+            logger.warning(f"Missing S3 configuration. Check env vars: AWS_ACCESS_KEY_ID={bool(os.getenv('AWS_ACCESS_KEY_ID'))}, AWS_SECRET_ACCESS_KEY={bool(os.getenv('AWS_SECRET_ACCESS_KEY'))}, AWS_S3_BUCKET={bool(os.getenv('AWS_S3_BUCKET'))}")
             if photos_dict:
                 warnings.append({
                     'row': 0,
@@ -1008,18 +1015,24 @@ async def import_contacts(
                                         def __init__(self, filename: str, content: bytes):
                                             self.filename = filename
                                             self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                            # Create BytesIO and ensure it's at position 0
                                             self.file = BytesIO(content)
+                                            self.file.seek(0)
                                     
                                     temp_file = TempUploadFile(pattern_to_use, photo_content)
                                     
                                     # Upload to S3
-                                    logger.info(f"Uploading photo '{pattern_to_use}' to S3 for {first_name} {last_name}...")
-                                    upload_result = s3_service.upload_file(
-                                        file=temp_file,
-                                        folder='contacts/photos',
-                                        user_id=str(current_user.id)
-                                    )
-                                    logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
+                                    logger.info(f"Uploading photo '{pattern_to_use}' to S3 for {first_name} {last_name} (size: {len(photo_content)} bytes)...")
+                                    try:
+                                        upload_result = s3_service.upload_file(
+                                            file=temp_file,
+                                            folder='contacts/photos',
+                                            user_id=str(current_user.id)
+                                        )
+                                        logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
+                                    except Exception as upload_error:
+                                        logger.error(f"Exception during upload_file call for {first_name} {last_name}: {upload_error}", exc_info=True)
+                                        raise
                                     
                                     uploaded_photo_url = upload_result.get('file_key')
                                     if uploaded_photo_url:
@@ -1078,17 +1091,22 @@ async def import_contacts(
                                                 # Create a BytesIO object that S3Service can read from
                                                 # Reset position to start for each read
                                                 self.file = BytesIO(content)
+                                                self.file.seek(0)
                                         
                                         temp_file = TempUploadFile(pattern, photo_content)
                                         
                                         # Upload to S3
-                                        logger.info(f"Uploading photo '{pattern}' to S3 for {first_name} {last_name}...")
-                                        upload_result = s3_service.upload_file(
-                                            file=temp_file,
-                                            folder='contacts/photos',
-                                            user_id=str(current_user.id)
-                                        )
-                                        logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
+                                        logger.info(f"Uploading photo '{pattern}' to S3 for {first_name} {last_name} (size: {len(photo_content)} bytes)...")
+                                        try:
+                                            upload_result = s3_service.upload_file(
+                                                file=temp_file,
+                                                folder='contacts/photos',
+                                                user_id=str(current_user.id)
+                                            )
+                                            logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
+                                        except Exception as upload_error:
+                                            logger.error(f"Exception during upload_file call for {first_name} {last_name}: {upload_error}", exc_info=True)
+                                            raise
                                         
                                         # Always store the file_key (not the presigned URL) for persistence
                                         # Presigned URLs expire, but file_key is permanent
