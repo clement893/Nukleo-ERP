@@ -90,7 +90,7 @@ function PipelineDetailContent() {
         status: opp.stage_id || '',
         priority: opp.probability && opp.probability >= 70 ? 'high' : opp.probability && opp.probability >= 40 ? 'medium' : 'low',
         dueDate: opp.expected_close_date ? new Date(opp.expected_close_date) : undefined,
-        tags: opp.amount ? [`${opp.amount.toLocaleString('fr-FR')}€`] : [],
+        tags: opp.amount ? [`$${opp.amount.toLocaleString('en-US')}`] : [],
         // Store amount in data for total calculation
         data: {
           amount: opp.amount || 0,
@@ -467,7 +467,7 @@ function PipelineDetailContent() {
               // Extract amount from card data
               return (card.data?.amount as number) || 0;
             }}
-            formatValue={(value) => `${value.toLocaleString('fr-FR')}€`}
+            formatValue={(value) => `$${value.toLocaleString('en-US')}`}
           />
         </div>
       </div>
