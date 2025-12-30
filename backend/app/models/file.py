@@ -26,7 +26,8 @@ class File(Base):
     filename = Column(String(255), nullable=False)
     original_filename = Column(String(255), nullable=False)
     content_type = Column(String(100), nullable=False)
-    size = Column(Integer, nullable=False)  # File size in bytes
+    size = Column(Integer, nullable=False)  # File size in bytes (legacy, kept for compatibility)
+    file_size = Column(Integer, nullable=False)  # File size in bytes (primary)
     url = Column(String(1000), nullable=False)
     file_path = Column(String(1000), nullable=False)  # File path (can be same as file_key or url)
     folder = Column(String(100), nullable=True)

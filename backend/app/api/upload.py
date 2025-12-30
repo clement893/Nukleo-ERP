@@ -201,6 +201,7 @@ async def upload_file(
             original_filename=upload_result["filename"] or "unknown",
             content_type=upload_result["content_type"],
             size=upload_result["size"],
+            file_size=upload_result["size"],  # Also set file_size (required by migration)
             url=upload_result["url"],
             file_path=upload_result["file_key"],  # Use file_key as file_path (S3 key)
             folder=folder,

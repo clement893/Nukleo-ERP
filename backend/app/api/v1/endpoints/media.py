@@ -282,6 +282,7 @@ async def upload_media(
             original_filename=file.filename or filename,
             content_type=file.content_type or "application/octet-stream",
             size=file_size,
+            file_size=file_size,  # Also set file_size (required by migration)
             url=upload_result.get("url", ""),
             file_path=file_key,  # Use file_key as file_path (S3 key)
             folder=folder,

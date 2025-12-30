@@ -96,3 +96,15 @@ body {
     will-change: transform;
   }
 }
+
+/* Hide vertical scrollbar but keep functionality */
+.overflow-y-auto,
+.overflow-y-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-y-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}

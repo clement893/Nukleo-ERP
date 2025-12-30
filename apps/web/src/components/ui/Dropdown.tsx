@@ -172,7 +172,7 @@ export default function Dropdown({
           role="menu"
           aria-orientation="vertical"
           className={clsx(
-            'absolute z-50 rounded-lg shadow-lg border py-1 min-w-[200px]',
+            'absolute z-[100] rounded-lg shadow-lg border py-1 min-w-[200px]',
             // Use glassmorphism background if enabled, otherwise use default
             hasEffect('glassmorphism') ? '' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700',
             positions[position]
