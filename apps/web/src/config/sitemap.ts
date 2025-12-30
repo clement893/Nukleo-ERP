@@ -381,14 +381,6 @@ export const sitePages: Record<string, SitemapPage[]> = {
       changefreq: 'monthly',
       requiresAuth: true,
     },
-    { 
-      path: '/settings/preferences', 
-      title: 'Preferences Settings', 
-      description: 'Préférences utilisateur et personnalisation',
-      priority: 0.7,
-      changefreq: 'monthly',
-      requiresAuth: true,
-    },
   ],
   'Abonnements': [
     { 

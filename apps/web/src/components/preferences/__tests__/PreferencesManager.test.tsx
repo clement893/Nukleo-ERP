@@ -16,7 +16,7 @@ import { apiClient } from '@/lib/api/client';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/settings/preferences',
+  usePathname: () => '/settings/profile',
   useLocale: () => 'en',
 }));
 

@@ -26,7 +26,6 @@ import {
   Key, 
   Shield, 
   Bell, 
-  UserCog,
   FileText,
   User
 } from 'lucide-react';
@@ -117,13 +116,6 @@ export default function SettingsNavigation({ className }: SettingsNavigationProp
       href: '/settings/notifications',
       icon: <Bell className="w-6 h-6" />,
       description: t('navigation.notificationsDescription') || 'Notification preferences and settings',
-    },
-    {
-      id: 'preferences',
-      label: t('navigation.preferences') || 'Preferences',
-      href: '/settings/preferences',
-      icon: <UserCog className="w-6 h-6" />,
-      description: t('navigation.preferencesDescription') || 'User preferences and personalization',
     },
     {
       id: 'logs',
