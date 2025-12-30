@@ -14,6 +14,7 @@ from app.api.v1.endpoints.finances import facturations_router, rapport_router, c
 from app.modules.finances.api import router as finances_module_router
 from app.modules.projects.api import router as projects_module_router
 from app.modules.management.api import router as management_module_router
+from app.modules.content.api import router as content_module_router
 from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
 from app.modules.client_portal.api import router as client_portal_module_router
 from app.modules.agenda.api import router as agenda_module_router
@@ -210,6 +211,8 @@ api_router.include_router(
     tags=["templates"]
 )
 
+# Note: Templates are also included in content_module_router above
+
 # Register versions endpoints
 api_router.include_router(
     versions.router,
@@ -338,6 +341,10 @@ api_router.include_router(
     menus.router,
     tags=["menus"]
 )
+
+# Register content module unified router (alternative to individual routers above)
+# Uncomment to use unified router instead:
+# api_router.include_router(content_module_router)
 
 # Register support tickets endpoints
 api_router.include_router(
