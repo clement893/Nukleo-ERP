@@ -4,8 +4,9 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -16,7 +17,12 @@ import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
 import ContactForm from '@/components/commercial/ContactForm';
 import ContactAvatar from '@/components/commercial/ContactAvatar';
-import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, FileSpreadsheet, Search, Mail, Phone, X, Users, Building2 } from 'lucide-react';
+import FilterBadges from '@/components/commercial/FilterBadges';
+import ContactCounter from '@/components/commercial/ContactCounter';
+import ViewModeToggle from '@/components/commercial/ViewModeToggle';
+import ContactActionLink from '@/components/commercial/ContactActionLink';
+import SearchBar from '@/components/ui/SearchBar';
+import { Plus, Edit, Trash2, Eye, Download, Upload, MoreVertical, FileSpreadsheet } from 'lucide-react';
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';

@@ -1,7 +1,8 @@
 'use client';
 
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 import Dropdown from './Dropdown';
 import type { DropdownItem } from './Dropdown';
@@ -92,6 +93,8 @@ function DataTable<T extends Record<string, unknown>>({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  virtualized,
+  estimatedRowHeight = 60,
 }: DataTableProps<T>) {
   // Use shared hook for all table data management
   const {
@@ -118,6 +121,19 @@ function DataTable<T extends Record<string, unknown>>({
 
   // Use filteredData when pagination is disabled
   const displayData = pagination ? paginatedData : filteredData;
+  
+  // Auto-enable virtualization for large lists (>100 items) if not explicitly disabled
+  const shouldVirtualize = virtualized !== false && displayData.length > 100;
+  
+  // Virtualization setup
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: displayData.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => estimatedRowHeight,
+    overscan: 5, // Render 5 extra items outside viewport for smoother scrolling
+    enabled: shouldVirtualize,
+  });
 
   return (
     <div className={clsx('space-y-4', className)}>
@@ -165,7 +181,14 @@ function DataTable<T extends Record<string, unknown>>({
           </span>
         </div>
         {/* Table component already has overflow-x-auto, but we add an extra wrapper for better mobile UX */}
-        <div className="overflow-x-auto relative">
+        <div 
+          ref={parentRef}
+          className={clsx(
+            'overflow-x-auto relative',
+            shouldVirtualize && 'overflow-y-auto',
+            shouldVirtualize && 'h-[600px]' // Fixed height for virtualization
+          )}
+        >
           {/* Horizontal scroll indicator - shows on mobile when content overflows */}
           <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-gray-800 to-transparent pointer-events-none z-10 md:hidden" aria-hidden="true" />
           <Table>
@@ -205,7 +228,67 @@ function DataTable<T extends Record<string, unknown>>({
                   <div className="text-gray-500 dark:text-gray-400">{emptyMessage}</div>
                 </TableCell>
               </TableRow>
+            ) : shouldVirtualize ? (
+              // Virtualized rendering
+              <div
+                style={{
+                  height: `${virtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                  const row = displayData[virtualRow.index];
+                  return (
+                    <TableRow
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      ref={virtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    >
+                      {columns.map((column) => (
+                        <TableCell key={column.key}>
+                          {column.render
+                            ? column.render(row[column.key], row)
+                            : row[column.key]?.toString() || '-'}
+                        </TableCell>
+                      ))}
+                      {actions && (
+                        <TableCell 
+                          onClick={(e) => e.stopPropagation()} 
+                          className="sticky right-0 bg-white dark:bg-gray-900 z-30 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+                        >
+                          <div className="relative z-[120]">
+                            <Dropdown 
+                              trigger={
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="min-w-[44px] min-h-[44px] p-2"
+                                  aria-label="Row actions"
+                                >
+                                  ⋯
+                                </Button>
+                              } 
+                              items={actions(row)}
+                              position="left"
+                            />
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </div>
             ) : (
+              // Non-virtualized rendering (default)
               displayData.map((row, index) => (
                 <TableRow
                   key={index}

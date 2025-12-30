@@ -4,8 +4,10 @@
  */
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { contactsAPI, type Contact, type ContactCreate, type ContactUpdate } from '@/lib/api/contacts';
-import { handleApiError } from '@/lib/errors/api';
+import { contactsAPI, type ContactCreate, type ContactUpdate } from '@/lib/api/contacts';
+
+// Re-export contactsAPI for convenience
+export { contactsAPI };
 
 // Query keys for contacts
 export const contactKeys = {

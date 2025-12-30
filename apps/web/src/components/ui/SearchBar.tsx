@@ -3,11 +3,13 @@
 import { InputHTMLAttributes, useState } from 'react';
 import { clsx } from 'clsx';
 
-interface SearchBarProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface SearchBarProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'> {
   onSearch?: (value: string) => void;
   placeholder?: string;
   fullWidth?: boolean;
   showClearButton?: boolean;
+  value?: string; // Controlled value
+  onChange?: (value: string) => void; // Controlled onChange
 }
 
 export default function SearchBar({
@@ -15,19 +17,35 @@ export default function SearchBar({
   placeholder = 'Search...',
   fullWidth = false,
   showClearButton = true,
+  value: controlledValue,
+  onChange: controlledOnChange,
   className,
   ...props
 }: SearchBarProps) {
-  const [value, setValue] = useState('');
+  const [internalValue, setInternalValue] = useState('');
+  
+  // Use controlled value if provided, otherwise use internal state
+  const isControlled = controlledValue !== undefined;
+  const value = isControlled ? controlledValue : internalValue;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    setValue(newValue);
+    
+    if (isControlled) {
+      controlledOnChange?.(newValue);
+    } else {
+      setInternalValue(newValue);
+    }
+    
     onSearch?.(newValue);
   };
 
   const handleClear = () => {
-    setValue('');
+    if (isControlled) {
+      controlledOnChange?.('');
+    } else {
+      setInternalValue('');
+    }
     onSearch?.('');
   };
 
