@@ -658,11 +658,15 @@ function ContactsContent() {
           <DataTable
             data={filteredContacts as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pageSize={10}
+            pagination={false}
             searchable={false}
             filterable={false}
             emptyMessage="Aucun contact trouvé"
             loading={loading}
+            infiniteScroll={!filterCity && !filterPhone && !filterCircle && !filterCompany}
+            hasMore={hasMore && !filterCity && !filterPhone && !filterCircle && !filterCompany}
+            loadingMore={loadingMore}
+            onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Contact)}
             actions={(row) => {
               const contact = row as unknown as Contact;

@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 import Dropdown from './Dropdown';
@@ -44,6 +44,8 @@ export interface DataTableProps<T> {
   columns: Column<T>[];
   /** Number of items per page */
   pageSize?: number;
+  /** Enable pagination */
+  pagination?: boolean;
   /** Enable search functionality */
   searchable?: boolean;
   /** Search input placeholder */
@@ -62,12 +64,21 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   /** Show loading state */
   loading?: boolean;
+  /** Enable infinite scroll */
+  infiniteScroll?: boolean;
+  /** Has more data to load (for infinite scroll) */
+  hasMore?: boolean;
+  /** Loading more data (for infinite scroll) */
+  loadingMore?: boolean;
+  /** Callback when more data should be loaded */
+  onLoadMore?: () => void;
 }
 
 function DataTable<T extends Record<string, unknown>>({
   data,
   columns,
   pageSize = 10,
+  pagination = true,
   searchable = true,
   searchPlaceholder = 'Rechercher...',
   filterable = true,
@@ -77,6 +88,10 @@ function DataTable<T extends Record<string, unknown>>({
   className,
   emptyMessage = 'Aucune donnée disponible',
   loading = false,
+  infiniteScroll = false,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }: DataTableProps<T>) {
   // Use shared hook for all table data management
   const {
@@ -98,8 +113,11 @@ function DataTable<T extends Record<string, unknown>>({
     searchable,
     filterable,
     sortable,
-    pageSize,
+    pageSize: pagination ? pageSize : Number.MAX_SAFE_INTEGER,
   });
+
+  // Use filteredData when pagination is disabled
+  const displayData = pagination ? paginatedData : filteredData;
 
   return (
     <div className={clsx('space-y-4', className)}>
@@ -180,14 +198,14 @@ function DataTable<T extends Record<string, unknown>>({
                   </div>
                 </TableCell>
               </TableRow>
-            ) : paginatedData.length === 0 ? (
+            ) : displayData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (actions ? 1 : 0)} className="text-center py-8">
                   <div className="text-gray-500 dark:text-gray-400">{emptyMessage}</div>
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((row, index) => (
+              displayData.map((row, index) => (
                 <TableRow
                   key={index}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -228,13 +246,42 @@ function DataTable<T extends Record<string, unknown>>({
       </div>
 
       {/* Pagination */}
-      <TablePagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredData.length}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-      />
+      {pagination && (
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
+      {/* Infinite scroll trigger */}
+      {infiniteScroll && hasMore && (
+        <div className="flex justify-center py-4">
+          {loadingMore ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600 dark:border-primary-500"></div>
+              <span className="text-sm">Chargement...</span>
+            </div>
+          ) : (
+            <div ref={(el) => {
+              if (el && onLoadMore) {
+                const observer = new IntersectionObserver(
+                  (entries) => {
+                    if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
+                      onLoadMore();
+                    }
+                  },
+                  { threshold: 0.1 }
+                );
+                observer.observe(el);
+                return () => observer.disconnect();
+              }
+            }} className="h-4" />
+          )}
+        </div>
+      )}
     </div>
   );
 }
