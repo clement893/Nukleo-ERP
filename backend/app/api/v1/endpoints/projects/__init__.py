@@ -75,6 +75,23 @@ async def get_projects(
     # Convert to response format with client and responsable names
     project_list = []
     for project in projects:
+        # Safely access relationships - check if they exist before accessing attributes
+        client_name = None
+        if project.client:
+            try:
+                client_name = project.client.name
+            except Exception:
+                # If lazy load fails, client_name remains None
+                pass
+        
+        responsable_name = None
+        if project.responsable:
+            try:
+                responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
+            except Exception:
+                # If lazy load fails or attributes don't exist, responsable_name remains None
+                pass
+        
         project_dict = {
             "id": project.id,
             "name": project.name,
@@ -82,9 +99,9 @@ async def get_projects(
             "status": project.status,
             "user_id": project.user_id,
             "client_id": project.client_id,
-            "client_name": project.client.name if project.client else None,
+            "client_name": client_name,
             "responsable_id": project.responsable_id,
-            "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+            "responsable_name": responsable_name,
             "created_at": project.created_at,
             "updated_at": project.updated_at,
         }
@@ -136,6 +153,23 @@ async def get_project(
         )
     
     # Convert to response format with client and responsable names
+    # Safely access relationships - check if they exist before accessing attributes
+    client_name = None
+    if project.client:
+        try:
+            client_name = project.client.name
+        except Exception:
+            # If lazy load fails, client_name remains None
+            pass
+    
+    responsable_name = None
+    if project.responsable:
+        try:
+            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
+        except Exception:
+            # If lazy load fails or attributes don't exist, responsable_name remains None
+            pass
+    
     project_dict = {
         "id": project.id,
         "name": project.name,
@@ -143,9 +177,9 @@ async def get_project(
         "status": project.status,
         "user_id": project.user_id,
         "client_id": project.client_id,
-        "client_name": project.client.name if project.client else None,
+        "client_name": client_name,
         "responsable_id": project.responsable_id,
-        "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+        "responsable_name": responsable_name,
         "created_at": project.created_at,
         "updated_at": project.updated_at,
     }
@@ -228,6 +262,23 @@ async def create_project(
     await db.refresh(project, ["client", "responsable"])
     
     # Convert to response format
+    # Safely access relationships - check if they exist before accessing attributes
+    client_name = None
+    if project.client:
+        try:
+            client_name = project.client.name
+        except Exception:
+            # If lazy load fails, client_name remains None
+            pass
+    
+    responsable_name = None
+    if project.responsable:
+        try:
+            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
+        except Exception:
+            # If lazy load fails or attributes don't exist, responsable_name remains None
+            pass
+    
     project_dict = {
         "id": project.id,
         "name": project.name,
@@ -235,9 +286,9 @@ async def create_project(
         "status": project.status,
         "user_id": project.user_id,
         "client_id": project.client_id,
-        "client_name": project.client.name if project.client else None,
+        "client_name": client_name,
         "responsable_id": project.responsable_id,
-        "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+        "responsable_name": responsable_name,
         "created_at": project.created_at,
         "updated_at": project.updated_at,
     }
@@ -311,6 +362,23 @@ async def update_project(
     await db.refresh(project, ["client", "responsable"])
     
     # Convert to response format
+    # Safely access relationships - check if they exist before accessing attributes
+    client_name = None
+    if project.client:
+        try:
+            client_name = project.client.name
+        except Exception:
+            # If lazy load fails, client_name remains None
+            pass
+    
+    responsable_name = None
+    if project.responsable:
+        try:
+            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
+        except Exception:
+            # If lazy load fails or attributes don't exist, responsable_name remains None
+            pass
+    
     project_dict = {
         "id": project.id,
         "name": project.name,
@@ -318,9 +386,9 @@ async def update_project(
         "status": project.status,
         "user_id": project.user_id,
         "client_id": project.client_id,
-        "client_name": project.client.name if project.client else None,
+        "client_name": client_name,
         "responsable_id": project.responsable_id,
-        "responsable_name": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else None,
+        "responsable_name": responsable_name,
         "created_at": project.created_at,
         "updated_at": project.updated_at,
     }
