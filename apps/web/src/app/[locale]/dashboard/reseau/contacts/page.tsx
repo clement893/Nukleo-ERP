@@ -68,7 +68,17 @@ function ContactsContent() {
         setContacts(data);
         setSkip(limit); // Fix: Always increment by limit, not data.length
       } else {
-        setContacts((prev) => [...prev, ...data]);
+        // Limit contacts in memory to prevent excessive memory usage
+        // Keep only the last 200 contacts loaded
+        const MAX_CONTACTS_IN_MEMORY = 200;
+        setContacts((prev) => {
+          const updated = [...prev, ...data];
+          // If we exceed the limit, keep only the most recent ones
+          if (updated.length > MAX_CONTACTS_IN_MEMORY) {
+            return updated.slice(-MAX_CONTACTS_IN_MEMORY);
+          }
+          return updated;
+        });
         setSkip((prevSkip) => prevSkip + limit); // Fix: Always increment by limit
       }
       
@@ -98,17 +108,25 @@ function ContactsContent() {
     loadContacts(true);
   }, [loadContacts]);
 
-  // Revalidate contacts when window regains focus
+  // Revalidate contacts when window regains focus (with debounce to avoid excessive reloads)
   useEffect(() => {
+    let lastReloadTime = Date.now();
+    const RELOAD_COOLDOWN = 30000; // 30 seconds minimum between reloads
+
     const handleFocus = () => {
-      loadContacts(true);
+      const now = Date.now();
+      // Only reload if more than 30 seconds have passed since last reload
+      if (now - lastReloadTime > RELOAD_COOLDOWN) {
+        lastReloadTime = now;
+        loadContacts(true);
+      }
     };
 
     window.addEventListener('focus', handleFocus);
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [loadContacts]);
 
   // Extract unique values for dropdowns
   const uniqueValues = useMemo(() => {
@@ -135,26 +153,36 @@ function ContactsContent() {
       const matchesCity = !filterCity || contact.city === filterCity;
       const matchesPhone = !filterPhone || contact.phone === filterPhone;
       const matchesCircle = !filterCircle || contact.circle === filterCircle;
-      const matchesCompany = !filterCompany || contact.company_id?.toString() === filterCompany;
+      // Fix: Compare with company_id correctly
+      const matchesCompany = !filterCompany || (contact.company_id && contact.company_id.toString() === filterCompany);
 
       return matchesCity && matchesPhone && matchesCircle && matchesCompany;
     });
   }, [contacts, filterCity, filterPhone, filterCircle, filterCompany]);
 
 
-  // Handle create
+  // Handle create with optimistic update
   const handleCreate = async (data: ContactCreate | ContactUpdate) => {
     try {
       setLoading(true);
       setError(null);
-      await contactsAPI.create(data as ContactCreate);
-      // Reload contacts to ensure we have the latest data with correct presigned URLs
-      await loadContacts();
+      const newContact = await contactsAPI.create(data as ContactCreate);
+      
+      // Optimistic update: add contact to list immediately
+      setContacts((prev) => [newContact, ...prev]);
       setShowCreateModal(false);
       showToast({
         message: 'Contact créé avec succès',
         type: 'success',
       });
+      
+      // Reload only first page in background to ensure data consistency
+      // This ensures presigned URLs are fresh, but doesn't block UI
+      setTimeout(() => {
+        loadContacts(true).catch(() => {
+          // Silent fail - optimistic update already shown
+        });
+      }, 1000);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la création du contact');
@@ -162,27 +190,41 @@ function ContactsContent() {
         message: appError.message || 'Erreur lors de la création du contact',
         type: 'error',
       });
+      // Reload on error to ensure consistency
+      await loadContacts(true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle update
+  // Handle update with optimistic update
   const handleUpdate = async (data: ContactCreate | ContactUpdate) => {
     if (!selectedContact) return;
 
     try {
       setLoading(true);
       setError(null);
-      await contactsAPI.update(selectedContact.id, data as ContactUpdate);
-      // Reload contacts to ensure we have the latest data with correct presigned URLs
-      await loadContacts();
+      const updatedContact = await contactsAPI.update(selectedContact.id, data as ContactUpdate);
+      
+      // Optimistic update: update contact in list immediately
+      setContacts((prev) =>
+        prev.map((contact) =>
+          contact.id === selectedContact.id ? updatedContact : contact
+        )
+      );
       setShowEditModal(false);
       setSelectedContact(null);
       showToast({
         message: 'Contact modifié avec succès',
         type: 'success',
       });
+      
+      // Reload only first page in background to ensure data consistency
+      setTimeout(() => {
+        loadContacts(true).catch(() => {
+          // Silent fail - optimistic update already shown
+        });
+      }, 1000);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la modification du contact');
@@ -190,37 +232,47 @@ function ContactsContent() {
         message: appError.message || 'Erreur lors de la modification du contact',
         type: 'error',
       });
+      // Reload on error to ensure consistency
+      await loadContacts(true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle delete
+  // Handle delete with optimistic update
   const handleDelete = async (contactId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce contact ?')) {
       return;
+    }
+
+    // Optimistic update: remove contact from list immediately
+    const contactToDelete = contacts.find((c) => c.id === contactId);
+    setContacts((prev) => prev.filter((contact) => contact.id !== contactId));
+    if (selectedContact?.id === contactId) {
+      setSelectedContact(null);
     }
 
     try {
       setLoading(true);
       setError(null);
       await contactsAPI.delete(contactId);
-      // Reload contacts to ensure we have the latest data
-      await loadContacts();
-      if (selectedContact?.id === contactId) {
-        setSelectedContact(null);
-      }
       showToast({
         message: 'Contact supprimé avec succès',
         type: 'success',
       });
     } catch (err) {
+      // Revert optimistic update on error
+      if (contactToDelete) {
+        setContacts((prev) => [...prev, contactToDelete].sort((a, b) => a.id - b.id));
+      }
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression du contact');
       showToast({
         message: appError.message || 'Erreur lors de la suppression du contact',
         type: 'error',
       });
+      // Reload on error to ensure consistency
+      await loadContacts(true);
     } finally {
       setLoading(false);
     }
@@ -395,8 +447,10 @@ function ContactsContent() {
           {value ? (
             <img
               src={String(value)}
-              alt={`${contact.first_name} ${contact.last_name}`}
+              alt={`Photo de profil de ${contact.first_name} ${contact.last_name}`}
               className="w-10 h-10 rounded-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
