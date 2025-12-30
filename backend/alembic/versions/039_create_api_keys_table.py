@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '039_create_api_keys_table'
-down_revision = '038_add_leo_conversations'
+down_revision = '037_add_quote_line_items'  # Changed from 038 as it may not exist in production
 branch_labels = None
 depends_on = None
 
