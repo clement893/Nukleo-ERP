@@ -74,8 +74,15 @@ export default function EmployeeForm({
         is_public: true,
       });
       
-      const photoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
+      // Always save file_key (S3 key) instead of file_path (presigned URL that expires)
+      // The backend will regenerate presigned URLs when needed
+      const photoUrlToSave = uploadedMedia.file_key;
+      if (!photoUrlToSave) {
+        throw new Error('file_key not returned from upload');
+      }
+      
       URL.revokeObjectURL(localPreviewUrl);
+      // Use file_path for preview (presigned URL), but save file_key to database
       setPreviewUrl(uploadedMedia.file_path);
       setFormData({ ...formData, photo_url: photoUrlToSave });
       
