@@ -21,7 +21,7 @@ from app.dependencies import get_current_user, require_superadmin, get_db
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.core.logging import logger
 
-router = APIRouter()
+router = APIRouter(tags=["leo-documentation"])
 
 
 @router.get("/leo-documentation", response_model=LeoDocumentationListResponse, tags=["leo-documentation"])
