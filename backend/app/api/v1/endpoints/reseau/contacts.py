@@ -46,13 +46,15 @@ async def list_contacts(
 
 @router.post("/", response_model=ContactSchema, status_code=commercial_contacts.status.HTTP_201_CREATED)
 async def create_contact(
-    contact: ContactCreate,
+    request: Request,
+    contact_data: ContactCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Create a new contact for network module"""
     return await commercial_contacts.create_contact(
-        contact=contact,
+        request=request,
+        contact_data=contact_data,
         db=db,
         current_user=current_user,
     )
@@ -85,15 +87,17 @@ async def get_contact(
 
 @router.put("/{contact_id}", response_model=ContactSchema)
 async def update_contact(
+    request: Request,
     contact_id: int,
-    contact: ContactUpdate,
+    contact_data: ContactUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Update a contact for network module"""
     return await commercial_contacts.update_contact(
+        request=request,
         contact_id=contact_id,
-        contact=contact,
+        contact_data=contact_data,
         db=db,
         current_user=current_user,
     )
