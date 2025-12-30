@@ -11,6 +11,9 @@ from app.modules.commercial.api import router as commercial_module_router
 from app.api.v1.endpoints.agenda import events as agenda_events
 from app.api.v1.endpoints.reseau import contacts as reseau_contacts
 from app.api.v1.endpoints.finances import facturations_router, rapport_router, compte_depenses_router
+from app.modules.finances.api import router as finances_module_router
+from app.modules.projects.api import router as projects_module_router
+from app.modules.management.api import router as management_module_router
 from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
 from app.api.v1.endpoints.erp import invoices_router as erp_invoices_router, clients_router, orders_router, inventory_router, reports_router, dashboard_router as erp_dashboard_router
 from app.api import ai as ai_router
@@ -489,6 +492,18 @@ api_router.include_router(
     compte_depenses_router,
     tags=["finances"]
 )
+
+# Register finances module unified router (alternative to individual routers above)
+# Uncomment to use unified router instead:
+# api_router.include_router(finances_module_router)
+
+# Register projects module unified router (alternative to individual router above)
+# Uncomment to use unified router instead:
+# api_router.include_router(projects_module_router)
+
+# Register management module unified router (alternative to individual routers above)
+# Uncomment to use unified router instead:
+# api_router.include_router(management_module_router)
 
 # Register API connection check endpoints
 api_router.include_router(

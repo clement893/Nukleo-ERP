@@ -120,6 +120,15 @@ export type { ProjectTask, ProjectTaskCreate, ProjectTaskUpdate, TaskStatus, Tas
 export { preferencesAPI } from './preferences';
 export type { UserPreferences, PreferenceResponse } from './preferences';
 
+// Re-export finances module API (unified)
+export { financesAPI } from './finances';
+
+// Re-export projects module API (unified)
+export { projectsAPI } from './projects';
+
+// Re-export management module API (unified)
+export { managementAPI, teamsAPI, employeesAPI } from './management';
+
 // Re-export Leo module API (unified)
 export { leoAPI, leoAgentAPI, leoDocumentationAPI } from './leo';
 export type {
