@@ -444,6 +444,10 @@ api_router.include_router(
     tags=["agenda-events"]
 )
 
+# Register agenda module unified router (alternative to individual router above)
+# Uncomment to use unified router instead:
+# api_router.include_router(agenda_module_router)
+
 api_router.include_router(
     commercial_contacts.router,
     tags=["commercial"]
