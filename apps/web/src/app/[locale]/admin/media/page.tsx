@@ -41,11 +41,12 @@ export default function AdminMediaLibraryPage() {
       setIsLoading(true);
       setError(null);
       
-      const mediaFiles = await mediaAPI.list();
+      // Fetch all media from S3 bucket
+      const mediaFiles = await mediaAPI.list(0, 1000, undefined, true);
       
       // Convert API Media to MediaItem format
       const convertedMedia: MediaItem[] = mediaFiles.map((file) => {
-        // Determine media type from mime_type
+        // Determine media type from mime_type or filename extension
         let type: 'image' | 'video' | 'document' | 'audio' | 'other' = 'other';
         if (file.mime_type) {
           if (file.mime_type.startsWith('image/')) {
@@ -57,12 +58,24 @@ export default function AdminMediaLibraryPage() {
           } else {
             type = 'document';
           }
+        } else {
+          // Fallback to filename extension if mime_type is not available
+          const ext = file.filename.split('.').pop()?.toLowerCase();
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) {
+            type = 'image';
+          } else if (['mp4', 'mov', 'webm', 'avi'].includes(ext || '')) {
+            type = 'video';
+          } else if (['mp3', 'wav', 'ogg'].includes(ext || '')) {
+            type = 'audio';
+          } else {
+            type = 'document';
+          }
         }
         
         return {
-          id: file.id,
+          id: String(file.id),
           name: file.filename,
-          url: file.file_path, // This should be the full URL, but for now use file_path
+          url: file.file_path, // This should be the full URL (presigned URL from S3)
           type,
           mime_type: file.mime_type || 'application/octet-stream',
           size: file.file_size,
@@ -101,12 +114,22 @@ export default function AdminMediaLibraryPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string | number) => {
     try {
       setError(null);
       logger.info('Deleting media', { id });
       
-      await mediaAPI.delete(id);
+      // For S3 files (string IDs), we can't delete via the normal API
+      // We'll need to reload the list instead
+      // TODO: Implement S3 file deletion if needed
+      if (typeof id === 'string') {
+        logger.warn('Cannot delete S3 file via API - file_key needed', { id });
+        // Just reload the list for now
+        await loadMedia();
+        return;
+      }
+      
+      await mediaAPI.delete(id as number);
       
       // Reload media list
       await loadMedia();

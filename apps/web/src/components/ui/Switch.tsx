@@ -5,7 +5,7 @@
 
 'use client';
 
-import { forwardRef, type InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes, useState } from 'react';
 import { clsx } from 'clsx';
 import { useComponentConfig } from '@/lib/theme/use-component-config';
 
@@ -23,6 +23,8 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       className,
       fullWidth = false,
       id,
+      checked,
+      onChange,
       ...props
     },
     ref
@@ -34,6 +36,18 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     const height = sizeConfig?.minHeight || '1.5rem';
     const width = `calc(${height} * 1.833)`; // Maintain aspect ratio
     const borderRadius = sizeConfig?.borderRadius || '9999px';
+    const toggleSize = `calc(${height} - 4px)`; // Size of the toggle circle
+    
+    const [internalChecked, setInternalChecked] = useState(checked || false);
+    const isControlled = checked !== undefined;
+    const currentChecked = isControlled ? checked : internalChecked;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isControlled) {
+        setInternalChecked(e.target.checked);
+      }
+      onChange?.(e);
+    };
 
     return (
       <div className={clsx('flex items-center', fullWidth && 'w-full')}>
@@ -45,13 +59,19 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             ref={ref}
             type="checkbox"
             id={switchId}
-            className="sr-only peer"
+            className="sr-only"
+            checked={currentChecked}
+            onChange={handleChange}
             {...props}
           />
           <div
             className={clsx(
-              "bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:transition-all peer-checked:bg-primary-600 dark:peer-checked:bg-primary-500",
+              "relative rounded-full transition-colors duration-200 ease-in-out",
+              currentChecked 
+                ? "bg-primary-600 dark:bg-primary-500" 
+                : "bg-muted",
               error && 'ring-2 ring-error-500 dark:ring-error-400',
+              props.disabled && 'opacity-50 cursor-not-allowed',
               className
             )}
             style={{
@@ -59,7 +79,18 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
               height,
               borderRadius,
             }}
-          />
+          >
+            <span
+              className={clsx(
+                "absolute top-[2px] left-[2px] bg-white border border-border rounded-full transition-transform duration-200 ease-in-out",
+                currentChecked && "translate-x-full"
+              )}
+              style={{
+                width: toggleSize,
+                height: toggleSize,
+              }}
+            />
+          </div>
           {label && (
             <span
               className={clsx(

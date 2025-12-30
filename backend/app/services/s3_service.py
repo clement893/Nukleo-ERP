@@ -163,6 +163,56 @@ class S3Service:
         except ClientError as e:
             raise ValueError(f"Failed to get file metadata: {str(e)}")
 
+    def list_all_files(self, prefix: Optional[str] = None, max_keys: Optional[int] = None) -> list:
+        """
+        List all files in the S3 bucket.
+        
+        Args:
+            prefix: Optional prefix to filter files (e.g., "media/")
+            max_keys: Optional maximum number of keys to return
+            
+        Returns:
+            List of dicts with file_key, size, content_type, last_modified, and url
+        """
+        if not AWS_S3_BUCKET:
+            raise ValueError("AWS_S3_BUCKET is not configured")
+
+        try:
+            files = []
+            paginator = s3_client.get_paginator('list_objects_v2')
+            page_iterator = paginator.paginate(
+                Bucket=AWS_S3_BUCKET,
+                Prefix=prefix or "",
+                MaxKeys=max_keys or 1000,
+            )
+
+            for page in page_iterator:
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+                        file_key = obj['Key']
+                        # Skip directories (keys ending with /)
+                        if file_key.endswith('/'):
+                            continue
+                        
+                        # Generate presigned URL
+                        try:
+                            url = self.generate_presigned_url(file_key, expiration=3600)
+                        except Exception:
+                            url = None
+                        
+                        files.append({
+                            "file_key": file_key,
+                            "filename": os.path.basename(file_key),
+                            "size": obj.get('Size', 0),
+                            "content_type": None,  # Will be fetched if needed
+                            "last_modified": obj.get('LastModified'),
+                            "url": url,
+                        })
+            
+            return files
+        except ClientError as e:
+            raise ValueError(f"Failed to list files from S3: {str(e)}")
+
     @staticmethod
     def is_configured() -> bool:
         """Check if S3 is properly configured."""

@@ -7,7 +7,7 @@ import { apiClient } from './client';
 import { extractApiData } from './utils';
 
 export interface Media {
-  id: number;
+  id: number | string;  // Can be number (DB) or string (S3 hash)
   filename: string;
   file_path: string;
   file_key?: string;  // S3 file key for regenerating URLs
@@ -32,9 +32,9 @@ export const mediaAPI = {
   /**
    * Get list of media files with pagination
    */
-  list: async (skip = 0, limit = 100, folder?: string): Promise<Media[]> => {
+  list: async (skip = 0, limit = 100, folder?: string, fromS3 = false): Promise<Media[]> => {
     const response = await apiClient.get<Media[]>('/v1/media', {
-      params: { skip, limit, ...(folder && { folder }) },
+      params: { skip, limit, ...(folder && { folder }), ...(fromS3 && { from_s3: true }) },
     });
     
     // Handle both array and paginated response formats

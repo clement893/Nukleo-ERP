@@ -27,7 +27,8 @@ import {
   Shield, 
   Bell, 
   UserCog,
-  FileText
+  FileText,
+  User
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -60,6 +61,13 @@ export default function SettingsNavigation({ className }: SettingsNavigationProp
       href: '/settings/general',
       icon: <Settings className="w-6 h-6" />,
       description: t('navigation.generalDescription') || 'Basic application settings and preferences',
+    },
+    {
+      id: 'profile',
+      label: t('navigation.profile') || 'Profile',
+      href: '/settings/profile',
+      icon: <User className="w-6 h-6" />,
+      description: t('navigation.profileDescription') || 'Manage your account profile and preferences',
     },
     {
       id: 'organization',

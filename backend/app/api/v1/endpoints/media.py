@@ -8,6 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+import uuid
+import hashlib
+from datetime import datetime, timezone
 
 from app.models.file import File as FileModel
 from app.models.user import User
@@ -71,10 +74,73 @@ async def list_media(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     folder: Optional[str] = Query(None, description="Filter by folder"),
+    from_s3: bool = Query(False, description="Fetch all files from S3 bucket instead of database"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all media files for the current user"""
+    
+    # If from_s3 is True, fetch all files directly from S3 bucket
+    if from_s3:
+        if not S3Service.is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="S3 service is not configured"
+            )
+        
+        try:
+            s3_service = S3Service()
+            s3_files = s3_service.list_all_files(prefix=folder, max_keys=limit * 10)  # Get more to account for pagination
+            
+            # Convert S3 files to MediaResponse format
+            media_responses = []
+            for s3_file in s3_files[skip:skip + limit]:
+                # Try to get content type from metadata
+                try:
+                    metadata = s3_service.get_file_metadata(s3_file['file_key'])
+                    content_type = metadata.get('content_type')
+                except Exception:
+                    content_type = None
+                
+                # Generate a temporary ID from file_key hash
+                import hashlib
+                file_id = hashlib.md5(s3_file['file_key'].encode()).hexdigest()
+                
+                media_responses.append(MediaResponse(
+                    id=file_id,
+                    filename=s3_file['filename'],
+                    file_path=s3_file['url'] or s3_file['file_key'],
+                    file_key=s3_file['file_key'],
+                    file_size=s3_file['size'],
+                    mime_type=content_type,
+                    storage_type="s3",
+                    is_public=False,
+                    user_id=current_user.id,
+                    created_at=s3_file['last_modified'].isoformat() if s3_file.get('last_modified') else datetime.now(timezone.utc).isoformat(),
+                    updated_at=s3_file['last_modified'].isoformat() if s3_file.get('last_modified') else datetime.now(timezone.utc).isoformat(),
+                ))
+            
+            # Log data access
+            try:
+                await SecurityAuditLogger.log_event(
+                    db=db,
+                    event_type=SecurityEventType.DATA_ACCESSED,
+                    description=f"Listed {len(media_responses)} media files from S3",
+                    user_id=current_user.id,
+                    ip_address=request.client.host if request.client else None,
+                )
+            except Exception:
+                pass
+            
+            return media_responses
+        except Exception as e:
+            logger.error(f"Error listing files from S3: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to list files from S3: {str(e)}"
+            )
+    
+    # Default behavior: fetch from database
     query = select(FileModel).where(FileModel.user_id == current_user.id)
     
     # Filter by folder if provided

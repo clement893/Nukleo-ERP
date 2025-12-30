@@ -13,7 +13,7 @@ import { Card, Button, FileUpload, Badge, Modal, Input, Alert } from '@/componen
 import { Upload, Grid3x3, List, Image as ImageIcon, Video, File, Search, Trash2, Eye } from 'lucide-react';
 
 export interface MediaItem extends Record<string, unknown> {
-  id: number;
+  id: number | string;  // Can be number (DB) or string (S3 hash)
   name: string;
   url: string;
   type: 'image' | 'video' | 'document' | 'audio' | 'other';
