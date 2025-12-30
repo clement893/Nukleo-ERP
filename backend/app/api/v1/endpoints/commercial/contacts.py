@@ -1353,32 +1353,55 @@ async def import_contacts(
                         photo_filename_clean = photo_filename.strip()
                         photo_filename_normalized = normalize_filename(photo_filename_clean)
                         
-                        # Try multiple matching strategies
-                        # 1. Exact match (lowercase)
-                        if photo_filename_clean.lower() in photos_dict:
-                            pattern_to_use = photo_filename_clean.lower()
-                        # 2. Normalized match
-                        elif photo_filename_normalized in photos_dict:
-                            pattern_to_use = photo_filename_normalized
-                        # 3. Try with different extensions if no extension provided
-                        elif not any(photo_filename_clean.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
-                            # No extension, try with common extensions
-                            for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                                if (photo_filename_clean.lower() + ext) in photos_dict:
-                                    pattern_to_use = photo_filename_clean.lower() + ext
-                                    break
-                                elif (photo_filename_normalized + ext) in photos_dict:
-                                    pattern_to_use = photo_filename_normalized + ext
-                                    break
-                        # 4. Try without extension (if extension was provided but file doesn't have it)
-                        else:
-                            # Has extension, try without it
+                        # Generate all possible variants to try (with and without accents, with and without extension)
+                        variants_to_try = []
+                        
+                        # Base variants (with original extension if present)
+                        variants_to_try.append(photo_filename_clean.lower())
+                        variants_to_try.append(photo_filename_normalized)
+                        
+                        # If has extension, try without extension
+                        if any(photo_filename_clean.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
                             base_name = os.path.splitext(photo_filename_clean.lower())[0]
                             base_name_normalized = normalize_filename(base_name)
-                            if base_name in photos_dict:
-                                pattern_to_use = base_name
-                            elif base_name_normalized in photos_dict:
-                                pattern_to_use = base_name_normalized
+                            variants_to_try.append(base_name)
+                            variants_to_try.append(base_name_normalized)
+                        
+                        # If no extension, try with common extensions
+                        if not any(photo_filename_clean.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                            for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                                variants_to_try.append(photo_filename_clean.lower() + ext)
+                                variants_to_try.append(photo_filename_normalized + ext)
+                        
+                        # Try all variants until we find a match
+                        for variant in variants_to_try:
+                            if variant in photos_dict:
+                                pattern_to_use = variant
+                                logger.debug(f"Row {idx + 2}: Found photo match: '{photo_filename_clean}' -> '{variant}'")
+                                break
+                        
+                        # If still no match, try fuzzy matching by comparing normalized versions
+                        if not pattern_to_use:
+                            photo_filename_normalized_search = normalize_filename(photo_filename_clean.lower())
+                            # Remove extension for comparison
+                            base_search = os.path.splitext(photo_filename_normalized_search)[0]
+                            
+                            logger.debug(f"Row {idx + 2}: No direct match found, trying fuzzy match. Base search: '{base_search}'")
+                            
+                            for key in photos_dict.keys():
+                                key_normalized = normalize_filename(key.lower())
+                                key_base = os.path.splitext(key_normalized)[0]
+                                
+                                # Check if normalized base names match (ignoring extension)
+                                if base_search == key_base:
+                                    pattern_to_use = key
+                                    logger.info(f"Row {idx + 2}: ✅ Found photo via fuzzy match: '{photo_filename_clean}' -> '{key}' (normalized: '{base_search}' == '{key_base}')")
+                                    break
+                            
+                            if not pattern_to_use:
+                                # Log what we tried and what's available
+                                available_samples = list(photos_dict.keys())[:10]
+                                logger.warning(f"Row {idx + 2}: ❌ No photo match found for '{photo_filename_clean}'. Tried variants: {variants_to_try[:5]}..., Available photos (samples): {available_samples}")
                         
                         # Log if we found a match and upload photo
                         if pattern_to_use and pattern_to_use in photos_dict:
