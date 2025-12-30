@@ -142,8 +142,10 @@ export function LeoContainer() {
   // Memoize loading state
   const isLoading = useMemo(() => isSending || isLoadingMessages, [isSending, isLoadingMessages]);
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
-    <div className="flex h-full gap-4">
+    <div className="flex h-full w-full">
       <LeoSidebar
         conversations={conversations}
         selectedConversationId={selectedConversationId}
@@ -152,13 +154,17 @@ export function LeoContainer() {
         onDeleteConversation={handleDeleteConversation}
         onRenameConversation={handleRenameConversation}
         isLoading={isLoadingConversations}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full">
         <LeoChat
           conversationId={selectedConversationId}
           messages={messages}
           isLoading={isLoading}
           onSendMessage={handleSendMessage}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
         />
       </div>
     </div>

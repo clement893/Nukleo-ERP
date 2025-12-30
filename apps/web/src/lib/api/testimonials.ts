@@ -153,14 +153,7 @@ export const testimonialsAPI = {
       params.import_id = importId;
     }
     
-    const response = await apiClient.post('/v1/commercial/testimonials/import', formData, {
-      params,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    const data = extractApiData<{
+    const response = await apiClient.post<{
       total_rows: number;
       valid_rows: number;
       invalid_rows: number;
@@ -169,7 +162,14 @@ export const testimonialsAPI = {
       logos_uploaded: number;
       import_id: string;
       data: Testimonial[];
-    }>(response);
+    }>('/v1/commercial/testimonials/import', formData, {
+      params,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    const data = extractApiData(response);
     
     return data || {
       total_rows: 0,

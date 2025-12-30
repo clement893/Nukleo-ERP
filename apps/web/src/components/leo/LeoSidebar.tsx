@@ -6,7 +6,7 @@
 'use client';
 
 import { Button } from '@/components/ui';
-import { Plus, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { Plus, MessageSquare, Pencil, Trash2, Menu, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import type { LeoConversation } from '@/lib/api/leo-agent';
@@ -19,6 +19,8 @@ interface LeoSidebarProps {
   onDeleteConversation?: (conversationId: number) => void;
   onRenameConversation?: (conversationId: number, newTitle: string) => void;
   isLoading?: boolean;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 export function LeoSidebar({
@@ -29,6 +31,8 @@ export function LeoSidebar({
   onDeleteConversation,
   onRenameConversation,
   isLoading = false,
+  isOpen = true,
+  onToggle,
 }: LeoSidebarProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
@@ -67,9 +71,39 @@ export function LeoSidebar({
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (!isOpen) {
+    return (
+      <div className="w-16 border-r border-border bg-muted/30 flex flex-col h-full items-center py-4">
+        {onToggle && (
+          <Button
+            onClick={onToggle}
+            variant="ghost"
+            size="sm"
+            className="w-10 h-10 p-0"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="w-64 border-r border-border bg-muted/30 flex flex-col h-full">
+    <div className="w-64 border-r border-border bg-muted/30 flex flex-col h-full transition-all duration-300">
       <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-2 mb-3">
+          {onToggle && (
+            <Button
+              onClick={onToggle}
+              variant="ghost"
+              size="sm"
+              className="w-8 h-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+          <h2 className="text-lg font-semibold text-foreground flex-1">Leo</h2>
+        </div>
         <Button
           onClick={onNewConversation}
           className="w-full flex items-center gap-2"

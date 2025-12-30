@@ -6,9 +6,9 @@
 'use client';
 
 import { useState, useRef, useEffect, memo } from 'react';
-import { Card, Button, Input } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import { useToast } from '@/components/ui';
-import { Loader2, Send, Sparkles, User, Copy, Check } from 'lucide-react';
+import { Loader2, Send, Sparkles, User, Copy, Check, Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { LeoMessage } from '@/lib/api/leo-agent';
 
@@ -270,6 +270,8 @@ interface LeoChatProps {
   messages: LeoMessage[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
 }
 
 // Quick suggestions for new conversations
@@ -282,7 +284,7 @@ const QUICK_SUGGESTIONS = [
   "Aide-moi avec les permissions",
 ];
 
-export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, messages, isLoading, onSendMessage }: LeoChatProps) {
+export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, messages, isLoading, onSendMessage, onToggleSidebar, sidebarOpen }: LeoChatProps) {
   const { success, error } = useToast();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -336,27 +338,43 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
   };
 
   return (
-    <Card className="flex flex-col h-full p-0 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-background">
+      {/* Header */}
+      {!sidebarOpen && onToggleSidebar && (
+        <div className="border-b border-border px-4 py-3 flex items-center">
+          <Button
+            onClick={onToggleSidebar}
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <h1 className="ml-3 text-lg font-semibold text-foreground">Leo - Assistant IA</h1>
+        </div>
+      )}
+      
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto w-full">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {showSuggestions && messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full py-12">
-            <div className="flex-shrink-0 w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-6">
-              <Sparkles className="w-8 h-8 text-primary-600 dark:text-primary-400" />
+          <div className="flex flex-col items-center justify-center min-h-[60vh] py-12">
+            <div className="flex-shrink-0 w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-8">
+              <Sparkles className="w-10 h-10 text-primary-600 dark:text-primary-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
+            <h3 className="text-2xl font-semibold text-foreground mb-3">
               Bonjour ! Je suis Leo, votre assistant IA
             </h3>
-            <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+            <p className="text-base text-muted-foreground mb-8 text-center max-w-lg">
               Posez-moi une question ou choisissez une suggestion ci-dessous pour commencer
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-3xl">
               {QUICK_SUGGESTIONS.map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isLoading}
-                  className="text-left px-4 py-3 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-left px-5 py-4 rounded-xl border border-border bg-background hover:bg-muted transition-colors text-base text-foreground disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                 >
                   {suggestion}
                 </button>
@@ -375,17 +393,17 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
             style={{ animationDelay: `${index * 50}ms` }}
           >
             {message.role === 'assistant' && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mt-1">
                 <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
             )}
             
             <div
               className={clsx(
-                'max-w-[80%] rounded-lg px-4 py-3 group relative',
+                'max-w-[85%] rounded-2xl px-5 py-4 group relative',
                 message.role === 'user'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-muted text-foreground'
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'bg-muted text-foreground shadow-sm'
               )}
             >
               {message.role === 'assistant' && (
@@ -402,11 +420,11 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
                 </button>
               )}
               {message.role === 'assistant' ? (
-                <div className="text-sm prose prose-sm dark:prose-invert max-w-none break-words">
+                <div className="text-base prose prose-base dark:prose-invert max-w-none break-words leading-relaxed">
                   <MarkdownContent content={message.content} />
                 </div>
               ) : (
-                <div className="text-sm whitespace-pre-wrap break-words">
+                <div className="text-base whitespace-pre-wrap break-words leading-relaxed">
                   {message.content}
                 </div>
               )}
@@ -428,7 +446,7 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
             </div>
 
             {message.role === 'user' && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center mt-1">
                 <User className="w-5 h-5 text-muted-foreground" />
               </div>
             )}
@@ -437,55 +455,61 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
 
         {isLoading && (
           <div className="flex gap-4 justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mt-1">
               <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
-            <div className="bg-muted rounded-lg px-4 py-3">
+            <div className="bg-muted rounded-2xl px-5 py-4 shadow-sm">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Leo réfléchit...</span>
+                <span className="text-base text-muted-foreground">Leo réfléchit...</span>
               </div>
             </div>
           </div>
         )}
 
         <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-border p-4 bg-background">
-        <div className="flex gap-2">
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Posez votre question à Leo..."
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="flex items-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Envoi...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Envoyer
-              </>
-            )}
-          </Button>
+      <div className="border-t border-border bg-background">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 relative">
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Posez votre question à Leo..."
+                disabled={isLoading}
+                className="w-full text-base py-3 px-4 rounded-xl border-2 focus:border-primary-500"
+              />
+            </div>
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="flex items-center gap-2 px-6 py-3 h-auto rounded-xl"
+              size="lg"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="hidden sm:inline">Envoi...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  <span className="hidden sm:inline">Envoyer</span>
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3 text-center">
+            Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne
-        </p>
       </div>
-    </Card>
+    </div>
   );
 });
