@@ -34,14 +34,22 @@ async def seed_main_pipeline():
 
     async with async_session() as session:
         # Check if MAIN pipeline already exists
+        from sqlalchemy.orm import selectinload
         result = await session.execute(
-            select(Pipeline).where(Pipeline.name == "MAIN")
+            select(Pipeline)
+            .where(Pipeline.name == "MAIN")
+            .options(selectinload(Pipeline.stages))
         )
         existing_pipeline = result.scalar_one_or_none()
         
         if existing_pipeline:
+            # Count stages explicitly to avoid lazy loading issues
+            stages_result = await session.execute(
+                select(PipelineStage).where(PipelineStage.pipeline_id == existing_pipeline.id)
+            )
+            stages = stages_result.scalars().all()
             print(f"✅ MAIN pipeline already exists (ID: {existing_pipeline.id})")
-            print(f"   Stages: {len(existing_pipeline.stages)}")
+            print(f"   Stages: {len(stages)}")
             return existing_pipeline
 
         # Get first user as creator (or create a default one)
