@@ -902,9 +902,26 @@ async def import_contacts(
                                 # Always store the file_key (not the presigned URL) for persistence
                                 # Presigned URLs expire, but file_key is permanent
                                 uploaded_photo_url = upload_result.get('file_key')
-                                logger.info(f"Upload result for {first_name} {last_name}: file_key={upload_result.get('file_key')}, url={upload_result.get('url')}")
                                 
-                                if not uploaded_photo_url:
+                                # Validate file_key format
+                                if uploaded_photo_url:
+                                    # Ensure file_key is in correct format: contacts/photos/...
+                                    if not uploaded_photo_url.startswith('contacts/photos'):
+                                        logger.warning(f"Invalid file_key format from upload_result for {first_name} {last_name}: {uploaded_photo_url}")
+                                        # Try to fix if it's missing the prefix
+                                        if uploaded_photo_url.startswith('contacts/'):
+                                            uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
+                                        else:
+                                            uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
+                                    
+                                    # Verify the file was actually uploaded by checking metadata
+                                    try:
+                                        metadata = s3_service.get_file_metadata(uploaded_photo_url)
+                                        logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
+                                    except Exception as e:
+                                        logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
+                                        uploaded_photo_url = None
+                                else:
                                     # Fallback to URL if file_key not available, but extract key from URL
                                     url = upload_result.get('url', '')
                                     logger.warning(f"No file_key in upload_result for {first_name} {last_name}, trying to extract from URL: {url}")
@@ -916,13 +933,17 @@ async def import_contacts(
                                         if 'contacts/photos' in path:
                                             idx = path.find('contacts/photos')
                                             uploaded_photo_url = path[idx:]
+                                            logger.info(f"Extracted file_key from URL for {first_name} {last_name}: {uploaded_photo_url}")
                                         else:
                                             uploaded_photo_url = url
                                     else:
                                         uploaded_photo_url = url
                                 
-                                logger.info(f"Uploaded photo for {first_name} {last_name}: {pattern} -> file_key stored: {uploaded_photo_url}")
-                                break
+                                if uploaded_photo_url:
+                                    logger.info(f"Photo ready for {first_name} {last_name}: {pattern} -> file_key: {uploaded_photo_url}")
+                                    break
+                                else:
+                                    logger.error(f"Failed to get valid file_key for {first_name} {last_name} after upload")
                             except Exception as e:
                                 logger.warning(f"Failed to upload photo {pattern}: {e}")
                                 continue
