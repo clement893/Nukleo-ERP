@@ -158,3 +158,23 @@ export function useDeleteCompany() {
     },
   });
 }
+
+/**
+ * Hook to delete all companies
+ */
+export function useDeleteAllCompanies() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => companiesAPI.deleteAll(),
+    onSuccess: () => {
+      // Remove all companies from cache
+      queryClient.removeQueries({ queryKey: companyKeys.all });
+      // Invalidate lists
+      queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Failed to delete all companies:', error);
+    },
+  });
+}
