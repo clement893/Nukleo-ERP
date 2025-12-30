@@ -48,6 +48,7 @@ export default function CompanyForm({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       showToast({
         message: 'Veuillez sélectionner une image',
@@ -62,7 +63,8 @@ export default function CompanyForm({
         folder: 'companies/logos',
         is_public: true,
       });
-
+      
+      // Save file_key if available, otherwise use file_path (URL)
       const logoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
       setFormData({ ...formData, logo_url: logoUrlToSave });
       showToast({
@@ -88,7 +90,7 @@ export default function CompanyForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!formData.name.trim()) {
       showToast({
         message: 'Le nom de l\'entreprise est requis',
@@ -113,7 +115,7 @@ export default function CompanyForm({
               <img
                 src={formData.logo_url}
                 alt="Company logo"
-                className="w-24 h-24 rounded-lg object-cover border border-border"
+                className="w-20 h-20 rounded object-cover border border-border"
               />
               <button
                 type="button"
@@ -124,7 +126,7 @@ export default function CompanyForm({
               </button>
             </div>
           ) : (
-            <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border border-border">
+            <div className="w-20 h-20 rounded bg-muted flex items-center justify-center border border-border">
               <Building2 className="w-10 h-10 text-muted-foreground" />
             </div>
           )}
@@ -150,7 +152,7 @@ export default function CompanyForm({
         </div>
       </div>
 
-      {/* Nom */}
+      {/* Nom de l'entreprise */}
       <Input
         label="Nom de l'entreprise *"
         value={formData.name}
@@ -171,7 +173,7 @@ export default function CompanyForm({
           options={[
             { value: '', label: 'Aucune' },
             ...parentCompanies
-              .filter(c => !company || c.id !== company.id) // Exclude self
+              .filter(c => !company || c.id !== company.id) // Exclude self from parent options
               .map(c => ({ value: c.id.toString(), label: c.name })),
           ]}
           fullWidth
@@ -186,7 +188,7 @@ export default function CompanyForm({
         <textarea
           value={formData.description || ''}
           onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
           rows={3}
         />
       </div>
@@ -243,22 +245,21 @@ export default function CompanyForm({
         />
       </div>
 
-      {/* Client */}
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="is_client"
-          checked={formData.is_client}
-          onChange={(e) => setFormData({ ...formData, is_client: e.target.checked })}
-          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-        />
-        <label htmlFor="is_client" className="text-sm font-medium text-foreground">
-          Client
+      {/* Client (Y/N) */}
+      <div>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={formData.is_client}
+            onChange={(e) => setFormData({ ...formData, is_client: e.target.checked })}
+            className="w-4 h-4 rounded border-border"
+          />
+          <span className="text-sm font-medium text-foreground">Client</span>
         </label>
       </div>
 
       {/* Réseaux sociaux */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-2 border-t border-border">
         <h3 className="text-sm font-medium text-foreground">Réseaux sociaux</h3>
         
         <Input

@@ -92,6 +92,16 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             icon: <Briefcase className="w-5 h-5" />,
           },
           {
+            name: 'Contacts',
+            href: '/dashboard/commercial/contacts',
+            icon: <UserCircle className="w-5 h-5" />,
+          },
+          {
+            name: 'Entreprises',
+            href: '/dashboard/commercial/companies',
+            icon: <Building2 className="w-5 h-5" />,
+          },
+          {
             name: 'Opportunités',
             href: '/dashboard/commercial/opportunites',
             icon: <Target className="w-5 h-5" />,
@@ -317,6 +327,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Sécurité',
             href: '/settings/security',
             icon: <Lock className="w-5 h-5" />,
+          },
+          {
+            name: 'Admin',
+            href: 'https://modeleweb-production-f341.up.railway.app/fr/admin',
+            icon: <Shield className="w-5 h-5" />,
           },
           ...(isAdmin ? [{
             name: 'Espace Admin',

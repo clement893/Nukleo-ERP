@@ -3,10 +3,9 @@
 import { Company } from '@/lib/api/companies';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { Building2, Globe, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Edit, Trash2, Users, FolderKanban } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Globe, Linkedin, Facebook, Instagram, Edit, Trash2, CheckCircle2, Users, FolderKanban } from 'lucide-react';
 import { clsx } from 'clsx';
-import Badge from '@/components/ui/Badge';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface CompanyDetailProps {
   company: Company;
@@ -21,6 +20,18 @@ export default function CompanyDetail({
   onDelete,
   className,
 }: CompanyDetailProps) {
+  const router = useRouter();
+  const locale = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] || 'fr' : 'fr';
+
+  const handleViewContacts = () => {
+    router.push(`/${locale}/dashboard/commercial/contacts?company_id=${company.id}`);
+  };
+
+  const handleViewProjects = () => {
+    // TODO: Navigate to projects filtered by company when projects page is ready
+    router.push(`/${locale}/dashboard/projects?company_id=${company.id}`);
+  };
+
   return (
     <div className={clsx('space-y-4', className)}>
       {/* Header avec logo */}
@@ -30,35 +41,27 @@ export default function CompanyDetail({
             <img
               src={company.logo_url}
               alt={company.name}
-              className="w-24 h-24 rounded-lg object-contain border border-border"
+              className="w-24 h-24 rounded object-cover border border-border"
             />
           ) : (
-            <div className="w-24 h-24 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center border border-border">
+            <div className="w-24 h-24 rounded bg-primary-100 dark:bg-primary-900 flex items-center justify-center border border-border">
               <Building2 className="w-12 h-12 text-primary-600 dark:text-primary-400" />
             </div>
           )}
           <div className="flex-1">
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground mb-1">
-                  {company.name}
-                </h2>
-                {company.parent_company_name && (
-                  <p className="text-sm text-muted-foreground">
-                    Filiale de {company.parent_company_name}
-                  </p>
-                )}
-              </div>
-              {company.is_client ? (
-                <Badge variant="success">
-                  Client
-                </Badge>
-              ) : (
-                <Badge variant="default">
-                  Prospect
-                </Badge>
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="text-2xl font-bold text-foreground">
+                {company.name}
+              </h2>
+              {company.is_client && (
+                <CheckCircle2 className="w-6 h-6 text-green-500" />
               )}
             </div>
+            {company.parent_company_name && (
+              <p className="text-sm text-muted-foreground mb-4">
+                Filiale de {company.parent_company_name}
+              </p>
+            )}
             {company.description && (
               <p className="text-muted-foreground mb-4">{company.description}</p>
             )}
@@ -121,14 +124,23 @@ export default function CompanyDetail({
               </div>
             </div>
           )}
-          {(company.address || company.city || company.country) && (
+          {(company.city || company.country) && (
+            <div className="flex items-center gap-3">
+              <MapPin className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Localisation</p>
+                <p className="text-foreground">
+                  {[company.city, company.country].filter(Boolean).join(', ') || 'Non renseigné'}
+                </p>
+              </div>
+            </div>
+          )}
+          {company.address && (
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Adresse</p>
-                <p className="text-foreground">
-                  {[company.address, company.city, company.country].filter(Boolean).join(', ')}
-                </p>
+                <p className="text-foreground">{company.address}</p>
               </div>
             </div>
           )}
@@ -192,21 +204,21 @@ export default function CompanyDetail({
       )}
 
       {/* Contacts liés */}
-      {company.contacts_count !== undefined && company.contacts_count > 0 && (
+      {company.contacts_count !== undefined && (
         <Card title="Contacts liés">
-          <div className="flex items-center gap-3">
-            <Users className="w-5 h-5 text-muted-foreground" />
-            <div>
-              <p className="text-sm text-muted-foreground">
-                {company.contacts_count} contact{company.contacts_count !== 1 ? 's' : ''} associé{company.contacts_count !== 1 ? 's' : ''}
-              </p>
-              <Link
-                href={`/dashboard/reseau/contacts?company_id=${company.id}`}
-                className="text-primary hover:underline text-sm"
-              >
-                Voir les contacts
-              </Link>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Nombre de contacts</p>
+                <p className="text-foreground font-semibold">{company.contacts_count}</p>
+              </div>
             </div>
+            {company.contacts_count > 0 && (
+              <Button variant="outline" size="sm" onClick={handleViewContacts}>
+                Voir les contacts
+              </Button>
+            )}
           </div>
         </Card>
       )}
@@ -214,14 +226,19 @@ export default function CompanyDetail({
       {/* Projets (si client) */}
       {company.is_client && company.projects_count !== undefined && (
         <Card title="Projets">
-          <div className="flex items-center gap-3">
-            <FolderKanban className="w-5 h-5 text-muted-foreground" />
-            <div>
-              <p className="text-sm text-muted-foreground">
-                {company.projects_count} projet{company.projects_count !== 1 ? 's' : ''}
-              </p>
-              {/* TODO: Add link to projects when project module is ready */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FolderKanban className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Nombre de projets</p>
+                <p className="text-foreground font-semibold">{company.projects_count}</p>
+              </div>
             </div>
+            {company.projects_count > 0 && (
+              <Button variant="outline" size="sm" onClick={handleViewProjects}>
+                Voir les projets
+              </Button>
+            )}
           </div>
         </Card>
       )}

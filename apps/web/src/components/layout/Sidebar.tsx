@@ -47,9 +47,17 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
     });
   };
 
+  // Check if a link is external
+  const isExternalLink = (href: string) => {
+    return href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//');
+  };
+
   // Check if item is active
   // Only mark as active if it's an exact match or if it's the most specific matching route
   const isActive = (href: string) => {
+    // External links are never active
+    if (isExternalLink(href)) return false;
+    
     if (!pathname) return false;
     
     // Exact match
@@ -126,16 +134,39 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
   // Render navigation item
   const renderNavItem = (item: NavigationItem) => {
     const active = isActive(item.href);
+    const external = isExternalLink(item.href);
+    const className = clsx(
+      'flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm transition-colors',
+      active
+        ? 'bg-primary/10 text-primary font-medium'
+        : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
+    );
+
+    if (external) {
+      return (
+        <a
+          key={item.href}
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={className}
+        >
+          <span className="w-4 h-4">{item.icon}</span>
+          <span>{item.name}</span>
+          {item.badge && (
+            <span className="ml-auto px-1.5 py-0.5 text-xs font-medium rounded bg-primary/20 text-primary">
+              {item.badge}
+            </span>
+          )}
+        </a>
+      );
+    }
+
     return (
       <Link
         key={item.href}
         href={item.href}
-        className={clsx(
-          'flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm transition-colors',
-          active
-            ? 'bg-primary/10 text-primary font-medium'
-            : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
-        )}
+        className={className}
       >
         <span className="w-4 h-4">{item.icon}</span>
         <span>{item.name}</span>
@@ -190,26 +221,52 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
         )}
         {(!group.collapsible || isOpen) && (
           <div className="ml-6 space-y-0.5">
-            {group.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={clsx(
-                  'flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm transition-colors',
-                  isActive(item.href)
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
-                )}
-              >
-                <span className="w-4 h-4">{item.icon}</span>
-                <span>{item.name}</span>
-                {item.badge && (
-                  <span className="ml-auto px-1.5 py-0.5 text-xs font-medium rounded bg-primary/20 text-primary">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
+            {group.items.map((item) => {
+              const active = isActive(item.href);
+              const external = isExternalLink(item.href);
+              const className = clsx(
+                'flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm transition-colors',
+                active
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
+              );
+
+              if (external) {
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                  >
+                    <span className="w-4 h-4">{item.icon}</span>
+                    <span>{item.name}</span>
+                    {item.badge && (
+                      <span className="ml-auto px-1.5 py-0.5 text-xs font-medium rounded bg-primary/20 text-primary">
+                        {item.badge}
+                      </span>
+                    )}
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={className}
+                >
+                  <span className="w-4 h-4">{item.icon}</span>
+                  <span>{item.name}</span>
+                  {item.badge && (
+                    <span className="ml-auto px-1.5 py-0.5 text-xs font-medium rounded bg-primary/20 text-primary">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

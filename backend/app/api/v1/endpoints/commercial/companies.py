@@ -14,6 +14,7 @@ import os
 import re
 import unicodedata
 from io import BytesIO
+from datetime import datetime
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -487,6 +488,71 @@ async def delete_company(
     
     await db.delete(company)
     await db.commit()
+
+
+@router.delete("/bulk", status_code=status.HTTP_200_OK)
+async def delete_all_companies(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Delete all companies (bulk delete)
+    
+    WARNING: This will delete ALL companies from the database.
+    Only companies without associated contacts will be deleted.
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dict with deletion results
+    """
+    try:
+        # Get all companies
+        companies_query = select(Company)
+        companies_result = await db.execute(companies_query)
+        all_companies = companies_result.scalars().all()
+        
+        deleted_count = 0
+        skipped_count = 0
+        errors = []
+        
+        for company in all_companies:
+            try:
+                # Check if company has contacts
+                contacts_query = select(func.count(Contact.id)).where(Contact.company_id == company.id)
+                contacts_result = await db.execute(contacts_query)
+                contacts_count = contacts_result.scalar()
+                
+                if contacts_count > 0:
+                    skipped_count += 1
+                    errors.append(f"Company '{company.name}' (ID: {company.id}) has {contacts_count} associated contact(s)")
+                    continue
+                
+                # Delete company
+                await db.delete(company)
+                deleted_count += 1
+            except Exception as e:
+                skipped_count += 1
+                errors.append(f"Error deleting company '{company.name}' (ID: {company.id}): {str(e)}")
+                logger.error(f"Error deleting company {company.id}: {e}")
+        
+        await db.commit()
+        
+        return {
+            "message": f"Deleted {deleted_count} company(ies), skipped {skipped_count}",
+            "deleted_count": deleted_count,
+            "skipped_count": skipped_count,
+            "errors": errors if errors else None,
+        }
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error in bulk delete companies: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la suppression en masse: {str(e)}"
+        )
 
 
 @router.post("/import", response_model=dict)
@@ -991,9 +1057,104 @@ async def export_companies(
     Returns:
         Excel file
     """
-    # TODO: Implement Excel export
-    # Similar to contacts export
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Export functionality not yet implemented"
-    )
+    try:
+        # Get all companies
+        query = select(Company).order_by(Company.created_at.desc())
+        result = await db.execute(query)
+        companies = result.scalars().all()
+        
+        # Prepare data for export
+        export_data = []
+        for company in companies:
+            export_data.append({
+                "ID": company.id,
+                "Nom de l'entreprise": company.name,
+                "Entreprise parente ID": company.parent_company_id or "",
+                "Description": company.description or "",
+                "Site web": company.website or "",
+                "Logo URL (S3)": company.logo_url or "",
+                "Courriel": company.email or "",
+                "Téléphone": company.phone or "",
+                "Adresse": company.address or "",
+                "Ville": company.city or "",
+                "Pays": company.country or "",
+                "Client (Y/N)": "Oui" if company.is_client else "Non",
+                "Facebook": company.facebook or "",
+                "Instagram": company.instagram or "",
+                "LinkedIn": company.linkedin or "",
+                "Date de création": company.created_at.isoformat() if company.created_at else "",
+                "Date de mise à jour": company.updated_at.isoformat() if company.updated_at else "",
+            })
+        
+        # Handle empty data case
+        if not export_data:
+            # Return empty Excel file with headers
+            export_data = [{
+                "ID": "",
+                "Nom de l'entreprise": "",
+                "Entreprise parente ID": "",
+                "Description": "",
+                "Site web": "",
+                "Logo URL (S3)": "",
+                "Courriel": "",
+                "Téléphone": "",
+                "Adresse": "",
+                "Ville": "",
+                "Pays": "",
+                "Client (Y/N)": "",
+                "Facebook": "",
+                "Instagram": "",
+                "LinkedIn": "",
+                "Date de création": "",
+                "Date de mise à jour": "",
+            }]
+        
+        # Export to Excel
+        buffer, filename = ExportService.export_to_excel(
+            data=export_data,
+            headers=[
+                "ID",
+                "Nom de l'entreprise",
+                "Entreprise parente ID",
+                "Description",
+                "Site web",
+                "Logo URL (S3)",
+                "Courriel",
+                "Téléphone",
+                "Adresse",
+                "Ville",
+                "Pays",
+                "Client (Y/N)",
+                "Facebook",
+                "Instagram",
+                "LinkedIn",
+                "Date de création",
+                "Date de mise à jour",
+            ],
+            filename=f"entreprises_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            sheet_name="Entreprises"
+        )
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        logger.error(f"Export validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Erreur lors de l'export: {str(e)}"
+        )
+    except ImportError as e:
+        logger.error(f"Export dependency error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le service d'export Excel n'est pas disponible. Veuillez contacter l'administrateur."
+        )
+    except Exception as e:
+        logger.error(f"Unexpected export error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur inattendue lors de l'export: {str(e)}"
+        )

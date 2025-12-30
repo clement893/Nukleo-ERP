@@ -17,16 +17,9 @@ export const COMPANY_TEMPLATE_COLUMNS: CompanyTemplateColumn[] = [
   {
     key: 'name',
     label: 'Nom de l\'entreprise',
-    description: 'Nom de l\'entreprise',
+    description: 'Nom de l\'entreprise (requis)',
     example: 'Acme Corporation',
     required: true,
-  },
-  {
-    key: 'description',
-    label: 'Description',
-    description: 'Description de l\'entreprise',
-    example: 'Entreprise spécialisée dans les solutions IT',
-    required: false,
   },
   {
     key: 'website',
@@ -36,9 +29,37 @@ export const COMPANY_TEMPLATE_COLUMNS: CompanyTemplateColumn[] = [
     required: false,
   },
   {
+    key: 'logo_url',
+    label: 'Logo URL (S3)',
+    description: 'URL S3 du logo ou nom du fichier dans le ZIP',
+    example: 'logos/acme.jpg',
+    required: false,
+  },
+  {
+    key: 'country',
+    label: 'Pays',
+    description: 'Pays de l\'entreprise',
+    example: 'France',
+    required: false,
+  },
+  {
+    key: 'is_client',
+    label: 'Client (Y/N)',
+    description: 'Oui ou Non',
+    example: 'Oui',
+    required: false,
+  },
+  {
+    key: 'description',
+    label: 'Description',
+    description: 'Description de l\'entreprise',
+    example: 'Entreprise spécialisée dans...',
+    required: false,
+  },
+  {
     key: 'email',
     label: 'Courriel',
-    description: 'Adresse email principale',
+    description: 'Adresse email',
     example: 'contact@acme.com',
     required: false,
   },
@@ -53,7 +74,7 @@ export const COMPANY_TEMPLATE_COLUMNS: CompanyTemplateColumn[] = [
     key: 'address',
     label: 'Adresse',
     description: 'Adresse complète',
-    example: '123 Rue de la République',
+    example: '123 Rue Example',
     required: false,
   },
   {
@@ -64,45 +85,31 @@ export const COMPANY_TEMPLATE_COLUMNS: CompanyTemplateColumn[] = [
     required: false,
   },
   {
-    key: 'country',
-    label: 'Pays',
-    description: 'Pays',
-    example: 'France',
-    required: false,
-  },
-  {
-    key: 'is_client',
-    label: 'Est client',
-    description: 'Oui/Non ou true/false',
-    example: 'Oui',
-    required: false,
-  },
-  {
     key: 'parent_company_id',
     label: 'ID Entreprise parente',
-    description: 'Identifiant de l\'entreprise parente (optionnel)',
+    description: 'ID de l\'entreprise parente (si filiale)',
     example: '1',
-    required: false,
-  },
-  {
-    key: 'linkedin',
-    label: 'LinkedIn',
-    description: 'URL du profil LinkedIn',
-    example: 'https://linkedin.com/company/acme',
     required: false,
   },
   {
     key: 'facebook',
     label: 'Facebook',
-    description: 'URL de la page Facebook',
+    description: 'URL Facebook',
     example: 'https://facebook.com/acme',
     required: false,
   },
   {
     key: 'instagram',
     label: 'Instagram',
-    description: 'URL du profil Instagram',
+    description: 'URL Instagram',
     example: 'https://instagram.com/acme',
+    required: false,
+  },
+  {
+    key: 'linkedin',
+    label: 'LinkedIn',
+    description: 'URL LinkedIn',
+    example: 'https://linkedin.com/company/acme',
     required: false,
   },
 ];
@@ -131,7 +138,7 @@ export function generateCompanyTemplate(): Blob {
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   // Set column widths for better readability
-  const colWidths = COMPANY_TEMPLATE_COLUMNS.map(() => ({ wch: 25 }));
+  const colWidths = COMPANY_TEMPLATE_COLUMNS.map(() => ({ wch: 20 }));
   ws['!cols'] = colWidths;
 
   // Style header row (bold)
@@ -152,30 +159,28 @@ export function generateCompanyTemplate(): Blob {
   const instructionsData = [
     ['Instructions pour l\'import d\'entreprises'],
     [''],
-    ['Colonnes supportées:'],
-    ...COMPANY_TEMPLATE_COLUMNS.map(col => [
-      `- ${col.label} (${col.key})${col.required ? ' *REQUIS*' : ''}`,
-      col.description || '',
-      col.example ? `Exemple: ${col.example}` : '',
-    ]),
+    ['Colonnes requises:'],
+    ['- Nom de l\'entreprise'],
     [''],
-    ['Notes importantes:'],
-    ['- La colonne "Nom de l\'entreprise" est REQUISE'],
-    ['- Pour "Est client", utilisez: Oui/Non, oui/non, true/false, 1/0'],
-    ['- Les IDs (parent_company_id) doivent correspondre à des enregistrements existants'],
-    ['- Vous pouvez utiliser les noms de colonnes en français ou en anglais'],
+    ['Colonnes optionnelles:'],
+    ['- Site web, Logo URL (S3), Pays, Client (Y/N), Description, Courriel, Téléphone, Adresse, Ville'],
+    ['- ID Entreprise parente, Facebook, Instagram, LinkedIn'],
     [''],
-    ['Format des colonnes acceptées:'],
-    ['Français: Nom de l\'entreprise, Description, Site web, Courriel, Téléphone, Adresse, Ville, Pays, Est client, ID Entreprise parente, LinkedIn, Facebook, Instagram'],
-    ['Anglais: name, description, website, email, phone, address, city, country, is_client, parent_company_id, linkedin, facebook, instagram'],
+    ['Format Client (Y/N):'],
+    ['- Oui, Yes, True, 1 pour client'],
+    ['- Non, No, False, 0 pour non-client'],
+    [''],
+    ['Pour les logos dans un ZIP:'],
+    ['- Placez les logos dans un dossier "logos/"'],
+    ['- Nommez les fichiers selon le nom de l\'entreprise (ex: acme.jpg)'],
+    ['- Ou référencez le nom du fichier dans la colonne "Logo URL (S3)"'],
   ];
 
   const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
-  instructionsWs['!cols'] = [{ wch: 80 }];
   XLSX.utils.book_append_sheet(wb, instructionsWs, 'Instructions');
 
-  // Convert to blob
-  const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  // Generate blob
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
@@ -201,7 +206,6 @@ export function downloadCompanyTemplate(): void {
 export async function generateCompanyZipTemplate(): Promise<Blob> {
   // Import JSZip dynamically to avoid SSR issues
   const JSZipModule = await import('jszip') as any;
-  // Handle both default export and named export
   const JSZip = JSZipModule.default || JSZipModule;
   const zip = new JSZip();
 
@@ -225,8 +229,8 @@ Votre fichier ZIP doit contenir :
 entreprises_import.zip
 ├── entreprises.xlsx
 └── logos/
-    ├── acme_corporation.jpg
-    ├── tech_solutions.png
+    ├── acme.jpg
+    ├── example.png
     └── ...
 \`\`\`
 
@@ -238,111 +242,47 @@ Le fichier Excel doit contenir les colonnes suivantes :
 - **Nom de l'entreprise** (ou \`name\`) : Nom de l'entreprise *REQUIS*
 
 ### Colonnes optionnelles
-- **Description** (ou \`description\`) : Description de l'entreprise
 - **Site web** (ou \`website\`) : URL du site web
-- **Courriel** (ou \`email\`) : Adresse email principale
+- **Logo URL (S3)** (ou \`logo_url\`) : URL S3 du logo ou nom du fichier dans le ZIP
+- **Pays** (ou \`country\`) : Pays de l'entreprise
+- **Client (Y/N)** (ou \`is_client\`) : Oui/Non pour indiquer si c'est un client
+- **Description** : Description de l'entreprise
+- **Courriel** (ou \`email\`) : Adresse email
 - **Téléphone** (ou \`phone\`) : Numéro de téléphone
 - **Adresse** (ou \`address\`) : Adresse complète
 - **Ville** (ou \`city\`) : Ville
-- **Pays** (ou \`country\`) : Pays
-- **Est client** (ou \`is_client\`) : Oui/Non ou true/false
-- **ID Entreprise parente** (ou \`parent_company_id\`) : Identifiant de l'entreprise parente
-- **LinkedIn** (ou \`linkedin\`) : URL du profil LinkedIn
-- **Facebook** (ou \`facebook\`) : URL de la page Facebook
-- **Instagram** (ou \`instagram\`) : URL du profil Instagram
-- **Logo URL** (ou \`logo_url\`) : URL du logo (alternative aux fichiers dans logos/)
+- **ID Entreprise parente** (ou \`parent_company_id\`) : ID de l'entreprise parente (si filiale)
+- **Facebook** : URL Facebook
+- **Instagram** : URL Instagram
+- **LinkedIn** : URL LinkedIn
 
-## Nommage des logos
+## Format Client (Y/N)
 
-Les logos doivent être nommés selon l'un de ces formats :
-- \`nom_entreprise.jpg\` (ex: \`acme_corporation.jpg\`)
-- \`nom_entreprise.png\`
-- \`nom_entreprise.jpeg\`
+Les valeurs acceptées pour "Client (Y/N)" sont :
+- **Oui** : Oui, Yes, True, 1, Vrai, O
+- **Non** : Non, No, False, 0, Faux, N
 
-**Exemples :**
-- Entreprise : Acme Corporation → Logo : \`acme_corporation.jpg\`
-- Entreprise : Tech Solutions → Logo : \`tech_solutions.png\`
+## Logos
 
-### Format alternatif
+### Option 1 : Logo dans le ZIP
+1. Placez les logos dans un dossier \`logos/\` dans le ZIP
+2. Nommez les fichiers selon le nom de l'entreprise (normalisé, sans accents, espaces remplacés par _)
+3. Exemple : \`logos/acme_corporation.jpg\`
 
-Vous pouvez aussi spécifier le nom du fichier logo dans une colonne Excel :
-- **Nom fichier logo** (ou \`logo_filename\`) : Nom exact du fichier logo
-
-## Formats de logos supportés
-
-- .jpg / .jpeg
-- .png
-- .gif
-- .webp
-
-## Exemple de fichier Excel
-
-| Nom de l'entreprise | Description              | Site web              | Courriel              | Téléphone      | Est client |
-|---------------------|--------------------------|-----------------------|-----------------------|----------------|------------|
-| Acme Corporation    | Solutions IT innovantes  | https://acme.com      | contact@acme.com      | +33 1 23 45 67 | Oui        |
-| Tech Solutions      | Services technologiques  | https://techsol.com   | info@techsol.com      | +33 1 98 76 54 | Non        |
-
-## Processus d'import
-
-1. Téléchargez ce modèle ZIP
-2. Décompressez le fichier
-3. Remplissez le fichier \`entreprises.xlsx\` avec vos données
-4. Ajoutez les logos dans le dossier \`logos/\` en suivant le format de nommage
-5. Recompressez le tout en ZIP
-6. Importez le fichier ZIP via l'interface
+### Option 2 : Logo URL S3
+1. Indiquez l'URL S3 complète dans la colonne "Logo URL (S3)"
+2. Format : \`companies/logos/acme.jpg\` ou URL complète
 
 ## Notes importantes
 
-- La colonne "Nom de l'entreprise" est REQUISE
-- Les logos sont automatiquement associés aux entreprises par leur nom
-- Si un logo n'est pas trouvé, l'entreprise sera créée sans logo
-- Vous pouvez utiliser soit des logos dans le ZIP, soit des URLs dans la colonne Logo URL
-- Les IDs (parent_company_id) doivent correspondre à des enregistrements existants dans le système
-- Pour "Est client", utilisez: Oui/Non, oui/non, true/false, 1/0
-
-## Support
-
-En cas de problème lors de l'import, vérifiez :
-- Le format du fichier Excel (doit être .xlsx ou .xls)
-- Le nommage des logos (doit correspondre au format nom_entreprise)
-- La colonne requise est présente et remplie
-- Le nom de l'entreprise correspond au nom du fichier logo (sans espaces, avec underscores)
+- Les noms de colonnes sont insensibles à la casse et aux accents
+- Les entreprises existantes seront mises à jour si le nom correspond
+- Les logos seront automatiquement uploadés vers S3 si présents dans le ZIP
 `;
 
-  zip.file('README.txt', readmeContent);
+  zip.file('README.md', readmeContent);
 
-  // Create logos folder with a placeholder/instructions file
-  const logosInstructions = `# Dossier Logos
-
-Placez ici les logos de vos entreprises.
-
-## Format de nommage
-
-Nommez vos logos selon le format : \`nom_entreprise.extension\`
-
-Exemples :
-- acme_corporation.jpg
-- tech_solutions.png
-- global_services.jpeg
-
-## Formats acceptés
-
-- .jpg / .jpeg
-- .png
-- .gif
-- .webp
-
-## Important
-
-- Les noms de fichiers doivent être en minuscules
-- Utilisez des underscores (_) pour remplacer les espaces dans le nom de l'entreprise
-- Le système associera automatiquement les logos aux entreprises correspondantes dans le fichier Excel
-- Le nom du logo doit correspondre au nom de l'entreprise dans Excel (sans espaces, avec underscores)
-`;
-
-  zip.folder('logos')?.file('INSTRUCTIONS.txt', logosInstructions);
-
-  // Generate ZIP file
+  // Generate ZIP blob
   const zipBlob = await zip.generateAsync({ type: 'blob' });
   return zipBlob;
 }

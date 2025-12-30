@@ -35,7 +35,11 @@ export function useCompanies(
 ) {
   return useQuery({
     queryKey: companyKeys.list({ skip, limit, is_client: options?.is_client, country: options?.country, search: options?.search }),
-    queryFn: () => companiesAPI.list(skip, limit, options?.is_client, options?.country, options?.search),
+    queryFn: () => companiesAPI.list(skip, limit, {
+      is_client: options?.is_client,
+      country: options?.country,
+      search: options?.search,
+    }),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60 * 5, // 5 minutes - data is fresh for 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes - cache persists for 10 minutes
@@ -57,7 +61,11 @@ export function useInfiniteCompanies(
 ) {
   return useInfiniteQuery({
     queryKey: [...companyKeys.lists(), 'infinite', { limit, is_client: options?.is_client, country: options?.country, search: options?.search }],
-    queryFn: ({ pageParam = 0 }) => companiesAPI.list(pageParam, limit, options?.is_client, options?.country, options?.search),
+    queryFn: ({ pageParam = 0 }) => companiesAPI.list(pageParam, limit, {
+      is_client: options?.is_client,
+      country: options?.country,
+      search: options?.search,
+    }),
     getNextPageParam: (lastPage, allPages) => {
       // If last page has fewer items than limit, we've reached the end
       if (lastPage.length < limit) {

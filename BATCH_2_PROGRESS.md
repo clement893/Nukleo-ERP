@@ -1,170 +1,83 @@
-# Rapport de Progression - Batch 2
+# Batch 2: Module ERP - Progression
 
-**Date:** 2025-01-27  
-**Batch:** 2 - Schémas Pydantic  
-**Développeur:** AI Assistant  
-**Durée:** ~20 minutes
+**Date**: 30 décembre 2025  
+**Statut**: ✅ Complété et pushé
 
----
+## 📋 Objectifs
 
-## 📋 Objectif du Batch
-
-Créer les schémas Pydantic pour valider et sérialiser les données des conversations et messages Leo dans l'API.
-
----
+- [x] Créer structure modulaire ERP complète
+- [x] Identifier et migrer schémas ERP
+- [x] Créer router unifié ERP dans modules/erp/api
+- [x] Créer client API unifié frontend et hooks
+- [x] Vérifier et commit/push
 
 ## ✅ Réalisations
 
-### Fichiers Créés
-- [x] `backend/app/schemas/leo.py` - Schémas Pydantic pour conversations et messages
-
-### Fichiers Modifiés
-- Aucun (les schémas sont autonomes)
-
-### Fonctionnalités Implémentées
-- [x] Schémas de base:
-  - `LeoConversationBase` - Schéma de base pour conversation
-  - `LeoMessageBase` - Schéma de base pour message
-  
-- [x] Schémas de création:
-  - `LeoConversationCreate` - Pour créer une conversation
-  - `LeoMessageCreate` - Pour créer un message
-  
-- [x] Schémas de mise à jour:
-  - `LeoConversationUpdate` - Pour mettre à jour une conversation
-  
-- [x] Schémas complets:
-  - `LeoConversation` - Conversation avec métadonnées
-  - `LeoMessage` - Message avec métadonnées
-  
-- [x] Schémas de réponse:
-  - `LeoConversationListResponse` - Liste de conversations
-  - `LeoMessageListResponse` - Liste de messages
-  - `LeoQueryRequest` - Requête pour interroger Leo
-  - `LeoQueryResponse` - Réponse de Leo
-
----
-
-## 🔍 Vérifications Effectuées
-
 ### Backend
 
-#### Linting Python
-```bash
-# Vérification via read_lints
-```
-- [x] ✓ Pas d'erreurs de formatage détectées
-- [x] ✓ Code conforme aux standards
+1. **Structure modulaire créée** (`backend/app/modules/erp/`)
+   - `schemas/` : Réexporte tous les schémas ERP depuis `app.schemas.erp`
+   - `api/router.py` : Router unifié regroupant tous les endpoints ERP
 
-#### Type Checking (mypy)
-```bash
-# À vérifier avec environnement virtuel activé
-```
-- [ ] ⚠ À vérifier avec mypy dans l'environnement virtuel
-- [x] ✓ Syntaxe Python valide (vérifiée manuellement)
+2. **Router unifié** (`backend/app/modules/erp/api/router.py`)
+   - Regroupe tous les endpoints ERP existants :
+     - Orders
+     - Invoices
+     - Clients
+     - Inventory
+     - Reports
+     - Dashboard
+   - Préfixe `/erp` pour isolation
+   - Prêt à être activé (actuellement commenté pour compatibilité)
 
-#### Validation Pydantic
-```bash
-# Les schémas seront testés lors de l'implémentation de l'API
-```
-- [ ] ⚠ Tests de validation à ajouter dans Batch 4
-
-#### Tests
-```bash
-# Pas de tests unitaires créés pour ce batch
-```
-- [ ] ⚠ Tests à ajouter dans un batch ultérieur
+3. **Documentation** (`backend/app/modules/erp/README.md`)
+   - Documentation complète du module
+   - Guide d'utilisation
 
 ### Frontend
-- N/A pour ce batch
+
+1. **Client API unifié** (`apps/web/src/lib/api/erp.ts`)
+   - Réexporte le client API ERP Portal existant
+   - Interface unifiée `erpAPI`
+
+2. **Hooks React Query préparés** (`apps/web/src/lib/query/erp.ts`)
+   - Clés de cache unifiées `erpKeys`
+   - Prêt pour implémentation future des hooks
+
+3. **Exports centraux** (`apps/web/src/lib/api/index.ts`)
+   - Ajout des exports du module ERP
+
+## 📝 Fichiers créés/modifiés
+
+### Backend
+- `backend/app/modules/erp/__init__.py`
+- `backend/app/modules/erp/schemas/__init__.py`
+- `backend/app/modules/erp/api/__init__.py`
+- `backend/app/modules/erp/api/router.py`
+- `backend/app/modules/erp/README.md`
+- `backend/app/api/v1/router.py` (modifié)
+
+### Frontend
+- `apps/web/src/lib/api/erp.ts`
+- `apps/web/src/lib/query/erp.ts`
+- `apps/web/src/lib/api/index.ts` (modifié)
+
+## 🔄 Notes
+
+- Le module ERP utilise les modèles existants (Invoice, Project, etc.)
+- Les schémas sont réexportés depuis `app.schemas.erp` pour éviter la duplication
+- Le service `ERPService` convertit les modèles existants en format ERP
+- Les hooks React Query ne sont pas encore implémentés mais la structure est prête
+
+## 📊 Prochaines étapes
+
+Le Batch 2 est complété. Les prochaines étapes pourraient inclure :
+
+1. **Services ERP** : Migrer le service ERP vers `modules/erp/services/`
+2. **Hooks React Query** : Implémenter les hooks React Query pour le module ERP
+3. **Tests** : Créer des tests spécifiques pour le module ERP
 
 ---
 
-## ⚠️ Problèmes Rencontrés
-
-Aucun problème rencontré.
-
----
-
-## 📝 Notes Importantes
-
-### Décisions Techniques
-- **Pattern Validation:** Utilisation de regex pour valider le rôle (user|assistant)
-- **Optional Fields:** Les champs optionnels permettent la flexibilité dans les mises à jour
-- **Metadata JSON:** Support pour métadonnées flexibles dans les messages
-- **ConfigDict:** Utilisation de `from_attributes=True` pour compatibilité SQLAlchemy
-
-### Dépendances
-- Ce batch dépend de: Batch 1 (modèles de données)
-- Ce batch est requis pour:
-  - Batch 3: Service Leo Agent
-  - Batch 4: Endpoint API
-  - Batch 5: Endpoint API (Partie 2)
-
-### Code Temporaire / TODO
-- [ ] Ajouter des tests unitaires pour la validation des schémas
-- [ ] Ajouter des validators personnalisés si nécessaire
-- [ ] Vérifier la compatibilité avec les modèles SQLAlchemy
-
----
-
-## 🎯 Prochaines Étapes
-
-### Batch Suivant: Batch 3 - Service Leo Agent
-- [ ] Créer `backend/app/services/leo_agent_service.py`
-- [ ] Implémenter les méthodes:
-  - `get_user_context()` - Récupérer le contexte utilisateur
-  - `get_relevant_data()` - Récupérer les données pertinentes
-  - `format_data_for_ai()` - Formater les données pour l'IA
-  - `create_conversation()` - Créer une conversation
-  - `add_message()` - Ajouter un message
-  - `get_conversation_messages()` - Récupérer les messages
-  - `get_user_conversations()` - Récupérer les conversations d'un utilisateur
-
-### Notes pour le Développeur du Batch Suivant
-- Les schémas sont prêts et peuvent être utilisés directement
-- Les schémas suivent les conventions Pydantic v2
-- Compatibilité SQLAlchemy via `from_attributes=True`
-
----
-
-## 📊 Métriques
-
-### Lignes de Code
-- Ajoutées: ~90 lignes
-- Supprimées: 0
-- Modifiées: 0
-
-### Fichiers
-- Créés: 1
-- Modifiés: 0
-- Supprimés: 0
-
-### Temps
-- Estimé: 1-2 heures
-- Réel: ~20 minutes
-- Écart: En avance
-
----
-
-## ✅ Checklist Finale
-
-- [x] Tous les fichiers créés/modifiés
-- [x] Code testé localement (syntaxe)
-- [x] Vérifications backend passées (linting)
-- [ ] Tests manuels effectués (nécessite API)
-- [x] Documentation mise à jour (ce rapport)
-- [x] Code prêt pour commit
-
----
-
-## 🔗 Liens Utils
-
-- Schémas créés: `backend/app/schemas/leo.py`
-- Plan d'implémentation: `LEO_IMPLEMENTATION_PLAN.md`
-- Batch précédent: `BATCH_1_PROGRESS.md`
-
----
-
-**Statut Final:** ✓ Complété  
-**Prêt pour le batch suivant:** Oui
+**Commit**: Batch 2: Isolation complète du module ERP  
+**Push**: ✅ Effectué

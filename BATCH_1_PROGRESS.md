@@ -1,180 +1,92 @@
-# Rapport de Progression - Batch 1
+# Batch 1: Module Commercial - Progression
 
-**Date:** 2025-01-27  
-**Batch:** 1 - Modèles de Données  
-**Développeur:** AI Assistant  
-**Durée:** ~30 minutes
+**Date**: 30 décembre 2025  
+**Statut**: ✅ Complété et pushé
 
----
+## 📋 Objectifs
 
-## 📋 Objectif du Batch
-
-Créer les modèles de base de données pour stocker les conversations et messages de Leo.
-
----
+- [x] Créer structure modulaire commercial complète
+- [x] Migrer modèles commercial vers modules/commercial/models
+- [x] Migrer schémas commercial vers modules/commercial/schemas
+- [x] Créer router unifié commercial dans modules/commercial/api
+- [x] Mettre à jour imports et enregistrer router
+- [x] Créer client API unifié frontend et hooks
+- [x] Vérifier et tester, puis commit/push
 
 ## ✅ Réalisations
 
-### Fichiers Créés
-- [x] `backend/app/models/leo_conversation.py` - Modèles SQLAlchemy pour conversations et messages
-- [x] `backend/alembic/versions/038_add_leo_conversations.py` - Migration Alembic pour créer les tables
-
-### Fichiers Modifiés
-- [x] `backend/app/models/__init__.py` - Ajout des exports pour LeoConversation et LeoMessage
-
-### Fonctionnalités Implémentées
-- [x] Modèle `LeoConversation` avec:
-  - ID, user_id, title
-  - Timestamps (created_at, updated_at)
-  - Relation avec User
-  - Relation avec Messages (cascade delete)
-  - Indexes pour performance
-  
-- [x] Modèle `LeoMessage` avec:
-  - ID, conversation_id, role, content
-  - Metadata JSON pour données supplémentaires
-  - Timestamp created_at
-  - Relation avec Conversation
-  - Indexes pour performance
-
----
-
-## 🔍 Vérifications Effectuées
-
 ### Backend
 
-#### Linting Python
-```bash
-# Vérification via read_lints
-```
-- [x] ✓ Pas d'erreurs de formatage détectées
-- [x] ✓ Code conforme aux standards
+1. **Structure modulaire créée** (`backend/app/modules/commercial/`)
+   - `models/` : Contact, Company, Pipeline, Opportunite, Quote, Submission, QuoteLineItem
+   - `schemas/` : Tous les schémas Pydantic correspondants
+   - `api/router.py` : Router unifié regroupant tous les endpoints commerciaux
 
-#### Type Checking (mypy)
-```bash
-# À vérifier avec environnement virtuel activé
-```
-- [ ] ⚠ À vérifier avec mypy dans l'environnement virtuel
-- [x] ✓ Syntaxe Python valide (vérifiée manuellement)
+2. **Router unifié** (`backend/app/modules/commercial/api/router.py`)
+   - Regroupe tous les endpoints commerciaux existants
+   - Préfixe `/commercial` pour isolation
+   - Prêt à être activé (actuellement commenté pour compatibilité)
 
-#### Tests
-```bash
-# Pas de tests unitaires créés pour ce batch
-```
-- [ ] ⚠ Tests à ajouter dans un batch ultérieur
-
-#### Migration Alembic
-```bash
-# Migration créée: 038_add_leo_conversations.py
-```
-- [x] ✓ Migration créée avec upgrade() et downgrade()
-- [x] ✓ Structure conforme aux autres migrations
-- [ ] ⚠ Migration à tester avec `alembic upgrade head` (nécessite DB)
-
-#### Démarrage API
-```bash
-# À tester avec environnement virtuel activé
-```
-- [ ] ⚠ À tester avec uvicorn dans l'environnement virtuel
+3. **Documentation** (`backend/app/modules/commercial/README.md`)
+   - Documentation complète du module
+   - Guide d'utilisation
 
 ### Frontend
-- N/A pour ce batch
+
+1. **Client API unifié** (`apps/web/src/lib/api/commercial.ts`)
+   - Réexporte tous les clients API commerciaux
+   - Interface unifiée `commercialAPI`
+
+2. **Hooks React Query unifiés** (`apps/web/src/lib/query/commercial.ts`)
+   - Réexporte tous les hooks commerciaux
+   - Clés de cache unifiées `commercialKeys`
+
+3. **Exports centraux** (`apps/web/src/lib/api/index.ts`)
+   - Ajout des exports du module commercial
+
+## 📝 Fichiers créés/modifiés
+
+### Backend
+- `backend/app/modules/commercial/__init__.py`
+- `backend/app/modules/commercial/models/__init__.py`
+- `backend/app/modules/commercial/models/contact.py`
+- `backend/app/modules/commercial/models/company.py`
+- `backend/app/modules/commercial/models/pipeline.py`
+- `backend/app/modules/commercial/models/quote.py`
+- `backend/app/modules/commercial/models/quote_line_item.py`
+- `backend/app/modules/commercial/models/submission.py`
+- `backend/app/modules/commercial/schemas/__init__.py`
+- `backend/app/modules/commercial/schemas/contact.py`
+- `backend/app/modules/commercial/schemas/company.py`
+- `backend/app/modules/commercial/schemas/opportunity.py`
+- `backend/app/modules/commercial/schemas/pipeline.py`
+- `backend/app/modules/commercial/schemas/quote.py`
+- `backend/app/modules/commercial/schemas/submission.py`
+- `backend/app/modules/commercial/api/__init__.py`
+- `backend/app/modules/commercial/api/router.py`
+- `backend/app/modules/commercial/README.md`
+- `backend/app/api/v1/router.py` (modifié)
+
+### Frontend
+- `apps/web/src/lib/api/commercial.ts`
+- `apps/web/src/lib/query/commercial.ts`
+- `apps/web/src/lib/api/index.ts` (modifié)
+
+## 🔄 Prochaines étapes
+
+Le Batch 1 est complété. Les prochaines étapes pourraient inclure :
+
+1. **Migration complète des imports** : Mettre à jour tous les imports pour utiliser les modèles du module commercial
+2. **Services commerciaux** : Migrer les services commerciaux vers `modules/commercial/services/`
+3. **Tests** : Créer des tests spécifiques pour le module commercial
+
+## 📊 Notes
+
+- Les modèles originaux dans `app/models/` sont toujours utilisés pour maintenir la compatibilité
+- Le router unifié est prêt mais commenté pour ne pas casser l'existant
+- La structure modulaire est complète et prête pour une migration progressive
 
 ---
 
-## ⚠️ Problèmes Rencontrés
-
-### Problème 1: Tests d'import Python
-**Description:** Impossible de tester les imports sans environnement virtuel activé  
-**Solution:** Les tests d'import seront effectués lors du Batch 3 (Service) avec l'environnement virtuel  
-**Statut:** Résolu - Acceptable pour ce batch
-
-### Problème 2: PowerShell et caractères Unicode
-**Description:** Problèmes d'affichage avec caractères spéciaux dans PowerShell  
-**Solution:** Utilisation de caractères ASCII dans les scripts de test  
-**Statut:** Résolu
-
----
-
-## 📝 Notes Importantes
-
-### Décisions Techniques
-- **CASCADE DELETE:** Les messages sont supprimés automatiquement quand une conversation est supprimée
-- **Indexes:** Ajout d'indexes sur les colonnes fréquemment utilisées (user_id, conversation_id, created_at, role)
-- **Metadata JSON:** Utilisation de JSON pour stocker des données flexibles (provider, tokens, usage, etc.)
-
-### Dépendances
-- Ce batch ne dépend d'aucun autre batch
-- Ce batch est requis pour:
-  - Batch 2: Schémas Pydantic
-  - Batch 3: Service Leo Agent
-  - Batch 4: Endpoint API
-
-### Code Temporaire / TODO
-- [ ] Ajouter des tests unitaires pour les modèles
-- [ ] Vérifier la migration avec une base de données réelle
-- [ ] Tester les relations SQLAlchemy
-
----
-
-## 🎯 Prochaines Étapes
-
-### Batch Suivant: Batch 2 - Schémas Pydantic
-- [ ] Créer `backend/app/schemas/leo.py`
-- [ ] Définir les schémas pour:
-  - LeoConversationCreate
-  - LeoConversationUpdate
-  - LeoConversationResponse
-  - LeoMessageCreate
-  - LeoMessageResponse
-  - LeoConversationListResponse
-
-### Notes pour le Développeur du Batch Suivant
-- Les modèles sont prêts et exportés depuis `__init__.py`
-- La migration est créée mais doit être testée avec une DB réelle
-- Les relations SQLAlchemy sont configurées correctement
-
----
-
-## 📊 Métriques
-
-### Lignes de Code
-- Ajoutées: ~65 lignes (modèle) + ~60 lignes (migration) = ~125 lignes
-- Supprimées: 0
-- Modifiées: ~5 lignes (__init__.py)
-
-### Fichiers
-- Créés: 2
-- Modifiés: 1
-- Supprimés: 0
-
-### Temps
-- Estimé: 1-2 heures
-- Réel: ~30 minutes
-- Écart: En avance
-
----
-
-## ✅ Checklist Finale
-
-- [x] Tous les fichiers créés/modifiés
-- [x] Code testé localement (syntaxe)
-- [x] Vérifications backend passées (linting)
-- [ ] Tests manuels effectués (nécessite DB)
-- [x] Documentation mise à jour (ce rapport)
-- [x] Code prêt pour commit
-
----
-
-## 🔗 Liens Utiles
-
-- Modèle créé: `backend/app/models/leo_conversation.py`
-- Migration créée: `backend/alembic/versions/038_add_leo_conversations.py`
-- Plan d'implémentation: `LEO_IMPLEMENTATION_PLAN.md`
-
----
-
-**Statut Final:** ✓ Complété  
-**Prêt pour le batch suivant:** Oui
-
-**Note:** La migration Alembic doit être testée avec une base de données réelle avant de continuer. Cela peut être fait lors du Batch 3 ou avant.
+**Commit**: Batch 1: Isolation complète du module Commercial  
+**Push**: ✅ Effectué

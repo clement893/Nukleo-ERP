@@ -10,7 +10,7 @@ export interface Company {
   id: number;
   name: string;
   parent_company_id: number | null;
-  parent_company_name?: string;
+  parent_company_name?: string | null;
   description: string | null;
   website: string | null;
   logo_url: string | null;
@@ -54,26 +54,21 @@ export interface CompanyUpdate extends Partial<CompanyCreate> {}
 export const companiesAPI = {
   /**
    * Get list of companies with pagination
-   * Uses cache-busting to ensure fresh data
    */
-  list: async (
-    skip = 0,
-    limit = 100,
-    is_client?: boolean,
-    country?: string,
-    search?: string
-  ): Promise<Company[]> => {
+  list: async (skip = 0, limit = 100, filters?: {
+    is_client?: boolean;
+    country?: string;
+    search?: string;
+  }): Promise<Company[]> => {
     const response = await apiClient.get<Company[]>('/v1/commercial/companies', {
-      params: {
-        skip,
+      params: { 
+        skip, 
         limit,
-        is_client,
-        country,
-        search,
+        ...filters,
         _t: Date.now(), // Cache-busting timestamp
       },
     });
-
+    
     const data = extractApiData<Company[] | { items: Company[] }>(response);
     if (Array.isArray(data)) {
       return data;
@@ -128,36 +123,66 @@ export const companiesAPI = {
   },
 
   /**
-   * Import companies from Excel
+   * Delete all companies
+   */
+  deleteAll: async (): Promise<{ message: string; deleted_count: number }> => {
+    const response = await apiClient.delete<{ message: string; deleted_count: number }>('/v1/commercial/companies/bulk');
+    return extractApiData(response) || { message: 'No companies deleted', deleted_count: 0 };
+  },
+
+  /**
+   * Import companies from Excel or ZIP (Excel + logos)
    */
   import: async (file: File): Promise<{
     total_rows: number;
     valid_rows: number;
+    created_rows: number;
+    updated_rows: number;
     invalid_rows: number;
     errors: Array<{ row: number; data: unknown; error: string }>;
+    warnings?: Array<{ 
+      row: number; 
+      type: string; 
+      message: string; 
+      data?: Record<string, unknown> 
+    }>;
     data: Company[];
+    logos_uploaded?: number;
   }> => {
     const formData = new FormData();
     formData.append('file', file);
-
+    
     const response = await apiClient.post<{
       total_rows: number;
       valid_rows: number;
+      created_rows: number;
+      updated_rows: number;
       invalid_rows: number;
       errors: Array<{ row: number; data: unknown; error: string }>;
+      warnings?: Array<{ 
+        row: number; 
+        type: string; 
+        message: string; 
+        data?: Record<string, unknown> 
+      }>;
       data: Company[];
+      logos_uploaded?: number;
     }>('/v1/commercial/companies/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-
+    
     return extractApiData(response) || {
       total_rows: 0,
       valid_rows: 0,
+      created_rows: 0,
+      updated_rows: 0,
       invalid_rows: 0,
       errors: [],
+      warnings: [],
       data: [],
+      logos_uploaded: 0,
     };
   },
 
@@ -171,7 +196,7 @@ export const companiesAPI = {
       const { getApiUrl } = await import('../api');
       const apiUrl = getApiUrl();
       const TokenStorage = (await import('../auth/tokenStorage')).TokenStorage;
-
+      
       const response = await axios.get(`${apiUrl}/api/v1/commercial/companies/export`, {
         responseType: 'blob',
         withCredentials: true,
@@ -179,7 +204,8 @@ export const companiesAPI = {
           'Authorization': `Bearer ${typeof window !== 'undefined' ? TokenStorage.getToken() || '' : ''}`,
         },
       });
-
+      
+      // Check if response is actually an error
       if (response.status >= 400) {
         const text = await (response.data as Blob).text();
         let errorData: any;
@@ -188,7 +214,7 @@ export const companiesAPI = {
         } catch (parseError) {
           errorData = { detail: text || 'Export failed' };
         }
-
+        
         const axiosError = {
           response: {
             status: response.status,
@@ -202,10 +228,10 @@ export const companiesAPI = {
           name: 'AxiosError',
           message: `Request failed with status code ${response.status}`,
         };
-
+        
         throw axiosError;
       }
-
+      
       return response.data as Blob;
     } catch (error: any) {
       if (error.response?.data instanceof Blob) {
@@ -228,20 +254,16 @@ export const companiesAPI = {
 
   /**
    * Download company import template (Excel only)
-   * This is a client-side function, not an API call
    */
   downloadTemplate: async (): Promise<void> => {
-    // Import dynamically to avoid SSR issues
     const { downloadCompanyTemplate } = await import('@/lib/utils/generateCompanyTemplate');
     downloadCompanyTemplate();
   },
 
   /**
    * Download company import ZIP template (Excel + instructions + logos folder)
-   * This is a client-side function, not an API call
    */
   downloadZipTemplate: async (): Promise<void> => {
-    // Import dynamically to avoid SSR issues
     const { downloadCompanyZipTemplate } = await import('@/lib/utils/generateCompanyTemplate');
     await downloadCompanyZipTemplate();
   },
