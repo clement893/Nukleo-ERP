@@ -1226,53 +1226,41 @@ async def import_contacts(
                     
                     # If company_id is not provided, try to find company by name
                     if not company_id:
-                    # Try multiple column names for company name
-                    company_name = get_field_value(row_data, [
-                        'company_name', 'company', 'entreprise', 'entreprise_name',
-                        'nom_entreprise', 'company name', 'nom entreprise',
-                        'société', 'societe', 'organisation', 'organization',
-                        'firme', 'business', 'client'
-                    ])
-                    
-                    if company_name and company_name.strip():
-                        company_name_normalized = company_name.strip().lower()
-                        # Remove common prefixes/suffixes for better matching
-                        company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                        # Try multiple column names for company name
+                        company_name = get_field_value(row_data, [
+                            'company_name', 'company', 'entreprise', 'entreprise_name',
+                            'nom_entreprise', 'company name', 'nom entreprise',
+                            'société', 'societe', 'organisation', 'organization',
+                            'firme', 'business', 'client'
+                        ])
                         
-                        # Try exact match first
-                        if company_name_normalized in company_name_to_id:
-                            company_id = company_name_to_id[company_name_normalized]
-                        elif company_name_clean and company_name_clean in company_name_to_id:
-                            # Try match without legal form
-                            company_id = company_name_to_id[company_name_clean]
-                            warnings.append({
-                                'row': idx + 2,
-                                'type': 'company_match_without_legal_form',
-                                'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
-                                'data': {'company_name': company_name, 'matched_company_id': company_id}
-                            })
-                        else:
-                            # Try partial match (contains) - check both original and cleaned
-                            matched_company_id = None
-                            matched_company_name = None
+                        if company_name and company_name.strip():
+                            company_name_normalized = company_name.strip().lower()
+                            # Remove common prefixes/suffixes for better matching
+                            company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
                             
-                            # First try with cleaned name
-                            for stored_name, stored_id in company_name_to_id.items():
-                                stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
-                                if (company_name_clean and stored_clean and 
-                                    (company_name_clean in stored_clean or stored_clean in company_name_clean)):
-                                    matched_company_id = stored_id
-                                    # Find the original company name
-                                    for c in all_companies:
-                                        if c.id == stored_id:
-                                            matched_company_name = c.name
-                                            break
-                                    break
-                            
-                            # If no match with cleaned, try original normalized
-                            if not matched_company_id:
+                            # Try exact match first
+                            if company_name_normalized in company_name_to_id:
+                                company_id = company_name_to_id[company_name_normalized]
+                            elif company_name_clean and company_name_clean in company_name_to_id:
+                                # Try match without legal form
+                                company_id = company_name_to_id[company_name_clean]
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'company_match_without_legal_form',
+                                    'message': f"Entreprise '{company_name}' correspond à une entreprise existante (sans forme juridique)",
+                                    'data': {'company_name': company_name, 'matched_company_id': company_id}
+                                })
+                            else:
+                                # Try partial match (contains) - check both original and cleaned
+                                matched_company_id = None
+                                matched_company_name = None
+                                
+                                # First try with cleaned name
                                 for stored_name, stored_id in company_name_to_id.items():
-                                    if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                                    stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+                                    if (company_name_clean and stored_clean and 
+                                        (company_name_clean in stored_clean or stored_clean in company_name_clean)):
                                         matched_company_id = stored_id
                                         # Find the original company name
                                         for c in all_companies:
@@ -1280,27 +1268,39 @@ async def import_contacts(
                                                 matched_company_name = c.name
                                                 break
                                         break
-                            
-                            if matched_company_id:
-                                company_id = matched_company_id
-                                warnings.append({
-                                    'row': idx + 2,
-                                    'type': 'company_partial_match',
-                                    'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
-                                    'data': {
-                                        'company_name': company_name,
-                                        'matched_company_name': matched_company_name,
-                                        'matched_company_id': matched_company_id,
-                                        'contact': f"{first_name} {last_name}".strip()
-                                    }
-                                })
-                            else:
-                                # No match found - add warning
-                                warnings.append({
-                                    'row': idx + 2,
-                                    'type': 'company_not_found',
-                                    'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
-                                    'data': {
+                                
+                                # If no match with cleaned, try original normalized
+                                if not matched_company_id:
+                                    for stored_name, stored_id in company_name_to_id.items():
+                                        if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                                            matched_company_id = stored_id
+                                            # Find the original company name
+                                            for c in all_companies:
+                                                if c.id == stored_id:
+                                                    matched_company_name = c.name
+                                                    break
+                                            break
+                                
+                                if matched_company_id:
+                                    company_id = matched_company_id
+                                    warnings.append({
+                                        'row': idx + 2,
+                                        'type': 'company_partial_match',
+                                        'message': f"Entreprise '{company_name}' correspond partiellement à '{matched_company_name}' (ID: {matched_company_id}). Veuillez vérifier.",
+                                        'data': {
+                                            'company_name': company_name,
+                                            'matched_company_name': matched_company_name,
+                                            'matched_company_id': matched_company_id,
+                                            'contact': f"{first_name} {last_name}".strip()
+                                        }
+                                    })
+                                else:
+                                    # No match found - add warning
+                                    warnings.append({
+                                        'row': idx + 2,
+                                        'type': 'company_not_found',
+                                        'message': f"⚠️ Entreprise '{company_name}' non trouvée dans la base de données. Veuillez réviser et créer l'entreprise si nécessaire.",
+                                        'data': {
                                         'company_name': company_name,
                                         'contact': f"{first_name} {last_name}".strip()
                                     }
