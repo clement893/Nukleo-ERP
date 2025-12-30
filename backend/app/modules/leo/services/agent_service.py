@@ -45,7 +45,9 @@ class LeoAgentService:
         permissions = await self.rbac_service.get_user_permissions(user.id)
         
         # Get teams
-        teams_query = select(TeamMember).where(TeamMember.user_id == user.id)
+        teams_query = select(TeamMember).where(TeamMember.user_id == user.id).options(
+            selectinload(TeamMember.team)
+        )
         teams_result = await self.db.execute(teams_query)
         teams = teams_result.scalars().all()
         team_names = [team.team.name for team in teams if team.team]
@@ -335,7 +337,9 @@ class LeoAgentService:
         self.db.add(message)
         
         # Update conversation updated_at
-        conversation = await self.db.get(LeoConversation, conversation_id)
+        conversation_query = select(LeoConversation).where(LeoConversation.id == conversation_id)
+        conversation_result = await self.db.execute(conversation_query)
+        conversation = conversation_result.scalar_one_or_none()
         if conversation:
             conversation.updated_at = datetime.utcnow()
         
