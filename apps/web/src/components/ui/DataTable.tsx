@@ -1,8 +1,7 @@
 'use client';
 
-import { memo, useEffect, useRef, useMemo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 import Dropdown from './Dropdown';
 import type { DropdownItem } from './Dropdown';

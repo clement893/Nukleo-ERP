@@ -83,8 +83,25 @@ const nextConfig = {
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     // Enable lazy loading by default (Next.js Image component does this automatically)
-    // Add remote patterns if needed for external images
-    remotePatterns: [],
+    // Note: Presigned S3 URLs are dynamic and change frequently, so we use regular <img> tags
+    // with lazy loading instead of Next.js Image component for better compatibility
+    // Add remote patterns for static S3 domains if needed (not for presigned URLs)
+    remotePatterns: [
+      // Allow common S3 domains (for static URLs, not presigned)
+      {
+        protocol: 'https',
+        hostname: '**.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.s3.*.amazonaws.com',
+      },
+      // Allow DigitalOcean Spaces if used
+      {
+        protocol: 'https',
+        hostname: '**.digitaloceanspaces.com',
+      },
+    ],
   },
 
   // SWC minification is enabled by default in Next.js 16+

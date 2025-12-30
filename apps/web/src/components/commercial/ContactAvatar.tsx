@@ -159,11 +159,12 @@ export default function ContactAvatar({
   if (isLoading && currentPhotoUrl && !imageError) {
     return (
       <div className={clsx(
-        'rounded-full bg-muted animate-pulse flex items-center justify-center',
+        'rounded-full bg-gradient-to-br from-muted to-muted/50 animate-pulse flex items-center justify-center',
         sizeClassesFull[size],
         className
       )}>
         <div className="w-1/2 h-1/2 bg-muted-foreground/20 rounded-full" />
+        <span className="sr-only">Chargement de la photo...</span>
       </div>
     );
   }
@@ -187,7 +188,11 @@ export default function ContactAvatar({
     );
   }
 
-  // Show image
+  // Show image with optimized loading
+  // Note: Using <img> instead of Next.js Image because:
+  // 1. Presigned URLs are dynamic and change frequently
+  // 2. Next.js Image requires static domains or complex remotePatterns config
+  // 3. We already have retry logic and error handling
   return (
     <img
       src={currentPhotoUrl}
@@ -200,8 +205,12 @@ export default function ContactAvatar({
       )}
       loading="lazy"
       decoding="async"
+      fetchPriority={size === 'xl' || size === 'lg' ? 'high' : 'low'} // Prioritize larger avatars
       onLoad={handleImageLoad}
       onError={handleImageError}
+      // Add width/height hints for better layout stability
+      width={sizeClassesFull[size].includes('w-6') ? 24 : sizeClassesFull[size].includes('w-8') ? 32 : sizeClassesFull[size].includes('w-10') ? 40 : sizeClassesFull[size].includes('w-12') ? 48 : 64}
+      height={sizeClassesFull[size].includes('h-6') ? 24 : sizeClassesFull[size].includes('h-8') ? 32 : sizeClassesFull[size].includes('h-10') ? 40 : sizeClassesFull[size].includes('h-12') ? 48 : 64}
     />
   );
 }

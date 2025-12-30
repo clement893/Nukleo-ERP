@@ -23,7 +23,6 @@ import ViewModeToggle from '@/components/commercial/ViewModeToggle';
 import ContactActionLink from '@/components/commercial/ContactActionLink';
 import SearchBar from '@/components/ui/SearchBar';
 import { Plus, Edit, Trash2, Eye, Download, Upload, MoreVertical, FileSpreadsheet } from 'lucide-react';
-import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -134,7 +133,7 @@ function ContactsContent() {
   }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, debouncedSearchQuery]);
   
   // Check if any filters are active (use debounced search for display)
-  const hasActiveFilters = filterCity || filterPhone || filterCircle || filterCompany || debouncedSearchQuery;
+  const hasActiveFilters = !!(filterCity || filterPhone || filterCircle || filterCompany || debouncedSearchQuery);
   
   // Clear all filters function
   const clearAllFilters = useCallback(() => {
