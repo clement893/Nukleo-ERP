@@ -835,7 +835,7 @@ function ContactsContent() {
       />
 
       {/* Import Logs Modal */}
-      {showImportLogs && currentImportId && (
+      {showImportLogs && (
         <Modal
           isOpen={showImportLogs}
           onClose={() => {
@@ -845,16 +845,23 @@ function ContactsContent() {
           title="Logs d'import en temps réel"
           size="xl"
         >
-          <ImportLogsViewer
-            importId={currentImportId}
-            onComplete={() => {
-              // Optionally close modal after completion
-              setTimeout(() => {
-                setShowImportLogs(false);
-                setCurrentImportId(null);
-              }, 3000);
-            }}
-          />
+          {currentImportId ? (
+            <ImportLogsViewer
+              importId={currentImportId}
+              onComplete={() => {
+                // Optionally close modal after completion
+                setTimeout(() => {
+                  setShowImportLogs(false);
+                  setCurrentImportId(null);
+                }, 3000);
+              }}
+            />
+          ) : (
+            <div className="p-4 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Initialisation de l'import...</p>
+            </div>
+          )}
         </Modal>
       )}
     </MotionDiv>
