@@ -3,7 +3,7 @@
 import { Employee } from '@/lib/api/employees';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { UserCircle, Mail, Phone, Linkedin, Calendar, Edit, Trash2 } from 'lucide-react';
+import { UserCircle, Mail, Phone, Linkedin, Calendar, Edit, Trash2, FileText, Plane, Clock, ExternalLink } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface EmployeeDetailProps {
@@ -126,6 +126,73 @@ export default function EmployeeDetail({
               </div>
             </div>
           )}
+        </div>
+      </Card>
+
+      {/* Feuilles de temps */}
+      <Card title="Feuilles de temps">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <FileText className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Accès aux feuilles de temps</p>
+              <a
+                href={`/dashboard/feuilles-de-temps?employee_id=${employee.id}`}
+                className="text-primary hover:underline flex items-center gap-1 mt-1"
+              >
+                Voir les feuilles de temps
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Vacances */}
+      <Card title="Vacances">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Plane className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Vacances restantes</p>
+              <p className="text-foreground">
+                {/* TODO: Calculer les vacances restantes depuis l'API */}
+                À calculer
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Demandes de vacances en suspens</p>
+              <a
+                href={`/dashboard/vacances?employee_id=${employee.id}&status=pending`}
+                className="text-primary hover:underline flex items-center gap-1 mt-1"
+              >
+                Voir les demandes en suspens
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Portail employé */}
+      <Card title="Portail employé">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <ExternalLink className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Accès au portail employé</p>
+              <a
+                href={`/portail-employe/${employee.id}`}
+                className="text-primary hover:underline flex items-center gap-1 mt-1"
+              >
+                Ouvrir le portail employé
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
         </div>
       </Card>
 

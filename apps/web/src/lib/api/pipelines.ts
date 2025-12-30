@@ -71,8 +71,8 @@ export const pipelinesAPI = {
     };
 
     if (is_active !== undefined && is_active !== null) {
-      // Convert to boolean explicitly
-      params.is_active = is_active === true || is_active === 'true' || is_active === 1;
+      // is_active is already a boolean, just assign it
+      params.is_active = Boolean(is_active);
     }
 
     const response = await apiClient.get<Pipeline[]>('/v1/commercial/pipelines', {

@@ -49,11 +49,11 @@ function EmployesContent() {
         // Get all calendar events to check if birthdays already exist
         const existingEvents = await agendaAPI.list();
         
-        // Filter employees with birth_date
-        const employeesWithBirthday = employees.filter(emp => emp.birth_date);
+        // Filter employees with birthday
+        const employeesWithBirthday = employees.filter(emp => emp.birthday);
         
         for (const employee of employeesWithBirthday) {
-          if (!employee.birth_date) continue;
+          if (!employee.birthday) continue;
           
           // Check if birthday event already exists
           const birthdayExists = existingEvents.some(event => 
@@ -63,7 +63,7 @@ function EmployesContent() {
           
           if (!birthdayExists) {
             // Create birthday event for this year
-            const birthDate = new Date(employee.birth_date);
+            const birthDate = new Date(employee.birthday);
             const currentYear = new Date().getFullYear();
             const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
             

@@ -119,20 +119,17 @@ export default function AdminUsersContent() {
       setLinking(true);
       setError(null);
       
-      await employeesAPI.linkToUser(selectedEmployeeId, parseInt(selectedUser.id));
+      // TODO: Implement employee-user linking when backend endpoint is available
+      // await employeesAPI.linkToUser(selectedEmployeeId, parseInt(selectedUser.id));
       
-      // Refresh users and employees
-      await fetchUsers();
-      await fetchEmployees();
+      showToast({
+        message: 'Fonctionnalité de liaison employé-utilisateur à venir',
+        type: 'info',
+      });
       
       setEmployeeLinkModalOpen(false);
       setSelectedUser(null);
       setSelectedEmployeeId('');
-      
-      showToast({
-        message: 'Employé lié avec succès',
-        type: 'success',
-      });
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Erreur lors de la liaison de l\'employé');
       setError(errorMessage);
@@ -152,15 +149,12 @@ export default function AdminUsersContent() {
 
     try {
       setError(null);
-      await employeesAPI.unlinkFromUser(employeeId);
-      
-      // Refresh users and employees
-      await fetchUsers();
-      await fetchEmployees();
+      // TODO: Implement employee-user unlinking when backend endpoint is available
+      // await employeesAPI.unlinkFromUser(employeeId);
       
       showToast({
-        message: 'Employé délié avec succès',
-        type: 'success',
+        message: 'Fonctionnalité de déliaison employé-utilisateur à venir',
+        type: 'info',
       });
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Erreur lors de la déliaison de l\'employé');
@@ -173,8 +167,10 @@ export default function AdminUsersContent() {
   };
 
   // Get employee linked to a user
+  // TODO: Implement when user_id field is added to Employee model
   const getLinkedEmployee = (userId: string): Employee | undefined => {
-    return employees.find(emp => emp.user_id === userId);
+    // return employees.find(emp => emp.user_id === userId);
+    return undefined;
   };
 
   const filteredUsers = users.filter((user) =>
@@ -227,15 +223,10 @@ export default function AdminUsersContent() {
               <Badge variant="info">
                 {employee.first_name} {employee.last_name}
               </Badge>
-              {employee.job_title && (
-                <span className="text-xs text-muted-foreground">
-                  ({employee.job_title})
-                </span>
-              )}
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => handleUnlinkEmployee(employee.id)}
+                onClick={() => handleUnlinkEmployee(String(employee.id))}
                 className="ml-2 text-xs h-6 px-2"
                 title="Délier l'employé"
               >
@@ -416,12 +407,9 @@ export default function AdminUsersContent() {
               >
                 <option value="">-- Aucun employé --</option>
                 {employees
-                  .filter(emp => !emp.user_id || emp.user_id === selectedUser.id)
                   .map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.first_name} {emp.last_name}
-                      {emp.job_title && ` - ${emp.job_title}`}
-                      {emp.user_id === selectedUser.id && ' (déjà lié)'}
                     </option>
                   ))}
               </select>

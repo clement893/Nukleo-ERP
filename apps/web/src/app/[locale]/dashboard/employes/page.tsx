@@ -34,6 +34,7 @@ import {
   Linkedin,
   Calendar
 } from 'lucide-react';
+import ImportEmployeesInstructions from '@/components/employes/ImportEmployeesInstructions';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -76,6 +77,7 @@ function EmployeesContent() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showImportInstructions, setShowImportInstructions] = useState(false);
   const [currentImportId, setCurrentImportId] = useState<string | null>(null);
   
   // Debounce search query
@@ -494,6 +496,16 @@ function EmployeesContent() {
                       <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                         <div className="py-1">
                           <button
+                            onClick={() => {
+                              setShowImportInstructions(true);
+                              setShowActionsMenu(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                          >
+                            <HelpCircle className="w-3.5 h-3.5" />
+                            Instructions d'import
+                          </button>
+                          <button
                             onClick={async () => {
                               try {
                                 await employeesAPI.downloadZipTemplate();
@@ -510,7 +522,7 @@ function EmployeesContent() {
                                 });
                               }
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
                           >
                             <FileSpreadsheet className="w-3.5 h-3.5" />
                             Modèle ZIP (avec photos)
@@ -644,6 +656,27 @@ function EmployeesContent() {
           />
         )}
       </Modal>
+
+      {/* Import Instructions Modal */}
+      <ImportEmployeesInstructions
+        isOpen={showImportInstructions}
+        onClose={() => setShowImportInstructions(false)}
+        onDownloadTemplate={async () => {
+          try {
+            await employeesAPI.downloadZipTemplate();
+            showToast({
+              message: 'Modèle ZIP téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+              type: 'error',
+            });
+          }
+        }}
+      />
     </MotionDiv>
   );
 }

@@ -41,7 +41,14 @@ async def list_pipelines(
     Returns:
         List of pipelines
     """
-    query = select(Pipeline).where(Pipeline.created_by_id == current_user.id)
+    # Filter by user's pipelines (or pipelines without created_by_id for backward compatibility)
+    from sqlalchemy import or_
+    query = select(Pipeline).where(
+        or_(
+            Pipeline.created_by_id == current_user.id,
+            Pipeline.created_by_id.is_(None)  # Include pipelines without creator for backward compatibility
+        )
+    )
     
     if is_active is not None:
         query = query.where(Pipeline.is_active == is_active)
