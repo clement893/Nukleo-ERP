@@ -54,7 +54,7 @@ class LeoMessage(Base):
     conversation_id = Column(Integer, ForeignKey("leo_conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     role = Column(String(20), nullable=False, index=True)  # 'user' | 'assistant'
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, nullable=True)  # Additional data (provider, tokens, usage, etc.)
+    message_metadata = Column("metadata", JSON, nullable=True)  # Additional data (provider, tokens, usage, etc.)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
 
     # Relationships

@@ -504,7 +504,7 @@ function ContactsContent() {
               company: filterCompany,
               search: searchQuery,
             }}
-            onRemoveFilter={(key, value) => {
+            onRemoveFilter={(key: string, value?: string) => {
               if (key === 'city' && value) {
                 setFilterCity(filterCity.filter(v => v !== value));
               } else if (key === 'phone' && value) {

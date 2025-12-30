@@ -44,17 +44,19 @@ class LeoMessageCreate(BaseModel):
     """Schema for creating a message"""
     role: str = Field(..., pattern="^(user|assistant)$", description="Message role")
     content: str = Field(..., min_length=1, description="Message content")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata (provider, tokens, etc.)")
+    message_metadata: Optional[Dict[str, Any]] = Field(None, alias="metadata", description="Additional metadata (provider, tokens, etc.)")
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class LeoMessage(LeoMessageBase):
     """Full message schema with metadata"""
     id: int
     conversation_id: int
-    metadata: Optional[Dict[str, Any]] = None
+    message_metadata: Optional[Dict[str, Any]] = Field(None, alias="metadata")
     created_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class LeoConversationListResponse(BaseModel):

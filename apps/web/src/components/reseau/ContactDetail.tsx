@@ -5,4 +5,4 @@
  * This wrapper provides isolation for the network module while
  * reusing the commercial component implementation.
  */
-export { ContactDetail as default } from '@/components/commercial/ContactDetail';
+export { default } from '@/components/commercial/ContactDetail';
