@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Quote, QuoteCreate, QuoteUpdate, QuoteLineItem } from '@/lib/api/quotes';
-import { Company } from '@/lib/api/companies';
+import { Company, CompanyCreate } from '@/lib/api/companies';
 import { companiesAPI } from '@/lib/api/companies';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui';
 import { Building2, Calendar, Plus, Trash2, DollarSign, Clock } from 'lucide-react';
+import CompanyForm from './CompanyForm';
 
 interface QuoteFormProps {
   quote?: Quote | null;
@@ -47,6 +49,8 @@ export default function QuoteForm({
   const { showToast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
+  const [creatingCompany, setCreatingCompany] = useState(false);
   const [pricingType, setPricingType] = useState<'fixed' | 'hourly'>(
     (quote?.pricing_type as 'fixed' | 'hourly') || 'fixed'
   );
@@ -67,24 +71,59 @@ export default function QuoteForm({
   });
 
   // Load companies
-  useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        setLoadingCompanies(true);
-        const data = await companiesAPI.list(0, 1000);
-        setCompanies(data);
-      } catch (error) {
-        showToast({
-          message: 'Erreur lors du chargement des entreprises',
-          type: 'error',
-        });
-      } finally {
-        setLoadingCompanies(false);
-      }
-    };
+  const loadCompanies = async () => {
+    try {
+      setLoadingCompanies(true);
+      const data = await companiesAPI.list(0, 1000);
+      setCompanies(data);
+    } catch (error) {
+      showToast({
+        message: 'Erreur lors du chargement des entreprises',
+        type: 'error',
+      });
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
 
+  useEffect(() => {
     loadCompanies();
   }, [showToast]);
+
+  // Handle create company
+  const handleCreateCompany = async (companyData: CompanyCreate) => {
+    try {
+      setCreatingCompany(true);
+      const newCompany = await companiesAPI.create({
+        ...companyData,
+        is_client: true, // Automatically mark as client when created from quote form
+      });
+      
+      // Reload companies list
+      await loadCompanies();
+      
+      // Select the newly created company
+      setFormData({
+        ...formData,
+        company_id: newCompany.id,
+      });
+      
+      // Close modal
+      setShowCreateCompanyModal(false);
+      
+      showToast({
+        message: 'Client créé avec succès',
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        message: 'Erreur lors de la création du client',
+        type: 'error',
+      });
+    } finally {
+      setCreatingCompany(false);
+    }
+  };
 
   // Calculate total from line items
   const calculateTotal = () => {
@@ -189,6 +228,7 @@ export default function QuoteForm({
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto">
       {/* Titre */}
       <Input
@@ -202,10 +242,22 @@ export default function QuoteForm({
 
       {/* Entreprise */}
       <div>
-        <label className="block text-sm font-medium mb-1.5 text-foreground">
-          <Building2 className="w-4 h-4 inline mr-1.5" />
-          Client
-        </label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="block text-sm font-medium text-foreground">
+            <Building2 className="w-4 h-4 inline mr-1.5" />
+            Client
+          </label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCreateCompanyModal(true)}
+            className="flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Créer un client
+          </Button>
+        </div>
         <Select
           value={formData.company_id?.toString() || ''}
           onChange={(e) => setFormData({
@@ -514,5 +566,20 @@ export default function QuoteForm({
         </Button>
       </div>
     </form>
+
+    {/* Create Company Modal */}
+    <Modal
+      isOpen={showCreateCompanyModal}
+      onClose={() => setShowCreateCompanyModal(false)}
+      title="Créer un nouveau client"
+      size="lg"
+    >
+      <CompanyForm
+        onSubmit={handleCreateCompany}
+        onCancel={() => setShowCreateCompanyModal(false)}
+        loading={creatingCompany}
+      />
+    </Modal>
+  </>
   );
 }
