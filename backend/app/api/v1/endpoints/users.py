@@ -115,10 +115,20 @@ async def list_users(
         result = await db.execute(paginated_query)
         users = result.scalars().all()
         
+        # Load employees for users (to show linked employee)
+        from app.models.employee import Employee
+        employees_result = await db.execute(
+            select(Employee).where(Employee.user_id.in_([u.id for u in users]))
+        )
+        employees_by_user_id = {emp.user_id: emp for emp in employees_result.scalars().all()}
+        
         # Convert SQLAlchemy User objects to UserResponse schemas
         user_responses = []
         for user in users:
             try:
+                # Get linked employee if exists
+                linked_employee = employees_by_user_id.get(user.id)
+                
                 # Convert SQLAlchemy User to dict, excluding relationships
                 # Handle datetime conversion explicitly
                 user_dict = {
@@ -130,6 +140,16 @@ async def list_users(
                     "created_at": user.created_at.isoformat() if hasattr(user.created_at, 'isoformat') else str(user.created_at),
                     "updated_at": user.updated_at.isoformat() if hasattr(user.updated_at, 'isoformat') else str(user.updated_at),
                 }
+                
+                # Add employee info if linked
+                if linked_employee:
+                    user_dict["employee"] = {
+                        "id": linked_employee.id,
+                        "first_name": linked_employee.first_name,
+                        "last_name": linked_employee.last_name,
+                        "email": linked_employee.email,
+                    }
+                
                 user_responses.append(UserResponse.model_validate(user_dict))
             except Exception as validation_error:
                 logger.error(

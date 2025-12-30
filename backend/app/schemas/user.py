@@ -172,10 +172,19 @@ class UserUpdate(BaseModel):
         return v
 
 
+class EmployeeInfo(BaseModel):
+    """Employee info for user response"""
+    id: int
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+
+
 class User(UserBase):
     """User response schema"""
     id: int
     avatar: Optional[str] = Field(None, max_length=500, description="Avatar URL")
+    employee: Optional[EmployeeInfo] = Field(None, description="Linked employee information")
     created_at: datetime
     updated_at: datetime
 

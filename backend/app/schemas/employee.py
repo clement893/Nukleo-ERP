@@ -58,6 +58,7 @@ class EmployeeUpdate(BaseModel):
 class Employee(EmployeeBase):
     """Employee response schema"""
     id: int
+    user_id: Optional[int] = Field(None, description="Linked user ID")
     created_at: datetime
     updated_at: datetime
 

@@ -1167,6 +1167,10 @@ async def import_contacts(
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
         
         # Simple loop like employees import - use enumerate directly
+        # Commit in batches to avoid session issues with large imports
+        BATCH_SIZE = 50
+        batch_count = 0
+        
         for idx, row_data in enumerate(result['data']):
             try:
                 stats["total_processed"] += 1
@@ -1175,8 +1179,8 @@ async def import_contacts(
                 # Log progress every 10 rows
                 if (idx + 1) % 10 == 0 or idx < 5:
                     add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
-                    
-                    # Map Excel columns to Contact fields with multiple possible column names
+                
+                # Map Excel columns to Contact fields with multiple possible column names
                     first_name = get_field_value(row_data, [
                         'first_name', 'prénom', 'prenom', 'firstname', 'first name',
                         'nom', 'name', 'given_name', 'given name'
@@ -1542,6 +1546,18 @@ async def import_contacts(
                         stats["created_new"] += 1
                         add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
                         logger.info(f"Created new contact: {first_name} {last_name}")
+                    
+                    # Commit in batches to avoid session timeout/memory issues
+                    if len(created_contacts) > 0 and len(created_contacts) % BATCH_SIZE == 0:
+                        try:
+                            await db.commit()
+                            batch_count += 1
+                            add_import_log(import_id, f"✅ Batch {batch_count}: {BATCH_SIZE} contact(s) sauvegardé(s) (total: {len(created_contacts)})", "info")
+                            logger.info(f"Committed batch {batch_count}: {len(created_contacts)} contacts so far")
+                        except Exception as batch_error:
+                            logger.error(f"Error committing batch {batch_count}: {batch_error}", exc_info=True)
+                            add_import_log(import_id, f"⚠️ Erreur lors du commit du batch {batch_count}: {str(batch_error)}", "warning")
+                            # Continue processing but log the error
                 
             except Exception as e:
                 stats["errors"] += 1
@@ -1553,25 +1569,54 @@ async def import_contacts(
                 })
                 continue
         
+        # Log completion of loop
+        add_import_log(import_id, f"✅ Boucle de traitement terminée: {stats['total_processed']} ligne(s) traitée(s) sur {total_rows} attendue(s)", "info", {
+            "total_processed": stats['total_processed'],
+            "total_expected": total_rows,
+            "created": stats['created_new'],
+            "updated": stats['matched_existing'],
+            "errors": stats['errors']
+        })
+        logger.info(f"Import loop completed: processed {stats['total_processed']}/{total_rows} rows, created {len(created_contacts)} contacts")
+        
         # Track which contacts were updated vs created
         existing_contact_ids = {c.id for c in all_existing_contacts}
         updated_contacts = []
         new_contacts = []
         
-        # Commit all contacts
-        add_import_log(import_id, f"Sauvegarde de {len(created_contacts)} contact(s) dans la base de données...", "info")
+        # Commit remaining contacts (if any not committed in batches)
+        remaining_to_commit = len(created_contacts) % BATCH_SIZE if len(created_contacts) > 0 else 0
+        if remaining_to_commit > 0 or len(created_contacts) == 0:
+            add_import_log(import_id, f"Sauvegarde finale de {remaining_to_commit if remaining_to_commit > 0 else len(created_contacts)} contact(s) restant(s)...", "info")
+        
         try:
             if created_contacts:
+                # Final commit for any remaining contacts
                 await db.commit()
-                # Refresh contacts with relationships loaded
-                for contact in created_contacts:
-                    await db.refresh(contact, ["company", "employee"])
-                    
-                    # Categorize as updated or new
-                    if contact.id in existing_contact_ids:
-                        updated_contacts.append(contact)
-                    else:
-                        new_contacts.append(contact)
+                logger.info(f"Final commit: {len(created_contacts)} total contacts")
+                
+                # Refresh contacts with relationships loaded (in batches to avoid issues)
+                refresh_batch_size = 50
+                for i in range(0, len(created_contacts), refresh_batch_size):
+                    batch = created_contacts[i:i + refresh_batch_size]
+                    try:
+                        for contact in batch:
+                            await db.refresh(contact, ["company", "employee"])
+                            
+                            # Categorize as updated or new
+                            if contact.id in existing_contact_ids:
+                                updated_contacts.append(contact)
+                            else:
+                                new_contacts.append(contact)
+                    except Exception as refresh_error:
+                        logger.error(f"Error refreshing contacts batch {i//refresh_batch_size + 1}: {refresh_error}", exc_info=True)
+                        # Continue with other contacts even if refresh fails
+                        # Categorize based on ID without refresh
+                        for contact in batch:
+                            if contact.id in existing_contact_ids:
+                                updated_contacts.append(contact)
+                            else:
+                                new_contacts.append(contact)
                 
                 add_import_log(import_id, f"Sauvegarde réussie: {len(new_contacts)} nouveau(x) contact(s), {len(updated_contacts)} contact(s) mis à jour", "success")
         except Exception as e:
