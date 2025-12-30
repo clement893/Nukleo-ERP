@@ -38,13 +38,14 @@ def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = N
         contact_id: Optional contact ID for logging
         
     Returns:
-        Presigned URL if successful, original file_key if generation fails, None if no photo_url
+        Presigned URL if successful, None if generation fails or no photo_url
     """
     if not photo_url:
         return None
     
     if not S3Service.is_configured():
         # If S3 is not configured, return the original URL (might be a direct URL)
+        logger.warning(f"S3 not configured, returning original photo_url for contact {contact_id}")
         return photo_url
     
     try:
@@ -76,31 +77,46 @@ def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = N
             # It's likely already a file_key
             file_key = photo_url
         
-        # Regenerate presigned URL if we have a file_key
+        # Validate and normalize file_key format
         if file_key:
+            # Normalize: remove leading/trailing slashes and ensure it starts with 'contacts/photos'
+            file_key = file_key.strip('/')
+            
+            # If it doesn't start with 'contacts/photos', it might be invalid
+            if not file_key.startswith('contacts/photos'):
+                logger.warning(f"Invalid file_key format for contact {contact_id}: {file_key}. Expected format: contacts/photos/...")
+                # Try to fix if it's just missing the prefix
+                if not file_key.startswith('contacts/'):
+                    logger.info(f"Attempting to fix file_key by adding contacts/photos/ prefix")
+                    file_key = f"contacts/photos/{file_key}"
+            
+            # Verify file exists in S3 before generating presigned URL
+            try:
+                metadata = s3_service.get_file_metadata(file_key)
+                logger.debug(f"File exists in S3 for contact {contact_id}: {file_key} (size: {metadata.get('size', 0)} bytes)")
+            except Exception as e:
+                logger.error(f"File does not exist in S3 for contact {contact_id} with file_key '{file_key}': {e}")
+                return None
+            
+            # Regenerate presigned URL if we have a valid file_key
             try:
                 presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
                 if presigned_url:
-                    if contact_id:
-                        logger.debug(f"Generated presigned URL for contact {contact_id} with file_key: {file_key[:50]}...")
+                    logger.info(f"Successfully generated presigned URL for contact {contact_id} with file_key: {file_key[:60]}...")
                     return presigned_url
                 else:
-                    logger.warning(f"Failed to generate presigned URL{' for contact ' + str(contact_id) if contact_id else ''}: generate_presigned_url returned None for file_key: {file_key}")
-                    # Keep the original file_key instead of setting to None, so frontend can try to generate URL
-                    return file_key
+                    logger.error(f"generate_presigned_url returned None for contact {contact_id} with file_key: {file_key}")
+                    return None
             except Exception as e:
-                logger.error(f"Failed to generate presigned URL{' for contact ' + str(contact_id) if contact_id else ''} with file_key '{file_key}': {e}", exc_info=True)
-                # Keep the original file_key instead of setting to None, so frontend can try to generate URL
-                return file_key
+                logger.error(f"Failed to generate presigned URL for contact {contact_id} with file_key '{file_key}': {e}", exc_info=True)
+                return None
         else:
-            # Could not extract file_key, return original URL
-            logger.warning(f"Could not extract file_key from photo_url{' for contact ' + str(contact_id) if contact_id else ''}: {photo_url}")
-            return photo_url
+            # Could not extract file_key, return None
+            logger.warning(f"Could not extract file_key from photo_url for contact {contact_id}: {photo_url}")
+            return None
     except Exception as e:
-        logger.error(f"Failed to regenerate presigned URL{' for contact ' + str(contact_id) if contact_id else ''}: {e}", exc_info=True)
-        # Keep the original photo_url instead of setting to None
-        # This allows the frontend to handle the URL appropriately
-        return photo_url
+        logger.error(f"Failed to regenerate presigned URL for contact {contact_id}: {e}", exc_info=True)
+        return None
 
 
 @router.get("/", response_model=List[ContactSchema])
