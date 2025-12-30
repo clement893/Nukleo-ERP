@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Quote, QuoteCreate, QuoteUpdate, QuoteLineItem } from '@/lib/api/quotes';
-import { Company, CompanyCreate } from '@/lib/api/companies';
+import { Company, CompanyCreate, CompanyUpdate } from '@/lib/api/companies';
 import { companiesAPI } from '@/lib/api/companies';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -91,12 +91,34 @@ export default function QuoteForm({
   }, [showToast]);
 
   // Handle create company
-  const handleCreateCompany = async (companyData: CompanyCreate) => {
+  const handleCreateCompany = async (companyData: CompanyCreate | CompanyUpdate) => {
     try {
       setCreatingCompany(true);
+      // When creating from quote form, we only create new companies
+      // Ensure name is present (required for CompanyCreate)
+      if (!companyData.name) {
+        showToast({
+          message: 'Le nom de l\'entreprise est requis',
+          type: 'error',
+        });
+        setCreatingCompany(false);
+        return;
+      }
       const newCompany = await companiesAPI.create({
-        ...companyData,
+        name: companyData.name,
+        parent_company_id: companyData.parent_company_id ?? null,
+        description: companyData.description ?? null,
+        website: companyData.website ?? null,
+        logo_url: companyData.logo_url ?? null,
+        email: companyData.email ?? null,
+        phone: companyData.phone ?? null,
+        address: companyData.address ?? null,
+        city: companyData.city ?? null,
+        country: companyData.country ?? null,
         is_client: true, // Automatically mark as client when created from quote form
+        facebook: companyData.facebook ?? null,
+        instagram: companyData.instagram ?? null,
+        linkedin: companyData.linkedin ?? null,
       });
       
       // Reload companies list
