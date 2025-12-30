@@ -19,8 +19,6 @@ import {
   XCircle, 
   Settings, 
   Activity,
-  Database,
-  Shield,
   Sparkles,
   Zap,
   TrendingUp

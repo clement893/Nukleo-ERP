@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import { quotesAPI, type Quote, type QuoteCreate } from '@/lib/api/quotes';
+import { quotesAPI, type Quote, type QuoteCreate, type QuoteUpdate } from '@/lib/api/quotes';
 import { submissionsAPI, type Submission, type SubmissionCreate } from '@/lib/api/submissions';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
@@ -83,11 +83,11 @@ function SoumissionsContent() {
   }, [activeTab]);
 
   // Handle create quote
-  const handleCreateQuote = async (quoteData: QuoteCreate) => {
+  const handleCreateQuote = async (quoteData: QuoteCreate | QuoteUpdate) => {
     try {
       setLoading(true);
       setError(null);
-      await quotesAPI.create(quoteData);
+      await quotesAPI.create(quoteData as QuoteCreate);
       await loadQuotes();
       setShowCreateQuoteModal(false);
       showToast({
