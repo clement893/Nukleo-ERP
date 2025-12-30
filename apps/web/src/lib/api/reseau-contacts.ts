@@ -93,7 +93,7 @@ export const reseauContactsAPI = {
   /**
    * Import contacts from Excel or ZIP (Excel + photos)
    */
-  import: async (file: File): Promise<{
+  import: async (file: File, importId?: string): Promise<{
     total_rows: number;
     valid_rows: number;
     invalid_rows: number;
@@ -111,6 +111,10 @@ export const reseauContactsAPI = {
     const formData = new FormData();
     formData.append('file', file);
     
+    const url = importId 
+      ? `/v1/reseau/contacts/import?import_id=${encodeURIComponent(importId)}`
+      : '/v1/reseau/contacts/import';
+    
     const response = await apiClient.post<{
       total_rows: number;
       valid_rows: number;
@@ -125,7 +129,7 @@ export const reseauContactsAPI = {
       data: Contact[];
       photos_uploaded?: number;
       import_id?: string;
-    }>('/v1/reseau/contacts/import', formData, {
+    }>(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

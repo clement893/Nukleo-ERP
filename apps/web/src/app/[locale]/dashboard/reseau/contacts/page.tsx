@@ -283,13 +283,15 @@ function ContactsContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
-      // Show logs viewer
+      // Generate import_id before starting import
+      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentImportId(importId);
       setShowImportLogs(true);
       
-      const result = await reseauContactsAPI.import(file);
+      const result = await reseauContactsAPI.import(file, importId);
       
-      // Set import_id for log tracking
-      if (result.import_id) {
+      // Update import_id if backend returns a different one (should be the same)
+      if (result.import_id && result.import_id !== importId) {
         setCurrentImportId(result.import_id);
       }
       
