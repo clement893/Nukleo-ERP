@@ -11,6 +11,8 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 import zipfile
 import os
+import re
+import unicodedata
 from io import BytesIO
 
 from app.core.database import get_db
@@ -494,22 +496,484 @@ async def import_companies(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Import companies from Excel file
+    Import companies from Excel file or ZIP file (Excel + logos)
+    
+    Supports two formats:
+    1. Excel file (.xlsx, .xls) - simple import with logo URLs
+    2. ZIP file (.zip) containing:
+       - entreprises.xlsx or entreprises.xls (Excel file with company data)
+       - logos/ folder (optional) with images named as "company_name.jpg" or referenced in Excel
+    
+    Supported column names (case-insensitive, accent-insensitive):
+    - Name: name, nom, nom de l'entreprise, company name, entreprise
+    - Description: description, description de l'entreprise
+    - Website: website, site web, site, url, site internet
+    - Email: email, courriel, e-mail, mail, adresse email
+    - Phone: phone, téléphone, telephone, tel, tél, phone_number
+    - Address: address, adresse, adresse complète
+    - City: city, ville, cité, cite
+    - Country: country, pays, nation
+    - Is Client: is_client, est client, client, is client, est un client
+    - Parent Company ID: parent_company_id, id_entreprise_parente, id entreprise parente, parent company id
+    - LinkedIn: linkedin, linkedin_url, linkedin url, profil linkedin
+    - Facebook: facebook, facebook_url, facebook url, page facebook
+    - Instagram: instagram, instagram_url, instagram url, profil instagram
+    - Logo URL: logo_url, logo, logo url, url logo, image_url, image url
+    
+    Features:
+    - Automatic matching of existing companies by name (for reimport/update)
+    - Case-insensitive and accent-insensitive column name matching
+    - Automatic logo upload from ZIP files
+    - Support for multiple logo formats (jpg, png, gif, webp)
     
     Args:
-        file: Excel file
+        file: Excel file or ZIP file with companies data and logos
         current_user: Current authenticated user
         db: Database session
         
     Returns:
-        Import result
+        Import results with data, errors, and warnings
     """
-    # TODO: Implement Excel import with logo URLs
-    # Similar to contacts import but handle logo_url from S3 links
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Import functionality not yet implemented"
-    )
+    try:
+        # Read file content
+        file_content = await file.read()
+        filename = file.filename or ""
+        file_ext = os.path.splitext(filename.lower())[1]
+        
+        # Dictionary to store logos from ZIP (filename -> file content)
+        logos_dict = {}
+        excel_content = None
+        
+        # Check if it's a ZIP file
+        if file_ext == '.zip':
+            try:
+                with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                    # Extract Excel file and logos
+                    for file_info in zip_ref.namelist():
+                        file_name_lower = file_info.lower()
+                        
+                        # Find Excel file
+                        if file_name_lower.endswith(('.xlsx', '.xls')):
+                            if excel_content is None:
+                                excel_content = zip_ref.read(file_info)
+                            else:
+                                logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
+                        
+                        # Find logos (in logos/ folder or root)
+                        elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                            logo_content = zip_ref.read(file_info)
+                            # Store with normalized filename (lowercase, no path)
+                            logo_filename = os.path.basename(file_info).lower()
+                            logos_dict[logo_filename] = logo_content
+                    
+                    if excel_content is None:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="No Excel file found in ZIP. Please include entreprises.xlsx or entreprises.xls"
+                        )
+                    
+                    file_content = excel_content
+                    logger.info(f"Extracted Excel from ZIP with {len(logos_dict)} logos")
+                    
+            except zipfile.BadZipFile:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid ZIP file format"
+                )
+            except Exception as e:
+                logger.error(f"Error extracting ZIP: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Error processing ZIP file: {str(e)}"
+                )
+        
+        # Import from Excel
+        try:
+            result = ImportService.import_from_excel(
+                file_content=file_content,
+                has_headers=True
+            )
+        except Exception as e:
+            logger.error(f"Error importing Excel file: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error reading Excel file: {str(e)}"
+            )
+        
+        # Validate result structure
+        if not result or 'data' not in result:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Excel file format or empty file"
+            )
+        
+        if not isinstance(result['data'], list):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Excel file does not contain valid data rows"
+            )
+        
+        # Load all existing companies once to check for duplicates
+        try:
+            companies_result = await db.execute(select(Company))
+            all_existing_companies = companies_result.scalars().all()
+            # Create mappings for duplicate detection:
+            # 1. By name (case-insensitive)
+            companies_by_name = {}  # name.lower() -> Company
+            
+            for company in all_existing_companies:
+                if company.name:
+                    name_lower = company.name.lower().strip()
+                    companies_by_name[name_lower] = company
+        except Exception as e:
+            logger.error(f"Error loading existing companies: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error loading existing companies from database"
+            )
+        
+        # Helper function to normalize column names (case-insensitive, handle accents)
+        def normalize_key(key: str) -> str:
+            """Normalize column name for matching"""
+            if not key:
+                return ''
+            # Convert to lowercase and strip whitespace
+            normalized = str(key).lower().strip()
+            # Remove accents and special characters for better matching
+            normalized = unicodedata.normalize('NFD', normalized)
+            normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+            return normalized
+        
+        # Helper function to get value from row with multiple possible column names
+        def get_field_value(row: dict, possible_names: list) -> Optional[str]:
+            """Get field value trying multiple possible column names"""
+            # First try exact match (case-sensitive)
+            for name in possible_names:
+                if name in row and row[name] is not None:
+                    value = str(row[name]).strip()
+                    if value:
+                        return value
+            
+            # Then try normalized match (case-insensitive, accent-insensitive)
+            normalized_row = {normalize_key(k): v for k, v in row.items()}
+            for name in possible_names:
+                normalized_name = normalize_key(name)
+                if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
+                    value = str(normalized_row[normalized_name]).strip()
+                    if value:
+                        return value
+            
+            return None
+        
+        # Process imported data
+        created_companies = []
+        errors = []
+        warnings = []
+        s3_service = S3Service() if S3Service.is_configured() else None
+        
+        for idx, row_data in enumerate(result['data']):
+            try:
+                # Map Excel columns to Company fields
+                name = get_field_value(row_data, [
+                    'name', 'nom', 'nom de l\'entreprise', 'company name', 'entreprise', 'nom entreprise'
+                ]) or ''
+                
+                if not name or not name.strip():
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Nom de l\'entreprise est requis'
+                    })
+                    continue
+                
+                # Normalize name for matching
+                name_lower = name.lower().strip()
+                
+                # Check if company already exists (for reimport/update)
+                existing_company = companies_by_name.get(name_lower)
+                
+                # Handle logo upload if ZIP contains logos
+                logo_url = get_field_value(row_data, [
+                    'logo_url', 'logo', 'logo url', 'url logo', 'image_url', 'image url'
+                ])
+                
+                # If no logo_url but we have logos in ZIP, try to find matching logo
+                if not logo_url and logos_dict and s3_service:
+                    # Try multiple naming patterns based on company name
+                    # Normalize company name for filename matching
+                    company_name_normalized = name_lower.replace(' ', '_').replace('-', '_')
+                    # Remove special characters
+                    import re
+                    company_name_clean = re.sub(r'[^a-z0-9_]', '', company_name_normalized)
+                    
+                    logo_filename_patterns = [
+                        f"{company_name_clean}.jpg",
+                        f"{company_name_clean}.jpeg",
+                        f"{company_name_clean}.png",
+                        f"{company_name_normalized}.jpg",
+                        f"{company_name_normalized}.jpeg",
+                        f"{company_name_normalized}.png",
+                        get_field_value(row_data, ['logo_filename', 'nom_fichier_logo']),  # Try explicit filename from Excel
+                    ]
+                    
+                    uploaded_logo_url = None
+                    for pattern in logo_filename_patterns:
+                        if pattern and pattern.lower() in logos_dict:
+                            try:
+                                # Upload logo to S3
+                                logo_content = logos_dict[pattern.lower()]
+                                
+                                # Create a temporary UploadFile-like object compatible with S3Service
+                                class TempUploadFile:
+                                    def __init__(self, filename: str, content: bytes):
+                                        self.filename = filename
+                                        self.content = content
+                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                        # Create a file-like object
+                                        self.file = BytesIO(content)
+                                
+                                temp_file = TempUploadFile(pattern, logo_content)
+                                
+                                # Upload to S3
+                                upload_result = s3_service.upload_file(
+                                    file=temp_file,
+                                    folder='companies/logos',
+                                    user_id=str(current_user.id)
+                                )
+                                
+                                # Always store the file_key (not the presigned URL) for persistence
+                                uploaded_logo_url = upload_result.get('file_key')
+                                if not uploaded_logo_url:
+                                    # Fallback to URL if file_key not available, but extract key from URL
+                                    url = upload_result.get('url', '')
+                                    if url and 'companies/logos' in url:
+                                        from urllib.parse import urlparse
+                                        parsed = urlparse(url)
+                                        path = parsed.path.strip('/')
+                                        if 'companies/logos' in path:
+                                            idx_logo = path.find('companies/logos')
+                                            uploaded_logo_url = path[idx_logo:]
+                                        else:
+                                            uploaded_logo_url = url
+                                    else:
+                                        uploaded_logo_url = url
+                                
+                                logger.info(f"Uploaded logo for {name}: {pattern} -> {uploaded_logo_url}")
+                                break
+                            except Exception as e:
+                                logger.warning(f"Failed to upload logo {pattern}: {e}")
+                                continue
+                    
+                    if uploaded_logo_url:
+                        logo_url = uploaded_logo_url
+                
+                # Get other fields
+                description = get_field_value(row_data, [
+                    'description', 'description de l\'entreprise', 'description entreprise'
+                ])
+                website = get_field_value(row_data, [
+                    'website', 'site web', 'site', 'url', 'site internet'
+                ])
+                email = get_field_value(row_data, [
+                    'email', 'courriel', 'e-mail', 'mail', 'adresse email'
+                ])
+                phone = get_field_value(row_data, [
+                    'phone', 'téléphone', 'telephone', 'tel', 'tél', 'phone_number'
+                ])
+                address = get_field_value(row_data, [
+                    'address', 'adresse', 'adresse complète'
+                ])
+                city = get_field_value(row_data, [
+                    'city', 'ville', 'cité', 'cite'
+                ])
+                country = get_field_value(row_data, [
+                    'country', 'pays', 'nation'
+                ])
+                
+                # Handle is_client field
+                is_client_raw = get_field_value(row_data, [
+                    'is_client', 'est client', 'client', 'is client', 'est un client'
+                ])
+                is_client = False
+                if is_client_raw:
+                    is_client_str = str(is_client_raw).lower().strip()
+                    is_client = is_client_str in ['oui', 'yes', 'true', '1', 'vrai', 'o']
+                
+                # Handle parent_company_id
+                parent_company_id = None
+                parent_company_id_raw = get_field_value(row_data, [
+                    'parent_company_id', 'id_entreprise_parente', 'id entreprise parente', 'parent company id'
+                ])
+                if parent_company_id_raw:
+                    try:
+                        parent_company_id = int(float(str(parent_company_id_raw)))
+                        # Validate parent company exists
+                        parent_check = await db.execute(select(Company).where(Company.id == parent_company_id))
+                        if not parent_check.scalar_one_or_none():
+                            warnings.append({
+                                'row': idx + 2,
+                                'type': 'parent_company_not_found',
+                                'message': f"Entreprise parente ID '{parent_company_id}' non trouvée",
+                                'data': {'parent_company_id': parent_company_id, 'company': name}
+                            })
+                            parent_company_id = None
+                    except (ValueError, TypeError):
+                        warnings.append({
+                            'row': idx + 2,
+                            'type': 'invalid_parent_company_id',
+                            'message': f"ID entreprise parente invalide: '{parent_company_id_raw}'",
+                            'data': {'parent_company_id_raw': parent_company_id_raw, 'company': name}
+                        })
+                
+                linkedin = get_field_value(row_data, [
+                    'linkedin', 'linkedin_url', 'linkedin url', 'profil linkedin'
+                ])
+                facebook = get_field_value(row_data, [
+                    'facebook', 'facebook_url', 'facebook url', 'page facebook'
+                ])
+                instagram = get_field_value(row_data, [
+                    'instagram', 'instagram_url', 'instagram url', 'profil instagram'
+                ])
+                
+                # Prepare company data
+                company_data = CompanyCreate(
+                    name=name,
+                    description=description,
+                    website=website,
+                    email=email,
+                    phone=phone,
+                    address=address,
+                    city=city,
+                    country=country,
+                    is_client=is_client,
+                    parent_company_id=parent_company_id,
+                    linkedin=linkedin,
+                    facebook=facebook,
+                    instagram=instagram,
+                    logo_url=logo_url,  # Store file_key, not presigned URL
+                )
+                
+                # Update existing company or create new one
+                if existing_company:
+                    # Update existing company
+                    update_data = company_data.model_dump(exclude_none=True)
+                    for field, value in update_data.items():
+                        # Only update logo_url if a new logo was uploaded
+                        if field == 'logo_url':
+                            if value:  # New logo provided
+                                setattr(existing_company, field, value)
+                                logger.info(f"Updated logo for company {existing_company.id}")
+                            # If no new logo provided, keep existing logo (don't update field)
+                        else:
+                            # Update all other fields
+                            setattr(existing_company, field, value)
+                    
+                    company = existing_company
+                    created_companies.append(company)  # Track as processed company
+                    logger.info(f"Updated existing company: {name} (ID: {existing_company.id})")
+                else:
+                    # Create new company
+                    company = Company(**company_data.model_dump(exclude_none=True))
+                    db.add(company)
+                    created_companies.append(company)
+                    logger.info(f"Created new company: {name}")
+                
+            except Exception as e:
+                errors.append({
+                    'row': idx + 2,  # +2 because Excel is 1-indexed and has header
+                    'data': row_data,
+                    'error': str(e)
+                })
+                logger.error(f"Error importing company row {idx + 2}: {str(e)}")
+        
+        # Track which companies were updated vs created
+        existing_company_ids = {c.id for c in all_existing_companies}
+        updated_companies = []
+        new_companies = []
+        
+        # Commit all companies
+        try:
+            if created_companies:
+                await db.commit()
+                for company in created_companies:
+                    await db.refresh(company)
+                    
+                    # Categorize as updated or new
+                    if company.id in existing_company_ids:
+                        updated_companies.append(company)
+                    else:
+                        new_companies.append(company)
+                    
+                    # Regenerate presigned URL for logo if it exists and S3 is configured
+                    if company.logo_url and s3_service:
+                        try:
+                            # Extract file_key from logo_url (it should be a file_key, not a presigned URL)
+                            file_key = company.logo_url
+                            
+                            # If it's already a presigned URL, try to extract file_key
+                            if file_key.startswith('http'):
+                                from urllib.parse import urlparse
+                                parsed = urlparse(file_key)
+                                path = parsed.path.strip('/')
+                                if 'companies/logos' in path:
+                                    idx_logo = path.find('companies/logos')
+                                    file_key = path[idx_logo:]
+                                else:
+                                    # Keep original if we can't extract
+                                    continue
+                            
+                            # Generate presigned URL for display (but keep file_key in DB)
+                            presigned_url = s3_service.generate_presigned_url(file_key, expiration=3600 * 24 * 7)  # 7 days
+                            if presigned_url:
+                                # Temporarily set presigned URL for response (but don't save it to DB)
+                                company.logo_url = presigned_url
+                                logger.info(f"Generated presigned URL for company {company.id}")
+                        except Exception as e:
+                            logger.warning(f"Failed to generate presigned URL for company {company.id}: {e}")
+                            # Keep original file_key if presigned URL generation fails
+        except Exception as e:
+            logger.error(f"Error committing companies to database: {e}", exc_info=True)
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error saving companies to database: {str(e)}"
+            )
+        
+        # Merge warnings from import service with our warnings
+        all_warnings = (result.get('warnings') or []) + warnings
+        
+        try:
+            return {
+                'total_rows': result.get('total_rows', 0),
+                'valid_rows': len(created_companies),
+                'created_rows': len(new_companies),
+                'updated_rows': len(updated_companies),
+                'invalid_rows': len(errors) + result.get('invalid_rows', 0),
+                'errors': errors + (result.get('errors') or []),
+                'warnings': all_warnings,
+                'logos_uploaded': len(logos_dict) if logos_dict else 0,
+                'data': [CompanySchema.model_validate(c) for c in created_companies]
+            }
+        except Exception as e:
+            logger.error(f"Error serializing response: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error processing import results: {str(e)}"
+            )
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        # Catch any other unexpected errors that weren't caught above
+        logger.error(f"Unexpected error in import_companies: {e}", exc_info=True)
+        try:
+            await db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during import: {str(e)}"
+        )
 
 
 @router.get("/export")

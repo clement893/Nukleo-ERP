@@ -731,33 +731,33 @@ async def import_contacts(
         s3_service = S3Service() if S3Service.is_configured() else None
         
         for idx, row_data in enumerate(result['data']):
-        try:
-            # Map Excel columns to Contact fields with multiple possible column names
-            first_name = get_field_value(row_data, [
-                'first_name', 'prénom', 'prenom', 'firstname', 'first name',
-                'nom', 'name', 'given_name', 'given name'
-            ]) or ''
-            
-            last_name = get_field_value(row_data, [
-                'last_name', 'nom', 'name', 'lastname', 'last name',
-                'surname', 'family_name', 'family name', 'nom de famille'
-            ]) or ''
-            
-            # Handle company matching by name or ID
-            company_id = None
-            # Try to get company_id directly (as integer or string)
-            company_id_raw = get_field_value(row_data, [
-                'company_id', 'id_entreprise', 'entreprise_id', 'company id',
-                'id company', 'id entreprise'
-            ])
-            if company_id_raw:
-                try:
-                    company_id = int(float(str(company_id_raw)))  # Handle float strings
-                except (ValueError, TypeError):
-                    pass
-            
-            # If company_id is not provided, try to find company by name
-            if not company_id:
+            try:
+                # Map Excel columns to Contact fields with multiple possible column names
+                first_name = get_field_value(row_data, [
+                    'first_name', 'prénom', 'prenom', 'firstname', 'first name',
+                    'nom', 'name', 'given_name', 'given name'
+                ]) or ''
+                
+                last_name = get_field_value(row_data, [
+                    'last_name', 'nom', 'name', 'lastname', 'last name',
+                    'surname', 'family_name', 'family name', 'nom de famille'
+                ]) or ''
+                
+                # Handle company matching by name or ID
+                company_id = None
+                # Try to get company_id directly (as integer or string)
+                company_id_raw = get_field_value(row_data, [
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id',
+                    'id company', 'id entreprise'
+                ])
+                if company_id_raw:
+                    try:
+                        company_id = int(float(str(company_id_raw)))  # Handle float strings
+                    except (ValueError, TypeError):
+                        pass
+                
+                # If company_id is not provided, try to find company by name
+                if not company_id:
                 # Try multiple column names for company name
                 company_name = get_field_value(row_data, [
                     'company_name', 'company', 'entreprise', 'entreprise_name',
@@ -838,14 +838,14 @@ async def import_contacts(
                                 }
                             })
             
-            # Handle photo upload if ZIP contains photos
-            photo_url = get_field_value(row_data, [
+                # Handle photo upload if ZIP contains photos
+                photo_url = get_field_value(row_data, [
                 'photo_url', 'photo', 'photo url', 'url photo', 'image_url',
                 'image url', 'avatar', 'avatar_url', 'avatar url'
-            ])
+                ])
             
-            # If no photo_url but we have photos in ZIP, try to find matching photo
-            if not photo_url and photos_dict and s3_service:
+                # If no photo_url but we have photos in ZIP, try to find matching photo
+                if not photo_url and photos_dict and s3_service:
                 # Try multiple naming patterns
                 photo_filename_patterns = [
                     f"{first_name.lower()}_{last_name.lower()}.jpg",
@@ -910,66 +910,66 @@ async def import_contacts(
                 if uploaded_photo_url:
                     photo_url = uploaded_photo_url
             
-            # Get position
-            position = get_field_value(row_data, [
+                # Get position
+                position = get_field_value(row_data, [
                 'position', 'poste', 'job_title', 'job title', 'titre',
                 'fonction', 'role', 'titre du poste'
-            ])
+                ])
             
-            # Get circle
-            circle = get_field_value(row_data, [
+                # Get circle
+                circle = get_field_value(row_data, [
                 'circle', 'cercle', 'network', 'réseau', 'reseau'
-            ])
+                ])
             
-            # Get LinkedIn
-            linkedin = get_field_value(row_data, [
+                # Get LinkedIn
+                linkedin = get_field_value(row_data, [
                 'linkedin', 'linkedin_url', 'linkedin url', 'profil linkedin'
-            ])
+                ])
             
-            # Get email
-            email = get_field_value(row_data, [
+                # Get email
+                email = get_field_value(row_data, [
                 'email', 'courriel', 'e-mail', 'mail', 'adresse email',
                 'adresse courriel', 'email address'
-            ])
+                ])
             
-            # Normalize email for matching
-            email_lower = email.lower().strip() if email else None
-            first_name_lower = first_name.lower().strip() if first_name else ''
-            last_name_lower = last_name.lower().strip() if last_name else ''
+                # Normalize email for matching
+                email_lower = email.lower().strip() if email else None
+                first_name_lower = first_name.lower().strip() if first_name else ''
+                last_name_lower = last_name.lower().strip() if last_name else ''
             
-            # Check if contact already exists (for reimport/update)
-            existing_contact = None
-            if email_lower and email_lower in contacts_by_email:
+                # Check if contact already exists (for reimport/update)
+                existing_contact = None
+                if email_lower and email_lower in contacts_by_email:
                 # Match by email (most reliable)
                 existing_contact = contacts_by_email[email_lower]
-            elif email_lower:
+                elif email_lower:
                 # Match by name + email
                 name_email_key = (first_name_lower, last_name_lower, email_lower)
                 if name_email_key in contacts_by_name_email:
                     existing_contact = contacts_by_name_email[name_email_key]
-            elif company_id:
+                elif company_id:
                 # Match by name + company_id (if no email)
                 name_company_key = (first_name_lower, last_name_lower, company_id)
                 if name_company_key in contacts_by_name_company:
                     existing_contact = contacts_by_name_company[name_company_key]
             
-            # Get phone
-            phone = get_field_value(row_data, [
+                # Get phone
+                phone = get_field_value(row_data, [
                 'phone', 'téléphone', 'telephone', 'tel', 'tél',
                 'phone_number', 'phone number', 'numéro de téléphone',
                 'numero de telephone', 'mobile', 'portable'
-            ])
+                ])
             
-            # Get city and country - try direct fields first, then parse region
-            city = get_field_value(row_data, [
+                # Get city and country - try direct fields first, then parse region
+                city = get_field_value(row_data, [
                 'city', 'ville', 'cité', 'cite', 'localité', 'localite'
-            ])
-            country = get_field_value(row_data, [
+                ])
+                country = get_field_value(row_data, [
                 'country', 'pays', 'nation', 'nationalité', 'nationalite'
-            ])
+                ])
             
-            # If city or country not found, try to parse from region
-            if not city or not country:
+                # If city or country not found, try to parse from region
+                if not city or not country:
                 region = get_field_value(row_data, [
                     'region', 'région', 'zone', 'area', 'location', 'localisation'
                 ])
@@ -980,13 +980,13 @@ async def import_contacts(
                     if parsed_country and not country:
                         country = parsed_country
             
-            # Get birthday
-            birthday_raw = get_field_value(row_data, [
+                # Get birthday
+                birthday_raw = get_field_value(row_data, [
                 'birthday', 'anniversaire', 'date de naissance',
                 'date de naissance', 'birth_date', 'birth date', 'dob'
-            ])
-            birthday = None
-            if birthday_raw:
+                ])
+                birthday = None
+                if birthday_raw:
                 try:
                     # Try to parse various date formats
                     try:
@@ -1011,19 +1011,19 @@ async def import_contacts(
                     except (ImportError, AttributeError, TypeError):
                         pass
             
-            # Get language
-            language = get_field_value(row_data, [
+                # Get language
+                language = get_field_value(row_data, [
                 'language', 'langue', 'lang', 'idioma'
-            ])
+                ])
             
-            # Get employee_id
-            employee_id = None
-            employee_id_raw = get_field_value(row_data, [
+                # Get employee_id
+                employee_id = None
+                employee_id_raw = get_field_value(row_data, [
                 'employee_id', 'id_employé', 'id_employe', 'employé_id',
                 'employe_id', 'employee id', 'id employee', 'responsable_id',
                 'responsable id', 'assigned_to_id', 'assigned to id'
-            ])
-            if employee_id_raw:
+                ])
+                if employee_id_raw:
                 try:
                     employee_id = int(float(str(employee_id_raw)))  # Handle float strings
                 except (ValueError, TypeError):
@@ -1034,8 +1034,8 @@ async def import_contacts(
                         'data': {'employee_id_raw': employee_id_raw}
                     })
             
-            # Prepare contact data
-            contact_data = ContactCreate(
+                # Prepare contact data
+                contact_data = ContactCreate(
                 first_name=first_name,
                 last_name=last_name,
                 company_id=company_id,
@@ -1050,10 +1050,10 @@ async def import_contacts(
                 birthday=birthday,
                 language=language,
                 employee_id=employee_id,
-            )
+                )
             
-            # Update existing contact or create new one
-            if existing_contact:
+                # Update existing contact or create new one
+                if existing_contact:
                 # Update existing contact
                 update_data = contact_data.model_dump(exclude_none=True)
                 for field, value in update_data.items():
@@ -1070,7 +1070,7 @@ async def import_contacts(
                 contact = existing_contact
                 created_contacts.append(contact)  # Track as processed contact
                 logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
-            else:
+                else:
                 # Create new contact
                 contact = Contact(**contact_data.model_dump(exclude_none=True))
                 db.add(contact)

@@ -235,4 +235,14 @@ export const companiesAPI = {
     const { downloadCompanyTemplate } = await import('@/lib/utils/generateCompanyTemplate');
     downloadCompanyTemplate();
   },
+
+  /**
+   * Download company import ZIP template (Excel + instructions + logos folder)
+   * This is a client-side function, not an API call
+   */
+  downloadZipTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadCompanyZipTemplate } = await import('@/lib/utils/generateCompanyTemplate');
+    await downloadCompanyZipTemplate();
+  },
 };
