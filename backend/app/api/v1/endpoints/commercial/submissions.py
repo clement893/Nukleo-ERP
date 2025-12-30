@@ -104,11 +104,15 @@ async def list_submissions(
             "description": submission.description,
             "content": submission.content,
             "status": submission.status,
-            "deadline": submission.deadline.isoformat() if submission.deadline else None,
-            "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else None,
+            "deadline": submission.deadline,
+            "submitted_at": submission.submitted_at,
             "notes": submission.notes,
             "attachments": submission.attachments,
-            "user_name": f"{submission.user.first_name} {submission.user.last_name}" if submission.user else None,
+            "user_name": (
+                f"{submission.user.first_name or ''} {submission.user.last_name or ''}".strip()
+                if submission.user and (submission.user.first_name or submission.user.last_name)
+                else None
+            ),
             "created_at": submission.created_at,
             "updated_at": submission.updated_at,
         }
@@ -153,26 +157,38 @@ async def get_submission(
             detail="Submission not found"
         )
     
-    submission_dict = {
-        "id": submission.id,
-        "submission_number": submission.submission_number,
-        "company_id": submission.company_id,
-        "company_name": submission.company.name if submission.company else None,
-        "title": submission.title,
-        "type": submission.type,
-        "description": submission.description,
-        "content": submission.content,
-        "status": submission.status,
-        "deadline": submission.deadline.isoformat() if submission.deadline else None,
-        "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else None,
-        "notes": submission.notes,
-        "attachments": submission.attachments,
-        "user_name": f"{submission.user.first_name} {submission.user.last_name}" if submission.user else None,
-        "created_at": submission.created_at,
-        "updated_at": submission.updated_at,
-    }
-    
-    return SubmissionSchema(**submission_dict)
+    try:
+        # Build response dict with proper serialization
+        submission_dict = {
+            "id": submission.id,
+            "submission_number": submission.submission_number,
+            "company_id": submission.company_id,
+            "company_name": submission.company.name if submission.company else None,
+            "title": submission.title,
+            "type": submission.type,
+            "description": submission.description,
+            "content": submission.content,
+            "status": submission.status,
+            "deadline": submission.deadline,
+            "submitted_at": submission.submitted_at,
+            "notes": submission.notes,
+            "attachments": submission.attachments,
+            "user_name": (
+                f"{submission.user.first_name or ''} {submission.user.last_name or ''}".strip()
+                if submission.user and (submission.user.first_name or submission.user.last_name)
+                else None
+            ),
+            "created_at": submission.created_at,
+            "updated_at": submission.updated_at,
+        }
+        
+        return SubmissionSchema.model_validate(submission_dict)
+    except Exception as e:
+        logger.error(f"Error serializing submission {submission_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error serializing submission: {str(e)}"
+        )
 
 
 @router.post("/", response_model=SubmissionSchema, status_code=status.HTTP_201_CREATED)
@@ -229,6 +245,7 @@ async def create_submission(
     await db.refresh(submission)
     await db.refresh(submission, ["company", "user"])
     
+    # Build response dict with proper serialization
     submission_dict = {
         "id": submission.id,
         "submission_number": submission.submission_number,
@@ -239,8 +256,8 @@ async def create_submission(
         "description": submission.description,
         "content": submission.content,
         "status": submission.status,
-        "deadline": submission.deadline.isoformat() if submission.deadline else None,
-        "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else None,
+        "deadline": submission.deadline,
+        "submitted_at": submission.submitted_at,
         "notes": submission.notes,
         "attachments": submission.attachments,
         "user_name": f"{submission.user.first_name} {submission.user.last_name}" if submission.user else None,
@@ -305,6 +322,7 @@ async def update_submission(
     await db.refresh(submission)
     await db.refresh(submission, ["company", "user"])
     
+    # Build response dict with proper serialization
     submission_dict = {
         "id": submission.id,
         "submission_number": submission.submission_number,
@@ -315,8 +333,8 @@ async def update_submission(
         "description": submission.description,
         "content": submission.content,
         "status": submission.status,
-        "deadline": submission.deadline.isoformat() if submission.deadline else None,
-        "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else None,
+        "deadline": submission.deadline,
+        "submitted_at": submission.submitted_at,
         "notes": submission.notes,
         "attachments": submission.attachments,
         "user_name": f"{submission.user.first_name} {submission.user.last_name}" if submission.user else None,

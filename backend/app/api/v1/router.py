@@ -13,6 +13,7 @@ from app.api.v1.endpoints.projects.clients import router as project_clients
 from app.modules.commercial.api import router as commercial_module_router
 from app.api.v1.endpoints.agenda import events as agenda_events
 from app.api.v1.endpoints.reseau import contacts as reseau_contacts
+from app.api.v1.endpoints.reseau import testimonials as reseau_testimonials
 from app.api.v1.endpoints.finances import facturations_router, rapport_router, compte_depenses_router
 from app.modules.finances.api import router as finances_module_router
 from app.modules.projects.api import router as projects_module_router
@@ -505,6 +506,11 @@ api_router.include_router(
 # Register réseau module endpoints
 api_router.include_router(
     reseau_contacts.router,
+    tags=["reseau"]
+)
+
+api_router.include_router(
+    reseau_testimonials.router,
     tags=["reseau"]
 )
 

@@ -12,27 +12,47 @@ import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui';
-import { opportunitiesAPI } from '@/lib/api/opportunities';
+import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
 import { pipelinesAPI, type Pipeline, type PipelineStage } from '@/lib/api/pipelines';
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { companiesAPI, type Company } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 
+// Helper function to convert Opportunity to Opportunite
+const convertOpportunityToOpportunite = (opp: Opportunity): Opportunite => {
+  return {
+    id: opp.id,
+    name: opp.name,
+    description: opp.description ?? undefined,
+    amount: opp.amount ?? undefined,
+    probability: opp.probability ?? undefined,
+    expected_close_date: opp.expected_close_date ?? undefined,
+    pipeline_id: opp.pipeline_id,
+    stage_id: opp.stage_id ?? undefined,
+    contact_ids: opp.contact_ids,
+    company_id: opp.company_id ?? undefined,
+    assigned_to_id: opp.assigned_to_id ?? undefined,
+    contact_names: opp.contact_names,
+    company_name: opp.company_name ?? undefined,
+    company_logo_url: undefined, // Not in Opportunity type
+  };
+};
+
 interface Opportunite {
   id: string;
   name: string;
-  description?: string;
-  amount?: number;
-  probability?: number;
-  expected_close_date?: string;
+  description?: string | null;
+  amount?: number | null;
+  probability?: number | null;
+  expected_close_date?: string | null;
   pipeline_id: string;
-  stage_id?: string;
+  stage_id?: string | null;
   contact_ids?: number[];
-  company_id?: number;
-  assigned_to_id?: number;
+  company_id?: number | null;
+  assigned_to_id?: number | null;
   contact_names?: string[];
-  company_name?: string;
-  company_logo_url?: string;
+  company_name?: string | null;
+  company_logo_url?: string | null;
 }
 
 function PipelineDetailContent() {
@@ -146,7 +166,7 @@ function PipelineDetailContent() {
     const loadOpportunities = async () => {
       try {
         const opps = await opportunitiesAPI.list(0, 1000, { pipeline_id: pipelineId });
-        setOpportunities(opps);
+        setOpportunities(opps.map(convertOpportunityToOpportunite));
       } catch (err) {
         const appError = handleApiError(err);
         setError(appError.message || 'Erreur lors du chargement des opportunités');
@@ -199,7 +219,7 @@ function PipelineDetailContent() {
     // TODO: Appel API pour mettre à jour le stage_id de l'opportunité
     setOpportunities(prev => 
       prev.map(opp => 
-        opp.id === cardId ? { ...opp, stage_id: newStatus } : opp
+        opp.id === cardId ? { ...opp, stage_id: newStatus || null } : opp
       )
     );
     showToast({
@@ -214,14 +234,18 @@ function PipelineDetailContent() {
       // Load full opportunity details to get contact_ids
       try {
         const fullOpp = await opportunitiesAPI.get(opportunity.id);
-        setEditingOpportunity(fullOpp);
-        setSelectedStageStatus(fullOpp.stage_id || null);
+        const convertedOpp = convertOpportunityToOpportunite(fullOpp);
+        setEditingOpportunity(convertedOpp);
+        setSelectedStageStatus(convertedOpp.stage_id || null);
+        const expectedCloseDate = fullOpp.expected_close_date 
+          ? new Date(fullOpp.expected_close_date).toISOString().split('T')[0] ?? ''
+          : '';
         setOpportunityForm({
           name: fullOpp.name,
           description: fullOpp.description || '',
           amount: fullOpp.amount?.toString() || '',
           probability: fullOpp.probability?.toString() || '',
-          expected_close_date: fullOpp.expected_close_date ? new Date(fullOpp.expected_close_date).toISOString().split('T')[0] : '',
+          expected_close_date: expectedCloseDate,
           contact_ids: fullOpp.contact_ids || [],
           company_id: fullOpp.company_id?.toString() || '',
           assigned_to_id: fullOpp.assigned_to_id?.toString() || '',
@@ -268,7 +292,7 @@ function PipelineDetailContent() {
           stage_id: selectedStageStatus || null,
           company_id: opportunityForm.company_id ? parseInt(opportunityForm.company_id) : null,
           assigned_to_id: opportunityForm.assigned_to_id ? parseInt(opportunityForm.assigned_to_id) : null,
-          contact_ids: opportunityForm.contact_ids.length > 0 ? opportunityForm.contact_ids : null,
+          contact_ids: opportunityForm.contact_ids.length > 0 ? opportunityForm.contact_ids : undefined,
         };
         
         await opportunitiesAPI.update(editingOpportunity.id, updateData);
@@ -276,7 +300,7 @@ function PipelineDetailContent() {
         
         // Reload opportunities
         const opps = await opportunitiesAPI.list(0, 1000, { pipeline_id: pipelineId });
-        setOpportunities(opps);
+        setOpportunities(opps.map(convertOpportunityToOpportunite));
       } else {
         // Create
         const createData = {
@@ -297,7 +321,7 @@ function PipelineDetailContent() {
         
         // Reload opportunities
         const opps = await opportunitiesAPI.list(0, 1000, { pipeline_id: pipelineId });
-        setOpportunities(opps);
+        setOpportunities(opps.map(convertOpportunityToOpportunite));
       }
       setShowOpportunityModal(false);
       setSelectedStageStatus(null);
