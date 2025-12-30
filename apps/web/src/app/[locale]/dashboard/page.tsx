@@ -203,12 +203,12 @@ function DashboardContent() {
               </div>
             </div>
             <Stack gap="normal">
-              <Link href="/admin">
+              <Link href="/settings/profile">
                 <Button variant="primary" className="w-full justify-start gap-3 h-auto py-3 hover:scale-[1.02] transition-transform">
                   <Settings className="w-5 h-5" />
                   <div className="text-left">
-                    <div className="font-semibold">Espace Admin</div>
-                    <div className="text-xs opacity-90">Manage system settings</div>
+                    <div className="font-semibold">Paramètres</div>
+                    <div className="text-xs opacity-90">Manage your settings</div>
                   </div>
                 </Button>
               </Link>

@@ -318,6 +318,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             href: '/settings/security',
             icon: <Lock className="w-5 h-5" />,
           },
+          ...(isAdmin ? [{
+            name: 'Espace Admin',
+            href: '/admin',
+            icon: <Shield className="w-5 h-5" />,
+          }] : []),
         ],
         collapsible: true,
         defaultOpen: false,
