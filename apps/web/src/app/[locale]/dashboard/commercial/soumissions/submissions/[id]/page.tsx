@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
-import { submissionsAPI, type Submission, type SubmissionUpdate } from '@/lib/api/submissions';
+import { submissionsAPI, type Submission, type SubmissionUpdate, type SubmissionCreate } from '@/lib/api/submissions';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { ArrowLeft, Edit } from 'lucide-react';
@@ -137,32 +137,6 @@ export default function SubmissionDetailPage() {
     };
   };
 
-  // Convert wizard data to submission update format
-  const wizardDataToSubmissionUpdate = (data: SubmissionWizardData): SubmissionUpdate => {
-    return {
-      title: data.coverTitle,
-      company_id: data.companyId,
-      type: data.type,
-      deadline: data.deadline,
-      description: data.introduction,
-      content: {
-        coverTitle: data.coverTitle,
-        coverSubtitle: data.coverSubtitle,
-        coverDate: data.coverDate,
-        coverClient: data.coverClient,
-        coverCompany: data.coverCompany,
-        context: data.context,
-        introduction: data.introduction,
-        mandate: data.mandate,
-        objectives: data.objectives,
-        processSteps: data.processSteps,
-        budgetItems: data.budgetItems,
-        budgetTotal: data.budgetTotal,
-        currency: data.currency,
-        teamMembers: data.teamMembers,
-      },
-    };
-  };
 
   if (loading) {
     return (
