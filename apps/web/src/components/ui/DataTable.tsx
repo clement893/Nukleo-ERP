@@ -182,7 +182,7 @@ function DataTable<T extends Record<string, unknown>>({
                   </TableHeader>
                 ))}
                 {actions && (
-                  <TableHeader className="sticky right-0 bg-gray-50 dark:bg-gray-800 z-20 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]">
+                  <TableHeader className="sticky right-0 bg-gray-50 dark:bg-gray-800 z-30 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]">
                     Actions
                   </TableHeader>
                 )}
@@ -220,9 +220,9 @@ function DataTable<T extends Record<string, unknown>>({
                   {actions && (
                     <TableCell 
                       onClick={(e) => e.stopPropagation()} 
-                      className="sticky right-0 bg-white dark:bg-gray-900 z-20 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+                      className="sticky right-0 bg-white dark:bg-gray-900 z-30 shadow-[0_0_8px_rgba(0,0,0,0.1)] dark:shadow-[0_0_8px_rgba(0,0,0,0.3)]"
                     >
-                      <div className="relative z-50">
+                      <div className="relative z-40">
                         <Dropdown 
                           trigger={
                             <Button 

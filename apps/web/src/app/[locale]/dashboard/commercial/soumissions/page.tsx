@@ -15,6 +15,7 @@ import { submissionsAPI, type Submission, type SubmissionCreate } from '@/lib/ap
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Plus, FileText, FileCheck, Eye, Edit, Trash2 } from 'lucide-react';
+import type { DropdownItem } from '@/components/ui/Dropdown';
 import MotionDiv from '@/components/motion/MotionDiv';
 
 type TabType = 'quotes' | 'submissions';
@@ -381,31 +382,26 @@ function SoumissionsContent() {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
                 router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quote.id}`);
               }}
-              actions={(quote) => (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const locale = window.location.pathname.split('/')[1] || 'fr';
+              actions={(quote): DropdownItem[] => {
+                const locale = window.location.pathname.split('/')[1] || 'fr';
+                return [
+                  {
+                    label: 'Voir',
+                    icon: <Eye className="w-4 h-4" />,
+                    onClick: () => {
                       router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quote.id}`);
-                    }}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    },
+                  },
+                  {
+                    label: 'Supprimer',
+                    icon: <Trash2 className="w-4 h-4" />,
+                    onClick: () => {
                       handleDeleteQuote(quote.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
+                    },
+                    variant: 'danger',
+                  },
+                ];
+              }}
             />
           ) : (
             <DataTable
@@ -415,31 +411,26 @@ function SoumissionsContent() {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
                 router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
               }}
-              actions={(submission) => (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const locale = window.location.pathname.split('/')[1] || 'fr';
+              actions={(submission): DropdownItem[] => {
+                const locale = window.location.pathname.split('/')[1] || 'fr';
+                return [
+                  {
+                    label: 'Voir',
+                    icon: <Eye className="w-4 h-4" />,
+                    onClick: () => {
                       router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
-                    }}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    },
+                  },
+                  {
+                    label: 'Supprimer',
+                    icon: <Trash2 className="w-4 h-4" />,
+                    onClick: () => {
                       handleDeleteSubmission(submission.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
+                    },
+                    variant: 'danger',
+                  },
+                ];
+              }}
             />
           )}
         </div>
