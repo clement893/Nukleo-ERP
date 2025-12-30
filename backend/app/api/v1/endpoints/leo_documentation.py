@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 
-from app.models.leo_documentation import LeoDocumentation, DocumentationCategory, DocumentationPriority
+from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory, DocumentationPriority
 from app.models.user import User
 from app.schemas.leo_documentation import (
     LeoDocumentationCreate,

@@ -42,6 +42,7 @@ class LeoDocumentation(Base):
         Index("idx_leo_doc_priority", "priority"),
         Index("idx_leo_doc_is_active", "is_active"),
         Index("idx_leo_doc_created_at", "created_at"),
+        {"extend_existing": True},
     )
 
     id = Column(Integer, primary_key=True, index=True)
