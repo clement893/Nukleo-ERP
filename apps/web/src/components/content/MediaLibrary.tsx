@@ -92,14 +92,19 @@ export default function MediaLibrary({
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number | string) => {
     if (!confirm('Are you sure you want to delete this media file?')) {
       return;
     }
 
     try {
       if (onDelete) {
-        await onDelete(id);
+        // Convert string ID to number if needed
+        const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+        if (isNaN(numericId)) {
+          throw new Error('Invalid media ID');
+        }
+        await onDelete(numericId);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to delete media');
