@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit_decorator
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+from app.core.logging import logger
 from app.models.user import User
 from app.models.api_key import APIKey
 from app.api.v1.endpoints.auth import get_current_user
@@ -71,49 +72,64 @@ async def generate_api_key_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Generate a new API key for the current user"""
-    # Validate rotation policy
-    if not APIKeyRotationPolicy.is_valid_policy(api_key_data.rotation_policy):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid rotation policy. Valid options: {', '.join(APIKeyRotationPolicy.POLICIES.keys())}"
+    try:
+        # Validate rotation policy
+        if not APIKeyRotationPolicy.is_valid_policy(api_key_data.rotation_policy):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid rotation policy. Valid options: {', '.join(APIKeyRotationPolicy.POLICIES.keys())}"
+            )
+        
+        # Create API key
+        api_key_model, plaintext_key = await APIKeyService.create_api_key(
+            db=db,
+            user=current_user,
+            name=api_key_data.name,
+            description=api_key_data.description,
+            rotation_policy=api_key_data.rotation_policy,
+            expires_in_days=api_key_data.expires_in_days,
         )
-    
-    # Create API key
-    api_key_model, plaintext_key = await APIKeyService.create_api_key(
-        db=db,
-        user=current_user,
-        name=api_key_data.name,
-        description=api_key_data.description,
-        rotation_policy=api_key_data.rotation_policy,
-        expires_in_days=api_key_data.expires_in_days,
-    )
-    
-    # Log security event
-    await SecurityAuditLogger.log_api_key_event(
-        db=db,
-        event_type=SecurityEventType.API_KEY_CREATED,
-        api_key_id=api_key_model.id,
-        description=f"API key '{api_key_data.name}' created",
-        user_id=current_user.id,
-        user_email=current_user.email,
-        ip_address=request.client.host if request.client else None,
-        metadata={
-            "rotation_policy": api_key_data.rotation_policy,
-            "expires_in_days": api_key_data.expires_in_days,
-        }
-    )
-    
-    return APIKeyResponse(
-        id=api_key_model.id,
-        name=api_key_model.name,
-        key=plaintext_key,  # Only time this is shown
-        key_prefix=api_key_model.key_prefix,
-        created_at=api_key_model.created_at.isoformat(),
-        expires_at=api_key_model.expires_at.isoformat() if api_key_model.expires_at else None,
-        last_used_at=api_key_model.last_used_at.isoformat() if api_key_model.last_used_at else None,
-        rotation_policy=api_key_model.rotation_policy,
-        next_rotation_at=api_key_model.next_rotation_at.isoformat() if api_key_model.next_rotation_at else None,
-    )
+        
+        # Log security event (don't fail if logging fails)
+        try:
+            await SecurityAuditLogger.log_api_key_event(
+                db=db,
+                event_type=SecurityEventType.API_KEY_CREATED,
+                api_key_id=api_key_model.id,
+                description=f"API key '{api_key_data.name}' created",
+                user_id=current_user.id,
+                user_email=current_user.email,
+                ip_address=request.client.host if request.client else None,
+                metadata={
+                    "rotation_policy": api_key_data.rotation_policy,
+                    "expires_in_days": api_key_data.expires_in_days,
+                }
+            )
+        except Exception as log_error:
+            # Log the error but don't fail the request
+            logger.error(f"Failed to log API key creation event: {log_error}", exc_info=True)
+        
+        return APIKeyResponse(
+            id=api_key_model.id,
+            name=api_key_model.name,
+            key=plaintext_key,  # Only time this is shown
+            key_prefix=api_key_model.key_prefix,
+            created_at=api_key_model.created_at.isoformat(),
+            expires_at=api_key_model.expires_at.isoformat() if api_key_model.expires_at else None,
+            last_used_at=api_key_model.last_used_at.isoformat() if api_key_model.last_used_at else None,
+            rotation_policy=api_key_model.rotation_policy,
+            next_rotation_at=api_key_model.next_rotation_at.isoformat() if api_key_model.next_rotation_at else None,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        from app.core.logging import logger
+        logger.error(f"Error generating API key: {e}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate API key: {str(e)}"
+        )
 
 
 @router.get("/list", response_model=List[APIKeyListResponse])
