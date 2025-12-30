@@ -207,14 +207,6 @@ export default function AdminUsersContent() {
     }
   };
 
-  // Get employee linked to a user
-  const getLinkedEmployee = (user: User): Employee | undefined => {
-    if (user.employee) {
-      return employees.find(emp => emp.id === user.employee!.id);
-    }
-    return undefined;
-  };
-
   const filteredUsers = users.filter((user) =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchTerm.toLowerCase())
