@@ -147,9 +147,25 @@ export default function SubmissionWizard({
 
   const handleSubmit = async () => {
     // Validate required fields
-    if (!formData.coverTitle || !formData.companyId) {
+    const missingFields: string[] = [];
+    
+    if (!formData.coverTitle || formData.coverTitle.trim() === '') {
+      missingFields.push('Titre principal');
+    }
+    
+    if (!formData.companyId) {
+      missingFields.push('Client');
+    }
+    
+    if (missingFields.length > 0) {
+      // Navigate to cover page if missing fields are there
+      if (!formData.coverTitle || !formData.companyId) {
+        setCurrentStep(0);
+      }
+      
+      const fieldsList = missingFields.join(', ');
       showToast({
-        message: 'Veuillez remplir tous les champs obligatoires',
+        message: `Veuillez remplir les champs obligatoires suivants : ${fieldsList}`,
         type: 'error',
       });
       return;
