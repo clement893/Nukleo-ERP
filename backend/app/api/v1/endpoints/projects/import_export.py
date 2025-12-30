@@ -295,21 +295,29 @@ async def import_projects(
                 
                 # Create project
                 # Convert status string to enum for ProjectCreate validation
+                status_enum = None
                 if isinstance(project_data.get('status'), str):
-                    project_data['status'] = ProjectStatus(project_data['status'])
+                    status_enum = ProjectStatus(project_data['status'])
+                    project_data['status'] = status_enum
+                else:
+                    status_enum = project_data.get('status', ProjectStatus.ACTIVE)
+                    project_data['status'] = status_enum
                 
                 project_create = ProjectCreate(**project_data)
                 
-                # For bulk insert with asyncpg, we need to pass the enum value directly
-                # SQLAlchemy's Enum column will handle the conversion
+                # For bulk insert with asyncpg, we need to use the enum's value (string) directly
+                # SQLAlchemy's Enum column with asyncpg doesn't convert Python enums correctly in bulk inserts
+                # We'll use setattr to bypass the normal assignment and set the string value directly
                 project = Project(
                     name=project_create.name,
                     description=project_create.description,
-                    status=project_create.status,  # ProjectStatus enum - SQLAlchemy will convert to string
                     user_id=current_user.id,
                     client_id=project_create.client_id,
                     responsable_id=project_create.responsable_id,
                 )
+                # Set status using the enum value (string) directly to avoid asyncpg conversion issues
+                # SQLAlchemy's Enum column will accept the string value and convert it internally
+                setattr(project, 'status', project_create.status.value)
                 
                 db.add(project)
                 projects_data.append(project)
