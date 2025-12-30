@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import { contactsAPI, type Contact, type ContactCreate, type ContactUpdate } from '@/lib/api/contacts';
+import { type Contact, type ContactCreate, type ContactUpdate } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ContactsGallery from '@/components/commercial/ContactsGallery';
@@ -20,15 +20,42 @@ import { Plus, Edit, Trash2, Eye, List, Grid, Download, Upload, MoreVertical, Fi
 import { clsx } from 'clsx';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
+import { 
+  useInfiniteContacts, 
+  useCreateContact, 
+  useUpdateContact, 
+  useDeleteContact, 
+  useDeleteAllContacts,
+  contactsAPI 
+} from '@/lib/query/contacts';
 
 type ViewMode = 'list' | 'gallery';
 
 function ContactsContent() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  // React Query hooks for contacts
+  const {
+    data: contactsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error: queryError,
+  } = useInfiniteContacts(20);
+  
+  // Mutations
+  const createContactMutation = useCreateContact();
+  const updateContactMutation = useUpdateContact();
+  const deleteContactMutation = useDeleteContact();
+  const deleteAllContactsMutation = useDeleteAllContacts();
+  
+  // Flatten pages into single array
+  const contacts = useMemo(() => {
+    return contactsData?.pages.flat() || [];
+  }, [contactsData]);
+  
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -43,98 +70,23 @@ function ContactsContent() {
   // Debounce search query to avoid excessive re-renders (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
-  // Pagination pour le scroll infini
-  const [skip, setSkip] = useState(0);
-  const [limit] = useState(20); // Nombre de contacts par page
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // Derived state from React Query
+  const loading = isLoading;
+  const loadingMore = isFetchingNextPage;
+  const hasMore = hasNextPage ?? false;
+  const error = queryError ? handleApiError(queryError).message : null;
 
   // Mock data pour les entreprises et employés (à remplacer par des appels API réels)
   const [companies] = useState<Array<{ id: number; name: string }>>([]);
   const [employees] = useState<Array<{ id: number; name: string }>>([]);
   const circles = ['client', 'prospect', 'partenaire', 'fournisseur', 'autre'];
 
-  // Load contacts avec pagination
-  const loadContacts = useCallback(async (reset = false) => {
-    if (reset) {
-      setSkip(0);
-      setContacts([]);
-      setHasMore(true);
-    }
-    
-    setLoading(reset);
-    setLoadingMore(!reset);
-    setError(null);
-    
-    try {
-      const currentSkip = reset ? 0 : skip;
-      const data = await contactsAPI.list(currentSkip, limit);
-      
-      if (reset) {
-        setContacts(data);
-        setSkip(limit); // Fix: Always increment by limit, not data.length
-      } else {
-        // Limit contacts in memory to prevent excessive memory usage
-        // Keep only the last 200 contacts loaded
-        const MAX_CONTACTS_IN_MEMORY = 200;
-        setContacts((prev) => {
-          const updated = [...prev, ...data];
-          // If we exceed the limit, keep only the most recent ones
-          if (updated.length > MAX_CONTACTS_IN_MEMORY) {
-            return updated.slice(-MAX_CONTACTS_IN_MEMORY);
-          }
-          return updated;
-        });
-        setSkip((prevSkip) => prevSkip + limit); // Fix: Always increment by limit
-      }
-      
-      // Si on reçoit moins de contacts que la limite, il n'y a plus de données
-      setHasMore(data.length === limit);
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement des contacts');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement des contacts',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [skip, limit, showToast]);
-
-  // Charger plus de contacts pour le scroll infini
+  // Load more contacts for infinite scroll
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
-      loadContacts(false);
+      fetchNextPage();
     }
-  }, [loadingMore, hasMore, loadContacts]);
-
-  useEffect(() => {
-    loadContacts(true);
-  }, [loadContacts]);
-
-  // Disabled: Revalidate contacts when window regains focus
-  // This was causing unnecessary network requests and degraded UX
-  // Users can manually refresh if needed, or we can implement a smarter cache strategy
-  // useEffect(() => {
-  //   let lastReloadTime = Date.now();
-  //   const RELOAD_COOLDOWN = 30000; // 30 seconds minimum between reloads
-
-  //   const handleFocus = () => {
-  //     const now = Date.now();
-  //     // Only reload if more than 30 seconds have passed since last reload
-  //     if (now - lastReloadTime > RELOAD_COOLDOWN) {
-  //       lastReloadTime = now;
-  //       loadContacts(true);
-  //     }
-  //   };
-
-  //   window.addEventListener('focus', handleFocus);
-  //   return () => {
-  //     window.removeEventListener('focus', handleFocus);
-  //   };
-  // }, [loadContacts]);
+  }, [loadingMore, hasMore, fetchNextPage]);
 
   // Extract unique values for dropdowns
   const uniqueValues = useMemo(() => {
@@ -188,124 +140,73 @@ function ContactsContent() {
   }, []);
 
 
-  // Handle create with optimistic update
+  // Handle create with React Query mutation
   const handleCreate = async (data: ContactCreate | ContactUpdate) => {
     try {
-      setLoading(true);
-      setError(null);
-      const newContact = await contactsAPI.create(data as ContactCreate);
-      
-      // Optimistic update: add contact to list immediately
-      setContacts((prev) => [newContact, ...prev]);
+      await createContactMutation.mutateAsync(data as ContactCreate);
       setShowCreateModal(false);
       showToast({
         message: 'Contact créé avec succès',
         type: 'success',
       });
-      
-      // Reload only first page in background to ensure data consistency
-      // This ensures presigned URLs are fresh, but doesn't block UI
-      setTimeout(() => {
-        loadContacts(true).catch(() => {
-          // Silent fail - optimistic update already shown
-        });
-      }, 1000);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la création du contact');
       showToast({
         message: appError.message || 'Erreur lors de la création du contact',
         type: 'error',
       });
-      // Reload on error to ensure consistency
-      await loadContacts(true);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Handle update with optimistic update
+  // Handle update with React Query mutation
   const handleUpdate = async (data: ContactCreate | ContactUpdate) => {
     if (!selectedContact) return;
 
     try {
-      setLoading(true);
-      setError(null);
-      const updatedContact = await contactsAPI.update(selectedContact.id, data as ContactUpdate);
-      
-      // Optimistic update: update contact in list immediately
-      setContacts((prev) =>
-        prev.map((contact) =>
-          contact.id === selectedContact.id ? updatedContact : contact
-        )
-      );
+      await updateContactMutation.mutateAsync({
+        id: selectedContact.id,
+        data: data as ContactUpdate,
+      });
       setShowEditModal(false);
       setSelectedContact(null);
       showToast({
         message: 'Contact modifié avec succès',
         type: 'success',
       });
-      
-      // Reload only first page in background to ensure data consistency
-      setTimeout(() => {
-        loadContacts(true).catch(() => {
-          // Silent fail - optimistic update already shown
-        });
-      }, 1000);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la modification du contact');
       showToast({
         message: appError.message || 'Erreur lors de la modification du contact',
         type: 'error',
       });
-      // Reload on error to ensure consistency
-      await loadContacts(true);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Handle delete with optimistic update
+  // Handle delete with React Query mutation
   const handleDelete = async (contactId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce contact ?')) {
       return;
     }
 
-    // Optimistic update: remove contact from list immediately
-    const contactToDelete = contacts.find((c) => c.id === contactId);
-    setContacts((prev) => prev.filter((contact) => contact.id !== contactId));
-    if (selectedContact?.id === contactId) {
-      setSelectedContact(null);
-    }
-
     try {
-      setLoading(true);
-      setError(null);
-      await contactsAPI.delete(contactId);
+      await deleteContactMutation.mutateAsync(contactId);
+      if (selectedContact?.id === contactId) {
+        setSelectedContact(null);
+      }
       showToast({
         message: 'Contact supprimé avec succès',
         type: 'success',
       });
     } catch (err) {
-      // Revert optimistic update on error
-      if (contactToDelete) {
-        setContacts((prev) => [...prev, contactToDelete].sort((a, b) => a.id - b.id));
-      }
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la suppression du contact');
       showToast({
         message: appError.message || 'Erreur lors de la suppression du contact',
         type: 'error',
       });
-      // Reload on error to ensure consistency
-      await loadContacts(true);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Handle delete all contacts
+  // Handle delete all contacts with React Query mutation
   const handleDeleteAll = async () => {
     const count = contacts.length;
     if (count === 0) {
@@ -334,11 +235,7 @@ function ContactsContent() {
     }
 
     try {
-      setLoading(true);
-      setError(null);
-      const result = await contactsAPI.deleteAll();
-      // Reload contacts to ensure we have the latest data
-      await loadContacts(true);
+      const result = await deleteAllContactsMutation.mutateAsync();
       setSelectedContact(null);
       showToast({
         message: result.message || `${result.deleted_count} contact(s) supprimé(s) avec succès`,
@@ -346,26 +243,25 @@ function ContactsContent() {
       });
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la suppression des contacts');
       showToast({
         message: appError.message || 'Erreur lors de la suppression des contacts',
         type: 'error',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Get query client for cache invalidation
+  const queryClient = useQueryClient();
+  
   // Handle import
   const handleImport = async (file: File) => {
     try {
-      setLoading(true);
-      setError(null);
       const result = await contactsAPI.import(file);
       
       if (result.valid_rows > 0) {
-        // Reload contacts after import
-        await loadContacts();
+        // Invalidate contacts query to refetch after import
+        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+        
         const photosMsg = result.photos_uploaded && result.photos_uploaded > 0 ? ` (${result.photos_uploaded} photo(s) uploadée(s))` : '';
         showToast({
           message: `${result.valid_rows} contact(s) importé(s) avec succès${photosMsg}`,
@@ -395,12 +291,6 @@ function ContactsContent() {
             type: 'warning',
             duration: 8000, // Longer duration for important warnings
           });
-          
-          // Also set error state to show detailed warnings
-          const warningsText = companyWarnings
-            .map(w => `Ligne ${w.row}: ${w.message}`)
-            .join('\n');
-          setError(`Avertissements d'import:\n${warningsText}`);
         }
       }
       
@@ -412,20 +302,16 @@ function ContactsContent() {
       }
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de l\'import');
       showToast({
         message: appError.message || 'Erreur lors de l\'import',
         type: 'error',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   // Handle export
   const handleExport = async () => {
     try {
-      setLoading(true);
       const blob = await contactsAPI.export();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -441,13 +327,10 @@ function ContactsContent() {
       });
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de l\'export');
       showToast({
         message: appError.message || 'Erreur lors de l\'export',
         type: 'error',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
