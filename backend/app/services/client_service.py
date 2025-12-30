@@ -326,9 +326,9 @@ class ClientService:
         # Get invoice stats
         invoice_query = select(
             func.count(Invoice.id).label("total"),
-            func.sum(Invoice.amount).label("total_amount"),
+            func.sum(Invoice.amount_due).label("total_amount"),
             func.sum(
-                func.case((Invoice.status == "pending", Invoice.amount), else_=0)
+                func.case((Invoice.status == "pending", Invoice.amount_due), else_=0)
             ).label("pending_amount"),
         ).where(Invoice.user_id == user_id)
         

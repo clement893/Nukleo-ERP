@@ -146,3 +146,15 @@ class ClientTicketListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class ClientDashboardStats(BaseModel):
+    """Client dashboard statistics schema"""
+    total_invoices: int = Field(default=0, description="Total number of invoices")
+    pending_invoices: int = Field(default=0, description="Number of pending invoices")
+    paid_invoices: int = Field(default=0, description="Number of paid invoices")
+    total_projects: int = Field(default=0, description="Total number of projects")
+    active_projects: int = Field(default=0, description="Number of active projects")
+    open_tickets: int = Field(default=0, description="Number of open support tickets")
+    total_spent: Decimal = Field(default=Decimal("0.00"), description="Total amount spent")
+    pending_amount: Decimal = Field(default=Decimal("0.00"), description="Total pending invoice amount")
