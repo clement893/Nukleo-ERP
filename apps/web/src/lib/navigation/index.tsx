@@ -126,6 +126,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             icon: <UserCircle className="w-5 h-5" />,
           },
           {
+            name: 'Contacts2',
+            href: '/dashboard/reseau/contacts2',
+            icon: <UserCircle className="w-5 h-5" />,
+          },
+          {
             name: 'Entreprises',
             href: '/dashboard/reseau/entreprises',
             icon: <Building2 className="w-5 h-5" />,

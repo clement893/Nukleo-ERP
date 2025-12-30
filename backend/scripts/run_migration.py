@@ -1,42 +1,62 @@
-#!/usr/bin/env python3
 """
-Script pour exécuter la migration Alembic
-Crée le pipeline MAIN avec toutes les étapes
+Script to run Alembic migrations
+Can be executed via Railway CLI: railway run python scripts/run_migration.py
 """
-
 import sys
-from pathlib import Path
+import os
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Find the backend directory (could be . or .. depending on execution context)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = current_dir
+if os.path.basename(current_dir) == 'scripts':
+    backend_dir = os.path.dirname(current_dir)
+elif os.path.basename(os.path.dirname(current_dir)) == 'backend':
+    backend_dir = os.path.dirname(os.path.dirname(current_dir))
 
-try:
-    from alembic import command
-    from alembic.config import Config
-    
-    def run_migration():
-        """Run Alembic migration to head"""
-        print("🔄 Exécution de la migration Alembic...")
-        
+# Add backend directory to path
+sys.path.insert(0, backend_dir)
+
+# Change to backend directory for alembic.ini
+os.chdir(backend_dir)
+
+from alembic.config import Config
+from alembic import command
+from app.core.config import settings
+from app.core.logging import logger
+
+
+def run_migration():
+    """Run Alembic migrations"""
+    try:
         # Get Alembic config
         alembic_cfg = Config("alembic.ini")
         
-        # Run upgrade to head
+        # Convert asyncpg URL to psycopg2 for Alembic
+        database_url = str(settings.DATABASE_URL)
+        if "postgresql+asyncpg://" in database_url:
+            database_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+        elif "postgresql://" in database_url and "+" not in database_url:
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg2://")
+        
+        alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+        
+        logger.info(f"Running migrations on database: {database_url.split('@')[1] if '@' in database_url else 'configured'}")
+        print(f"Running migrations on database: {database_url.split('@')[1] if '@' in database_url else 'configured'}")
+        
+        # Run upgrade
         command.upgrade(alembic_cfg, "head")
         
-        print("✅ Migration exécutée avec succès!")
-        print("📋 Pipeline MAIN créé avec 15 étapes")
-        
-    if __name__ == "__main__":
-        run_migration()
-        
-except ImportError as e:
-    print(f"❌ Erreur: Module non trouvé - {e}")
-    print("💡 Installez les dépendances Python:")
-    print("   pip install -r requirements.txt")
-    sys.exit(1)
-except Exception as e:
-    print(f"❌ Erreur lors de l'exécution de la migration: {e}")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+        logger.info("✅ Migrations completed successfully")
+        print("✅ Migrations completed successfully")
+        return 0
+    except Exception as e:
+        logger.error(f"❌ Migration failed: {e}", exc_info=True)
+        print(f"❌ Migration failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
+if __name__ == "__main__":
+    exit_code = run_migration()
+    sys.exit(exit_code)
