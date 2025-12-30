@@ -1362,8 +1362,8 @@ async def import_contacts(
                                 row_data.get('nom_fichier_photo')
                             )
                             if excel_photo_filename:
-                            excel_photo_normalized = normalize_filename(excel_photo_filename)
-                            if excel_photo_filename.lower() in photos_dict:
+                                excel_photo_normalized = normalize_filename(excel_photo_filename)
+                                if excel_photo_filename.lower() in photos_dict:
                                 pattern_to_use = excel_photo_filename.lower()
                             elif excel_photo_normalized in photos_dict:
                                 pattern_to_use = excel_photo_normalized
