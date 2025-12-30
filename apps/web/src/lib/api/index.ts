@@ -48,6 +48,10 @@ export { notificationsAPI } from './notifications';
 // Re-export settings API
 export { settingsAPI } from './settings';
 
+// Re-export API keys API
+export { apiKeysAPI } from './api-keys';
+export type { APIKeyCreate, APIKeyResponse, APIKeyListResponse, APIKeyRotateResponse } from './api-keys';
+
 // Re-export admin API
 export { adminAPI } from './admin';
 
