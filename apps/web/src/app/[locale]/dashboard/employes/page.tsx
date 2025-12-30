@@ -232,7 +232,6 @@ function EmployeesContent() {
   const handleImport = async (file: File) => {
     try {
       const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
       
       const result = await employeesAPI.import(file, importId);
       
