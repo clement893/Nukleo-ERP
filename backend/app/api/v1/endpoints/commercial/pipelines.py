@@ -5,7 +5,7 @@ API endpoints for managing commercial pipelines
 
 from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -22,13 +22,12 @@ router = APIRouter(prefix="/commercial/pipelines", tags=["commercial-pipelines"]
 
 @router.get("/", response_model=List[PipelineResponse])
 async def list_pipelines(
-    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    is_active: Optional[bool] = Query(None),
-) -> List[Pipeline]:
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+) -> List[PipelineResponse]:
     """
     Get list of pipelines
     
@@ -42,7 +41,7 @@ async def list_pipelines(
     Returns:
         List of pipelines
     """
-    query = select(Pipeline)
+    query = select(Pipeline).where(Pipeline.created_by_id == current_user.id)
     
     if is_active is not None:
         query = query.where(Pipeline.is_active == is_active)

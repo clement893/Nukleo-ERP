@@ -65,13 +65,14 @@ export const pipelinesAPI = {
     is_active?: boolean
   ): Promise<Pipeline[]> => {
     const params: Record<string, string | number | boolean> = {
-      skip,
-      limit,
+      skip: Number(skip),
+      limit: Number(limit),
       _t: Date.now(), // Cache-busting timestamp
     };
 
-    if (is_active !== undefined) {
-      params.is_active = is_active;
+    if (is_active !== undefined && is_active !== null) {
+      // Convert to boolean explicitly
+      params.is_active = is_active === true || is_active === 'true' || is_active === 1;
     }
 
     const response = await apiClient.get<Pipeline[]>('/v1/commercial/pipelines', {

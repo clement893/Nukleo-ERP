@@ -67,7 +67,7 @@ class PipelineUpdate(BaseModel):
 class PipelineResponse(PipelineBase):
     """Schema pour réponse Pipeline"""
     id: UUID
-    created_by_id: Optional[UUID] = None
+    created_by_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     stages: List[PipelineStageResponse] = []
@@ -114,10 +114,10 @@ class OpportuniteResponse(OpportuniteBase):
     id: UUID
     pipeline_id: UUID
     stage_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
-    company_id: Optional[UUID] = None
-    assigned_to_id: Optional[UUID] = None
-    created_by_id: Optional[UUID] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_to_id: Optional[int] = None
+    created_by_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 
