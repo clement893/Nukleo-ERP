@@ -19,6 +19,7 @@ class EmployeeBase(BaseModel):
     photo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
     hire_date: Optional[date] = Field(None, description="Hire date")
     birthday: Optional[date] = Field(None, description="Birthday")
+    team_id: Optional[int] = Field(None, description="Team ID")
     
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -53,12 +54,14 @@ class EmployeeUpdate(BaseModel):
     photo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
     hire_date: Optional[date] = Field(None, description="Hire date")
     birthday: Optional[date] = Field(None, description="Birthday")
+    team_id: Optional[int] = Field(None, description="Team ID")
 
 
 class Employee(EmployeeBase):
     """Employee response schema"""
     id: int
     user_id: Optional[int] = Field(None, description="Linked user ID")
+    team_id: Optional[int] = Field(None, description="Team ID")
     created_at: datetime
     updated_at: datetime
 

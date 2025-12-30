@@ -18,6 +18,7 @@ class Employee(Base):
         Index("idx_employees_created_at", "created_at"),
         Index("idx_employees_updated_at", "updated_at"),
         Index("idx_employees_hire_date", "hire_date"),
+        Index("idx_employees_team_id", "team_id"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -31,6 +32,7 @@ class Employee(Base):
     hire_date = Column(Date, nullable=True, index=True)  # Date d'embauche
     birthday = Column(Date, nullable=True)  # Anniversaire
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, unique=True, index=True)  # Link to User account
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True, index=True)  # Link to Team
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
         DateTime(timezone=True),
@@ -42,6 +44,7 @@ class Employee(Base):
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id], backref="employee", lazy="select")
+    team = relationship("Team", foreign_keys=[team_id], lazy="select")
 
     def __repr__(self) -> str:
         return f"<Employee(id={self.id}, name={self.first_name} {self.last_name})>"

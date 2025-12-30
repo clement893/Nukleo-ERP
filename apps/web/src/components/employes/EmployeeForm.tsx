@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Employee, EmployeeCreate, EmployeeUpdate } from '@/lib/api/employees';
+import { teamsAPI } from '@/lib/api/teams';
 import { mediaAPI } from '@/lib/api/media';
+import { extractApiData } from '@/lib/api/utils';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Upload, X, UserCircle } from 'lucide-react';
 import { useToast } from '@/components/ui';
@@ -25,6 +28,8 @@ export default function EmployeeForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(employee?.photo_url || null);
+  const [teams, setTeams] = useState<Array<{ id: number; name: string }>>([]);
+  const [loadingTeams, setLoadingTeams] = useState(true);
   const [formData, setFormData] = useState<EmployeeCreate>({
     first_name: employee?.first_name || '',
     last_name: employee?.last_name || '',
@@ -34,7 +39,27 @@ export default function EmployeeForm({
     photo_url: employee?.photo_url || null,
     hire_date: employee?.hire_date || null,
     birthday: employee?.birthday || null,
+    team_id: employee?.team_id || null,
   });
+  
+  // Load teams
+  useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        setLoadingTeams(true);
+        const response = await teamsAPI.list(0, 100);
+        const teamsData = extractApiData(response);
+        if (teamsData?.teams) {
+          setTeams(teamsData.teams.map((team: any) => ({ id: team.id, name: team.name })));
+        }
+      } catch (error) {
+        console.error('Error loading teams:', error);
+      } finally {
+        setLoadingTeams(false);
+      }
+    };
+    loadTeams();
+  }, []);
   
   useEffect(() => {
     if (employee?.photo_url) {
@@ -258,6 +283,19 @@ export default function EmployeeForm({
         type="date"
         value={formData.birthday || ''}
         onChange={(e) => setFormData({ ...formData, birthday: e.target.value || null })}
+        fullWidth
+      />
+
+      {/* Équipe */}
+      <Select
+        label="Équipe"
+        value={formData.team_id?.toString() || ''}
+        onChange={(e) => setFormData({ ...formData, team_id: e.target.value ? parseInt(e.target.value) : null })}
+        options={[
+          { value: '', label: 'Aucune équipe' },
+          ...teams.map(team => ({ value: team.id.toString(), label: team.name })),
+        ]}
+        disabled={loadingTeams}
         fullWidth
       />
 

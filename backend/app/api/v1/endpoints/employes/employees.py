@@ -190,7 +190,8 @@ async def list_employees(
                     birthday=row[9],
                     created_at=row[10],
                     updated_at=row[11],
-                    user_id=None  # Column doesn't exist yet
+                    user_id=None,  # Column doesn't exist yet
+                    team_id=None  # Column doesn't exist yet
                 )
                 employees.append(emp)
         else:
@@ -215,6 +216,7 @@ async def list_employees(
             "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
             "birthday": employee.birthday.isoformat() if employee.birthday else None,
             "user_id": getattr(employee, 'user_id', None),
+            "team_id": getattr(employee, 'team_id', None),
             "created_at": employee.created_at,
             "updated_at": employee.updated_at,
         }
@@ -278,7 +280,8 @@ async def get_employee(
                     birthday=row[9],
                     created_at=row[10],
                     updated_at=row[11],
-                    user_id=None  # Column doesn't exist yet
+                    user_id=None,  # Column doesn't exist yet
+                    team_id=None  # Column doesn't exist yet
                 )
         else:
             logger.error(f"Database error in get_employee: {e}", exc_info=True)
@@ -307,6 +310,7 @@ async def get_employee(
         "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
         "user_id": getattr(employee, 'user_id', None),
+        "team_id": getattr(employee, 'team_id', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -334,6 +338,7 @@ async def create_employee(
         photo_filename=getattr(employee_data, 'photo_filename', None),
         hire_date=employee_data.hire_date,
         birthday=employee_data.birthday,
+        team_id=getattr(employee_data, 'team_id', None),
     )
     
     db.add(employee)
@@ -354,6 +359,7 @@ async def create_employee(
         "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
         "user_id": getattr(employee, 'user_id', None),
+        "team_id": getattr(employee, 'team_id', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -405,6 +411,7 @@ async def update_employee(
         "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
         "user_id": getattr(employee, 'user_id', None),
+        "team_id": getattr(employee, 'team_id', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }

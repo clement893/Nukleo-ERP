@@ -1123,6 +1123,7 @@ async def import_contacts(
             "total_processed": 0,
             "skipped_missing_firstname": 0,
             "skipped_missing_lastname": 0,
+            "skipped_empty_row": 0,
             "matched_existing": 0,
             "created_new": 0,
             "errors": 0,
@@ -1191,6 +1192,18 @@ async def import_contacts(
                         'last_name', 'nom', 'name', 'lastname', 'last name',
                         'surname', 'family_name', 'family name', 'nom de famille'
                     ]) or ''
+                    
+                    # Debug: Log if both names are empty (likely empty row)
+                    if not first_name.strip() and not last_name.strip():
+                        # Check if row has any data at all
+                        has_any_data = any(v and str(v).strip() for v in row_data.values() if v is not None)
+                        if not has_any_data:
+                            # Empty row, skip silently but log for debugging
+                            stats["skipped_empty_row"] = stats.get("skipped_empty_row", 0) + 1
+                            if (idx + 1) % 50 == 0:  # Log every 50 empty rows to avoid spam
+                                logger.debug(f"Skipped {stats.get('skipped_empty_row', 0)} empty rows so far")
+                            continue
+                        # Row has some data but no names - will be caught by validation below
                     
                     # Handle company matching by name or ID
                     company_id = None
@@ -1557,23 +1570,35 @@ async def import_contacts(
                     logo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
                     
                     # Prepare contact data
-                    contact_data = ContactCreate(
-                        first_name=first_name.strip(),
-                        last_name=last_name.strip(),
-                        company_id=company_id,
-                        position=position,
-                        circle=circle,
-                        linkedin=linkedin,
-                        photo_url=photo_url,  # Store file_key, not presigned URL
-                        photo_filename=logo_filename,  # Store filename for photo matching (using logo_filename variable name from Excel)
-                        email=email,
-                        phone=phone,
-                        city=city,
-                        country=country,
-                        birthday=birthday,
-                        language=language,
-                        employee_id=employee_id,
-                    )
+                    try:
+                        contact_data = ContactCreate(
+                            first_name=first_name.strip(),
+                            last_name=last_name.strip(),
+                            company_id=company_id,
+                            position=position,
+                            circle=circle,
+                            linkedin=linkedin,
+                            photo_url=photo_url,  # Store file_key, not presigned URL
+                            photo_filename=logo_filename,  # Store filename for photo matching (using logo_filename variable name from Excel)
+                            email=email,
+                            phone=phone,
+                            city=city,
+                            country=country,
+                            birthday=birthday,
+                            language=language,
+                            employee_id=employee_id,
+                        )
+                    except Exception as validation_error:
+                        stats["errors"] += 1
+                        error_msg = f"Ligne {idx + 2}: Erreur de validation - {str(validation_error)}"
+                        add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(validation_error), "contact": f"{first_name} {last_name}"})
+                        logger.error(f"Row {idx + 2}: Validation error for {first_name} {last_name}: {validation_error}", exc_info=True)
+                        errors.append({
+                            'row': idx + 2,
+                            'data': row_data,
+                            'error': f'Erreur de validation: {str(validation_error)}'
+                        })
+                        continue
                     
                     # Update existing contact or create new one
                     if existing_contact:
@@ -1629,15 +1654,32 @@ async def import_contacts(
                 })
                 continue
         
-        # Log completion of loop
+        # Log completion of loop with detailed summary
+        skipped_total = stats['skipped_missing_firstname'] + stats['skipped_missing_lastname'] + stats.get('skipped_empty_row', 0)
         add_import_log(import_id, f"✅ Boucle de traitement terminée: {stats['total_processed']} ligne(s) traitée(s) sur {total_rows} attendue(s)", "info", {
             "total_processed": stats['total_processed'],
             "total_expected": total_rows,
             "created": stats['created_new'],
             "updated": stats['matched_existing'],
-            "errors": stats['errors']
+            "errors": stats['errors'],
+            "skipped_missing_firstname": stats['skipped_missing_firstname'],
+            "skipped_missing_lastname": stats['skipped_missing_lastname'],
+            "skipped_empty_row": stats.get('skipped_empty_row', 0),
+            "skipped_total": skipped_total
         })
-        logger.info(f"Import loop completed: processed {stats['total_processed']}/{total_rows} rows, created {len(created_contacts)} contacts")
+        
+        # Add summary log explaining why rows were skipped
+        if skipped_total > 0:
+            skipped_details = []
+            if stats['skipped_missing_firstname'] > 0:
+                skipped_details.append(f"prénom manquant: {stats['skipped_missing_firstname']}")
+            if stats['skipped_missing_lastname'] > 0:
+                skipped_details.append(f"nom manquant: {stats['skipped_missing_lastname']}")
+            if stats.get('skipped_empty_row', 0) > 0:
+                skipped_details.append(f"lignes vides: {stats.get('skipped_empty_row', 0)}")
+            add_import_log(import_id, f"ℹ️ Résumé: {skipped_total} ligne(s) ignorée(s) ({', '.join(skipped_details)})", "info")
+        
+        logger.info(f"Import loop completed: processed {stats['total_processed']}/{total_rows} rows, created {len(created_contacts)} contacts, skipped {skipped_total} rows")
         
         # Track which contacts were updated vs created
         existing_contact_ids = {c.id for c in all_existing_contacts}
