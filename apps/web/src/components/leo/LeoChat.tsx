@@ -17,16 +17,124 @@ import type { LeoMessage } from '@/lib/api/leo-agent';
  * Renders markdown formatting with improved support for code blocks, lists, and formatting
  */
 function MarkdownContent({ content }: { content: string }) {
+  // Process inline formatting (bold, italic, links, code)
+  const processInlineFormatting = (text: string): React.ReactNode => {
+    const parts: React.ReactNode[] = [];
+    let partKey = 0;
+
+    // Code inline `code`
+    const codeRegex = /`([^`]+)`/g;
+    let codeMatch;
+    const codeMatches: Array<{ start: number; end: number; content: string }> = [];
+    while ((codeMatch = codeRegex.exec(text)) !== null) {
+      if (codeMatch[1]) {
+        codeMatches.push({
+          start: codeMatch.index,
+          end: codeMatch.index + codeMatch[0].length,
+          content: codeMatch[1],
+        });
+      }
+    }
+
+    // Links [text](url)
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const linkMatches: Array<{ start: number; end: number; text: string; url: string }> = [];
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(text)) !== null) {
+      if (linkMatch[1] && linkMatch[2]) {
+        linkMatches.push({
+          start: linkMatch.index,
+          end: linkMatch.index + linkMatch[0].length,
+          text: linkMatch[1],
+          url: linkMatch[2],
+        });
+      }
+    }
+
+    // Bold **text**
+    const boldRegex = /\*\*([^*]+)\*\*/g;
+    const boldMatches: Array<{ start: number; end: number; content: string }> = [];
+    let boldMatch;
+    while ((boldMatch = boldRegex.exec(text)) !== null) {
+      if (boldMatch[1]) {
+        boldMatches.push({
+          start: boldMatch.index,
+          end: boldMatch.index + boldMatch[0].length,
+          content: boldMatch[1],
+        });
+      }
+    }
+
+    // Italic *text*
+    const italicRegex = /(?<!\*)\*([^*]+)\*(?!\*)/g;
+    const italicMatches: Array<{ start: number; end: number; content: string }> = [];
+    let italicMatch;
+    while ((italicMatch = italicRegex.exec(text)) !== null) {
+      if (italicMatch[1]) {
+        italicMatches.push({
+          start: italicMatch.index,
+          end: italicMatch.index + italicMatch[0].length,
+          content: italicMatch[1],
+        });
+      }
+    }
+
+    // Combine all matches and sort by position
+    const allMatches = [
+      ...codeMatches.map(m => ({ ...m, type: 'code' as const })),
+      ...linkMatches.map(m => ({ ...m, type: 'link' as const })),
+      ...boldMatches.map(m => ({ ...m, type: 'bold' as const })),
+      ...italicMatches.map(m => ({ ...m, type: 'italic' as const })),
+    ].sort((a, b) => a.start - b.start);
+
+    let lastIndex = 0;
+    for (const match of allMatches) {
+      if (match.start > lastIndex) {
+        parts.push(text.substring(lastIndex, match.start));
+      }
+      if (match.type === 'code') {
+        parts.push(
+          <code key={partKey++} className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono">
+            {match.content}
+          </code>
+        );
+      } else if (match.type === 'link') {
+        const linkMatch = match as { type: 'link'; start: number; end: number; text: string; url: string };
+        parts.push(
+          <a
+            key={partKey++}
+            href={linkMatch.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 dark:text-primary-400 underline hover:text-primary-700 dark:hover:text-primary-300"
+          >
+            {linkMatch.text}
+          </a>
+        );
+      } else if (match.type === 'bold') {
+        parts.push(<strong key={partKey++}>{match.content}</strong>);
+      } else if (match.type === 'italic') {
+        parts.push(<em key={partKey++}>{match.content}</em>);
+      }
+      lastIndex = match.end;
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? <>{parts}</> : text;
+  };
+
   const formatMarkdown = (text: string): React.ReactNode => {
     const elements: React.ReactNode[] = [];
     let inCodeBlock = false;
     let codeBlockContent: string[] = [];
-    let codeBlockLanguage = '';
+    let codeBlockLanguage: string = '';
     let listItems: string[] = [];
     let inList = false;
     let keyCounter = 0;
 
-    const processLine = (line: string, index: number) => {
+    const processLine = (line: string) => {
       // Code blocks
       if (line.trim().startsWith('```')) {
         if (inCodeBlock) {
@@ -96,7 +204,7 @@ function MarkdownContent({ content }: { content: string }) {
 
       // Lists
       const listMatch = line.match(/^[-*]\s(.+)$/);
-      if (listMatch) {
+      if (listMatch && listMatch[1]) {
         inList = true;
         listItems.push(listMatch[1]);
         return;
@@ -113,106 +221,6 @@ function MarkdownContent({ content }: { content: string }) {
         inList = false;
         return;
       }
-
-      // Process inline formatting (bold, italic, links, code)
-      const processInlineFormatting = (text: string): React.ReactNode => {
-        const parts: React.ReactNode[] = [];
-        let currentIndex = 0;
-        let partKey = 0;
-
-        // Code inline `code`
-        const codeRegex = /`([^`]+)`/g;
-        let codeMatch;
-        const codeMatches: Array<{ start: number; end: number; content: string }> = [];
-        while ((codeMatch = codeRegex.exec(text)) !== null) {
-          codeMatches.push({
-            start: codeMatch.index,
-            end: codeMatch.index + codeMatch[0].length,
-            content: codeMatch[1],
-          });
-        }
-
-        // Links [text](url)
-        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-        const linkMatches: Array<{ start: number; end: number; text: string; url: string }> = [];
-        let linkMatch;
-        while ((linkMatch = linkRegex.exec(text)) !== null) {
-          linkMatches.push({
-            start: linkMatch.index,
-            end: linkMatch.index + linkMatch[0].length,
-            text: linkMatch[1],
-            url: linkMatch[2],
-          });
-        }
-
-        // Bold **text**
-        const boldRegex = /\*\*([^*]+)\*\*/g;
-        const boldMatches: Array<{ start: number; end: number; content: string }> = [];
-        let boldMatch;
-        while ((boldMatch = boldRegex.exec(text)) !== null) {
-          boldMatches.push({
-            start: boldMatch.index,
-            end: boldMatch.index + boldMatch[0].length,
-            content: boldMatch[1],
-          });
-        }
-
-        // Italic *text*
-        const italicRegex = /(?<!\*)\*([^*]+)\*(?!\*)/g;
-        const italicMatches: Array<{ start: number; end: number; content: string }> = [];
-        let italicMatch;
-        while ((italicMatch = italicRegex.exec(text)) !== null) {
-          italicMatches.push({
-            start: italicMatch.index,
-            end: italicMatch.index + italicMatch[0].length,
-            content: italicMatch[1],
-          });
-        }
-
-        // Combine all matches and sort by position
-        const allMatches = [
-          ...codeMatches.map(m => ({ ...m, type: 'code' as const })),
-          ...linkMatches.map(m => ({ ...m, type: 'link' as const })),
-          ...boldMatches.map(m => ({ ...m, type: 'bold' as const })),
-          ...italicMatches.map(m => ({ ...m, type: 'italic' as const })),
-        ].sort((a, b) => a.start - b.start);
-
-        let lastIndex = 0;
-        for (const match of allMatches) {
-          if (match.start > lastIndex) {
-            parts.push(text.substring(lastIndex, match.start));
-          }
-          if (match.type === 'code') {
-            parts.push(
-              <code key={partKey++} className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono">
-                {match.content}
-              </code>
-            );
-          } else if (match.type === 'link') {
-            parts.push(
-              <a
-                key={partKey++}
-                href={match.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 dark:text-primary-400 underline hover:text-primary-700 dark:hover:text-primary-300"
-              >
-                {match.text}
-              </a>
-            );
-          } else if (match.type === 'bold') {
-            parts.push(<strong key={partKey++}>{match.content}</strong>);
-          } else if (match.type === 'italic') {
-            parts.push(<em key={partKey++}>{match.content}</em>);
-          }
-          lastIndex = match.end;
-        }
-        if (lastIndex < text.length) {
-          parts.push(text.substring(lastIndex));
-        }
-
-        return parts.length > 0 ? <>{parts}</> : text;
-      };
 
       // Regular paragraphs
       if (line.trim()) {
@@ -238,14 +246,14 @@ function MarkdownContent({ content }: { content: string }) {
     };
 
     const lines = text.split('\n');
-    lines.forEach((line, index) => processLine(line, index));
+    lines.forEach((line) => processLine(line));
 
     // Close any open list
     if (inList && listItems.length > 0) {
       elements.push(
         <ul key={`list-${keyCounter++}`} className="list-disc ml-6 mb-2 space-y-1">
           {listItems.map((item, i) => (
-            <li key={i} className="text-foreground">{processInlineFormatting(item)}</li>
+            <li key={i} className="text-foreground">{processInlineFormatting(item as string)}</li>
           ))}
         </ul>
       );
@@ -343,9 +351,9 @@ export const LeoChat = memo(function LeoChat({ conversationId: _conversationId, 
               Posez-moi une question ou choisissez une suggestion ci-dessous pour commencer
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-2xl">
-              {QUICK_SUGGESTIONS.map((suggestion, index) => (
+              {QUICK_SUGGESTIONS.map((suggestion) => (
                 <button
-                  key={index}
+                  key={suggestion}
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isLoading}
                   className="text-left px-4 py-3 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed"

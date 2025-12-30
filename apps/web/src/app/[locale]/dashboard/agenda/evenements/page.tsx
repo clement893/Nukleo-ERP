@@ -112,10 +112,11 @@ function EvenementsContent() {
   // Handle create
   const handleCreate = async (eventData: Omit<DayEvent, 'id'>) => {
     try {
+      const eventDate = eventData.date || new Date();
       const createData: CalendarEventCreate = {
         title: eventData.title,
         description: eventData.description,
-        date: eventData.date ? eventData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        date: eventDate.toISOString().split('T')[0],
         end_date: eventData.endDate?.toISOString().split('T')[0],
         time: eventData.time,
         type: eventData.type || 'other',

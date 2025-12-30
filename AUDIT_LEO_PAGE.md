@@ -55,12 +55,14 @@
 
 ## 🎯 Plan d'Amélioration
 
-### Phase 1 : Améliorations Critiques (Priorité Haute)
+### Phase 1 : Améliorations Critiques (Priorité Haute) ✅ COMPLÉTÉE
 1. ✅ Améliorer la mise en page pour utiliser toute la hauteur
 2. ✅ Ajouter PageContainer pour meilleure intégration
-3. ✅ Améliorer le rendu markdown (code blocks, tables)
+3. ✅ Améliorer le rendu markdown (code blocks, tables, inline formatting)
 4. ✅ Ajouter recherche dans les conversations
 5. ✅ Améliorer le design général
+6. ✅ Ajouter fonctionnalité de copie de message
+7. ✅ Améliorer la sidebar avec meilleur design et recherche
 
 ### Phase 2 : Fonctionnalités Essentielles (Priorité Moyenne)
 1. Ajouter copie de message
