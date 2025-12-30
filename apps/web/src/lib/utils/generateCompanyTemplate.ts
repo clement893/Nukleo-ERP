@@ -175,6 +175,7 @@ export function generateCompanyTemplate(): Blob {
     ['- Description (description)'],
     ['- Site web (website, site web, site internet, url)'],
     ['- Logo URL (S3) (logo_url, logo, logo url, image_url)'],
+    ['- Nom fichier logo (logo_filename, nom_fichier_logo, logo filename)'],
     [''],
     ['Contact:'],
     ['- Courriel (email, courriel, e-mail, mail)'],
