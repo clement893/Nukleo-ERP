@@ -1744,9 +1744,15 @@ async def import_contacts(
                     'data': row_data,
                     'error': str(e)
                 })
-                logger.error(f"Error importing contact row {idx + 2}: {str(e)}", exc_info=True)
-                # Continue processing other rows even if one fails
-                continue
+                    logger.error(f"Error importing contact row {idx + 2}: {str(e)}", exc_info=True)
+                    # Continue processing other rows even if one fails
+                    continue
+        except Exception as loop_error:
+            # Catch any exception that stops the loop prematurely
+            add_import_log(import_id, f"❌ ERREUR CRITIQUE: La boucle s'est arrêtée prématurément à la ligne {idx + 2}: {str(loop_error)}", "error", {"error": str(loop_error), "last_processed_row": idx + 2, "total_expected": len(data_list), "stats": stats.copy()})
+            logger.error(f"CRITICAL: Loop stopped prematurely at row {idx + 2}: {loop_error}", exc_info=True)
+            # Re-raise to ensure error is visible
+            raise
         
         # Log completion of loop
         add_import_log(import_id, f"✅ Boucle de traitement terminée: {len(data_list)} ligne(s) dans la liste, {stats['total_processed']} ligne(s) réellement traitée(s)", "info", {"total_rows_in_list": len(data_list), "total_rows_processed": stats['total_processed'], "stats": stats.copy()})
