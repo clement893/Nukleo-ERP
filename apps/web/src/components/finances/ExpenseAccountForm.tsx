@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import DatePicker from '@/components/ui/DatePicker';
 import Button from '@/components/ui/Button';
-import { type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/finances/expenseAccounts';
+import { useToast } from '@/components/ui';
+import { Upload, FileText, X, Loader2 } from 'lucide-react';
+import { type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate, expenseAccountsAPI } from '@/lib/api/finances/expenseAccounts';
 
 interface ExpenseAccountFormProps {
   expenseAccount?: ExpenseAccount | null;
@@ -46,6 +48,103 @@ export default function ExpenseAccountForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast({
+        message: 'Type de fichier non supporté. Utilisez une image (JPEG, PNG, GIF, WebP) ou un PDF.',
+        type: 'error',
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showToast({
+        message: 'Le fichier est trop volumineux. Taille maximale: 10MB',
+        type: 'error',
+      });
+      return;
+    }
+
+    setUploadedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+
+    // Extract data automatically
+    setIsExtracting(true);
+    try {
+      const extracted = await expenseAccountsAPI.extractFromDocument(file);
+      
+      // Update form with extracted data
+      if (extracted.title) {
+        setFormData(prev => ({ ...prev, title: extracted.title || prev.title }));
+      }
+      if (extracted.description) {
+        setFormData(prev => ({ ...prev, description: extracted.description || prev.description }));
+      }
+      if (extracted.total_amount) {
+        setFormData(prev => ({ ...prev, total_amount: extracted.total_amount || prev.total_amount }));
+      }
+      if (extracted.currency) {
+        setFormData(prev => ({ ...prev, currency: extracted.currency || prev.currency }));
+      }
+      if (extracted.expense_period_start) {
+        // Convert ISO date to YYYY-MM-DD format for date input
+        const date = new Date(extracted.expense_period_start);
+        const dateStr = date.toISOString().split('T')[0];
+        setFormData(prev => ({ ...prev, expense_period_start: dateStr }));
+      }
+      if (extracted.expense_period_end) {
+        const date = new Date(extracted.expense_period_end);
+        const dateStr = date.toISOString().split('T')[0];
+        setFormData(prev => ({ ...prev, expense_period_end: dateStr }));
+      }
+      if (extracted.metadata) {
+        setFormData(prev => ({ ...prev, metadata: extracted.metadata }));
+      }
+
+      showToast({
+        message: `Données extraites avec succès (confiance: ${Math.round(extracted.confidence * 100)}%)`,
+        type: 'success',
+      });
+    } catch (error) {
+      console.error('Error extracting expense data:', error);
+      showToast({
+        message: error instanceof Error ? error.message : 'Erreur lors de l\'extraction des données. Vous pouvez remplir le formulaire manuellement.',
+        type: 'error',
+      });
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +189,84 @@ export default function ExpenseAccountForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Upload de document */}
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Importer une facture/reçu (optionnel)
+        </label>
+        <div className="space-y-2">
+          {!uploadedFile ? (
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="expense-document-upload"
+                disabled={isExtracting}
+              />
+              <label
+                htmlFor="expense-document-upload"
+                className="cursor-pointer flex flex-col items-center gap-2"
+              >
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">Extraction en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <div>
+                      <span className="text-sm font-medium text-primary">Cliquez pour téléverser</span>
+                      <span className="text-sm text-muted-foreground block">ou glissez-déposez un fichier</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Images (JPEG, PNG, GIF, WebP) ou PDF • Max 10MB
+                    </span>
+                  </>
+                )}
+              </label>
+            </div>
+          ) : (
+            <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {filePreview ? (
+                  <img
+                    src={filePreview}
+                    alt="Preview"
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium">{uploadedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleRemoveFile}
+                disabled={isExtracting}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Les détails seront extraits automatiquement via OCR + IA
+        </p>
+      </div>
+
       {/* Employé */}
       <div>
         <Select

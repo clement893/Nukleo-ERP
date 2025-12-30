@@ -65,6 +65,22 @@ export interface ExpenseAccountAction {
   rejection_reason?: string | null;
 }
 
+export interface ExpenseExtractionResult {
+  title?: string | null;
+  description?: string | null;
+  total_amount?: string | null;
+  currency?: string | null;
+  expense_period_start?: string | null;
+  expense_period_end?: string | null;
+  metadata?: Record<string, unknown> | null;
+  confidence: number;
+  extracted_items?: Array<{
+    description: string;
+    amount: string;
+    quantity?: number;
+  }> | null;
+}
+
 /**
  * Expense Accounts API client
  */
@@ -228,6 +244,29 @@ export const expenseAccountsAPI = {
     const data = extractApiData<ExpenseAccount>(response);
     if (!data) {
       throw new Error('Failed to set expense account under review: no data returned');
+    }
+    return data;
+  },
+
+  /**
+   * Extract expense account details from an image or PDF using OCR + AI
+   */
+  extractFromDocument: async (file: File): Promise<ExpenseExtractionResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await apiClient.post<ExpenseExtractionResult>(
+      '/v1/finances/compte-depenses/extract-from-document',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    const data = extractApiData<ExpenseExtractionResult>(response);
+    if (!data) {
+      throw new Error('Failed to extract expense data: no data returned');
     }
     return data;
   },

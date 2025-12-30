@@ -3,12 +3,14 @@ Finances - Compte de Dépenses Endpoints
 API endpoints for managing expense accounts
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import datetime
+import base64
+import json
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -21,6 +23,9 @@ from app.schemas.expense_account import (
     ExpenseAccountAction,
 )
 from app.core.logging import logger
+from app.services.openai_service import OpenAIService
+from app.services.s3_service import S3Service
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/finances/compte-depenses", tags=["finances-compte-depenses"])
 
@@ -659,3 +664,176 @@ async def delete_compte_depenses(
     await db.commit()
     
     return None
+
+
+class ExpenseExtractionResponse(BaseModel):
+    """Response model for expense extraction"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    total_amount: Optional[str] = None
+    currency: Optional[str] = None
+    expense_period_start: Optional[str] = None
+    expense_period_end: Optional[str] = None
+    metadata: Optional[dict] = None
+    confidence: float = 0.0
+    extracted_items: Optional[List[dict]] = None
+
+
+@router.post("/extract-from-document", response_model=ExpenseExtractionResponse)
+async def extract_expense_from_document(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Extract expense account details from an image or PDF using OCR + AI
+    
+    Supports:
+    - Images: JPEG, PNG, GIF, WebP
+    - PDFs: PDF files
+    
+    Returns structured data that can be used to pre-fill the expense account form.
+    """
+    # Validate file type
+    allowed_types = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf'
+    ]
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type: {file.content_type}. Supported types: {', '.join(allowed_types)}"
+        )
+    
+    # Check file size (max 10MB)
+    file_content = await file.read()
+    if len(file_content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds 10MB limit"
+        )
+    
+    try:
+        # Check if OpenAI is configured
+        if not OpenAIService.is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="OpenAI service is not configured. Please set OPENAI_API_KEY."
+            )
+        
+        openai_service = OpenAIService()
+        
+        # Prepare image for OpenAI Vision API
+        # For PDFs, we'll need to convert them to images first (simplified: assume image for now)
+        image_base64 = base64.b64encode(file_content).decode('utf-8')
+        image_url = f"data:{file.content_type};base64,{image_base64}"
+        
+        # Create system prompt for extraction
+        system_prompt = """You are an expert at extracting expense/receipt information from images.
+Extract the following information from the document:
+- title: A descriptive title for the expense (e.g., "Restaurant - Le Bistrot")
+- description: Detailed description of the expense
+- total_amount: The total amount as a string (e.g., "125.50")
+- currency: The currency code (EUR, USD, CAD, GBP, etc.)
+- expense_period_start: Start date in YYYY-MM-DD format if available
+- expense_period_end: End date in YYYY-MM-DD format if available
+- extracted_items: List of individual line items if available (each with description, amount, quantity)
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "string or null",
+  "description": "string or null",
+  "total_amount": "string or null",
+  "currency": "string or null",
+  "expense_period_start": "YYYY-MM-DD or null",
+  "expense_period_end": "YYYY-MM-DD or null",
+  "extracted_items": [{"description": "string", "amount": "string", "quantity": "number"}],
+  "confidence": 0.0-1.0
+}
+
+If information is not found, use null. Be precise with amounts and dates."""
+        
+        # Use OpenAI Vision API
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Extract all expense information from this document. Return only valid JSON."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_url
+                        }
+                    }
+                ]
+            }
+        ]
+        
+        # Call OpenAI with vision model
+        response = await openai_service.client.chat.completions.create(
+            model="gpt-4o",  # Use vision-capable model
+            messages=messages,
+            max_tokens=2000,
+            temperature=0.1,  # Low temperature for accuracy
+        )
+        
+        content = response.choices[0].message.content
+        
+        # Parse JSON response
+        try:
+            # Extract JSON from markdown code blocks if present
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            
+            extracted_data = json.loads(content)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse OpenAI response as JSON: {e}")
+            logger.error(f"Response content: {content}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to parse extracted data. Please try again or enter manually."
+            )
+        
+        # Validate and structure response
+        result = ExpenseExtractionResponse(
+            title=extracted_data.get("title"),
+            description=extracted_data.get("description"),
+            total_amount=extracted_data.get("total_amount"),
+            currency=extracted_data.get("currency", "EUR"),
+            expense_period_start=extracted_data.get("expense_period_start"),
+            expense_period_end=extracted_data.get("expense_period_end"),
+            extracted_items=extracted_data.get("extracted_items"),
+            confidence=extracted_data.get("confidence", 0.5),
+            metadata={
+                "extraction_method": "openai_vision",
+                "original_filename": file.filename,
+                "file_type": file.content_type,
+                "extracted_items": extracted_data.get("extracted_items"),
+            }
+        )
+        
+        logger.info(f"Successfully extracted expense data from {file.filename}")
+        return result
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error extracting expense data: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to extract expense data: {str(e)}"
+        )
