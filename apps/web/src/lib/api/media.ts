@@ -92,7 +92,19 @@ export const mediaAPI = {
   /**
    * Delete a media file
    */
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: number | string): Promise<void> => {
     await apiClient.delete(`/v1/media/${id}`);
+  },
+
+  /**
+   * Delete all media files (superadmin only)
+   */
+  deleteAll: async (): Promise<{ success: boolean; deleted_count: number; message: string }> => {
+    const response = await apiClient.delete<{ success: boolean; deleted_count: number; message: string }>('/v1/media');
+    const data = extractApiData<{ success: boolean; deleted_count: number; message: string }>(response);
+    if (!data) {
+      throw new Error('Failed to delete all media files: no data returned');
+    }
+    return data;
   },
 };

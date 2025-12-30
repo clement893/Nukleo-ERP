@@ -39,8 +39,7 @@ import {
   Receipt,
   FileBarChart,
   Wallet,
-  MessageSquare,
-  FileText
+  MessageSquare
 } from 'lucide-react';
 
 export interface NavigationItem {

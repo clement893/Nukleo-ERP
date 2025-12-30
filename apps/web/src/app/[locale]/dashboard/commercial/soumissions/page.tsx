@@ -14,7 +14,7 @@ import { quotesAPI, type Quote, type QuoteCreate } from '@/lib/api/quotes';
 import { submissionsAPI, type Submission, type SubmissionCreate } from '@/lib/api/submissions';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Plus, FileText, FileCheck, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, FileText, FileCheck, Eye, Trash2 } from 'lucide-react';
 import type { DropdownItem } from '@/components/ui/Dropdown';
 import MotionDiv from '@/components/motion/MotionDiv';
 
@@ -30,8 +30,6 @@ function SoumissionsContent() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateQuoteModal, setShowCreateQuoteModal] = useState(false);
   const [showCreateSubmissionModal, setShowCreateSubmissionModal] = useState(false);
-  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
   // Load quotes
   const loadQuotes = async () => {
@@ -375,7 +373,7 @@ function SoumissionsContent() {
               <Loading />
             </div>
           ) : activeTab === 'quotes' ? (
-            <DataTable
+            <DataTable<Quote>
               data={quotes}
               columns={quoteColumns}
               onRowClick={(quote) => {
@@ -404,7 +402,7 @@ function SoumissionsContent() {
               }}
             />
           ) : (
-            <DataTable
+            <DataTable<Submission>
               data={submissions}
               columns={submissionColumns}
               onRowClick={(submission) => {

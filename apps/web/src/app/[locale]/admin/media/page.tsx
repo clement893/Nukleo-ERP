@@ -13,16 +13,19 @@ import { useAuthStore } from '@/lib/store';
 import { MediaLibrary } from '@/components/content';
 import type { MediaItem } from '@/components/content';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
+import { Loading, Alert, Button, Card } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
 import { handleApiError } from '@/lib/errors';
 import { mediaAPI } from '@/lib/api/media';
+import { useToast } from '@/components/ui';
+import { Trash2 } from 'lucide-react';
 
 export default function AdminMediaLibraryPage() {
   const router = useRouter();
   const t = useTranslations('content.media');
   const { isAuthenticated } = useAuthStore();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -41,8 +44,9 @@ export default function AdminMediaLibraryPage() {
       setIsLoading(true);
       setError(null);
       
-      // Fetch all media from S3 bucket
-      const mediaFiles = await mediaAPI.list(0, 1000, undefined, true);
+      // Fetch media from S3 bucket with reasonable limit to avoid freezing
+      // Load in batches to prevent UI freezing
+      const mediaFiles = await mediaAPI.list(0, 500, undefined, true);
       
       // Convert API Media to MediaItem format
       const convertedMedia: MediaItem[] = mediaFiles.map((file) => {
@@ -141,6 +145,62 @@ export default function AdminMediaLibraryPage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    const count = media.length;
+    if (count === 0) {
+      showToast({
+        message: 'Aucun média à supprimer',
+        type: 'info',
+      });
+      return;
+    }
+
+    const confirmed = confirm(
+      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUS les ${count} média(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Double confirmation
+    const doubleConfirmed = confirm(
+      '⚠️ DERNIÈRE CONFIRMATION: Tous les médias seront définitivement supprimés. Tapez OK pour confirmer.'
+    );
+
+    if (!doubleConfirmed) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const result = await mediaAPI.deleteAll();
+      
+      // Clear media list
+      setMedia([]);
+      
+      showToast({
+        message: result.message || `${result.deleted_count} média(x) supprimé(s) avec succès`,
+        type: 'success',
+      });
+      
+      // Reload media list
+      await loadMedia();
+    } catch (error: unknown) {
+      logger.error('Failed to delete all media', error instanceof Error ? error : new Error(String(error)));
+      const appError = handleApiError(error);
+      setError(appError.message || 'Erreur lors de la suppression des médias');
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression des médias',
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <ProtectedRoute requireAdmin>
@@ -172,6 +232,26 @@ export default function AdminMediaLibraryPage() {
               {error}
             </Alert>
           </div>
+        )}
+
+        {/* Delete All Button */}
+        {media.length > 0 && (
+          <Card className="mt-6 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {media.length} média{media.length > 1 ? 'x' : ''} au total
+              </div>
+              <Button
+                variant="danger"
+                onClick={handleDeleteAll}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Supprimer tous les médias
+              </Button>
+            </div>
+          </Card>
         )}
 
         <div className="mt-8">

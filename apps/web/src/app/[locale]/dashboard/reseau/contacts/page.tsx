@@ -475,7 +475,7 @@ function ContactsContent() {
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
       <PageHeader
         title="Contacts"
-        description="Gérez vos contacts commerciaux"
+        description={`Gérez vos contacts commerciaux${contacts.length > 0 ? ` - ${contacts.length} contact${contacts.length > 1 ? 's' : ''} au total` : ''}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Module Réseau', href: '/dashboard/reseau' },
@@ -486,6 +486,24 @@ function ContactsContent() {
       {/* Toolbar */}
       <Card>
         <div className="space-y-3">
+          {/* Contact count */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {filteredContacts.length > 0 ? (
+                <>
+                  <span className="font-medium text-foreground">{filteredContacts.length}</span>
+                  {filteredContacts.length !== contacts.length && (
+                    <> sur <span className="font-medium text-foreground">{contacts.length}</span></>
+                  )}
+                  {' '}contact{filteredContacts.length > 1 ? 's' : ''}
+                  {(filterCity || filterPhone || filterCircle || filterCompany) && ' (filtré' + (filteredContacts.length !== contacts.length ? 's' : '') + ')'}
+                </>
+              ) : (
+                <>Aucun contact</>
+              )}
+            </div>
+          </div>
+          
           {/* Top row: Filters, View toggle, Actions */}
           <div className="flex flex-col gap-3">
             {/* Filters row */}

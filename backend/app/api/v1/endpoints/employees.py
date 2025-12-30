@@ -109,9 +109,9 @@ async def list_employees(
 async def link_employee_to_user(
     request: Request,
     employee_id: str,
-    user_id: int = Query(..., description="User ID to link"),
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(require_superadmin)],
+    user_id: int = Query(..., description="User ID to link"),
 ) -> EmployeeResponse:
     """
     Link an employee to a user

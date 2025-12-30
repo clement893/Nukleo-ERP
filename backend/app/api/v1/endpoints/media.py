@@ -367,12 +367,82 @@ async def delete_media(
             event_type=SecurityEventType.DATA_DELETED,
             description=f"Deleted media file {media_id}",
             user_id=current_user.id,
-            ip_address=request.client.host if request.client else None,
+            ip_address=request.client.host if request else None,
         )
     except Exception:
         pass
+
+
+@router.delete("/media", status_code=status.HTTP_200_OK, tags=["media"])
+async def delete_all_media(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete all media files (superadmin only)"""
+    from app.dependencies import is_superadmin
     
-    return None
+    # Only superadmin can delete all media
+    is_admin = await is_superadmin(current_user, db)
+    if not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only superadmin can delete all media files"
+        )
+    
+    try:
+        # Get all files
+        query = select(FileModel)
+        query = apply_tenant_scope(query, FileModel)
+        
+        result = await db.execute(query)
+        files = result.scalars().all()
+        
+        deleted_count = 0
+        s3_service = S3Service() if S3Service.is_configured() else None
+        
+        # Delete each file
+        for file in files:
+            try:
+                # Delete from S3 if configured
+                if s3_service and file.file_key:
+                    try:
+                        s3_service.delete_file(file.file_key)
+                    except Exception as e:
+                        logger.warning(f"Failed to delete file from S3: {file.file_key}, error: {e}")
+                
+                await db.delete(file)
+                deleted_count += 1
+            except Exception as e:
+                logger.error(f"Failed to delete file {file.id}: {e}", exc_info=True)
+                continue
+        
+        await db.commit()
+        
+        # Log deletion
+        try:
+            await SecurityAuditLogger.log_event(
+                db=db,
+                event_type=SecurityEventType.DATA_DELETED,
+                description=f"Deleted all media files ({deleted_count} files)",
+                user_id=current_user.id,
+                ip_address=request.client.host if request else None,
+            )
+        except Exception:
+            pass
+        
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            content={"success": True, "deleted_count": deleted_count, "message": f"Deleted {deleted_count} media files"},
+            status_code=200
+        )
+    except Exception as e:
+        logger.error(f"Error deleting all media: {e}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete all media: {str(e)}"
+        )
 
 
 class MediaValidationRequest(BaseModel):
