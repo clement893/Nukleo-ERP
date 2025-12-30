@@ -59,6 +59,8 @@ export default function ContactAvatar({
       return;
     }
 
+    let urlToUse = contact.photo_url;
+
     // Check localStorage cache (only in browser)
     if (typeof window !== 'undefined') {
       const cacheKey = `photo_${contact.id}`;
@@ -69,9 +71,7 @@ export default function ContactAvatar({
           const { url, expiresAt } = JSON.parse(cached);
           // If cache is still valid (more than 1 day remaining), use it
           if (expiresAt > Date.now() + 86400000) {
-            setCurrentPhotoUrl(url);
-            // Don't set isLoading to false here - let the image load handler do it
-            return;
+            urlToUse = url;
           } else {
             // Cache expired, remove it
             localStorage.removeItem(cacheKey);
@@ -83,10 +83,33 @@ export default function ContactAvatar({
       }
     }
 
-    // Set the photo URL and allow image to load
-    setCurrentPhotoUrl(contact.photo_url);
-    setIsLoading(true); // Reset loading state when URL changes
-    setImageError(false); // Reset error state
+    // Set the photo URL and check if image is already loaded
+    setCurrentPhotoUrl(urlToUse);
+    setImageError(false);
+    
+    // Check if image is already loaded in browser cache
+    if (typeof window !== 'undefined' && urlToUse) {
+      const img = new Image();
+      img.onload = () => {
+        // Image is already loaded or loads quickly
+        setIsLoading(false);
+      };
+      img.onerror = () => {
+        // Image failed to load
+        setIsLoading(false);
+        setImageError(true);
+      };
+      img.src = urlToUse;
+      
+      // If image is already complete (cached), set loading to false immediately
+      if (img.complete) {
+        setIsLoading(false);
+      } else {
+        setIsLoading(true);
+      }
+    } else {
+      setIsLoading(true);
+    }
   }, [contact.id, contact.photo_url]);
 
   // Cache successful loads

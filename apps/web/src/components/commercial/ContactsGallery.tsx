@@ -38,6 +38,8 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
       return;
     }
 
+    let urlToUse = contact.photo_url;
+
     // Check localStorage cache (only in browser)
     if (typeof window !== 'undefined') {
       const cacheKey = `photo_${contact.id}`;
@@ -47,10 +49,7 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
         try {
           const { url, expiresAt } = JSON.parse(cached);
           if (expiresAt > Date.now() + 86400000) {
-            setCurrentPhotoUrl(url);
-            setIsLoading(true); // Allow image to load
-            setImageError(false);
-            return;
+            urlToUse = url;
           } else {
             localStorage.removeItem(cacheKey);
           }
@@ -60,10 +59,31 @@ function GalleryPhoto({ contact }: { contact: Contact }) {
       }
     }
 
-    // Set the photo URL and allow image to load
-    setCurrentPhotoUrl(contact.photo_url);
-    setIsLoading(true); // Reset loading state when URL changes
-    setImageError(false); // Reset error state
+    // Set the photo URL and check if image is already loaded
+    setCurrentPhotoUrl(urlToUse);
+    setImageError(false);
+    
+    // Check if image is already loaded in browser cache
+    if (typeof window !== 'undefined' && urlToUse) {
+      const img = new Image();
+      img.onload = () => {
+        setIsLoading(false);
+      };
+      img.onerror = () => {
+        setIsLoading(false);
+        setImageError(true);
+      };
+      img.src = urlToUse;
+      
+      // If image is already complete (cached), set loading to false immediately
+      if (img.complete) {
+        setIsLoading(false);
+      } else {
+        setIsLoading(true);
+      }
+    } else {
+      setIsLoading(true);
+    }
   }, [contact.id, contact.photo_url]);
 
   const handleImageLoad = () => {
