@@ -153,9 +153,6 @@ async def get_project(
     return ProjectSchema(**project_dict)
 
 
-@router.post("/", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
-@rate_limit_decorator("30/hour")
-@invalidate_cache_pattern("projects:*")
 async def find_company_by_name(
     company_name: str,
     db: AsyncSession,
@@ -185,6 +182,9 @@ async def find_company_by_name(
     return None
 
 
+@router.post("/", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
+@rate_limit_decorator("30/hour")
+@invalidate_cache_pattern("projects:*")
 async def create_project(
     request: Request,
     project_data: ProjectCreate,

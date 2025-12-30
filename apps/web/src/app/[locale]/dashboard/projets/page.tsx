@@ -155,30 +155,6 @@ function ProjectsContent() {
     }
   };
 
-  // Handle delete with React Query mutation
-  const _handleDelete = async (projectId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
-      return;
-    }
-
-    try {
-      await deleteProjectMutation.mutateAsync(projectId);
-      if (selectedProject?.id === projectId) {
-        setSelectedProject(null);
-      }
-      showToast({
-        message: 'Projet supprimé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression du projet',
-        type: 'error',
-      });
-    }
-  };
-
   // Handle delete all projects with React Query mutation
   const handleDeleteAll = async () => {
     const count = projects.length;
@@ -295,12 +271,6 @@ function ProjectsContent() {
   const openDetailPage = (project: Project) => {
     const locale = window.location.pathname.split('/')[1] || 'fr';
     router.push(`/${locale}/dashboard/projets/${project.id}`);
-  };
-
-  // Open edit modal
-  const _openEditModal = (project: Project) => {
-    setSelectedProject(project);
-    setShowEditModal(true);
   };
 
   // Table columns
