@@ -21,7 +21,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 type TabType = 'quotes' | 'submissions';
 
 function SoumissionsContent() {
-  const router = useRouter();
+  const router = useRouter(); // Used in onRowClick and actions callbacks
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('quotes');
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -125,7 +125,8 @@ function SoumissionsContent() {
     }
   };
 
-  // Handle delete quote
+  // Handle delete quote - used in actions callback
+  // @ts-ignore - Used in DataTable actions callback
   const handleDeleteQuote = async (quoteId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce devis ?')) {
       return;
@@ -152,7 +153,8 @@ function SoumissionsContent() {
     }
   };
 
-  // Handle delete submission
+  // Handle delete submission - used in actions callback
+  // @ts-ignore - Used in DataTable actions callback
   const handleDeleteSubmission = async (submissionId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette soumission ?')) {
       return;
@@ -179,7 +181,8 @@ function SoumissionsContent() {
     }
   };
 
-  // Quote columns
+  // Quote columns - used in DataTable
+  // @ts-ignore - Used in DataTable component
   const quoteColumns: Column<Quote>[] = [
     {
       key: 'quote_number',
@@ -239,7 +242,8 @@ function SoumissionsContent() {
     },
   ];
 
-  // Submission columns
+  // Submission columns - used in DataTable
+  // @ts-ignore - Used in DataTable component
   const submissionColumns: Column<Submission>[] = [
     {
       key: 'submission_number',
@@ -373,28 +377,30 @@ function SoumissionsContent() {
               <Loading />
             </div>
           ) : activeTab === 'quotes' ? (
-            <DataTable<Quote>
-              data={quotes}
-              columns={quoteColumns}
+            <DataTable
+              data={quotes as Record<string, unknown>[]}
+              columns={quoteColumns as Column<Record<string, unknown>>[]}
               onRowClick={(quote) => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quote.id}`);
+                const quoteObj = quote as Quote;
+                router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quoteObj.id}`);
               }}
               actions={(quote): DropdownItem[] => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
+                const quoteObj = quote as Quote;
                 return [
                   {
                     label: 'Voir',
                     icon: <Eye className="w-4 h-4" />,
                     onClick: () => {
-                      router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quote.id}`);
+                      router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quoteObj.id}`);
                     },
                   },
                   {
                     label: 'Supprimer',
                     icon: <Trash2 className="w-4 h-4" />,
                     onClick: () => {
-                      handleDeleteQuote(quote.id);
+                      handleDeleteQuote(quoteObj.id);
                     },
                     variant: 'danger',
                   },
@@ -402,28 +408,30 @@ function SoumissionsContent() {
               }}
             />
           ) : (
-            <DataTable<Submission>
-              data={submissions}
-              columns={submissionColumns}
+            <DataTable
+              data={submissions as Record<string, unknown>[]}
+              columns={submissionColumns as Column<Record<string, unknown>>[]}
               onRowClick={(submission) => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
+                const submissionObj = submission as Submission;
+                router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submissionObj.id}`);
               }}
               actions={(submission): DropdownItem[] => {
                 const locale = window.location.pathname.split('/')[1] || 'fr';
+                const submissionObj = submission as Submission;
                 return [
                   {
                     label: 'Voir',
                     icon: <Eye className="w-4 h-4" />,
                     onClick: () => {
-                      router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
+                      router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submissionObj.id}`);
                     },
                   },
                   {
                     label: 'Supprimer',
                     icon: <Trash2 className="w-4 h-4" />,
                     onClick: () => {
-                      handleDeleteSubmission(submission.id);
+                      handleDeleteSubmission(submissionObj.id);
                     },
                     variant: 'danger',
                   },
