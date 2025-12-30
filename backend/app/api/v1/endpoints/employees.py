@@ -33,8 +33,13 @@ class EmployeeResponse(BaseModel):
     first_name: str
     last_name: str
     email: str
+    phone: Optional[str] = None
     job_title: Optional[str] = None
     department: Optional[str] = None
+    hire_date: Optional[str] = None  # ISO date string
+    birth_date: Optional[str] = None  # ISO date string
+    photo_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
     user_id: Optional[str] = None
     
     class Config:
@@ -91,8 +96,13 @@ async def list_employees(
                 first_name=emp.first_name,
                 last_name=emp.last_name,
                 email=emp.email,
+                phone=emp.phone,
                 job_title=emp.job_title,
                 department=emp.department,
+                hire_date=emp.hire_date.isoformat() if emp.hire_date else None,
+                birth_date=emp.birth_date.isoformat() if emp.birth_date else None,
+                photo_url=emp.photo_url,
+                linkedin_url=emp.linkedin_url,
                 user_id=str(uuid_to_user_id(emp.user_id)) if emp.user_id else None,
             )
             for emp in employees
@@ -206,8 +216,13 @@ async def link_employee_to_user(
             first_name=employee.first_name,
             last_name=employee.last_name,
             email=employee.email,
+            phone=employee.phone,
             job_title=employee.job_title,
             department=employee.department,
+            hire_date=employee.hire_date.isoformat() if employee.hire_date else None,
+            birth_date=employee.birth_date.isoformat() if employee.birth_date else None,
+            photo_url=employee.photo_url,
+            linkedin_url=employee.linkedin_url,
             user_id=str(uuid_to_user_id(employee.user_id)) if employee.user_id else None,
         )
     except ValueError:

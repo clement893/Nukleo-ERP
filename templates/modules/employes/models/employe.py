@@ -42,6 +42,9 @@ class Employee(Base):
     last_name: str = Column(String(100), nullable=False)
     email: str = Column(String(255), nullable=False, unique=True, index=True)
     phone: Optional[str] = Column(String(20), nullable=True)
+    photo_url: Optional[str] = Column(String(500), nullable=True)  # URL de la photo
+    birth_date: Optional[date] = Column(Date, nullable=True)  # Date d'anniversaire
+    linkedin_url: Optional[str] = Column(String(500), nullable=True)  # URL LinkedIn
     
     # Informations professionnelles
     employee_number: Optional[str] = Column(String(50), nullable=True, unique=True, index=True)

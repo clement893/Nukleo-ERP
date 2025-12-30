@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './client';
+import { extractApiData } from './utils';
 import type { ApiResponse } from '@modele/types';
 
 export interface Employee {
@@ -11,8 +12,13 @@ export interface Employee {
   first_name: string;
   last_name: string;
   email: string;
+  phone?: string;
   job_title?: string;
   department?: string;
+  hire_date?: string; // ISO date string
+  birth_date?: string; // ISO date string
+  photo_url?: string;
+  linkedin_url?: string;
   user_id?: string;
 }
 
@@ -20,10 +26,12 @@ export const employeesAPI = {
   /**
    * List all employees
    */
-  list: async (skip = 0, limit = 100): Promise<ApiResponse<Employee[]>> => {
-    return apiClient.get<Employee[]>('/v1/employees', {
+  list: async (skip = 0, limit = 100): Promise<Employee[]> => {
+    const response = await apiClient.get<Employee[]>('/v1/employees', {
       params: { skip, limit },
     });
+    const data = extractApiData<Employee[]>(response);
+    return Array.isArray(data) ? data : [];
   },
 
   /**
