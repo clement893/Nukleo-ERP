@@ -258,28 +258,56 @@ function DataTable<T extends Record<string, unknown>>({
 
       {/* Infinite scroll trigger */}
       {infiniteScroll && hasMore && (
-        <div className="flex justify-center py-4">
-          {loadingMore ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600 dark:border-primary-500"></div>
-              <span className="text-sm">Chargement...</span>
-            </div>
-          ) : (
-            <div ref={(el) => {
-              if (el && onLoadMore) {
-                const observer = new IntersectionObserver(
-                  (entries) => {
-                    if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
-                      onLoadMore();
-                    }
-                  },
-                  { threshold: 0.1 }
-                );
-                observer.observe(el);
-                return () => observer.disconnect();
-              }
-            }} className="h-4" />
-          )}
+        <InfiniteScrollTrigger
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={onLoadMore}
+        />
+      )}
+    </div>
+  );
+}
+
+// Infinite scroll trigger component
+function InfiniteScrollTrigger({
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: {
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore?: () => void;
+}) {
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loadingMore && onLoadMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, onLoadMore]);
+
+  return (
+    <div ref={observerTarget} className="flex justify-center py-4">
+      {loadingMore && (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600 dark:border-primary-500"></div>
+          <span className="text-sm">Chargement...</span>
         </div>
       )}
     </div>
