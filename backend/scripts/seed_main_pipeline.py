@@ -42,24 +42,6 @@ async def seed_main_pipeline():
         )
         existing_pipeline = result.scalar_one_or_none()
         
-        if existing_pipeline:
-            # Count stages explicitly to avoid lazy loading issues
-            stages_result = await session.execute(
-                select(PipelineStage).where(PipelineStage.pipeline_id == existing_pipeline.id)
-            )
-            stages = stages_result.scalars().all()
-            print(f"✅ MAIN pipeline already exists (ID: {existing_pipeline.id})")
-            print(f"   Stages: {len(stages)}")
-            return existing_pipeline
-
-        # Get first user as creator (or create a default one)
-        result = await session.execute(select(User).limit(1))
-        first_user = result.scalar_one_or_none()
-        
-        if not first_user:
-            print("❌ No users found. Please create a user first.")
-            return None
-
         # Define stages with their order and colors
         stages_data = [
             {"name": "00 - Idées de projet", "order": 0, "color": "#94A3B8"},
@@ -78,6 +60,66 @@ async def seed_main_pipeline():
             {"name": "Renouvellement à venir", "order": 13, "color": "#10B981"},
             {"name": "Renouvellements potentiels", "order": 14, "color": "#10B981"},
         ]
+
+        if existing_pipeline:
+            # Count stages explicitly to avoid lazy loading issues
+            stages_result = await session.execute(
+                select(PipelineStage).where(PipelineStage.pipeline_id == existing_pipeline.id)
+            )
+            existing_stages = stages_result.scalars().all()
+            existing_stage_names = {stage.name for stage in existing_stages}
+            
+            print(f"✅ MAIN pipeline already exists (ID: {existing_pipeline.id})")
+            print(f"   Existing stages: {len(existing_stages)}")
+            
+            # Check which stages are missing
+            missing_stages = [
+                stage_data for stage_data in stages_data
+                if stage_data["name"] not in existing_stage_names
+            ]
+            
+            if missing_stages:
+                print(f"   ⚠️  Missing {len(missing_stages)} stages, adding them...")
+                for stage_data in missing_stages:
+                    stage = PipelineStage(
+                        pipeline_id=existing_pipeline.id,
+                        name=stage_data["name"],
+                        description=f"Étape: {stage_data['name']}",
+                        color=stage_data["color"],
+                        order=stage_data["order"],
+                    )
+                    session.add(stage)
+                
+                await session.commit()
+                
+                # Reload stages
+                stages_result = await session.execute(
+                    select(PipelineStage).where(PipelineStage.pipeline_id == existing_pipeline.id)
+                )
+                all_stages = stages_result.scalars().all()
+                
+                print(f"   ✅ Added {len(missing_stages)} missing stages")
+                print(f"   Total stages now: {len(all_stages)}")
+                print()
+                print("📋 All stages:")
+                for stage in sorted(all_stages, key=lambda s: s.order):
+                    print(f"   {stage.order:2d}. {stage.name} ({stage.color})")
+            else:
+                print(f"   ✅ All {len(existing_stages)} stages are present")
+                print()
+                print("📋 Existing stages:")
+                for stage in sorted(existing_stages, key=lambda s: s.order):
+                    print(f"   {stage.order:2d}. {stage.name} ({stage.color})")
+            
+            return existing_pipeline
+
+        # Get first user as creator (or create a default one)
+        result = await session.execute(select(User).limit(1))
+        first_user = result.scalar_one_or_none()
+        
+        if not first_user:
+            print("❌ No users found. Please create a user first.")
+            return None
 
         # Create MAIN pipeline
         pipeline = Pipeline(

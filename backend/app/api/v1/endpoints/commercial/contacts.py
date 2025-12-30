@@ -1747,8 +1747,13 @@ async def import_contacts(
                 continue
         
         # Log completion of loop
-        add_import_log(import_id, f"✅ Boucle de traitement terminée: {len(result['data'])} ligne(s) traitée(s)", "info", {"total_rows_in_loop": len(result['data']), "stats": stats.copy()})
-        logger.info(f"Import loop completed: processed {len(result['data'])} rows, created_contacts={len(created_contacts)}, stats: {stats}")
+        add_import_log(import_id, f"✅ Boucle de traitement terminée: {len(data_list)} ligne(s) dans la liste, {stats['total_processed']} ligne(s) réellement traitée(s)", "info", {"total_rows_in_list": len(data_list), "total_rows_processed": stats['total_processed'], "stats": stats.copy()})
+        logger.info(f"Import loop completed: {len(data_list)} rows in list, {stats['total_processed']} rows actually processed, created_contacts={len(created_contacts)}, stats: {stats}")
+        
+        # Check if loop stopped prematurely
+        if len(data_list) > stats['total_processed']:
+            add_import_log(import_id, f"⚠️ ATTENTION: La boucle s'est arrêtée prématurément ! {len(data_list) - stats['total_processed']} ligne(s) n'ont pas été traitées.", "warning", {"expected": len(data_list), "processed": stats['total_processed'], "missing": len(data_list) - stats['total_processed']})
+            logger.warning(f"Loop stopped prematurely: expected {len(data_list)} rows, but only processed {stats['total_processed']}")
         
         # Log final statistics
         add_import_log(import_id, f"📊 Statistiques du traitement: {stats['total_processed']} lignes traitées, {stats['created_new']} nouveaux contacts, {stats['matched_existing']} contacts mis à jour, {stats['skipped_missing_firstname']} sans prénom, {stats['skipped_missing_lastname']} sans nom, {stats['errors']} erreurs", "info", stats)
