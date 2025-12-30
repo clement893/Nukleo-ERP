@@ -145,6 +145,9 @@ export type {
   CalendarEventUpdate as AgendaEventUpdateType,
 } from './agenda-unified';
 
+// Re-export content module API (unified)
+export { contentAPI, pagesAPI, mediaAPI, formsAPI, menusAPI } from './content';
+
 // Re-export Leo module API (unified)
 export { leoAPI, leoAgentAPI, leoDocumentationAPI } from './leo';
 export type {
