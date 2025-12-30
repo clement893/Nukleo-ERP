@@ -1364,13 +1364,13 @@ async def import_contacts(
                             if excel_photo_filename:
                                 excel_photo_normalized = normalize_filename(excel_photo_filename)
                                 if excel_photo_filename.lower() in photos_dict:
-                                pattern_to_use = excel_photo_filename.lower()
-                            elif excel_photo_normalized in photos_dict:
-                                pattern_to_use = excel_photo_normalized
-                            else:
-                                pattern_to_use = None
-                            
-                            if pattern_to_use and pattern_to_use in photos_dict:
+                                    pattern_to_use = excel_photo_filename.lower()
+                                elif excel_photo_normalized in photos_dict:
+                                    pattern_to_use = excel_photo_normalized
+                                else:
+                                    pattern_to_use = None
+                                
+                                if pattern_to_use and pattern_to_use in photos_dict:
                                 try:
                                     photo_content = photos_dict[pattern_to_use]
                                     logger.info(f"Found photo from Excel column '{excel_photo_filename}' -> '{pattern_to_use}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
@@ -1442,7 +1442,7 @@ async def import_contacts(
                                         continue
                                     
                                     if pattern_to_use in photos_dict:
-                                    try:
+                                        try:
                                         # Upload photo to S3
                                         photo_content = photos_dict[pattern_to_use]
                                         logger.info(f"Found matching photo '{pattern}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
