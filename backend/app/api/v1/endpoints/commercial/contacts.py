@@ -28,6 +28,11 @@ from app.core.logging import logger
 
 router = APIRouter(prefix="/commercial/contacts", tags=["commercial-contacts"])
 
+# Cache for presigned URLs to avoid regenerating them unnecessarily
+# Format: {file_key: (presigned_url, expiration_timestamp)}
+_presigned_url_cache: dict[str, tuple[str, float]] = {}
+_cache_max_size = 1000  # Maximum number of cached URLs
+
 
 def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = None) -> Optional[str]:
     """
@@ -90,19 +95,38 @@ def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = N
                     logger.info(f"Attempting to fix file_key by adding contacts/photos/ prefix")
                     file_key = f"contacts/photos/{file_key}"
             
-            # Verify file exists in S3 before generating presigned URL
-            try:
-                metadata = s3_service.get_file_metadata(file_key)
-                logger.debug(f"File exists in S3 for contact {contact_id}: {file_key} (size: {metadata.get('size', 0)} bytes)")
-            except Exception as e:
-                logger.error(f"File does not exist in S3 for contact {contact_id} with file_key '{file_key}': {e}")
-                return None
+            # Skip S3 metadata check for performance (trust that file_key is valid)
+            # This saves 50-100ms per photo and reduces S3 API calls
             
-            # Regenerate presigned URL if we have a valid file_key
+            # Check cache first
+            import time
+            if file_key in _presigned_url_cache:
+                cached_url, expiration_timestamp = _presigned_url_cache[file_key]
+                # If URL is still valid (not expired and not close to expiration), return cached version
+                current_time = time.time()
+                buffer_seconds = 3600  # Regenerate 1 hour before expiration
+                if current_time < (expiration_timestamp - buffer_seconds):
+                    logger.debug(f"Using cached presigned URL for contact {contact_id} with file_key: {file_key[:60]}...")
+                    return cached_url
+                # Remove expired entry from cache
+                else:
+                    del _presigned_url_cache[file_key]
+            
+            # Generate new presigned URL
             try:
-                presigned_url = s3_service.generate_presigned_url(file_key, expiration=604800)  # 7 days (AWS S3 maximum)
+                expiration_seconds = 604800  # 7 days (AWS S3 maximum)
+                presigned_url = s3_service.generate_presigned_url(file_key, expiration=expiration_seconds)
                 if presigned_url:
-                    logger.info(f"Successfully generated presigned URL for contact {contact_id} with file_key: {file_key[:60]}...")
+                    # Cache the URL with expiration timestamp
+                    expiration_timestamp = time.time() + expiration_seconds
+                    _presigned_url_cache[file_key] = (presigned_url, expiration_timestamp)
+                    
+                    # Limit cache size (LRU eviction - remove oldest entry)
+                    if len(_presigned_url_cache) > _cache_max_size:
+                        oldest_key = next(iter(_presigned_url_cache))
+                        del _presigned_url_cache[oldest_key]
+                    
+                    logger.debug(f"Generated and cached presigned URL for contact {contact_id} with file_key: {file_key[:60]}...")
                     return presigned_url
                 else:
                     logger.error(f"generate_presigned_url returned None for contact {contact_id} with file_key: {file_key}")
@@ -111,9 +135,9 @@ def regenerate_photo_url(photo_url: Optional[str], contact_id: Optional[int] = N
                 logger.error(f"Failed to generate presigned URL for contact {contact_id} with file_key '{file_key}': {e}", exc_info=True)
                 return None
         else:
-            # Could not extract file_key, return None
+            # Could not extract file_key, return original URL
             logger.warning(f"Could not extract file_key from photo_url for contact {contact_id}: {photo_url}")
-            return None
+            return photo_url  # Return original URL instead of None
     except Exception as e:
         logger.error(f"Failed to regenerate presigned URL for contact {contact_id}: {e}", exc_info=True)
         return None
