@@ -18,7 +18,7 @@ interface ContactsGalleryProps {
 // Component for gallery photo with error handling and retry
 function GalleryPhoto({ contact }: { contact: Contact }) {
   const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!!contact.photo_url); // Only loading if photo_url exists
   const [retryCount, setRetryCount] = useState(0);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(contact.photo_url);
 
