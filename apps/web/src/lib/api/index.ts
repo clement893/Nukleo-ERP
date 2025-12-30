@@ -35,6 +35,17 @@ export { clientPortalAPI } from './client-portal';
 // Re-export ERP portal API
 export { erpPortalAPI } from './erp-portal';
 
+// Re-export ERP module API (unified)
+export { erpAPI } from './erp';
+export type {
+  ERPDashboardStats as ERPDashboardStatsType,
+  ERPInvoice as ERPInvoiceType,
+  ERPClient as ERPClientType,
+  ERPOrder as ERPOrderType,
+  ERPInventoryProduct as ERPInventoryProductType,
+  ERPReport as ERPReportType,
+} from './erp';
+
 // Re-export theme API functions
 export * from './theme';
 
