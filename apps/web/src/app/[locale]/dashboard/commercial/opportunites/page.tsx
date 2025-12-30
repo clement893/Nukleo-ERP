@@ -29,7 +29,7 @@ import {
   useInfiniteOpportunities, 
   useCreateOpportunity, 
   useUpdateOpportunity, 
-  useDeleteOpportunity,
+  // useDeleteOpportunity, // Currently unused but kept for future use
   opportunitiesAPI 
 } from '@/lib/query/opportunities';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
