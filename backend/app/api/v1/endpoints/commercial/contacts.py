@@ -908,13 +908,20 @@ async def import_contacts(
                                 photo_content = photos_dict[pattern.lower()]
                                 
                                 # Create a temporary UploadFile-like object compatible with S3Service
+                                # S3Service.upload_file expects an UploadFile with async read() method
                                 class TempUploadFile:
                                     def __init__(self, filename: str, content: bytes):
                                         self.filename = filename
-                                        self.content = content
+                                        self._content = content
                                         self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                        # Create a file-like object
-                                        self.file = BytesIO(content)
+                                        self._read = False
+                                    
+                                    async def read(self) -> bytes:
+                                        """Async read method compatible with FastAPI UploadFile"""
+                                        if self._read:
+                                            return b''
+                                        self._read = True
+                                        return self._content
                                 
                                 temp_file = TempUploadFile(pattern, photo_content)
                                 

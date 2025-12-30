@@ -21,8 +21,9 @@ import FilterBadges from '@/components/commercial/FilterBadges';
 import ContactCounter from '@/components/commercial/ContactCounter';
 import ViewModeToggle from '@/components/commercial/ViewModeToggle';
 import ContactActionLink from '@/components/commercial/ContactActionLink';
+import ContactRowActions from '@/components/commercial/ContactRowActions';
 import SearchBar from '@/components/ui/SearchBar';
-import { Plus, Edit, Trash2, Eye, Download, Upload, MoreVertical, FileSpreadsheet } from 'lucide-react';
+import { Plus, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
@@ -368,11 +369,21 @@ function ContactsContent() {
       label: 'Prénom',
       sortable: true,
       render: (_value, contact) => (
-        <div>
-          <div className="font-medium">{contact.first_name} {contact.last_name}</div>
-          {contact.position && (
-            <div className="text-sm text-muted-foreground">{contact.position}</div>
-          )}
+        <div className="flex items-center justify-between group">
+          <div>
+            <div className="font-medium">{contact.first_name} {contact.last_name}</div>
+            {contact.position && (
+              <div className="text-sm text-muted-foreground">{contact.position}</div>
+            )}
+          </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <ContactRowActions
+              contact={contact}
+              onView={() => openDetailPage(contact)}
+              onEdit={() => openEditModal(contact)}
+              onDelete={() => handleDelete(contact.id)}
+            />
+          </div>
         </div>
       ),
     },
@@ -708,27 +719,6 @@ function ContactsContent() {
             loadingMore={loadingMore}
             onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Contact)}
-            actions={(row) => {
-              const contact = row as unknown as Contact;
-              return [
-                {
-                  label: 'Voir',
-                  onClick: () => openDetailPage(contact),
-                  icon: <Eye className="w-4 h-4" />,
-                },
-                {
-                  label: 'Modifier',
-                  onClick: () => openEditModal(contact),
-                  icon: <Edit className="w-4 h-4" />,
-                },
-                {
-                  label: 'Supprimer',
-                  onClick: () => handleDelete(contact.id),
-                  icon: <Trash2 className="w-4 h-4" />,
-                  variant: 'danger',
-                },
-              ];
-            }}
           />
         </Card>
       ) : (
