@@ -44,11 +44,13 @@ class LeoAgentService:
         # Get permissions
         permissions = await self.rbac_service.get_user_permissions(user.id)
         
-        # Get teams (with eager loading to avoid lazy loading issues in async context)
-        teams_query = select(TeamMember).options(selectinload(TeamMember.team)).where(TeamMember.user_id == user.id)
+        # Get teams (using join to avoid lazy loading issues in async context)
+        from app.models.team import Team
+        teams_query = select(Team.name).join(TeamMember, Team.id == TeamMember.team_id).where(
+            TeamMember.user_id == user.id
+        ).where(Team.is_active == True).where(TeamMember.is_active == True)
         teams_result = await self.db.execute(teams_query)
-        teams = teams_result.scalars().all()
-        team_names = [team.team.name for team in teams if team.team]
+        team_names = list(teams_result.scalars().all())
         
         # Get statistics
         # Count projects
