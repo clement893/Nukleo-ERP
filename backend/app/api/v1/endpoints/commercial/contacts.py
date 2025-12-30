@@ -736,13 +736,64 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
         import_status[import_id]["total"] = total
 
 
+async def get_current_user_from_query(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    Get current user from query parameter (for SSE endpoints that can't use headers)
+    EventSource doesn't support custom headers, so we accept token in query params
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    # Try to get token from query parameter first (for SSE)
+    token = request.query_params.get("token")
+    
+    # Fallback to Authorization header if no query param
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "")
+    
+    if not token:
+        raise credentials_exception
+    
+    # Use the same authentication logic as get_current_user
+    from app.core.security import decode_token
+    
+    # Decode token
+    payload = decode_token(token, token_type="access")
+    if not payload:
+        raise credentials_exception
+    
+    username: str = payload.get("sub")
+    if username is None:
+        raise credentials_exception
+    
+    # Get user from database
+    result = await db.execute(select(User).where(User.email == username))
+    user = result.scalar_one_or_none()
+    
+    if user is None or not user.is_active:
+        raise credentials_exception
+    
+    return user
+
+
 @router.get("/import/{import_id}/logs")
 async def stream_import_logs(
     import_id: str,
-    current_user: User = Depends(get_current_user),
+    request: Request,
+    current_user: User = Depends(get_current_user_from_query),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Stream import logs via Server-Sent Events (SSE)
+    Note: Uses query parameter authentication because EventSource doesn't support custom headers
     """
     async def event_generator():
         last_index = 0

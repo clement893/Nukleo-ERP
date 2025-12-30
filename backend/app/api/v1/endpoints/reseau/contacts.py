@@ -133,11 +133,16 @@ async def import_contacts(
 @router.get("/import/{import_id}/logs")
 async def stream_import_logs(
     import_id: str,
-    current_user: User = Depends(get_current_user),
+    request: Request,
+    db: AsyncSession = Depends(get_db),
 ):
     """Stream import logs via Server-Sent Events (SSE) for network module"""
+    # Use the same authentication function as commercial contacts
+    from app.api.v1.endpoints.commercial.contacts import get_current_user_from_query
+    current_user = await get_current_user_from_query(request, db)
     return await commercial_contacts.stream_import_logs(
         import_id=import_id,
+        request=request,
         current_user=current_user,
     )
 
