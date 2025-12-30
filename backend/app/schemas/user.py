@@ -137,6 +137,8 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """User update schema"""
+    model_config = ConfigDict(extra='ignore')  # Ignore extra fields like 'name', 'phone', 'bio', etc.
+    
     email: Optional[EmailStr] = Field(None, strip_whitespace=True)
     first_name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
     last_name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)

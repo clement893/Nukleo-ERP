@@ -390,8 +390,23 @@ async def update_current_user(
                 )
         
         # Update only provided fields
-        update_data = user_data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
+        update_data = user_data.model_dump(exclude_unset=True, exclude_none=False)
+        
+        # Filter to only allow valid User model fields
+        allowed_fields = {'email', 'first_name', 'last_name', 'avatar', 'is_active'}
+        filtered_data = {}
+        for k, v in update_data.items():
+            if k in allowed_fields and hasattr(current_user, k):
+                # Convert empty strings to None for optional string fields
+                if k in ('first_name', 'last_name', 'avatar') and v == '':
+                    v = None
+                # Skip None email updates (email is required)
+                if k == 'email' and (v is None or v == ''):
+                    continue
+                filtered_data[k] = v
+        
+        # Update user object with filtered data
+        for field, value in filtered_data.items():
             setattr(current_user, field, value)
         
         # Save changes
@@ -407,7 +422,13 @@ async def update_current_user(
     except Exception as e:
         logger.error(f"Error updating user profile: {e}", exc_info=True)
         await db.rollback()
+        error_detail = str(e)
+        # Provide more specific error message if possible
+        if "not-null" in error_detail.lower() or "null value" in error_detail.lower():
+            error_detail = "One or more required fields are missing"
+        elif "duplicate" in error_detail.lower() or "unique" in error_detail.lower():
+            error_detail = "Email is already taken"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update user profile"
+            detail=f"Failed to update user profile: {error_detail}"
         )
