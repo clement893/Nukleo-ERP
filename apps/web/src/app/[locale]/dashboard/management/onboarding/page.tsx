@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Input, Textarea, Alert, Loading } from '@/components/ui';
+import { Card, Button, Input, Textarea, Alert } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -16,9 +16,7 @@ import {
   FileText, 
   Link as LinkIcon, 
   Video, 
-  Save,
-  X,
-  Edit2
+  Save
 } from 'lucide-react';
 
 // Types
@@ -153,7 +151,11 @@ function OnboardingContent() {
 
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     const newSteps = [...template.steps];
-    [newSteps[currentIndex], newSteps[newIndex]] = [newSteps[newIndex], newSteps[currentIndex]];
+    const temp = newSteps[currentIndex];
+    if (temp && newSteps[newIndex]) {
+      newSteps[currentIndex] = newSteps[newIndex];
+      newSteps[newIndex] = temp;
+    }
     
     // Update order
     newSteps.forEach((step, index) => {
@@ -299,8 +301,8 @@ function OnboardingContent() {
           <Button
             variant="primary"
             onClick={addStep}
-            leftIcon={<Plus className="w-4 h-4" />}
           >
+            <Plus className="w-4 h-4 mr-2" />
             Ajouter une étape
           </Button>
         }
@@ -315,7 +317,7 @@ function OnboardingContent() {
               <Card
                 key={step.id}
                 className="border-2"
-                title={
+                header={
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <GripVertical className="w-5 h-5 cursor-move" />
@@ -368,8 +370,8 @@ function OnboardingContent() {
                       variant="danger"
                       size="sm"
                       onClick={() => deleteStep(step.id)}
-                      leftIcon={<Trash2 className="w-4 h-4" />}
                     >
+                      <Trash2 className="w-4 h-4 mr-2" />
                       Supprimer
                     </Button>
                   </div>
@@ -401,24 +403,24 @@ function OnboardingContent() {
                           variant="ghost"
                           size="sm"
                           onClick={() => addResource(step.id, 'document')}
-                          leftIcon={<FileText className="w-4 h-4" />}
                         >
+                          <FileText className="w-4 h-4 mr-2" />
                           Document
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => addResource(step.id, 'link')}
-                          leftIcon={<LinkIcon className="w-4 h-4" />}
                         >
+                          <LinkIcon className="w-4 h-4 mr-2" />
                           Lien
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => addResource(step.id, 'video')}
-                          leftIcon={<Video className="w-4 h-4" />}
                         >
+                          <Video className="w-4 h-4 mr-2" />
                           Vidéo
                         </Button>
                       </div>
@@ -444,8 +446,8 @@ function OnboardingContent() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => deleteResource(step.id, resource.id)}
-                                  leftIcon={<Trash2 className="w-4 h-4" />}
                                 >
+                                  <Trash2 className="w-4 h-4 mr-2" />
                                   Supprimer
                                 </Button>
                               </div>
@@ -521,8 +523,8 @@ function OnboardingContent() {
           variant="primary"
           onClick={handleSave}
           loading={loading}
-          leftIcon={<Save className="w-4 h-4" />}
         >
+          <Save className="w-4 h-4 mr-2" />
           Sauvegarder l'onboarding
         </Button>
       </div>
