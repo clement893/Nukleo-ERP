@@ -771,7 +771,34 @@ async def import_contacts(
         created_contacts = []
         errors = []
         warnings = []
-        s3_service = S3Service() if S3Service.is_configured() else None
+        
+        # Initialize S3 service for photo uploads
+        s3_service = None
+        s3_configured = S3Service.is_configured()
+        logger.info(f"S3 configuration check: is_configured={s3_configured}, photos_dict has {len(photos_dict)} photos")
+        
+        if s3_configured:
+            try:
+                s3_service = S3Service()
+                logger.info("S3Service initialized successfully for contact photo uploads")
+            except Exception as e:
+                logger.error(f"Failed to initialize S3Service: {e}", exc_info=True)
+                warnings.append({
+                    'row': 0,
+                    'type': 's3_init_failed',
+                    'message': f"⚠️ Impossible d'initialiser le service S3 pour l'upload des photos. Les contacts seront créés sans photos. Erreur: {str(e)}",
+                    'data': {}
+                })
+                s3_service = None
+        else:
+            logger.warning("S3 is not configured. Photos from ZIP will not be uploaded to S3.")
+            if photos_dict:
+                warnings.append({
+                    'row': 0,
+                    'type': 's3_not_configured',
+                    'message': f"⚠️ S3 n'est pas configuré. {len(photos_dict)} photo(s) trouvée(s) dans le ZIP ne seront pas uploadées.",
+                    'data': {'photos_count': len(photos_dict)}
+                })
         
         for idx, row_data in enumerate(result['data']):
             try:
@@ -888,42 +915,57 @@ async def import_contacts(
                 ])
             
                 # If no photo_url but we have photos in ZIP, try to find matching photo
-                if not photo_url and photos_dict and s3_service:
-                    # Try multiple naming patterns
-                    photo_filename_patterns = [
-                        f"{first_name.lower()}_{last_name.lower()}.jpg",
-                        f"{first_name.lower()}_{last_name.lower()}.jpeg",
-                        f"{first_name.lower()}_{last_name.lower()}.png",
-                        f"{first_name}_{last_name}.jpg",
-                        f"{first_name}_{last_name}.jpeg",
-                        f"{first_name}_{last_name}.png",
-                        row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
-                    ]
-                    
-                    uploaded_photo_url = None
-                    for pattern in photo_filename_patterns:
-                        if pattern and pattern.lower() in photos_dict:
-                            try:
-                                # Upload photo to S3
-                                photo_content = photos_dict[pattern.lower()]
-                                
-                                # Create a temporary UploadFile-like object compatible with S3Service
-                                # S3Service.upload_file uses file.file.read() (synchronous)
-                                class TempUploadFile:
-                                    def __init__(self, filename: str, content: bytes):
-                                        self.filename = filename
-                                        self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                        # Create a BytesIO object that S3Service can read from
-                                        self.file = BytesIO(content)
-                                
-                                temp_file = TempUploadFile(pattern, photo_content)
-                                
-                                # Upload to S3
-                                upload_result = s3_service.upload_file(
-                                    file=temp_file,
-                                    folder='contacts/photos',
-                                    user_id=str(current_user.id)
-                                )
+                if not photo_url and photos_dict:
+                    if not s3_service:
+                        logger.warning(f"Photo found for {first_name} {last_name} but S3 service is not available. Skipping photo upload.")
+                        warnings.append({
+                            'row': idx + 2,
+                            'type': 'photo_upload_skipped',
+                            'message': f"Photo trouvée pour {first_name} {last_name} mais S3 n'est pas disponible. La photo n'a pas été uploadée.",
+                            'data': {'contact': f"{first_name} {last_name}"}
+                        })
+                    else:
+                        # Try multiple naming patterns
+                        photo_filename_patterns = [
+                            f"{first_name.lower()}_{last_name.lower()}.jpg",
+                            f"{first_name.lower()}_{last_name.lower()}.jpeg",
+                            f"{first_name.lower()}_{last_name.lower()}.png",
+                            f"{first_name}_{last_name}.jpg",
+                            f"{first_name}_{last_name}.jpeg",
+                            f"{first_name}_{last_name}.png",
+                            row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
+                        ]
+                        
+                        uploaded_photo_url = None
+                        logger.info(f"Attempting to upload photo for {first_name} {last_name}. Available photos in ZIP: {list(photos_dict.keys())[:5]}...")
+                        
+                        for pattern in photo_filename_patterns:
+                            if pattern and pattern.lower() in photos_dict:
+                                try:
+                                    # Upload photo to S3
+                                    photo_content = photos_dict[pattern.lower()]
+                                    logger.info(f"Found matching photo '{pattern}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
+                                    
+                                    # Create a temporary UploadFile-like object compatible with S3Service
+                                    # S3Service.upload_file uses file.file.read() (synchronous)
+                                    class TempUploadFile:
+                                        def __init__(self, filename: str, content: bytes):
+                                            self.filename = filename
+                                            self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                            # Create a BytesIO object that S3Service can read from
+                                            # Reset position to start for each read
+                                            self.file = BytesIO(content)
+                                    
+                                    temp_file = TempUploadFile(pattern, photo_content)
+                                    
+                                    # Upload to S3
+                                    logger.info(f"Uploading photo '{pattern}' to S3 for {first_name} {last_name}...")
+                                    upload_result = s3_service.upload_file(
+                                        file=temp_file,
+                                        folder='contacts/photos',
+                                        user_id=str(current_user.id)
+                                    )
+                                    logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
                                 
                                 # Always store the file_key (not the presigned URL) for persistence
                                 # Presigned URLs expire, but file_key is permanent
@@ -969,13 +1011,28 @@ async def import_contacts(
                                     logger.info(f"Photo ready for {first_name} {last_name}: {pattern} -> file_key: {uploaded_photo_url}")
                                     break
                                 else:
-                                    logger.error(f"Failed to get valid file_key for {first_name} {last_name} after upload")
+                                    logger.error(f"Failed to get valid file_key for {first_name} {last_name} after upload. Upload result: {upload_result}")
+                                    warnings.append({
+                                        'row': idx + 2,
+                                        'type': 'photo_upload_failed',
+                                        'message': f"Échec de l'upload de la photo pour {first_name} {last_name}. Le contact sera créé sans photo.",
+                                        'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern}
+                                    })
                             except Exception as e:
-                                logger.warning(f"Failed to upload photo {pattern}: {e}")
+                                logger.error(f"Failed to upload photo {pattern} for {first_name} {last_name}: {e}", exc_info=True)
+                                warnings.append({
+                                    'row': idx + 2,
+                                    'type': 'photo_upload_error',
+                                    'message': f"Erreur lors de l'upload de la photo '{pattern}' pour {first_name} {last_name}: {str(e)}",
+                                    'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern, 'error': str(e)}
+                                })
                                 continue
                     
-                    if uploaded_photo_url:
-                        photo_url = uploaded_photo_url
+                        if uploaded_photo_url:
+                            photo_url = uploaded_photo_url
+                            logger.info(f"Photo successfully assigned to {first_name} {last_name}: {photo_url}")
+                        else:
+                            logger.warning(f"No photo uploaded for {first_name} {last_name} despite photos being available in ZIP")
             
                 # Get position
                 position = get_field_value(row_data, [

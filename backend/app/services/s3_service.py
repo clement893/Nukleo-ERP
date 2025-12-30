@@ -62,8 +62,15 @@ class S3Service:
         file_key = f"{folder}/{user_id}/{file_id}{file_extension}" if user_id else f"{folder}/{file_id}{file_extension}"
 
         # Read file content
+        # Reset file pointer to start in case it was already read
+        if hasattr(file.file, 'seek'):
+            file.file.seek(0)
         file_content = file.file.read()
         file_size = len(file_content)
+        
+        # Reset pointer again for potential future reads
+        if hasattr(file.file, 'seek'):
+            file.file.seek(0)
 
         # Upload to S3
         try:
