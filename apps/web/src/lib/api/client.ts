@@ -246,15 +246,19 @@ function getApiClient(): ApiClient {
 
 // Export as a Proxy to maintain the same API while using lazy initialization
 export const apiClient = new Proxy({} as ApiClient, {
-  get(_target, prop) {
+  get(_target, prop: string | symbol) {
     const instance = getApiClient();
-    const value = (instance as any)[prop];
+    // Handle symbol properties (like Symbol.toPrimitive, etc.)
+    if (typeof prop === 'symbol') {
+      return (instance as any)[prop];
+    }
+    const value = (instance as Record<string, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(instance);
     }
     return value;
   },
-  set(_target, prop, value) {
+  set(_target, prop: string | symbol, value) {
     const instance = getApiClient();
     (instance as any)[prop] = value;
     return true;

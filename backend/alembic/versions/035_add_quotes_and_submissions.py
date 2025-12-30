@@ -1,7 +1,7 @@
 """Add quotes and submissions tables
 
 Revision ID: 035_add_quotes_and_submissions
-Revises: 034_extend_companies_table
+Revises: 034_extend_companies
 Create Date: 2025-12-30 12:30:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '035_add_quotes_and_submissions'
-down_revision = '034_extend_companies_table'
+down_revision = '034_extend_companies'
 branch_labels = None
 depends_on = None
 

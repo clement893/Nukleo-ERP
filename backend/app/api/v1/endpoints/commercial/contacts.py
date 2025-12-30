@@ -16,6 +16,7 @@ from io import BytesIO
 from datetime import datetime as dt
 
 from app.core.database import get_db
+from app.core.cache_enhanced import cache_query
 from app.dependencies import get_current_user
 from app.models.contact import Contact
 from app.models.company import Company
