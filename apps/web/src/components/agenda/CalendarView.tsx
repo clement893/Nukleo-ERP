@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui';
 import DayEventsModal, { type DayEvent } from './DayEventsModal';
 import { agendaAPI, type CalendarEvent as APICalendarEvent, type CalendarEventCreate } from '@/lib/api/agenda';
 import { handleApiError } from '@/lib/errors/api';
+import { employeesAPI, type Employee } from '@/lib/api/employees';
 
 // Types pour les différents événements
 export interface VacationEvent {
@@ -183,6 +184,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
   const [deadlines, setDeadlines] = useState<DeadlineEvent[]>([]);
   const [events, setEvents] = useState<GeneralEvent[]>([]);
   const [apiEvents, setApiEvents] = useState<APICalendarEvent[]>([]); // Événements de l'API
+  const [employees, setEmployees] = useState<Employee[]>([]); // Employés pour les anniversaires
   
   // Filtres
   const [showVacations, setShowVacations] = useState(true);
@@ -190,6 +192,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
   const [showSummerVacation, setShowSummerVacation] = useState(true);
   const [showDeadlines, setShowDeadlines] = useState(true);
   const [showEvents, setShowEvents] = useState(true);
+  const [showBirthdays, setShowBirthdays] = useState(true);
 
   // Modal pour les événements d'une journée
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -222,6 +225,16 @@ export default function CalendarView({ className }: CalendarViewProps) {
         }));
       
       setEvents(convertedEvents);
+
+      // Charger les employés pour les anniversaires
+      try {
+        const loadedEmployees = await employeesAPI.list(0, 1000);
+        setEmployees(loadedEmployees);
+      } catch (err) {
+        // Silently fail if employees API is not available
+        console.warn('Could not load employees for birthdays:', err);
+        setEmployees([]);
+      }
 
       // TODO: Charger les vacances et deadlines depuis leurs APIs respectives
       // Pour l'instant, on garde les données mockées
@@ -373,8 +386,37 @@ export default function CalendarView({ className }: CalendarViewProps) {
       });
     }
 
+    // Anniversaires des employés
+    if (showBirthdays) {
+      const currentYear = new Date().getFullYear();
+      // Calculer pour l'année courante et les 2 années suivantes
+      for (let year = currentYear; year <= currentYear + 2; year++) {
+        employees.forEach((employee) => {
+          if (employee.birthday) {
+            // Parser la date d'anniversaire
+            const birthDate = new Date(employee.birthday);
+            if (!isNaN(birthDate.getTime())) {
+              // Créer la date d'anniversaire pour cette année
+              const birthdayThisYear = new Date(year, birthDate.getMonth(), birthDate.getDate());
+              
+              // Calculer l'âge cette année
+              const age = year - birthDate.getFullYear();
+              
+              eventsList.push({
+                id: `birthday-${employee.id}-${year}`,
+                title: `🎂 ${employee.first_name} ${employee.last_name}${age > 0 ? ` (${age} ans)` : ''}`,
+                date: birthdayThisYear,
+                color: '#EC4899', // Rose pour les anniversaires
+                description: `Anniversaire de ${employee.first_name} ${employee.last_name}${employee.email ? ` (${employee.email})` : ''}`,
+              });
+            }
+          }
+        });
+      }
+    }
+
     return eventsList;
-  }, [vacations, deadlines, events, apiEvents, showVacations, showHolidays, showSummerVacation, showDeadlines, showEvents]);
+  }, [vacations, deadlines, events, apiEvents, employees, showVacations, showHolidays, showSummerVacation, showDeadlines, showEvents, showBirthdays]);
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
@@ -417,6 +459,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
         if (event.id.startsWith('vacation-')) type = 'vacation';
         else if (event.id.startsWith('deadline-')) type = 'deadline';
         else if (event.id.startsWith('holiday-')) type = 'holiday';
+        else if (event.id.startsWith('birthday-')) type = 'other'; // Anniversaires comme événements spéciaux
         else if (event.id.startsWith('event-')) {
           // Pour les événements de l'API, chercher dans les apiEvents chargés
           const eventIdStr = event.id.replace('event-', '');
@@ -652,6 +695,15 @@ export default function CalendarView({ className }: CalendarViewProps) {
               />
               <span className="text-sm text-foreground">Événements</span>
             </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showBirthdays}
+                onChange={(e) => setShowBirthdays(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-sm text-foreground">Anniversaires</span>
+            </label>
           </div>
 
           {/* Légende */}
@@ -677,6 +729,10 @@ export default function CalendarView({ className }: CalendarViewProps) {
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }} />
                 <span className="text-muted-foreground">Vacances en attente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EC4899' }} />
+                <span className="text-muted-foreground">Anniversaires</span>
               </div>
             </div>
           </div>

@@ -1371,54 +1371,54 @@ async def import_contacts(
                                     pattern_to_use = None
                                 
                                 if pattern_to_use and pattern_to_use in photos_dict:
-                                try:
-                                    photo_content = photos_dict[pattern_to_use]
-                                    logger.info(f"Found photo from Excel column '{excel_photo_filename}' -> '{pattern_to_use}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
-                                    
-                                    # Create a temporary UploadFile-like object compatible with S3Service
-                                    class TempUploadFile:
-                                        def __init__(self, filename: str, content: bytes):
-                                            self.filename = filename
-                                            self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
-                                            # Create BytesIO and ensure it's at position 0
-                                            self.file = BytesIO(content)
-                                            self.file.seek(0)
-                                    
-                                    temp_file = TempUploadFile(pattern_to_use, photo_content)
-                                    
-                                    # Upload to S3
-                                    logger.info(f"Uploading photo '{pattern_to_use}' to S3 for {first_name} {last_name} (size: {len(photo_content)} bytes)...")
                                     try:
-                                        upload_result = s3_service.upload_file(
-                                            file=temp_file,
-                                            folder='contacts/photos',
-                                            user_id=str(current_user.id)
-                                        )
-                                        logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
-                                    except Exception as upload_error:
-                                        logger.error(f"Exception during upload_file call for {first_name} {last_name}: {upload_error}", exc_info=True)
-                                        raise
-                                    
-                                    uploaded_photo_url = upload_result.get('file_key')
-                                    if uploaded_photo_url:
-                                        if not uploaded_photo_url.startswith('contacts/photos'):
-                                            if uploaded_photo_url.startswith('contacts/'):
-                                                uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
-                                            else:
-                                                uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
+                                        photo_content = photos_dict[pattern_to_use]
+                                        logger.info(f"Found photo from Excel column '{excel_photo_filename}' -> '{pattern_to_use}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
                                         
+                                        # Create a temporary UploadFile-like object compatible with S3Service
+                                        class TempUploadFile:
+                                            def __init__(self, filename: str, content: bytes):
+                                                self.filename = filename
+                                                self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                                # Create BytesIO and ensure it's at position 0
+                                                self.file = BytesIO(content)
+                                                self.file.seek(0)
+                                        
+                                        temp_file = TempUploadFile(pattern_to_use, photo_content)
+                                        
+                                        # Upload to S3
+                                        logger.info(f"Uploading photo '{pattern_to_use}' to S3 for {first_name} {last_name} (size: {len(photo_content)} bytes)...")
                                         try:
-                                            metadata = s3_service.get_file_metadata(uploaded_photo_url)
-                                            logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
-                                        except Exception as e:
-                                            logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
-                                            uploaded_photo_url = None
-                                    
-                                    if uploaded_photo_url:
-                                        logger.info(f"Photo ready for {first_name} {last_name}: {pattern_to_use} -> file_key: {uploaded_photo_url}")
-                                        break
-                                except Exception as e:
-                                    logger.error(f"Failed to upload photo {pattern_to_use} for {first_name} {last_name}: {e}", exc_info=True)
+                                            upload_result = s3_service.upload_file(
+                                                file=temp_file,
+                                                folder='contacts/photos',
+                                                user_id=str(current_user.id)
+                                            )
+                                            logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
+                                        except Exception as upload_error:
+                                            logger.error(f"Exception during upload_file call for {first_name} {last_name}: {upload_error}", exc_info=True)
+                                            raise
+                                        
+                                        uploaded_photo_url = upload_result.get('file_key')
+                                        if uploaded_photo_url:
+                                            if not uploaded_photo_url.startswith('contacts/photos'):
+                                                if uploaded_photo_url.startswith('contacts/'):
+                                                    uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
+                                                else:
+                                                    uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
+                                            
+                                            try:
+                                                metadata = s3_service.get_file_metadata(uploaded_photo_url)
+                                                logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
+                                            except Exception as e:
+                                                logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
+                                                uploaded_photo_url = None
+                                        
+                                        if uploaded_photo_url:
+                                            logger.info(f"Photo ready for {first_name} {last_name}: {pattern_to_use} -> file_key: {uploaded_photo_url}")
+                                            break
+                                    except Exception as e:
+                                        logger.error(f"Failed to upload photo {pattern_to_use} for {first_name} {last_name}: {e}", exc_info=True)
                                     warnings.append({
                                         'row': idx + 2,
                                         'type': 'photo_upload_error',

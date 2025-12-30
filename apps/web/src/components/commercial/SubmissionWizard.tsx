@@ -14,6 +14,7 @@ import SubmissionMandate from './submission/Mandate';
 import SubmissionProcess from './submission/Process';
 import SubmissionBudget from './submission/Budget';
 import SubmissionTeam from './submission/Team';
+import { LeoAssistant } from './LeoAssistant';
 
 export interface SubmissionWizardData {
   // Cover Page
@@ -386,6 +387,12 @@ export default function SubmissionWizard({
       <div className="min-h-[400px]">
         {renderStep()}
       </div>
+
+      {/* Leo Assistant */}
+      <LeoAssistant
+        context={getStepContext()}
+        onTextGenerated={handleTextGenerated}
+      />
 
       {/* Navigation */}
       <div className="flex justify-between pt-4 border-t border-border">

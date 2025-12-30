@@ -3,7 +3,7 @@ Commercial Opportunities Endpoints
 API endpoints for managing commercial opportunities
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
@@ -13,6 +13,9 @@ from datetime import datetime as dt
 from sqlalchemy.orm import selectinload
 import zipfile
 import os
+import uuid
+import json
+import asyncio
 from io import BytesIO
 
 from app.core.database import get_db
@@ -25,8 +28,37 @@ from app.schemas.opportunity import OpportunityCreate, OpportunityUpdate, Opport
 from app.services.import_service import ImportService
 from app.services.export_service import ExportService
 from app.core.logging import logger
+from app.utils.import_logs import (
+    import_logs, import_status, add_import_log, update_import_status,
+    get_current_user_from_query, stream_import_logs_generator
+)
 
 router = APIRouter(prefix="/commercial/opportunities", tags=["commercial-opportunities"])
+
+
+# SSE endpoint for import logs
+@router.get("/import/{import_id}/logs")
+async def stream_import_logs(
+    import_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Stream import logs via Server-Sent Events (SSE) for opportunities import
+    Note: Uses query parameter authentication because EventSource doesn't support custom headers
+    """
+    # Authenticate user
+    current_user = await get_current_user_from_query(request, db)
+    
+    return StreamingResponse(
+        stream_import_logs_generator(import_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @router.get("/", response_model=List[OpportunitySchema])
@@ -508,6 +540,7 @@ async def delete_opportunity(
 @router.post("/import")
 async def import_opportunities(
     file: UploadFile = File(...),
+    import_id: Optional[str] = Query(None, description="Unique ID for this import process"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -522,20 +555,56 @@ async def import_opportunities(
     Returns:
         Import results with data, errors, and warnings
     """
-    # Read file content
-    file_content = await file.read()
+    # Generate import_id if not provided
+    if not import_id:
+        import_id = f"import_{int(dt.now().timestamp() * 1000)}_{uuid.uuid4().hex[:8]}"
     
-    # Import from Excel
-    result = ImportService.import_from_excel(
-        file_content=file_content,
-        has_headers=True
-    )
+    # Initialize logs and status
+    import_logs[import_id] = []
+    import_status[import_id] = {
+        "status": "started",
+        "progress": 0,
+        "total": 0,
+        "created_at": dt.now().isoformat()
+    }
     
-    # Process imported data
-    created_opportunities = []
-    errors = []
+    add_import_log(import_id, f"Début de l'import du fichier: {file.filename}", "info")
     
-    for idx, row_data in enumerate(result['data']):
+    try:
+        # Read file content
+        file_content = await file.read()
+        add_import_log(import_id, f"Fichier lu: {len(file_content)} bytes", "info")
+        
+        # Import from Excel
+        add_import_log(import_id, "Lecture du fichier Excel...", "info")
+        result = ImportService.import_from_excel(
+            file_content=file_content,
+            has_headers=True
+        )
+        
+        total_rows = len(result.get('data', []))
+        add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
+        update_import_status(import_id, "processing", progress=0, total=total_rows)
+        
+        # Process imported data
+        created_opportunities = []
+        errors = []
+        stats = {
+            "total_processed": 0,
+            "created_new": 0,
+            "errors": 0
+        }
+        
+        add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
+        
+        for idx, row_data in enumerate(result['data']):
+            try:
+                stats["total_processed"] += 1
+                update_import_status(import_id, "processing", progress=idx + 1, total=total_rows)
+                
+                # Log progress every 10 rows
+                if (idx + 1) % 10 == 0 or idx < 5:
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
         try:
             # Map Excel columns to Opportunity fields
             name = row_data.get('name') or row_data.get('nom') or row_data.get('Nom de l\'opportunité') or ''
@@ -601,43 +670,68 @@ async def import_opportunities(
             opportunity.created_by_id = current_user.id
             opportunity.opened_at = opportunity.opened_at or dt.now()
             
-            db.add(opportunity)
-            created_opportunities.append(opportunity)
+                db.add(opportunity)
+                created_opportunities.append(opportunity)
+                stats["created_new"] += 1
+                add_import_log(import_id, f"Ligne {idx + 2}: Nouvelle opportunité créée - {name}", "info", {"row": idx + 2, "action": "created", "opportunity_name": name})
+                
+            except Exception as e:
+                stats["errors"] += 1
+                error_msg = f"Ligne {idx + 2}: ❌ Erreur lors de l'import - {str(e)}"
+                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e)})
+                errors.append({
+                    'row': idx + 2,
+                    'data': row_data,
+                    'error': str(e)
+                })
+                logger.error(f"Error importing opportunity row {idx + 2}: {str(e)}")
+        
+        # Commit all opportunities
+        add_import_log(import_id, f"Sauvegarde de {len(created_opportunities)} opportunité(s) dans la base de données...", "info")
+        if created_opportunities:
+            await db.commit()
+            for opportunity in created_opportunities:
+                await db.refresh(opportunity)
             
-        except Exception as e:
-            errors.append({
-                'row': idx + 2,
-                'data': row_data,
-                'error': str(e)
-            })
-            logger.error(f"Error importing opportunity row {idx + 2}: {str(e)}")
-    
-    # Commit all opportunities
-    if created_opportunities:
-        await db.commit()
-        for opportunity in created_opportunities:
-            await db.refresh(opportunity)
-    
-    return {
-        'total_rows': result['total_rows'],
-        'valid_rows': len(created_opportunities),
-        'invalid_rows': len(errors) + result['invalid_rows'],
-        'errors': errors + result['errors'],
-        'warnings': result['warnings'],
-        'data': [OpportunitySchema.model_validate({
-            'id': o.id,
-            'name': o.name,
-            'description': o.description,
-            'amount': float(o.amount) if o.amount else None,
-            'probability': o.probability,
-            'status': o.status,
-            'pipeline_id': o.pipeline_id,
-            'stage_id': o.stage_id,
-            'company_id': o.company_id,
-            'created_at': o.created_at,
-            'updated_at': o.updated_at,
-        }) for o in created_opportunities]
-    }
+            add_import_log(import_id, f"Sauvegarde réussie: {len(created_opportunities)} opportunité(s) créée(s)", "success")
+        
+        # Final logs
+        add_import_log(import_id, f"✅ Import terminé: {len(created_opportunities)} opportunité(s) importée(s), {len(errors)} erreur(s)", "success", {
+            "total_valid": len(created_opportunities),
+            "total_errors": len(errors)
+        })
+        update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
+        
+        return {
+            'total_rows': result['total_rows'],
+            'valid_rows': len(created_opportunities),
+            'invalid_rows': len(errors) + result['invalid_rows'],
+            'errors': errors + result['errors'],
+            'warnings': result['warnings'],
+            'import_id': import_id,
+            'data': [OpportunitySchema.model_validate({
+                'id': o.id,
+                'name': o.name,
+                'description': o.description,
+                'amount': float(o.amount) if o.amount else None,
+                'probability': o.probability,
+                'status': o.status,
+                'pipeline_id': o.pipeline_id,
+                'stage_id': o.stage_id,
+                'company_id': o.company_id,
+                'created_at': o.created_at,
+                'updated_at': o.updated_at,
+            }) for o in created_opportunities]
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error in import_opportunities: {e}", exc_info=True)
+        if 'import_id' in locals():
+            add_import_log(import_id, f"❌ Erreur inattendue lors de l'import: {str(e)}", "error")
+            update_import_status(import_id, "failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during import: {str(e)}"
+        )
 
 
 @router.get("/export")

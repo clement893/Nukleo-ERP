@@ -3,7 +3,7 @@ Project Import/Export Endpoints
 """
 
 from typing import Optional, Dict, List, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -12,7 +12,9 @@ from io import BytesIO
 import pandas as pd
 import zipfile
 import json
-from datetime import datetime
+import uuid
+import asyncio
+from datetime import datetime as dt
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -23,8 +25,37 @@ from app.models.employee import Employee
 from app.schemas.project import ProjectCreate
 from app.core.logging import logger
 from app.services.export_service import ExportService
+from app.utils.import_logs import (
+    import_logs, import_status, add_import_log, update_import_status,
+    get_current_user_from_query, stream_import_logs_generator
+)
 
 router = APIRouter()
+
+
+# SSE endpoint for import logs
+@router.get("/import/{import_id}/logs")
+async def stream_import_logs(
+    import_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Stream import logs via Server-Sent Events (SSE) for projects import
+    Note: Uses query parameter authentication because EventSource doesn't support custom headers
+    """
+    # Authenticate user
+    current_user = await get_current_user_from_query(request, db)
+    
+    return StreamingResponse(
+        stream_import_logs_generator(import_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 async def find_company_by_name(
@@ -148,9 +179,28 @@ async def import_projects(
                     normalized_columns[col] = key
                     break
         
+        total_rows = len(df)
+        add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
+        update_import_status(import_id, "processing", progress=0, total=total_rows)
+        
+        stats = {
+            "total_processed": 0,
+            "created_new": 0,
+            "errors": 0
+        }
+        
+        add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
+        
         # Process rows
         for idx, row in df.iterrows():
             try:
+                stats["total_processed"] += 1
+                update_import_status(import_id, "processing", progress=idx + 1, total=total_rows)
+                
+                # Log progress every 10 rows
+                if (idx + 1) % 10 == 0 or idx < 5:
+                    add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
+                
                 project_data = {}
                 
                 # Name (required)
@@ -158,6 +208,8 @@ async def import_projects(
                 if name_col and pd.notna(row.get(name_col)):
                     project_data['name'] = str(row[name_col]).strip()
                 else:
+                    stats["errors"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: ❌ Nom requis manquant", "error", {"row": idx + 2})
                     errors.append({
                         "row": idx + 2,  # +2 because Excel is 1-indexed and has header
                         "data": row.to_dict(),
@@ -254,19 +306,34 @@ async def import_projects(
                 
                 db.add(project)
                 projects_data.append(project)
+                stats["created_new"] += 1
+                add_import_log(import_id, f"Ligne {idx + 2}: Nouveau projet créé - {project_data['name']}", "info", {"row": idx + 2, "action": "created", "project_name": project_data['name']})
                 
             except Exception as e:
+                stats["errors"] += 1
+                error_msg = f"Ligne {idx + 2}: ❌ Erreur lors de l'import - {str(e)}"
+                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e)})
                 errors.append({
                     "row": idx + 2,
                     "data": row.to_dict(),
                     "error": str(e)
                 })
         
+        add_import_log(import_id, f"Sauvegarde de {len(projects_data)} projet(s) dans la base de données...", "info")
         await db.commit()
         
         # Refresh projects to get IDs
         for project in projects_data:
             await db.refresh(project)
+        
+        add_import_log(import_id, f"Sauvegarde réussie: {len(projects_data)} projet(s) créé(s)", "success")
+        
+        # Final logs
+        add_import_log(import_id, f"✅ Import terminé: {len(projects_data)} projet(s) importé(s), {len(errors)} erreur(s)", "success", {
+            "total_valid": len(projects_data),
+            "total_errors": len(errors)
+        })
+        update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
         
         return {
             "total_rows": len(df),
@@ -280,6 +347,9 @@ async def import_projects(
         
     except Exception as e:
         logger.error(f"Import error: {e}", exc_info=True)
+        if 'import_id' in locals():
+            add_import_log(import_id, f"❌ Erreur inattendue lors de l'import: {str(e)}", "error")
+            update_import_status(import_id, "failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Import failed: {str(e)}"

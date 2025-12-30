@@ -23,9 +23,7 @@ import {
   Upload, 
   FileSpreadsheet, 
   MoreVertical,
-  Info,
-  ChevronDown,
-  ChevronUp
+  Info
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -38,6 +36,8 @@ import {
 } from '@/lib/query/opportunities';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI } from '@/lib/api/companies';
+import ImportOpportunitiesInstructions from '@/components/commercial/ImportOpportunitiesInstructions';
+import { HelpCircle } from 'lucide-react';
 
 function OpportunitiesContent() {
   const router = useRouter();
@@ -417,70 +417,6 @@ function OpportunitiesContent() {
         ]}
       />
 
-      {/* Import Instructions */}
-      <Card>
-        <div className="space-y-3">
-          <button
-            onClick={() => setShowImportInstructions(!showImportInstructions)}
-            className="w-full flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">Instructions pour l'import d'opportunités</span>
-            </div>
-            {showImportInstructions ? (
-              <ChevronUp className="w-5 h-5 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-muted-foreground" />
-            )}
-          </button>
-          
-          {showImportInstructions && (
-            <div className="pt-2 pb-3 px-3 space-y-3 border-t border-border">
-              <div className="space-y-2 text-sm text-foreground">
-                <div>
-                  <p className="font-semibold mb-2">Colonnes requises :</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                    <li><strong>Nom de l'opportunité</strong> (ou <code className="text-xs bg-muted px-1 py-0.5 rounded">name</code>) : Nom de l'opportunité commerciale *REQUIS*</li>
-                    <li><strong>ID Pipeline</strong> (ou <code className="text-xs bg-muted px-1 py-0.5 rounded">pipeline_id</code>) : Identifiant UUID du pipeline *REQUIS*</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <p className="font-semibold mb-2">Colonnes optionnelles principales :</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                    <li><strong>Description</strong> : Description détaillée de l'opportunité</li>
-                    <li><strong>Montant</strong> : Montant en euros</li>
-                    <li><strong>Probabilité (%)</strong> : Probabilité de succès (0-100)</li>
-                    <li><strong>Statut</strong> : open, qualified, proposal, negotiation, won, lost, cancelled</li>
-                    <li><strong>ID Stade du pipeline</strong> : UUID du stade (doit appartenir au pipeline spécifié)</li>
-                    <li><strong>Nom Entreprise</strong> ou <strong>ID Entreprise</strong> : Entreprise cliente</li>
-                    <li><strong>Date de clôture prévue</strong> : Format YYYY-MM-DD</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <p className="font-semibold mb-2">Notes importantes :</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                    <li>L'ID Pipeline doit être un UUID valide d'un pipeline existant (trouvable dans Module Commercial &gt; Pipeline Client)</li>
-                    <li>L'ID Stade du pipeline doit appartenir au pipeline spécifié</li>
-                    <li>Les dates doivent être au format YYYY-MM-DD (ex: 2024-12-31)</li>
-                    <li>Pour les IDs Contacts, séparez plusieurs IDs par des virgules (ex: 1,2,3)</li>
-                    <li>Le fichier Excel téléchargé contient une feuille "Instructions" avec tous les détails</li>
-                  </ul>
-                </div>
-                
-                <div className="pt-2">
-                  <p className="text-xs text-muted-foreground">
-                    💡 <strong>Astuce</strong> : Téléchargez le modèle Excel ou ZIP depuis le menu d'actions (⋮) pour voir toutes les colonnes disponibles et des exemples.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
-
       {/* Toolbar */}
       <Card>
         <div className="space-y-3">
@@ -588,6 +524,16 @@ function OpportunitiesContent() {
                     <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                       <div className="py-1">
                         <button
+                          onClick={() => {
+                            setShowImportInstructions(true);
+                            setShowActionsMenu(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" />
+                          Instructions d'import
+                        </button>
+                        <button
                           onClick={async () => {
                             try {
                               await opportunitiesAPI.downloadTemplate();
@@ -600,7 +546,7 @@ function OpportunitiesContent() {
                               });
                             }
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5" />
                           Modèle Excel
@@ -736,6 +682,42 @@ function OpportunitiesContent() {
           />
         )}
       </Modal>
+
+      {/* Import Instructions Modal */}
+      <ImportOpportunitiesInstructions
+        isOpen={showImportInstructions}
+        onClose={() => setShowImportInstructions(false)}
+        onDownloadTemplate={async () => {
+          try {
+            await opportunitiesAPI.downloadTemplate();
+            showToast({
+              message: 'Modèle Excel téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle',
+              type: 'error',
+            });
+          }
+        }}
+        onDownloadZipTemplate={async () => {
+          try {
+            await opportunitiesAPI.downloadZipTemplate();
+            showToast({
+              message: 'Modèle ZIP téléchargé avec succès',
+              type: 'success',
+            });
+          } catch (err) {
+            const appError = handleApiError(err);
+            showToast({
+              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+              type: 'error',
+            });
+          }
+        }}
+      />
     </MotionDiv>
   );
 }

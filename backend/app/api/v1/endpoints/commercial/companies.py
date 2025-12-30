@@ -3,7 +3,7 @@ Commercial Companies Endpoints
 API endpoints for managing commercial companies
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,8 +13,11 @@ import zipfile
 import os
 import re
 import unicodedata
+import uuid
+import json
+import asyncio
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime as dt
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -26,8 +29,37 @@ from app.services.import_service import ImportService
 from app.services.export_service import ExportService
 from app.services.s3_service import S3Service
 from app.core.logging import logger
+from app.utils.import_logs import (
+    import_logs, import_status, add_import_log, update_import_status,
+    get_current_user_from_query, stream_import_logs_generator
+)
 
 router = APIRouter(prefix="/commercial/companies", tags=["commercial-companies"])
+
+
+# SSE endpoint for import logs
+@router.get("/import/{import_id}/logs")
+async def stream_import_logs(
+    import_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Stream import logs via Server-Sent Events (SSE) for companies import
+    Note: Uses query parameter authentication because EventSource doesn't support custom headers
+    """
+    # Authenticate user
+    current_user = await get_current_user_from_query(request, db)
+    
+    return StreamingResponse(
+        stream_import_logs_generator(import_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @router.get("/", response_model=List[CompanySchema])
@@ -772,7 +804,7 @@ async def import_companies(
                 # Log progress every 10 rows
                 if (idx + 1) % 10 == 0 or idx < 5:
                     add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
-            try:
+                
                 # Map Excel columns to Company fields
                 name = get_field_value(row_data, [
                     'name', 'nom', 'nom de l\'entreprise', 'company name', 'entreprise', 'nom entreprise'
@@ -1004,15 +1036,22 @@ async def import_companies(
                     
                     company = existing_company
                     created_companies.append(company)  # Track as processed company
+                    stats["matched_existing"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: Entreprise mise à jour - {name} (ID: {existing_company.id})", "info", {"row": idx + 2, "action": "updated", "company_id": existing_company.id})
                     logger.info(f"Updated existing company: {name} (ID: {existing_company.id})")
                 else:
                     # Create new company
                     company = Company(**company_data.model_dump(exclude_none=True))
                     db.add(company)
                     created_companies.append(company)
+                    stats["created_new"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: Nouvelle entreprise créée - {name}", "info", {"row": idx + 2, "action": "created"})
                     logger.info(f"Created new company: {name}")
                 
             except Exception as e:
+                stats["errors"] += 1
+                error_msg = f"Ligne {idx + 2}: ❌ Erreur lors de l'import - {str(e)}"
+                add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(e)})
                 errors.append({
                     'row': idx + 2,  # +2 because Excel is 1-indexed and has header
                     'data': row_data,
@@ -1026,6 +1065,7 @@ async def import_companies(
         new_companies = []
         
         # Commit all companies
+        add_import_log(import_id, f"Sauvegarde de {len(created_companies)} entreprise(s) dans la base de données...", "info")
         try:
             if created_companies:
                 await db.commit()
@@ -1037,6 +1077,8 @@ async def import_companies(
                         updated_companies.append(company)
                     else:
                         new_companies.append(company)
+                
+                add_import_log(import_id, f"Sauvegarde réussie: {len(new_companies)} nouvelle(s) entreprise(s), {len(updated_companies)} entreprise(s) mise(s) à jour", "success")
                     
                     # Regenerate presigned URL for logo if it exists and S3 is configured
                     if company.logo_url and s3_service:
@@ -1076,6 +1118,16 @@ async def import_companies(
         # Merge warnings from import service with our warnings
         all_warnings = (result.get('warnings') or []) + warnings
         
+        # Final logs
+        add_import_log(import_id, f"✅ Import terminé: {len(created_companies)} entreprise(s) importée(s), {len(errors)} erreur(s)", "success", {
+            "total_valid": len(created_companies),
+            "total_errors": len(errors),
+            "new_companies": len(new_companies),
+            "updated_companies": len(updated_companies),
+            "logos_uploaded": len(logos_dict) if logos_dict else 0
+        })
+        update_import_status(import_id, "completed", progress=total_rows, total=total_rows)
+        
         try:
             return {
                 'total_rows': result.get('total_rows', 0),
@@ -1086,6 +1138,7 @@ async def import_companies(
                 'errors': errors + (result.get('errors') or []),
                 'warnings': all_warnings,
                 'logos_uploaded': len(logos_dict) if logos_dict else 0,
+                'import_id': import_id,
                 'data': [CompanySchema.model_validate(c) for c in created_companies]
             }
         except Exception as e:
@@ -1096,10 +1149,16 @@ async def import_companies(
             )
     except HTTPException:
         # Re-raise HTTP exceptions as-is
+        if 'import_id' in locals():
+            add_import_log(import_id, f"❌ Erreur HTTP: {str(e)}", "error")
+            update_import_status(import_id, "failed")
         raise
     except Exception as e:
         # Catch any other unexpected errors that weren't caught above
         logger.error(f"Unexpected error in import_companies: {e}", exc_info=True)
+        if 'import_id' in locals():
+            add_import_log(import_id, f"❌ Erreur inattendue lors de l'import: {str(e)}", "error")
+            update_import_status(import_id, "failed")
         try:
             await db.rollback()
         except Exception:
