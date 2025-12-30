@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '042_rename_logo_filename_to_photo_filename'
+revision = '042_rename_logo_to_photo_fn'
 down_revision = '041_city_index_companies'
 branch_labels = None
 depends_on = None
