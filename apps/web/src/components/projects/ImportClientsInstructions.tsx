@@ -21,37 +21,9 @@ export default function ImportClientsInstructions({
   const handleDownloadTemplate = async () => {
     try {
       setDownloading(true);
-      // Create a simple Excel template structure
-      const templateData = [
-        {
-          'Nom de l\'entreprise': 'Exemple Entreprise SARL',
-          'Statut': 'actif',
-          'Responsable ID': '',
-          'Notes': 'Notes sur le client',
-          'Commentaires': 'Commentaires additionnels',
-          'URL Portail': 'https://portail.client.com',
-        },
-      ];
-      
-      // Use a simple CSV format for template (can be opened in Excel)
-      const firstRow = templateData[0];
-      if (!firstRow) {
-        throw new Error('Template data is empty');
-      }
-      const csvContent = [
-        Object.keys(firstRow).join(','),
-        ...templateData.map(row => Object.values(row).map(v => `"${v}"`).join(','))
-      ].join('\n');
-      
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'modele_import_clients.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Import dynamically to avoid SSR issues
+      const { downloadClientZipTemplate } = await import('@/lib/utils/generateClientTemplate');
+      await downloadClientZipTemplate();
       
       if (onDownloadTemplate) {
         onDownloadTemplate();
@@ -135,7 +107,7 @@ export default function ImportClientsInstructions({
             className="flex-1"
           >
             <Download className="w-4 h-4 mr-2" />
-            {downloading ? 'Téléchargement...' : 'Télécharger le modèle'}
+            {downloading ? 'Téléchargement...' : 'Télécharger le modèle ZIP'}
           </Button>
           <Button variant="primary" onClick={onClose} className="flex-1">
             J'ai compris

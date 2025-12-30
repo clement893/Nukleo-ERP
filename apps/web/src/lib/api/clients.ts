@@ -154,4 +154,24 @@ export const clientsAPI = {
     const baseURL = process.env.NEXT_PUBLIC_API_URL || '';
     return `${baseURL}/v1/projects/clients/import/${importId}/logs`;
   },
+
+  /**
+   * Download client import template (Excel only)
+   * This is a client-side function, not an API call
+   */
+  downloadTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadClientTemplate } = await import('@/lib/utils/generateClientTemplate');
+    downloadClientTemplate();
+  },
+
+  /**
+   * Download client import ZIP template (Excel + instructions + logos folder)
+   * This is a client-side function, not an API call
+   */
+  downloadZipTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadClientZipTemplate } = await import('@/lib/utils/generateClientTemplate');
+    await downloadClientZipTemplate();
+  },
 };
