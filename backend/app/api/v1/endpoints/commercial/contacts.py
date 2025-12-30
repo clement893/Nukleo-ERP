@@ -26,8 +26,34 @@ from app.services.import_service import ImportService
 from app.services.export_service import ExportService
 from app.services.s3_service import S3Service
 from app.core.logging import logger
+import unicodedata
+import re
 
 router = APIRouter(prefix="/commercial/contacts", tags=["commercial-contacts"])
+
+
+def normalize_filename(name: str) -> str:
+    """
+    Normalize a name for filename matching.
+    - Convert to lowercase
+    - Remove accents
+    - Replace spaces and special characters with underscores
+    - Remove multiple underscores
+    """
+    if not name:
+        return ""
+    # Convert to lowercase
+    name = name.lower().strip()
+    # Remove accents
+    name = unicodedata.normalize('NFD', name)
+    name = ''.join(char for char in name if unicodedata.category(char) != 'Mn')
+    # Replace spaces and special characters with underscores
+    name = re.sub(r'[^\w\-]', '_', name)
+    # Remove multiple underscores
+    name = re.sub(r'_+', '_', name)
+    # Remove leading/trailing underscores
+    name = name.strip('_')
+    return name
 
 # Cache for presigned URLs to avoid regenerating them unnecessarily
 # Format: {file_key: (presigned_url, expiration_timestamp)}
@@ -617,9 +643,14 @@ async def import_contacts(
                         # Find photos (in photos/ folder or root)
                         elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                             photo_content = zip_ref.read(file_info)
-                            # Store with normalized filename (lowercase, no path)
-                            photo_filename = os.path.basename(file_info).lower()
-                            photos_dict[photo_filename] = photo_content
+                            # Store with normalized filename (lowercase, no path, normalized)
+                            photo_filename = os.path.basename(file_info)
+                            # Normalize the filename for matching (remove accents, normalize spaces)
+                            photo_filename_normalized = normalize_filename(photo_filename)
+                            # Store both original and normalized versions for flexible matching
+                            photos_dict[photo_filename.lower()] = photo_content
+                            if photo_filename_normalized != photo_filename.lower():
+                                photos_dict[photo_filename_normalized] = photo_content
                 
                 if excel_content is None:
                     raise HTTPException(
@@ -925,25 +956,117 @@ async def import_contacts(
                             'data': {'contact': f"{first_name} {last_name}"}
                         })
                     else:
+                        # Normalize names for filename matching
+                        first_name_normalized = normalize_filename(first_name)
+                        last_name_normalized = normalize_filename(last_name)
+                        
                         # Try multiple naming patterns
                         photo_filename_patterns = [
+                            # Normalized patterns (without accents)
+                            f"{first_name_normalized}_{last_name_normalized}.jpg",
+                            f"{first_name_normalized}_{last_name_normalized}.jpeg",
+                            f"{first_name_normalized}_{last_name_normalized}.png",
+                            f"{first_name_normalized}_{last_name_normalized}.gif",
+                            f"{first_name_normalized}_{last_name_normalized}.webp",
+                            # Original patterns (with accents)
                             f"{first_name.lower()}_{last_name.lower()}.jpg",
                             f"{first_name.lower()}_{last_name.lower()}.jpeg",
                             f"{first_name.lower()}_{last_name.lower()}.png",
-                            f"{first_name}_{last_name}.jpg",
-                            f"{first_name}_{last_name}.jpeg",
-                            f"{first_name}_{last_name}.png",
+                            f"{first_name.lower()}_{last_name.lower()}.gif",
+                            f"{first_name.lower()}_{last_name.lower()}.webp",
+                            # Without underscores
+                            f"{first_name_normalized}{last_name_normalized}.jpg",
+                            f"{first_name_normalized}{last_name_normalized}.jpeg",
+                            f"{first_name_normalized}{last_name_normalized}.png",
+                            # From Excel column
                             row_data.get('photo_filename') or row_data.get('nom_fichier_photo'),
                         ]
                         
                         uploaded_photo_url = None
                         logger.info(f"Attempting to upload photo for {first_name} {last_name}. Available photos in ZIP: {list(photos_dict.keys())[:5]}...")
+                        logger.debug(f"Normalized names: first='{first_name_normalized}', last='{last_name_normalized}'")
+                        logger.debug(f"Trying patterns: {photo_filename_patterns[:5]}...")
                         
-                        for pattern in photo_filename_patterns:
-                            if pattern and pattern.lower() in photos_dict:
+                        # First, try exact match from Excel column if provided
+                        excel_photo_filename = row_data.get('photo_filename') or row_data.get('nom_fichier_photo')
+                        if excel_photo_filename:
+                            excel_photo_normalized = normalize_filename(excel_photo_filename)
+                            if excel_photo_filename.lower() in photos_dict:
+                                pattern_to_use = excel_photo_filename.lower()
+                            elif excel_photo_normalized in photos_dict:
+                                pattern_to_use = excel_photo_normalized
+                            else:
+                                pattern_to_use = None
+                            
+                            if pattern_to_use and pattern_to_use in photos_dict:
+                                try:
+                                    photo_content = photos_dict[pattern_to_use]
+                                    logger.info(f"Found photo from Excel column '{excel_photo_filename}' -> '{pattern_to_use}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
+                                    
+                                    # Create a temporary UploadFile-like object compatible with S3Service
+                                    class TempUploadFile:
+                                        def __init__(self, filename: str, content: bytes):
+                                            self.filename = filename
+                                            self.content_type = 'image/jpeg' if filename.lower().endswith(('.jpg', '.jpeg')) else ('image/png' if filename.lower().endswith('.png') else 'image/webp')
+                                            self.file = BytesIO(content)
+                                    
+                                    temp_file = TempUploadFile(pattern_to_use, photo_content)
+                                    
+                                    # Upload to S3
+                                    logger.info(f"Uploading photo '{pattern_to_use}' to S3 for {first_name} {last_name}...")
+                                    upload_result = s3_service.upload_file(
+                                        file=temp_file,
+                                        folder='contacts/photos',
+                                        user_id=str(current_user.id)
+                                    )
+                                    logger.info(f"Upload result for {first_name} {last_name}: {upload_result}")
+                                    
+                                    uploaded_photo_url = upload_result.get('file_key')
+                                    if uploaded_photo_url:
+                                        if not uploaded_photo_url.startswith('contacts/photos'):
+                                            if uploaded_photo_url.startswith('contacts/'):
+                                                uploaded_photo_url = uploaded_photo_url.replace('contacts/', 'contacts/photos/', 1)
+                                            else:
+                                                uploaded_photo_url = f"contacts/photos/{uploaded_photo_url}"
+                                        
+                                        try:
+                                            metadata = s3_service.get_file_metadata(uploaded_photo_url)
+                                            logger.info(f"Successfully uploaded and verified photo for {first_name} {last_name}: {uploaded_photo_url} (size: {metadata.get('size', 0)} bytes)")
+                                        except Exception as e:
+                                            logger.error(f"Photo upload verification failed for {first_name} {last_name} with file_key '{uploaded_photo_url}': {e}")
+                                            uploaded_photo_url = None
+                                    
+                                    if uploaded_photo_url:
+                                        logger.info(f"Photo ready for {first_name} {last_name}: {pattern_to_use} -> file_key: {uploaded_photo_url}")
+                                        break
+                                except Exception as e:
+                                    logger.error(f"Failed to upload photo {pattern_to_use} for {first_name} {last_name}: {e}", exc_info=True)
+                                    warnings.append({
+                                        'row': idx + 2,
+                                        'type': 'photo_upload_error',
+                                        'message': f"Erreur lors de l'upload de la photo '{pattern_to_use}' pour {first_name} {last_name}: {str(e)}",
+                                        'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern_to_use, 'error': str(e)}
+                                    })
+                        
+                        # If no match from Excel column, try name-based patterns
+                        if not uploaded_photo_url:
+                            for pattern in photo_filename_patterns:
+                                if not pattern or pattern == excel_photo_filename:
+                                    continue  # Skip if already tried
+                                
+                                pattern_normalized = normalize_filename(pattern)
+                                # Try both original pattern and normalized pattern
+                                if pattern.lower() in photos_dict:
+                                    pattern_to_use = pattern.lower()
+                                elif pattern_normalized in photos_dict:
+                                    pattern_to_use = pattern_normalized
+                                else:
+                                    continue
+                                
+                                if pattern_to_use in photos_dict:
                                 try:
                                     # Upload photo to S3
-                                    photo_content = photos_dict[pattern.lower()]
+                                    photo_content = photos_dict[pattern_to_use]
                                     logger.info(f"Found matching photo '{pattern}' for {first_name} {last_name} (size: {len(photo_content)} bytes)")
                                     
                                     # Create a temporary UploadFile-like object compatible with S3Service
