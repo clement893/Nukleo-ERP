@@ -1113,13 +1113,14 @@ async def import_contacts(
                 })
         
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
+        logger.info(f"Starting import loop: {total_rows} rows to process, result['data'] has {len(result['data'])} items")
         
         for idx, row_data in enumerate(result['data']):
             try:
                 stats["total_processed"] += 1
                 
-                # Log progress every 50 rows
-                if (idx + 1) % 50 == 0:
+                # Log progress every 10 rows for debugging (changed from 50)
+                if (idx + 1) % 10 == 0 or idx == 0:
                     add_import_log(import_id, f"📊 Progression: {idx + 1}/{total_rows} lignes traitées... (créés: {stats['created_new']}, mis à jour: {stats['matched_existing']}, ignorés: {stats['skipped_missing_firstname'] + stats['skipped_missing_lastname']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
                 
                 # Map Excel columns to Contact fields with multiple possible column names
@@ -1660,6 +1661,7 @@ async def import_contacts(
                     
                     contact = existing_contact
                     created_contacts.append(contact)  # Track as processed contact
+                    stats["matched_existing"] += 1
                     add_import_log(import_id, f"Ligne {idx + 2}: Contact mis à jour - {first_name} {last_name} (ID: {existing_contact.id})", "info", {"row": idx + 2, "action": "updated", "contact_id": existing_contact.id})
                     logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
                 else:
@@ -1667,6 +1669,7 @@ async def import_contacts(
                     contact = Contact(**contact_data.model_dump(exclude_none=True))
                     db.add(contact)
                     created_contacts.append(contact)
+                    stats["created_new"] += 1
                     add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
                     logger.info(f"Created new contact: {first_name} {last_name}")
             
@@ -1680,6 +1683,12 @@ async def import_contacts(
                     'error': str(e)
                 })
                 logger.error(f"Error importing contact row {idx + 2}: {str(e)}", exc_info=True)
+                # Continue processing other rows even if one fails
+                continue
+        
+        # Log completion of loop
+        add_import_log(import_id, f"✅ Boucle de traitement terminée: {len(result['data'])} ligne(s) traitée(s)", "info", {"total_rows_in_loop": len(result['data']), "stats": stats.copy()})
+        logger.info(f"Import loop completed: processed {len(result['data'])} rows, created_contacts={len(created_contacts)}, stats: {stats}")
         
         # Log final statistics
         add_import_log(import_id, f"📊 Statistiques du traitement: {stats['total_processed']} lignes traitées, {stats['created_new']} nouveaux contacts, {stats['matched_existing']} contacts mis à jour, {stats['skipped_missing_firstname']} sans prénom, {stats['skipped_missing_lastname']} sans nom, {stats['errors']} erreurs", "info", stats)
