@@ -12,7 +12,7 @@ interface EmployeeRowActionsProps {
 }
 
 export default function EmployeeRowActions({
-  // employee, // Not used yet
+  employee: _employee, // Not used yet but required by interface
   onView,
   onEdit,
   onDelete,

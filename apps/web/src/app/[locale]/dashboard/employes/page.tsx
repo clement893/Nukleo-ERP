@@ -305,7 +305,7 @@ function EmployeesContent() {
       key: 'photo_url',
       label: '',
       sortable: false,
-      render: (_value) => (
+      render: (_value, employee) => (
         <div className="flex items-center">
           <EmployeeAvatar employee={employee} size="md" />
         </div>
@@ -315,7 +315,7 @@ function EmployeesContent() {
       key: 'first_name',
       label: 'Prénom',
       sortable: true,
-      render: (_value) => (
+      render: (_value, employee) => (
         <div className="flex items-center justify-between group">
           <div>
             <div className="font-medium">{employee.first_name} {employee.last_name}</div>
@@ -335,7 +335,7 @@ function EmployeesContent() {
       key: 'email',
       label: 'Courriel',
       sortable: true,
-      render: (value, employee) => (
+      render: (value) => (
         value ? (
           <a href={`mailto:${value}`} className="text-primary hover:underline flex items-center gap-1">
             <Mail className="w-3.5 h-3.5" />
@@ -350,7 +350,7 @@ function EmployeesContent() {
       key: 'phone',
       label: 'Téléphone',
       sortable: true,
-      render: (value, employee) => (
+      render: (value) => (
         value ? (
           <a href={`tel:${value}`} className="text-primary hover:underline flex items-center gap-1">
             <Phone className="w-3.5 h-3.5" />
