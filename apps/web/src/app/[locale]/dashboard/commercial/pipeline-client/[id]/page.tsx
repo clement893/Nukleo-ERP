@@ -13,7 +13,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui';
 import { opportunitiesAPI } from '@/lib/api/opportunities';
-import { handleApiError } from '@/lib/api/utils';
+import { handleApiError } from '@/lib/errors/api';
 
 // Types temporaires - à remplacer par les types générés depuis l'API
 interface Pipeline {
