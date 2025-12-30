@@ -560,23 +560,23 @@ async def import_contacts(
         if file_ext == '.zip':
             try:
                 with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
-                # Extract Excel file and photos
-                for file_info in zip_ref.namelist():
-                    file_name_lower = file_info.lower()
-                    
-                    # Find Excel file
-                    if file_name_lower.endswith(('.xlsx', '.xls')):
-                        if excel_content is None:
-                            excel_content = zip_ref.read(file_info)
-                        else:
-                            logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
-                    
-                    # Find photos (in photos/ folder or root)
-                    elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
-                        photo_content = zip_ref.read(file_info)
-                        # Store with normalized filename (lowercase, no path)
-                        photo_filename = os.path.basename(file_info).lower()
-                        photos_dict[photo_filename] = photo_content
+                    # Extract Excel file and photos
+                    for file_info in zip_ref.namelist():
+                        file_name_lower = file_info.lower()
+                        
+                        # Find Excel file
+                        if file_name_lower.endswith(('.xlsx', '.xls')):
+                            if excel_content is None:
+                                excel_content = zip_ref.read(file_info)
+                            else:
+                                logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
+                        
+                        # Find photos (in photos/ folder or root)
+                        elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                            photo_content = zip_ref.read(file_info)
+                            # Store with normalized filename (lowercase, no path)
+                            photo_filename = os.path.basename(file_info).lower()
+                            photos_dict[photo_filename] = photo_content
                 
                 if excel_content is None:
                     raise HTTPException(
