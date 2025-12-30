@@ -1419,12 +1419,12 @@ async def import_contacts(
                                             break
                                     except Exception as e:
                                         logger.error(f"Failed to upload photo {pattern_to_use} for {first_name} {last_name}: {e}", exc_info=True)
-                                    warnings.append({
-                                        'row': idx + 2,
-                                        'type': 'photo_upload_error',
-                                        'message': f"Erreur lors de l'upload de la photo '{pattern_to_use}' pour {first_name} {last_name}: {str(e)}",
-                                        'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern_to_use, 'error': str(e)}
-                                    })
+                                        warnings.append({
+                                            'row': idx + 2,
+                                            'type': 'photo_upload_error',
+                                            'message': f"Erreur lors de l'upload de la photo '{pattern_to_use}' pour {first_name} {last_name}: {str(e)}",
+                                            'data': {'contact': f"{first_name} {last_name}", 'pattern': pattern_to_use, 'error': str(e)}
+                                        })
                             
                             # If no match from Excel column, try name-based patterns
                             if not uploaded_photo_url:

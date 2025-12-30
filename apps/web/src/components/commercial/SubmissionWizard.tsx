@@ -136,6 +136,55 @@ export default function SubmissionWizard({
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
+  // Get current step context for Leo
+  const getStepContext = () => {
+    const stepNames = ['Page couverture', 'Contexte', 'Introduction', 'Mandat', 'Processus', 'Budget', 'Équipe'];
+    const currentStepName = stepNames[currentStep] || '';
+    const companyName = companies.find(c => c.id === formData.companyId)?.name || formData.coverClient || '';
+    return `Étape actuelle : ${currentStepName}${companyName ? ` - Client : ${companyName}` : ''}${formData.coverTitle ? ` - Titre : ${formData.coverTitle}` : ''}`;
+  };
+  
+  // Handle text generation from Leo
+  const handleTextGenerated = (text: string) => {
+    const stepNames = ['cover', 'context', 'introduction', 'mandate', 'process', 'budget', 'team'];
+    const currentStepName = stepNames[currentStep];
+    
+    switch (currentStepName) {
+      case 'cover':
+        if (!formData.coverTitle) {
+          updateFormData({ coverTitle: text });
+        } else if (!formData.coverSubtitle) {
+          updateFormData({ coverSubtitle: text });
+        }
+        break;
+      case 'context':
+        updateFormData({ context: text });
+        break;
+      case 'introduction':
+        updateFormData({ introduction: text });
+        break;
+      case 'mandate':
+        updateFormData({ mandate: text });
+        break;
+      case 'process':
+        // For process, we might want to parse the text into steps
+        // For now, just update the first step if empty
+        if (formData.processSteps.length === 0 || !formData.processSteps[0].description) {
+          const steps = text.split('\n').filter(line => line.trim()).map((line, index) => ({
+            title: `Étape ${index + 1}`,
+            description: line.trim(),
+          }));
+          if (steps.length > 0) {
+            updateFormData({ processSteps: steps });
+          }
+        }
+        break;
+      default:
+        // For other steps, try to update the appropriate field
+        break;
+    }
+  };
+
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
