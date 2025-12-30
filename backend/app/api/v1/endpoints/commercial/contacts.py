@@ -937,10 +937,11 @@ async def import_contacts(
                                 logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
                                 add_import_log(import_id, f"Plusieurs fichiers Excel trouvés, utilisation du premier: {file_info}", "warning")
                         
-                        # Find photos (in photos/ folder or root)
+                        # Find photos (in photos/ folder or root, or any subfolder)
                         elif file_name_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                             photo_content = zip_ref.read(file_info)
                             # Store with normalized filename (lowercase, no path, normalized)
+                            # Extract just the filename, ignoring folder structure
                             photo_filename = os.path.basename(file_info)
                             # Normalize the filename for matching (remove accents, normalize spaces)
                             photo_filename_normalized = normalize_filename(photo_filename)
@@ -949,8 +950,13 @@ async def import_contacts(
                             if photo_filename_normalized != photo_filename.lower():
                                 photos_dict[photo_filename_normalized] = photo_content
                             photo_count += 1
+                            logger.debug(f"Photo ajoutée au dictionnaire: {photo_filename} (chemin complet: {file_info})")
                     
                     add_import_log(import_id, f"Extraction ZIP terminée: {photo_count} photo(s) trouvée(s)", "info")
+                    if photo_count > 0:
+                        # Log first few photo names for debugging
+                        photo_names = list(photos_dict.keys())[:10]  # Show first 10
+                        add_import_log(import_id, f"Photos trouvées dans le ZIP (exemples): {', '.join(photo_names)}", "info", {"photo_count": photo_count, "sample_photos": photo_names})
                 
                 if excel_content is None:
                     add_import_log(import_id, "ERREUR: Aucun fichier Excel trouvé dans le ZIP", "error")
@@ -1401,13 +1407,19 @@ async def import_contacts(
                                     'data': {'contact': f"{first_name} {last_name}", 'error': str(e)}
                                 })
                         elif photos_dict and s3_service:
-                            # Log why photo wasn't matched
+                            # Log why photo wasn't matched with more details
                             if not first_name or not last_name:
                                 logger.debug(f"Row {idx + 2}: Cannot match photo - missing first_name or last_name")
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Photo non associée - prénom ou nom manquant pour {first_name} {last_name}", "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}"})
                             elif not photo_filename:
-                                logger.debug(f"Row {idx + 2}: Cannot match photo - no photo_filename and auto-match failed for {first_name} {last_name}")
+                                # List available photos for debugging
+                                available_photos = list(photos_dict.keys())[:5]  # Show first 5
+                                logger.debug(f"Row {idx + 2}: Cannot match photo - no photo_filename and auto-match failed for {first_name} {last_name}. Available photos: {available_photos}")
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Photo non associée - correspondance automatique échouée pour {first_name} {last_name}. Photos disponibles dans le ZIP: {len(photos_dict)}", "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "available_photos_count": len(photos_dict)})
                             else:
-                                logger.debug(f"Row {idx + 2}: Cannot match photo - photo_filename '{photo_filename}' not found in ZIP")
+                                available_photos = list(photos_dict.keys())[:5]  # Show first 5
+                                logger.debug(f"Row {idx + 2}: Cannot match photo - photo_filename '{photo_filename}' not found in ZIP. Available photos: {available_photos}")
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Photo non trouvée - '{photo_filename}' introuvable dans le ZIP. Photos disponibles: {len(photos_dict)}", "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "requested_filename": photo_filename, "available_photos_count": len(photos_dict)})
                 
                 # Get position
                 position = get_field_value(row_data, [
