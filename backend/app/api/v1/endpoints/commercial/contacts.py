@@ -55,6 +55,72 @@ def normalize_filename(name: str) -> str:
     name = name.strip('_')
     return name
 
+
+async def find_company_by_name(
+    company_name: str,
+    db: AsyncSession,
+    all_companies: Optional[List[Company]] = None,
+    company_name_to_id: Optional[dict] = None
+) -> Optional[int]:
+    """
+    Find a company ID by name using intelligent matching.
+    
+    Matching strategy:
+    1. Exact match (case-insensitive)
+    2. Match without legal form (SARL, SA, SAS, EURL)
+    3. Partial match (contains)
+    
+    Args:
+        company_name: Company name to search for
+        db: Database session
+        all_companies: Optional pre-loaded list of companies (for performance)
+        company_name_to_id: Optional pre-built mapping (for performance)
+        
+    Returns:
+        Company ID if found, None otherwise
+    """
+    if not company_name or not company_name.strip():
+        return None
+    
+    # Load companies if not provided
+    if all_companies is None or company_name_to_id is None:
+        companies_result = await db.execute(select(Company))
+        all_companies = companies_result.scalars().all()
+        company_name_to_id = {}
+        for company in all_companies:
+            if company.name:
+                company_name_to_id[company.name.lower().strip()] = company.id
+    
+    company_name_normalized = company_name.strip().lower()
+    # Remove common prefixes/suffixes for better matching
+    company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+    
+    # Try exact match first
+    if company_name_normalized in company_name_to_id:
+        return company_name_to_id[company_name_normalized]
+    
+    # Try match without legal form
+    if company_name_clean and company_name_clean in company_name_to_id:
+        return company_name_to_id[company_name_clean]
+    
+    # Try partial match (contains)
+    matched_company_id = None
+    for stored_name, stored_id in company_name_to_id.items():
+        stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+        if (company_name_clean and stored_clean and 
+            (company_name_clean in stored_clean or stored_clean in company_name_clean)):
+            matched_company_id = stored_id
+            break
+    
+    # If no match with cleaned, try original normalized
+    if not matched_company_id:
+        for stored_name, stored_id in company_name_to_id.items():
+            if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                matched_company_id = stored_id
+                break
+    
+    return matched_company_id
+
 # Cache for presigned URLs to avoid regenerating them unnecessarily
 # Format: {file_key: (presigned_url, expiration_timestamp)}
 _presigned_url_cache: dict[str, tuple[str, float]] = {}
@@ -326,10 +392,25 @@ async def create_contact(
     Returns:
         Created contact
     """
+    # Handle company matching: if company_name is provided but company_id is not, try to find the company
+    final_company_id = contact_data.company_id
+    
+    if not final_company_id and contact_data.company_name:
+        # Try to find company by name
+        matched_company_id = await find_company_by_name(
+            company_name=contact_data.company_name,
+            db=db
+        )
+        if matched_company_id:
+            final_company_id = matched_company_id
+            logger.info(f"Auto-matched company '{contact_data.company_name}' to company ID {matched_company_id}")
+        else:
+            logger.warning(f"Company '{contact_data.company_name}' not found in database. Contact will be created without company link.")
+    
     # Validate company exists if provided
-    if contact_data.company_id:
+    if final_company_id:
         company_result = await db.execute(
-            select(Company).where(Company.id == contact_data.company_id)
+            select(Company).where(Company.id == final_company_id)
         )
         if not company_result.scalar_one_or_none():
             raise HTTPException(
@@ -351,7 +432,7 @@ async def create_contact(
     contact = Contact(
         first_name=contact_data.first_name,
         last_name=contact_data.last_name,
-        company_id=contact_data.company_id,
+        company_id=final_company_id,
         position=contact_data.position,
         circle=contact_data.circle,
         linkedin=contact_data.linkedin,
@@ -435,10 +516,25 @@ async def update_contact(
             detail="Contact not found"
         )
     
+    # Handle company matching: if company_name is provided but company_id is not, try to find the company
+    final_company_id = contact_data.company_id
+    
+    if final_company_id is None and contact_data.company_name:
+        # Try to find company by name
+        matched_company_id = await find_company_by_name(
+            company_name=contact_data.company_name,
+            db=db
+        )
+        if matched_company_id:
+            final_company_id = matched_company_id
+            logger.info(f"Auto-matched company '{contact_data.company_name}' to company ID {matched_company_id} for contact {contact_id}")
+        else:
+            logger.warning(f"Company '{contact_data.company_name}' not found in database. Contact company will remain unchanged.")
+    
     # Validate company exists if provided
-    if contact_data.company_id is not None:
+    if final_company_id is not None:
         company_result = await db.execute(
-            select(Company).where(Company.id == contact_data.company_id)
+            select(Company).where(Company.id == final_company_id)
         )
         if not company_result.scalar_one_or_none():
             raise HTTPException(
@@ -457,8 +553,13 @@ async def update_contact(
                 detail="Employee not found"
             )
     
-    # Update fields
-    update_data = contact_data.model_dump(exclude_unset=True)
+    # Update fields (exclude company_name as it's not a database field)
+    update_data = contact_data.model_dump(exclude_unset=True, exclude={'company_name'})
+    
+    # Set company_id if we found a match
+    if final_company_id is not None:
+        update_data['company_id'] = final_company_id
+    
     for field, value in update_data.items():
         setattr(contact, field, value)
     

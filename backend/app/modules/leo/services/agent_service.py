@@ -10,7 +10,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.orm import selectinload
 
 from app.models.user import User
-from app.models.leo_conversation import LeoConversation, LeoMessage
+from app.modules.leo.models import LeoConversation, LeoMessage
 from app.models.project import Project
 from app.models.team import TeamMember
 from app.models.invoice import Invoice

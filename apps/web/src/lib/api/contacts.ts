@@ -32,6 +32,7 @@ export interface ContactCreate {
   first_name: string;
   last_name: string;
   company_id?: number | null;
+  company_name?: string | null;
   position?: string | null;
   circle?: string | null;
   linkedin?: string | null;

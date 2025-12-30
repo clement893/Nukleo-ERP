@@ -130,14 +130,11 @@ api_router.include_router(
     tags=["ai"]
 )
 
-# Register Leo documentation endpoints
-api_router.include_router(
-    leo_documentation.router,
-    tags=["leo-documentation"]
-)
-
-# Register Leo module router (isolated module)
+# Register Leo module router (isolated module - includes documentation)
 api_router.include_router(leo_router)
+
+# Note: Leo documentation endpoints are now included in leo_router
+# The old leo_documentation.router can be removed once migration is validated
 
 # Register newsletter endpoints
 api_router.include_router(

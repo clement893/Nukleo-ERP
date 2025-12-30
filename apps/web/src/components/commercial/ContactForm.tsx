@@ -51,6 +51,7 @@ export default function ContactForm({
     first_name: contact?.first_name || '',
     last_name: contact?.last_name || '',
     company_id: contact?.company_id || null,
+    company_name: contact?.company_name || null,
     position: contact?.position || null,
     circle: contact?.circle || null,
     linkedin: contact?.linkedin || null,
@@ -63,6 +64,13 @@ export default function ContactForm({
     language: contact?.language || null,
     employee_id: contact?.employee_id || null,
   });
+  
+  // Track company name input separately for better UX
+  const [companyNameInput, setCompanyNameInput] = useState<string>(
+    contact?.company_name || contact?.company_id 
+      ? companies.find(c => c.id === contact?.company_id)?.name || ''
+      : ''
+  );
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -196,21 +204,52 @@ export default function ContactForm({
       </div>
 
       {/* Entreprise */}
-      {companies.length > 0 && (
-        <Select
-          label="Entreprise"
-          value={formData.company_id?.toString() || ''}
-          onChange={(e) => setFormData({
-            ...formData,
-            company_id: e.target.value ? parseInt(e.target.value) : null,
-          })}
-          options={[
-            { value: '', label: 'Aucune' },
-            ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
-          ]}
-          fullWidth
-        />
-      )}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Entreprise
+        </label>
+        {companies.length > 0 ? (
+          <Select
+            value={formData.company_id?.toString() || ''}
+            onChange={(e) => {
+              const selectedId = e.target.value ? parseInt(e.target.value) : null;
+              const selectedCompany = companies.find(c => c.id === selectedId);
+              setFormData({
+                ...formData,
+                company_id: selectedId,
+                company_name: selectedCompany?.name || null,
+              });
+              setCompanyNameInput(selectedCompany?.name || '');
+            }}
+            options={[
+              { value: '', label: 'Aucune' },
+              ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
+            ]}
+            fullWidth
+          />
+        ) : (
+          <Input
+            label=""
+            value={companyNameInput}
+            onChange={(e) => {
+              const name = e.target.value || '';
+              setCompanyNameInput(name);
+              setFormData({
+                ...formData,
+                company_id: null, // Clear company_id when typing manually
+                company_name: name || null, // Send company_name to backend for auto-matching
+              });
+            }}
+            placeholder="Nom de l'entreprise (sera automatiquement lié si elle existe)"
+            fullWidth
+          />
+        )}
+        {companyNameInput && !formData.company_id && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            L'entreprise sera automatiquement liée si elle existe dans la base de données.
+          </p>
+        )}
+      </div>
 
       {/* Poste */}
       <Input
