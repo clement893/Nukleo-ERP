@@ -18,9 +18,13 @@ depends_on = None
 
 def upgrade() -> None:
     """Create clients table"""
-    # Create enum type for client status
+    # Create enum type for client status (if it doesn't exist)
     op.execute("""
-        CREATE TYPE clientstatus AS ENUM ('active', 'inactive', 'maintenance')
+        DO $$ BEGIN
+            CREATE TYPE clientstatus AS ENUM ('active', 'inactive', 'maintenance');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
     
     # Create clients table
