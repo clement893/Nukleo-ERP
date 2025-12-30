@@ -22,8 +22,7 @@ import {
   Download, 
   Upload, 
   FileSpreadsheet, 
-  MoreVertical,
-  Info
+  MoreVertical
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';

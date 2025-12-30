@@ -289,7 +289,6 @@ export function LeoAssistant({ context, onTextGenerated, className = '' }: LeoAs
                 placeholder="Demandez à Leo..."
                 disabled={isLoading}
                 className="flex-1 text-sm"
-                size="sm"
               />
               <Button
                 onClick={sendMessage}

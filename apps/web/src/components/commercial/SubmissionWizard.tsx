@@ -169,7 +169,7 @@ export default function SubmissionWizard({
       case 'process':
         // For process, we might want to parse the text into steps
         // For now, just update the first step if empty
-        if (formData.processSteps.length === 0 || !formData.processSteps[0].description) {
+        if (formData.processSteps.length === 0 || !formData.processSteps[0]?.description) {
           const steps = text.split('\n').filter(line => line.trim()).map((line, index) => ({
             title: `Étape ${index + 1}`,
             description: line.trim(),
