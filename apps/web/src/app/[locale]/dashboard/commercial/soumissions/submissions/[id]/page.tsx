@@ -142,24 +142,26 @@ export default function SubmissionDetailPage() {
 
   // Convert submission to wizard data format
   const submissionToWizardData = (sub: Submission): SubmissionWizardData | null => {
-    if (!sub.content || typeof sub.content !== 'object') {
+    if (!sub.content || typeof sub.content !== 'object' || Array.isArray(sub.content)) {
       return null;
     }
     
     const content = sub.content as Record<string, any>;
     
+    // Ensure we don't pass objects directly - convert them to strings or arrays
+    
     return {
-      coverTitle: content.coverTitle || sub.title || '',
-      coverSubtitle: content.coverSubtitle || '',
-      coverDate: content.coverDate || new Date().toISOString().split('T')[0] || '',
-      coverClient: content.coverClient || '',
+      coverTitle: typeof content.coverTitle === 'string' ? content.coverTitle : (content.coverTitle ? String(content.coverTitle) : (sub.title || '')),
+      coverSubtitle: typeof content.coverSubtitle === 'string' ? content.coverSubtitle : (content.coverSubtitle ? String(content.coverSubtitle) : ''),
+      coverDate: typeof content.coverDate === 'string' ? content.coverDate : (content.coverDate ? String(content.coverDate) : (new Date().toISOString().split('T')[0] || '')),
+      coverClient: typeof content.coverClient === 'string' ? content.coverClient : (content.coverClient ? String(content.coverClient) : ''),
       coverCompany: sub.company_name || '',
-      context: content.context || '',
-      introduction: content.introduction || '',
-      mandate: content.mandate || '',
-      objectives: content.objectives || [],
-      processSteps: content.processSteps || [],
-      budgetItems: content.budgetItems || [],
+      context: typeof content.context === 'string' ? content.context : (content.context ? String(content.context) : ''),
+      introduction: typeof content.introduction === 'string' ? content.introduction : (content.introduction ? String(content.introduction) : ''),
+      mandate: typeof content.mandate === 'string' ? content.mandate : (content.mandate ? String(content.mandate) : ''),
+      objectives: Array.isArray(content.objectives) ? content.objectives : [],
+      processSteps: Array.isArray(content.processSteps) ? content.processSteps : [],
+      budgetItems: Array.isArray(content.budgetItems) ? content.budgetItems : [],
       budgetTotal: content.budgetTotal || 0,
       currency: content.currency || 'EUR',
       teamMembers: content.teamMembers || [],
@@ -314,14 +316,16 @@ export default function SubmissionDetailPage() {
             )}
           </div>
 
-          {submission.description && (
+          {/* Safely render description - handle both string and object cases */}
+          {submission.description !== null && submission.description !== undefined && (
             <div>
               <label className="text-sm font-medium text-muted-foreground">Description</label>
               <p className="text-lg whitespace-pre-wrap">{renderTextValue(submission.description)}</p>
             </div>
           )}
 
-          {submission.notes && (
+          {/* Safely render notes - handle both string and object cases */}
+          {submission.notes !== null && submission.notes !== undefined && (
             <div>
               <label className="text-sm font-medium text-muted-foreground">Notes</label>
               <p className="text-lg whitespace-pre-wrap">{renderTextValue(submission.notes)}</p>
@@ -394,25 +398,25 @@ export default function SubmissionDetailPage() {
                 {wizardData.coverTitle && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Titre</label>
-                    <p className="text-lg">{wizardData.coverTitle}</p>
+                    <p className="text-lg">{renderTextValue(wizardData.coverTitle)}</p>
                   </div>
                 )}
                 {wizardData.context && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Contexte</label>
-                    <p className="text-lg whitespace-pre-wrap">{wizardData.context}</p>
+                    <p className="text-lg whitespace-pre-wrap">{renderTextValue(wizardData.context)}</p>
                   </div>
                 )}
                 {wizardData.introduction && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Introduction</label>
-                    <p className="text-lg whitespace-pre-wrap">{wizardData.introduction}</p>
+                    <p className="text-lg whitespace-pre-wrap">{renderTextValue(wizardData.introduction)}</p>
                   </div>
                 )}
                 {wizardData.mandate && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Mandat</label>
-                    <p className="text-lg whitespace-pre-wrap">{wizardData.mandate}</p>
+                    <p className="text-lg whitespace-pre-wrap">{renderTextValue(wizardData.mandate)}</p>
                   </div>
                 )}
               </div>
