@@ -186,7 +186,7 @@ async def get_active_theme(db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.get("", response_model=ThemeListResponse, tags=["themes"])
+@router.get("/", response_model=ThemeListResponse, tags=["themes"])
 async def list_themes(
     skip: int = 0,
     limit: int = 100,
@@ -302,7 +302,7 @@ async def get_theme(
     return ThemeResponse.model_validate(theme)
 
 
-@router.post("", response_model=ThemeResponse, status_code=status.HTTP_201_CREATED, tags=["themes"])
+@router.post("/", response_model=ThemeResponse, status_code=status.HTTP_201_CREATED, tags=["themes"])
 @invalidate_cache_pattern("themes:*")
 @invalidate_cache_pattern("theme:*")
 async def create_theme(
