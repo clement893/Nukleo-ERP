@@ -281,18 +281,9 @@ export default function OpportunityDetailPage() {
               </h3>
               
               {opportunity.company_name && (
-                <div className="flex items-center gap-3">
-                  {opportunity.company_logo_url && (
-                    <img
-                      src={opportunity.company_logo_url}
-                      alt={opportunity.company_name}
-                      className="w-12 h-12 rounded object-cover"
-                    />
-                  )}
-                  <div>
-                    <p className="text-sm text-muted-foreground">Entreprise</p>
-                    <p className="font-medium">{opportunity.company_name}</p>
-                  </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Entreprise</p>
+                  <p className="font-medium">{opportunity.company_name}</p>
                 </div>
               )}
 

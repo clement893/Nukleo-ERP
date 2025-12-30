@@ -23,8 +23,7 @@ import {
   FileSpreadsheet, 
   MoreVertical, 
   Trash2,
-  HelpCircle,
-  Building2
+  HelpCircle
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -309,26 +308,6 @@ function OpportunitiesContent() {
   // Table columns
   const columns: Column<Opportunity>[] = [
     {
-      key: 'company_logo_url',
-      label: '',
-      sortable: false,
-      render: (_value, opportunity) => (
-        <div className="flex items-center">
-          {opportunity.company_logo_url ? (
-            <img
-              src={opportunity.company_logo_url}
-              alt={opportunity.company_name || 'Logo'}
-              className="w-10 h-10 rounded object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
       key: 'name',
       label: 'Nom de l\'opportunité',
       sortable: true,
@@ -573,6 +552,28 @@ function OpportunitiesContent() {
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5" />
                           Modèle Excel
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await opportunitiesAPI.downloadZipTemplate();
+                              setShowActionsMenu(false);
+                              showToast({
+                                message: 'Modèle ZIP téléchargé avec succès',
+                                type: 'success',
+                              });
+                            } catch (err) {
+                              const appError = handleApiError(err);
+                              showToast({
+                                message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
+                                type: 'error',
+                              });
+                            }
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5" />
+                          Modèle ZIP
                         </button>
                         <input
                           type="file"

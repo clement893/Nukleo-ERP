@@ -115,7 +115,6 @@ async def list_opportunities(
             "stage_name": opp.stage.name if opp.stage else None,
             "company_id": opp.company_id,
             "company_name": opp.company.name if opp.company else None,
-            "company_logo_url": opp.company.logo_url if opp.company else None,
             "assigned_to_id": opp.assigned_to_id,
             "assigned_to_name": f"{opp.assigned_to.first_name} {opp.assigned_to.last_name}" if opp.assigned_to else None,
             "created_by_name": f"{opp.created_by.first_name} {opp.created_by.last_name}" if opp.created_by else None,

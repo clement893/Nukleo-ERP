@@ -24,7 +24,6 @@ export interface Opportunity {
   stage_name?: string | null;
   company_id?: number | null;
   company_name?: string | null;
-  company_logo_url?: string | null;
   assigned_to_id?: number | null;
   assigned_to_name?: string | null;
   created_by_name?: string | null;
@@ -264,5 +263,15 @@ export const opportunitiesAPI = {
     // Import dynamically to avoid SSR issues
     const { downloadOpportunityTemplate } = await import('@/lib/utils/generateOpportunityTemplate');
     downloadOpportunityTemplate();
+  },
+
+  /**
+   * Download opportunity import ZIP template (Excel + instructions + logos folder)
+   * This is a client-side function, not an API call
+   */
+  downloadZipTemplate: async (): Promise<void> => {
+    // Import dynamically to avoid SSR issues
+    const { downloadOpportunityZipTemplate } = await import('@/lib/utils/generateOpportunityTemplate');
+    await downloadOpportunityZipTemplate();
   },
 };
