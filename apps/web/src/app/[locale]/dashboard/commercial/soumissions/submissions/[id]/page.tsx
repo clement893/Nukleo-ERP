@@ -108,6 +108,22 @@ export default function SubmissionDetailPage() {
     }
   };
 
+  // Helper function to safely render text values (handles objects that might be passed as strings)
+  const renderTextValue = (value: any): string => {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (value && typeof value === 'object') {
+      // If it's an object with a 'description' property, use that
+      if ('description' in value && typeof value.description === 'string') {
+        return value.description;
+      }
+      // Otherwise, stringify it
+      return JSON.stringify(value, null, 2);
+    }
+    return String(value || '');
+  };
+
   // Convert submission to wizard data format
   const submissionToWizardData = (sub: Submission): SubmissionWizardData | null => {
     if (!sub.content || typeof sub.content !== 'object') {
@@ -285,14 +301,14 @@ export default function SubmissionDetailPage() {
           {submission.description && (
             <div>
               <label className="text-sm font-medium text-muted-foreground">Description</label>
-              <p className="text-lg whitespace-pre-wrap">{submission.description}</p>
+              <p className="text-lg whitespace-pre-wrap">{renderTextValue(submission.description)}</p>
             </div>
           )}
 
           {submission.notes && (
             <div>
               <label className="text-sm font-medium text-muted-foreground">Notes</label>
-              <p className="text-lg whitespace-pre-wrap">{submission.notes}</p>
+              <p className="text-lg whitespace-pre-wrap">{renderTextValue(submission.notes)}</p>
             </div>
           )}
 
