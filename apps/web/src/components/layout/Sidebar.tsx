@@ -9,7 +9,7 @@ import Input from '@/components/ui/Input';
 import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
 import { getNavigationConfig, type NavigationItem, type NavigationGroup } from '@/lib/navigation';
 import { clsx } from 'clsx';
-import { ChevronDown, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, X, LogOut } from 'lucide-react';
 
 export interface SidebarProps {
   isOpen?: boolean;
@@ -314,9 +314,11 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
             size="sm"
             variant="ghost"
             onClick={logout}
-            className="flex-1 text-xs h-8"
+            className="p-2 h-8 w-8"
+            aria-label="Déconnexion"
+            title="Déconnexion"
           >
-            Déconnexion
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </div>
