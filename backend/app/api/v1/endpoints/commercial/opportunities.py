@@ -36,6 +36,132 @@ from app.utils.import_logs import (
 router = APIRouter(prefix="/commercial/opportunities", tags=["commercial-opportunities"])
 
 
+async def find_company_by_name(
+    company_name: str,
+    db: AsyncSession,
+    all_companies: Optional[List[Company]] = None,
+    company_name_to_id: Optional[dict] = None
+) -> Optional[int]:
+    """
+    Find a company ID by name using intelligent matching.
+    
+    Matching strategy:
+    1. Exact match (case-insensitive)
+    2. Match without legal form (SARL, SA, SAS, EURL)
+    3. Partial match (contains)
+    
+    Args:
+        company_name: Company name to search for
+        db: Database session
+        all_companies: Optional pre-loaded list of companies (for performance)
+        company_name_to_id: Optional pre-built mapping (for performance)
+        
+    Returns:
+        Company ID if found, None otherwise
+    """
+    if not company_name or not company_name.strip():
+        return None
+    
+    # Load companies if not provided
+    if all_companies is None or company_name_to_id is None:
+        companies_result = await db.execute(select(Company))
+        all_companies = companies_result.scalars().all()
+        company_name_to_id = {}
+        for company in all_companies:
+            if company.name:
+                company_name_to_id[company.name.lower().strip()] = company.id
+    
+    company_name_normalized = company_name.strip().lower()
+    # Remove common prefixes/suffixes for better matching
+    company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+    
+    # Try exact match first
+    if company_name_normalized in company_name_to_id:
+        return company_name_to_id[company_name_normalized]
+    
+    # Try match without legal form
+    if company_name_clean and company_name_clean in company_name_to_id:
+        return company_name_to_id[company_name_clean]
+    
+    # Try partial match (contains)
+    matched_company_id = None
+    for stored_name, stored_id in company_name_to_id.items():
+        stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+        if (company_name_clean and stored_clean and 
+            (company_name_clean in stored_clean or stored_clean in company_name_clean)):
+            matched_company_id = stored_id
+            break
+    
+    # If no match with cleaned, try original normalized
+    if not matched_company_id:
+        for stored_name, stored_id in company_name_to_id.items():
+            if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                matched_company_id = stored_id
+                break
+    
+    return matched_company_id
+
+
+async def find_contact_by_name(
+    first_name: str,
+    last_name: str,
+    company_id: Optional[int] = None,
+    db: AsyncSession = None,
+    all_contacts: Optional[List[Contact]] = None,
+    contact_name_to_id: Optional[dict] = None
+) -> Optional[int]:
+    """
+    Find a contact ID by first name and last name using intelligent matching.
+    
+    Matching strategy:
+    1. Exact match (case-insensitive) on first_name + last_name
+    2. If company_id provided, also filter by company_id
+    
+    Args:
+        first_name: Contact first name
+        last_name: Contact last name
+        company_id: Optional company ID to filter by
+        db: Database session
+        all_contacts: Optional pre-loaded list of contacts (for performance)
+        contact_name_to_id: Optional pre-built mapping (for performance)
+        
+    Returns:
+        Contact ID if found, None otherwise
+    """
+    if not first_name or not last_name or not first_name.strip() or not last_name.strip():
+        return None
+    
+    # Load contacts if not provided
+    if all_contacts is None or contact_name_to_id is None:
+        query = select(Contact)
+        if company_id:
+            query = query.where(Contact.company_id == company_id)
+        contacts_result = await db.execute(query)
+        all_contacts = contacts_result.scalars().all()
+        contact_name_to_id = {}
+        for contact in all_contacts:
+            if contact.first_name and contact.last_name:
+                full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                contact_name_to_id[full_name] = contact.id
+    
+    # Normalize search name
+    search_name = f"{first_name.strip().lower()} {last_name.strip().lower()}"
+    
+    # Try exact match
+    if search_name in contact_name_to_id:
+        return contact_name_to_id[search_name]
+    
+    # Try matching with company filter if company_id provided
+    if company_id:
+        for contact in all_contacts:
+            if contact.company_id == company_id:
+                contact_full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                if contact_full_name == search_name:
+                    return contact.id
+    
+    return None
+
+
 # SSE endpoint for import logs
 @router.get("/import/{import_id}/logs")
 async def stream_import_logs(
@@ -586,6 +712,27 @@ async def import_opportunities(
         add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
         update_import_status(import_id, "processing", progress=0, total=total_rows)
         
+        # Load all companies once to create a name -> ID mapping
+        add_import_log(import_id, "Chargement des entreprises existantes...", "info")
+        companies_result = await db.execute(select(Company))
+        all_companies = companies_result.scalars().all()
+        company_name_to_id = {}
+        for company in all_companies:
+            if company.name:
+                company_name_to_id[company.name.lower().strip()] = company.id
+        add_import_log(import_id, f"{len(company_name_to_id)} entreprise(s) chargée(s) pour le matching", "info")
+        
+        # Load all contacts once to create a name -> ID mapping
+        add_import_log(import_id, "Chargement des contacts existants...", "info")
+        contacts_result = await db.execute(select(Contact))
+        all_contacts = contacts_result.scalars().all()
+        contact_name_to_id = {}
+        for contact in all_contacts:
+            if contact.first_name and contact.last_name:
+                full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                contact_name_to_id[full_name] = contact.id
+        add_import_log(import_id, f"{len(contact_name_to_id)} contact(s) chargé(s) pour le matching", "info")
+        
         # Process imported data
         created_opportunities = []
         errors = []
@@ -605,72 +752,153 @@ async def import_opportunities(
                 # Log progress every 10 rows
                 if (idx + 1) % 10 == 0 or idx < 5:
                     add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
-        try:
-            # Map Excel columns to Opportunity fields
-            name = row_data.get('name') or row_data.get('nom') or row_data.get('Nom de l\'opportunité') or ''
-            
-            if not name:
-                errors.append({
-                    'row': idx + 2,
-                    'data': row_data,
-                    'error': 'Name is required'
-                })
-                continue
-            
-            # Get pipeline_id (required)
-            pipeline_id_str = row_data.get('pipeline_id') or row_data.get('pipeline') or ''
-            if not pipeline_id_str:
-                errors.append({
-                    'row': idx + 2,
-                    'data': row_data,
-                    'error': 'Pipeline ID is required'
-                })
-                continue
-            
-            try:
-                pipeline_id = UUID(pipeline_id_str)
-            except ValueError:
-                errors.append({
-                    'row': idx + 2,
-                    'data': row_data,
-                    'error': f'Invalid pipeline ID: {pipeline_id_str}'
-                })
-                continue
-            
-            # Validate pipeline exists
-            pipeline_result = await db.execute(
-                select(Pipeline).where(Pipeline.id == pipeline_id)
-            )
-            if not pipeline_result.scalar_one_or_none():
-                errors.append({
-                    'row': idx + 2,
-                    'data': row_data,
-                    'error': f'Pipeline not found: {pipeline_id}'
-                })
-                continue
-            
-            opportunity_data = OpportunityCreate(
-                name=name,
-                description=row_data.get('description') or row_data.get('Description') or None,
-                amount=float(row_data.get('amount') or row_data.get('montant') or row_data.get('Montant') or 0) if row_data.get('amount') or row_data.get('montant') or row_data.get('Montant') else None,
-                probability=int(row_data.get('probability') or row_data.get('probabilité') or 0) if row_data.get('probability') or row_data.get('probabilité') else None,
-                status=row_data.get('status') or row_data.get('statut') or None,
-                segment=row_data.get('segment') or None,
-                region=row_data.get('region') or row_data.get('région') or None,
-                service_offer_link=row_data.get('service_offer_link') or row_data.get('lien_offre') or None,
-                notes=row_data.get('notes') or None,
-                pipeline_id=pipeline_id,
-                stage_id=UUID(row_data.get('stage_id') or row_data.get('stage')) if row_data.get('stage_id') or row_data.get('stage') else None,
-                company_id=int(row_data.get('company_id') or row_data.get('company')) if row_data.get('company_id') or row_data.get('company') else None,
-                assigned_to_id=int(row_data.get('assigned_to_id') or row_data.get('assigned_to')) if row_data.get('assigned_to_id') or row_data.get('assigned_to') else None,
-            )
-            
-            # Create opportunity
-            opportunity = Opportunite(**opportunity_data.model_dump(exclude={'contact_ids'}))
-            opportunity.created_by_id = current_user.id
-            opportunity.opened_at = opportunity.opened_at or dt.now()
-            
+                
+                # Map Excel columns to Opportunity fields
+                name = row_data.get('name') or row_data.get('nom') or row_data.get('Nom de l\'opportunité') or ''
+                
+                if not name:
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Name is required'
+                    })
+                    continue
+                
+                # Get pipeline_id (required)
+                pipeline_id_str = row_data.get('pipeline_id') or row_data.get('pipeline') or ''
+                if not pipeline_id_str:
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Pipeline ID is required'
+                    })
+                    continue
+                
+                try:
+                    pipeline_id = UUID(pipeline_id_str)
+                except ValueError:
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': f'Invalid pipeline ID: {pipeline_id_str}'
+                    })
+                    continue
+                
+                # Validate pipeline exists
+                pipeline_result = await db.execute(
+                    select(Pipeline).where(Pipeline.id == pipeline_id)
+                )
+                if not pipeline_result.scalar_one_or_none():
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': f'Pipeline not found: {pipeline_id}'
+                    })
+                    continue
+                
+                # Handle company matching by name or ID
+                company_id = None
+                company_name = row_data.get('company_name') or row_data.get('entreprise') or row_data.get('Entreprise') or None
+                company_id_raw = row_data.get('company_id') or row_data.get('company') or None
+                
+                if company_id_raw:
+                    try:
+                        company_id = int(float(str(company_id_raw)))
+                        # Verify company exists
+                        company_result = await db.execute(
+                            select(Company).where(Company.id == company_id)
+                        )
+                        if not company_result.scalar_one_or_none():
+                            errors.append({
+                                'row': idx + 2,
+                                'data': row_data,
+                                'error': f'Company ID {company_id} not found'
+                            })
+                            continue
+                    except (ValueError, TypeError):
+                        errors.append({
+                            'row': idx + 2,
+                            'data': row_data,
+                            'error': f'Invalid company ID: {company_id_raw}'
+                        })
+                        continue
+                elif company_name:
+                    # Try to find existing company by name
+                    matched_company_id = await find_company_by_name(
+                        company_name=company_name,
+                        db=db,
+                        all_companies=all_companies,
+                        company_name_to_id=company_name_to_id
+                    )
+                    if matched_company_id:
+                        company_id = matched_company_id
+                        add_import_log(import_id, f"Ligne {idx + 2}: Entreprise '{company_name}' matchée avec ID {matched_company_id}", "info")
+                    else:
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_name}' non trouvée, opportunité créée sans entreprise", "warning")
+                
+                # Handle contact matching by name
+                contact_ids = []
+                contact_name = row_data.get('contact_name') or row_data.get('contact') or row_data.get('Contact') or None
+                contact_first_name = row_data.get('contact_first_name') or row_data.get('contact_prenom') or row_data.get('Contact Prénom') or None
+                contact_last_name = row_data.get('contact_last_name') or row_data.get('contact_nom') or row_data.get('Contact Nom') or None
+                
+                if contact_name:
+                    # Try to parse "First Last" format
+                    name_parts = contact_name.strip().split(' ', 1)
+                    if len(name_parts) == 2:
+                        contact_first_name = name_parts[0]
+                        contact_last_name = name_parts[1]
+                    elif len(name_parts) == 1:
+                        contact_last_name = name_parts[0]
+                
+                if contact_first_name and contact_last_name:
+                    matched_contact_id = await find_contact_by_name(
+                        first_name=contact_first_name,
+                        last_name=contact_last_name,
+                        company_id=company_id,
+                        db=db,
+                        all_contacts=all_contacts,
+                        contact_name_to_id=contact_name_to_id
+                    )
+                    if matched_contact_id:
+                        contact_ids.append(matched_contact_id)
+                        add_import_log(import_id, f"Ligne {idx + 2}: Contact '{contact_first_name} {contact_last_name}' matché avec ID {matched_contact_id}", "info")
+                    else:
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Contact '{contact_first_name} {contact_last_name}' non trouvé", "warning")
+                
+                opportunity_data = OpportunityCreate(
+                    name=name,
+                    description=row_data.get('description') or row_data.get('Description') or None,
+                    amount=float(row_data.get('amount') or row_data.get('montant') or row_data.get('Montant') or 0) if row_data.get('amount') or row_data.get('montant') or row_data.get('Montant') else None,
+                    probability=int(row_data.get('probability') or row_data.get('probabilité') or 0) if row_data.get('probability') or row_data.get('probabilité') else None,
+                    status=row_data.get('status') or row_data.get('statut') or None,
+                    segment=row_data.get('segment') or None,
+                    region=row_data.get('region') or row_data.get('région') or None,
+                    service_offer_link=row_data.get('service_offer_link') or row_data.get('lien_offre') or None,
+                    notes=row_data.get('notes') or None,
+                    pipeline_id=pipeline_id,
+                    stage_id=UUID(row_data.get('stage_id') or row_data.get('stage')) if row_data.get('stage_id') or row_data.get('stage') else None,
+                    company_id=company_id,
+                    assigned_to_id=int(row_data.get('assigned_to_id') or row_data.get('assigned_to')) if row_data.get('assigned_to_id') or row_data.get('assigned_to') else None,
+                    contact_ids=contact_ids if contact_ids else None,
+                )
+                
+                # Create opportunity
+                opportunity = Opportunite(**opportunity_data.model_dump(exclude={'contact_ids'}))
+                opportunity.created_by_id = current_user.id
+                opportunity.opened_at = opportunity.opened_at or dt.now()
+                
                 db.add(opportunity)
+                await db.flush()  # Flush to get the ID
+                
+                # Add contacts if provided
+                if contact_ids:
+                    contact_results = await db.execute(
+                        select(Contact).where(Contact.id.in_(contact_ids))
+                    )
+                    contacts = contact_results.scalars().all()
+                    opportunity.contacts.extend(contacts)
+                
                 created_opportunities.append(opportunity)
                 stats["created_new"] += 1
                 add_import_log(import_id, f"Ligne {idx + 2}: Nouvelle opportunité créée - {name}", "info", {"row": idx + 2, "action": "created", "opportunity_name": name})

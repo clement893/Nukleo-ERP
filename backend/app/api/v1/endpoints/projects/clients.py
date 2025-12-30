@@ -24,6 +24,7 @@ from app.core.cache_enhanced import cache_query
 from app.dependencies import get_current_user
 from app.models.client import Client, ClientStatus
 from app.models.company import Company
+from app.models.contact import Contact
 from app.models.user import User
 from app.schemas.client import ClientCreate, ClientUpdate, ClientResponse
 from app.services.import_service import ImportService
@@ -126,6 +127,66 @@ async def find_company_by_name(
                 break
     
     return matched_company_id
+
+
+async def find_contact_by_name(
+    first_name: str,
+    last_name: str,
+    company_id: Optional[int] = None,
+    db: AsyncSession = None,
+    all_contacts: Optional[List[Contact]] = None,
+    contact_name_to_id: Optional[dict] = None
+) -> Optional[int]:
+    """
+    Find a contact ID by first name and last name using intelligent matching.
+    
+    Matching strategy:
+    1. Exact match (case-insensitive) on first_name + last_name
+    2. If company_id provided, also filter by company_id
+    
+    Args:
+        first_name: Contact first name
+        last_name: Contact last name
+        company_id: Optional company ID to filter by
+        db: Database session
+        all_contacts: Optional pre-loaded list of contacts (for performance)
+        contact_name_to_id: Optional pre-built mapping (for performance)
+        
+    Returns:
+        Contact ID if found, None otherwise
+    """
+    if not first_name or not last_name or not first_name.strip() or not last_name.strip():
+        return None
+    
+    # Load contacts if not provided
+    if all_contacts is None or contact_name_to_id is None:
+        query = select(Contact)
+        if company_id:
+            query = query.where(Contact.company_id == company_id)
+        contacts_result = await db.execute(query)
+        all_contacts = contacts_result.scalars().all()
+        contact_name_to_id = {}
+        for contact in all_contacts:
+            if contact.first_name and contact.last_name:
+                full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                contact_name_to_id[full_name] = contact.id
+    
+    # Normalize search name
+    search_name = f"{first_name.strip().lower()} {last_name.strip().lower()}"
+    
+    # Try exact match
+    if search_name in contact_name_to_id:
+        return contact_name_to_id[search_name]
+    
+    # Try matching with company filter if company_id provided
+    if company_id:
+        for contact in all_contacts:
+            if contact.company_id == company_id:
+                contact_full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                if contact_full_name == search_name:
+                    return contact.id
+    
+    return None
 
 
 def add_import_log(import_id: str, message: str, level: str = "info", data: Optional[Dict] = None):
@@ -869,6 +930,23 @@ async def import_clients(
                 detail="Error loading existing clients from database"
             )
         
+        # Load all contacts once to create a name -> ID mapping
+        add_import_log(import_id, "Chargement des contacts existants...", "info")
+        try:
+            contacts_result = await db.execute(select(Contact))
+            all_contacts = contacts_result.scalars().all()
+            contact_name_to_id = {}
+            for contact in all_contacts:
+                if contact.first_name and contact.last_name:
+                    full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
+                    contact_name_to_id[full_name] = contact.id
+            add_import_log(import_id, f"{len(contact_name_to_id)} contact(s) chargé(s) pour le matching", "info")
+        except Exception as e:
+            logger.error(f"Error loading contacts: {e}", exc_info=True)
+            add_import_log(import_id, f"⚠️ Erreur lors du chargement des contacts: {str(e)}", "warning")
+            all_contacts = []
+            contact_name_to_id = {}
+        
         # Helper function to normalize column names
         def normalize_key(key: str) -> str:
             """Normalize column name for matching"""
@@ -998,6 +1076,43 @@ async def import_clients(
                 
                 # Check if client already exists for this company
                 existing_client = clients_by_company_id.get(company_id)
+                
+                # Handle contact matching by name
+                contact_name = get_field_value(row_data, [
+                    'contact_name', 'contact', 'Contact', 'contact_nom', 'contact_name_full'
+                ])
+                contact_first_name = get_field_value(row_data, [
+                    'contact_first_name', 'contact_prenom', 'Contact Prénom', 'contact_prenom'
+                ])
+                contact_last_name = get_field_value(row_data, [
+                    'contact_last_name', 'contact_nom', 'Contact Nom', 'contact_nom_famille'
+                ])
+                
+                if contact_name:
+                    # Try to parse "First Last" format
+                    name_parts = contact_name.strip().split(' ', 1)
+                    if len(name_parts) == 2:
+                        contact_first_name = name_parts[0]
+                        contact_last_name = name_parts[1]
+                    elif len(name_parts) == 1:
+                        contact_last_name = name_parts[0]
+                
+                # Note: We log contact matching but don't link contacts to clients
+                # as the Client model doesn't have a direct contact relationship
+                # This is for informational purposes and future enhancement
+                if contact_first_name and contact_last_name:
+                    matched_contact_id = await find_contact_by_name(
+                        first_name=contact_first_name,
+                        last_name=contact_last_name,
+                        company_id=company_id,
+                        db=db,
+                        all_contacts=all_contacts,
+                        contact_name_to_id=contact_name_to_id
+                    )
+                    if matched_contact_id:
+                        add_import_log(import_id, f"Ligne {idx + 2}: Contact '{contact_first_name} {contact_last_name}' matché avec ID {matched_contact_id} (entreprise: {company_name})", "info")
+                    else:
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Contact '{contact_first_name} {contact_last_name}' non trouvé pour l'entreprise '{company_name}'", "warning")
                 
                 # Get status
                 status_raw = get_field_value(row_data, [
