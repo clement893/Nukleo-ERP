@@ -9,8 +9,8 @@
  * - Documentation
  */
 
-// Re-export Leo Agent API
-export {
+// Import Leo Agent API
+import {
   leoAgentAPI,
   type LeoConversation,
   type LeoMessage,
@@ -20,8 +20,8 @@ export {
   type LeoQueryResponse,
 } from './leo-agent';
 
-// Re-export Leo Documentation API
-export {
+// Import Leo Documentation API
+import {
   leoDocumentationAPI,
   type LeoDocumentation,
   type LeoDocumentationCreate,
@@ -30,6 +30,25 @@ export {
   type DocumentationCategory,
   type DocumentationPriority,
 } from './leo-documentation';
+
+// Re-export types
+export type {
+  LeoConversation,
+  LeoMessage,
+  LeoConversationListResponse,
+  LeoMessageListResponse,
+  LeoQueryRequest,
+  LeoQueryResponse,
+  LeoDocumentation,
+  LeoDocumentationCreate,
+  LeoDocumentationUpdate,
+  LeoDocumentationListResponse,
+  DocumentationCategory,
+  DocumentationPriority,
+};
+
+// Re-export APIs
+export { leoAgentAPI, leoDocumentationAPI };
 
 /**
  * Unified Leo API

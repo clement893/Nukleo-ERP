@@ -90,6 +90,117 @@ export interface ERPClientListResponse {
 }
 
 /**
+ * ERP Order
+ */
+export interface ERPOrder {
+  id: number;
+  order_number: string;
+  status: string;
+  total_amount: string; // Decimal as string
+  order_date: string;
+  delivery_date?: string;
+  client_id?: number;
+  client_name?: string;
+  client_email?: string;
+  items_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * ERP Order List Response
+ */
+export interface ERPOrderListResponse {
+  items: ERPOrder[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+/**
+ * ERP Inventory Product
+ */
+export interface ERPInventoryProduct {
+  id: number;
+  sku: string;
+  name: string;
+  description?: string;
+  price: string; // Decimal as string
+  stock_quantity: number;
+  low_stock_threshold: number;
+  category?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * ERP Inventory Product List Response
+ */
+export interface ERPInventoryProductListResponse {
+  items: ERPInventoryProduct[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+/**
+ * ERP Inventory Movement
+ */
+export interface ERPInventoryMovement {
+  id: number;
+  product_id: number;
+  product_name?: string;
+  movement_type: string; // 'in', 'out', 'adjustment'
+  quantity: number;
+  reference_type?: string; // 'order', 'invoice', etc.
+  reference_id?: number;
+  notes?: string;
+  created_by_id?: number;
+  created_by_name?: string;
+  created_at: string;
+}
+
+/**
+ * ERP Inventory Movement List Response
+ */
+export interface ERPInventoryMovementListResponse {
+  items: ERPInventoryMovement[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+/**
+ * ERP Report
+ */
+export interface ERPReport {
+  id: number;
+  report_type: string;
+  title: string;
+  period_start: string;
+  period_end: string;
+  data: Record<string, unknown>;
+  filters?: Record<string, unknown>;
+  generated_by_id?: number;
+  generated_by_name?: string;
+  created_at: string;
+}
+
+/**
+ * ERP Report List Response
+ */
+export interface ERPReportListResponse {
+  items: ERPReport[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+/**
  * ERP Portal API
  * 
  * Provides methods to interact with ERP portal endpoints.
@@ -182,6 +293,99 @@ export const erpPortalAPI = {
     const response = await apiClient.get<ERPClient>(`/v1/erp/clients/${clientId}`);
     if (!response.data) {
       throw new Error('Failed to fetch client: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get list of all orders
+   * 
+   * @param params Query parameters for pagination and filtering
+   * @returns Paginated list of all orders
+   * @requires ERP_VIEW_ALL_ORDERS permission
+   */
+  getOrders: async (params?: {
+    skip?: number;
+    limit?: number;
+    status?: string;
+    client_id?: number;
+  }): Promise<ERPOrderListResponse> => {
+    const response = await apiClient.get<ERPOrderListResponse>('/v1/erp/orders', { params });
+    if (!response.data) {
+      throw new Error('Failed to fetch orders: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get a specific order by ID
+   * 
+   * @param orderId Order ID
+   * @returns Order details
+   * @requires ERP_VIEW_ALL_ORDERS permission
+   */
+  getOrder: async (orderId: number): Promise<ERPOrder> => {
+    const response = await apiClient.get<ERPOrder>(`/v1/erp/orders/${orderId}`);
+    if (!response.data) {
+      throw new Error('Failed to fetch order: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get list of inventory products
+   * 
+   * @param params Query parameters for pagination and filtering
+   * @returns Paginated list of inventory products
+   * @requires ERP_VIEW_INVENTORY permission
+   */
+  getInventoryProducts: async (params?: {
+    skip?: number;
+    limit?: number;
+    low_stock_only?: boolean;
+  }): Promise<ERPInventoryProductListResponse> => {
+    const response = await apiClient.get<ERPInventoryProductListResponse>('/v1/erp/inventory/products', { params });
+    if (!response.data) {
+      throw new Error('Failed to fetch inventory products: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get list of inventory movements
+   * 
+   * @param params Query parameters for pagination and filtering
+   * @returns Paginated list of inventory movements
+   * @requires ERP_VIEW_INVENTORY permission
+   */
+  getInventoryMovements: async (params?: {
+    skip?: number;
+    limit?: number;
+    product_id?: number;
+    movement_type?: string;
+  }): Promise<ERPInventoryMovementListResponse> => {
+    const response = await apiClient.get<ERPInventoryMovementListResponse>('/v1/erp/inventory/movements', { params });
+    if (!response.data) {
+      throw new Error('Failed to fetch inventory movements: no data returned');
+    }
+    return response.data;
+  },
+
+  /**
+   * Get list of reports
+   * 
+   * @param params Query parameters for pagination and filtering
+   * @returns Paginated list of reports
+   * @requires ERP_VIEW_REPORTS permission
+   */
+  getReports: async (params?: {
+    skip?: number;
+    limit?: number;
+    report_type?: string;
+  }): Promise<ERPReportListResponse> => {
+    const response = await apiClient.get<ERPReportListResponse>('/v1/erp/reports', { params });
+    if (!response.data) {
+      throw new Error('Failed to fetch reports: no data returned');
     }
     return response.data;
   },
