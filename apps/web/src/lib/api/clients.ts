@@ -66,9 +66,13 @@ export const clientsAPI = {
     responsible_id?: number,
     search?: string
   ): Promise<Client[]> => {
+    // Ensure skip and limit are integers (not strings)
+    const skipInt = typeof skip === 'string' ? parseInt(skip, 10) : Math.floor(Number(skip));
+    const limitInt = typeof limit === 'string' ? parseInt(limit, 10) : Math.floor(Number(limit));
+    
     const params: Record<string, any> = { 
-      skip: Number(skip), 
-      limit: Number(limit),
+      skip: skipInt, 
+      limit: limitInt,
       _t: Date.now() 
     };
     if (status) params.status = status;
@@ -77,7 +81,23 @@ export const clientsAPI = {
     }
     if (search) params.search = search;
 
-    const response = await apiClient.get<Client[]>('/v1/projects/clients', { params });
+    const response = await apiClient.get<Client[]>('/v1/projects/clients', { 
+      params,
+      paramsSerializer: (params) => {
+        // Ensure numeric params are sent as numbers, not strings
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            if (typeof value === 'number') {
+              searchParams.append(key, value.toString());
+            } else {
+              searchParams.append(key, String(value));
+            }
+          }
+        });
+        return searchParams.toString();
+      }
+    });
     const data = extractApiData<Client[]>(response);
     return Array.isArray(data) ? data : [];
   },

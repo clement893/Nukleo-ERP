@@ -169,6 +169,7 @@ function ClientsContent() {
   const [showImportInstructions, setShowImportInstructions] = useState(false);
   const [currentImportId, setCurrentImportId] = useState<string | null>(null);
   const [showImportLogs, setShowImportLogs] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -337,6 +338,27 @@ function ClientsContent() {
         message: appError.message || 'Erreur lors de l\'export',
         type: 'error',
       });
+    }
+  };
+
+  // Handle download ZIP template
+  const handleDownloadZipTemplate = async () => {
+    try {
+      setDownloadingTemplate(true);
+      await clientsAPI.downloadZipTemplate();
+      showToast({
+        message: 'Modèle ZIP téléchargé avec succès',
+        type: 'success',
+      });
+      setShowActionsMenu(false);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du téléchargement du modèle',
+        type: 'error',
+      });
+    } finally {
+      setDownloadingTemplate(false);
     }
   };
 
@@ -570,6 +592,14 @@ function ClientsContent() {
                         >
                           <FileSpreadsheet className="w-4 h-4" />
                           Instructions d'import
+                        </button>
+                        <button
+                          onClick={handleDownloadZipTemplate}
+                          disabled={downloadingTemplate}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted border-t border-border disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Download className="w-4 h-4" />
+                          {downloadingTemplate ? 'Téléchargement...' : 'Télécharger modèle ZIP'}
                         </button>
                         <input
                           type="file"

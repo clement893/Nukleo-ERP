@@ -1315,14 +1315,14 @@ async def import_contacts(
                     # If no photo_url but we have photos in ZIP, try to find matching photo
                     if not photo_url and photos_dict:
                         if not s3_service:
-                        logger.warning(f"Photo found for {first_name} {last_name} but S3 service is not available. Skipping photo upload.")
-                        warnings.append({
-                            'row': idx + 2,
-                            'type': 'photo_upload_skipped',
-                            'message': f"Photo trouvée pour {first_name} {last_name} mais S3 n'est pas disponible. La photo n'a pas été uploadée.",
-                            'data': {'contact': f"{first_name} {last_name}"}
-                        })
-                    else:
+                            logger.warning(f"Photo found for {first_name} {last_name} but S3 service is not available. Skipping photo upload.")
+                            warnings.append({
+                                'row': idx + 2,
+                                'type': 'photo_upload_skipped',
+                                'message': f"Photo trouvée pour {first_name} {last_name} mais S3 n'est pas disponible. La photo n'a pas été uploadée.",
+                                'data': {'contact': f"{first_name} {last_name}"}
+                            })
+                        else:
                         # Normalize names for filename matching
                         first_name_normalized = normalize_filename(first_name)
                         last_name_normalized = normalize_filename(last_name)
