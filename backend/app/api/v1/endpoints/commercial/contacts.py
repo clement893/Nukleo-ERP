@@ -1411,228 +1411,228 @@ async def import_contacts(
                 
                 # Get position
                 position = get_field_value(row_data, [
-                        'position', 'poste', 'job_title', 'job title', 'titre',
-                        'fonction', 'role', 'titre du poste'
+                    'position', 'poste', 'job_title', 'job title', 'titre',
+                    'fonction', 'role', 'titre du poste'
+                ])
+                
+                # Get circle
+                circle = get_field_value(row_data, [
+                    'circle', 'cercle', 'network', 'réseau', 'reseau'
+                ])
+                
+                # Get LinkedIn
+                linkedin = get_field_value(row_data, [
+                    'linkedin', 'linkedin_url', 'linkedin url', 'profil linkedin'
+                ])
+                
+                # Get email
+                email = get_field_value(row_data, [
+                    'email', 'courriel', 'e-mail', 'mail', 'adresse email',
+                    'adresse courriel', 'email address'
+                ])
+                
+                # Normalize email for matching
+                email_lower = email.lower().strip() if email else None
+                first_name_lower = first_name.lower().strip() if first_name else ''
+                last_name_lower = last_name.lower().strip() if last_name else ''
+                
+                # Check if contact already exists (for reimport/update)
+                existing_contact = None
+                match_reason = None
+                if email_lower and email_lower in contacts_by_email:
+                    # Match by email (most reliable)
+                    existing_contact = contacts_by_email[email_lower]
+                    match_reason = f"email: {email_lower}"
+                elif email_lower:
+                    # Match by name + email
+                    name_email_key = (first_name_lower, last_name_lower, email_lower)
+                    if name_email_key in contacts_by_name_email:
+                        existing_contact = contacts_by_name_email[name_email_key]
+                        match_reason = f"name+email: {first_name} {last_name} + {email_lower}"
+                elif company_id:
+                    # Match by name + company_id (if no email)
+                    name_company_key = (first_name_lower, last_name_lower, company_id)
+                    if name_company_key in contacts_by_name_company:
+                        existing_contact = contacts_by_name_company[name_company_key]
+                        match_reason = f"name+company: {first_name} {last_name} + company_id:{company_id}"
+                
+                if existing_contact:
+                    add_import_log(import_id, f"Ligne {idx + 2}: Contact existant trouvé ({match_reason}) - sera mis à jour", "info", {"row": idx + 2, "match_reason": match_reason, "existing_id": existing_contact.id})
+                
+                # Get phone
+                phone = get_field_value(row_data, [
+                    'phone', 'téléphone', 'telephone', 'tel', 'tél',
+                    'phone_number', 'phone number', 'numéro de téléphone',
+                    'numero de telephone', 'mobile', 'portable'
+                ])
+                
+                # Get city and country - try direct fields first, then parse region
+                city = get_field_value(row_data, [
+                    'city', 'ville', 'cité', 'cite', 'localité', 'localite'
+                ])
+                country = get_field_value(row_data, [
+                    'country', 'pays', 'nation', 'nationalité', 'nationalite'
+                ])
+                
+                # If city or country not found, try to parse from region
+                if not city or not country:
+                    region = get_field_value(row_data, [
+                        'region', 'région', 'zone', 'area', 'location', 'localisation'
                     ])
-                    
-                    # Get circle
-                    circle = get_field_value(row_data, [
-                        'circle', 'cercle', 'network', 'réseau', 'reseau'
-                    ])
-                    
-                    # Get LinkedIn
-                    linkedin = get_field_value(row_data, [
-                        'linkedin', 'linkedin_url', 'linkedin url', 'profil linkedin'
-                    ])
-                    
-                    # Get email
-                    email = get_field_value(row_data, [
-                        'email', 'courriel', 'e-mail', 'mail', 'adresse email',
-                        'adresse courriel', 'email address'
-                    ])
-                    
-                    # Normalize email for matching
-                    email_lower = email.lower().strip() if email else None
-                    first_name_lower = first_name.lower().strip() if first_name else ''
-                    last_name_lower = last_name.lower().strip() if last_name else ''
-                    
-                    # Check if contact already exists (for reimport/update)
-                    existing_contact = None
-                    match_reason = None
-                    if email_lower and email_lower in contacts_by_email:
-                        # Match by email (most reliable)
-                        existing_contact = contacts_by_email[email_lower]
-                        match_reason = f"email: {email_lower}"
-                    elif email_lower:
-                        # Match by name + email
-                        name_email_key = (first_name_lower, last_name_lower, email_lower)
-                        if name_email_key in contacts_by_name_email:
-                            existing_contact = contacts_by_name_email[name_email_key]
-                            match_reason = f"name+email: {first_name} {last_name} + {email_lower}"
-                    elif company_id:
-                        # Match by name + company_id (if no email)
-                        name_company_key = (first_name_lower, last_name_lower, company_id)
-                        if name_company_key in contacts_by_name_company:
-                            existing_contact = contacts_by_name_company[name_company_key]
-                            match_reason = f"name+company: {first_name} {last_name} + company_id:{company_id}"
-                    
-                    if existing_contact:
-                        add_import_log(import_id, f"Ligne {idx + 2}: Contact existant trouvé ({match_reason}) - sera mis à jour", "info", {"row": idx + 2, "match_reason": match_reason, "existing_id": existing_contact.id})
-                    
-                    # Get phone
-                    phone = get_field_value(row_data, [
-                        'phone', 'téléphone', 'telephone', 'tel', 'tél',
-                        'phone_number', 'phone number', 'numéro de téléphone',
-                        'numero de telephone', 'mobile', 'portable'
-                    ])
-                    
-                    # Get city and country - try direct fields first, then parse region
-                    city = get_field_value(row_data, [
-                        'city', 'ville', 'cité', 'cite', 'localité', 'localite'
-                    ])
-                    country = get_field_value(row_data, [
-                        'country', 'pays', 'nation', 'nationalité', 'nationalite'
-                    ])
-                    
-                    # If city or country not found, try to parse from region
-                    if not city or not country:
-                        region = get_field_value(row_data, [
-                            'region', 'région', 'zone', 'area', 'location', 'localisation'
-                        ])
-                        if region:
-                            parsed_city, parsed_country = parse_region(region)
-                            if parsed_city and not city:
-                                city = parsed_city
-                            if parsed_country and not country:
-                                country = parsed_country
-                    
-                    # Get birthday
-                    birthday_raw = get_field_value(row_data, [
-                        'birthday', 'anniversaire', 'date de naissance',
-                        'date de naissance', 'birth_date', 'birth date', 'dob'
-                    ])
-                    birthday = None
-                    if birthday_raw:
-                        try:
-                            # Try to parse various date formats
-                            try:
-                                from dateutil import parser
-                                birthday = parser.parse(str(birthday_raw)).date()
-                            except ImportError:
-                                # Fallback to datetime.strptime for common formats
-                                date_str = str(birthday_raw).strip()
-                                # Try common date formats
-                                for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%d.%m.%Y']:
-                                    try:
-                                        birthday = dt.strptime(date_str, fmt).date()
-                                        break
-                                    except ValueError:
-                                        continue
-                        except (ValueError, TypeError):
-                            try:
-                                # Try pandas datetime if available
-                                import pandas as pd
-                                if isinstance(birthday_raw, (pd.Timestamp,)):
-                                    birthday = birthday_raw.date()
-                            except (ImportError, AttributeError, TypeError):
-                                pass
-                    
-                    # Get language
-                    language = get_field_value(row_data, [
-                        'language', 'langue', 'lang', 'idioma'
-                    ])
-                    
-                    # Get employee_id
-                    employee_id = None
-                    employee_id_raw = get_field_value(row_data, [
-                        'employee_id', 'id_employé', 'id_employe', 'employé_id',
-                        'employe_id', 'employee id', 'id employee', 'responsable_id',
-                        'responsable id', 'assigned_to_id', 'assigned to id'
-                    ])
-                    if employee_id_raw:
-                        try:
-                            employee_id = int(float(str(employee_id_raw)))  # Handle float strings
-                        except (ValueError, TypeError):
-                            warnings.append({
-                                'row': idx + 2,
-                                'type': 'invalid_employee_id',
-                                'message': f"ID employé invalide: '{employee_id_raw}'",
-                                'data': {'employee_id_raw': employee_id_raw}
-                            })
-                    
-                    # Validate required fields before creating contact
-                    if not first_name or not first_name.strip():
-                        stats["skipped_missing_firstname"] += 1
-                        error_msg = f"Ligne {idx + 2}: ⚠️ Prénom manquant - contact ignoré (first_name='{first_name}', last_name='{last_name}')"
-                        add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "row_data_keys": list(row_data.keys())})
-                        errors.append({
-                            'row': idx + 2,
-                            'data': row_data,
-                            'error': 'Le prénom est obligatoire'
-                        })
-                        logger.warning(f"Row {idx + 2}: Skipping contact - missing first_name. Row keys: {list(row_data.keys())}")
-                        continue
-                    
-                    if not last_name or not last_name.strip():
-                        stats["skipped_missing_lastname"] += 1
-                        error_msg = f"Ligne {idx + 2}: ⚠️ Nom manquant - contact ignoré (first_name='{first_name}', last_name='{last_name}')"
-                        add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "row_data_keys": list(row_data.keys())})
-                        errors.append({
-                            'row': idx + 2,
-                            'data': row_data,
-                            'error': 'Le nom est obligatoire'
-                        })
-                        logger.warning(f"Row {idx + 2}: Skipping contact - missing last_name. Row keys: {list(row_data.keys())}")
-                        continue
-                    
-                    # Get photo_filename for photo matching (from Excel column logo_filename, photo_filename, or nom_fichier_photo)
-                    logo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
-                    
-                    # Prepare contact data
+                    if region:
+                        parsed_city, parsed_country = parse_region(region)
+                        if parsed_city and not city:
+                            city = parsed_city
+                        if parsed_country and not country:
+                            country = parsed_country
+                
+                # Get birthday
+                birthday_raw = get_field_value(row_data, [
+                    'birthday', 'anniversaire', 'date de naissance',
+                    'date de naissance', 'birth_date', 'birth date', 'dob'
+                ])
+                birthday = None
+                if birthday_raw:
                     try:
-                        contact_data = ContactCreate(
-                            first_name=first_name.strip(),
-                            last_name=last_name.strip(),
-                            company_id=company_id,
-                            position=position,
-                            circle=circle,
-                            linkedin=linkedin,
-                            photo_url=photo_url,  # Store file_key, not presigned URL
-                            photo_filename=logo_filename,  # Store filename for photo matching (using logo_filename variable name from Excel)
-                            email=email,
-                            phone=phone,
-                            city=city,
-                            country=country,
-                            birthday=birthday,
-                            language=language,
-                            employee_id=employee_id,
-                        )
-                    except Exception as validation_error:
-                        stats["errors"] += 1
-                        error_msg = f"Ligne {idx + 2}: Erreur de validation - {str(validation_error)}"
-                        add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(validation_error), "contact": f"{first_name} {last_name}"})
-                        logger.error(f"Row {idx + 2}: Validation error for {first_name} {last_name}: {validation_error}", exc_info=True)
-                        errors.append({
+                        # Try to parse various date formats
+                        try:
+                            from dateutil import parser
+                            birthday = parser.parse(str(birthday_raw)).date()
+                        except ImportError:
+                            # Fallback to datetime.strptime for common formats
+                            date_str = str(birthday_raw).strip()
+                            # Try common date formats
+                            for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%d.%m.%Y']:
+                                try:
+                                    birthday = dt.strptime(date_str, fmt).date()
+                                    break
+                                except ValueError:
+                                    continue
+                    except (ValueError, TypeError):
+                        try:
+                            # Try pandas datetime if available
+                            import pandas as pd
+                            if isinstance(birthday_raw, (pd.Timestamp,)):
+                                birthday = birthday_raw.date()
+                        except (ImportError, AttributeError, TypeError):
+                            pass
+                
+                # Get language
+                language = get_field_value(row_data, [
+                    'language', 'langue', 'lang', 'idioma'
+                ])
+                
+                # Get employee_id
+                employee_id = None
+                employee_id_raw = get_field_value(row_data, [
+                    'employee_id', 'id_employé', 'id_employe', 'employé_id',
+                    'employe_id', 'employee id', 'id employee', 'responsable_id',
+                    'responsable id', 'assigned_to_id', 'assigned to id'
+                ])
+                if employee_id_raw:
+                    try:
+                        employee_id = int(float(str(employee_id_raw)))  # Handle float strings
+                    except (ValueError, TypeError):
+                        warnings.append({
                             'row': idx + 2,
-                            'data': row_data,
-                            'error': f'Erreur de validation: {str(validation_error)}'
+                            'type': 'invalid_employee_id',
+                            'message': f"ID employé invalide: '{employee_id_raw}'",
+                            'data': {'employee_id_raw': employee_id_raw}
                         })
-                        continue
-                    
-                    # Update existing contact or create new one
-                    if existing_contact:
-                        # Update existing contact
-                        update_data = contact_data.model_dump(exclude_none=True)
-                        for field, value in update_data.items():
-                            # Only update photo_url if a new photo was uploaded (photo_url is not None and not empty)
-                            if field == 'photo_url':
-                                if value:  # New photo provided
-                                    setattr(existing_contact, field, value)
-                                    # Also update photo_filename if photo_url is updated
-                                    if 'photo_filename' in update_data and update_data['photo_filename']:
-                                        setattr(existing_contact, 'photo_filename', update_data['photo_filename'])
-                                    logger.info(f"Updated photo for contact {existing_contact.id}")
-                                # If no new photo provided, keep existing photo (don't update field)
-                            else:
-                                # Update all other fields including photo_filename
+                
+                # Validate required fields before creating contact
+                if not first_name or not first_name.strip():
+                    stats["skipped_missing_firstname"] += 1
+                    error_msg = f"Ligne {idx + 2}: ⚠️ Prénom manquant - contact ignoré (first_name='{first_name}', last_name='{last_name}')"
+                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "row_data_keys": list(row_data.keys())})
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Le prénom est obligatoire'
+                    })
+                    logger.warning(f"Row {idx + 2}: Skipping contact - missing first_name. Row keys: {list(row_data.keys())}")
+                    continue
+                
+                if not last_name or not last_name.strip():
+                    stats["skipped_missing_lastname"] += 1
+                    error_msg = f"Ligne {idx + 2}: ⚠️ Nom manquant - contact ignoré (first_name='{first_name}', last_name='{last_name}')"
+                    add_import_log(import_id, error_msg, "warning", {"row": idx + 2, "contact": f"{first_name} {last_name}", "row_data_keys": list(row_data.keys())})
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': 'Le nom est obligatoire'
+                    })
+                    logger.warning(f"Row {idx + 2}: Skipping contact - missing last_name. Row keys: {list(row_data.keys())}")
+                    continue
+                
+                # Get photo_filename for photo matching (from Excel column logo_filename, photo_filename, or nom_fichier_photo)
+                logo_filename = get_field_value(row_data, ['logo_filename', 'photo_filename', 'nom_fichier_photo'])
+                
+                # Prepare contact data
+                try:
+                    contact_data = ContactCreate(
+                        first_name=first_name.strip(),
+                        last_name=last_name.strip(),
+                        company_id=company_id,
+                        position=position,
+                        circle=circle,
+                        linkedin=linkedin,
+                        photo_url=photo_url,  # Store file_key, not presigned URL
+                        photo_filename=logo_filename,  # Store filename for photo matching (using logo_filename variable name from Excel)
+                        email=email,
+                        phone=phone,
+                        city=city,
+                        country=country,
+                        birthday=birthday,
+                        language=language,
+                        employee_id=employee_id,
+                    )
+                except Exception as validation_error:
+                    stats["errors"] += 1
+                    error_msg = f"Ligne {idx + 2}: Erreur de validation - {str(validation_error)}"
+                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "error": str(validation_error), "contact": f"{first_name} {last_name}"})
+                    logger.error(f"Row {idx + 2}: Validation error for {first_name} {last_name}: {validation_error}", exc_info=True)
+                    errors.append({
+                        'row': idx + 2,
+                        'data': row_data,
+                        'error': f'Erreur de validation: {str(validation_error)}'
+                    })
+                    continue
+                
+                # Update existing contact or create new one
+                if existing_contact:
+                    # Update existing contact
+                    update_data = contact_data.model_dump(exclude_none=True)
+                    for field, value in update_data.items():
+                        # Only update photo_url if a new photo was uploaded (photo_url is not None and not empty)
+                        if field == 'photo_url':
+                            if value:  # New photo provided
                                 setattr(existing_contact, field, value)
-                        
-                        contact = existing_contact
-                        created_contacts.append(contact)  # Track as processed contact
-                        stats["matched_existing"] += 1
-                        add_import_log(import_id, f"Ligne {idx + 2}: Contact mis à jour - {first_name} {last_name} (ID: {existing_contact.id})", "info", {"row": idx + 2, "action": "updated", "contact_id": existing_contact.id})
-                        logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
-                    else:
-                        # Create new contact
-                        contact = Contact(**contact_data.model_dump(exclude_none=True))
-                        db.add(contact)
-                        created_contacts.append(contact)
-                        stats["created_new"] += 1
-                        add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
-                        logger.info(f"Created new contact: {first_name} {last_name}")
+                                # Also update photo_filename if photo_url is updated
+                                if 'photo_filename' in update_data and update_data['photo_filename']:
+                                    setattr(existing_contact, 'photo_filename', update_data['photo_filename'])
+                                logger.info(f"Updated photo for contact {existing_contact.id}")
+                            # If no new photo provided, keep existing photo (don't update field)
+                        else:
+                            # Update all other fields including photo_filename
+                            setattr(existing_contact, field, value)
                     
-                    # Note: No batch commits here - we commit all contacts at the end (like companies import)
-                    # This ensures all contacts remain in the session and are saved together
+                    contact = existing_contact
+                    created_contacts.append(contact)  # Track as processed contact
+                    stats["matched_existing"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: Contact mis à jour - {first_name} {last_name} (ID: {existing_contact.id})", "info", {"row": idx + 2, "action": "updated", "contact_id": existing_contact.id})
+                    logger.info(f"Updated existing contact: {first_name} {last_name} (ID: {existing_contact.id})")
+                else:
+                    # Create new contact
+                    contact = Contact(**contact_data.model_dump(exclude_none=True))
+                    db.add(contact)
+                    created_contacts.append(contact)
+                    stats["created_new"] += 1
+                    add_import_log(import_id, f"Ligne {idx + 2}: Nouveau contact créé - {first_name} {last_name}", "info", {"row": idx + 2, "action": "created"})
+                    logger.info(f"Created new contact: {first_name} {last_name}")
+                
+                # Note: No batch commits here - we commit all contacts at the end (like companies import)
+                # This ensures all contacts remain in the session and are saved together
                 
             except Exception as e:
                 stats["errors"] += 1
