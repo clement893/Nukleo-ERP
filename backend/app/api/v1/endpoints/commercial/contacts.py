@@ -1172,14 +1172,29 @@ async def import_contacts(
         
         # Convert to list to ensure we iterate over all items
         data_list = list(result['data']) if not isinstance(result['data'], list) else result['data']
-        add_import_log(import_id, f"🔍 DEBUG: Liste convertie, nombre d'éléments: {len(data_list)}", "info")
-        logger.info(f"DEBUG: Converted to list, length: {len(data_list)}")
+        add_import_log(import_id, f"🔍 DEBUG: Liste convertie, nombre d'éléments: {len(data_list)}, type: {type(data_list)}", "info")
+        logger.info(f"DEBUG: Converted to list, length: {len(data_list)}, type: {type(data_list)}")
+        
+        # Verify we can access all items
+        try:
+            first_few = data_list[:10] if len(data_list) >= 10 else data_list
+            add_import_log(import_id, f"🔍 DEBUG: Premiers éléments accessibles: {len(first_few)}", "info")
+            logger.info(f"DEBUG: First few items accessible: {len(first_few)}")
+        except Exception as e:
+            add_import_log(import_id, f"❌ ERREUR lors de l'accès aux premiers éléments: {str(e)}", "error")
+            logger.error(f"ERROR accessing first items: {e}", exc_info=True)
         
         # Wrap entire loop in try/except to catch any unhandled exceptions
         try:
+            iteration_count = 0
             for idx, row_data in enumerate(data_list):
+                iteration_count += 1
                 try:
                     stats["total_processed"] += 1
+                    
+                    # Log every iteration for first 10 rows
+                    if idx < 10:
+                        add_import_log(import_id, f"🔍 DEBUG: Itération {idx + 1}: début du traitement", "info", {"iteration": idx + 1, "iteration_count": iteration_count})
                 
                 # Log every row for debugging (temporarily)
                 if idx < 10 or (idx + 1) % 10 == 0:
