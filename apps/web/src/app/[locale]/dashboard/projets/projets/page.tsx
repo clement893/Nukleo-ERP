@@ -65,6 +65,8 @@ function ProjectsContent() {
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
+  const [showImportLogs, setShowImportLogs] = useState(false);
   
   // Debounce search query to avoid excessive re-renders (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);

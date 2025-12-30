@@ -78,6 +78,8 @@ function EmployeesContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showImportInstructions, setShowImportInstructions] = useState(false);
+  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
+  const [showImportLogs, setShowImportLogs] = useState(false);
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
