@@ -79,10 +79,33 @@ async def list_events(
         selectinload(CalendarEvent.user)
     ).order_by(CalendarEvent.date.asc(), CalendarEvent.time.asc()).offset(skip).limit(limit)
     
-    result = await db.execute(query)
-    events = result.scalars().all()
-    
-    return [CalendarEventSchema.model_validate(event) for event in events]
+    try:
+        result = await db.execute(query)
+        events = result.scalars().all()
+        
+        # Convert events to schema format
+        event_list = []
+        for event in events:
+            try:
+                # Use model_validate with from_attributes=True to handle SQLAlchemy model
+                # The schema's model_validator will handle the conversion of 'type' to 'event_category'
+                event_schema = CalendarEventSchema.model_validate(event, from_attributes=True)
+                event_list.append(event_schema)
+            except Exception as e:
+                logger.error(f"Error validating event {event.id}: {e}", exc_info=True)
+                logger.error(f"Event data: id={event.id}, title={event.title}, date={event.date}, type={event.type}")
+                # Re-raise to see the actual error in logs
+                raise
+        
+        return event_list
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching calendar events: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch calendar events: {str(e)}"
+        )
 
 
 @router.get("/{event_id}", response_model=CalendarEventSchema)

@@ -42,16 +42,22 @@ class CalendarEventBase(BaseModel):
             for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
                        'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
                 if hasattr(data, key):
-                    result[key] = getattr(data, key)
+                    value = getattr(data, key)
+                    # Convert Time object to string
+                    if key == 'time' and value is not None:
+                        from datetime import time as dt_time
+                        if isinstance(value, dt_time):
+                            value = value.strftime('%H:%M:%S')
+                    result[key] = value
             # Map 'type' to 'event_category'
             if hasattr(data, 'type'):
                 result['event_category'] = getattr(data, 'type')
-            # Map 'time' to 'event_time'
-            if hasattr(data, 'time'):
-                result['event_time'] = getattr(data, 'time')
+            # Map 'time' to 'event_time' (already converted to string above)
+            if 'time' in result:
+                result['event_time'] = result.pop('time')
             # Map 'date' to 'event_date'
-            if hasattr(data, 'date'):
-                result['event_date'] = getattr(data, 'date')
+            if 'date' in result:
+                result['event_date'] = result.pop('date')
             return result
         # Handle dict input (from API)
         if isinstance(data, dict):
@@ -60,7 +66,13 @@ class CalendarEventBase(BaseModel):
                 data['event_category'] = data.pop('type')
             # Convert 'time' key to 'event_time'
             if 'time' in data and 'event_time' not in data:
-                data['event_time'] = data.pop('time')
+                time_value = data.pop('time')
+                # Convert Time object to string if needed
+                if time_value is not None:
+                    from datetime import time as dt_time
+                    if isinstance(time_value, dt_time):
+                        time_value = time_value.strftime('%H:%M:%S')
+                data['event_time'] = time_value
             # Convert 'date' key to 'event_date'
             if 'date' in data and 'event_date' not in data:
                 data['event_date'] = data.pop('date')
@@ -183,16 +195,22 @@ class CalendarEvent(CalendarEventBase):
             for key in ['id', 'user_id', 'title', 'description', 'date', 'end_date', 
                        'time', 'location', 'attendees', 'color', 'created_at', 'updated_at']:
                 if hasattr(data, key):
-                    result[key] = getattr(data, key)
+                    value = getattr(data, key)
+                    # Convert Time object to string
+                    if key == 'time' and value is not None:
+                        from datetime import time as dt_time
+                        if isinstance(value, dt_time):
+                            value = value.strftime('%H:%M:%S')
+                    result[key] = value
             # Map 'type' to 'event_category'
             if hasattr(data, 'type'):
                 result['event_category'] = getattr(data, 'type')
-            # Map 'time' to 'event_time'
-            if hasattr(data, 'time'):
-                result['event_time'] = getattr(data, 'time')
+            # Map 'time' to 'event_time' (already converted to string above)
+            if 'time' in result:
+                result['event_time'] = result.pop('time')
             # Map 'date' to 'event_date'
-            if hasattr(data, 'date'):
-                result['event_date'] = getattr(data, 'date')
+            if 'date' in result:
+                result['event_date'] = result.pop('date')
             return result
         # Handle dict input (from API)
         if isinstance(data, dict):
@@ -201,7 +219,13 @@ class CalendarEvent(CalendarEventBase):
                 data['event_category'] = data.pop('type')
             # Convert 'time' key to 'event_time'
             if 'time' in data and 'event_time' not in data:
-                data['event_time'] = data.pop('time')
+                time_value = data.pop('time')
+                # Convert Time object to string if needed
+                if time_value is not None:
+                    from datetime import time as dt_time
+                    if isinstance(time_value, dt_time):
+                        time_value = time_value.strftime('%H:%M:%S')
+                data['event_time'] = time_value
             # Convert 'date' key to 'event_date'
             if 'date' in data and 'event_date' not in data:
                 data['event_date'] = data.pop('date')
