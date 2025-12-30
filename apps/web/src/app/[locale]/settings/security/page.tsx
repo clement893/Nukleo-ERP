@@ -22,6 +22,8 @@ import { Loading, Alert, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/compo
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errors';
+import { apiKeysAPI } from '@/lib/api/api-keys';
+import type { APIKeyListResponse } from '@/lib/api/api-keys';
 
 export default function SecuritySettingsPage() {
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function SecuritySettingsPage() {
     loginNotifications: true,
     suspiciousActivityAlerts: true,
   });
-  const [apiKeys] = useState<APIKey[]>([]);
+  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -52,12 +54,34 @@ export default function SecuritySettingsPage() {
     try {
       setIsLoading(true);
       setError(null);
-      // API integration - Load security settings from API endpoint when available
+      // Load API keys
+      await loadAPIKeys();
       setIsLoading(false);
     } catch (error) {
       logger.error('Failed to load security settings', error instanceof Error ? error : new Error(String(error)));
       setError(t('errors.loadFailed') || 'Failed to load security settings. Please try again.');
       setIsLoading(false);
+    }
+  };
+
+  const loadAPIKeys = async () => {
+    try {
+      const keys = await apiKeysAPI.list();
+      setApiKeys(
+        keys.map((key: APIKeyListResponse) => ({
+          id: String(key.id),
+          name: key.name,
+          key: '', // Never show full key in list
+          prefix: key.key_prefix,
+          lastUsed: key.last_used_at || undefined,
+          createdAt: key.created_at,
+          expiresAt: key.expires_at || undefined,
+          scopes: [], // Scopes not in backend response yet
+        }))
+      );
+    } catch (error) {
+      logger.error('Failed to load API keys', error instanceof Error ? error : new Error(String(error)));
+      // Don't throw, just log - allow page to load without API keys
     }
   };
 
@@ -133,21 +157,51 @@ export default function SecuritySettingsPage() {
                   <APIKeys 
                     apiKeys={apiKeys} 
                     onCreate={async (name: string, scopes: string[]) => {
-                      // API integration - Implement API key creation when backend endpoint is available
-                      return {
-                        id: '',
-                        name,
-                        key: '',
-                        prefix: '',
-                        createdAt: new Date().toISOString(),
-                        scopes,
-                      };
+                      try {
+                        setError(null);
+                        logger.info('Creating API key', { name });
+                        
+                        const response = await apiKeysAPI.create({
+                          name,
+                          description: `API key for ${name}`,
+                          rotation_policy: 'manual',
+                        });
+                        
+                        // Reload API keys list
+                        await loadAPIKeys();
+                        
+                        // Return the created key (with full key shown only once)
+                        return {
+                          id: String(response.id),
+                          name: response.name,
+                          key: response.key, // Full key shown only once
+                          prefix: response.key_prefix,
+                          createdAt: response.created_at,
+                          expiresAt: response.expires_at || undefined,
+                          scopes: scopes, // Use provided scopes
+                        };
+                      } catch (error: unknown) {
+                        logger.error('Failed to create API key', error instanceof Error ? error : new Error(String(error)));
+                        const errorMessage = getErrorMessage(error) || 'Failed to create API key. Please try again.';
+                        setError(errorMessage);
+                        throw error;
+                      }
                     }} 
-                    onDelete={async (_id: string) => {
-                      // API integration - Implement API key deletion when backend endpoint is available
-                    }} 
-                    onRevoke={async (_id: string) => {
-                      // API integration - Implement API key revocation when backend endpoint is available
+                    onDelete={async (id: string) => {
+                      try {
+                        setError(null);
+                        logger.info('Revoking API key', { id });
+                        
+                        await apiKeysAPI.revoke(Number(id));
+                        
+                        // Reload API keys list
+                        await loadAPIKeys();
+                      } catch (error: unknown) {
+                        logger.error('Failed to revoke API key', error instanceof Error ? error : new Error(String(error)));
+                        const errorMessage = getErrorMessage(error) || 'Failed to revoke API key. Please try again.';
+                        setError(errorMessage);
+                        throw error;
+                      }
                     }} 
                   />
                 </Section>
