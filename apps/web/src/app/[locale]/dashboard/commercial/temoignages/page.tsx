@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge, Input, Select, Textarea } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import { type Testimonial, type TestimonialCreate, type TestimonialUpdate, testimonialsAPI } from '@/lib/api/testimonials';
+import { type Testimonial, type TestimonialCreate, testimonialsAPI } from '@/lib/api/testimonials';
 import { contactsAPI } from '@/lib/api/contacts';
 import { companiesAPI } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
@@ -23,7 +23,6 @@ import {
   FileSpreadsheet, 
   MoreVertical, 
   Trash2,
-  HelpCircle,
   Edit,
   Eye
 } from 'lucide-react';
@@ -345,7 +344,7 @@ function TemoignagesContent() {
       label: 'Langue',
       sortable: true,
       render: (value) => (
-        <Badge variant="outline" className="uppercase">
+        <Badge variant="info" className="uppercase">
           {value ? String(value) : 'fr'}
         </Badge>
       ),
@@ -355,7 +354,7 @@ function TemoignagesContent() {
       label: 'Publié',
       sortable: true,
       render: (value) => (
-        <Badge variant={value === 'true' ? 'default' : 'secondary'}>
+        <Badge variant={value === 'true' ? 'success' : 'default'}>
           {value === 'true' ? 'Oui' : 'Non'}
         </Badge>
       ),
@@ -409,22 +408,22 @@ function TemoignagesContent() {
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2">
               {filterCompany.length > 0 && (
-                <Badge variant="secondary" className="cursor-pointer" onClick={() => setFilterCompany([])}>
+                <Badge variant="default" className="cursor-pointer" onClick={() => setFilterCompany([])}>
                   Entreprise: {allCompanies.find(c => c.id.toString() === filterCompany[0])?.name || filterCompany[0]} ×
                 </Badge>
               )}
               {filterLanguage.length > 0 && (
-                <Badge variant="secondary" className="cursor-pointer" onClick={() => setFilterLanguage([])}>
+                <Badge variant="default" className="cursor-pointer" onClick={() => setFilterLanguage([])}>
                   Langue: {filterLanguage[0]} ×
                 </Badge>
               )}
               {filterPublished.length > 0 && (
-                <Badge variant="secondary" className="cursor-pointer" onClick={() => setFilterPublished([])}>
+                <Badge variant="default" className="cursor-pointer" onClick={() => setFilterPublished([])}>
                   Publié: {filterPublished[0] === 'true' ? 'Oui' : 'Non'} ×
                 </Badge>
               )}
               {debouncedSearchQuery && (
-                <Badge variant="secondary" className="cursor-pointer" onClick={() => setSearchQuery('')}>
+                <Badge variant="default" className="cursor-pointer" onClick={() => setSearchQuery('')}>
                   Recherche: {debouncedSearchQuery} ×
                 </Badge>
               )}
@@ -441,7 +440,6 @@ function TemoignagesContent() {
               onChange={(e) => setFilterCompany(e.target.value ? [e.target.value] : [])}
               options={allCompanies.map(c => ({ label: c.name, value: c.id.toString() }))}
               placeholder="Toutes les entreprises"
-              isClearable
             />
             
             <Select
@@ -453,7 +451,6 @@ function TemoignagesContent() {
                 { label: 'Anglais', value: 'en' },
               ]}
               placeholder="Toutes les langues"
-              isClearable
             />
             
             <Select
@@ -465,7 +462,6 @@ function TemoignagesContent() {
                 { label: 'Non', value: 'false' },
               ]}
               placeholder="Tous"
-              isClearable
             />
             
             <div className="ml-auto flex items-center gap-2">
@@ -618,7 +614,6 @@ function TemoignagesContent() {
             onChange={(e) => setTestimonialForm({ ...testimonialForm, company_id: e.target.value ? Number(e.target.value) : null })}
             options={allCompanies.map(c => ({ label: c.name, value: c.id.toString() }))}
             placeholder="Sélectionner une entreprise"
-            isClearable
           />
           
           <Select
@@ -627,7 +622,6 @@ function TemoignagesContent() {
             onChange={(e) => setTestimonialForm({ ...testimonialForm, contact_id: e.target.value ? Number(e.target.value) : null })}
             options={allContacts.map(c => ({ label: `${c.first_name} ${c.last_name}`, value: c.id.toString() }))}
             placeholder="Sélectionner un contact"
-            isClearable
           />
           
           <Input
@@ -710,7 +704,6 @@ function TemoignagesContent() {
             onChange={(e) => setTestimonialForm({ ...testimonialForm, company_id: e.target.value ? Number(e.target.value) : null })}
             options={allCompanies.map(c => ({ label: c.name, value: c.id.toString() }))}
             placeholder="Sélectionner une entreprise"
-            isClearable
           />
           
           <Select
@@ -719,7 +712,6 @@ function TemoignagesContent() {
             onChange={(e) => setTestimonialForm({ ...testimonialForm, contact_id: e.target.value ? Number(e.target.value) : null })}
             options={allContacts.map(c => ({ label: `${c.first_name} ${c.last_name}`, value: c.id.toString() }))}
             placeholder="Sélectionner un contact"
-            isClearable
           />
           
           <Input

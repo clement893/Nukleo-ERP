@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button, Input, Textarea, Select, Label } from '@/components/ui';
+import { Button, Input, Textarea, Select } from '@/components/ui';
 import { type Testimonial, type TestimonialCreate, type TestimonialUpdate } from '@/lib/api/reseau-testimonials';
 
 interface TestimonialFormProps {
@@ -76,7 +76,7 @@ export default function TestimonialForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Company */}
       <div>
-        <Label htmlFor="company_id">Entreprise</Label>
+        <label htmlFor="company_id" className="block text-sm font-medium mb-2">Entreprise</label>
         <Select
           id="company_id"
           value={formData.company_id?.toString() || ''}
@@ -93,7 +93,7 @@ export default function TestimonialForm({
 
       {/* Contact */}
       <div>
-        <Label htmlFor="contact_id">Contact</Label>
+        <label htmlFor="contact_id" className="block text-sm font-medium mb-2">Contact</label>
         <Select
           id="contact_id"
           value={formData.contact_id?.toString() || ''}
@@ -110,7 +110,7 @@ export default function TestimonialForm({
 
       {/* Title */}
       <div>
-        <Label htmlFor="title">Titre</Label>
+        <label htmlFor="title" className="block text-sm font-medium mb-2">Titre</label>
         <Input
           id="title"
           value={formData.title || ''}
@@ -121,7 +121,7 @@ export default function TestimonialForm({
 
       {/* Testimonial FR */}
       <div>
-        <Label htmlFor="testimonial_fr">Témoignage (Français)</Label>
+        <label htmlFor="testimonial_fr" className="block text-sm font-medium mb-2">Témoignage (Français)</label>
         <Textarea
           id="testimonial_fr"
           value={formData.testimonial_fr || ''}
@@ -133,7 +133,7 @@ export default function TestimonialForm({
 
       {/* Testimonial EN */}
       <div>
-        <Label htmlFor="testimonial_en">Témoignage (Anglais)</Label>
+        <label htmlFor="testimonial_en" className="block text-sm font-medium mb-2">Témoignage (Anglais)</label>
         <Textarea
           id="testimonial_en"
           value={formData.testimonial_en || ''}
@@ -145,7 +145,7 @@ export default function TestimonialForm({
 
       {/* Language */}
       <div>
-        <Label htmlFor="language">Langue</Label>
+        <label htmlFor="language" className="block text-sm font-medium mb-2">Langue</label>
         <Select
           id="language"
           value={formData.language || ''}
@@ -160,7 +160,7 @@ export default function TestimonialForm({
 
       {/* Rating */}
       <div>
-        <Label htmlFor="rating">Note (1-5)</Label>
+        <label htmlFor="rating" className="block text-sm font-medium mb-2">Note (1-5)</label>
         <Select
           id="rating"
           value={formData.rating?.toString() || ''}

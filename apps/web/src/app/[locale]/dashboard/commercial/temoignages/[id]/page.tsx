@@ -136,7 +136,7 @@ export default function TestimonialDetailPage() {
               <Edit className="w-4 h-4 mr-2" />
               Modifier
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={deleting}>
               <Trash2 className="w-4 h-4 mr-2" />
               {deleting ? 'Suppression...' : 'Supprimer'}
             </Button>
@@ -153,10 +153,10 @@ export default function TestimonialDetailPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Témoignage</h2>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="uppercase">
+                  <Badge variant="info" className="uppercase">
                     {testimonial.language || 'fr'}
                   </Badge>
-                  <Badge variant={testimonial.is_published === 'true' ? 'default' : 'secondary'}>
+                  <Badge variant={testimonial.is_published === 'true' ? 'success' : 'default'}>
                     {testimonial.is_published === 'true' ? 'Publié' : 'Non publié'}
                   </Badge>
                   {testimonial.rating && (

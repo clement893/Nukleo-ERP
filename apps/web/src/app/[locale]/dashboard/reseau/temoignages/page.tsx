@@ -24,7 +24,6 @@ import {
   MoreVertical, 
   Trash2,
   Edit,
-  Eye,
   Star
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -42,7 +41,6 @@ import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
 import TestimonialForm from '@/components/reseau/TestimonialForm';
 
 function TemoignagesContent() {
-  const router = useRouter();
   const { showToast } = useToast();
   
   // React Query hooks for testimonials
@@ -397,7 +395,7 @@ function TemoignagesContent() {
       label: 'Statut',
       sortable: true,
       render: (_value, testimonial) => (
-        <Badge variant={testimonial.is_published === 'published' ? 'success' : 'secondary'}>
+        <Badge variant={testimonial.is_published === 'published' ? 'success' : 'default'}>
           {testimonial.is_published === 'published' ? 'Publié' : 'Brouillon'}
         </Badge>
       ),
