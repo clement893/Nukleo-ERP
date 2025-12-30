@@ -99,15 +99,6 @@ async def get_project(
     project_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: User = Depends(get_current_user),
-) -> ProjectSchema:
-
-
-@router.get("/{project_id}", response_model=ProjectSchema)
-@cached(expire=300, key_prefix="project")
-async def get_project(
-    project_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: User = Depends(get_current_user),
 ) -> Project:
     """
     Get a single project by ID

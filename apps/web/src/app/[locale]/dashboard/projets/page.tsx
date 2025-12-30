@@ -22,8 +22,7 @@ import {
   Upload, 
   FileSpreadsheet, 
   MoreVertical, 
-  Trash2,
-  HelpCircle
+  Trash2
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -157,7 +156,7 @@ function ProjectsContent() {
   };
 
   // Handle delete with React Query mutation
-  const handleDelete = async (projectId: number) => {
+  const _handleDelete = async (projectId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
       return;
     }
@@ -299,7 +298,7 @@ function ProjectsContent() {
   };
 
   // Open edit modal
-  const openEditModal = (project: Project) => {
+  const _openEditModal = (project: Project) => {
     setSelectedProject(project);
     setShowEditModal(true);
   };

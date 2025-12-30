@@ -3,7 +3,7 @@
 import { Project } from '@/lib/api/projects';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { FolderKanban, Building2, User, Edit, Trash2, FileText, CheckSquare, MessageSquare, Users, Briefcase } from 'lucide-react';
+import { Building2, User, Edit, Trash2, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 import Badge from '@/components/ui/Badge';
 
