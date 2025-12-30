@@ -39,7 +39,8 @@ import {
   Receipt,
   FileBarChart,
   Wallet,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -100,6 +101,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Pipeline & client',
             href: '/dashboard/commercial/pipeline-client',
             icon: <TrendingUp className="w-5 h-5" />,
+          },
+          {
+            name: 'Soumissions',
+            href: '/dashboard/commercial/soumissions',
+            icon: <FileText className="w-5 h-5" />,
           },
         ],
         collapsible: true,
