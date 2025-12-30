@@ -997,14 +997,22 @@ async def import_contacts(
                 detail="Invalid Excel file format or empty file"
             )
         
+        # CRITICAL: Convert to list IMMEDIATELY to avoid consuming generator multiple times
+        # Some iterables (like generators) can only be consumed once
         if not isinstance(result['data'], list):
+            data_list_raw = list(result['data'])
+        else:
+            data_list_raw = result['data']
+        
+        if not isinstance(data_list_raw, list) or len(data_list_raw) == 0:
             add_import_log(import_id, "ERREUR: Le fichier Excel ne contient pas de lignes de données valides", "error")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Excel file does not contain valid data rows"
             )
         
-        total_rows = len(result['data'])
+        # Now we can safely use data_list_raw everywhere
+        total_rows = len(data_list_raw)
         add_import_log(import_id, f"Fichier Excel lu avec succès: {total_rows} ligne(s) trouvée(s)", "info")
         update_import_status(import_id, "processing", progress=0, total=total_rows)
         
@@ -1164,16 +1172,12 @@ async def import_contacts(
                 })
         
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
-        logger.info(f"Starting import loop: {total_rows} rows to process, result['data'] has {len(result['data'])} items")
+        logger.info(f"Starting import loop: {total_rows} rows to process")
         
-        # DEBUG: Log total rows before loop
-        add_import_log(import_id, f"🔍 DEBUG: Nombre total de lignes dans result['data']: {len(result['data'])}", "info")
-        logger.info(f"DEBUG: Starting import loop with {len(result['data'])} rows")
-        
-        # Convert to list to ensure we iterate over all items
-        data_list = list(result['data']) if not isinstance(result['data'], list) else result['data']
-        add_import_log(import_id, f"🔍 DEBUG: Liste convertie, nombre d'éléments: {len(data_list)}, type: {type(data_list)}", "info")
-        logger.info(f"DEBUG: Converted to list, length: {len(data_list)}, type: {type(data_list)}")
+        # Use the already-converted list (data_list_raw from above)
+        data_list = data_list_raw
+        add_import_log(import_id, f"🔍 DEBUG: Utilisation de la liste convertie, nombre d'éléments: {len(data_list)}, type: {type(data_list)}", "info")
+        logger.info(f"DEBUG: Using converted list, length: {len(data_list)}, type: {type(data_list)}")
         
         # Verify we can access all items
         try:
@@ -1187,6 +1191,12 @@ async def import_contacts(
         # Wrap entire loop in try/except to catch any unhandled exceptions
         try:
             iteration_count = 0
+            # Ensure data_list is actually a list and not consumed
+            if not isinstance(data_list, list):
+                data_list = list(data_list)
+            
+            logger.info(f"DEBUG: Starting loop with data_list type={type(data_list)}, length={len(data_list)}")
+            
             for idx, row_data in enumerate(data_list):
                 iteration_count += 1
                 try:
