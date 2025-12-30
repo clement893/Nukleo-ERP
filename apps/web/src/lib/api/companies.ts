@@ -58,6 +58,7 @@ export const companiesAPI = {
   list: async (skip = 0, limit = 100, filters?: {
     is_client?: boolean;
     country?: string;
+    city?: string;
     search?: string;
   }): Promise<Company[]> => {
     const response = await apiClient.get<Company[]>('/v1/commercial/companies', {
