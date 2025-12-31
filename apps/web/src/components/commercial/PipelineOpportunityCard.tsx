@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, UserCircle } from 'lucide-react';
+import { Plus, UserCircle, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import Image from 'next/image';
 import { type Contact } from '@/lib/api/contacts';
@@ -16,6 +16,9 @@ interface PipelineOpportunityCardProps {
   contact_ids?: number[];
   contact_names?: string[];
   contacts?: Contact[];
+  company_id?: number | null;
+  company_name?: string | null;
+  company_logo_url?: string | null;
   onAddContact?: () => void;
   onClick?: () => void;
   dragged?: boolean;
@@ -31,6 +34,9 @@ export default function PipelineOpportunityCard({
   contact_ids = [],
   contact_names = [],
   contacts = [],
+  company_id,
+  company_name,
+  company_logo_url,
   onAddContact,
   onClick,
   dragged = false,
@@ -116,22 +122,39 @@ export default function PipelineOpportunityCard({
         </div>
       )}
       
-      {/* Add company button if no contacts */}
-      {displayContacts.length === 0 && contact_names.length === 0 && onAddContact && (
-        <div className="mb-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddContact();
-            }}
-            className="h-6 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
-          >
-            <Plus className="w-3 h-3" />
-            Ajouter une entreprise
-          </Button>
+      {/* Company display or add button */}
+      {company_id && company_name ? (
+        <div className="mb-3 flex items-center gap-2">
+          {company_logo_url ? (
+            <Image
+              src={company_logo_url}
+              alt={company_name}
+              width={20}
+              height={20}
+              className="rounded object-cover"
+            />
+          ) : (
+            <Building2 className="w-5 h-5 text-muted-foreground" />
+          )}
+          <span className="text-xs font-medium text-foreground">{company_name}</span>
         </div>
+      ) : (
+        onAddContact && (
+          <div className="mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddContact();
+              }}
+              className="h-6 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              Ajouter une entreprise
+            </Button>
+          </div>
+        )
       )}
       
       <div className="flex items-center justify-between flex-wrap gap-2">

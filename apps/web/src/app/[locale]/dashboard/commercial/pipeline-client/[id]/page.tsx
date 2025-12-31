@@ -580,6 +580,9 @@ function PipelineDetailContent() {
             formatValue={(value) => `$${value.toLocaleString('en-US')}`}
             renderCard={(card: KanbanCard, isDragged: boolean, _onDragStart: () => void) => {
               const opportunity = opportunities.find(opp => opp.id === card.id);
+              const company = opportunity?.company_id 
+                ? companies.find(c => c.id === opportunity.company_id)
+                : null;
               return (
                 <PipelineOpportunityCard
                   key={card.id}
@@ -592,6 +595,9 @@ function PipelineDetailContent() {
                   contact_ids={opportunity?.contact_ids || []}
                   contact_names={opportunity?.contact_names || []}
                   contacts={contacts}
+                  company_id={opportunity?.company_id || null}
+                  company_name={opportunity?.company_name || company?.name || null}
+                  company_logo_url={company?.logo_url || null}
                   onAddContact={() => {
                     if (opportunity) {
                       handleCardClick(card);
