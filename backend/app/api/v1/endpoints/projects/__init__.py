@@ -65,7 +65,11 @@ async def _check_project_columns_exist(db: AsyncSession, column_names: List[str]
             if col in existing_columns:
                 exists[col] = True
     except Exception as e:
-        logger.warning(f"Could not check 'projects' table columns: {e}")
+        logger.warning(
+            f"Could not check 'projects' table columns: {e}",
+            exc_info=True,
+            context={"column_names": column_names}
+        )
         # If check fails, assume columns don't exist (safer)
         exists = {col: False for col in column_names}
     return exists
@@ -127,21 +131,43 @@ async def get_projects(
         
         # Check if client_id, responsable_id and extended fields columns exist BEFORE querying
         # This prevents transaction errors
-        columns_exist = await _check_project_columns_exist(db, [
-            'client_id', 
-            'responsable_id',
-            'equipe',
-            'etape',
-            'annee_realisation',
-            'contact',
-            'budget',
-            'proposal_url',
-            'drive_url',
-            'slack_url',
-            'echeancier_url',
-            'temoignage_status',
-            'portfolio_status'
-        ])
+        try:
+            columns_exist = await _check_project_columns_exist(db, [
+                'client_id', 
+                'responsable_id',
+                'equipe',
+                'etape',
+                'annee_realisation',
+                'contact',
+                'budget',
+                'proposal_url',
+                'drive_url',
+                'slack_url',
+                'echeancier_url',
+                'temoignage_status',
+                'portfolio_status'
+            ])
+        except Exception as e:
+            logger.warning(
+                f"Error checking project columns: {e}",
+                exc_info=True
+            )
+            # Default to all columns not existing if check fails
+            columns_exist = {
+                'client_id': False,
+                'responsable_id': False,
+                'equipe': False,
+                'etape': False,
+                'annee_realisation': False,
+                'contact': False,
+                'budget': False,
+                'proposal_url': False,
+                'drive_url': False,
+                'slack_url': False,
+                'echeancier_url': False,
+                'temoignage_status': False,
+                'portfolio_status': False
+            }
         
         projects = []
         use_explicit_columns = False
@@ -313,8 +339,16 @@ async def get_projects(
                         )
                         client = client_result.scalar_one_or_none()
                         if client:
-                            client_name = f"{client.first_name} {client.last_name}".strip()
-                    except Exception:
+                            # Handle both company_name (for companies) and first_name/last_name (for contacts)
+                            if hasattr(client, 'company_name') and client.company_name:
+                                client_name = client.company_name
+                            elif hasattr(client, 'first_name') and hasattr(client, 'last_name'):
+                                client_name = f"{client.first_name} {client.last_name}".strip()
+                    except Exception as client_error:
+                        logger.warning(
+                            f"Error loading client name for client_id {client_id}: {client_error}",
+                            exc_info=True
+                        )
                         client_name = None
                 
                 # Try to load responsable name if responsable_id exists
@@ -327,7 +361,11 @@ async def get_projects(
                         responsable = responsable_result.scalar_one_or_none()
                         if responsable:
                             responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
-                    except Exception:
+                    except Exception as emp_error:
+                        logger.warning(
+                            f"Error loading responsable name for responsable_id {responsable_id}: {emp_error}",
+                            exc_info=True
+                        )
                         responsable_name = None
                 
                 # Build extended fields dict, only including fields that exist
@@ -346,21 +384,39 @@ async def get_projects(
                     else:
                         extended_fields_dict[field_name] = None
                 
-                project_list.append(ProjectSchema(
-                    id=project.id,
-                    name=project.name,
-                    description=project.description,
-                    status=project.status,
-                    user_id=project.user_id,
-                    client_id=client_id,
-                    client_name=client_name,
-                    responsable_id=responsable_id,
-                    responsable_name=responsable_name,
-                    created_at=project.created_at,
-                    updated_at=project.updated_at,
-                    # Extended fields
-                    **extended_fields_dict
-                ))
+                try:
+                    # Build project schema with safe defaults
+                    project_data = {
+                        "id": project.id,
+                        "name": project.name or "",
+                        "description": project.description,
+                        "status": project.status,
+                        "user_id": project.user_id,
+                        "client_id": client_id,
+                        "client_name": client_name,
+                        "responsable_id": responsable_id,
+                        "responsable_name": responsable_name,
+                        "created_at": project.created_at,
+                        "updated_at": project.updated_at,
+                    }
+                    # Add extended fields only if they're not None to avoid validation errors
+                    for key, value in extended_fields_dict.items():
+                        if value is not None:
+                            project_data[key] = value
+                    
+                    project_schema = ProjectSchema(**project_data)
+                    project_list.append(project_schema)
+                except Exception as schema_error:
+                    logger.warning(
+                        f"Error creating ProjectSchema for project {getattr(project, 'id', 'unknown')}: {schema_error}",
+                        exc_info=True,
+                        context={
+                            "project_id": getattr(project, 'id', None),
+                            "error_type": type(schema_error).__name__
+                        }
+                    )
+                    # Skip this project and continue with others
+                    continue
             except Exception as e:
                 logger.warning(f"Error processing project {getattr(project, 'id', 'unknown')}: {e}")
                 # Skip this project and continue with others
@@ -394,8 +450,21 @@ async def get_projects(
             },
             exc_info=e
         )
-        # Return JSONResponse explicitly to satisfy slowapi's requirement for Response object
-        return JSONResponse(content=[], status_code=200)
+        # Return a proper error response instead of empty list
+        # This helps with debugging while still being safe
+        try:
+            # Try to return empty list first (safest)
+            return JSONResponse(content=[], status_code=200)
+        except Exception as response_error:
+            # If even returning empty list fails, raise HTTPException
+            logger.error(
+                f"Failed to return response in get_projects: {response_error}",
+                exc_info=True
+            )
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"A database error occurred: {error_msg}"
+            )
 
 
 # Explicit route handler for /clients to ensure it's matched before /{project_id}
