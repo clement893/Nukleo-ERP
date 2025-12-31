@@ -264,32 +264,6 @@ export default function EmployeePortalPermissionsEditor({
     setClients(prev => prev.filter(c => c.id !== clientId));
   };
 
-  const _searchClients = async (searchTerm: string) => {
-    if (searchTerm.length < 2) return [];
-    try {
-      const results = await contactsAPI.list(0, 20);
-      return results.filter(client => {
-        const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
-        const companyName = (client.company_name || '').toLowerCase();
-        const search = searchTerm.toLowerCase();
-        return fullName.includes(search) || companyName.includes(search);
-      });
-    } catch (err) {
-      return [];
-    }
-  };
-
-  const _filteredClients = useMemo(() => {
-    if (!clientSearchTerm) return [];
-    // On va utiliser une recherche côté client pour l'instant
-    return clients.filter(client => {
-      const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
-      const companyName = (client.company_name || '').toLowerCase();
-      const search = clientSearchTerm.toLowerCase();
-      return fullName.includes(search) || companyName.includes(search);
-    });
-  }, [clientSearchTerm, clients]);
-
   if (loading) {
     return <Loading />;
   }

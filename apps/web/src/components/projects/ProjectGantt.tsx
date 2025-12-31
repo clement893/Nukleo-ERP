@@ -129,36 +129,6 @@ export default function ProjectGantt({
     }
   };
 
-
-  // Calculate date range based on project dates and tasks
-  const calculateDateRange = () => {
-    const dates: Date[] = [];
-    
-    if (startDate) dates.push(new Date(startDate));
-    if (endDate) dates.push(new Date(endDate));
-    if (deadline) dates.push(new Date(deadline));
-    
-    tasks.forEach(task => {
-      if (task.due_date) dates.push(new Date(task.due_date));
-      if (task.started_at) dates.push(new Date(task.started_at));
-    });
-    
-    if (dates.length === 0) {
-      // Default to current week if no dates
-      return { start: startOfWeek(new Date()), end: endOfWeek(new Date()) };
-    }
-    
-    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-    
-    // Extend range to show full weeks
-    const weekStart = startOfWeek(minDate);
-    const weekEnd = endOfWeek(maxDate);
-    
-    return { start: weekStart, end: weekEnd };
-  };
-
-  const _dateRange = calculateDateRange();
   const weekStart = startOfWeek(currentWeek);
   const weekEnd = endOfWeek(currentWeek);
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
@@ -261,16 +231,6 @@ export default function ProjectGantt({
     const width = ((actualEndIndex - actualStartIndex + 1) / weekDays.length) * 100;
     
     return { left, width };
-  };
-
-  const _getTaskPosition = (task: ProjectTask) => {
-    if (!task.due_date && !task.started_at) return null;
-    
-    const taskDate = task.due_date ? new Date(task.due_date) : (task.started_at ? new Date(task.started_at) : null);
-    if (!taskDate) return null;
-
-    const dayIndex = weekDays.findIndex(day => isSameDay(day, taskDate));
-    return dayIndex >= 0 ? dayIndex : null;
   };
 
   const navigateWeek = (direction: 'prev' | 'next') => {
