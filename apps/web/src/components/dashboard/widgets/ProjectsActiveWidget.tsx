@@ -65,11 +65,17 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto space-y-3">
         {projects.map((project: any) => {
-          const overdue = isOverdue(project.due_date);
+          // Safely handle missing or invalid data
+          const due_date = project.due_date || new Date().toISOString();
+          const overdue = isOverdue(due_date);
+          const progress = project.progress ?? 0;
+          const status = project.status || 'ACTIVE';
+          const name = project.name || 'Sans nom';
+          const client = project.client || 'N/A';
           
           return (
             <Link
-              key={project.id}
+              key={project.id || Math.random()}
               href={`/dashboard/projets/projets/${project.id}`}
               className="block p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
             >
@@ -77,7 +83,7 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {project.name}
+                      {name}
                     </h4>
                     {overdue && (
                       <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
@@ -85,11 +91,11 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
                     <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {project.client}
+                    {client}
                   </p>
                 </div>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(project.status)} flex-shrink-0`}>
-                  {project.status}
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(status)} flex-shrink-0`}>
+                  {status}
                 </span>
               </div>
 
@@ -97,12 +103,12 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
               <div className="mb-2">
                 <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
                   <span>Progression</span>
-                  <span className="font-medium">{project.progress}%</span>
+                  <span className="font-medium">{progress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                   <div
                     className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${project.progress}%` }}
+                    style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
                   />
                 </div>
               </div>
@@ -110,7 +116,7 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
               {/* Due date */}
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">
-                  Échéance : {new Date(project.due_date).toLocaleDateString('fr-FR')}
+                  Échéance : {new Date(due_date).toLocaleDateString('fr-FR')}
                 </span>
                 {overdue && (
                   <span className="text-red-600 dark:text-red-400 font-medium">

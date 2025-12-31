@@ -40,7 +40,7 @@ interface Props {
   /** Child components to wrap */
   children: ReactNode;
   /** Custom fallback UI to display on error */
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((error: Error | null, errorInfo: ErrorInfo | null) => ReactNode);
   /** Error handler callback */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
   /** Show error details in UI */
@@ -116,6 +116,11 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       // Use custom fallback if provided
       if (this.props.fallback) {
+        // Check if fallback is a function (render prop pattern)
+        if (typeof this.props.fallback === 'function') {
+          return this.props.fallback(this.state.error, this.state.errorInfo);
+        }
+        // Otherwise, it's a static ReactNode
         return this.props.fallback;
       }
 
