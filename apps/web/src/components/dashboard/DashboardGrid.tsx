@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useEffect, useState } from 'react';
-import { Responsive, type Layout } from 'react-grid-layout';
+import { Responsive } from 'react-grid-layout';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { WidgetContainer } from './WidgetContainer';
 import 'react-grid-layout/css/styles.css';
@@ -104,7 +104,6 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
         rowHeight={100}
         width={width}
         onLayoutChange={handleLayoutChange}
-        isDraggable={isEditMode}
         isResizable={isEditMode}
         compactType="vertical"
         preventCollision={false}
