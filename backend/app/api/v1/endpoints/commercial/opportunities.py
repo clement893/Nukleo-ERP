@@ -750,7 +750,58 @@ async def import_opportunities(
             "errors": 0
         }
         
+        # Helper function to normalize column names (case-insensitive, accent-insensitive)
+        import unicodedata
+        import re
+        
+        def normalize_key(key: str) -> str:
+            """Normalize column name for matching"""
+            if not key:
+                return ''
+            normalized = str(key).lower().strip()
+            normalized = unicodedata.normalize('NFD', normalized)
+            normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+            return normalized
+        
+        def get_field_value(row: dict, possible_names: list) -> Optional[str]:
+            """Get field value trying multiple possible column names"""
+            # First try exact match (case-sensitive)
+            for name in possible_names:
+                if name in row and row[name] is not None:
+                    value = str(row[name]).strip()
+                    if value:
+                        return value
+            
+            # Then try case-insensitive match
+            row_lower_keys = {k.lower(): v for k, v in row.items()}
+            for name in possible_names:
+                if name.lower() in row_lower_keys and row_lower_keys[name.lower()] is not None:
+                    value = str(row_lower_keys[name.lower()]).strip()
+                    if value:
+                        return value
+            
+            # Then try normalized match (case-insensitive, accent-insensitive)
+            normalized_row = {normalize_key(k): v for k, v in row.items()}
+            for name in possible_names:
+                normalized_name = normalize_key(name)
+                if normalized_name in normalized_row and normalized_row[normalized_name] is not None:
+                    value = str(normalized_row[normalized_name]).strip()
+                    if value:
+                        return value
+            
+            return None
+        
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
+        
+        # Get default pipeline if available (for cases where pipeline_id is not in Excel)
+        default_pipeline = None
+        try:
+            pipeline_result = await db.execute(select(Pipeline).limit(1))
+            default_pipeline = pipeline_result.scalar_one_or_none()
+            if default_pipeline:
+                add_import_log(import_id, f"Pipeline par défaut trouvé: {default_pipeline.name} (ID: {default_pipeline.id})", "info")
+        except Exception as e:
+            logger.warning(f"Could not get default pipeline: {e}")
         
         for idx, row_data in enumerate(result['data']):
             try:
@@ -761,10 +812,16 @@ async def import_opportunities(
                 if (idx + 1) % 10 == 0 or idx < 5:
                     add_import_log(import_id, f"📊 Ligne {idx + 1}/{total_rows}: Traitement en cours... (créés: {stats['created_new']}, erreurs: {stats['errors']})", "info", {"progress": idx + 1, "total": total_rows, "stats": stats.copy()})
                 
-                # Map Excel columns to Opportunity fields
-                name = row_data.get('name') or row_data.get('nom') or row_data.get('Nom de l\'opportunité') or ''
+                # Map Excel columns to Opportunity fields using flexible matching
+                name = get_field_value(row_data, [
+                    'name', 'nom', 'Nom de l\'opportunité', 'opportunité', 'opportunite', 
+                    'titre', 'title', 'nom_opportunite', 'nom_opportunité'
+                ])
                 
                 if not name:
+                    stats["errors"] += 1
+                    error_msg = f"Ligne {idx + 2}: ❌ Nom de l'opportunité requis mais non trouvé dans les colonnes"
+                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "available_columns": list(row_data.keys())[:10]})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
@@ -772,9 +829,18 @@ async def import_opportunities(
                     })
                     continue
                 
-                # Get pipeline_id (required)
-                pipeline_id_str = row_data.get('pipeline_id') or row_data.get('pipeline') or ''
-                if not pipeline_id_str:
+                # Get pipeline_id (try to find in Excel, or use default)
+                pipeline_id_str = get_field_value(row_data, [
+                    'pipeline_id', 'pipeline', 'pipeline_id', 'id_pipeline', 'pipeline uuid'
+                ])
+                
+                if not pipeline_id_str and default_pipeline:
+                    pipeline_id_str = str(default_pipeline.id)
+                    add_import_log(import_id, f"Ligne {idx + 2}: Pipeline ID non trouvé, utilisation du pipeline par défaut: {default_pipeline.name}", "info")
+                elif not pipeline_id_str:
+                    stats["errors"] += 1
+                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline ID requis mais non trouvé et aucun pipeline par défaut disponible"
+                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "available_columns": list(row_data.keys())[:10]})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
@@ -785,6 +851,9 @@ async def import_opportunities(
                 try:
                     pipeline_id = UUID(pipeline_id_str)
                 except ValueError:
+                    stats["errors"] += 1
+                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline ID invalide: {pipeline_id_str}"
+                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "pipeline_id_str": pipeline_id_str})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
@@ -797,6 +866,9 @@ async def import_opportunities(
                     select(Pipeline).where(Pipeline.id == pipeline_id)
                 )
                 if not pipeline_result.scalar_one_or_none():
+                    stats["errors"] += 1
+                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline non trouvé: {pipeline_id}"
+                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "pipeline_id": str(pipeline_id)})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
@@ -804,10 +876,15 @@ async def import_opportunities(
                     })
                     continue
                 
-                # Handle company matching by name or ID
+                # Handle company matching by name or ID using flexible matching
                 company_id = None
-                company_name = row_data.get('company_name') or row_data.get('entreprise') or row_data.get('Entreprise') or None
-                company_id_raw = row_data.get('company_id') or row_data.get('company') or None
+                company_name = get_field_value(row_data, [
+                    'company_name', 'entreprise', 'Entreprise', 'nom_entreprise', 'company', 
+                    'société', 'societe', 'organisation', 'organization'
+                ])
+                company_id_raw = get_field_value(row_data, [
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company'
+                ])
                 
                 if company_id_raw:
                     try:
@@ -817,6 +894,9 @@ async def import_opportunities(
                             select(Company).where(Company.id == company_id)
                         )
                         if not company_result.scalar_one_or_none():
+                            stats["errors"] += 1
+                            error_msg = f"Ligne {idx + 2}: ❌ Entreprise ID {company_id} non trouvée"
+                            add_import_log(import_id, error_msg, "error", {"row": idx + 2, "company_id": company_id})
                             errors.append({
                                 'row': idx + 2,
                                 'data': row_data,
@@ -824,6 +904,9 @@ async def import_opportunities(
                             })
                             continue
                     except (ValueError, TypeError):
+                        stats["errors"] += 1
+                        error_msg = f"Ligne {idx + 2}: ❌ ID entreprise invalide: {company_id_raw}"
+                        add_import_log(import_id, error_msg, "error", {"row": idx + 2, "company_id_raw": company_id_raw})
                         errors.append({
                             'row': idx + 2,
                             'data': row_data,
@@ -844,11 +927,17 @@ async def import_opportunities(
                     else:
                         add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_name}' non trouvée, opportunité créée sans entreprise", "warning")
                 
-                # Handle contact matching by name
+                # Handle contact matching by name using flexible matching
                 contact_ids = []
-                contact_name = row_data.get('contact_name') or row_data.get('contact') or row_data.get('Contact') or None
-                contact_first_name = row_data.get('contact_first_name') or row_data.get('contact_prenom') or row_data.get('Contact Prénom') or None
-                contact_last_name = row_data.get('contact_last_name') or row_data.get('contact_nom') or row_data.get('Contact Nom') or None
+                contact_name = get_field_value(row_data, [
+                    'contact_name', 'contact', 'Contact', 'nom_contact', 'contact_nom'
+                ])
+                contact_first_name = get_field_value(row_data, [
+                    'contact_first_name', 'contact_prenom', 'Contact Prénom', 'prenom_contact', 'contact prénom'
+                ])
+                contact_last_name = get_field_value(row_data, [
+                    'contact_last_name', 'contact_nom', 'Contact Nom', 'nom_contact', 'contact nom'
+                ])
                 
                 if contact_name:
                     # Try to parse "First Last" format
@@ -874,20 +963,64 @@ async def import_opportunities(
                     else:
                         add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Contact '{contact_first_name} {contact_last_name}' non trouvé", "warning")
                 
+                # Get other fields using flexible matching
+                description = get_field_value(row_data, ['description', 'Description', 'descriptif', 'desc'])
+                
+                amount_str = get_field_value(row_data, ['amount', 'montant', 'Montant', 'prix', 'valeur'])
+                amount = None
+                if amount_str:
+                    try:
+                        amount = float(amount_str)
+                    except (ValueError, TypeError):
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Montant invalide: {amount_str}, ignoré", "warning")
+                
+                probability_str = get_field_value(row_data, ['probability', 'probabilité', 'Probabilité', 'probabilite'])
+                probability = None
+                if probability_str:
+                    try:
+                        probability = int(float(probability_str))
+                        if probability < 0 or probability > 100:
+                            probability = None
+                            add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Probabilité hors limites (0-100): {probability_str}, ignorée", "warning")
+                    except (ValueError, TypeError):
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Probabilité invalide: {probability_str}, ignorée", "warning")
+                
+                status_val = get_field_value(row_data, ['status', 'statut', 'Statut', 'état', 'etat'])
+                segment = get_field_value(row_data, ['segment', 'Segment', 'segmentation'])
+                region = get_field_value(row_data, ['region', 'région', 'Région', 'Region'])
+                service_offer_link = get_field_value(row_data, ['service_offer_link', 'lien_offre', 'lien', 'url'])
+                notes = get_field_value(row_data, ['notes', 'Notes', 'note', 'commentaires', 'commentaire'])
+                
+                stage_id_str = get_field_value(row_data, ['stage_id', 'stage', 'stade', 'Stage', 'Stade'])
+                stage_id = None
+                if stage_id_str:
+                    try:
+                        stage_id = UUID(stage_id_str)
+                    except ValueError:
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Stage ID invalide: {stage_id_str}, ignoré", "warning")
+                
+                assigned_to_id_str = get_field_value(row_data, ['assigned_to_id', 'assigned_to', 'assigné', 'assigné_à', 'assigned to'])
+                assigned_to_id = None
+                if assigned_to_id_str:
+                    try:
+                        assigned_to_id = int(float(str(assigned_to_id_str)))
+                    except (ValueError, TypeError):
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ ID assigné invalide: {assigned_to_id_str}, ignoré", "warning")
+                
                 opportunity_data = OpportunityCreate(
                     name=name,
-                    description=row_data.get('description') or row_data.get('Description') or None,
-                    amount=float(row_data.get('amount') or row_data.get('montant') or row_data.get('Montant') or 0) if row_data.get('amount') or row_data.get('montant') or row_data.get('Montant') else None,
-                    probability=int(row_data.get('probability') or row_data.get('probabilité') or 0) if row_data.get('probability') or row_data.get('probabilité') else None,
-                    status=row_data.get('status') or row_data.get('statut') or None,
-                    segment=row_data.get('segment') or None,
-                    region=row_data.get('region') or row_data.get('région') or None,
-                    service_offer_link=row_data.get('service_offer_link') or row_data.get('lien_offre') or None,
-                    notes=row_data.get('notes') or None,
+                    description=description,
+                    amount=amount,
+                    probability=probability,
+                    status=status_val,
+                    segment=segment,
+                    region=region,
+                    service_offer_link=service_offer_link,
+                    notes=notes,
                     pipeline_id=pipeline_id,
-                    stage_id=UUID(row_data.get('stage_id') or row_data.get('stage')) if row_data.get('stage_id') or row_data.get('stage') else None,
+                    stage_id=stage_id,
                     company_id=company_id,
-                    assigned_to_id=int(row_data.get('assigned_to_id') or row_data.get('assigned_to')) if row_data.get('assigned_to_id') or row_data.get('assigned_to') else None,
+                    assigned_to_id=assigned_to_id,
                     contact_ids=contact_ids if contact_ids else None,
                 )
                 
