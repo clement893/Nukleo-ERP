@@ -232,8 +232,8 @@ async def list_clients(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: Union[int, str] = Query(0, ge=0, description="Number of records to skip"),
-    limit: Union[int, str] = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    skip: Union[int, str] = Query(0, description="Number of records to skip"),
+    limit: Union[int, str] = Query(100, description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by client status"),
     responsable_id: Optional[str] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[str] = Query(None, description="Filter by company ID"),
@@ -258,6 +258,7 @@ async def list_clients(
         List of clients
     """
     # Explicitly convert skip and limit to integers, handling potential string inputs
+    # Remove constraints from Query() to avoid FastAPI validation issues with strings
     try:
         skip_int = max(0, int(skip))
     except (ValueError, TypeError):
