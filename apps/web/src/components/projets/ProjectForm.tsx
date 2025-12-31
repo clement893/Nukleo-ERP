@@ -165,6 +165,31 @@ export default function ProjectForm({
         />
       )}
 
+      {/* Dates du projet */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Date de début"
+          type="date"
+          value={formData.start_date ? new Date(formData.start_date).toISOString().split('T')[0] : ''}
+          onChange={(e) => setFormData({ ...formData, start_date: e.target.value || null })}
+          fullWidth
+        />
+        <Input
+          label="Date de fin prévue"
+          type="date"
+          value={formData.end_date ? new Date(formData.end_date).toISOString().split('T')[0] : ''}
+          onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
+          fullWidth
+        />
+        <Input
+          label="Deadline"
+          type="date"
+          value={formData.deadline ? new Date(formData.deadline).toISOString().split('T')[0] : ''}
+          onChange={(e) => setFormData({ ...formData, deadline: e.target.value || null })}
+          fullWidth
+        />
+      </div>
+
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>

@@ -271,23 +271,55 @@ export default function CalendarView({ className }: CalendarViewProps) {
         setVacations([]);
       }
 
-      setDeadlines([
-        {
-          id: 'deadline-1',
-          title: 'Livraison projet Alpha',
-          due_date: '2025-07-20',
-          project_name: 'Projet Alpha',
-          priority: 'high',
-          status: 'pending',
-        },
-        {
-          id: 'deadline-2',
-          title: 'Rapport mensuel',
-          due_date: '2025-08-05',
-          priority: 'medium',
-          status: 'pending',
-        },
-      ]);
+      // Charger les deadlines de projets depuis l'API
+      try {
+        const { projectsAPI } = await import('@/lib/api/projects');
+        const allProjects = await projectsAPI.list(0, 1000);
+        
+        // Convertir les projets avec deadline en DeadlineEvent
+        const projectDeadlines: DeadlineEvent[] = allProjects
+          .filter(project => project.deadline)
+          .map(project => {
+            const deadlineDate = new Date(project.deadline!);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            deadlineDate.setHours(0, 0, 0, 0);
+            const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            
+            // Déterminer le statut et la priorité basés sur la date
+            let status: 'pending' | 'completed' | 'overdue' | 'cancelled' = 'pending';
+            let priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium';
+            
+            if (project.status === 'COMPLETED') {
+              status = 'completed';
+            } else if (daysUntilDeadline < 0) {
+              status = 'overdue';
+              priority = 'urgent';
+            } else if (daysUntilDeadline <= 7) {
+              priority = 'high';
+            } else if (daysUntilDeadline <= 14) {
+              priority = 'medium';
+            } else {
+              priority = 'low';
+            }
+            
+            return {
+              id: `project-${project.id}`,
+              title: `Deadline: ${project.name}`,
+              due_date: project.deadline!,
+              project_name: project.name,
+              priority,
+              status,
+            };
+          });
+        
+        console.log(`[CalendarView] Loaded ${projectDeadlines.length} project deadlines`);
+        setDeadlines(projectDeadlines);
+      } catch (err) {
+        // Log error for debugging but don't block calendar loading
+        console.error('Could not load project deadlines:', err);
+        setDeadlines([]);
+      }
 
     } catch (err) {
       const appError = handleApiError(err);

@@ -136,6 +136,20 @@ api_router.include_router(
     tags=["employee-portal-permissions"]
 )
 
+# Register Project Attachments endpoints
+from app.api.v1.endpoints import project_attachments
+api_router.include_router(
+    project_attachments.router,
+    tags=["project-attachments"]
+)
+
+# Register Project Comments endpoints
+from app.api.v1.endpoints import project_comments
+api_router.include_router(
+    project_comments.router,
+    tags=["project-comments"]
+)
+
 # Register health check endpoints
 api_router.include_router(
     health.router,

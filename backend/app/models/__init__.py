@@ -54,6 +54,8 @@ from app.models.pipeline import Pipeline, PipelineStage, Opportunite
 from app.models.expense_account import ExpenseAccount, ExpenseAccountStatus
 from app.models.testimonial import Testimonial
 from app.models.employee_portal_permission import EmployeePortalPermission
+from app.models.project_attachment import ProjectAttachment
+from app.models.project_comment import ProjectComment
 from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory as LeoDocumentationCategory, DocumentationPriority as LeoDocumentationPriority
 from app.core.security_audit import SecurityAuditLog
 
@@ -155,5 +157,7 @@ __all__ = [
     "CalendarEvent",
     "Testimonial",
     "EmployeePortalPermission",
+    "ProjectAttachment",
+    "ProjectComment",
 ]
 
