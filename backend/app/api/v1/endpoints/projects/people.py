@@ -54,6 +54,10 @@ async def list_people(
     """
     Get list of people
     """
+    # Log that we've reached the endpoint
+    logger.info(f"[PeopleAPI] ✅ ENDPOINT REACHED - URL: {request.url}, Method: {request.method}")
+    logger.info(f"[PeopleAPI] ✅ Query params: {dict(request.query_params)}")
+    
     # Parse skip and limit directly from query params to avoid FastAPI validation
     skip_str = request.query_params.get("skip", "0")
     limit_str = request.query_params.get("limit", "100")
