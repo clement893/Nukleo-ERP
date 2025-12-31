@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export function RevenueChartWidget({ config }: WidgetProps) {
+export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'revenue-chart',
     config,

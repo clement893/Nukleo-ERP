@@ -8,7 +8,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading } from '@/components/ui';
+import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Employee, type EmployeeCreate, type EmployeeUpdate } from '@/lib/api/employees';
@@ -295,26 +295,19 @@ function PeopleContent() {
     setShowEditModal(true);
   };
 
-  // Table columns
+  // Table columns - Only Nom, Statut, Responsable
   const columns: Column<Employee>[] = [
     {
-      key: 'photo_url',
-      label: '',
-      sortable: false,
-      render: (_value, employee) => (
-        <div className="flex items-center">
-          <EmployeeAvatar employee={employee} size="md" />
-        </div>
-      ),
-    },
-    {
       key: 'first_name',
-      label: 'Prénom',
+      label: 'Nom',
       sortable: true,
       render: (_value, employee) => (
         <div className="flex items-center justify-between group">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
+          <div className="min-w-0 flex-1 flex items-center gap-3">
+            <EmployeeAvatar employee={employee} size="sm" />
+            <div className="font-medium truncate" title={`${employee.first_name} ${employee.last_name}`}>
+              {employee.first_name} {employee.last_name}
+            </div>
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
             <EmployeeRowActions
@@ -328,79 +321,42 @@ function PeopleContent() {
       ),
     },
     {
-      key: 'email',
-      label: 'Courriel',
+      key: 'status',
+      label: 'Statut',
       sortable: true,
-      render: (value) => (
-        value ? (
-          <a href={`mailto:${value}`} className="text-primary hover:underline flex items-center gap-1">
-            <Mail className="w-3.5 h-3.5" />
-            {String(value)}
-          </a>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
+      render: (_value, _employee) => {
+        // TODO: Add status field to Employee model
+        // For now, default to "actif"
+        const status = 'actif'; // Default status
+        const statusColors: Record<string, string> = {
+          'actif': 'bg-green-500 hover:bg-green-600',
+          'inactif': 'bg-gray-500 hover:bg-gray-600',
+          'maintenance': 'bg-yellow-500 hover:bg-yellow-600',
+        };
+        const statusLabels: Record<string, string> = {
+          'actif': 'Actif',
+          'inactif': 'Inactif',
+          'maintenance': 'Maintenance',
+        };
+        return (
+          <Badge
+            variant="default"
+            className={`capitalize text-white ${statusColors[status] || 'bg-gray-500'}`}
+          >
+            {statusLabels[status] || status}
+          </Badge>
+        );
+      },
     },
     {
-      key: 'phone',
-      label: 'Téléphone',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <a href={`tel:${value}`} className="text-primary hover:underline flex items-center gap-1">
-            <Phone className="w-3.5 h-3.5" />
-            {String(value)}
-          </a>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'linkedin',
-      label: 'LinkedIn',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-            <Linkedin className="w-3.5 h-3.5" />
-            LinkedIn
-          </a>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'hire_date',
-      label: 'Date d\'embauche',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            {new Date(String(value)).toLocaleDateString('fr-FR')}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'birthday',
-      label: 'Anniversaire',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            {new Date(String(value)).toLocaleDateString('fr-FR')}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
+      key: 'responsable',
+      label: 'Responsable',
+      sortable: false,
+      render: (_value, _employee) => {
+        // TODO: Add responsable_id field to Employee model
+        // For now, show "-"
+        return <span className="text-muted-foreground">-</span>;
+      },
     },
   ];
 

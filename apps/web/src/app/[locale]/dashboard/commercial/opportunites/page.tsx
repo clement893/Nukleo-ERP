@@ -352,25 +352,11 @@ function OpportunitiesContent() {
       label: 'Nom de l\'opportunité',
       sortable: true,
       render: (_value, opportunity) => (
-        <div className="flex items-center justify-between group">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={opportunity.name}>{opportunity.name}</div>
-            {opportunity.description && (
-              <div className="text-sm text-muted-foreground line-clamp-1">{opportunity.description}</div>
-            )}
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                openEditModal(opportunity);
-              }}
-            >
-              Modifier
-            </Button>
-          </div>
+        <div className="max-w-xs">
+          <div className="font-medium truncate block" title={opportunity.name}>{opportunity.name}</div>
+          {opportunity.description && (
+            <div className="text-sm text-muted-foreground line-clamp-1 truncate">{opportunity.description}</div>
+          )}
         </div>
       ),
     },

@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from 'react';
-import { Responsive, Layout, Layouts } from 'react-grid-layout';
+import { Responsive, Layout } from 'react-grid-layout';
 // @ts-ignore - WidthProvider is not properly typed in react-grid-layout
 import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import { useDashboardStore } from '@/lib/dashboard/store';
@@ -30,10 +30,10 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   const activeConfig = getActiveConfig();
 
   // Convertir les layouts du store au format react-grid-layout
-  const layouts = useMemo((): Layouts => {
+  const layouts = useMemo(() => {
     if (!activeConfig) return { lg: [], md: [], sm: [], xs: [] };
 
-    const gridLayouts: Layout[] = activeConfig.layouts.map((widget) => ({
+    const gridLayouts = activeConfig.layouts.map((widget) => ({
       i: widget.id,
       x: widget.x,
       y: widget.y,
@@ -47,17 +47,17 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
 
     return {
       lg: gridLayouts,
-      md: gridLayouts.map(l => ({ ...l, w: Math.min(l.w, 8) })),
-      sm: gridLayouts.map(l => ({ ...l, w: Math.min(l.w, 6), x: 0 })),
-      xs: gridLayouts.map(l => ({ ...l, w: 4, x: 0 })),
+      md: gridLayouts.map((l: any) => ({ ...l, w: Math.min(l.w, 8) })),
+      sm: gridLayouts.map((l: any) => ({ ...l, w: Math.min(l.w, 6), x: 0 })),
+      xs: gridLayouts.map((l: any) => ({ ...l, w: 4, x: 0 })),
     };
   }, [activeConfig]);
 
   // Handler pour les changements de layout
-  const handleLayoutChange = (currentLayout: Layout[]) => {
+  const handleLayoutChange = (currentLayout: any) => {
     if (!isEditMode || !activeConfig) return;
 
-    currentLayout.forEach((item) => {
+    currentLayout.forEach((item: any) => {
       const widget = activeConfig.layouts.find((w) => w.id === item.i);
       if (widget && (widget.x !== item.x || widget.y !== item.y)) {
         updateWidgetPosition(item.i, item.x, item.y);

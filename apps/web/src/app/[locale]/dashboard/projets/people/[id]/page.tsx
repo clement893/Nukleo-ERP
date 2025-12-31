@@ -1,57 +1,65 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { employeesAPI } from '@/lib/api/employees';
+import { projectsAPI } from '@/lib/api/projects';
+import { contactsAPI } from '@/lib/api/contacts';
 import type { Employee } from '@/lib/api/employees';
+import type { Project } from '@/lib/api/projects';
+import type { Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import EmployeeDetail from '@/components/employes/EmployeeDetail';
+import PeopleDetail from '@/components/projects/PeopleDetail';
 import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { useQuery } from '@tanstack/react-query';
 
 export default function PeopleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [_deleting, setDeleting] = useState(false);
 
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
 
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID de personne invalide');
-      setLoading(false);
-      return;
-    }
+  // Fetch employee
+  const { data: employee, isLoading: loadingEmployee, error: employeeError } = useQuery({
+    queryKey: ['employee', employeeId],
+    queryFn: () => employeeId ? employeesAPI.get(employeeId) : null,
+    enabled: !!employeeId,
+  });
 
-    loadEmployee();
-  }, [employeeId]);
+  // Fetch all projects
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => projectsAPI.list(0, 1000),
+    enabled: !!employeeId,
+  });
 
-  const loadEmployee = async () => {
-    if (!employeeId) return;
+  // Filter projects by employee responsable_id
+  const projects = useMemo(() => {
+    if (!employeeId || !allProjects) return [];
+    return allProjects.filter(p => p.responsable_id === employeeId);
+  }, [allProjects, employeeId]);
 
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de la personne');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de la personne',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch contacts linked to this employee (via user_id)
+  const { data: allContacts = [] } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: () => contactsAPI.list(0, 1000),
+    enabled: !!employee?.user_id,
+  });
+
+  // Filter contacts by employee user_id
+  const contacts = useMemo(() => {
+    if (!employee?.user_id || !allContacts) return [];
+    return allContacts.filter(c => c.employee_id === employee.user_id);
+  }, [allContacts, employee?.user_id]);
+
+  const loading = loadingEmployee;
+  const error = employeeError ? handleApiError(employeeError).message : null;
 
   const handleEdit = () => {
     if (employee) {
@@ -76,7 +84,6 @@ export default function PeopleDetailPage() {
       router.push(`/${locale}/dashboard/projets/people`);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la suppression');
       showToast({
         message: appError.message || 'Erreur lors de la suppression',
         type: 'error',
@@ -178,8 +185,13 @@ export default function PeopleDetailPage() {
       )}
 
       <div className="mt-6">
-        <EmployeeDetail
+        <PeopleDetail
           employee={employee}
+          projects={projects}
+          contacts={contacts}
+          portalUrl={employee.user_id ? `/erp/dashboard` : null} // TODO: Get actual portal URL from backend
+          notes={null} // TODO: Add notes field to Employee model
+          comments={null} // TODO: Add comments field to Employee model
           onEdit={handleEdit}
           onDelete={handleDelete}
         />

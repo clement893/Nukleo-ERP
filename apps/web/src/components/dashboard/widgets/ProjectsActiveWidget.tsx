@@ -9,7 +9,7 @@ import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
 
-export function ProjectsActiveWidget({ config }: WidgetProps) {
+export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'projects-active',
     config,

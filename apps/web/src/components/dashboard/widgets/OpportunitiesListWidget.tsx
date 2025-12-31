@@ -9,7 +9,7 @@ import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
 
-export function OpportunitiesListWidget({ config }: WidgetProps) {
+export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'opportunities-list',
     config,
