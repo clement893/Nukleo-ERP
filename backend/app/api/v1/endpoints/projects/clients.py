@@ -49,8 +49,8 @@ async def list_clients(
     limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search term"),
-    db: Annotated[AsyncSession, Depends(get_db)] = ...,
-    current_user: Annotated[User, Depends(get_current_user)] = ...,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> List[ClientSchema]:
     """
     Get list of clients
