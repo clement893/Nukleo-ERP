@@ -12,8 +12,23 @@ import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import { MessageSquare, Send, Edit, Trash2, Pin, Reply } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+// Format date relative helper
+const formatDateRelative = (date: string) => {
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now.getTime() - then.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'à l\'instant';
+  if (diffMins < 60) return `il y a ${diffMins} min${diffMins > 1 ? 's' : ''}`;
+  if (diffHours < 24) return `il y a ${diffHours} h`;
+  if (diffDays < 7) return `il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+  if (diffDays < 30) return `il y a ${Math.floor(diffDays / 7)} semaine${Math.floor(diffDays / 7) > 1 ? 's' : ''}`;
+  if (diffDays < 365) return `il y a ${Math.floor(diffDays / 30)} mois`;
+  return `il y a ${Math.floor(diffDays / 365)} an${Math.floor(diffDays / 365) > 1 ? 's' : ''}`;
+};
 
 interface ProjectCommentsProps {
   projectId?: number;
@@ -179,7 +194,7 @@ export default function ProjectComments({ projectId, taskId, onCommentAdded }: P
                   <span className="text-xs text-muted-foreground">(modifié)</span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: fr })}
+                  {formatDateRelative(comment.created_at)}
                 </span>
               </div>
               {isEditing ? (

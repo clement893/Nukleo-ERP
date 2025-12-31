@@ -8,8 +8,63 @@ import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+// Date utilities
+const startOfWeek = (date: Date): Date => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  return new Date(d.setDate(diff));
+};
+
+const endOfWeek = (date: Date): Date => {
+  const start = startOfWeek(date);
+  return new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+};
+
+const addWeeks = (date: Date, weeks: number): Date => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + weeks * 7);
+  return result;
+};
+
+const subWeeks = (date: Date, weeks: number): Date => {
+  return addWeeks(date, -weeks);
+};
+
+const eachDayOfInterval = ({ start, end }: { start: Date; end: Date }): Date[] => {
+  const days: Date[] = [];
+  const current = new Date(start);
+  while (current <= end) {
+    days.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
+};
+
+const isSameDay = (date1: Date, date2: Date): boolean => {
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+};
+
+const formatDate = (date: Date, formatStr: string): string => {
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const monthNames = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc'];
+  const dayNames = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+  
+  if (formatStr === 'd MMM') {
+    return `${day} ${monthNames[month - 1]}`;
+  }
+  if (formatStr === 'd MMM yyyy') {
+    return `${day} ${monthNames[month - 1]} ${year}`;
+  }
+  if (formatStr === 'EEE') {
+    return dayNames[date.getDay()];
+  }
+  return date.toLocaleDateString('fr-FR');
+};
 
 interface ProjectGanttProps {
   projectId: number;
@@ -70,8 +125,8 @@ export default function ProjectGantt({ projectId, startDate, endDate }: ProjectG
     }
   };
 
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Monday
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(currentWeek); // Monday
+  const weekEnd = endOfWeek(currentWeek);
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const getTaskPosition = (task: ProjectTask) => {
@@ -114,7 +169,7 @@ export default function ProjectGantt({ projectId, startDate, endDate }: ProjectG
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="text-sm font-medium text-foreground min-w-[200px] text-center">
-            {format(weekStart, 'd MMM', { locale: fr })} - {format(weekEnd, 'd MMM yyyy', { locale: fr })}
+            {formatDate(weekStart, 'd MMM')} - {formatDate(weekEnd, 'd MMM yyyy')}
           </span>
           <Button
             size="sm"
@@ -153,10 +208,10 @@ export default function ProjectGantt({ projectId, startDate, endDate }: ProjectG
                   }`}
                 >
                   <div className="text-xs text-muted-foreground">
-                    {format(day, 'EEE', { locale: fr })}
+                    {formatDate(day, 'EEE')}
                   </div>
                   <div className="text-sm font-medium text-foreground">
-                    {format(day, 'd')}
+                    {day.getDate()}
                   </div>
                 </div>
               ))}
