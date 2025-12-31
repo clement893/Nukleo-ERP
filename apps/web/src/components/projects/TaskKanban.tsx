@@ -14,6 +14,8 @@ import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority }
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
 import TaskTimer from './TaskTimer';
+import ProjectAttachments from './ProjectAttachments';
+import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
 
 interface TaskKanbanProps {
