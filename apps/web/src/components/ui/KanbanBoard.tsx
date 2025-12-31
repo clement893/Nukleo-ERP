@@ -145,6 +145,7 @@ export default function KanbanBoard({
                       key={card.id}
                       draggable
                       onDragStart={() => handleDragStart(card.id)}
+                      className="w-full"
                     >
                       {renderCard(card, draggedCard === card.id, () => handleDragStart(card.id))}
                     </div>
