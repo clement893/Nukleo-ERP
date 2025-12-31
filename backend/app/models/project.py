@@ -44,6 +44,7 @@ class Project(Base):
     etape = Column(String(100), nullable=True, index=True)  # Project stage
     annee_realisation = Column(String(50), nullable=True, index=True)  # Year of realization
     contact = Column(String(255), nullable=True)  # Contact name
+    budget = Column(Numeric(15, 2), nullable=True)  # Project budget
     proposal_url = Column(String(500), nullable=True)  # Proposal link
     drive_url = Column(String(500), nullable=True)  # Drive link
     slack_url = Column(String(500), nullable=True)  # Slack link

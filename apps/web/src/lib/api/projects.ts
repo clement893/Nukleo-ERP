@@ -21,6 +21,7 @@ export interface Project {
   etape?: string | null;
   annee_realisation?: string | null;
   contact?: string | null;
+  budget?: number | null;
   proposal_url?: string | null;
   drive_url?: string | null;
   slack_url?: string | null;
@@ -43,6 +44,7 @@ export interface ProjectCreate {
   etape?: string | null;
   annee_realisation?: string | null;
   contact?: string | null;
+  budget?: number | null;
   proposal_url?: string | null;
   drive_url?: string | null;
   slack_url?: string | null;

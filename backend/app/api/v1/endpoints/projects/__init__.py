@@ -177,6 +177,7 @@ async def get_projects(
                     Project.etape,
                     Project.annee_realisation,
                     Project.contact,
+                    Project.budget,
                     Project.proposal_url,
                     Project.drive_url,
                     Project.slack_url,
@@ -307,6 +308,7 @@ async def get_projects(
                     etape=getattr(project, 'etape', None),
                     annee_realisation=getattr(project, 'annee_realisation', None),
                     contact=getattr(project, 'contact', None),
+                    budget=getattr(project, 'budget', None),
                     proposal_url=getattr(project, 'proposal_url', None),
                     drive_url=getattr(project, 'drive_url', None),
                     slack_url=getattr(project, 'slack_url', None),
@@ -519,6 +521,18 @@ async def get_project(
         "responsable_name": responsable_name,
         "created_at": project.created_at,
         "updated_at": project.updated_at,
+        # Extended fields
+        "equipe": getattr(project, 'equipe', None),
+        "etape": getattr(project, 'etape', None),
+        "annee_realisation": getattr(project, 'annee_realisation', None),
+        "contact": getattr(project, 'contact', None),
+        "budget": getattr(project, 'budget', None),
+        "proposal_url": getattr(project, 'proposal_url', None),
+        "drive_url": getattr(project, 'drive_url', None),
+        "slack_url": getattr(project, 'slack_url', None),
+        "echeancier_url": getattr(project, 'echeancier_url', None),
+        "temoignage_status": getattr(project, 'temoignage_status', None),
+        "portfolio_status": getattr(project, 'portfolio_status', None),
     }
     
     return ProjectSchema(**project_dict)
@@ -625,6 +639,18 @@ async def create_project(
         user_id=current_user.id,
         client_id=final_client_id,
         responsable_id=project_data.responsable_id,
+        # Extended fields
+        equipe=project_data.equipe,
+        etape=project_data.etape,
+        annee_realisation=project_data.annee_realisation,
+        contact=project_data.contact,
+        budget=project_data.budget,
+        proposal_url=project_data.proposal_url,
+        drive_url=project_data.drive_url,
+        slack_url=project_data.slack_url,
+        echeancier_url=project_data.echeancier_url,
+        temoignage_status=project_data.temoignage_status,
+        portfolio_status=project_data.portfolio_status,
     )
     
     db.add(project)
