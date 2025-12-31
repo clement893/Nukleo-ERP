@@ -2,20 +2,19 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Employee } from '@/lib/api/employees';
+import { People } from '@/lib/api/people';
 import { Project } from '@/lib/api/projects';
-import { Contact } from '@/lib/api/contacts';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui';
 import { Edit, Trash2, ExternalLink, FolderKanban, Users, FileText, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
-import EmployeeAvatar from '@/components/employes/EmployeeAvatar';
+import PeopleAvatar from './PeopleAvatar';
 
 interface PeopleDetailProps {
-  employee: Employee;
+  person: People;
   projects?: Project[];
-  contacts?: Contact[];
+  contacts?: Array<Record<string, unknown>>;
   portalUrl?: string | null;
   notes?: string | null;
   comments?: string | null;
@@ -25,7 +24,7 @@ interface PeopleDetailProps {
 }
 
 export default function PeopleDetail({
-  employee,
+  person,
   projects = [],
   contacts = [],
   portalUrl,
@@ -37,10 +36,10 @@ export default function PeopleDetail({
 }: PeopleDetailProps) {
   const router = useRouter();
 
-  // Filter active projects
+  // Filter active projects (projects where person is responsable)
   const activeProjects = useMemo(() => {
-    return projects.filter(p => p.status === 'active' && p.responsable_id === employee.id);
-  }, [projects, employee.id]);
+    return projects.filter(p => p.status === 'active' && p.responsable_id === person.id);
+  }, [projects, person.id]);
 
   // Get locale from path
   const locale = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] || 'fr' : 'fr';
@@ -50,11 +49,11 @@ export default function PeopleDetail({
       {/* Header avec photo */}
       <Card>
         <div className="flex items-start gap-6 p-6">
-          <EmployeeAvatar employee={employee} size="xl" />
+          <PeopleAvatar person={person} size="xl" />
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {employee.first_name} {employee.last_name}
+                {person.first_name} {person.last_name}
               </h2>
             </div>
             <div className="flex gap-2">
@@ -108,20 +107,20 @@ export default function PeopleDetail({
       </Card>
 
       {/* Portail */}
-      {portalUrl && (
+      {(portalUrl || person.portal_url) && (
         <Card title="Portail">
           <div className="flex items-center justify-between p-3 border border-border rounded-md">
             <div className="flex items-center gap-3">
               <ExternalLink className="w-5 h-5 text-primary" />
               <div>
-                <div className="font-medium">Portail employé</div>
+                <div className="font-medium">Portail</div>
                 <div className="text-sm text-muted-foreground">Accéder au portail dédié</div>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(portalUrl, '_blank')}
+              onClick={() => window.open(portalUrl || person.portal_url || '', '_blank')}
             >
               <ExternalLink className="w-4 h-4 mr-1.5" />
               Ouvrir
@@ -131,28 +130,28 @@ export default function PeopleDetail({
       )}
 
       {/* Notes et commentaires */}
-      {(notes || comments) && (
+      {(notes || comments || person.notes || person.comments) && (
         <Card title="Notes et commentaires">
           <div className="space-y-4">
-            {notes && (
+            {(notes || person.notes) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <h3 className="font-medium">Notes</h3>
                 </div>
                 <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                  {notes}
+                  {notes || person.notes}
                 </div>
               </div>
             )}
-            {comments && (
+            {(comments || person.comments) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <MessageSquare className="w-4 h-4 text-muted-foreground" />
                   <h3 className="font-medium">Commentaires</h3>
                 </div>
                 <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                  {comments}
+                  {comments || person.comments}
                 </div>
               </div>
             )}
@@ -161,20 +160,20 @@ export default function PeopleDetail({
       )}
 
       {/* Contacts liés */}
-      <Card title="Contacts liés">
-        {contacts.length > 0 ? (
+      {contacts.length > 0 && (
+        <Card title="Contacts liés">
           <div className="space-y-2">
-            {contacts.map((contact) => (
+            {contacts.map((contact: any, index: number) => (
               <div
-                key={contact.id}
+                key={contact.id || index}
                 className="flex items-center justify-between p-3 border border-border rounded-md hover:bg-muted cursor-pointer transition-colors"
-                onClick={() => router.push(`/${locale}/dashboard/reseau/contacts/${contact.id}`)}
+                onClick={() => contact.id && router.push(`/${locale}/dashboard/reseau/contacts/${contact.id}`)}
               >
                 <div className="flex items-center gap-3">
                   {contact.photo_url ? (
                     <img
                       src={contact.photo_url}
-                      alt={`${contact.first_name} ${contact.last_name}`}
+                      alt={`${contact.first_name || ''} ${contact.last_name || ''}`}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
@@ -201,10 +200,8 @@ export default function PeopleDetail({
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-muted-foreground">Aucun contact lié</p>
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }

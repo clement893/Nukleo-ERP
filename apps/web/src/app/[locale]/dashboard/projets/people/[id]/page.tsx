@@ -185,7 +185,7 @@ export default function PeopleDetailPage() {
         <PeopleDetail
           employee={employee}
           projects={projects}
-          contacts={contacts}
+          contacts={contacts as unknown as Record<string, unknown>[]}
           portalUrl={employee.user_id ? `/erp/dashboard` : null} // TODO: Get actual portal URL from backend
           notes={null} // TODO: Add notes field to Employee model
           comments={null} // TODO: Add comments field to Employee model

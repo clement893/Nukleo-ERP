@@ -11,71 +11,61 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import { type Employee, type EmployeeCreate, type EmployeeUpdate } from '@/lib/api/employees';
+import { type People, type PeopleCreate, type PeopleUpdate } from '@/lib/api/people';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import EmployeesGallery from '@/components/employes/EmployeesGallery';
-import EmployeeForm from '@/components/employes/EmployeeForm';
-import EmployeeAvatar from '@/components/employes/EmployeeAvatar';
-import EmployeeCounter from '@/components/employes/EmployeeCounter';
+import PeopleGallery from '@/components/projects/PeopleGallery';
+import PeopleForm from '@/components/projects/PeopleForm';
+import PeopleAvatar from '@/components/projects/PeopleAvatar';
+import PeopleCounter from '@/components/projects/PeopleCounter';
 import ViewModeToggle, { type ViewMode } from '@/components/employes/ViewModeToggle';
-import EmployeeRowActions from '@/components/employes/EmployeeRowActions';
+import PeopleRowActions from '@/components/projects/PeopleRowActions';
 import SearchBar from '@/components/ui/SearchBar';
 import { 
   Plus, 
-  Download, 
-  Upload, 
-  FileSpreadsheet, 
   MoreVertical, 
   Trash2
 } from 'lucide-react';
-import ImportEmployeesInstructions from '@/components/employes/ImportEmployeesInstructions';
-import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
-  useInfiniteEmployees, 
-  useCreateEmployee, 
-  useUpdateEmployee, 
-  useDeleteEmployee, 
-  useDeleteAllEmployees,
-  employeesAPI 
-} from '@/lib/query/employees';
+  useInfinitePeople, 
+  useCreatePerson, 
+  useUpdatePerson, 
+  useDeletePerson,
+  peopleAPI 
+} from '@/lib/query/people';
 
 function PeopleContent() {
   const router = useRouter();
   const { showToast } = useToast();
   
-  // React Query hooks for employees
+  // React Query hooks for people
   const {
-    data: employeesData,
+    data: peopleData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading,
     error: queryError,
-  } = useInfiniteEmployees(20);
+  } = useInfinitePeople(20);
   
   // Mutations
-  const createEmployeeMutation = useCreateEmployee();
-  const updateEmployeeMutation = useUpdateEmployee();
-  const deleteEmployeeMutation = useDeleteEmployee();
-  const deleteAllEmployeesMutation = useDeleteAllEmployees();
+  const createPersonMutation = useCreatePerson();
+  const updatePersonMutation = useUpdatePerson();
+  const deletePersonMutation = useDeletePerson();
   
   // Flatten pages into single array
-  const employees = useMemo(() => {
-    return employeesData?.pages.flat() || [];
-  }, [employeesData]);
+  const people = useMemo(() => {
+    return peopleData?.pages.flat() || [];
+  }, [peopleData]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<People | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [showImportInstructions, setShowImportInstructions] = useState(false);
-  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
-  const [showImportLogs, setShowImportLogs] = useState(false);
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -86,25 +76,25 @@ function PeopleContent() {
   const hasMore = hasNextPage ?? false;
   const error = queryError ? handleApiError(queryError).message : null;
 
-  // Load more employees for infinite scroll
+  // Load more people for infinite scroll
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
       fetchNextPage();
     }
   }, [loadingMore, hasMore, fetchNextPage]);
 
-  // Filtered employees with debounced search
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
+  // Filtered people with debounced search
+  const filteredPeople = useMemo(() => {
+    return people.filter((person) => {
       const matchesSearch = !debouncedSearchQuery || 
-        `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        employee.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        employee.phone?.includes(debouncedSearchQuery) ||
-        employee.linkedin?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+        `${person.first_name} ${person.last_name}`.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        person.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        person.phone?.includes(debouncedSearchQuery) ||
+        person.linkedin?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       return matchesSearch;
     });
-  }, [employees, debouncedSearchQuery]);
+  }, [people, debouncedSearchQuery]);
   
   // Check if any filters are active
   const hasActiveFilters = !!debouncedSearchQuery;
@@ -113,11 +103,16 @@ function PeopleContent() {
   const clearAllFilters = useCallback(() => {
     setSearchQuery('');
   }, []);
+  
+  // Clear all filters function
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery('');
+  }, []);
 
   // Handle create
-  const handleCreate = async (data: EmployeeCreate | EmployeeUpdate) => {
+  const handleCreate = async (data: PeopleCreate | PeopleUpdate) => {
     try {
-      await createEmployeeMutation.mutateAsync(data as EmployeeCreate);
+      await createPersonMutation.mutateAsync(data as PeopleCreate);
       setShowCreateModal(false);
       showToast({
         message: 'Personne créée avec succès',
@@ -133,16 +128,16 @@ function PeopleContent() {
   };
 
   // Handle update
-  const handleUpdate = async (data: EmployeeCreate | EmployeeUpdate) => {
-    if (!selectedEmployee) return;
+  const handleUpdate = async (data: PeopleCreate | PeopleUpdate) => {
+    if (!selectedPerson) return;
 
     try {
-      await updateEmployeeMutation.mutateAsync({
-        id: selectedEmployee.id,
-        data: data as EmployeeUpdate,
+      await updatePersonMutation.mutateAsync({
+        id: selectedPerson.id,
+        data: data as PeopleUpdate,
       });
       setShowEditModal(false);
-      setSelectedEmployee(null);
+      setSelectedPerson(null);
       showToast({
         message: 'Personne modifiée avec succès',
         type: 'success',
@@ -157,15 +152,15 @@ function PeopleContent() {
   };
 
   // Handle delete
-  const handleDelete = async (employeeId: number) => {
+  const handleDelete = async (personId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette personne ?')) {
       return;
     }
 
     try {
-      await deleteEmployeeMutation.mutateAsync(employeeId);
-      if (selectedEmployee?.id === employeeId) {
-        setSelectedEmployee(null);
+      await deletePersonMutation.mutateAsync(personId);
+      if (selectedPerson?.id === personId) {
+        setSelectedPerson(null);
       }
       showToast({
         message: 'Personne supprimée avec succès',
@@ -180,137 +175,38 @@ function PeopleContent() {
     }
   };
 
-  // Handle delete all employees
-  const handleDeleteAll = async () => {
-    const count = employees.length;
-    if (count === 0) {
-      showToast({
-        message: 'Aucune personne à supprimer',
-        type: 'info',
-      });
-      return;
-    }
-
-    const confirmed = confirm(
-      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUTES les ${count} personne(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const doubleConfirmed = confirm(
-      '⚠️ DERNIÈRE CONFIRMATION: Toutes les personnes seront définitivement supprimées. Tapez OK pour confirmer.'
-    );
-
-    if (!doubleConfirmed) {
-      return;
-    }
-
-    try {
-      const result = await deleteAllEmployeesMutation.mutateAsync();
-      setSelectedEmployee(null);
-      showToast({
-        message: result.message || `${result.deleted_count} personne(s) supprimée(s) avec succès`,
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression des personnes',
-        type: 'error',
-      });
-    }
-  };
-
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
-  
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      // Generate import_id before starting import
-      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
-      setShowImportLogs(true);
-      
-      const result = await employeesAPI.import(file, importId);
-      
-      // Update import_id if backend returns a different one (should be the same)
-      if (result.import_id && result.import_id !== importId) {
-        setCurrentImportId(result.import_id);
-      }
-      
-      if (result.valid_rows > 0) {
-        queryClient.invalidateQueries({ queryKey: ['employees'] });
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-      setShowImportLogs(false);
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    try {
-      const blob = await employeesAPI.export();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `people-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast({
-        message: 'Export réussi',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'export',
-        type: 'error',
-      });
-    }
-  };
-
   // Navigate to detail page
-  const openDetailPage = (employee: Employee) => {
+  const openDetailPage = (person: People) => {
     const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/projets/people/${employee.id}`);
+    router.push(`/${locale}/dashboard/projets/people/${person.id}`);
   };
 
   // Open edit modal
-  const openEditModal = (employee: Employee) => {
-    setSelectedEmployee(employee);
+  const openEditModal = (person: People) => {
+    setSelectedPerson(person);
     setShowEditModal(true);
   };
 
-  // Table columns - Only Nom, Statut, Responsable
-  const columns: Column<Employee>[] = [
+  // Table columns - Only Nom, Statut
+  const columns: Column<People>[] = [
     {
       key: 'first_name',
       label: 'Nom',
       sortable: true,
-      render: (_value, employee) => (
+      render: (_value, person) => (
         <div className="flex items-center justify-between group">
           <div className="min-w-0 flex-1 flex items-center gap-3">
-            <EmployeeAvatar employee={employee} size="sm" />
-            <div className="font-medium truncate" title={`${employee.first_name} ${employee.last_name}`}>
-              {employee.first_name} {employee.last_name}
+            <PeopleAvatar person={person} size="sm" />
+            <div className="font-medium truncate" title={`${person.first_name} ${person.last_name}`}>
+              {person.first_name} {person.last_name}
             </div>
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-            <EmployeeRowActions
-              employee={employee}
-              onView={() => openDetailPage(employee)}
-              onEdit={() => openEditModal(employee)}
-              onDelete={() => handleDelete(employee.id)}
+            <PeopleRowActions
+              person={person}
+              onView={() => openDetailPage(person)}
+              onEdit={() => openEditModal(person)}
+              onDelete={() => handleDelete(person.id)}
             />
           </div>
         </div>
@@ -320,18 +216,16 @@ function PeopleContent() {
       key: 'status',
       label: 'Statut',
       sortable: true,
-      render: (_value, _employee) => {
-        // TODO: Add status field to Employee model
-        // For now, default to "actif"
-        const status = 'actif'; // Default status
+      render: (_value, person) => {
+        const status = person.status || 'active';
         const statusColors: Record<string, string> = {
-          'actif': 'bg-green-500 hover:bg-green-600',
-          'inactif': 'bg-gray-500 hover:bg-gray-600',
+          'active': 'bg-green-500 hover:bg-green-600',
+          'inactive': 'bg-gray-500 hover:bg-gray-600',
           'maintenance': 'bg-yellow-500 hover:bg-yellow-600',
         };
         const statusLabels: Record<string, string> = {
-          'actif': 'Actif',
-          'inactif': 'Inactif',
+          'active': 'Actif',
+          'inactive': 'Inactif',
           'maintenance': 'Maintenance',
         };
         return (
@@ -344,23 +238,13 @@ function PeopleContent() {
         );
       },
     },
-    {
-      key: 'responsable',
-      label: 'Responsable',
-      sortable: false,
-      render: (_value, _employee) => {
-        // TODO: Add responsable_id field to Employee model
-        // For now, show "-"
-        return <span className="text-muted-foreground">-</span>;
-      },
-    },
   ];
 
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
       <PageHeader
         title="People"
-        description={`Gérez vos personnes${employees.length > 0 ? ` - ${employees.length} personne${employees.length > 1 ? 's' : ''} au total` : ''}`}
+        description={`Gérez vos personnes${people.length > 0 ? ` - ${people.length} personne${people.length > 1 ? 's' : ''} au total` : ''}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Modules Opérations', href: '/dashboard/projets' },
@@ -371,11 +255,11 @@ function PeopleContent() {
       {/* Toolbar */}
       <Card>
         <div className="space-y-3">
-          {/* Employee count */}
+          {/* People count */}
           <div className="flex items-center justify-between">
-            <EmployeeCounter
-              filtered={filteredEmployees.length}
-              total={employees.length}
+            <PeopleCounter
+              filtered={filteredPeople.length}
+              total={people.length}
               showFilteredBadge={hasActiveFilters}
             />
           </div>
@@ -444,79 +328,6 @@ function PeopleContent() {
                       />
                       <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                         <div className="py-1">
-                          <button
-                            onClick={() => {
-                              setShowImportInstructions(true);
-                              setShowActionsMenu(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                            Instructions d'import
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await employeesAPI.downloadZipTemplate();
-                                setShowActionsMenu(false);
-                                showToast({
-                                  message: 'Modèle ZIP téléchargé avec succès',
-                                  type: 'success',
-                                });
-                              } catch (err) {
-                                const appError = handleApiError(err);
-                                showToast({
-                                  message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-                                  type: 'error',
-                                });
-                              }
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                            Modèle ZIP (avec photos)
-                          </button>
-                          <input
-                            type="file"
-                            accept=".xlsx,.xls,.zip"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                handleImport(file);
-                                setShowActionsMenu(false);
-                              }
-                            }}
-                            className="hidden"
-                            id="import-people"
-                          />
-                          <label
-                            htmlFor="import-people"
-                            className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer border-t border-border"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                            Importer
-                          </label>
-                          <button
-                            onClick={() => {
-                              handleExport();
-                              setShowActionsMenu(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Exporter
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteAll();
-                              setShowActionsMenu(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 border-t border-border"
-                            disabled={loading || employees.length === 0}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Supprimer toutes les personnes
-                          </button>
                         </div>
                       </div>
                     </>
@@ -536,7 +347,7 @@ function PeopleContent() {
       )}
 
       {/* Content */}
-      {loading && employees.length === 0 ? (
+      {loading && people.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
             <Loading />
@@ -545,7 +356,7 @@ function PeopleContent() {
       ) : viewMode === 'list' ? (
         <Card>
           <DataTable
-            data={filteredEmployees as unknown as Record<string, unknown>[]}
+            data={filteredPeople as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
             pagination={false}
             searchable={false}
@@ -556,13 +367,13 @@ function PeopleContent() {
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={loadMore}
-            onRowClick={(row) => openDetailPage(row as unknown as Employee)}
+            onRowClick={(row) => openDetailPage(row as unknown as People)}
           />
         </Card>
       ) : (
-        <EmployeesGallery
-          employees={filteredEmployees}
-          onEmployeeClick={openDetailPage}
+        <PeopleGallery
+          people={filteredPeople}
+          onPersonClick={openDetailPage}
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={loadMore}
@@ -576,7 +387,7 @@ function PeopleContent() {
         title="Créer une nouvelle personne"
         size="lg"
       >
-        <EmployeeForm
+        <PeopleForm
           onSubmit={handleCreate}
           onCancel={() => setShowCreateModal(false)}
           loading={loading}
@@ -585,75 +396,26 @@ function PeopleContent() {
 
       {/* Edit Modal */}
       <Modal
-        isOpen={showEditModal && selectedEmployee !== null}
+        isOpen={showEditModal && selectedPerson !== null}
         onClose={() => {
           setShowEditModal(false);
-          setSelectedEmployee(null);
+          setSelectedPerson(null);
         }}
         title="Modifier la personne"
         size="lg"
       >
-        {selectedEmployee && (
-          <EmployeeForm
-            employee={selectedEmployee}
+        {selectedPerson && (
+          <PeopleForm
+            person={selectedPerson}
             onSubmit={handleUpdate}
             onCancel={() => {
               setShowEditModal(false);
-              setSelectedEmployee(null);
+              setSelectedPerson(null);
             }}
             loading={loading}
           />
         )}
       </Modal>
-
-      {/* Import Instructions Modal */}
-      <ImportEmployeesInstructions
-        isOpen={showImportInstructions}
-        onClose={() => setShowImportInstructions(false)}
-        onDownloadTemplate={async () => {
-          try {
-            await employeesAPI.downloadZipTemplate();
-            showToast({
-              message: 'Modèle ZIP téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-              type: 'error',
-            });
-          }
-        }}
-      />
-      
-      {/* Import Logs Modal */}
-      {showImportLogs && (
-        <Modal
-          isOpen={showImportLogs}
-          onClose={() => {
-            setShowImportLogs(false);
-            setCurrentImportId(null);
-          }}
-          title="Logs d'import en temps réel"
-          size="xl"
-        >
-          {currentImportId ? (
-            <ImportLogsViewer
-              endpointUrl={`/v1/employes/employees/import/${currentImportId}/logs`}
-              importId={currentImportId}
-              onComplete={() => {
-                // Don't auto-close - let user close manually to review logs
-              }}
-            />
-          ) : (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
-            </div>
-          )}
-        </Modal>
-      )}
     </MotionDiv>
   );
 }

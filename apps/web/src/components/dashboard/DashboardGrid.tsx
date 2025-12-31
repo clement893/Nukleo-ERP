@@ -4,16 +4,12 @@
  * Composant de grille drag & drop pour le dashboard
  */
 
-import { useMemo } from 'react';
-import { Responsive } from 'react-grid-layout';
-// @ts-ignore - WidthProvider is not properly typed in react-grid-layout
-import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
+import { useMemo, useEffect, useState } from 'react';
+import { Responsive, type Layout } from 'react-grid-layout';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { WidgetContainer } from './WidgetContainer';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface DashboardGridProps {
   className?: string;
@@ -28,6 +24,21 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   } = useDashboardStore();
 
   const activeConfig = getActiveConfig();
+  const [width, setWidth] = useState(1200);
+
+  // Measure container width for Responsive component
+  useEffect(() => {
+    const updateWidth = () => {
+      const container = document.querySelector('.dashboard-grid-container');
+      if (container) {
+        setWidth(container.clientWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   // Convertir les layouts du store au format react-grid-layout
   const layouts = useMemo(() => {
@@ -84,13 +95,14 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   }
 
   return (
-    <div className={className}>
-      <ResponsiveGridLayout
+    <div className={`dashboard-grid-container ${className}`}>
+      <Responsive
         className="layout"
         layouts={layouts}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
         cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
         rowHeight={100}
+        width={width}
         onLayoutChange={handleLayoutChange}
         isDraggable={isEditMode}
         isResizable={isEditMode}
@@ -107,7 +119,7 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
             />
           </div>
         ))}
-      </ResponsiveGridLayout>
+      </Responsive>
 
       <style jsx global>{`
         .react-grid-layout {
