@@ -99,17 +99,17 @@ api_router.include_router(
 # Uncomment to use unified router instead:
 # api_router.include_router(themes_module_router)
 
+# Register people endpoints (under projects module) - MUST be before /projects/{project_id} route
+api_router.include_router(
+    projects_people.router,
+    tags=["people"]
+)
+
 # Register project endpoints
 api_router.include_router(
     projects.router,
     prefix="/projects",
     tags=["projects"]
-)
-
-# Register people endpoints (under projects module)
-api_router.include_router(
-    projects_people.router,
-    tags=["people"]
 )
 
 # Register WebSocket endpoints
