@@ -21,7 +21,7 @@ def upgrade() -> None:
     # Create enum type for client status (if it doesn't exist)
     op.execute("""
         DO $$ BEGIN
-            CREATE TYPE clientstatus AS ENUM ('active', 'inactive', 'maintenance');
+            CREATE TYPE clientstatus AS ENUM ('actif', 'inactif', 'maintenance');
         EXCEPTION
             WHEN duplicate_object THEN null;
         END $$;
@@ -34,7 +34,7 @@ def upgrade() -> None:
                 id SERIAL NOT NULL,
                 company_id INTEGER NOT NULL,
                 status clientstatus DEFAULT 'active' NOT NULL,
-                responsible_id INTEGER,
+                responsable_id INTEGER,
                 notes TEXT,
                 comments TEXT,
                 portal_url VARCHAR(500),
@@ -42,7 +42,7 @@ def upgrade() -> None:
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
                 PRIMARY KEY (id),
                 FOREIGN KEY(company_id) REFERENCES companies (id) ON DELETE CASCADE,
-                FOREIGN KEY(responsible_id) REFERENCES users (id) ON DELETE SET NULL,
+                FOREIGN KEY(responsable_id) REFERENCES users (id) ON DELETE SET NULL,
                 UNIQUE (company_id)
             );
         EXCEPTION
@@ -54,7 +54,7 @@ def upgrade() -> None:
     op.execute("""
         DO $$ BEGIN
             CREATE INDEX IF NOT EXISTS idx_clients_company_id ON clients (company_id);
-            CREATE INDEX IF NOT EXISTS idx_clients_responsible_id ON clients (responsible_id);
+            CREATE INDEX IF NOT EXISTS idx_clients_responsable_id ON clients (responsable_id);
             CREATE INDEX IF NOT EXISTS idx_clients_status ON clients (status);
             CREATE INDEX IF NOT EXISTS idx_clients_created_at ON clients (created_at);
         EXCEPTION
@@ -67,7 +67,7 @@ def downgrade() -> None:
     """Drop clients table"""
     op.drop_index('idx_clients_created_at', table_name='clients')
     op.drop_index('idx_clients_status', table_name='clients')
-    op.drop_index('idx_clients_responsible_id', table_name='clients')
+    op.drop_index('idx_clients_responsable_id', table_name='clients')
     op.drop_index('idx_clients_company_id', table_name='clients')
     op.drop_table('clients')
     

@@ -7,8 +7,8 @@ import { apiClient } from './client';
 import { extractApiData } from './utils';
 
 export enum ClientStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
+  ACTIVE = 'actif',
+  INACTIVE = 'inactif',
   MAINTENANCE = 'maintenance',
 }
 
@@ -18,8 +18,8 @@ export interface Client {
   company_name: string | null;
   company_logo_url: string | null;
   status: ClientStatus;
-  responsible_id: number | null;
-  responsible_name: string | null;
+  responsable_id: number | null;
+  responsable_name: string | null;
   notes: string | null;
   comments: string | null;
   portal_url: string | null;
@@ -38,7 +38,7 @@ export interface ClientCreate {
   company_website?: string | null;
   company_description?: string | null;
   status?: ClientStatus;
-  responsible_id?: number | null;
+  responsable_id?: number | null;
   notes?: string | null;
   comments?: string | null;
   portal_url?: string | null;
@@ -46,7 +46,7 @@ export interface ClientCreate {
 
 export interface ClientUpdate {
   status?: ClientStatus;
-  responsible_id?: number | null;
+  responsable_id?: number | null;
   notes?: string | null;
   comments?: string | null;
   portal_url?: string | null;
@@ -63,7 +63,7 @@ export const clientsAPI = {
     skip = 0,
     limit = 100,
     status?: ClientStatus,
-    responsible_id?: number,
+    responsable_id?: number,
     search?: string
   ): Promise<Client[]> => {
     // Ensure skip and limit are valid integers (not strings, NaN, or undefined)
@@ -77,8 +77,8 @@ export const clientsAPI = {
     
     // Only add optional parameters if they have valid values
     if (status) queryParams.append('status', status);
-    if (responsible_id !== undefined && responsible_id !== null && !isNaN(Number(responsible_id))) {
-      queryParams.append('responsible_id', String(responsible_id));
+    if (responsable_id !== undefined && responsable_id !== null && !isNaN(Number(responsable_id))) {
+      queryParams.append('responsable_id', String(responsable_id));
     }
     if (search && search.trim()) {
       queryParams.append('search', search.trim());
@@ -136,24 +136,76 @@ export const clientsAPI = {
   },
 
   /**
-   * Import clients from Excel/ZIP file
+   * Delete all clients
    */
-  import: async (file: File, importId?: string): Promise<any> => {
+  deleteAll: async (): Promise<{ message: string; deleted_count: number }> => {
+    const response = await apiClient.delete<{ message: string; deleted_count: number }>('/v1/projects/clients/bulk');
+    return extractApiData(response) || { message: 'No clients deleted', deleted_count: 0 };
+  },
+
+  /**
+   * Get total count of clients in the database
+   */
+  count: async (): Promise<number> => {
+    const response = await apiClient.get<{ total: number }>('/v1/projects/clients/count');
+    const data = extractApiData<{ total: number }>(response);
+    return data?.total || 0;
+  },
+
+  /**
+   * Import clients from Excel or ZIP (Excel + logos)
+   */
+  import: async (file: File, importId?: string): Promise<{
+    total_rows: number;
+    valid_rows: number;
+    invalid_rows: number;
+    errors: Array<{ row: number; data: unknown; error: string }>;
+    warnings?: Array<{ 
+      row: number; 
+      type: string; 
+      message: string; 
+      data?: Record<string, unknown> 
+    }>;
+    data: Client[];
+    logos_uploaded?: number;
+    import_id?: string;
+  }> => {
     const formData = new FormData();
     formData.append('file', file);
-
-    const params: Record<string, string> = {};
-    if (importId) {
-      params.import_id = importId;
-    }
-
-    const response = await apiClient.post('/v1/projects/clients/import', formData, {
+    
+    const url = importId 
+      ? `/v1/projects/clients/import?import_id=${encodeURIComponent(importId)}`
+      : '/v1/projects/clients/import';
+    
+    const response = await apiClient.post<{
+      total_rows: number;
+      valid_rows: number;
+      invalid_rows: number;
+      errors: Array<{ row: number; data: unknown; error: string }>;
+      warnings?: Array<{ 
+        row: number; 
+        type: string; 
+        message: string; 
+        data?: Record<string, unknown> 
+      }>;
+      data: Client[];
+      logos_uploaded?: number;
+      import_id?: string;
+    }>(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      params,
     });
-    return extractApiData(response);
+    
+    return extractApiData(response) || {
+      total_rows: 0,
+      valid_rows: 0,
+      invalid_rows: 0,
+      errors: [],
+      warnings: [],
+      data: [],
+      logos_uploaded: 0,
+    };
   },
 
   /**

@@ -17,14 +17,14 @@ export const CLIENT_TEMPLATE_COLUMNS: ClientTemplateColumn[] = [
   {
     key: 'company_name',
     label: 'Nom de l\'entreprise',
-    description: 'Nom de l\'entreprise (sera créée si elle n\'existe pas)',
-    example: 'Exemple Entreprise SARL',
+    description: 'Nom de l\'entreprise (sera matché si existe, sinon créée)',
+    example: 'Acme Corporation',
     required: true,
   },
   {
     key: 'company_id',
     label: 'ID Entreprise',
-    description: 'Identifiant de l\'entreprise existante (optionnel si company_name est fourni)',
+    description: 'Identifiant de l\'entreprise (optionnel, si fourni, company_name sera ignoré)',
     example: '1',
     required: false,
   },
@@ -36,7 +36,7 @@ export const CLIENT_TEMPLATE_COLUMNS: ClientTemplateColumn[] = [
     required: false,
   },
   {
-    key: 'responsible_id',
+    key: 'responsable_id',
     label: 'ID Responsable',
     description: 'Identifiant de l\'employé responsable',
     example: '1',
@@ -52,8 +52,8 @@ export const CLIENT_TEMPLATE_COLUMNS: ClientTemplateColumn[] = [
   {
     key: 'comments',
     label: 'Commentaires',
-    description: 'Commentaires additionnels',
-    example: 'Renouvellement prévu en janvier',
+    description: 'Commentaires sur le client',
+    example: 'À contacter régulièrement',
     required: false,
   },
   {
@@ -63,38 +63,40 @@ export const CLIENT_TEMPLATE_COLUMNS: ClientTemplateColumn[] = [
     example: 'https://portail.client.com',
     required: false,
   },
+  {
+    key: 'logo_filename',
+    label: 'Nom fichier logo',
+    description: 'Nom du fichier logo dans le dossier logos/',
+    example: 'acme_corporation.jpg',
+    required: false,
+  },
 ];
 
 /**
- * Generate Excel template file for client import
+ * Generate Excel template for client import
  * @returns Blob containing the Excel file
  */
 export function generateClientTemplate(): Blob {
   // Create workbook
   const wb = XLSX.utils.book_new();
-
-  // Create header row with labels
-  const headers = CLIENT_TEMPLATE_COLUMNS.map(col => col.label);
   
-  // Create example data row
-  const exampleRow = CLIENT_TEMPLATE_COLUMNS.map(col => col.example || '');
-
   // Create worksheet data
-  const wsData = [
-    headers,
-    exampleRow,
-  ];
-
+  const headers = CLIENT_TEMPLATE_COLUMNS.map(col => col.label);
+  const examples = CLIENT_TEMPLATE_COLUMNS.map(col => col.example || '');
+  
+  // Add header row
+  const wsData = [headers, examples];
+  
   // Create worksheet
   const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-  // Set column widths for better readability
+  
+  // Set column widths
   const colWidths = CLIENT_TEMPLATE_COLUMNS.map(() => ({ wch: 25 }));
   ws['!cols'] = colWidths;
-
+  
   // Style header row (bold)
   const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-  for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+  for (let col = headerRange.s.c; col <= headerRange.s.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
     if (!ws[cellAddress]) continue;
     ws[cellAddress].s = {
@@ -102,47 +104,13 @@ export function generateClientTemplate(): Blob {
       fill: { fgColor: { rgb: 'E0E0E0' } },
     };
   }
-
+  
   // Add worksheet to workbook
   XLSX.utils.book_append_sheet(wb, ws, 'Clients');
-
-  // Create instructions sheet
-  const instructionsData = [
-    ['Instructions pour l\'import de clients'],
-    [''],
-    ['Colonnes supportées:'],
-    ...CLIENT_TEMPLATE_COLUMNS.map(col => [
-      `- ${col.label} (${col.key})${col.required ? ' *REQUIS*' : ''}`,
-      col.description || '',
-      col.example ? `Exemple: ${col.example}` : '',
-    ]),
-    [''],
-    ['Notes importantes:'],
-    ['- La colonne "Nom de l\'entreprise" est REQUISE'],
-    ['- Si l\'entreprise n\'existe pas, elle sera créée automatiquement'],
-    ['- Les statuts acceptés sont: actif, inactif, maintenance'],
-    ['- Les IDs (company_id, responsible_id) doivent correspondre à des enregistrements existants'],
-    ['- Vous pouvez utiliser les noms de colonnes en français ou en anglais'],
-    [''],
-    ['Format des colonnes acceptées:'],
-    ['Français: Nom de l\'entreprise, ID Entreprise, Statut, ID Responsable, Notes, Commentaires, URL Portail'],
-    ['Anglais: company_name, company_id, status, responsible_id, notes, comments, portal_url'],
-    [''],
-    ['Matching des entreprises:'],
-    ['Le système essaiera automatiquement de faire correspondre les entreprises par nom:'],
-    ['- Correspondance exacte (insensible à la casse)'],
-    ['- Correspondance sans forme juridique (SARL, SA, SAS, EURL)'],
-    ['- Correspondance partielle'],
-    ['Si aucune entreprise correspondante n\'est trouvée, une nouvelle entreprise sera créée automatiquement'],
-  ];
-
-  const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
-  instructionsWs['!cols'] = [{ wch: 80 }];
-  XLSX.utils.book_append_sheet(wb, instructionsWs, 'Instructions');
-
-  // Convert to blob
-  const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-  return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  
+  // Generate Excel file
+  const excelBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
 /**
@@ -166,9 +134,7 @@ export function downloadClientTemplate(): void {
  */
 export async function generateClientZipTemplate(): Promise<Blob> {
   // Import JSZip dynamically to avoid SSR issues
-  // Type assertion needed because TypeScript can't resolve dynamic imports at compile time
   const JSZipModule = await import('jszip') as any;
-  // Handle both default export and named export
   const JSZip = JSZipModule.default || JSZipModule;
   const zip = new JSZip();
 
@@ -192,8 +158,8 @@ Votre fichier ZIP doit contenir :
 clients_import.zip
 ├── clients.xlsx
 └── logos/
-    ├── exemple_entreprise_sarl.jpg
-    ├── acme_corp.png
+    ├── acme_corporation.jpg
+    ├── tech_solutions.png
     └── ...
 \`\`\`
 
@@ -202,33 +168,44 @@ clients_import.zip
 Le fichier Excel doit contenir les colonnes suivantes :
 
 ### Colonnes requises
-- **Nom de l'entreprise** (ou \`company_name\`) : Nom de l'entreprise *REQUIS*
-  - L'entreprise sera créée automatiquement si elle n'existe pas
-  - Le système essaiera de faire correspondre par nom (exact, sans forme juridique, ou partiel)
+- **Nom de l'entreprise** (ou \`company_name\`, \`entreprise\`, \`nom_entreprise\`) : Nom de l'entreprise *REQUIS*
 
 ### Colonnes optionnelles
-- **ID Entreprise** (ou \`company_id\`) : Identifiant de l'entreprise existante
-- **Statut** (ou \`status\`) : actif, inactif, ou maintenance (défaut: actif)
-- **ID Responsable** (ou \`responsible_id\`) : Identifiant de l'employé responsable
-- **Notes** (ou \`notes\`) : Notes sur le client
-- **Commentaires** (ou \`comments\`) : Commentaires additionnels
-- **URL Portail** (ou \`portal_url\`) : URL du portail client
+- **ID Entreprise** (ou \`company_id\`, \`id_entreprise\`) : Identifiant de l'entreprise (si fourni, le nom sera ignoré)
+- **Statut** (ou \`status\`, \`statut\`) : actif, inactif, maintenance (défaut: actif)
+- **ID Responsable** (ou \`responsable_id\`, \`employee_id\`) : Identifiant de l'employé responsable
+- **Notes** (ou \`notes\`, \`note\`) : Notes sur le client
+- **Commentaires** (ou \`comments\`, \`commentaires\`) : Commentaires sur le client
+- **URL Portail** (ou \`portal_url\`, \`url_portail\`) : URL du portail client
+- **Nom fichier logo** (ou \`logo_filename\`, \`nom_fichier_logo\`) : Nom du fichier logo dans le dossier logos/
+
+## Matching des entreprises
+
+Le système fait un matching intelligent par nom d'entreprise :
+1. **Match exact** (insensible à la casse)
+2. **Match sans forme juridique** (SARL, SA, SAS, EURL)
+3. **Match partiel** (contient)
+
+Si une entreprise existe déjà, elle sera liée au client et le tag "client" sera ajouté.
+Si l'entreprise n'existe pas, elle sera créée automatiquement avec le tag "client".
 
 ## Nommage des logos
 
 Les logos doivent être nommés selon le nom de l'entreprise (normalisé) :
-- Le nom de l'entreprise est converti en minuscules
-- Les accents et caractères spéciaux sont supprimés
-- Les espaces sont remplacés par des underscores
+- \`nom_entreprise.jpg\` (ex: \`acme_corporation.jpg\`)
+- \`nom_entreprise.png\`
+- \`nom_entreprise.jpeg\`
 
 **Exemples :**
-- Entreprise : "Exemple Entreprise SARL" → Logo : \`exemple_entreprise_sarl.jpg\`
-- Entreprise : "Acme Corp" → Logo : \`acme_corp.png\`
+- Entreprise : Acme Corporation → Logo : \`acme_corporation.jpg\`
+- Entreprise : Tech Solutions SARL → Logo : \`tech_solutions.jpg\`
 
-### Format alternatif
+### Format alternatif (recommandé)
 
 Vous pouvez aussi spécifier le nom du fichier logo dans une colonne Excel :
-- **Nom fichier logo** (ou \`logo_filename\`) : Nom exact du fichier logo
+- **Nom fichier logo** (ou \`logo_filename\`, \`nom_fichier_logo\`) : Nom exact du fichier logo
+
+Cette méthode a la priorité la plus élevée et permet un matching précis même si le nom de l'entreprise ne correspond pas exactement au nom du fichier.
 
 ## Formats de logos supportés
 
@@ -239,10 +216,10 @@ Vous pouvez aussi spécifier le nom du fichier logo dans une colonne Excel :
 
 ## Exemple de fichier Excel
 
-| Nom de l'entreprise | Statut | ID Responsable | Notes | URL Portail |
-|---------------------|--------|----------------|-------|-------------|
-| Exemple Entreprise SARL | actif | 1 | Client important | https://portail.client.com |
-| Acme Corp | actif | 2 | Nouveau client | https://acme.portail.com |
+| Nom de l'entreprise | Statut | ID Responsable | Notes                    | Commentaires              | URL Portail                    | Nom fichier logo        |
+|---------------------|--------|----------------|--------------------------|---------------------------|--------------------------------|--------------------------|
+| Acme Corporation    | actif  | 1              | Client important         | À contacter régulièrement | https://portail.acme.com       | acme_corporation.jpg    |
+| Tech Solutions      | actif  | 2              | Nouveau client           | Premier contact réussi    | https://portail.tech.com       | tech_solutions.png      |
 
 ## Processus d'import
 
@@ -253,31 +230,22 @@ Vous pouvez aussi spécifier le nom du fichier logo dans une colonne Excel :
 5. Recompressez le tout en ZIP
 6. Importez le fichier ZIP via l'interface
 
-## Matching des entreprises
-
-Le système essaiera automatiquement de faire correspondre les entreprises par nom :
-- **Correspondance exacte** (insensible à la casse)
-- **Correspondance sans forme juridique** (SARL, SA, SAS, EURL)
-- **Correspondance partielle** (contient)
-
-Si aucune entreprise correspondante n'est trouvée, une nouvelle entreprise sera créée automatiquement et marquée comme client (\`is_client=True\`).
-
 ## Notes importantes
 
-- La colonne "Nom de l'entreprise" est REQUISE
-- Les logos sont automatiquement associés aux entreprises par leur nom normalisé
+- Les colonnes marquées *REQUIS* doivent être remplies
+- Les logos sont automatiquement associés aux entreprises par leur nom
 - Si un logo n'est pas trouvé, le client sera créé sans logo
-- Vous pouvez utiliser soit des logos dans le ZIP, soit des URLs dans une colonne Logo URL (si supporté)
-- Les IDs (company_id, responsible_id) doivent correspondre à des enregistrements existants dans le système
-- Les entreprises créées automatiquement seront marquées comme clients
+- Vous pouvez utiliser soit des logos dans le ZIP, soit des URLs dans la colonne Logo URL (si supporté)
+- Les IDs (company_id, responsable_id) doivent correspondre à des enregistrements existants dans le système
+- Le matching des entreprises se fait par nom, pas par ID (sauf si company_id est fourni)
 
 ## Support
 
 En cas de problème lors de l'import, vérifiez :
 - Le format du fichier Excel (doit être .xlsx ou .xls)
-- Le nommage des logos (doit correspondre au nom normalisé de l'entreprise)
-- La colonne "Nom de l'entreprise" est présente et remplie
-- Les statuts utilisés sont valides (actif, inactif, maintenance)
+- Le nommage des logos (doit correspondre au format nom_entreprise)
+- Les colonnes requises sont présentes et remplies
+- Le format du statut (actif, inactif, maintenance)
 `;
 
   zip.file('README.txt', readmeContent);
@@ -289,17 +257,12 @@ Placez ici les logos de vos entreprises.
 
 ## Format de nommage
 
-Nommez vos logos selon le nom normalisé de l'entreprise : \`nom_entreprise.extension\`
-
-Le nom est normalisé automatiquement :
-- Converti en minuscules
-- Accents et caractères spéciaux supprimés
-- Espaces remplacés par des underscores
+Nommez vos logos selon le format : \`nom_entreprise.extension\`
 
 Exemples :
-- "Exemple Entreprise SARL" → exemple_entreprise_sarl.jpg
-- "Acme Corp" → acme_corp.png
-- "Société Générale" → societe_generale.jpeg
+- acme_corporation.jpg
+- tech_solutions.png
+- global_services.jpeg
 
 ## Formats acceptés
 
@@ -310,10 +273,10 @@ Exemples :
 
 ## Important
 
-- Les noms de fichiers doivent correspondre au nom normalisé de l'entreprise
+- Les noms de fichiers doivent être en minuscules
 - Utilisez des underscores (_) pour séparer les mots
 - Le système associera automatiquement les logos aux entreprises correspondantes dans le fichier Excel
-- Si le logo n'est pas trouvé, le client sera créé sans logo
+- Vous pouvez aussi spécifier le nom du fichier dans la colonne "Nom fichier logo" du fichier Excel
 `;
 
   zip.folder('logos')?.file('INSTRUCTIONS.txt', logosInstructions);
@@ -331,7 +294,7 @@ export async function downloadClientZipTemplate(): Promise<void> {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `modele-import-clients-avec-logos-${new Date().toISOString().split('T')[0]}.zip`;
+  link.download = `modele-import-clients-${new Date().toISOString().split('T')[0]}.zip`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

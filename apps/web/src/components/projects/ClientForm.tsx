@@ -41,7 +41,7 @@ export default function ClientForm({
     company_id: client?.company_id || null,
     company_name: client?.company_name || null,
     status: client?.status || ClientStatus.ACTIVE,
-    responsible_id: client?.responsible_id || null,
+    responsable_id: client?.responsable_id || null,
     notes: client?.notes || null,
     comments: client?.comments || null,
     portal_url: client?.portal_url || null,
@@ -158,9 +158,9 @@ export default function ClientForm({
       <div>
         <label className="block text-sm font-medium mb-2">Responsable</label>
         <Input
-          name="responsible_id"
+          name="responsable_id"
           type="number"
-          value={formData.responsible_id?.toString() || ''}
+          value={formData.responsable_id?.toString() || ''}
           onChange={handleChange}
           placeholder="ID de l'employé responsable"
         />

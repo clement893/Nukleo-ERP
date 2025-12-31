@@ -40,6 +40,7 @@ import { companiesAPI } from '@/lib/api/companies';
 import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
 import TestimonialForm from '@/components/reseau/TestimonialForm';
 import ImportTestimonialsInstructions from '@/components/reseau/ImportTestimonialsInstructions';
+import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import TestimonialContact from '@/components/reseau/TestimonialContact';
 
 function TemoignagesContent() {
@@ -76,6 +77,8 @@ function TemoignagesContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showImportInstructions, setShowImportInstructions] = useState(false);
+  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
+  const [showImportLogs, setShowImportLogs] = useState(false);
   
   // Load companies and contacts for filters
   const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
@@ -276,11 +279,22 @@ function TemoignagesContent() {
   // Handle import
   const handleImport = async (file: File) => {
     try {
+      // Generate import_id before starting import
       const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentImportId(importId);
+      setShowImportLogs(true);
+      
       const result = await reseauTestimonialsAPI.import(file, importId);
       
+      // Update import_id if backend returns a different one (should be the same)
+      if (result.import_id && result.import_id !== importId) {
+        setCurrentImportId(result.import_id);
+      }
+      
       if (result.valid_rows > 0) {
+        // Invalidate testimonials query to refetch after import
         queryClient.invalidateQueries({ queryKey: ['reseau-testimonials'] });
+        
         showToast({
           message: `${result.valid_rows} témoignage(s) importé(s) avec succès`,
           type: 'success',
@@ -765,6 +779,34 @@ function TemoignagesContent() {
           }
         }}
       />
+
+      {/* Import Logs Modal */}
+      {showImportLogs && (
+        <Modal
+          isOpen={showImportLogs}
+          onClose={() => {
+            setShowImportLogs(false);
+            setCurrentImportId(null);
+          }}
+          title="Logs d'import en temps réel"
+          size="xl"
+        >
+          {currentImportId ? (
+            <ImportLogsViewer
+              endpointUrl={`/v1/reseau/testimonials/import/${currentImportId}/logs`}
+              importId={currentImportId}
+              onComplete={() => {
+                // Don't auto-close - let user close manually to review logs
+              }}
+            />
+          ) : (
+            <div className="p-4 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Initialisation de l'import...</p>
+            </div>
+          )}
+        </Modal>
+      )}
     </MotionDiv>
   );
 }

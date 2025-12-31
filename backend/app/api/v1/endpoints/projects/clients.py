@@ -233,7 +233,7 @@ async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
-    responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
+    responsable_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
     search: Optional[str] = Query(None, description="Search by company name or responsible employee name"),
     _t: Optional[int] = Query(None, description="Cache-busting timestamp (ignored)", include_in_schema=False),
@@ -244,7 +244,7 @@ async def list_clients(
     Args:
         request: FastAPI Request object to access query parameters
         status: Optional status filter
-        responsible_id: Optional responsible filter
+        responsable_id: Optional responsible filter
         company_id: Optional company filter
         search: Optional search term
         current_user: Current authenticated user
@@ -272,20 +272,20 @@ async def list_clients(
     limit_int = min(max(1, limit_int), 1000)
     
     # Use integer parameters directly
-    responsible_id_int = responsible_id
+    responsable_id_int = responsable_id
     company_id_int = company_id
     
     query = select(Client)
     
     if status:
         query = query.where(Client.status == status)
-    if responsible_id_int is not None:
-        query = query.where(Client.responsible_id == responsible_id_int)
+    if responsable_id_int is not None:
+        query = query.where(Client.responsable_id == responsable_id_int)
     if company_id_int is not None:
         query = query.where(Client.company_id == company_id_int)
     if search:
         search_term = f"%{search.lower()}%"
-        query = query.join(Company).join(User, Client.responsible_id == User.id, isouter=True).where(
+        query = query.join(Company).join(User, Client.responsable_id == User.id, isouter=True).where(
             or_(
                 func.lower(Company.name).like(search_term),
                 func.lower(Company.email).like(search_term),
@@ -296,7 +296,7 @@ async def list_clients(
     
     query = query.options(
         selectinload(Client.company),
-        selectinload(Client.responsible)
+        selectinload(Client.responsable)
     ).order_by(Client.created_at.desc()).offset(skip_int).limit(limit_int)
     
     try:
@@ -328,8 +328,8 @@ async def list_clients(
                 'company_name': client.company.name if client.company else None,
                 'company_logo_url': logo_url,
                 'status': client.status.value if isinstance(client.status, ClientStatus) else client.status,
-                'responsible_id': client.responsible_id,
-                'responsible_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
+                'responsable_id': client.responsable_id,
+                'responsable_name': f"{client.responsable.first_name} {client.responsable.last_name}" if client.responsable else None,
                 'notes': client.notes,
                 'comments': client.comments,
                 'portal_url': client.portal_url,
@@ -341,6 +341,35 @@ async def list_clients(
         return client_list
     except Exception as e:
         logger.error(f"Database error in list_clients: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
+
+
+@router.get("/count")
+@cache_query(expire=60, tags=["clients"])
+async def count_clients(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """
+    Get total count of clients
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dictionary with total count
+    """
+    try:
+        result = await db.execute(select(func.count(Client.id)))
+        count = result.scalar_one() or 0
+        return {"total": count}
+    except Exception as e:
+        logger.error(f"Database error in count_clients: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"A database error occurred: {str(e)}"
@@ -370,7 +399,7 @@ async def get_client(
     query = select(Client).where(Client.id == client_id)
     query = query.options(
         selectinload(Client.company),
-        selectinload(Client.responsible)
+        selectinload(Client.responsable)
     )
     
     result = await db.execute(query)
@@ -401,8 +430,8 @@ async def get_client(
         'company_name': client.company.name if client.company else None,
         'company_logo_url': logo_url,
         'status': client.status.value if isinstance(client.status, ClientStatus) else client.status,
-        'responsible_id': client.responsible_id,
-        'responsible_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
+        'responsable_id': client.responsable_id,
+        'responsable_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
         'notes': client.notes,
         'comments': client.comments,
         'portal_url': client.portal_url,
@@ -503,21 +532,21 @@ async def create_client(
             )
         
         # Validate responsible exists if provided
-        if client_data.responsible_id:
-            responsible_result = await db.execute(
-                select(User).where(User.id == client_data.responsible_id)
+        if client_data.responsable_id:
+            responsable_result = await db.execute(
+                select(User).where(User.id == client_data.responsable_id)
             )
-            if not responsible_result.scalar_one_or_none():
+            if not responsable_result.scalar_one_or_none():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Responsible user not found"
+                    detail="Responsable user not found"
                 )
         
         # Create client
         client = Client(
             company_id=company_id,
             status=client_data.status,
-            responsible_id=client_data.responsible_id,
+            responsable_id=client_data.responsable_id,
             notes=client_data.notes,
             comments=client_data.comments,
             portal_url=client_data.portal_url,
@@ -525,7 +554,7 @@ async def create_client(
         
         db.add(client)
         await db.commit()
-        await db.refresh(client, ["company", "responsible"])
+        await db.refresh(client, ["company", "responsable"])
         
         logger.info(f"User {current_user.id} created client {client.id} for company {company_id}")
         
@@ -548,8 +577,8 @@ async def create_client(
             'company_name': client.company.name if client.company else None,
             'company_logo_url': logo_url,
             'status': client.status.value if isinstance(client.status, ClientStatus) else client.status,
-            'responsible_id': client.responsible_id,
-            'responsible_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
+            'responsable_id': client.responsable_id,
+            'responsable_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
             'notes': client.notes,
             'comments': client.comments,
             'portal_url': client.portal_url,
@@ -604,14 +633,14 @@ async def update_client(
     
     try:
         # Validate responsible exists if provided
-        if client_data.responsible_id is not None:
-            responsible_result = await db.execute(
-                select(User).where(User.id == client_data.responsible_id)
+        if client_data.responsable_id is not None:
+            responsable_result = await db.execute(
+                select(User).where(User.id == client_data.responsable_id)
             )
-            if not responsible_result.scalar_one_or_none():
+            if not responsable_result.scalar_one_or_none():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Responsible user not found"
+                    detail="Responsable user not found"
                 )
         
         # Update fields
@@ -620,7 +649,7 @@ async def update_client(
             setattr(client, field, value)
         
         await db.commit()
-        await db.refresh(client, ["company", "responsible"])
+        await db.refresh(client, ["company", "responsable"])
         
         logger.info(f"User {current_user.id} updated client {client_id}")
         
@@ -643,8 +672,8 @@ async def update_client(
             'company_name': client.company.name if client.company else None,
             'company_logo_url': logo_url,
             'status': client.status.value if isinstance(client.status, ClientStatus) else client.status,
-            'responsible_id': client.responsible_id,
-            'responsible_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
+            'responsable_id': client.responsable_id,
+            'responsable_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
             'notes': client.notes,
             'comments': client.comments,
             'portal_url': client.portal_url,
@@ -821,7 +850,7 @@ async def import_clients(
     - Company Name: company_name, company, entreprise, entreprise_name, nom_entreprise, société, societe, organisation, organization, firme, business, client
     - Company ID: company_id, id_entreprise, entreprise_id, company id, id company, id entreprise
     - Status: status, statut, état, etat, state
-    - Responsible ID: responsible_id, responsable_id, employee_id, id_employé, id_employe, employé_id, employe_id, employee id, id employee, responsable id, assigned_to_id, assigned to id
+    - Responsible ID: responsable_id, responsable_id, employee_id, id_employé, id_employe, employé_id, employe_id, employee id, id employee, responsable id, assigned_to_id, assigned to id
     - Notes: notes, note, commentaires, commentaire, comments, comment
     - Comments: comments, commentaires, commentaire, comment, notes, note
     - Portal URL: portal_url, portal url, url_portail, url portail, portail, portal
@@ -1097,6 +1126,10 @@ async def import_clients(
                             'error': f"Company ID {company_id} not found"
                         })
                         continue
+                    # Mark existing company as client
+                    if not company.is_client:
+                        company.is_client = True
+                        add_import_log(import_id, f"Ligne {idx + 2}: Entreprise existante (ID: {company_id}) marquée comme client", "info")
                 elif company_name:
                     # Try to find existing company
                     matched_company_id = await find_company_by_name(
@@ -1108,6 +1141,14 @@ async def import_clients(
                     if matched_company_id:
                         company_id = matched_company_id
                         logger.info(f"Auto-matched company '{company_name}' to company ID {matched_company_id}")
+                        # Mark existing company as client
+                        company_result = await db.execute(
+                            select(Company).where(Company.id == company_id)
+                        )
+                        company = company_result.scalar_one_or_none()
+                        if company and not company.is_client:
+                            company.is_client = True
+                            add_import_log(import_id, f"Ligne {idx + 2}: Entreprise '{company_name}' marquée comme client", "info")
                     else:
                         # Create new company
                         company = Company(
@@ -1151,15 +1192,15 @@ async def import_clients(
                         else:
                             update_data['status'] = ClientStatus.ACTIVE
                     
-                    # Get responsible_id
-                    responsible_id_raw = get_field_value(row_data, [
-                        'responsible_id', 'responsable_id', 'employee_id', 'id_employé', 'id_employe',
+                    # Get responsable_id
+                    responsable_id_raw = get_field_value(row_data, [
+                        'responsable_id', 'responsable_id', 'employee_id', 'id_employé', 'id_employe',
                         'employé_id', 'employe_id', 'employee id', 'id employee', 'responsable id',
                         'assigned_to_id', 'assigned to id'
                     ])
-                    if responsible_id_raw:
+                    if responsable_id_raw:
                         try:
-                            update_data['responsible_id'] = int(float(str(responsible_id_raw)))
+                            update_data['responsable_id'] = int(float(str(responsable_id_raw)))
                         except (ValueError, TypeError):
                             pass
                     
@@ -1238,22 +1279,22 @@ async def import_clients(
                     elif status_lower in ['maintenance', 'maintenance']:
                         client_status = ClientStatus.MAINTENANCE
                 
-                # Get responsible_id
-                responsible_id = None
-                responsible_id_raw = get_field_value(row_data, [
-                    'responsible_id', 'responsable_id', 'employee_id', 'id_employé', 'id_employe',
+                # Get responsable_id
+                responsable_id = None
+                responsable_id_raw = get_field_value(row_data, [
+                    'responsable_id', 'responsable_id', 'employee_id', 'id_employé', 'id_employe',
                     'employé_id', 'employe_id', 'employee id', 'id employee', 'responsable id',
                     'assigned_to_id', 'assigned to id'
                 ])
-                if responsible_id_raw:
+                if responsable_id_raw:
                     try:
-                        responsible_id = int(float(str(responsible_id_raw)))
+                        responsable_id = int(float(str(responsable_id_raw)))
                     except (ValueError, TypeError):
                         warnings.append({
                             'row': idx + 2,
-                            'type': 'invalid_responsible_id',
-                            'message': f"ID responsable invalide: '{responsible_id_raw}'",
-                            'data': {'responsible_id_raw': responsible_id_raw}
+                            'type': 'invalid_responsable_id',
+                            'message': f"ID responsable invalide: '{responsable_id_raw}'",
+                            'data': {'responsable_id_raw': responsable_id_raw}
                         })
                 
                 # Get notes
@@ -1318,7 +1359,7 @@ async def import_clients(
                 client = Client(
                     company_id=company_id,
                     status=client_status,
-                    responsible_id=responsible_id,
+                    responsable_id=responsable_id,
                     notes=notes,
                     comments=comments,
                     portal_url=portal_url,
@@ -1355,7 +1396,7 @@ async def import_clients(
             if created_clients:
                 await db.commit()
                 for client in created_clients:
-                    await db.refresh(client, ["company", "responsible"])
+                    await db.refresh(client, ["company", "responsable"])
                 
                 add_import_log(import_id, f"Sauvegarde réussie: {len(created_clients)} client(s) traité(s)", "success")
         except Exception as e:
@@ -1385,8 +1426,8 @@ async def import_clients(
                 'company_name': client.company.name if client.company else None,
                 'company_logo_url': logo_url,
                 'status': client.status.value if isinstance(client.status, ClientStatus) else client.status,
-                'responsible_id': client.responsible_id,
-                'responsible_name': f"{client.responsible.first_name} {client.responsible.last_name}" if client.responsible else None,
+                'responsable_id': client.responsable_id,
+                'responsable_name': f"{client.responsable.first_name} {client.responsable.last_name}" if client.responsable else None,
                 'notes': client.notes,
                 'comments': client.comments,
                 'portal_url': client.portal_url,
@@ -1459,7 +1500,7 @@ async def export_clients(
             select(Client)
             .options(
                 selectinload(Client.company),
-                selectinload(Client.responsible)
+                selectinload(Client.responsable)
             )
             .order_by(Client.created_at.desc())
         )
@@ -1469,16 +1510,16 @@ async def export_clients(
         export_data = []
         for client in clients:
             try:
-                responsible_name = ''
-                if client.responsible:
-                    first_name = client.responsible.first_name or ''
-                    last_name = client.responsible.last_name or ''
-                    responsible_name = f"{first_name} {last_name}".strip()
+                responsable_name = ''
+                if client.responsable:
+                    first_name = client.responsable.first_name or ''
+                    last_name = client.responsable.last_name or ''
+                    responsable_name = f"{first_name} {last_name}".strip()
                 
                 export_data.append({
                     'Nom de l\'entreprise': client.company.name if client.company and client.company.name else '',
                     'Statut': client.status.value if isinstance(client.status, ClientStatus) else str(client.status),
-                    'Responsable': responsible_name,
+                    'Responsable': responsable_name,
                     'Notes': client.notes or '',
                     'Commentaires': client.comments or '',
                     'URL Portail': client.portal_url or '',

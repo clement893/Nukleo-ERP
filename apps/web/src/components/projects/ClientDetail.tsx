@@ -84,9 +84,9 @@ export default function ClientDetail({
                 {getStatusLabel(client.status)}
               </Badge>
             </div>
-            {client.responsible_name && (
+            {client.responsable_name && (
               <p className="text-lg text-muted-foreground mb-4">
-                Responsable: {client.responsible_name}
+                Responsable: {client.responsable_name}
               </p>
             )}
             <div className="flex gap-2">

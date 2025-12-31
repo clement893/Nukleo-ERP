@@ -64,14 +64,21 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
     }
   };
 
-  const handleCreate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate) => {
+  const handleCreate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate): Promise<void> => {
     try {
       setCreating(true);
       // Ensure employee_id is set to the current employee
+      // Convert to ExpenseAccountCreate format (all fields required for creation)
       const expenseData: ExpenseAccountCreate = {
-        ...data,
         employee_id: employee.id,
-      } as ExpenseAccountCreate;
+        title: data.title || '',
+        description: data.description ?? null,
+        expense_period_start: data.expense_period_start ?? null,
+        expense_period_end: data.expense_period_end ?? null,
+        total_amount: data.total_amount || '0',
+        currency: data.currency || 'EUR',
+        metadata: data.metadata ?? null,
+      };
       await expenseAccountsAPI.create(expenseData);
       setShowCreateModal(false);
       showToast({
