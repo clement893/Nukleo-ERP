@@ -625,7 +625,7 @@ async def create_project(
     
     if final_client_id is None and project_data.client_name:
         matched_client_id = await find_client_by_name(
-            people_name=project_data.client_name,
+            client_name=project_data.client_name,
             db=db
         )
         if matched_client_id:
@@ -736,7 +736,7 @@ async def update_project(
     
     if final_client_id is None and project_data.client_name:
         matched_client_id = await find_client_by_name(
-            people_name=project_data.client_name,
+            client_name=project_data.client_name,
             db=db
         )
         if matched_client_id:
