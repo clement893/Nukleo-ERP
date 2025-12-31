@@ -179,34 +179,13 @@ async def get_projects(
             }
         
         projects = []
-        use_explicit_columns = False
         
-        # Try to use normal query with relationships if columns exist
-        # NOTE: We always use explicit column selection to avoid lazy loading issues in async context
+        # Always use explicit column selection to avoid lazy loading issues in async context
         # Even if columns exist, we load relationships manually to prevent MissingGreenlet errors
-        use_explicit_columns = True  # Always use explicit columns to avoid lazy loading issues
-            except (ProgrammingError, Exception) as e:
-                # If query fails, rollback and use explicit column selection
-                error_str = str(e).lower()
-                
-                # Check if error is due to failed transaction - rollback first
-                if 'transaction is aborted' in error_str or 'infailed' in error_str:
-                    logger.warning(f"Transaction error detected, rolling back: {e}")
-                
-                try:
-                    await db.rollback()
-                except Exception as rollback_error:
-                    logger.warning(
-                        f"Rollback failed: {rollback_error}",
-                        context={"original_error": str(e)}
-                    )
-                logger.warning(
-                    "Query failed, using explicit column selection",
-                    context={"error": str(e), "error_type": type(e).__name__}
-                )
-                use_explicit_columns = True
+        # This ensures we never trigger lazy loading which causes MissingGreenlet errors
+        use_explicit_columns = True
         
-        # Use explicit column selection if columns don't exist or query failed
+        # Use explicit column selection to avoid lazy loading issues
         if use_explicit_columns or not columns_exist.get('client_id', False) or not columns_exist.get('responsable_id', False):
             try:
                 # Build column list - include only columns that exist
