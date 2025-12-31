@@ -7,6 +7,8 @@
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
+import { SkeletonWidget } from '@/components/ui/Skeleton';
+import EmptyState from '@/components/ui/EmptyState';
 import {
   LineChart,
   Line,
@@ -49,12 +51,12 @@ export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <DollarSign className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-2" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aucune donnée de revenus
-        </p>
-      </div>
+      <EmptyState
+        icon={DollarSign}
+        title="Aucune donnée de revenus"
+        description="Les données de revenus apparaîtront ici une fois que vous aurez enregistré vos premières transactions."
+        variant="compact"
+      />
     );
   }
 

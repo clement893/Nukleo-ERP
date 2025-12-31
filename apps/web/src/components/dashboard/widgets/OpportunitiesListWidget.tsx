@@ -9,6 +9,7 @@ import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
+import EmptyState from '@/components/ui/EmptyState';
 
 export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
@@ -35,12 +36,12 @@ export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) 
 
   if (opportunities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <TrendingUp className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-2" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aucune opportunité
-        </p>
-      </div>
+      <EmptyState
+        icon={TrendingUp}
+        title="Aucune opportunité"
+        description="Commencez par créer votre première opportunité pour suivre vos prospects."
+        variant="compact"
+      />
     );
   }
 

@@ -7,6 +7,8 @@
 import { FolderKanban, ExternalLink, AlertCircle } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
+import EmptyState from '@/components/ui/EmptyState';
+import { SkeletonWidget } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 
 export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
@@ -38,12 +40,12 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
 
   if (projects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <FolderKanban className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-2" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aucun projet actif
-        </p>
-      </div>
+      <EmptyState
+        icon={FolderKanban}
+        title="Aucun projet actif"
+        description="Créez votre premier projet pour commencer à organiser votre travail."
+        variant="compact"
+      />
     );
   }
 

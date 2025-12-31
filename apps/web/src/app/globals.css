@@ -205,6 +205,55 @@ body {
     inset -1px 0 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
 }
 
+/* Enhanced Glass Sidebar - Premium version with stronger glassmorphism */
+.glass-sidebar-enhanced {
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-right: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 25%, transparent);
+  box-shadow: 
+    8px 0 32px 0 color-mix(in srgb, var(--color-foreground) 8%, transparent),
+    inset -1px 0 0 0 color-mix(in srgb, var(--color-background) 60%, transparent),
+    inset 0 0 60px 0 color-mix(in srgb, var(--color-primary-500) 3%, transparent);
+}
+
+/* Glass Card Active State - For active navigation items */
+.glass-card-active {
+  background: color-mix(in srgb, var(--color-primary-500) 12%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+  box-shadow: 
+    0 2px 8px 0 color-mix(in srgb, var(--color-primary-500) 15%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 40%, transparent);
+}
+
+/* Glass Card Hover State - For navigation item hover */
+.glass-card-hover {
+  background: color-mix(in srgb, var(--color-foreground) 5%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 15%, transparent);
+}
+
+/* Custom Scrollbar for Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-foreground) 20%, transparent);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-foreground) 30%, transparent);
+}
+
 /* Glass Modal - For modals and overlays */
 .glass-modal {
   background: color-mix(in srgb, var(--color-background) 90%, transparent);
