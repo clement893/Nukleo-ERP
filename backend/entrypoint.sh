@@ -86,58 +86,87 @@ if [ -n "$DATABASE_URL" ]; then
             if [ $HEADS_UPGRADE_EXIT -eq 0 ]; then
                 MIGRATION_STATUS="success"
             elif echo "$HEADS_UPGRADE_RESULT" | grep -q "Can't locate revision"; then
-                echo "⚠️  Missing revision detected in migration chain. Attempting to identify and handle..."
-                # Try to get current heads and upgrade them individually
-                CURRENT_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
-                if [ -n "$CURRENT_HEADS" ]; then
-                    echo "Found heads: $CURRENT_HEADS"
-                    # Try to upgrade to the latest valid head
-                    LATEST_VALID=$(alembic history | grep -E "^[a-f0-9]+" | head -1 | awk '{print $1}' || echo "")
-                    if [ -n "$LATEST_VALID" ]; then
-                        echo "Attempting to upgrade to latest valid revision: $LATEST_VALID"
-                        timeout 60 alembic upgrade "$LATEST_VALID" 2>&1 && MIGRATION_STATUS="success" || MIGRATION_STATUS="timeout_or_failed"
+                echo "⚠️  Missing revision detected in migration chain. Running fix script..."
+                # Run the fix_migration_chain script to clean up invalid references
+                if python scripts/fix_migration_chain.py 2>&1; then
+                    echo "✅ Migration chain fixed, retrying upgrade..."
+                    # Retry upgrade after fixing
+                    RETRY_RESULT=$(timeout 60 alembic upgrade head 2>&1)
+                    RETRY_EXIT=$?
+                    echo "$RETRY_RESULT"
+                    if [ $RETRY_EXIT -eq 0 ]; then
+                        MIGRATION_STATUS="success"
+                    else
+                        MIGRATION_STATUS="timeout_or_failed"
+                    fi
+                else
+                    echo "⚠️  Fix script failed, trying manual recovery..."
+                    # Try to get current heads and upgrade them individually
+                    CURRENT_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
+                    if [ -n "$CURRENT_HEADS" ]; then
+                        echo "Found heads: $CURRENT_HEADS"
+                        # Try to upgrade to the latest valid head
+                        LATEST_VALID=$(alembic history | grep -E "^[a-f0-9]+" | head -1 | awk '{print $1}' || echo "")
+                        if [ -n "$LATEST_VALID" ]; then
+                            echo "Attempting to upgrade to latest valid revision: $LATEST_VALID"
+                            timeout 60 alembic upgrade "$LATEST_VALID" 2>&1 && MIGRATION_STATUS="success" || MIGRATION_STATUS="timeout_or_failed"
+                        else
+                            MIGRATION_STATUS="timeout_or_failed"
+                        fi
+                    else
+                        MIGRATION_STATUS="timeout_or_failed"
+                    fi
+                fi
+            else
+                MIGRATION_STATUS="timeout_or_failed"
+            fi
+        elif echo "$MIGRATION_RESULT" | grep -q "Can't locate revision"; then
+            echo "⚠️  Missing revision detected. Running fix script..."
+            # Run the fix_migration_chain script to clean up invalid references
+            if python scripts/fix_migration_chain.py 2>&1; then
+                echo "✅ Migration chain fixed, retrying upgrade..."
+                # Retry upgrade after fixing
+                RETRY_RESULT=$(timeout 60 alembic upgrade head 2>&1)
+                RETRY_EXIT=$?
+                echo "$RETRY_RESULT"
+                if [ $RETRY_EXIT -eq 0 ]; then
+                    MIGRATION_STATUS="success"
+                else
+                    MIGRATION_STATUS="timeout_or_failed"
+                fi
+            else
+                echo "⚠️  Fix script failed, trying manual recovery..."
+                # Try to get the current database revision
+                CURRENT_REV=$(alembic current 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" | head -1 || echo "")
+                if [ -n "$CURRENT_REV" ]; then
+                    echo "Current database revision: $CURRENT_REV"
+                    # Try to find a valid head that doesn't reference the missing revision
+                    # Get all available heads
+                    AVAILABLE_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
+                    if [ -n "$AVAILABLE_HEADS" ]; then
+                        echo "Available heads: $AVAILABLE_HEADS"
+                        # Try upgrading to each head individually, skipping problematic ones
+                        for HEAD in $AVAILABLE_HEADS; do
+                            echo "Attempting to upgrade to head: $HEAD"
+                            HEAD_RESULT=$(timeout 30 alembic upgrade "$HEAD" 2>&1)
+                            if echo "$HEAD_RESULT" | grep -q "Can't locate revision"; then
+                                echo "⚠️  Head $HEAD references missing revision, skipping..."
+                                continue
+                            elif echo "$HEAD_RESULT" | grep -qE "(Running upgrade|already at|up to date)"; then
+                                echo "✅ Successfully upgraded to $HEAD"
+                                MIGRATION_STATUS="success"
+                                break
+                            fi
+                        done
+                        if [ "$MIGRATION_STATUS" != "success" ]; then
+                            MIGRATION_STATUS="timeout_or_failed"
+                        fi
                     else
                         MIGRATION_STATUS="timeout_or_failed"
                     fi
                 else
                     MIGRATION_STATUS="timeout_or_failed"
                 fi
-            else
-                MIGRATION_STATUS="timeout_or_failed"
-            fi
-        elif echo "$MIGRATION_RESULT" | grep -q "Can't locate revision"; then
-            echo "⚠️  Missing revision detected. This may indicate a migration file was deleted or renamed."
-            echo "Attempting to identify valid migration path..."
-            # Try to get the current database revision
-            CURRENT_REV=$(alembic current 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" | head -1 || echo "")
-            if [ -n "$CURRENT_REV" ]; then
-                echo "Current database revision: $CURRENT_REV"
-                # Try to find a valid head that doesn't reference the missing revision
-                # Get all available heads
-                AVAILABLE_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
-                if [ -n "$AVAILABLE_HEADS" ]; then
-                    echo "Available heads: $AVAILABLE_HEADS"
-                    # Try upgrading to each head individually, skipping problematic ones
-                    for HEAD in $AVAILABLE_HEADS; do
-                        echo "Attempting to upgrade to head: $HEAD"
-                        HEAD_RESULT=$(timeout 30 alembic upgrade "$HEAD" 2>&1)
-                        if echo "$HEAD_RESULT" | grep -q "Can't locate revision"; then
-                            echo "⚠️  Head $HEAD references missing revision, skipping..."
-                            continue
-                        elif echo "$HEAD_RESULT" | grep -qE "(Running upgrade|already at|up to date)"; then
-                            echo "✅ Successfully upgraded to $HEAD"
-                            MIGRATION_STATUS="success"
-                            break
-                        fi
-                    done
-                    if [ "$MIGRATION_STATUS" != "success" ]; then
-                        MIGRATION_STATUS="timeout_or_failed"
-                    fi
-                else
-                    MIGRATION_STATUS="timeout_or_failed"
-                fi
-            else
-                MIGRATION_STATUS="timeout_or_failed"
             fi
         elif echo "$MIGRATION_RESULT" | grep -q "overlaps with other requested revisions"; then
             echo "⚠️  Migration overlap detected. Attempting to resolve..."
@@ -169,65 +198,94 @@ if [ -n "$DATABASE_URL" ]; then
             if [ $HEADS_UPGRADE_EXIT -eq 0 ]; then
                 MIGRATION_STATUS="success"
             elif echo "$HEADS_UPGRADE_RESULT" | grep -q "Can't locate revision"; then
-                echo "⚠️  Missing revision detected in migration chain. Attempting to identify and handle..."
-                # Try to get current heads and upgrade them individually
-                CURRENT_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
-                if [ -n "$CURRENT_HEADS" ]; then
-                    echo "Found heads: $CURRENT_HEADS"
-                    # Try upgrading to each head individually, skipping problematic ones
-                    for HEAD in $CURRENT_HEADS; do
-                        echo "Attempting to upgrade to head: $HEAD"
-                        HEAD_RESULT=$(alembic upgrade "$HEAD" 2>&1)
-                        if echo "$HEAD_RESULT" | grep -q "Can't locate revision"; then
-                            echo "⚠️  Head $HEAD references missing revision, skipping..."
-                            continue
-                        elif echo "$HEAD_RESULT" | grep -qE "(Running upgrade|already at|up to date)"; then
-                            echo "✅ Successfully upgraded to $HEAD"
-                            MIGRATION_STATUS="success"
-                            break
-                        fi
-                    done
-                    if [ "$MIGRATION_STATUS" != "success" ]; then
+                echo "⚠️  Missing revision detected in migration chain. Running fix script..."
+                # Run the fix_migration_chain script to clean up invalid references
+                if python scripts/fix_migration_chain.py 2>&1; then
+                    echo "✅ Migration chain fixed, retrying upgrade..."
+                    # Retry upgrade after fixing
+                    RETRY_RESULT=$(alembic upgrade head 2>&1)
+                    RETRY_EXIT=$?
+                    echo "$RETRY_RESULT"
+                    if [ $RETRY_EXIT -eq 0 ]; then
+                        MIGRATION_STATUS="success"
+                    else
                         MIGRATION_STATUS="failed"
                     fi
                 else
-                    MIGRATION_STATUS="failed"
+                    echo "⚠️  Fix script failed, trying manual recovery..."
+                    # Try to get current heads and upgrade them individually
+                    CURRENT_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
+                    if [ -n "$CURRENT_HEADS" ]; then
+                        echo "Found heads: $CURRENT_HEADS"
+                        # Try upgrading to each head individually, skipping problematic ones
+                        for HEAD in $CURRENT_HEADS; do
+                            echo "Attempting to upgrade to head: $HEAD"
+                            HEAD_RESULT=$(alembic upgrade "$HEAD" 2>&1)
+                            if echo "$HEAD_RESULT" | grep -q "Can't locate revision"; then
+                                echo "⚠️  Head $HEAD references missing revision, skipping..."
+                                continue
+                            elif echo "$HEAD_RESULT" | grep -qE "(Running upgrade|already at|up to date)"; then
+                                echo "✅ Successfully upgraded to $HEAD"
+                                MIGRATION_STATUS="success"
+                                break
+                            fi
+                        done
+                        if [ "$MIGRATION_STATUS" != "success" ]; then
+                            MIGRATION_STATUS="failed"
+                        fi
+                    else
+                        MIGRATION_STATUS="failed"
+                    fi
                 fi
             else
                 MIGRATION_STATUS="failed"
             fi
         elif echo "$MIGRATION_RESULT" | grep -q "Can't locate revision"; then
-            echo "⚠️  Missing revision detected. This may indicate a migration file was deleted or renamed."
-            echo "Attempting to identify valid migration path..."
-            # Try to get the current database revision
-            CURRENT_REV=$(alembic current 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" | head -1 || echo "")
-            if [ -n "$CURRENT_REV" ]; then
-                echo "Current database revision: $CURRENT_REV"
-                # Try to find a valid head that doesn't reference the missing revision
-                AVAILABLE_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
-                if [ -n "$AVAILABLE_HEADS" ]; then
-                    echo "Available heads: $AVAILABLE_HEADS"
-                    # Try upgrading to each head individually, skipping problematic ones
-                    for HEAD in $AVAILABLE_HEADS; do
-                        echo "Attempting to upgrade to head: $HEAD"
-                        HEAD_RESULT=$(alembic upgrade "$HEAD" 2>&1)
-                        if echo "$HEAD_RESULT" | grep -q "Can't locate revision"; then
-                            echo "⚠️  Head $HEAD references missing revision, skipping..."
-                            continue
-                        elif echo "$HEAD_RESULT" | grep -qE "(Running upgrade|already at|up to date)"; then
-                            echo "✅ Successfully upgraded to $HEAD"
-                            MIGRATION_STATUS="success"
-                            break
+            echo "⚠️  Missing revision detected. Running fix script..."
+            # Run the fix_migration_chain script to clean up invalid references
+            if python scripts/fix_migration_chain.py 2>&1; then
+                echo "✅ Migration chain fixed, retrying upgrade..."
+                # Retry upgrade after fixing
+                RETRY_RESULT=$(alembic upgrade head 2>&1)
+                RETRY_EXIT=$?
+                echo "$RETRY_RESULT"
+                if [ $RETRY_EXIT -eq 0 ]; then
+                    MIGRATION_STATUS="success"
+                else
+                    MIGRATION_STATUS="failed"
+                fi
+            else
+                echo "⚠️  Fix script failed, trying manual recovery..."
+                # Try to get the current database revision
+                CURRENT_REV=$(alembic current 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" | head -1 || echo "")
+                if [ -n "$CURRENT_REV" ]; then
+                    echo "Current database revision: $CURRENT_REV"
+                    # Try to find a valid head that doesn't reference the missing revision
+                    AVAILABLE_HEADS=$(alembic heads 2>&1 | grep -oE "[a-f0-9]+_[a-z_]+" || echo "")
+                    if [ -n "$AVAILABLE_HEADS" ]; then
+                        echo "Available heads: $AVAILABLE_HEADS"
+                        # Try upgrading to each head individually, skipping problematic ones
+                        for HEAD in $AVAILABLE_HEADS; do
+                            echo "Attempting to upgrade to head: $HEAD"
+                            HEAD_RESULT=$(alembic upgrade "$HEAD" 2>&1)
+                            if echo "$HEAD_RESULT" | grep -q "Can't locate revision"; then
+                                echo "⚠️  Head $HEAD references missing revision, skipping..."
+                                continue
+                            elif echo "$HEAD_RESULT" | grep -qE "(Running upgrade|already at|up to date)"; then
+                                echo "✅ Successfully upgraded to $HEAD"
+                                MIGRATION_STATUS="success"
+                                break
+                            fi
+                        done
+                        if [ "$MIGRATION_STATUS" != "success" ]; then
+                            MIGRATION_STATUS="failed"
                         fi
-                    done
-                    if [ "$MIGRATION_STATUS" != "success" ]; then
+                    else
                         MIGRATION_STATUS="failed"
                     fi
                 else
                     MIGRATION_STATUS="failed"
                 fi
-            else
-                MIGRATION_STATUS="failed"
             fi
         elif echo "$MIGRATION_RESULT" | grep -q "overlaps with other requested revisions"; then
             echo "⚠️  Migration overlap detected. Attempting to resolve..."
