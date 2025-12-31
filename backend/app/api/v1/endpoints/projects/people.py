@@ -48,18 +48,20 @@ async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: Optional[str] = Query(None, description="Number of records to skip"),
-    limit: Optional[str] = Query(None, description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
     """
     Get list of people
     """
+    # Parse skip and limit directly from query params to avoid FastAPI validation
+    skip_str = request.query_params.get("skip", "0")
+    limit_str = request.query_params.get("limit", "100")
+    
     # Parse and validate integer parameters (convert from string, with defaults)
     try:
-        skip_int = parse_int_param(skip if skip is not None else "0", "skip")
-        limit_int = parse_int_param(limit if limit is not None else "100", "limit")
+        skip_int = parse_int_param(skip_str, "skip")
+        limit_int = parse_int_param(limit_str, "limit")
     except HTTPException:
         raise  # Re-raise HTTPException as-is
     
