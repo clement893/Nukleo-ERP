@@ -1,7 +1,7 @@
 """fix expense_accounts employee_id foreign key constraint (force)
 
-Revision ID: 057_fix_expense_accounts_employee_id_fkey_force
-Revises: 056_increase_expense_accounts_total_amount_precision
+Revision ID: 057_fix_exp_emp_fk_force
+Revises: 056_incr_expense_total_amt
 Create Date: 2025-01-27 20:00:00.000000
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy import inspect, text
 
 # revision identifiers, used by Alembic.
-revision = '057_fix_expense_accounts_employee_id_fkey_force'
-down_revision = '056_increase_expense_accounts_total_amount_precision'
+revision = '057_fix_exp_emp_fk_force'
+down_revision = '056_incr_expense_total_amt'
 branch_labels = None
 depends_on = None
 

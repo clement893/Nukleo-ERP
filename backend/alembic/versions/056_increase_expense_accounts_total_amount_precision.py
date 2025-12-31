@@ -1,6 +1,6 @@
 """increase expense_accounts total_amount precision
 
-Revision ID: 056_increase_expense_accounts_total_amount_precision
+Revision ID: 056_incr_expense_total_amt
 Revises: 055_rename_people_to_clients
 Create Date: 2025-01-27 19:00:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
-revision = '056_increase_expense_accounts_total_amount_precision'
+revision = '056_incr_expense_total_amt'
 down_revision = '055_rename_people_to_clients'
 branch_labels = None
 depends_on = None
