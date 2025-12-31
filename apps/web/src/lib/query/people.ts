@@ -34,7 +34,16 @@ export function usePeople(
 ) {
   return useQuery({
     queryKey: peopleKeys.list({ skip, limit, ...filters }),
-    queryFn: () => peopleAPI.list(Number(skip), Number(limit), filters),
+    queryFn: () => {
+      const skipNum = Number(skip);
+      const limitNum = Number(limit);
+      console.log('[usePeople] queryFn called:', {
+        skip: { original: skip, type: typeof skip, converted: skipNum },
+        limit: { original: limit, type: typeof limit, converted: limitNum },
+        filters,
+      });
+      return peopleAPI.list(skipNum, limitNum, filters);
+    },
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -53,7 +62,16 @@ export function useInfinitePeople(
 ) {
   return useInfiniteQuery({
     queryKey: [...peopleKeys.lists(), 'infinite', { limit, ...filters }],
-    queryFn: ({ pageParam = 0 }) => peopleAPI.list(Number(pageParam), Number(limit), filters),
+    queryFn: ({ pageParam = 0 }) => {
+      const skipNum = Number(pageParam);
+      const limitNum = Number(limit);
+      console.log('[useInfinitePeople] queryFn called:', {
+        pageParam: { original: pageParam, type: typeof pageParam, converted: skipNum },
+        limit: { original: limit, type: typeof limit, converted: limitNum },
+        filters,
+      });
+      return peopleAPI.list(skipNum, limitNum, filters);
+    },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < limit) {
         return undefined;
