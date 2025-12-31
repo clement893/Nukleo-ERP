@@ -10,10 +10,10 @@ import { PageHeader } from '@/components/layout';
 import { Card, Badge, Loading, Alert } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Users, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { teamsAPI } from '@/lib/api';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { teamsAPI } from '@/lib/api/teams';
 import type { Team as TeamType, TeamMember } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
 
