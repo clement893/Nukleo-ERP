@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
+import QuickActions from '@/components/ui/QuickActions';
 import { Menu } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -60,6 +61,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
             <div className="w-10" /> {/* Spacer for centering */}
           </div>
         </header>
+
+        {/* Quick Actions FAB */}
+        <QuickActions />
 
         {/* Page Content */}
         <main 
