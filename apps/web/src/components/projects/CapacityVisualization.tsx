@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { Clock, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import type { ProjectTask } from '@/lib/api/project-tasks';
 import type { Employee } from '@/lib/api/employees';
 import { formatDurationHours } from '@/lib/utils/timesheet';
+import { calculateWeeklyCapacity } from '@/lib/utils/capacity';
+import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 
 interface CapacityVisualizationProps {
   tasks: ProjectTask[];
@@ -14,6 +16,7 @@ interface CapacityVisualizationProps {
   teamId?: number;
   startDate?: Date;
   endDate?: Date;
+  holidays?: Array<{ id: number; name: string; date: string; year?: number | null; is_active: boolean }>;
 }
 
 interface EmployeeCapacity {
@@ -22,6 +25,8 @@ interface EmployeeCapacity {
   estimatedHours: number;
   utilization: number; // Percentage
   status: 'under' | 'optimal' | 'over';
+  actualCapacityHours?: number;
+  workingDays?: number;
 }
 
 export default function CapacityVisualization({
@@ -30,7 +35,10 @@ export default function CapacityVisualization({
   teamId,
   startDate,
   endDate,
+  holidays = [],
 }: CapacityVisualizationProps) {
+  const [vacations, setVacations] = useState<VacationRequest[]>([]);
+  const [loadingVacations, setLoadingVacations] = useState(false);
   // Calculate weeks in date range
   const weeks = useMemo(() => {
     if (!startDate || !endDate) {
@@ -64,18 +72,53 @@ export default function CapacityVisualization({
     });
   }, [tasks, teamId, startDate, endDate]);
 
+  // Load vacations
+  useEffect(() => {
+    const loadVacations = async () => {
+      try {
+        setLoadingVacations(true);
+        const allVacations = await vacationRequestsAPI.list({ status: 'approved' });
+        setVacations(allVacations);
+      } catch (err) {
+        console.error('Error loading vacations:', err);
+      } finally {
+        setLoadingVacations(false);
+      }
+    };
+    loadVacations();
+  }, []);
+
+  // Convert vacations to absences format
+  const absences = useMemo(() => {
+    return vacations.map(vac => ({
+      id: vac.id,
+      employee_id: vac.employee_id,
+      start_date: vac.start_date,
+      end_date: vac.end_date,
+      type: 'vacation' as const,
+      status: 'approved' as const,
+    }));
+  }, [vacations]);
+
   // Calculate capacity per employee
   const employeeCapacities = useMemo<EmployeeCapacity[]>(() => {
     const capacityMap = new Map<number, EmployeeCapacity>();
 
     employees.forEach((employee) => {
-      const capacityHoursPerWeek = employee.capacity_hours_per_week || 40;
-      capacityMap.set(employee.id, {
+      // Use user_id if available, otherwise use employee.id
+      const key = employee.user_id || employee.id;
+      
+      // Calculate actual capacity considering holidays and absences
+      const capacityInfo = calculateWeeklyCapacity(employee, weeks, holidays, absences);
+      
+      capacityMap.set(key, {
         employee,
-        capacityHoursPerWeek,
+        capacityHoursPerWeek: capacityInfo.capacityHoursPerWeek,
         estimatedHours: 0,
         utilization: 0,
         status: 'under',
+        actualCapacityHours: capacityInfo.totalCapacityHours,
+        workingDays: capacityInfo.totalWorkingDays,
       });
     });
 
@@ -89,10 +132,9 @@ export default function CapacityVisualization({
       }
     });
 
-    // Calculate utilization
-    const numWeeks = weeks.length;
+    // Calculate utilization using actual capacity
     capacityMap.forEach((capacity) => {
-      const totalCapacity = capacity.capacityHoursPerWeek * numWeeks;
+      const totalCapacity = capacity.actualCapacityHours || capacity.capacityHoursPerWeek * weeks.length;
       capacity.utilization = totalCapacity > 0 
         ? (capacity.estimatedHours / totalCapacity) * 100 
         : 0;
@@ -107,12 +149,12 @@ export default function CapacityVisualization({
     });
 
     return Array.from(capacityMap.values()).sort((a, b) => b.utilization - a.utilization);
-  }, [employees, filteredTasks, weeks]);
+  }, [employees, filteredTasks, weeks, holidays, absences]);
 
   // Calculate team totals
   const teamStats = useMemo(() => {
     const totalCapacity = employeeCapacities.reduce(
-      (sum, cap) => sum + cap.capacityHoursPerWeek * weeks.length,
+      (sum, cap) => sum + (cap.actualCapacityHours || cap.capacityHoursPerWeek * weeks.length),
       0
     );
     const totalEstimated = employeeCapacities.reduce(
@@ -209,7 +251,7 @@ export default function CapacityVisualization({
             </p>
           ) : (
             employeeCapacities.map((capacity) => {
-              const totalCapacity = capacity.capacityHoursPerWeek * weeks.length;
+              const totalCapacity = capacity.actualCapacityHours || capacity.capacityHoursPerWeek * weeks.length;
               const remaining = totalCapacity - capacity.estimatedHours;
               
               return (
@@ -224,6 +266,11 @@ export default function CapacityVisualization({
                       </h4>
                       <p className="text-sm text-muted-foreground">
                         {capacity.capacityHoursPerWeek}h/semaine × {weeks.length} semaine{weeks.length > 1 ? 's' : ''} = {formatDurationHours(totalCapacity * 3600)}h
+                        {capacity.workingDays !== undefined && (
+                          <span className="ml-2 text-xs">
+                            ({capacity.workingDays} jours ouvrables)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <Badge className={getStatusColor(capacity.status)}>
@@ -263,10 +310,21 @@ export default function CapacityVisualization({
                         {formatDurationHours(remaining * 3600)}h
                       </p>
                     </div>
+                    {capacity.workingDays !== undefined && (
+                      <div>
+                        <p className="text-muted-foreground">Jours ouvrables</p>
+                        <p className="font-medium text-foreground">
+                          {capacity.workingDays}
+                        </p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-muted-foreground">Tâches</p>
                       <p className="font-medium text-foreground">
-                        {filteredTasks.filter((t) => t.assignee_id === capacity.employee.id).length}
+                        {filteredTasks.filter((t) => {
+                          const employeeKey = capacity.employee.user_id || capacity.employee.id;
+                          return t.assignee_id === employeeKey;
+                        }).length}
                       </p>
                     </div>
                   </div>

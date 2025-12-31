@@ -6,7 +6,6 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import Container from '@/components/ui/Container';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -19,7 +18,6 @@ import { handleApiError } from '@/lib/errors/api';
 import { employeesAPI } from '@/lib/api/employees';
 import { projectsAPI } from '@/lib/api/projects';
 import { clientsAPI } from '@/lib/api/clients';
-import { extractApiData } from '@/lib/api/utils';
 import { 
   Calendar, 
   Clock, 
@@ -28,8 +26,6 @@ import {
   Building, 
   ChevronDown, 
   ChevronUp,
-  Download,
-  TrendingUp,
   FileText
 } from 'lucide-react';
 import {
@@ -307,14 +303,15 @@ function FeuillesTempsContent() {
                 setGroupBy(e.target.value as GroupByType);
                 setExpandedGroups(new Set()); // Reset expanded groups
               }}
-            >
-              <option value="week">Semaine</option>
-              <option value="month">Mois</option>
-              <option value="employee">Employé</option>
-              <option value="project">Projet</option>
-              <option value="client">Client</option>
-              <option value="none">Aucun</option>
-            </Select>
+              options={[
+                { value: 'week', label: 'Semaine' },
+                { value: 'month', label: 'Mois' },
+                { value: 'employee', label: 'Employé' },
+                { value: 'project', label: 'Projet' },
+                { value: 'client', label: 'Client' },
+                { value: 'none', label: 'Aucun' },
+              ]}
+            />
           </div>
           <div>
             <Input
@@ -335,44 +332,44 @@ function FeuillesTempsContent() {
           <div>
             <Select
               label="Employé"
-              value={filters.user_id}
+              value={filters.user_id || ''}
               onChange={(e) => setFilters({ ...filters, user_id: e.target.value })}
-            >
-              <option value="">Tous les employés</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id.toString()}>
-                  {emp.first_name} {emp.last_name}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: 'Tous les employés' },
+                ...employees.map((emp) => ({
+                  value: emp.id.toString(),
+                  label: `${emp.first_name} ${emp.last_name}`,
+                })),
+              ]}
+            />
           </div>
           <div>
             <Select
               label="Projet"
-              value={filters.project_id}
+              value={filters.project_id || ''}
               onChange={(e) => setFilters({ ...filters, project_id: e.target.value })}
-            >
-              <option value="">Tous les projets</option>
-              {projects.map((proj) => (
-                <option key={proj.id} value={proj.id.toString()}>
-                  {proj.name}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: 'Tous les projets' },
+                ...projects.map((proj) => ({
+                  value: proj.id.toString(),
+                  label: proj.name,
+                })),
+              ]}
+            />
           </div>
           <div>
             <Select
               label="Client"
-              value={filters.client_id}
+              value={filters.client_id || ''}
               onChange={(e) => setFilters({ ...filters, client_id: e.target.value })}
-            >
-              <option value="">Tous les clients</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id.toString()}>
-                  {client.company_name || client.name || `Client ${client.id}`}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: 'Tous les clients' },
+                ...clients.map((client) => ({
+                  value: client.id.toString(),
+                  label: client.company_name || client.name || `Client ${client.id}`,
+                })),
+              ]}
+            />
           </div>
         </div>
       </Card>
@@ -383,14 +380,14 @@ function FeuillesTempsContent() {
           <h2 className="text-xl font-semibold text-foreground">Entrées de temps</h2>
           <div className="flex gap-2">
             <Button
-              variant={viewMode === 'cards' ? 'default' : 'outline'}
+              variant={viewMode === 'cards' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setViewMode('cards')}
             >
               Cartes
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
+              variant={viewMode === 'table' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setViewMode('table')}
             >
@@ -474,7 +471,7 @@ function FeuillesTempsContent() {
                                     <h4 className="font-medium text-foreground">
                                       {entry.task_title || 'Tâche sans titre'}
                                     </h4>
-                                    <Badge variant="outline">{formatDuration(entry.duration)}</Badge>
+                                    <Badge variant="default">{formatDuration(entry.duration)}</Badge>
                                   </div>
                                   
                                   {entry.description && (

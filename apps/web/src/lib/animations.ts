@@ -209,3 +209,51 @@ export const createAnimation = (
   exit: exit || initial,
   transition: { duration: transitionDuration / 1000, ease: transitionEasing },
 });
+
+// Animation configuration types
+export type AnimationVariant = 'fade' | 'fadeUp' | 'fadeDown' | 'fadeLeft' | 'fadeRight' | 'slideUp' | 'slideDown' | 'slideLeft' | 'slideRight' | 'scale' | 'scaleUp' | 'slide';
+export type AnimationDuration = 'fastest' | 'faster' | 'fast' | 'normal' | 'slow' | 'slower' | 'slowest';
+
+export interface AnimationConfig {
+  variant?: AnimationVariant;
+  duration?: AnimationDuration;
+  delay?: number;
+}
+
+// Check if user prefers reduced motion
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Get animation classes based on variant and duration
+export function getAnimationClasses(config: { variant?: AnimationVariant; duration?: AnimationDuration }): string {
+  const { variant = 'fade', duration: dur = 'normal' } = config;
+  
+  const variantClasses: Record<AnimationVariant, string> = {
+    fade: 'opacity-100',
+    fadeUp: 'opacity-100 translate-y-0',
+    fadeDown: 'opacity-100 translate-y-0',
+    fadeLeft: 'opacity-100 translate-x-0',
+    fadeRight: 'opacity-100 translate-x-0',
+    slideUp: 'opacity-100 translate-y-0',
+    slideDown: 'opacity-100 translate-y-0',
+    slideLeft: 'opacity-100 translate-x-0',
+    slideRight: 'opacity-100 translate-x-0',
+    slide: 'opacity-100 translate-y-0',
+    scale: 'opacity-100 scale-100',
+    scaleUp: 'opacity-100 scale-100',
+  };
+  
+  const durationClasses: Record<AnimationDuration, string> = {
+    fastest: 'duration-100',
+    faster: 'duration-150',
+    fast: 'duration-200',
+    normal: 'duration-300',
+    slow: 'duration-400',
+    slower: 'duration-500',
+    slowest: 'duration-600',
+  };
+  
+  return `${variantClasses[variant]} ${durationClasses[dur]}`;
+}

@@ -17,7 +17,7 @@ export interface Employee {
   photo_filename?: string | null;
   hire_date?: string | null; // ISO date string
   birthday?: string | null; // ISO date string
-  capacity_hours_per_week?: number | null; // Capacity in hours per week (default: 40)
+  capacity_hours_per_week?: number | null; // Capacity in hours per week (default: 35)
   user_id?: number | null; // Linked user ID
   team_id?: number | null; // Team ID
   created_at: string;
@@ -34,7 +34,7 @@ export interface EmployeeCreate {
   photo_filename?: string | null;
   hire_date?: string | null; // ISO date string (YYYY-MM-DD)
   birthday?: string | null; // ISO date string (YYYY-MM-DD)
-  capacity_hours_per_week?: number | null; // Capacity in hours per week (default: 40)
+  capacity_hours_per_week?: number | null; // Capacity in hours per week (default: 35)
   team_id?: number | null; // Team ID
 }
 

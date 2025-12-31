@@ -39,6 +39,7 @@ export default function EmployeeForm({
     photo_url: employee?.photo_url || null,
     hire_date: employee?.hire_date || null,
     birthday: employee?.birthday || null,
+    capacity_hours_per_week: employee?.capacity_hours_per_week || 35,
     team_id: employee?.team_id || null,
   });
   
@@ -284,6 +285,22 @@ export default function EmployeeForm({
         value={formData.birthday || ''}
         onChange={(e) => setFormData({ ...formData, birthday: e.target.value || null })}
         fullWidth
+      />
+
+      {/* Capacité hebdomadaire */}
+      <Input
+        label="Capacité hebdomadaire (heures)"
+        type="number"
+        step="0.5"
+        min="0"
+        max="168"
+        value={formData.capacity_hours_per_week || 35}
+        onChange={(e) => setFormData({ 
+          ...formData, 
+          capacity_hours_per_week: e.target.value ? parseFloat(e.target.value) : 35 
+        })}
+        fullWidth
+        helperText="Nombre d'heures de travail par semaine (défaut: 35h)"
       />
 
       {/* Équipe */}

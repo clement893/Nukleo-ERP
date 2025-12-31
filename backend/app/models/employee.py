@@ -31,7 +31,7 @@ class Employee(Base):
     photo_filename = Column(String(500), nullable=True)  # Filename for photo matching during import
     hire_date = Column(Date, nullable=True, index=True)  # Date d'embauche
     birthday = Column(Date, nullable=True)  # Anniversaire
-    capacity_hours_per_week = Column(Numeric(5, 2), nullable=True, default=40.0)  # Capacité en heures par semaine (défaut: 40h)
+    capacity_hours_per_week = Column(Numeric(5, 2), nullable=True, default=35.0)  # Capacité en heures par semaine (défaut: 35h)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, unique=True, index=True)  # Link to User account
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True, index=True)  # Link to Team
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)

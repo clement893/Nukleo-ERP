@@ -37,10 +37,10 @@ def upgrade() -> None:
         if 'capacity_hours_per_week' not in columns:
             op.add_column(
                 'employees',
-                sa.Column('capacity_hours_per_week', sa.Numeric(5, 2), nullable=True, server_default='40.00')
+                sa.Column('capacity_hours_per_week', sa.Numeric(5, 2), nullable=True, server_default='35.00')
             )
             # Update existing employees to have default capacity
-            op.execute("UPDATE employees SET capacity_hours_per_week = 40.00 WHERE capacity_hours_per_week IS NULL")
+            op.execute("UPDATE employees SET capacity_hours_per_week = 35.00 WHERE capacity_hours_per_week IS NULL")
             print("Added capacity_hours_per_week column to employees")
 
 

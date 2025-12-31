@@ -12,7 +12,7 @@ import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
 import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
-import { Plus, Edit, Trash2, Calendar, User, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
 import TaskTimer from './TaskTimer';
 
 interface TaskKanbanProps {
@@ -109,6 +109,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       priority: 'medium',
       assignee_id: null,
       due_date: undefined,
+      estimated_hours: null,
     });
     setShowTaskModal(true);
   };
@@ -312,6 +313,12 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                     )}
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {task.estimated_hours && (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {task.estimated_hours}h
+                          </div>
+                        )}
                         {task.due_date && (
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -389,15 +396,33 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Date d'échéance
-            </label>
-            <Input
-              type="date"
-              value={formData.due_date}
-              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Date d'échéance
+              </label>
+              <Input
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Heures prévues
+              </label>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={formData.estimated_hours || ''}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  estimated_hours: e.target.value ? parseFloat(e.target.value) : null 
+                })}
+                placeholder="Ex: 8"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

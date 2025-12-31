@@ -9,10 +9,12 @@ import { useParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
 import TaskKanban from '@/components/projects/TaskKanban';
+import CapacityVisualization from '@/components/projects/CapacityVisualization';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users } from 'lucide-react';
 import { teamsAPI } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { employeesAPI, type Employee as EmployeeType } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { extractApiData } from '@/lib/api/utils';
@@ -33,6 +35,7 @@ function TeamProjectManagementContent() {
   const teamSlug = params?.slug as string;
   const [team, setTeam] = useState<Team | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesWithCapacity, setEmployeesWithCapacity] = useState<EmployeeType[]>([]);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +120,19 @@ function TeamProjectManagementContent() {
         console.error('Error loading team tasks:', taskErr);
         // Continuer même si les tâches ne peuvent pas être chargées
         setTasks([]);
+      }
+      
+      // Charger les employés avec leurs capacités
+      try {
+        const allEmployees = await employeesAPI.list();
+        // Filtrer les employés de cette équipe
+        const teamEmployeesData = allEmployees.filter(
+          (emp) => emp.team_id === foundTeam.id
+        );
+        setEmployeesWithCapacity(teamEmployeesData);
+      } catch (empErr) {
+        console.error('Error loading employees:', empErr);
+        setEmployeesWithCapacity([]);
       }
       
       // Grouper les membres
@@ -327,6 +343,19 @@ function TeamProjectManagementContent() {
           </div>
         </div>
       </Card>
+
+      {/* Visualisation de la capacité */}
+      {team && employeesWithCapacity.length > 0 && (
+        <Card>
+          <div className="p-6">
+            <CapacityVisualization
+              tasks={tasks}
+              employees={employeesWithCapacity}
+              teamId={team.id}
+            />
+          </div>
+        </Card>
+      )}
 
       {/* Kanban Board avec le nouveau composant TaskKanban */}
       <Card>

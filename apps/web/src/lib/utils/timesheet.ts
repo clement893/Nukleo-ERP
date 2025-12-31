@@ -123,7 +123,7 @@ export function groupByMonth(entries: TimeEntry[]): GroupedTimeEntry[] {
   return Object.entries(grouped)
     .map(([key, entries]) => ({
       key,
-      label: formatMonth(new Date(entries[0].date)),
+      label: formatMonth(new Date(entries[0]?.date || new Date())),
       entries,
       totalDuration: entries.reduce((sum, e) => sum + e.duration, 0),
     }))
@@ -148,7 +148,7 @@ export function groupByEmployee(entries: TimeEntry[]): GroupedTimeEntry[] {
   return Object.entries(grouped)
     .map(([key, entries]) => ({
       key,
-      label: entries[0].user_name || entries[0].user_email || `Employé ${key}`,
+      label: entries[0]?.user_name || entries[0]?.user_email || `Employé ${key}`,
       entries,
       totalDuration: entries.reduce((sum, e) => sum + e.duration, 0),
     }))
@@ -173,7 +173,7 @@ export function groupByProject(entries: TimeEntry[]): GroupedTimeEntry[] {
   return Object.entries(grouped)
     .map(([key, entries]) => ({
       key,
-      label: entries[0].project_name || 'Sans projet',
+      label: entries[0]?.project_name || 'Sans projet',
       entries,
       totalDuration: entries.reduce((sum, e) => sum + e.duration, 0),
     }))
@@ -202,7 +202,7 @@ export function groupByClient(entries: TimeEntry[]): GroupedTimeEntry[] {
   return Object.entries(grouped)
     .map(([key, entries]) => ({
       key,
-      label: entries[0].client_name || 'Sans client',
+      label: entries[0]?.client_name || 'Sans client',
       entries,
       totalDuration: entries.reduce((sum, e) => sum + e.duration, 0),
     }))

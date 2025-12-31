@@ -16,10 +16,13 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { getAnimationClasses, prefersReducedMotion, type AnimationConfig } from '@/lib/animations';
+import { getAnimationClasses, prefersReducedMotion, type AnimationVariant, type AnimationDuration } from '@/lib/animations';
 
-export interface MotionDivProps extends AnimationConfig {
+export interface MotionDivProps {
   children: ReactNode;
+  variant?: AnimationVariant;
+  duration?: AnimationDuration;
+  delay?: number;
   as?: 'div' | 'section' | 'article' | 'main' | 'aside' | 'header' | 'footer';
   initial?: boolean;
   className?: string;
