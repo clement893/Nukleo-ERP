@@ -76,7 +76,7 @@ function PipelineDetailContent() {
   const [deletingOpportunityId, setDeletingOpportunityId] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [, setLoadingContacts] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   
   // Contact selection modal
