@@ -12,6 +12,7 @@
 import { ERPDashboard } from '@/components/erp';
 import { Card } from '@/components/ui';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { Link } from '@/i18n/routing';
 
 /**
  * ERP Dashboard Page
@@ -39,9 +40,9 @@ function ERPDashboardContent() {
 
       <Card title="Quick Actions" className="mt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a
+          <Link
             href="/erp/orders"
-            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors block"
           >
             <h3 className="font-semibold text-foreground mb-1">
               Manage Orders
@@ -49,10 +50,10 @@ function ERPDashboardContent() {
             <p className="text-sm text-muted-foreground">
               View and manage all orders
             </p>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/erp/invoices"
-            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors block"
           >
             <h3 className="font-semibold text-foreground mb-1">
               Manage Invoices
@@ -60,10 +61,10 @@ function ERPDashboardContent() {
             <p className="text-sm text-muted-foreground">
               View and manage all invoices
             </p>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/erp/inventory"
-            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors block"
           >
             <h3 className="font-semibold text-foreground mb-1">
               Manage Inventory
@@ -71,7 +72,7 @@ function ERPDashboardContent() {
             <p className="text-sm text-muted-foreground">
               View and manage inventory
             </p>
-          </a>
+          </Link>
         </div>
       </Card>
     </div>
