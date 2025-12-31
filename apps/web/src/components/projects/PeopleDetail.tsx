@@ -8,7 +8,7 @@ import { Contact } from '@/lib/api/contacts';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui';
-import { UserCircle, Edit, Trash2, ExternalLink, FolderKanban, Users, FileText, MessageSquare } from 'lucide-react';
+import { Edit, Trash2, ExternalLink, FolderKanban, Users, FileText, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 import EmployeeAvatar from '@/components/employes/EmployeeAvatar';
 

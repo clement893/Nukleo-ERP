@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from 'react';
-import { Responsive, Layout } from 'react-grid-layout';
+import { Responsive } from 'react-grid-layout';
 // @ts-ignore - WidthProvider is not properly typed in react-grid-layout
 import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import { useDashboardStore } from '@/lib/dashboard/store';

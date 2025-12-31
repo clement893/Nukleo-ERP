@@ -27,11 +27,7 @@ import {
   Upload, 
   FileSpreadsheet, 
   MoreVertical, 
-  Trash2,
-  Mail,
-  Phone,
-  Linkedin,
-  Calendar
+  Trash2
 } from 'lucide-react';
 import ImportEmployeesInstructions from '@/components/employes/ImportEmployeesInstructions';
 import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';

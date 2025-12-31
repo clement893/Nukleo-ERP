@@ -26,7 +26,7 @@ export function useWidgetData<T = any>({
     queryFn: async () => {
       // TODO: Implémenter les appels API spécifiques par type de widget
       // Pour l'instant, on retourne des données factices
-      return fetchWidgetData(widgetType, config, globalFilters);
+      return fetchWidgetData(widgetType);
     },
     enabled,
     staleTime: config.refresh_interval 
@@ -43,9 +43,7 @@ export function useWidgetData<T = any>({
  * À implémenter avec les vrais appels API
  */
 async function fetchWidgetData(
-  widgetType: WidgetType,
-  config?: WidgetConfig,
-  globalFilters?: GlobalFilters
+  widgetType: WidgetType
 ): Promise<any> {
   // Simuler un délai réseau
   await new Promise(resolve => setTimeout(resolve, 500));

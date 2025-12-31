@@ -333,12 +333,6 @@ function OpportunitiesContent() {
     router.push(`/${locale}/dashboard/commercial/opportunites/${opportunity.id}`);
   };
 
-  // Open edit modal
-  const openEditModal = (opportunity: Opportunity) => {
-    setSelectedOpportunity(opportunity);
-    setShowEditModal(true);
-  };
-
   // Format currency
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return '-';
