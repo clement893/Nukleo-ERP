@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountCreate } from '@/lib/api/finances/expenseAccounts';
+import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/finances/expenseAccounts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Button } from '@/components/ui';
