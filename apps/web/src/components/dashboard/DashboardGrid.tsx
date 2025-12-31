@@ -65,7 +65,7 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   }, [activeConfig]);
 
   // Handler pour les changements de layout
-  const handleLayoutChange = (currentLayout: any, allLayouts: any) => {
+  const handleLayoutChange = (currentLayout: any, _allLayouts?: any) => {
     if (!activeConfig) return;
     
     // Permettre les changements même en mode non-édition pour la persistance
@@ -118,12 +118,14 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
         rowHeight={100}
         width={width}
         onLayoutChange={handleLayoutChange}
-        isDraggable={isEditMode}
-        isResizable={isEditMode}
         compactType="vertical"
         preventCollision={false}
         margin={[16, 16]}
         containerPadding={[0, 0]}
+        {...({
+          isDraggable: isEditMode,
+          isResizable: isEditMode,
+        } as any)}
       >
         {activeConfig.layouts.map((widget) => (
           <div key={widget.id} className="widget-grid-item">
