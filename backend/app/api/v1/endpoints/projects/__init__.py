@@ -171,7 +171,20 @@ async def get_projects(
                     Project.status,
                     Project.user_id,
                     Project.created_at,
-                    Project.updated_at
+                    Project.updated_at,
+                    # Extended fields
+                    Project.equipe,
+                    Project.etape,
+                    Project.annee_realisation,
+                    Project.contact,
+                    Project.taux_horaire,
+                    Project.budget,
+                    Project.proposal_url,
+                    Project.drive_url,
+                    Project.slack_url,
+                    Project.echeancier_url,
+                    Project.temoignage_status,
+                    Project.portfolio_status,
                 ]
                 
                 # Track which optional columns we're trying to select
