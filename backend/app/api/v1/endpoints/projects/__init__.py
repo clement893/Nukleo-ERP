@@ -115,16 +115,16 @@ async def get_projects(
         
         logger.error(
             f"Database error in get_projects: {error_type} - {error_message}",
-            extra={
+            context={
                 "error_type": error_type,
                 "error_message": error_message,
                 "sql_statement": sql_statement[:500] if sql_statement else None,
                 "user_id": current_user.id,
-                "status_filter": status,
+                "status_filter": str(status) if status else None,
                 "skip": skip,
                 "limit": limit,
             },
-            exc_info=True,
+            exc_info=e,
         )
         
         # Re-raise to let the global exception handler deal with it
