@@ -146,54 +146,62 @@ async def list_employees(
     """
     Get list of employees
     """
-    # Handle case where user_id column might not exist yet (migration not applied)
-    # Try normal query first, fallback to explicit column selection if user_id is missing
+    # Handle case where columns might not exist yet (migration not applied)
+    # Try normal query first, fallback to explicit column selection if columns are missing
     try:
         query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(query)
         employees = result.scalars().all()
     except Exception as e:
         error_str = str(e).lower()
-        # Check if error is due to missing user_id column
-        if 'user_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
-            logger.warning(f"user_id column not found in database. Please run migration: alembic upgrade head. Error: {e}")
-            # Fallback: select columns explicitly excluding user_id
+        # Check if error is due to missing columns
+        if 'does not exist' in error_str or 'undefinedcolumn' in error_str or 'column' in error_str:
+            logger.warning(f"Some columns not found in database. Using fallback query. Error: {e}")
+            # Fallback: select only columns that definitely exist (core columns)
             from types import SimpleNamespace
-            query = select(
-                Employee.id,
-                Employee.first_name,
-                Employee.last_name,
-                Employee.email,
-                Employee.phone,
-                Employee.linkedin,
-                Employee.photo_url,
-                Employee.photo_filename,
-                Employee.hire_date,
-                Employee.birthday,
-                Employee.created_at,
-                Employee.updated_at
-            ).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
-            result = await db.execute(query)
-            # Convert result tuples to simple objects with Employee attributes
-            employees = []
-            for row in result.all():
-                emp = SimpleNamespace(
-                    id=row[0],
-                    first_name=row[1],
-                    last_name=row[2],
-                    email=row[3],
-                    phone=row[4],
-                    linkedin=row[5],
-                    photo_url=row[6],
-                    photo_filename=row[7],
-                    hire_date=row[8],
-                    birthday=row[9],
-                    created_at=row[10],
-                    updated_at=row[11],
-                    user_id=None,  # Column doesn't exist yet
-                    team_id=None  # Column doesn't exist yet
+            try:
+                query = select(
+                    Employee.id,
+                    Employee.first_name,
+                    Employee.last_name,
+                    Employee.email,
+                    Employee.phone,
+                    Employee.linkedin,
+                    Employee.photo_url,
+                    Employee.photo_filename,
+                    Employee.hire_date,
+                    Employee.birthday,
+                    Employee.created_at,
+                    Employee.updated_at
+                ).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
+                result = await db.execute(query)
+                # Convert result tuples to simple objects with Employee attributes
+                employees = []
+                for row in result.all():
+                    emp = SimpleNamespace(
+                        id=row[0],
+                        first_name=row[1],
+                        last_name=row[2],
+                        email=row[3],
+                        phone=row[4],
+                        linkedin=row[5],
+                        photo_url=row[6],
+                        photo_filename=row[7],
+                        hire_date=row[8],
+                        birthday=row[9],
+                        created_at=row[10],
+                        updated_at=row[11],
+                        user_id=None,  # Column might not exist yet
+                        team_id=None,  # Column might not exist yet
+                        capacity_hours_per_week=None  # Column might not exist yet
+                    )
+                    employees.append(emp)
+            except Exception as fallback_error:
+                logger.error(f"Fallback query also failed: {fallback_error}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"A database error occurred: {str(fallback_error)}"
                 )
-                employees.append(emp)
         else:
             logger.error(f"Database error in list_employees: {e}", exc_info=True)
             raise HTTPException(
@@ -217,10 +225,30 @@ async def list_employees(
             "birthday": employee.birthday.isoformat() if employee.birthday else None,
             "user_id": getattr(employee, 'user_id', None),
             "team_id": getattr(employee, 'team_id', None),
+            "capacity_hours_per_week": getattr(employee, 'capacity_hours_per_week', None),
             "created_at": employee.created_at,
             "updated_at": employee.updated_at,
         }
-        employee_list.append(EmployeeSchema(**employee_dict))
+        try:
+            employee_list.append(EmployeeSchema(**employee_dict))
+        except Exception as schema_error:
+            logger.warning(f"Error creating EmployeeSchema for employee {employee.id}: {schema_error}")
+            # Try without optional fields that might not be in schema
+            employee_dict_minimal = {
+                "id": employee.id,
+                "first_name": employee.first_name,
+                "last_name": employee.last_name,
+                "email": employee.email,
+                "phone": employee.phone,
+                "linkedin": employee.linkedin,
+                "photo_url": photo_url,
+                "photo_filename": getattr(employee, 'photo_filename', None),
+                "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
+                "birthday": employee.birthday.isoformat() if employee.birthday else None,
+                "created_at": employee.created_at,
+                "updated_at": employee.updated_at,
+            }
+            employee_list.append(EmployeeSchema(**employee_dict_minimal))
     
     return employee_list
 
