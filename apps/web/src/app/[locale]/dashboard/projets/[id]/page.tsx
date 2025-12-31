@@ -514,6 +514,7 @@ function ProjectDetailContent() {
               </div>
             </Card>
           </div>
+          </div>
         )}
 
         {activeTab === 'tasks' && (
@@ -665,6 +666,28 @@ function ProjectDetailContent() {
               </div>
             )}
           </Card>
+        )}
+
+        {activeTab === 'files' && (
+          <Card className="glass-card p-6">
+            <ProjectAttachments projectId={projectId} />
+          </Card>
+        )}
+
+        {activeTab === 'comments' && (
+          <Card className="glass-card p-6">
+            <ProjectComments projectId={projectId} />
+          </Card>
+        )}
+
+        {activeTab === 'gantt' && (
+          <ProjectGantt projectId={projectId} startDate={project.start_date || null} endDate={project.end_date || null} />
+        )}
+
+        {activeTab === 'statistics' && (
+          <div className="space-y-6">
+            <ProjectStatistics projectId={projectId} budget={project.budget} />
+          </div>
         )}
 
         {activeTab === 'deliverables' && (
