@@ -3,7 +3,7 @@ Project Clients Endpoints
 API endpoints for managing project clients
 """
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -228,8 +228,8 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    skip: Union[int, str] = Query(0, description="Number of records to skip"),
+    limit: Union[int, str] = Query(100, description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
@@ -252,9 +252,17 @@ async def list_clients(
     Returns:
         List of clients
     """
-    # Validate ranges (already validated by FastAPI Query, but ensure defaults)
-    skip_int = max(0, skip)
-    limit_int = min(max(1, limit), 1000)
+    # Ensure skip and limit are valid integers (handle string conversion)
+    try:
+        skip_int = max(0, int(skip)) if skip is not None else 0
+    except (ValueError, TypeError):
+        skip_int = 0
+    
+    try:
+        limit_value = int(limit) if limit is not None else 100
+        limit_int = min(max(1, limit_value), 1000)
+    except (ValueError, TypeError):
+        limit_int = 100
     
     # Use integer parameters directly
     responsible_id_int = responsible_id
