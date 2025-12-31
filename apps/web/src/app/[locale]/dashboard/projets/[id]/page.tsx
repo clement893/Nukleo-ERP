@@ -28,12 +28,17 @@ import {
   CheckSquare,
   TrendingUp,
   AlertCircle,
+  MessageSquare,
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
 import TaskTimeline from '@/components/projects/TaskTimeline';
+import ProjectAttachments from '@/components/projects/ProjectAttachments';
+import ProjectComments from '@/components/projects/ProjectComments';
+import ProjectGantt from '@/components/projects/ProjectGantt';
+import ProjectStatistics from '@/components/projects/ProjectStatistics';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 
-type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables';
+type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables' | 'files' | 'comments' | 'gantt' | 'statistics';
 
 function ProjectDetailContent() {
   const router = useRouter();
