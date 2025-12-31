@@ -89,6 +89,14 @@ class EmployeePortalPermissionsAPI {
   }
 
   /**
+   * Get summary of permissions for an employee
+   */
+  async getSummaryForEmployee(employeeId: number): Promise<EmployeePortalPermissionSummary> {
+    const response = await apiClient.get<EmployeePortalPermissionSummary>(`/v1/employees/${employeeId}/employee-portal-permissions/summary`);
+    return extractApiData<EmployeePortalPermissionSummary>(response as any);
+  }
+
+  /**
    * Create a new permission
    */
   async create(data: EmployeePortalPermissionCreate): Promise<EmployeePortalPermission> {
@@ -124,6 +132,13 @@ class EmployeePortalPermissionsAPI {
    */
   async deleteAllForUser(userId: number): Promise<void> {
     await apiClient.delete(`/v1/users/${userId}/employee-portal-permissions`);
+  }
+
+  /**
+   * Delete all permissions for an employee
+   */
+  async deleteAllForEmployee(employeeId: number): Promise<void> {
+    await apiClient.delete(`/v1/employees/${employeeId}/employee-portal-permissions`);
   }
 }
 

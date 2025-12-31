@@ -16,10 +16,14 @@ export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
+  const { user } = useAuthStore();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [_deleting, setDeleting] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [activeTab, setActiveTab] = useState<'details' | 'permissions'>('details');
 
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
 
@@ -27,11 +31,27 @@ export default function EmployeeDetailPage() {
     if (!employeeId) {
       setError('ID d\'employé invalide');
       setLoading(false);
+      setCheckingAdmin(false);
       return;
     }
 
-    loadEmployee();
-  }, [employeeId]);
+    checkAdminStatus();
+  }, [employeeId, user]);
+
+  const checkAdminStatus = async () => {
+    try {
+      setCheckingAdmin(true);
+      const status = await checkMySuperAdminStatus();
+      setIsAdmin(status.is_superadmin === true);
+      await loadEmployee();
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la vérification des permissions');
+      setIsAdmin(false);
+    } finally {
+      setCheckingAdmin(false);
+    }
+  };
 
   const loadEmployee = async () => {
     if (!employeeId) return;
@@ -86,7 +106,7 @@ export default function EmployeeDetailPage() {
     }
   };
 
-  if (loading) {
+  if (loading || checkingAdmin) {
     return (
       <PageContainer>
         <div className="py-12 text-center">
@@ -178,11 +198,45 @@ export default function EmployeeDetailPage() {
       )}
 
       <div className="mt-6">
-        <EmployeeDetail
-          employee={employee}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        {isAdmin ? (
+          <Card>
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'details' | 'permissions')}>
+              <TabList className="border-b border-border px-4 sm:px-6 lg:px-8">
+                <Tab value="details">
+                  Détails
+                </Tab>
+                <Tab value="permissions">
+                  <Shield className="w-4 h-4 mr-2 inline" />
+                  Permissions du portail
+                </Tab>
+              </TabList>
+
+              <TabPanels className="px-4 sm:px-6 lg:px-8 py-6">
+                <TabPanel value="details">
+                  <EmployeeDetail
+                    employee={employee}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                </TabPanel>
+                <TabPanel value="permissions">
+                  <EmployeePortalPermissionsEditor
+                    employeeId={employee.id}
+                    onUpdate={() => {
+                      // Optionnel: recharger les données si nécessaire
+                    }}
+                  />
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </Card>
+        ) : (
+          <div className="mb-4">
+            <Alert variant="warning">
+              Vous devez être administrateur pour accéder à cette page.
+            </Alert>
+          </div>
+        )}
       </div>
     </PageContainer>
   );

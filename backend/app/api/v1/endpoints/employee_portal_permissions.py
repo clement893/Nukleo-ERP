@@ -298,6 +298,68 @@ async def delete_employee_portal_permission(
     return None
 
 
+@router.get("/employees/{employee_id}/employee-portal-permissions/summary", response_model=EmployeePortalPermissionSummary)
+async def get_employee_portal_permissions_summary(
+    employee_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get summary of portal permissions for an employee"""
+    await require_permission("admin:*", current_user, db)
+    
+    # Get all permissions for this employee
+    result = await db.execute(
+        select(EmployeePortalPermission).where(
+            EmployeePortalPermission.employee_id == employee_id
+        )
+    )
+    permissions = result.scalars().all()
+    
+    # Build summary
+    summary = EmployeePortalPermissionSummary(
+        user_id=None,
+        employee_id=employee_id,
+        pages=[],
+        modules=[],
+        projects=[],
+        clients=[],
+        all_projects=False,
+        all_clients=False,
+    )
+    
+    for perm in permissions:
+        if perm.permission_type == 'page':
+            if perm.resource_id == '*':
+                summary.pages.append('*')
+            else:
+                summary.pages.append(perm.resource_id)
+        elif perm.permission_type == 'module':
+            if perm.resource_id == '*':
+                summary.modules.append('*')
+            else:
+                summary.modules.append(perm.resource_id)
+        elif perm.permission_type == 'project':
+            if perm.resource_id == '*':
+                summary.all_projects = True
+            else:
+                try:
+                    project_id = int(perm.resource_id)
+                    summary.projects.append(project_id)
+                except ValueError:
+                    pass
+        elif perm.permission_type == 'client':
+            if perm.resource_id == '*':
+                summary.all_clients = True
+            else:
+                try:
+                    client_id = int(perm.resource_id)
+                    summary.clients.append(client_id)
+                except ValueError:
+                    pass
+    
+    return summary
+
+
 @router.delete("/users/{user_id}/employee-portal-permissions", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_all_user_portal_permissions(
     user_id: int,
@@ -321,6 +383,30 @@ async def delete_all_user_portal_permissions(
     
     result = await db.execute(
         select(EmployeePortalPermission).where(or_(*conditions))
+    )
+    permissions = result.scalars().all()
+    
+    for perm in permissions:
+        await db.delete(perm)
+    
+    await db.commit()
+    
+    return None
+
+
+@router.delete("/employees/{employee_id}/employee-portal-permissions", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_all_employee_portal_permissions(
+    employee_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete all portal permissions for an employee"""
+    await require_permission("admin:*", current_user, db)
+    
+    result = await db.execute(
+        select(EmployeePortalPermission).where(
+            EmployeePortalPermission.employee_id == employee_id
+        )
     )
     permissions = result.scalars().all()
     
