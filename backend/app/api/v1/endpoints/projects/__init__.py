@@ -7,7 +7,7 @@ from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func, delete
+from sqlalchemy import select, and_, func, delete, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import ProgrammingError
 
@@ -72,9 +72,61 @@ async def get_projects(
         result = await db.execute(query)
         projects = result.scalars().all()
         
-        # Convert to response format - safely handle missing columns
-        project_list = []
-        for project in projects:
+    except ProgrammingError as pe:
+        # If the error is about missing columns, query with explicit column selection
+        error_msg = str(pe).lower()
+        if 'client_id' in error_msg or 'responsable_id' in error_msg or 'column' in error_msg:
+            logger.warning(
+                "Missing columns detected, querying with explicit column selection",
+                context={
+                    "error": str(pe),
+                    "user_id": current_user.id,
+                }
+            )
+            
+            # Build query with only columns that exist (excluding client_id and responsable_id)
+            query = select(
+                Project.id,
+                Project.name,
+                Project.description,
+                Project.status,
+                Project.user_id,
+                Project.created_at,
+                Project.updated_at
+            ).where(Project.user_id == current_user.id)
+            
+            if status:
+                query = query.where(Project.status == status)
+            
+            query = apply_tenant_scope(query, Project)
+            query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+            
+            result = await db.execute(query)
+            # Convert rows to dict-like objects
+            rows = result.all()
+            projects = []
+            for row in rows:
+                # Create a simple object with the row data
+                class ProjectRow:
+                    def __init__(self, row):
+                        self.id = row.id
+                        self.name = row.name
+                        self.description = row.description
+                        self.status = row.status
+                        self.user_id = row.user_id
+                        self.created_at = row.created_at
+                        self.updated_at = row.updated_at
+                        # These columns don't exist, so set to None
+                        self.client_id = None
+                        self.responsable_id = None
+                projects.append(ProjectRow(row))
+        else:
+            # Re-raise if it's a different ProgrammingError
+            raise
+    
+    # Convert to response format - safely handle missing columns
+    project_list = []
+    for project in projects:
             # Safely get client_id and responsable_id first
             client_id = None
             responsable_id = None
