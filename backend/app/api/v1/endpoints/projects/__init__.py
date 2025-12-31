@@ -148,6 +148,15 @@ async def get_projects(
                 'portfolio_status'
             ])
         except Exception as e:
+            error_str = str(e).lower()
+            # Check if error is due to failed transaction - rollback first
+            if 'transaction is aborted' in error_str or 'infailed' in error_str:
+                logger.warning(f"Transaction error detected in column check, rolling back: {e}")
+                try:
+                    await db.rollback()
+                except Exception as rollback_error:
+                    logger.warning(f"Rollback failed: {rollback_error}")
+            
             logger.warning(
                 f"Error checking project columns: {e}",
                 exc_info=True
@@ -187,6 +196,12 @@ async def get_projects(
                 projects = result.scalars().all()
             except (ProgrammingError, Exception) as e:
                 # If query fails, rollback and use explicit column selection
+                error_str = str(e).lower()
+                
+                # Check if error is due to failed transaction - rollback first
+                if 'transaction is aborted' in error_str or 'infailed' in error_str:
+                    logger.warning(f"Transaction error detected, rolling back: {e}")
+                
                 try:
                     await db.rollback()
                 except Exception as rollback_error:
@@ -314,6 +329,16 @@ async def get_projects(
                     for row in rows
                 ]
             except Exception as e:
+                error_str = str(e).lower()
+                
+                # Check if error is due to failed transaction - rollback first
+                if 'transaction is aborted' in error_str or 'infailed' in error_str:
+                    logger.warning(f"Transaction error detected in explicit query, rolling back: {e}")
+                    try:
+                        await db.rollback()
+                    except Exception as rollback_error:
+                        logger.warning(f"Rollback failed: {rollback_error}")
+                
                 logger.error(
                     f"Failed to execute explicit column query: {e}",
                     context={"user_id": current_user.id, "error_type": type(e).__name__},
@@ -468,6 +493,16 @@ async def get_projects(
         # Log unexpected errors with full context
         error_type = type(e).__name__
         error_msg = str(e)
+        error_str = str(e).lower()
+        
+        # Check if error is due to failed transaction - rollback first
+        if 'transaction is aborted' in error_str or 'infailed' in error_str:
+            logger.warning(f"Transaction error detected in get_projects, rolling back: {e}")
+            try:
+                await db.rollback()
+            except Exception as rollback_error:
+                logger.warning(f"Rollback failed: {rollback_error}")
+        
         logger.error(
             f"Unexpected error in get_projects: {error_type}: {error_msg}",
             context={
