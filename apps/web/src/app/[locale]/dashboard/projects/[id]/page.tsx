@@ -25,9 +25,16 @@ import {
   Award,
   Briefcase,
   Clock,
+  Kanban,
+  GanttChart,
 } from 'lucide-react';
+import TaskKanban from '@/components/projects/TaskKanban';
+import TaskTimeline from '@/components/projects/TaskTimeline';
+import { teamsAPI } from '@/lib/api/teams';
+import { extractApiData } from '@/lib/api/utils';
+import type { TeamListResponse } from '@/lib/api/teams';
 
-type Tab = 'overview' | 'financial' | 'links' | 'deliverables';
+type Tab = 'overview' | 'financial' | 'links' | 'deliverables' | 'tasks' | 'timeline';
 
 function ProjectDetailContent() {
   const router = useRouter();
@@ -38,10 +45,25 @@ function ProjectDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [teamId, setTeamId] = useState<number | null>(null);
 
   useEffect(() => {
     loadProject();
+    loadTeamId();
   }, [projectId]);
+
+  const loadTeamId = async () => {
+    try {
+      const response = await teamsAPI.getMyTeams();
+      const data = extractApiData<TeamListResponse>(response);
+      if (data?.teams && data.teams.length > 0) {
+        setTeamId(data.teams[0].id);
+      }
+    } catch (err) {
+      // Silently fail - team_id is optional for tasks
+      console.warn('Could not load team ID:', err);
+    }
+  };
 
   const loadProject = async () => {
     setLoading(true);
@@ -302,6 +324,36 @@ function ProjectDetailContent() {
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
             </button>
+
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                activeTab === 'tasks'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Kanban className="w-4 h-4 inline mr-2" />
+              Tâches
+              {activeTab === 'tasks' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                activeTab === 'timeline'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <GanttChart className="w-4 h-4 inline mr-2" />
+              Planification
+              {activeTab === 'timeline' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -522,6 +574,24 @@ function ProjectDetailContent() {
                 <p>Aucun livrable renseigné</p>
               </div>
             )}
+          </Card>
+        )}
+
+        {activeTab === 'tasks' && (
+          <Card className="glass-card p-6">
+            {teamId ? (
+              <TaskKanban projectId={projectId} teamId={teamId} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Chargement de l'équipe...</p>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {activeTab === 'timeline' && (
+          <Card className="glass-card p-6">
+            <TaskTimeline projectId={projectId} />
           </Card>
         )}
       </Container>

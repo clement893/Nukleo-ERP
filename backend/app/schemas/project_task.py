@@ -22,6 +22,7 @@ class ProjectTaskBase(BaseModel):
 class ProjectTaskCreate(ProjectTaskBase):
     """Schema for creating a project task"""
     team_id: int
+    project_id: Optional[int] = None
     assignee_id: Optional[int] = None
     order: int = 0
 
@@ -33,6 +34,7 @@ class ProjectTaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     team_id: Optional[int] = None
+    project_id: Optional[int] = None
     assignee_id: Optional[int] = None
     due_date: Optional[datetime] = None
     order: Optional[int] = None
@@ -42,6 +44,7 @@ class ProjectTaskResponse(ProjectTaskBase):
     """Schema for project task response"""
     id: int
     team_id: int
+    project_id: Optional[int] = None
     assignee_id: Optional[int] = None
     created_by_id: Optional[int] = None
     started_at: Optional[datetime] = None

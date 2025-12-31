@@ -33,6 +33,7 @@ class ProjectTask(Base):
     __tablename__ = "project_tasks"
     __table_args__ = (
         Index("idx_project_tasks_team", "team_id"),
+        Index("idx_project_tasks_project", "project_id"),
         Index("idx_project_tasks_assignee", "assignee_id"),
         Index("idx_project_tasks_status", "status"),
         Index("idx_project_tasks_priority", "priority"),
@@ -47,6 +48,7 @@ class ProjectTask(Base):
     
     # Relations
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     assignee_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     
@@ -69,6 +71,7 @@ class ProjectTask(Base):
 
     # Relationships
     team = relationship("Team", backref="tasks")
+    project = relationship("Project", backref="tasks")
     assignee = relationship("User", foreign_keys=[assignee_id], backref="assigned_tasks")
     created_by = relationship("User", foreign_keys=[created_by_id], backref="created_tasks")
 

@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
-from app.models import User, Team, ProjectTask, TaskStatus, TaskPriority
+from app.models import User, Team, Project, ProjectTask, TaskStatus, TaskPriority
 from app.schemas.project_task import (
     ProjectTaskCreate,
     ProjectTaskUpdate,
@@ -25,6 +25,7 @@ router = APIRouter(prefix="/project-tasks", tags=["project-tasks"])
 @router.get("", response_model=List[ProjectTaskWithAssignee])
 async def list_tasks(
     team_id: Optional[int] = Query(None, description="Filter by team ID"),
+    project_id: Optional[int] = Query(None, description="Filter by project ID"),
     assignee_id: Optional[int] = Query(None, description="Filter by assignee ID"),
     status: Optional[TaskStatus] = Query(None, description="Filter by status"),
     skip: int = Query(0, ge=0),
@@ -37,6 +38,8 @@ async def list_tasks(
     
     if team_id:
         query = query.where(ProjectTask.team_id == team_id)
+    if project_id:
+        query = query.where(ProjectTask.project_id == project_id)
     if assignee_id:
         query = query.where(ProjectTask.assignee_id == assignee_id)
     if status:
@@ -47,6 +50,7 @@ async def list_tasks(
     result = await db.execute(query.options(
         selectinload(ProjectTask.assignee),
         selectinload(ProjectTask.team),
+        selectinload(ProjectTask.project),
     ))
     tasks = result.scalars().all()
     
@@ -60,6 +64,7 @@ async def list_tasks(
             "status": task.status,
             "priority": task.priority,
             "team_id": task.team_id,
+            "project_id": task.project_id,
             "assignee_id": task.assignee_id,
             "created_by_id": task.created_by_id,
             "due_date": task.due_date,
@@ -93,6 +98,7 @@ async def get_task(
         .options(
             selectinload(ProjectTask.assignee),
             selectinload(ProjectTask.team),
+            selectinload(ProjectTask.project),
         )
     )
     task = result.scalar_one_or_none()
@@ -110,6 +116,7 @@ async def get_task(
         "status": task.status,
         "priority": task.priority,
         "team_id": task.team_id,
+        "project_id": task.project_id,
         "assignee_id": task.assignee_id,
         "created_by_id": task.created_by_id,
         "due_date": task.due_date,
@@ -144,6 +151,16 @@ async def create_task(
             detail="Team not found"
         )
     
+    # Verify project exists if provided
+    if task_data.project_id:
+        result = await db.execute(select(Project).where(Project.id == task_data.project_id))
+        project = result.scalar_one_or_none()
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+    
     # Verify assignee exists if provided
     if task_data.assignee_id:
         result = await db.execute(select(User).where(User.id == task_data.assignee_id))
@@ -161,6 +178,7 @@ async def create_task(
         status=task_data.status,
         priority=task_data.priority,
         team_id=task_data.team_id,
+        project_id=task_data.project_id,
         assignee_id=task_data.assignee_id,
         created_by_id=current_user.id,
         due_date=task_data.due_date,
@@ -211,6 +229,16 @@ async def update_task(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Team not found"
+            )
+    
+    # Verify project exists if provided
+    if 'project_id' in update_data and update_data['project_id']:
+        result = await db.execute(select(Project).where(Project.id == update_data['project_id']))
+        project = result.scalar_one_or_none()
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
             )
     
     # Verify assignee exists if provided
