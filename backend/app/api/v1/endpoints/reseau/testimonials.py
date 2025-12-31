@@ -1201,31 +1201,47 @@ async def import_testimonials(
                 ])
                 
                 company_id_raw = get_field_value(row_data, [
-                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company'
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company', 'ID Entreprise'
                 ])
                 
                 company_id = None
                 if company_id_raw:
+                    # Try to parse as ID first
                     try:
-                        company_id = int(float(str(company_id_raw)))
-                        # Verify company exists
+                        potential_id = int(float(str(company_id_raw)))
+                        # Verify company exists with this ID
                         company_result = await db.execute(
-                            select(Company).where(Company.id == company_id)
+                            select(Company).where(Company.id == potential_id)
                         )
-                        if not company_result.scalar_one_or_none():
-                            errors.append({
-                                'row': idx + 2,
-                                'data': row_data,
-                                'error': f'Company ID {company_id} not found'
-                            })
-                            continue
+                        if company_result.scalar_one_or_none():
+                            company_id = potential_id
+                            add_import_log(import_id, f"Ligne {idx + 2}: Entreprise trouvée par ID: {company_id}", "info")
+                        else:
+                            # ID doesn't exist, try as name
+                            matched_company_id = await find_company_by_name(
+                                company_name=str(company_id_raw).strip(),
+                                db=db,
+                                all_companies=all_companies,
+                                company_name_to_id=company_name_to_id
+                            )
+                            if matched_company_id:
+                                company_id = matched_company_id
+                                add_import_log(import_id, f"Ligne {idx + 2}: '{company_id_raw}' traité comme nom d'entreprise et matché avec ID {matched_company_id}", "info")
+                            else:
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_id_raw}' non trouvée (ID ou nom), témoignage créé sans entreprise", "warning")
                     except (ValueError, TypeError):
-                        errors.append({
-                            'row': idx + 2,
-                            'data': row_data,
-                            'error': f'Invalid company ID: {company_id_raw}'
-                        })
-                        continue
+                        # Not a number, try as name
+                        matched_company_id = await find_company_by_name(
+                            company_name=str(company_id_raw).strip(),
+                            db=db,
+                            all_companies=all_companies,
+                            company_name_to_id=company_name_to_id
+                        )
+                        if matched_company_id:
+                            company_id = matched_company_id
+                            add_import_log(import_id, f"Ligne {idx + 2}: '{company_id_raw}' traité comme nom d'entreprise et matché avec ID {matched_company_id}", "info")
+                        else:
+                            add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_id_raw}' non trouvée, témoignage créé sans entreprise", "warning")
                 elif company_name:
                     # Try to find existing company by name
                     matched_company_id = await find_company_by_name(
@@ -1240,9 +1256,87 @@ async def import_testimonials(
                     else:
                         add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_name}' non trouvée, témoignage créé sans entreprise", "warning")
                 
-                # Handle contact matching
+                # Handle contact matching - support both contact_id and contact_name
                 contact_id = None
-                if contact_name:
+                contact_id_raw = get_field_value(row_data, [
+                    'contact_id', 'id_contact', 'contact id', 'id contact', 'ID Contact'
+                ])
+                
+                if contact_id_raw:
+                    # Try to parse as ID first
+                    try:
+                        potential_contact_id = int(float(str(contact_id_raw)))
+                        # Verify contact exists with this ID
+                        contact_result = await db.execute(
+                            select(Contact).where(Contact.id == potential_contact_id)
+                        )
+                        if contact_result.scalar_one_or_none():
+                            contact_id = potential_contact_id
+                            add_import_log(import_id, f"Ligne {idx + 2}: Contact trouvé par ID: {contact_id}", "info")
+                        else:
+                            # ID doesn't exist, try as name
+                            # Parse name format: "Prénom Nom" or "Nom, Prénom"
+                            contact_name_parts = str(contact_id_raw).strip().split(',')
+                            if len(contact_name_parts) == 2:
+                                last_name = contact_name_parts[0].strip()
+                                first_name = contact_name_parts[1].strip()
+                            else:
+                                name_parts = str(contact_id_raw).strip().split(' ', 1)
+                                if len(name_parts) == 2:
+                                    first_name = name_parts[0].strip()
+                                    last_name = name_parts[1].strip()
+                                else:
+                                    first_name = str(contact_id_raw).strip()
+                                    last_name = ""
+                            
+                            if first_name and last_name:
+                                matched_contact_id = await find_contact_by_name(
+                                    first_name=first_name,
+                                    last_name=last_name,
+                                    company_id=company_id,
+                                    db=db,
+                                    all_contacts=all_contacts,
+                                    contact_name_to_id=contact_name_to_id
+                                )
+                                if matched_contact_id:
+                                    contact_id = matched_contact_id
+                                    add_import_log(import_id, f"Ligne {idx + 2}: '{contact_id_raw}' traité comme nom de contact et matché avec ID {matched_contact_id}", "info")
+                                else:
+                                    add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Contact '{contact_id_raw}' non trouvé (ID ou nom), témoignage créé sans contact", "warning")
+                            else:
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Format de nom de contact invalide: '{contact_id_raw}', témoignage créé sans contact", "warning")
+                    except (ValueError, TypeError):
+                        # Not a number, try as name
+                        contact_name_parts = str(contact_id_raw).strip().split(',')
+                        if len(contact_name_parts) == 2:
+                            last_name = contact_name_parts[0].strip()
+                            first_name = contact_name_parts[1].strip()
+                        else:
+                            name_parts = str(contact_id_raw).strip().split(' ', 1)
+                            if len(name_parts) == 2:
+                                first_name = name_parts[0].strip()
+                                last_name = name_parts[1].strip()
+                            else:
+                                first_name = str(contact_id_raw).strip()
+                                last_name = ""
+                        
+                        if first_name and last_name:
+                            matched_contact_id = await find_contact_by_name(
+                                first_name=first_name,
+                                last_name=last_name,
+                                company_id=company_id,
+                                db=db,
+                                all_contacts=all_contacts,
+                                contact_name_to_id=contact_name_to_id
+                            )
+                            if matched_contact_id:
+                                contact_id = matched_contact_id
+                                add_import_log(import_id, f"Ligne {idx + 2}: '{contact_id_raw}' traité comme nom de contact et matché avec ID {matched_contact_id}", "info")
+                            else:
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Contact '{contact_id_raw}' non trouvé, témoignage créé sans contact", "warning")
+                        else:
+                            add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Format de nom de contact invalide: '{contact_id_raw}', témoignage créé sans contact", "warning")
+                elif contact_name:
                     # Try to parse contact name
                     contact_name_parts = contact_name.strip().split(',')
                     if len(contact_name_parts) == 2:

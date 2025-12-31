@@ -82,7 +82,7 @@ export default function ImportTestimonialsInstructions({
                 <p className="font-medium mb-2">Informations principales:</p>
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• <strong>Entreprise</strong> / company_name : Nom de l'entreprise</li>
-                  <li>• <strong>ID Entreprise</strong> / company_id : Identifiant de l'entreprise</li>
+                  <li>• <strong>ID Entreprise</strong> / company_id : ID ou nom de l'entreprise</li>
                   <li>• <strong>Titre</strong> / title : Titre du témoignage</li>
                 </ul>
               </div>
@@ -91,8 +91,9 @@ export default function ImportTestimonialsInstructions({
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• <strong>Prénom Contact</strong> / first_name : Prénom du contact</li>
                   <li>• <strong>Nom Contact</strong> / last_name : Nom du contact</li>
-                  <li>• <strong>ID Contact</strong> / contact_id : Identifiant du contact</li>
+                  <li>• <strong>ID Contact</strong> / contact_id : ID ou nom du contact (format "Prénom Nom" ou "Nom, Prénom")</li>
                 </ul>
+                <p className="text-xs text-muted-foreground mt-2">💡 Les colonnes "ID Entreprise" et "ID Contact" acceptent aussi les noms au lieu des IDs</p>
               </div>
               <div>
                 <p className="font-medium mb-2">Contenu:</p>
@@ -173,6 +174,7 @@ export default function ImportTestimonialsInstructions({
                     <th className="border p-2 text-left">ID Entreprise</th>
                     <th className="border p-2 text-left">Prénom Contact</th>
                     <th className="border p-2 text-left">Nom Contact</th>
+                    <th className="border p-2 text-left">ID Contact</th>
                     <th className="border p-2 text-left">Titre</th>
                     <th className="border p-2 text-left">Témoignage FR</th>
                     <th className="border p-2 text-left">Langue</th>
@@ -184,9 +186,10 @@ export default function ImportTestimonialsInstructions({
                 <tbody>
                   <tr>
                     <td className="border p-2">Acme Corp</td>
-                    <td className="border p-2">1</td>
+                    <td className="border p-2">Acme Corp</td>
                     <td className="border p-2">Jean</td>
                     <td className="border p-2">Dupont</td>
+                    <td className="border p-2">Jean Dupont</td>
                     <td className="border p-2">Excellent service</td>
                     <td className="border p-2">Service exceptionnel, je recommande vivement.</td>
                     <td className="border p-2">fr</td>
@@ -196,9 +199,10 @@ export default function ImportTestimonialsInstructions({
                   </tr>
                   <tr>
                     <td className="border p-2">Tech Solutions</td>
-                    <td className="border p-2">2</td>
-                    <td className="border p-2">Marie</td>
-                    <td className="border p-2">Martin</td>
+                    <td className="border p-2">Tech Solutions</td>
+                    <td className="border p-2"></td>
+                    <td className="border p-2"></td>
+                    <td className="border p-2">Marie Martin</td>
                     <td className="border p-2">Très satisfait</td>
                     <td className="border p-2">Une équipe professionnelle et réactive.</td>
                     <td className="border p-2">fr</td>
@@ -276,7 +280,11 @@ export default function ImportTestimonialsInstructions({
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>
-                <span>L'ID Entreprise et l'ID Contact doivent correspondre à des enregistrements existants dans la base de données</span>
+                <span>L'<strong>ID Entreprise</strong> peut être un ID numérique ou le nom de l'entreprise. Le système cherchera d'abord par ID, puis par nom si l'ID n'est pas trouvé.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 dark:text-yellow-400">•</span>
+                <span>L'<strong>ID Contact</strong> peut être un ID numérique ou le nom du contact (format "Prénom Nom" ou "Nom, Prénom"). Le système cherchera d'abord par ID, puis par nom si l'ID n'est pas trouvé.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>
