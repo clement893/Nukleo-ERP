@@ -54,51 +54,81 @@ async def get_projects(
     Returns:
         List of projects
     """
-    # Build query
-    query = select(Project).where(Project.user_id == current_user.id)
-    
-    if status:
-        query = query.where(Project.status == status)
-    
-    # Apply tenant scoping if tenancy is enabled
-    query = apply_tenant_scope(query, Project)
-    
-    query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
-    
-    # Use selectinload like get_project endpoint
-    query = query.options(
-        selectinload(Project.client),
-        selectinload(Project.responsable)
-    )
-    
-    # Execute query
-    result = await db.execute(query)
-    projects = result.scalars().all()
-    
-    # Convert to response format with client and responsable names
-    project_list = []
-    for project in projects:
-        client_name = project.client.name if project.client else None
-        responsable_name = None
-        if project.responsable:
-            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}".strip()
+    try:
+        # Build query
+        query = select(Project).where(Project.user_id == current_user.id)
         
-        project_list.append(ProjectSchema(
-            id=project.id,
-            name=project.name,
-            description=project.description,
-            status=project.status,
-            user_id=project.user_id,
-            client_id=project.client_id,
-            client_name=client_name,
-            responsable_id=project.responsable_id,
-            responsable_name=responsable_name,
-            created_at=project.created_at,
-            updated_at=project.updated_at,
-        ))
+        if status:
+            query = query.where(Project.status == status)
+        
+        # Apply tenant scoping if tenancy is enabled
+        query = apply_tenant_scope(query, Project)
+        
+        query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+        
+        # Use selectinload like get_project endpoint
+        query = query.options(
+            selectinload(Project.client),
+            selectinload(Project.responsable)
+        )
+        
+        # Execute query
+        result = await db.execute(query)
+        projects = result.scalars().all()
+        
+        # Convert to response format with client and responsable names
+        project_list = []
+        for project in projects:
+            client_name = project.client.name if project.client else None
+            responsable_name = None
+            if project.responsable:
+                responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}".strip()
+            
+            project_list.append(ProjectSchema(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                status=project.status,
+                user_id=project.user_id,
+                client_id=project.client_id,
+                client_name=client_name,
+                responsable_id=project.responsable_id,
+                responsable_name=responsable_name,
+                created_at=project.created_at,
+                updated_at=project.updated_at,
+            ))
+        
+        # Return the list directly - FastAPI will serialize it correctly
+        return project_list
     
-    # Return the list directly - FastAPI will serialize it correctly
-    return project_list
+    except Exception as e:
+        # Log detailed error information before re-raising
+        error_type = type(e).__name__
+        error_message = str(e)
+        
+        # Get SQL statement if available (for SQLAlchemy errors)
+        sql_statement = None
+        if hasattr(e, "statement"):
+            sql_statement = str(e.statement)
+        elif hasattr(e, "orig") and hasattr(e.orig, "statement"):
+            sql_statement = str(e.orig.statement)
+        
+        logger.error(
+            f"Database error in get_projects: {error_type} - {error_message}",
+            extra={
+                "error_type": error_type,
+                "error_message": error_message,
+                "sql_statement": sql_statement[:500] if sql_statement else None,
+                "user_id": current_user.id,
+                "status_filter": status,
+                "skip": skip,
+                "limit": limit,
+            },
+            exc_info=True,
+        )
+        
+        # Re-raise to let the global exception handler deal with it
+        raise
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)

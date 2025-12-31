@@ -155,12 +155,32 @@ async def validation_exception_handler(
 
 async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     """Handle database errors"""
+    # Extract detailed error information
+    error_message = str(exc)
+    error_type = exc.__class__.__name__
+    
+    # Try to get more details from the exception
+    error_details = {
+        "type": error_type,
+        "message": error_message,
+    }
+    
+    # Get original exception if available (for wrapped exceptions)
+    if hasattr(exc, "orig") and exc.orig:
+        error_details["original_error"] = str(exc.orig)
+        error_details["original_type"] = exc.orig.__class__.__name__
+    
+    # Get SQL statement if available
+    if hasattr(exc, "statement") and exc.statement:
+        error_details["sql_statement"] = str(exc.statement)[:500]  # Limit length
+    
     context = sanitize_log_data({
         "path": request.url.path,
         "method": request.method,
+        **error_details,
     })
     logger.error(
-        "Database error",
+        f"Database error: {error_type} - {error_message}",
         context=context,
         exc_info=exc,
     )
