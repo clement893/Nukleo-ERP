@@ -48,15 +48,15 @@ async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: Union[str, int] = Query(0, ge=0),
-    limit: Union[str, int] = Query(100, ge=1, le=1000),
+    skip: str = Query("0", description="Number of records to skip"),
+    limit: str = Query("100", description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
     """
     Get list of people
     """
-    # Parse and validate integer parameters (handle both string and int inputs)
+    # Parse and validate integer parameters (convert from string)
     try:
         skip_int = parse_int_param(skip, "skip")
         limit_int = parse_int_param(limit, "limit")
