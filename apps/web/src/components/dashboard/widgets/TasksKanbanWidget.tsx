@@ -5,7 +5,6 @@
  */
 
 import { CheckSquare, ExternalLink } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -19,7 +18,7 @@ const STATUS_COLUMNS = [
   { status: 'completed', label: 'Terminé', color: 'bg-green-100 dark:bg-green-900/30' },
 ];
 
-export function TasksKanbanWidget({ config, globalFilters }: WidgetProps) {
+export function TasksKanbanWidget({ globalFilters }: WidgetProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

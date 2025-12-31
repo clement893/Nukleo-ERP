@@ -5,14 +5,12 @@
  */
 
 import { Users, TrendingUp, TrendingDown } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
-import EmptyState from '@/components/ui/EmptyState';
 import { employeesAPI } from '@/lib/api/employees';
 import { useEffect, useState } from 'react';
 
-export function EmployeesCountWidget({ config, globalFilters }: WidgetProps) {
+export function EmployeesCountWidget({ }: WidgetProps) {
   const [count, setCount] = useState(0);
   const [previousCount, setPreviousCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);

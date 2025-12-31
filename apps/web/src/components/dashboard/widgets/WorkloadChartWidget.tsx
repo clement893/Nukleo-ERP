@@ -5,7 +5,6 @@
  */
 
 import { Briefcase } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -13,8 +12,8 @@ import { employeesAPI } from '@/lib/api/employees';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
 import { useEffect, useState } from 'react';
 
-export function WorkloadChartWidget({ config, globalFilters }: WidgetProps) {
-  const [workloadData, setWorkloadData] = useState<{ name: string; hours: number; capacity: number }[]>([]);
+export function WorkloadChartWidget({ }: WidgetProps) {
+  const [workloadData, setWorkloadData] = useState<{ name: string; hours: number; capacity: number; utilization: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -84,8 +83,6 @@ export function WorkloadChartWidget({ config, globalFilters }: WidgetProps) {
     );
   }
 
-  const maxUtilization = Math.max(...workloadData.map(d => d.utilization), 1);
-
   return (
     <div className="h-full flex flex-col">
       {/* Summary */}
@@ -99,7 +96,7 @@ export function WorkloadChartWidget({ config, globalFilters }: WidgetProps) {
       {/* Chart */}
       <div className="flex-1 overflow-auto space-y-3">
         {workloadData.map((item, index) => {
-          const utilization = item.utilization;
+          const utilization = item.utilization ?? (item.capacity > 0 ? (item.hours / item.capacity) * 100 : 0);
           const isOverloaded = utilization > 100;
           
           return (

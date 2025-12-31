@@ -5,6 +5,7 @@
  */
 
 import { useMemo, useEffect, useState } from 'react';
+// @ts-ignore - react-grid-layout types may not be available
 import { Responsive } from 'react-grid-layout';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { WidgetContainer } from './WidgetContainer';

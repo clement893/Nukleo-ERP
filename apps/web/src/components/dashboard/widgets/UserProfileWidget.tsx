@@ -4,10 +4,8 @@
  * Widget : Profil Utilisateur
  */
 
-import { UserCircle, Mail, Calendar } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
+import { UserCircle, Mail } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
-import { SkeletonWidget } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/lib/store';
 import Link from 'next/link';
 

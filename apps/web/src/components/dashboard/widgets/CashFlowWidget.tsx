@@ -5,14 +5,13 @@
  */
 
 import { DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import EmptyState from '@/components/ui/EmptyState';
 import { expenseAccountsAPI } from '@/lib/api/finances/expenseAccounts';
 import { fetchDashboardRevenue } from '@/lib/api/dashboard-revenue';
 import { useEffect, useState } from 'react';
 
-export function CashFlowWidget({ config, globalFilters }: WidgetProps) {
+export function CashFlowWidget({ config }: WidgetProps) {
   const [cashFlow, setCashFlow] = useState<{ month: string; income: number; expenses: number; net: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalIncome, setTotalIncome] = useState(0);

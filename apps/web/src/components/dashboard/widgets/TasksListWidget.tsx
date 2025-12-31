@@ -5,7 +5,6 @@
  */
 
 import { CheckSquare, ExternalLink, Clock } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -20,7 +19,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'bg-red-500',
 };
 
-export function TasksListWidget({ config, globalFilters }: WidgetProps) {
+export function TasksListWidget({ globalFilters }: WidgetProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 
 export function ExpensesChartWidget({ }: WidgetProps) {
-  const [expenses] = useState<any[]>([]);
+  const [_expenses, setExpenses] = useState<any[]>([]);
   const [chartData, setChartData] = useState<{ month: string; amount: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);

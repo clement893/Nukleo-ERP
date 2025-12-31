@@ -5,7 +5,6 @@
  */
 
 import { Target, CheckCircle2 } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -21,7 +20,7 @@ interface Goal {
   unit: string;
 }
 
-export function GoalsProgressWidget({ config, globalFilters }: WidgetProps) {
+export function GoalsProgressWidget({ }: WidgetProps) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

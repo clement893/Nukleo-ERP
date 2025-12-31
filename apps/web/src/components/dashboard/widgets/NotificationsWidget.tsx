@@ -5,7 +5,6 @@
  */
 
 import { Bell, ExternalLink } from 'lucide-react';
-import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -13,7 +12,7 @@ import { notificationsAPI } from '@/lib/api/notifications';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-export function NotificationsWidget({ config, globalFilters }: WidgetProps) {
+export function NotificationsWidget({ }: WidgetProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
