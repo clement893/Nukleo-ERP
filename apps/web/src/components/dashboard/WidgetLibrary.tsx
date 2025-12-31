@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import { X, Search, Plus } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
-import { widgetRegistry, getCategories } from '@/lib/dashboard/widgetRegistry';
+import { widgetRegistry } from '@/lib/dashboard/widgetRegistry';
 import { getFilteredWidgetRegistry } from '@/lib/dashboard/widgetPermissions';
 import type { WidgetType } from '@/lib/dashboard/types';
 
