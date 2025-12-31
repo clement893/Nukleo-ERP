@@ -38,7 +38,7 @@ export default function CapacityVisualization({
   holidays = [],
 }: CapacityVisualizationProps) {
   const [vacations, setVacations] = useState<VacationRequest[]>([]);
-  const [loadingVacations, setLoadingVacations] = useState(false);
+  const [_loadingVacations, setLoadingVacations] = useState(false);
   // Calculate weeks in date range
   const weeks = useMemo(() => {
     if (!startDate || !endDate) {
@@ -115,15 +115,7 @@ export default function CapacityVisualization({
     }));
   }, [vacations]);
 
-  // Create mapping: user_id -> employee AND employee_id -> employee (for fallback)
-  const employeeByIdMap = useMemo(() => {
-    const map = new Map<number, Employee>();
-    employees.forEach((employee) => {
-      map.set(employee.id, employee);
-    });
-    return map;
-  }, [employees]);
-
+  // Create mapping: user_id -> employee
   const employeeByUserIdMap = useMemo(() => {
     const map = new Map<number, Employee>();
     employees.forEach((employee) => {
