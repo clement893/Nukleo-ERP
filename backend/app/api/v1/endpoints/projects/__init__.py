@@ -704,6 +704,45 @@ async def get_project(
                     self.deadline = getattr(row, 'deadline', None)
             
             project = ProjectRow(row)
+            
+            # Load client and responsable names manually since ProjectRow doesn't have relationships
+            client_name = None
+            client_id = getattr(project, 'client_id', None)
+            if client_id:
+                try:
+                    client_result = await db.execute(
+                        select(Client).where(Client.id == client_id)
+                    )
+                    client = client_result.scalar_one_or_none()
+                    if client:
+                        # Handle both company_name (for companies) and first_name/last_name (for contacts)
+                        if hasattr(client, 'company_name') and client.company_name:
+                            client_name = client.company_name
+                        elif hasattr(client, 'first_name') and hasattr(client, 'last_name'):
+                            client_name = f"{client.first_name} {client.last_name}".strip()
+                except Exception as client_error:
+                    logger.warning(
+                        f"Error loading client name for client_id {client_id}: {client_error}",
+                        exc_info=True
+                    )
+                    client_name = None
+            
+            responsable_name = None
+            responsable_id = getattr(project, 'responsable_id', None)
+            if responsable_id:
+                try:
+                    responsable_result = await db.execute(
+                        select(Employee).where(Employee.id == responsable_id)
+                    )
+                    responsable = responsable_result.scalar_one_or_none()
+                    if responsable:
+                        responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
+                except Exception as emp_error:
+                    logger.warning(
+                        f"Error loading responsable name for responsable_id {responsable_id}: {emp_error}",
+                        exc_info=True
+                    )
+                    responsable_name = None
         else:
             # Rollback and re-raise if it's a different ProgrammingError
             try:
@@ -719,35 +758,51 @@ async def get_project(
         )
     
     # Convert to response format with client and responsable names
-    # Safely access relationships - check if they exist before accessing attributes
-    client_name = None
-    try:
-        if project.client:
-            client_name = f"{project.client.first_name} {project.client.last_name}".strip()
-    except (AttributeError, ProgrammingError):
-        # If lazy load fails or column doesn't exist, client_name remains None
-        pass
-    
-    responsable_name = None
-    try:
-        if project.responsable:
-            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
-    except (AttributeError, ProgrammingError):
-        # If lazy load fails or attributes don't exist, responsable_name remains None
-        pass
+    # If project is a ProjectRow (from explicit column selection), client_name and responsable_name are already loaded above
+    # If project is a regular Project object, try to access relationships safely
+    if not isinstance(project, ProjectRow):
+        client_name = None
+        try:
+            if hasattr(project, 'client') and project.client:
+                client_name = f"{project.client.first_name} {project.client.last_name}".strip()
+        except (AttributeError, ProgrammingError):
+            # If lazy load fails or column doesn't exist, try loading manually
+            client_id = getattr(project, 'client_id', None)
+            if client_id:
+                try:
+                    client_result = await db.execute(
+                        select(Client).where(Client.id == client_id)
+                    )
+                    client = client_result.scalar_one_or_none()
+                    if client:
+                        if hasattr(client, 'company_name') and client.company_name:
+                            client_name = client.company_name
+                        elif hasattr(client, 'first_name') and hasattr(client, 'last_name'):
+                            client_name = f"{client.first_name} {client.last_name}".strip()
+                except Exception:
+                    client_name = None
+        
+        responsable_name = None
+        try:
+            if hasattr(project, 'responsable') and project.responsable:
+                responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
+        except (AttributeError, ProgrammingError):
+            # If lazy load fails, try loading manually
+            responsable_id = getattr(project, 'responsable_id', None)
+            if responsable_id:
+                try:
+                    responsable_result = await db.execute(
+                        select(Employee).where(Employee.id == responsable_id)
+                    )
+                    responsable = responsable_result.scalar_one_or_none()
+                    if responsable:
+                        responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
+                except Exception:
+                    responsable_name = None
     
     # Safely get client_id and responsable_id
-    client_id = None
-    responsable_id = None
-    try:
-        client_id = getattr(project, 'client_id', None)
-    except (AttributeError, ProgrammingError):
-        pass
-    
-    try:
-        responsable_id = getattr(project, 'responsable_id', None)
-    except (AttributeError, ProgrammingError):
-        pass
+    client_id = getattr(project, 'client_id', None) if not isinstance(project, ProjectRow) else project.client_id
+    responsable_id = getattr(project, 'responsable_id', None) if not isinstance(project, ProjectRow) else project.responsable_id
     
     project_dict = {
         "id": project.id,
