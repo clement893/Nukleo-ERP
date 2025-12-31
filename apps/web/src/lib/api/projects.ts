@@ -10,12 +10,25 @@ export interface Project {
   id: number;
   name: string;
   description: string | null;
-  status: 'active' | 'archived' | 'completed';
+  status: 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
   user_id: number;
   client_id: number | null;
   client_name?: string | null;
   responsable_id: number | null;
   responsable_name?: string | null;
+  // Extended fields
+  equipe?: string | null;
+  etape?: string | null;
+  annee_realisation?: string | null;
+  contact?: string | null;
+  taux_horaire?: number | null;
+  budget?: number | null;
+  proposal_url?: string | null;
+  drive_url?: string | null;
+  slack_url?: string | null;
+  echeancier_url?: string | null;
+  temoignage_status?: string | null;
+  portfolio_status?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,10 +36,23 @@ export interface Project {
 export interface ProjectCreate {
   name: string;
   description?: string | null;
-  status?: 'active' | 'archived' | 'completed';
+  status?: 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
   client_id?: number | null;
   client_name?: string | null;
   responsable_id?: number | null;
+  // Extended fields
+  equipe?: string | null;
+  etape?: string | null;
+  annee_realisation?: string | null;
+  contact?: string | null;
+  taux_horaire?: number | null;
+  budget?: number | null;
+  proposal_url?: string | null;
+  drive_url?: string | null;
+  slack_url?: string | null;
+  echeancier_url?: string | null;
+  temoignage_status?: string | null;
+  portfolio_status?: string | null;
 }
 
 export interface ProjectUpdate extends Partial<ProjectCreate> {}
@@ -39,7 +65,7 @@ export const projectsAPI = {
    * Get list of projects with pagination
    * Uses cache-busting to ensure fresh data
    */
-  list: async (skip = 0, limit = 100): Promise<Project[]> => {
+  list: async (skip = 0, limit = 1000): Promise<Project[]> => {
     const response = await apiClient.get<Project[]>('/v1/projects', {
       params: { 
         skip, 

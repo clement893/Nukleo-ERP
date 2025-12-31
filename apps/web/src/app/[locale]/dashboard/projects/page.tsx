@@ -4,52 +4,54 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
 import Select from '@/components/ui/Select';
 import DataTable, { type Column } from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
-import { projectsAPI } from '@/lib/api';
+import { projectsAPI, type Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { 
+  Plus, 
+  LayoutGrid, 
+  LayoutList, 
+  Filter,
+  Search,
+  ExternalLink,
+  Calendar,
+  Users,
+  TrendingUp,
+  Briefcase
+} from 'lucide-react';
 
-interface Project extends Record<string, unknown> {
-  id: number;
-  name: string;
-  description: string | null;
-  status: 'active' | 'archived' | 'completed';
-  created_at: string;
-  updated_at: string;
-  user_id: number;
-}
+type ViewMode = 'table' | 'cards';
 
 function ProjectsContent() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    status: 'active' as 'active' | 'archived' | 'completed',
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [etapeFilter, setEtapeFilter] = useState<string>('all');
+  const [anneeFilter, setAnneeFilter] = useState<string>('all');
 
   // Load projects from API
   const loadProjects = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await projectsAPI.list();
-      setProjects(response.data || []);
+      const data = await projectsAPI.list();
+      setProjects(data || []);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors du chargement des projets');
@@ -61,115 +63,90 @@ function ProjectsContent() {
   // Initialize projects on mount
   useEffect(() => {
     loadProjects();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCreateProject = async () => {
-    if (!formData.name.trim()) {
-      setError('Le nom du projet est requis');
-      return;
-    }
+  // Get unique values for filters
+  const uniqueEtapes = useMemo(() => {
+    const etapes = projects
+      .map(p => p.etape)
+      .filter((e): e is string => !!e);
+    return Array.from(new Set(etapes)).sort();
+  }, [projects]);
 
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await projectsAPI.create({
-        name: formData.name,
-        description: formData.description || undefined,
-        status: formData.status,
-      });
-      
-      setProjects([...projects, response.data]);
-      setShowCreateModal(false);
-      resetForm();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la création du projet');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const uniqueAnnees = useMemo(() => {
+    const annees = projects
+      .map(p => p.annee_realisation)
+      .filter((a): e is string => !!a);
+    return Array.from(new Set(annees)).sort().reverse();
+  }, [projects]);
 
-  const handleEditProject = async () => {
-    if (!selectedProject || !formData.name.trim()) {
-      setError('Le nom du projet est requis');
-      return;
-    }
+  // Filter and search projects
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          project.name.toLowerCase().includes(query) ||
+          project.description?.toLowerCase().includes(query) ||
+          project.client_name?.toLowerCase().includes(query) ||
+          project.equipe?.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
 
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await projectsAPI.update(selectedProject.id, {
-        name: formData.name,
-        description: formData.description || undefined,
-        status: formData.status,
-      });
-      
-      setProjects(projects.map((p) => (p.id === selectedProject.id ? response.data : p)));
-      setShowEditModal(false);
-      setSelectedProject(null);
-      resetForm();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la modification du projet');
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Status filter
+      if (statusFilter !== 'all' && project.status !== statusFilter) {
+        return false;
+      }
 
-  const handleDeleteProject = async (projectId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
-      return;
-    }
+      // Etape filter
+      if (etapeFilter !== 'all' && project.etape !== etapeFilter) {
+        return false;
+      }
 
-    try {
-      setLoading(true);
-      setError(null);
-      await projectsAPI.delete(projectId);
-      
-      setProjects(projects.filter((p) => p.id !== projectId));
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la suppression du projet');
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Annee filter
+      if (anneeFilter !== 'all' && project.annee_realisation !== anneeFilter) {
+        return false;
+      }
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      status: 'active',
+      return true;
     });
-  };
+  }, [projects, searchQuery, statusFilter, etapeFilter, anneeFilter]);
 
-  const openEditModal = (project: Project) => {
-    setSelectedProject(project);
-    setFormData({
-      name: project.name,
-      description: project.description || '',
-      status: project.status,
-    });
-    setShowEditModal(true);
-  };
+  // Statistics
+  const stats = useMemo(() => {
+    const total = filteredProjects.length;
+    const active = filteredProjects.filter(p => p.status === 'ACTIVE').length;
+    const completed = filteredProjects.filter(p => p.status === 'COMPLETED').length;
+    const withBudget = filteredProjects.filter(p => p.budget).length;
+
+    return { total, active, completed, withBudget };
+  }, [filteredProjects]);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'success' | 'warning' | 'default'> = {
-      active: 'success',
-      completed: 'default',
-      archived: 'warning',
+      ACTIVE: 'success',
+      COMPLETED: 'default',
+      ARCHIVED: 'warning',
     };
     return variants[status] || 'default';
   };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      active: 'Actif',
-      completed: 'Terminé',
-      archived: 'Archivé',
+      ACTIVE: 'Actif',
+      COMPLETED: 'Terminé',
+      ARCHIVED: 'Archivé',
     };
     return labels[status] || status;
+  };
+
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '-';
+    return new Intl.NumberFormat('fr-CA', {
+      style: 'currency',
+      currency: 'CAD',
+    }).format(amount);
   };
 
   const columns: Column<Project>[] = [
@@ -177,14 +154,57 @@ function ProjectsContent() {
       key: 'name',
       label: 'Nom',
       sortable: true,
+      render: (value, row) => (
+        <div className="flex flex-col">
+          <span 
+            className="font-medium text-foreground hover:text-primary cursor-pointer"
+            onClick={() => router.push(`/dashboard/projects/${row.id}`)}
+          >
+            {String(value)}
+          </span>
+          {row.client_name && (
+            <span className="text-sm text-muted-foreground">{row.client_name}</span>
+          )}
+        </div>
+      ),
     },
     {
-      key: 'description',
-      label: 'Description',
+      key: 'etape',
+      label: 'Étape',
       sortable: true,
       render: (value) => (
-        <span className="text-muted-foreground">
-          {value && String(value).length > 50 ? `${String(value).substring(0, 50)}...` : (value ? String(value) : '-')}
+        <span className="text-sm text-foreground">
+          {value ? String(value) : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'equipe',
+      label: 'Équipe',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">
+          {value ? String(value) : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'annee_realisation',
+      label: 'Année',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">
+          {value ? String(value) : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'budget',
+      label: 'Budget',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm font-medium text-foreground">
+          {formatCurrency(value as number)}
         </span>
       ),
     },
@@ -198,59 +218,21 @@ function ProjectsContent() {
         </Badge>
       ),
     },
-    {
-      key: 'created_at',
-      label: 'Créé le',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">
-          {new Date(String(value)).toLocaleDateString('fr-FR')}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      sortable: false,
-      render: (_, row) => (
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openEditModal(row)}
-            className="p-2"
-            title="Modifier"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteProject(row.id)}
-            className="p-2 text-red-600 hover:text-red-700"
-            title="Supprimer"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   return (
     <div className="py-8">
       <Container>
-        <div className="mb-8 flex justify-between items-center">
+        {/* Header */}
+        <div className="mb-8 flex justify-between items-start">
           <div>
-            <p className="text-foreground">
-              Gérez vos projets et leurs statuts
+            <h1 className="text-3xl font-bold text-foreground mb-2">Projets</h1>
+            <p className="text-muted-foreground">
+              Gérez vos projets, clients et livrables
             </p>
           </div>
           <Button
-            onClick={() => {
-              resetForm();
-              setShowCreateModal(true);
-            }}
+            onClick={() => router.push('/dashboard/projects/new')}
             className="flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
@@ -259,168 +241,271 @@ function ProjectsContent() {
         </div>
 
         {error && (
-          <Alert variant="error" className="mb-4">
+          <Alert variant="error" className="mb-6">
             {error}
           </Alert>
         )}
 
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="glass-card p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total</p>
+                <p className="text-3xl font-bold text-foreground">{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Briefcase className="w-6 h-6 text-primary" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Actifs</p>
+                <p className="text-3xl font-bold text-green-600">{stats.active}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Terminés</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.completed}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Avec budget</p>
+                <p className="text-3xl font-bold text-purple-600">{stats.withBudget}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Filters and View Toggle */}
+        <Card className="glass-card p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Rechercher un projet, client, équipe..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  fullWidth
+                />
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-2">
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                options={[
+                  { value: 'all', label: 'Tous les statuts' },
+                  { value: 'ACTIVE', label: 'Actif' },
+                  { value: 'COMPLETED', label: 'Terminé' },
+                  { value: 'ARCHIVED', label: 'Archivé' },
+                ]}
+                className="w-40"
+              />
+
+              <Select
+                value={etapeFilter}
+                onChange={(e) => setEtapeFilter(e.target.value)}
+                options={[
+                  { value: 'all', label: 'Toutes les étapes' },
+                  ...uniqueEtapes.map(e => ({ value: e, label: e })),
+                ]}
+                className="w-48"
+              />
+
+              <Select
+                value={anneeFilter}
+                onChange={(e) => setAnneeFilter(e.target.value)}
+                options={[
+                  { value: 'all', label: 'Toutes les années' },
+                  ...uniqueAnnees.map(a => ({ value: a, label: a })),
+                ]}
+                className="w-40"
+              />
+
+              {/* View Toggle */}
+              <div className="flex border border-border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`px-4 py-2 transition-colors ${
+                    viewMode === 'table'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:bg-accent'
+                  }`}
+                  title="Vue table"
+                >
+                  <LayoutList className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`px-4 py-2 transition-colors ${
+                    viewMode === 'cards'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:bg-accent'
+                  }`}
+                  title="Vue cartes"
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Content */}
         {loading && projects.length === 0 ? (
-          <Card>
+          <Card className="glass-card">
             <div className="py-12 text-center">
               <Loading />
             </div>
           </Card>
-        ) : (
-          <Card>
+        ) : viewMode === 'table' ? (
+          <Card className="glass-card">
             <div className="p-6">
               <DataTable
-                data={projects}
+                data={filteredProjects}
                 columns={columns}
-                pageSize={10}
-                searchable={true}
-                searchPlaceholder="Rechercher un projet..."
+                pageSize={20}
+                searchable={false}
                 emptyMessage="Aucun projet trouvé"
                 loading={loading}
               />
             </div>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <Card 
+                key={project.id} 
+                className="glass-card p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-foreground mb-1 line-clamp-2">
+                      {project.name}
+                    </h3>
+                    {project.client_name && (
+                      <p className="text-sm text-muted-foreground">{project.client_name}</p>
+                    )}
+                  </div>
+                  <Badge variant={getStatusBadge(project.status)}>
+                    {getStatusLabel(project.status)}
+                  </Badge>
+                </div>
+
+                {/* Description */}
+                {project.description && (
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {project.description}
+                  </p>
+                )}
+
+                {/* Metadata */}
+                <div className="space-y-2 mb-4">
+                  {project.etape && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-foreground">{project.etape}</span>
+                    </div>
+                  )}
+                  {project.equipe && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Équipe {project.equipe}</span>
+                    </div>
+                  )}
+                  {project.annee_realisation && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{project.annee_realisation}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Budget */}
+                {project.budget && (
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Budget</span>
+                      <span className="text-lg font-semibold text-foreground">
+                        {formatCurrency(project.budget)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Links */}
+                {(project.drive_url || project.slack_url || project.proposal_url) && (
+                  <div className="pt-4 border-t border-border mt-4">
+                    <div className="flex gap-2">
+                      {project.drive_url && (
+                        <a
+                          href={project.drive_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        >
+                          Drive <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {project.slack_url && (
+                        <a
+                          href={project.slack_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        >
+                          Slack <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {project.proposal_url && (
+                        <a
+                          href={project.proposal_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        >
+                          Proposal <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
         )}
-
-        {/* Create Project Modal */}
-        <Modal
-          isOpen={showCreateModal}
-          onClose={() => {
-            setShowCreateModal(false);
-            resetForm();
-          }}
-          title="Créer un nouveau projet"
-          size="md"
-          footer={
-            <>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  resetForm();
-                }}
-              >
-                Annuler
-              </Button>
-              <Button onClick={handleCreateProject} loading={loading}>
-                Créer
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <div>
-              <Input
-                label="Nom du projet *"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Projet Alpha"
-                fullWidth
-              />
-            </div>
-            <div>
-              <Textarea
-                label="Description"
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Description du projet..."
-                rows={4}
-                fullWidth
-              />
-            </div>
-            <div>
-              <Select
-                label="Statut"
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value as 'active' | 'archived' | 'completed',
-                  })
-                }
-                fullWidth
-                options={[
-                  { value: 'active', label: 'Actif' },
-                  { value: 'completed', label: 'Terminé' },
-                  { value: 'archived', label: 'Archivé' },
-                ]}
-              />
-            </div>
-          </div>
-        </Modal>
-
-        {/* Edit Project Modal */}
-        <Modal
-          isOpen={showEditModal && selectedProject !== null}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedProject(null);
-            resetForm();
-          }}
-          title="Modifier le projet"
-          size="md"
-          footer={
-            <>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedProject(null);
-                  resetForm();
-                }}
-              >
-                Annuler
-              </Button>
-              <Button onClick={handleEditProject} loading={loading}>
-                Enregistrer
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <div>
-              <Input
-                label="Nom du projet *"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Projet Alpha"
-                fullWidth
-              />
-            </div>
-            <div>
-              <Textarea
-                label="Description"
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Description du projet..."
-                rows={4}
-                fullWidth
-              />
-            </div>
-            <div>
-              <Select
-                label="Statut"
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value as 'active' | 'archived' | 'completed',
-                  })
-                }
-                fullWidth
-                options={[
-                  { value: 'active', label: 'Actif' },
-                  { value: 'completed', label: 'Terminé' },
-                  { value: 'archived', label: 'Archivé' },
-                ]}
-              />
-            </div>
-          </div>
-        </Modal>
       </Container>
     </div>
   );
@@ -429,4 +514,3 @@ function ProjectsContent() {
 export default function ProjectsPage() {
   return <ProjectsContent />;
 }
-
