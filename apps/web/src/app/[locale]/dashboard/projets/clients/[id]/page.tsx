@@ -159,17 +159,21 @@ export default function ClientDetailPage() {
       <div className="mt-6">
         <ClientDetail
           client={client}
-          projects={projects.map(p => ({
-            id: p.id,
-            name: p.name,
-            description: p.description || null,
-            status: (p.status || 'active') as 'active' | 'archived' | 'completed',
-            client_id: client.id,
-            user_id: 0, // Required by Project type but not provided by API
-            responsable_id: null,
-            created_at: new Date().toISOString(), // Required by Project type but not provided by API
-            updated_at: new Date().toISOString(), // Required by Project type but not provided by API
-          })) as Project[]}
+          projects={projects.map(p => {
+            // Convert lowercase status to uppercase to match Project type
+            const statusUpper = (p.status || 'ACTIVE').toUpperCase() as 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
+            return {
+              id: p.id,
+              name: p.name,
+              description: p.description || null,
+              status: statusUpper,
+              client_id: client.id,
+              user_id: 0, // Required by Project type but not provided by API
+              responsable_id: null,
+              created_at: new Date().toISOString(), // Required by Project type but not provided by API
+              updated_at: new Date().toISOString(), // Required by Project type but not provided by API
+            };
+          }) as Project[]}
           contacts={contacts}
           portalUrl={client.portal_url || null}
           notes={client.notes || null}

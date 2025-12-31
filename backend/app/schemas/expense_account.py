@@ -6,7 +6,7 @@ Pydantic schemas for expense account API
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ExpenseAccountBase(BaseModel):
@@ -15,9 +15,21 @@ class ExpenseAccountBase(BaseModel):
     description: Optional[str] = Field(None, description="Description")
     expense_period_start: Optional[datetime] = Field(None, description="Date de début de la période")
     expense_period_end: Optional[datetime] = Field(None, description="Date de fin de la période")
-    total_amount: Decimal = Field(0, ge=0, description="Montant total")
+    total_amount: Decimal = Field(0, ge=0, le=Decimal('999999999999999999.99'), description="Montant total (max: 999,999,999,999,999,999.99)")
     currency: str = Field("EUR", max_length=3, description="Devise")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Métadonnées supplémentaires", alias="account_metadata")
+    
+    @field_validator('total_amount')
+    @classmethod
+    def validate_total_amount(cls, v: Decimal) -> Decimal:
+        """Validate total_amount is within acceptable range"""
+        if v < 0:
+            raise ValueError('Total amount cannot be negative')
+        # Maximum value for NUMERIC(18, 2): 999,999,999,999,999,999.99
+        max_value = Decimal('999999999999999999.99')
+        if v > max_value:
+            raise ValueError(f'Total amount cannot exceed {max_value:,.2f}')
+        return v
 
 
 class ExpenseAccountCreate(ExpenseAccountBase):
@@ -31,9 +43,22 @@ class ExpenseAccountUpdate(BaseModel):
     description: Optional[str] = None
     expense_period_start: Optional[datetime] = None
     expense_period_end: Optional[datetime] = None
-    total_amount: Optional[Decimal] = Field(None, ge=0)
+    total_amount: Optional[Decimal] = Field(None, ge=0, le=Decimal('999999999999999999.99'))
     currency: Optional[str] = Field(None, max_length=3)
     metadata: Optional[Dict[str, Any]] = Field(None, alias="account_metadata")
+    
+    @field_validator('total_amount')
+    @classmethod
+    def validate_total_amount(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Validate total_amount is within acceptable range"""
+        if v is not None:
+            if v < 0:
+                raise ValueError('Total amount cannot be negative')
+            # Maximum value for NUMERIC(18, 2): 999,999,999,999,999,999.99
+            max_value = Decimal('999999999999999999.99')
+            if v > max_value:
+                raise ValueError(f'Total amount cannot exceed {max_value:,.2f}')
+        return v
 
 
 class ExpenseAccountAction(BaseModel):

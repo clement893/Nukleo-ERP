@@ -38,7 +38,7 @@ export default function ClientDetail({
 
   // Filter active projects (projects where client is connected)
   const activeProjects = useMemo(() => {
-    return projects.filter(p => p.status === 'active' && p.client_id === client.id);
+    return projects.filter(p => p.status === 'ACTIVE' && p.client_id === client.id);
   }, [projects, client.id]);
 
   // Get locale from path

@@ -59,7 +59,7 @@ function TeamProjectManagementContent() {
       
       // Trouver l'équipe par slug
       const teamsResponse = await teamsAPI.list();
-      const teamsListData = extractApiData<{ teams: Team[]; total: number }>(teamsResponse);
+      const teamsListData = extractApiData(teamsResponse);
       const teams = teamsListData?.teams || [];
       const foundTeam = teams.find((t: Team) => t.slug === teamSlug);
       

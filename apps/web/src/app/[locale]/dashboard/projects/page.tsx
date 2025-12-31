@@ -76,7 +76,7 @@ function ProjectsContent() {
   const uniqueAnnees = useMemo(() => {
     const annees = projects
       .map(p => p.annee_realisation)
-      .filter((a): e is string => !!a);
+      .filter((a): a is string => !!a);
     return Array.from(new Set(annees)).sort().reverse();
   }, [projects]);
 
@@ -344,7 +344,7 @@ function ProjectsContent() {
                 onChange={(e) => setAnneeFilter(e.target.value)}
                 options={[
                   { value: 'all', label: 'Toutes les années' },
-                  ...uniqueAnnees.map(a => ({ value: a, label: a })),
+                  ...uniqueAnnees.map(a => ({ value: a, label: a || '' })),
                 ]}
                 className="w-40"
               />
@@ -389,8 +389,8 @@ function ProjectsContent() {
           <Card className="glass-card">
             <div className="p-6">
               <DataTable
-                data={filteredProjects}
-                columns={columns}
+                data={filteredProjects as Array<Record<string, unknown>>}
+                columns={columns as Column<Record<string, unknown>>[]}
                 pageSize={20}
                 searchable={false}
                 emptyMessage="Aucun projet trouvé"

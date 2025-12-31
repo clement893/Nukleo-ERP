@@ -17,9 +17,9 @@ interface ProjectFormProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'active', label: 'Actif' },
-  { value: 'archived', label: 'Archivé' },
-  { value: 'completed', label: 'Complété' },
+  { value: 'ACTIVE', label: 'Actif' },
+  { value: 'ARCHIVED', label: 'Archivé' },
+  { value: 'COMPLETED', label: 'Complété' },
 ];
 
 export default function ProjectForm({
@@ -34,7 +34,7 @@ export default function ProjectForm({
   const [formData, setFormData] = useState<ProjectCreate>({
     name: project?.name || '',
     description: project?.description || null,
-    status: project?.status || 'active',
+    status: project?.status || 'ACTIVE',
     client_id: project?.client_id || null,
     client_name: project?.client_name || null,
     responsable_id: project?.responsable_id || null,
@@ -88,8 +88,8 @@ export default function ProjectForm({
       {/* Statut */}
       <Select
         label="Statut"
-        value={formData.status || 'active'}
-        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'archived' | 'completed' })}
+        value={formData.status || 'ACTIVE'}
+        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'ACTIVE' | 'ARCHIVED' | 'COMPLETED' })}
         options={STATUS_OPTIONS}
         fullWidth
       />

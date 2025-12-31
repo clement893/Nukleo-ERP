@@ -44,7 +44,6 @@ async def list_clients_test(
 @router.get("/", response_model=List[ClientSchema])
 # Temporarily removed @cache_query to debug validation issue
 async def list_clients(
-    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
     skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -61,8 +60,6 @@ async def list_clients(
     # Log that we've reached the endpoint with detailed information
     logger.info(f"[ClientsAPI] ========================================")
     logger.info(f"[ClientsAPI] ✅ ENDPOINT REACHED")
-    logger.info(f"[ClientsAPI] URL: {request.url}")
-    logger.info(f"[ClientsAPI] Method: {request.method}")
     logger.info(f"[ClientsAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
     logger.info(f"[ClientsAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
     logger.info(f"[ClientsAPI] Status: {status_filter}")

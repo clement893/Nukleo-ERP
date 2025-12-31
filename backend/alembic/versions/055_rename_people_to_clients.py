@@ -21,8 +21,31 @@ def upgrade() -> None:
     bind = op.get_bind()
     inspector = inspect(bind)
     
+    table_names = inspector.get_table_names()
+    
+    # Check if clients table already exists
+    if 'clients' in table_names:
+        print("Clients table already exists, skipping rename")
+        # Still need to update foreign keys if they point to 'people'
+        if 'projects' in table_names:
+            fk_constraints = inspector.get_foreign_keys('projects')
+            for fk in fk_constraints:
+                if fk['constrained_columns'] == ['client_id'] and fk['referred_table'] == 'people':
+                    # Drop old constraint
+                    op.drop_constraint(fk['name'], 'projects', type_='foreignkey', if_exists=True)
+                    # Create new constraint pointing to clients
+                    op.create_foreign_key(
+                        'fk_projects_client_id',
+                        'projects', 'clients',
+                        ['client_id'], ['id'],
+                        ondelete='SET NULL'
+                    )
+                    print("Updated projects.client_id foreign key to point to clients table")
+                    break
+        return
+    
     # Check if people table exists
-    if 'people' not in inspector.get_table_names():
+    if 'people' not in table_names:
         print("People table does not exist, skipping rename")
         return
     
@@ -61,12 +84,12 @@ def upgrade() -> None:
     except Exception:
         pass
     
-    # Update foreign key constraints that reference people table
+    # Update foreign key constraints that reference people table (now clients)
     # Check projects table
-    if 'projects' in inspector.get_table_names():
+    if 'projects' in table_names:
         fk_constraints = inspector.get_foreign_keys('projects')
         for fk in fk_constraints:
-            if fk['referred_table'] == 'people':
+            if fk['constrained_columns'] == ['client_id'] and fk['referred_table'] == 'people':
                 # Drop old constraint
                 op.drop_constraint(fk['name'], 'projects', type_='foreignkey', if_exists=True)
                 # Create new constraint pointing to clients
