@@ -234,6 +234,7 @@ async def list_clients(
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
     search: Optional[str] = Query(None, description="Search by company name or responsible employee name"),
+    _t: Optional[int] = Query(None, description="Cache-busting timestamp (ignored)"),
 ) -> List[Client]:
     """
     Get list of clients
