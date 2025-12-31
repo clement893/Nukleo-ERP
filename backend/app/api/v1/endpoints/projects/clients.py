@@ -33,27 +33,6 @@ from app.services.s3_service import S3Service
 from app.core.logging import logger
 
 
-def get_pagination_params(
-    skip: str = Query("0", description="Number of records to skip"),
-    limit: str = Query("100", description="Maximum number of records to return"),
-) -> tuple[int, int]:
-    """Convert pagination parameters to integers"""
-    try:
-        skip_int = int(skip) if skip and skip.strip() else 0
-    except (ValueError, TypeError):
-        skip_int = 0
-    
-    try:
-        limit_int = int(limit) if limit and limit.strip() else 100
-    except (ValueError, TypeError):
-        limit_int = 100
-    
-    # Validate ranges
-    skip_int = max(0, skip_int)
-    limit_int = min(max(1, limit_int), 1000)
-    
-    return skip_int, limit_int
-
 router = APIRouter(prefix="/projects/clients", tags=["project-clients"])
 
 # In-memory store for import logs (in production, use Redis)
@@ -250,7 +229,8 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    pagination: tuple[int, int] = Depends(get_pagination_params),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
@@ -261,7 +241,8 @@ async def list_clients(
     Get list of clients
     
     Args:
-        pagination: Tuple of (skip, limit) from dependency
+        skip: Number of records to skip
+        limit: Maximum number of records to return
         status: Optional status filter
         responsible_id: Optional responsible filter
         company_id: Optional company filter
@@ -272,7 +253,7 @@ async def list_clients(
     Returns:
         List of clients
     """
-    skip_int, limit_int = pagination
+    skip_int, limit_int = skip, limit
     
     # Use integer parameters directly
     responsible_id_int = responsible_id
