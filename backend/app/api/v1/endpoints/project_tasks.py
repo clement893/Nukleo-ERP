@@ -41,15 +41,10 @@ async def list_tasks(
         
         if team_id:
             query = query.where(ProjectTask.team_id == team_id)
-        # Note: project_id filter is skipped if column doesn't exist in database
-        # Try to filter by project_id, but handle gracefully if column doesn't exist
+        # Note: project_id filter may fail if column doesn't exist in database
+        # This will be caught by the exception handler below
         if project_id:
-            try:
-                query = query.where(ProjectTask.project_id == project_id)
-            except (AttributeError, ProgrammingError):
-                # Column doesn't exist, skip this filter
-                logger.warning(f"project_id column doesn't exist, skipping project_id filter")
-                pass
+            query = query.where(ProjectTask.project_id == project_id)
         if assignee_id:
             query = query.where(ProjectTask.assignee_id == assignee_id)
         if task_status:
@@ -71,13 +66,24 @@ async def list_tasks(
             ))
         except (ProgrammingError, AttributeError, Exception) as e:
             # If relationship loading fails (e.g., missing columns), try without relationships
+            error_str = str(e).lower()
             logger.warning(f"Failed to load relationships for project tasks: {e}")
             # Rollback the failed transaction first
             try:
                 await db.rollback()
             except Exception as rollback_error:
                 logger.warning(f"Rollback failed: {rollback_error}")
-            # Retry without relationship loading
+            
+            # If error is due to project_id column not existing, raise informative error
+            # SQLAlchemy will always try to select all model columns, so we can't work around this
+            if 'project_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
+                logger.error("project_id column doesn't exist in database - database migration may be needed")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Database schema mismatch: project_id column is missing. Please run database migrations."
+                )
+            
+            # Retry without relationship loading for other errors
             result = await db.execute(query)
         
         tasks = result.scalars().all()
