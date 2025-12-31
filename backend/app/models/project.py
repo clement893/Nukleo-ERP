@@ -25,7 +25,6 @@ class Project(Base):
     __table_args__ = (
         Index("idx_projects_user_id", "user_id"),  # For filtering by user
         Index("idx_projects_status", "status"),  # For filtering by status
-        Index("idx_projects_client_id", "client_id"),  # For filtering by client
         Index("idx_projects_responsable_id", "responsable_id"),  # For filtering by responsable
         Index("idx_projects_created_at", "created_at"),  # For sorting by creation date
         Index("idx_projects_updated_at", "updated_at"),  # For sorting by update date
@@ -36,7 +35,6 @@ class Project(Base):
     description = Column(Text, nullable=True)
     status = Column(Enum(ProjectStatus), default=ProjectStatus.ACTIVE, nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    client_id = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
     responsable_id = Column(Integer, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
@@ -49,7 +47,6 @@ class Project(Base):
 
     # Relationships
     user = relationship("User", backref="projects")
-    client = relationship("Company", foreign_keys=[client_id], backref="projects")
     responsable = relationship("Employee", foreign_keys=[responsable_id], backref="projects")
 
     def __repr__(self) -> str:

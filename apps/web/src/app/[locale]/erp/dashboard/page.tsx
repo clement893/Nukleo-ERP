@@ -62,17 +62,6 @@ function ERPDashboardContent() {
             </p>
           </a>
           <a
-            href="/erp/clients"
-            className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
-          >
-            <h3 className="font-semibold text-foreground mb-1">
-              Manage Clients
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              View and manage all clients
-            </p>
-          </a>
-          <a
             href="/erp/inventory"
             className="p-4 border border-border rounded-lg hover:bg-muted transition-colors"
           >

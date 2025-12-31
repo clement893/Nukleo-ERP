@@ -12,8 +12,6 @@ export type {
   ERPDashboardStats,
   ERPInvoice,
   ERPInvoiceListResponse,
-  ERPClient,
-  ERPClientListResponse,
   ERPOrder,
   ERPOrderListResponse,
   ERPInventoryProduct,
@@ -30,7 +28,6 @@ export const erpKeys = {
   dashboard: () => [...erpKeys.all, 'dashboard'] as const,
   orders: () => [...erpKeys.all, 'orders'] as const,
   invoices: () => [...erpKeys.all, 'invoices'] as const,
-  clients: () => [...erpKeys.all, 'clients'] as const,
   inventory: () => [...erpKeys.all, 'inventory'] as const,
   reports: () => [...erpKeys.all, 'reports'] as const,
 };

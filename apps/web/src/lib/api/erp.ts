@@ -5,7 +5,6 @@
  * This module provides a unified interface for all ERP operations:
  * - Orders
  * - Invoices
- * - Clients
  * - Inventory
  * - Reports
  * - Dashboard
@@ -17,8 +16,6 @@ import {
   type ERPDashboardStats,
   type ERPInvoice,
   type ERPInvoiceListResponse,
-  type ERPClient,
-  type ERPClientListResponse,
   type ERPOrder,
   type ERPOrderListResponse,
   type ERPInventoryProduct,
@@ -34,8 +31,6 @@ export type {
   ERPDashboardStats,
   ERPInvoice,
   ERPInvoiceListResponse,
-  ERPClient,
-  ERPClientListResponse,
   ERPOrder,
   ERPOrderListResponse,
   ERPInventoryProduct,

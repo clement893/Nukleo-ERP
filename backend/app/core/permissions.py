@@ -70,22 +70,13 @@ class Permission:
     # Admin permissions
     ADMIN_ALL = "admin:*"
     
-    # Client Portal permissions
-    CLIENT_VIEW_ORDERS = "client:view:orders"
-    CLIENT_VIEW_INVOICES = "client:view:invoices"
-    CLIENT_VIEW_PROJECTS = "client:view:projects"
-    CLIENT_VIEW_TICKETS = "client:view:tickets"
-    CLIENT_SUBMIT_TICKETS = "client:submit:tickets"
-    CLIENT_VIEW_PROFILE = "client:view:profile"
-    CLIENT_UPDATE_PROFILE = "client:update:profile"
+    # Client Portal permissions (removed - client portal functionality has been removed)
     
     # Employee/ERP Portal permissions
     ERP_VIEW_ALL_ORDERS = "erp:view:all:orders"
     ERP_MANAGE_ORDERS = "erp:manage:orders"
     ERP_VIEW_INVENTORY = "erp:view:inventory"
     ERP_MANAGE_INVENTORY = "erp:manage:inventory"
-    ERP_VIEW_CLIENTS = "erp:view:clients"
-    ERP_MANAGE_CLIENTS = "erp:manage:clients"
     ERP_VIEW_INVOICES = "erp:view:invoices"
     ERP_MANAGE_INVOICES = "erp:manage:invoices"
     ERP_VIEW_REPORTS = "erp:view:reports"
@@ -183,25 +174,17 @@ def get_role_permissions_hardcoded(role_name: str) -> List[str]:
             Permission.READ_PROJECT,
         ],
         "client": [
-            Permission.CLIENT_VIEW_ORDERS,
-            Permission.CLIENT_VIEW_INVOICES,
-            Permission.CLIENT_VIEW_PROJECTS,
-            Permission.CLIENT_VIEW_TICKETS,
-            Permission.CLIENT_SUBMIT_TICKETS,
-            Permission.CLIENT_VIEW_PROFILE,
-            Permission.CLIENT_UPDATE_PROFILE,
+            # Client portal permissions removed - client portal functionality has been removed
         ],
         "employee": [
             Permission.ERP_VIEW_ALL_ORDERS,
             Permission.ERP_VIEW_INVENTORY,
-            Permission.ERP_VIEW_CLIENTS,
             Permission.ERP_VIEW_INVOICES,
             Permission.ERP_VIEW_REPORTS,
         ],
         "sales": [
             Permission.SALES_VIEW_ORDERS,
             Permission.SALES_MANAGE_ORDERS,
-            Permission.ERP_VIEW_CLIENTS,
         ],
         "accounting": [
             Permission.ACCOUNTING_VIEW_INVOICES,

@@ -24,18 +24,6 @@ export {
   surveysAPI,
 } from '../api';
 
-// Re-export client portal API
-export { clientPortalAPI } from './client-portal';
-
-// Re-export client portal module API (unified)
-export { clientPortalModuleAPI } from './client-portal-unified';
-export type {
-  ClientDashboardStats as ClientDashboardStatsType,
-  ClientInvoice as ClientInvoiceType,
-  ClientProject as ClientProjectType,
-  ClientTicket as ClientTicketType,
-  ClientOrder as ClientOrderType,
-} from './client-portal-unified';
 
 // Re-export ERP portal API
 export { erpPortalAPI } from './erp-portal';
@@ -45,7 +33,6 @@ export { erpAPI } from './erp';
 export type {
   ERPDashboardStats as ERPDashboardStatsType,
   ERPInvoice as ERPInvoiceType,
-  ERPClient as ERPClientType,
   ERPOrder as ERPOrderType,
   ERPInventoryProduct as ERPInventoryProductType,
   ERPReport as ERPReportType,
@@ -164,6 +151,3 @@ export type {
   DocumentationPriority as LeoDocumentationPriorityType,
 } from './leo';
 
-// Re-export clients API
-export { clientsAPI } from './clients';
-export type { Client, ClientCreate, ClientUpdate, ClientStatus } from './clients';

@@ -42,45 +42,9 @@ export const PORTAL_ROUTES = {
 } as const;
 
 /**
- * Client portal routes
+ * Client portal routes (removed - client portal functionality has been removed)
  */
-export const CLIENT_PORTAL_ROUTES: PortalRoute[] = [
-  {
-    path: '/client/dashboard',
-    label: 'Dashboard',
-    icon: 'LayoutDashboard',
-  },
-  {
-    path: '/client/orders',
-    label: 'Orders',
-    icon: 'ShoppingCart',
-    permission: 'client:view:orders',
-  },
-  {
-    path: '/client/invoices',
-    label: 'Invoices',
-    icon: 'FileText',
-    permission: 'client:view:invoices',
-  },
-  {
-    path: '/client/projects',
-    label: 'Projects',
-    icon: 'Folder',
-    permission: 'client:view:projects',
-  },
-  {
-    path: '/client/tickets',
-    label: 'Support Tickets',
-    icon: 'MessageSquare',
-    permission: 'client:view:tickets',
-  },
-  {
-    path: '/client/profile',
-    label: 'Profile',
-    icon: 'User',
-    permission: 'client:view:profile',
-  },
-];
+export const CLIENT_PORTAL_ROUTES: PortalRoute[] = [];
 
 /**
  * Employee/ERP portal routes
@@ -144,12 +108,6 @@ export const EMPLOYEE_PORTAL_ROUTES: PortalRoute[] = [
     ],
   },
   {
-    path: '/erp/clients',
-    label: 'Clients',
-    icon: 'Users',
-    permission: 'erp:view:clients',
-  },
-  {
     path: '/erp/invoices',
     label: 'Invoices',
     icon: 'FileText',
@@ -190,51 +148,9 @@ export const EMPLOYEE_PORTAL_ROUTES: PortalRoute[] = [
 ];
 
 /**
- * Client portal navigation items
+ * Client portal navigation items (removed - client portal functionality has been removed)
  */
-export const CLIENT_PORTAL_NAVIGATION: ClientPortalNavigation[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    path: '/client/dashboard',
-    icon: 'LayoutDashboard',
-  },
-  {
-    id: 'orders',
-    label: 'My Orders',
-    path: '/client/orders',
-    icon: 'ShoppingCart',
-    permission: 'client:view:orders',
-  },
-  {
-    id: 'invoices',
-    label: 'Invoices',
-    path: '/client/invoices',
-    icon: 'FileText',
-    permission: 'client:view:invoices',
-  },
-  {
-    id: 'projects',
-    label: 'Projects',
-    path: '/client/projects',
-    icon: 'Folder',
-    permission: 'client:view:projects',
-  },
-  {
-    id: 'tickets',
-    label: 'Support',
-    path: '/client/tickets',
-    icon: 'MessageSquare',
-    permission: 'client:view:tickets',
-  },
-  {
-    id: 'profile',
-    label: 'Profile',
-    path: '/client/profile',
-    icon: 'User',
-    permission: 'client:view:profile',
-  },
-];
+export const CLIENT_PORTAL_NAVIGATION: ClientPortalNavigation[] = [];
 
 /**
  * Employee/ERP portal navigation items
@@ -308,14 +224,6 @@ export const EMPLOYEE_PORTAL_NAVIGATION: EmployeePortalNavigation[] = [
         permission: 'inventory:view:stock',
       },
     ],
-  },
-  {
-    id: 'clients',
-    label: 'Clients',
-    path: '/erp/clients',
-    icon: 'Users',
-    permission: 'erp:view:clients',
-    module: 'crm',
   },
   {
     id: 'invoices',

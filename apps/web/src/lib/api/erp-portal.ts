@@ -20,8 +20,6 @@ export interface ERPDashboardStats {
   total_invoices: number;
   pending_invoices: number;
   paid_invoices: number;
-  total_clients: number;
-  active_clients: number;
   total_products: number;
   low_stock_products: number;
   total_revenue: string; // Decimal as string
@@ -55,34 +53,6 @@ export interface ERPInvoice {
  */
 export interface ERPInvoiceListResponse {
   items: ERPInvoice[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-}
-
-/**
- * ERP Client
- */
-export interface ERPClient {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  company_name?: string;
-  address?: string;
-  is_active: boolean;
-  total_orders: number;
-  total_spent: string; // Decimal as string
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * ERP Client List Response
- */
-export interface ERPClientListResponse {
-  items: ERPClient[];
   total: number;
   page: number;
   page_size: number;
@@ -263,39 +233,6 @@ export const erpPortalAPI = {
     return response.data;
   },
 
-  /**
-   * Get list of all clients
-   * 
-   * @param params Query parameters for pagination and filtering
-   * @returns Paginated list of all clients
-   * @requires ERP_VIEW_CLIENTS permission
-   */
-  getClients: async (params?: {
-    skip?: number;
-    limit?: number;
-    is_active?: boolean;
-  }): Promise<ERPClientListResponse> => {
-    const response = await apiClient.get<ERPClientListResponse>('/v1/erp/clients', { params });
-    if (!response.data) {
-      throw new Error('Failed to fetch clients: no data returned');
-    }
-    return response.data;
-  },
-
-  /**
-   * Get a specific client by ID
-   * 
-   * @param clientId Client ID
-   * @returns Client details
-   * @requires ERP_VIEW_CLIENTS permission
-   */
-  getClient: async (clientId: number): Promise<ERPClient> => {
-    const response = await apiClient.get<ERPClient>(`/v1/erp/clients/${clientId}`);
-    if (!response.data) {
-      throw new Error('Failed to fetch client: no data returned');
-    }
-    return response.data;
-  },
 
   /**
    * Get list of all orders

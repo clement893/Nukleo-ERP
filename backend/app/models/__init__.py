@@ -47,7 +47,6 @@ from app.models.quote import Quote
 from app.models.quote_line_item import QuoteLineItem
 from app.models.submission import Submission
 from app.models.pipeline import Pipeline, PipelineStage, Opportunite
-from app.models.client import Client, ClientStatus
 from app.models.expense_account import ExpenseAccount, ExpenseAccountStatus
 from app.models.testimonial import Testimonial
 from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory as LeoDocumentationCategory, DocumentationPriority as LeoDocumentationPriority
@@ -144,7 +143,5 @@ __all__ = [
     "LeoDocumentationPriority",
     "CalendarEvent",
     "Testimonial",
-    "Client",
-    "ClientStatus",
 ]
 

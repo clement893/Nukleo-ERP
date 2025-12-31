@@ -116,39 +116,6 @@ class ERPInventoryMovementListResponse(BaseModel):
     total_pages: int
 
 
-class ERPClientBase(BaseModel):
-    """Base client schema for ERP"""
-    name: str
-    email: str
-    phone: Optional[str] = None
-
-
-class ERPClientResponse(ERPClientBase):
-    """ERP client response schema"""
-    id: int
-    name: str
-    email: str
-    phone: Optional[str] = None
-    company_name: Optional[str] = None
-    address: Optional[str] = None
-    is_active: bool = True
-    total_orders: int = Field(default=0)
-    total_spent: Decimal = Field(default=Decimal("0.00"))
-    created_at: datetime
-    updated_at: datetime
-    
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ERPClientListResponse(BaseModel):
-    """List of ERP clients"""
-    items: List[ERPClientResponse]
-    total: int
-    page: int
-    page_size: int
-    total_pages: int
-
-
 class ERPInvoiceBase(BaseModel):
     """Base invoice schema for ERP"""
     invoice_number: str
@@ -231,8 +198,6 @@ class ERPDashboardStats(BaseModel):
     total_invoices: int = 0
     pending_invoices: int = 0
     paid_invoices: int = 0
-    total_clients: int = 0
-    active_clients: int = 0
     total_projects: int = 0
     active_projects: int = 0
     total_products: int = 0

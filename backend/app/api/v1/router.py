@@ -10,7 +10,6 @@ from app.api.v1.endpoints.commercial import companies as commercial_companies, o
 from app.api.v1.endpoints.commercial import quotes as commercial_quotes, submissions as commercial_submissions
 from app.api.v1.endpoints.commercial import pipelines as commercial_pipelines
 from app.api.v1.endpoints.commercial import testimonials as commercial_testimonials
-from app.api.v1.endpoints.projects.clients import router as project_clients
 from app.modules.commercial.api import router as commercial_module_router
 from app.api.v1.endpoints.agenda import events as agenda_events
 from app.api.v1.endpoints.reseau import contacts as reseau_contacts
@@ -22,10 +21,8 @@ from app.modules.management.api import router as management_module_router
 from app.modules.content.api import router as content_module_router
 from app.modules.themes.api import router as themes_module_router
 from app.modules.analytics.api import router as analytics_module_router
-from app.api.v1.endpoints.client import invoices_router, projects_router, tickets_router, dashboard_router
-from app.modules.client_portal.api import router as client_portal_module_router
 from app.modules.agenda.api import router as agenda_module_router
-from app.api.v1.endpoints.erp import invoices_router as erp_invoices_router, clients_router, orders_router, inventory_router, reports_router, dashboard_router as erp_dashboard_router
+from app.api.v1.endpoints.erp import invoices_router as erp_invoices_router, orders_router, inventory_router, reports_router, dashboard_router as erp_dashboard_router
 from app.api import ai as ai_router
 
 api_router = APIRouter()
@@ -403,26 +400,6 @@ api_router.include_router(
     tags=["posts"]
 )
 
-# Register client portal endpoints
-api_router.include_router(
-    invoices_router,
-    tags=["client-portal"]
-)
-
-api_router.include_router(
-    projects_router,
-    tags=["client-portal"]
-)
-
-api_router.include_router(
-    tickets_router,
-    tags=["client-portal"]
-)
-
-api_router.include_router(
-    dashboard_router,
-    tags=["client-portal"]
-)
 
 # Register ERP/Employee portal endpoints
 api_router.include_router(
@@ -430,10 +407,6 @@ api_router.include_router(
     tags=["erp-portal"]
 )
 
-api_router.include_router(
-    clients_router,
-    tags=["erp-portal"]
-)
 
 api_router.include_router(
     orders_router,
@@ -544,11 +517,6 @@ api_router.include_router(
 # Uncomment to use unified router instead:
 # api_router.include_router(projects_module_router)
 
-# Register project clients endpoints
-api_router.include_router(
-    project_clients,
-    tags=["projects"]
-)
 
 # Register management module unified router (alternative to individual routers above)
 # Uncomment to use unified router instead:

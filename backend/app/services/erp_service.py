@@ -111,65 +111,6 @@ class ERPService:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
-    async def get_all_clients(
-        self,
-        user_id: int,
-        skip: int = 0,
-        limit: int = 100,
-        is_active: Optional[bool] = None,
-    ) -> tuple[List[User], int]:
-        """
-        Get all clients (for ERP employees)
-        
-        Args:
-            user_id: Employee user ID (for audit)
-            skip: Number of records to skip
-            limit: Maximum number of records
-            is_active: Optional active status filter
-            
-        Returns:
-            Tuple of (clients list, total count)
-        """
-        # Get users with client role
-        # Note: This is simplified - in production, you'd check user roles
-        query = select(User)
-        
-        if is_active is not None:
-            query = query.where(User.is_active == is_active)
-        
-        # Apply tenant scoping
-        query = apply_tenant_scope(query, User)
-        
-        # Get total count
-        count_query = select(func.count()).select_from(query.subquery())
-        total_result = await self.db.execute(count_query)
-        total = total_result.scalar() or 0
-        
-        # Get paginated results
-        query = query.order_by(User.created_at.desc()).offset(skip).limit(limit)
-        result = await self.db.execute(query)
-        users = result.scalars().all()
-        
-        return list(users), total
-    
-    async def get_client(self, client_id: int) -> Optional[User]:
-        """
-        Get a specific client (for ERP employees)
-        
-        Args:
-            client_id: Client user ID
-            
-        Returns:
-            User object or None
-        """
-        query = select(User).where(User.id == client_id)
-        
-        # Apply tenant scoping
-        query = apply_tenant_scope(query, User)
-        
-        result = await self.db.execute(query)
-        return result.scalar_one_or_none()
-    
     async def get_inventory_products(
         self,
         user_id: int,
@@ -274,18 +215,6 @@ class ERPService:
         invoice_result = await self.db.execute(invoice_query)
         invoice_stats = invoice_result.first()
         
-        # Get client stats
-        client_query = select(
-            func.count(User.id).label("total"),
-            func.count(
-                case((User.is_active == True, 1), else_=None)
-            ).label("active"),
-        )
-        
-        client_query = apply_tenant_scope(client_query, User)
-        client_result = await self.db.execute(client_query)
-        client_stats = client_result.first()
-        
         # Get project stats
         project_query = select(
             func.count(Project.id).label("total"),
@@ -311,8 +240,6 @@ class ERPService:
             "total_invoices": invoice_stats.total or 0,
             "pending_invoices": invoice_stats.pending_count or 0,
             "paid_invoices": invoice_stats.paid_count or 0,
-            "total_clients": client_stats.total or 0,
-            "active_clients": client_stats.active or 0,
             "total_projects": project_stats.total or 0,
             "active_projects": project_stats.active or 0,
             "total_revenue": Decimal(str(invoice_stats.total_amount or 0)),
