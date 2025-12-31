@@ -67,12 +67,12 @@ export function ProjectsStatusWidget({ }: WidgetProps) {
   };
 
   const statusColors: Record<string, string> = {
-    'ACTIVE': 'bg-green-500',
-    'COMPLETED': 'bg-blue-500',
-    'ON_HOLD': 'bg-yellow-500',
-    'CANCELLED': 'bg-red-500',
-    'PLANNING': 'bg-purple-500',
-    'UNKNOWN': 'bg-gray-500',
+    'ACTIVE': '#10b981', // green-500
+    'COMPLETED': '#3b82f6', // blue-500
+    'ON_HOLD': '#eab308', // yellow-500
+    'CANCELLED': '#ef4444', // red-500
+    'PLANNING': '#a855f7', // purple-500
+    'UNKNOWN': '#6b7280', // gray-500
   };
 
   const entries = Object.entries(statusData).sort((a, b) => b[1] - a[1]);
@@ -90,7 +90,7 @@ export function ProjectsStatusWidget({ }: WidgetProps) {
       percentage,
       angle,
       startAngle,
-      color: statusColors[status] || 'bg-gray-500',
+      color: statusColors[status] || '#6b7280',
       label: statusLabels[status] || status,
     };
   });
@@ -101,24 +101,6 @@ export function ProjectsStatusWidget({ }: WidgetProps) {
       <div className="flex-1 flex items-center justify-center mb-4">
         <div className="relative w-32 h-32">
           <svg viewBox="0 0 100 100" className="transform -rotate-90">
-            <defs>
-              {segments.map((segment, index) => {
-                const colorMap: Record<string, string> = {
-                  'bg-green-500': '#10b981',
-                  'bg-blue-500': '#3b82f6',
-                  'bg-yellow-500': '#eab308',
-                  'bg-red-500': '#ef4444',
-                  'bg-purple-500': '#a855f7',
-                  'bg-gray-500': '#6b7280',
-                };
-                return (
-                  <linearGradient key={`gradient-${index}`} id={`gradient-${index}`}>
-                    <stop offset="0%" stopColor={colorMap[segment.color] || '#6b7280'} />
-                    <stop offset="100%" stopColor={colorMap[segment.color] || '#6b7280'} />
-                  </linearGradient>
-                );
-              })}
-            </defs>
             {segments.map((segment, index) => {
               const largeArcFlag = segment.angle > 180 ? 1 : 0;
               const x1 = 50 + 50 * Math.cos((segment.startAngle * Math.PI) / 180);
@@ -130,8 +112,7 @@ export function ProjectsStatusWidget({ }: WidgetProps) {
                 <path
                   key={index}
                   d={`M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
-                  fill={`url(#gradient-${index})`}
-                  className={segment.color}
+                  fill={segment.color}
                 />
               );
             })}
@@ -150,7 +131,10 @@ export function ProjectsStatusWidget({ }: WidgetProps) {
         {segments.map((segment) => (
           <div key={segment.status} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${segment.color}`} />
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: segment.color }}
+              />
               <span className="text-xs text-gray-700 dark:text-gray-300">{segment.label}</span>
             </div>
             <div className="flex items-center gap-2">
