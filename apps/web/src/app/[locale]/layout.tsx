@@ -8,7 +8,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { aktivGrotesk } from '@/lib/fonts';
 import '../globals.css';
 import AppProviders from '@/components/providers/AppProviders';
 import { App } from '../app';
@@ -24,14 +24,8 @@ import { LocaleSync } from '@/components/preferences/LocaleSync';
 import type { Locale } from '@/i18n/routing';
 import { themeCacheInlineScript } from '@/lib/theme/theme-inline-cache-script';
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap', // Optimize font loading - show fallback until font loads
-  variable: '--font-inter',
-  preload: true, // Preload critical font
-  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'], // Better fallback
-  adjustFontFallback: true, // Adjust fallback font metrics
-});
+// Aktiv Grotesk is now imported from @/lib/fonts
+// Configuration includes all weights (100-900) and styles
 
 export const metadata: Metadata = {
   title: 'MODELE-NEXTJS-FULLSTACK',
@@ -80,7 +74,7 @@ export default async function LocaleLayout({
   const appDescription = process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Full-stack template with Next.js 16 frontend and FastAPI backend';
 
   return (
-    <html lang={locale} className={inter.variable} data-api-url={apiUrl} suppressHydrationWarning>
+    <html lang={locale} className={aktivGrotesk.variable} data-api-url={apiUrl} suppressHydrationWarning>
       <head>
         {/* CRITICAL: Apply dark mode FIRST, before any CSS, to prevent flash */}
         {/* This script MUST execute synchronously and block rendering until dark mode is applied */}
@@ -120,9 +114,9 @@ export default async function LocaleLayout({
               /* Base structure - default colors prevent flash before theme loads */
               :root {
                 /* Font and layout variables */
-                --font-family: Inter, system-ui, -apple-system, sans-serif;
-                --font-family-heading: Inter, system-ui, -apple-system, sans-serif;
-                --font-family-subheading: Inter, system-ui, -apple-system, sans-serif;
+                --font-family: var(--font-aktiv-grotesk), system-ui, -apple-system, sans-serif;
+                --font-family-heading: var(--font-aktiv-grotesk), system-ui, -apple-system, sans-serif;
+                --font-family-subheading: var(--font-aktiv-grotesk), system-ui, -apple-system, sans-serif;
                 --border-radius: 8px;
                 
                 /* Default color variables - prevent flash before theme loads */
