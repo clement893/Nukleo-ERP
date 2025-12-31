@@ -48,6 +48,8 @@ async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    skip: Optional[str] = Query(None, description="Number of records to skip (accepts string or int)"),
+    limit: Optional[str] = Query(None, description="Maximum number of records (accepts string or int)"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
@@ -57,10 +59,11 @@ async def list_people(
     # Log that we've reached the endpoint
     logger.info(f"[PeopleAPI] ✅ ENDPOINT REACHED - URL: {request.url}, Method: {request.method}")
     logger.info(f"[PeopleAPI] ✅ Query params: {dict(request.query_params)}")
+    logger.info(f"[PeopleAPI] ✅ Received skip: {repr(skip)} (type: {type(skip).__name__}), limit: {repr(limit)} (type: {type(limit).__name__})")
     
-    # Parse skip and limit directly from query params to avoid FastAPI validation
-    skip_str = request.query_params.get("skip", "0")
-    limit_str = request.query_params.get("limit", "100")
+    # Parse skip and limit - accept from function param or query params as fallback
+    skip_str = skip if skip is not None else request.query_params.get("skip", "0")
+    limit_str = limit if limit is not None else request.query_params.get("limit", "100")
     
     # Parse and validate integer parameters (convert from string, with defaults)
     try:
