@@ -2,6 +2,7 @@
 
 /**
  * Widget : Graphique des Revenus
+ * Version améliorée avec glassmorphism et animations
  */
 
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
@@ -16,7 +17,30 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from 'recharts';
+
+// Custom Tooltip avec glassmorphism
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-card px-4 py-3 animate-scale-in">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+          {label}
+        </p>
+        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+          {new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR',
+            maximumFractionDigits: 0,
+          }).format(payload[0].value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
@@ -28,7 +52,7 @@ export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin-custom rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -56,11 +80,11 @@ export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header stats */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+    <div className="h-full flex flex-col animate-fade-in-up">
+      {/* Header stats avec glassmorphism */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
             {new Intl.NumberFormat('fr-FR', {
               style: 'currency',
               currency: 'EUR',
@@ -71,14 +95,19 @@ export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
             Revenus totaux
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        
+        {/* Growth badge avec glassmorphism */}
+        <div 
+          className="glass-badge px-4 py-2 rounded-full flex items-center gap-2 hover-lift animate-fade-in-up"
+          style={{ animationDelay: '200ms' }}
+        >
           {isPositive ? (
             <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
           ) : (
             <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
           )}
           <span
-            className={`text-lg font-semibold ${
+            className={`text-lg font-bold ${
               isPositive
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-red-600 dark:text-red-400'
@@ -89,19 +118,46 @@ export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="flex-1 min-h-0">
+      {/* Chart avec gradient et animations */}
+      <div className="flex-1 min-h-0 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <AreaChart data={chartData}>
+            <defs>
+              {/* Gradient pour l'area */}
+              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="currentColor" 
+              className="text-gray-200 dark:text-gray-700"
+              opacity={0.5}
+            />
+            
             <XAxis
               dataKey="month"
-              tick={{ fill: '#6b7280', fontSize: 12 }}
-              stroke="#9ca3af"
+              tick={{ 
+                fill: 'currentColor',
+                fontSize: 12,
+                className: 'text-gray-600 dark:text-gray-400'
+              }}
+              stroke="currentColor"
+              className="text-gray-300 dark:text-gray-600"
+              axisLine={{ strokeWidth: 1 }}
             />
+            
             <YAxis
-              tick={{ fill: '#6b7280', fontSize: 12 }}
-              stroke="#9ca3af"
+              tick={{ 
+                fill: 'currentColor',
+                fontSize: 12,
+                className: 'text-gray-600 dark:text-gray-400'
+              }}
+              stroke="currentColor"
+              className="text-gray-300 dark:text-gray-600"
+              axisLine={{ strokeWidth: 1 }}
               tickFormatter={(value) =>
                 new Intl.NumberFormat('fr-FR', {
                   notation: 'compact',
@@ -109,31 +165,43 @@ export function RevenueChartWidget({ config, globalFilters }: WidgetProps) {
                 }).format(value)
               }
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '0.5rem',
-                padding: '0.5rem',
-              }}
-              formatter={(value: any) =>
-                new Intl.NumberFormat('fr-FR', {
-                  style: 'currency',
-                  currency: 'EUR',
-                  maximumFractionDigits: 0,
-                }).format(value)
-              }
-              labelStyle={{ color: '#374151', fontWeight: 600 }}
+            
+            <Tooltip content={<CustomTooltip />} />
+            
+            {/* Area avec gradient */}
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#2563eb"
+              strokeWidth={3}
+              fill="url(#colorRevenue)"
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
+            
+            {/* Line pour plus de contraste */}
             <Line
               type="monotone"
               dataKey="value"
               stroke="#2563eb"
-              strokeWidth={2}
-              dot={{ fill: '#2563eb', r: 4 }}
-              activeDot={{ r: 6 }}
+              strokeWidth={3}
+              dot={{ 
+                fill: '#2563eb', 
+                r: 5,
+                strokeWidth: 2,
+                stroke: '#fff',
+                className: 'hover-scale'
+              }}
+              activeDot={{ 
+                r: 7,
+                strokeWidth: 3,
+                stroke: '#fff',
+                fill: '#2563eb'
+              }}
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
