@@ -104,7 +104,6 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
         rowHeight={100}
         width={width}
         onLayoutChange={handleLayoutChange}
-        isResizable={isEditMode}
         compactType="vertical"
         preventCollision={false}
         margin={[16, 16]}
