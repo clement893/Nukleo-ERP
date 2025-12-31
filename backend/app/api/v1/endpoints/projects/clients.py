@@ -20,6 +20,8 @@ from app.schemas.client import ClientCreate, ClientUpdate, Client as ClientSchem
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/clients", tags=["clients"])
 
+# IMPORTANT: Define /{client_id}/projects BEFORE /{client_id} to ensure proper route matching
+
 
 @router.get("", response_model=List[ClientSchema])
 async def list_clients(
@@ -94,15 +96,17 @@ async def list_clients(
         )
 
 
-@router.get("/{client_id}/projects", response_model=List[dict])
+@router.get("/{client_id}/projects")
 async def get_client_projects(
     client_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> List[dict]:
+):
     """
     Get all projects for a client
     """
+    logger.info(f"[ClientsAPI] Get projects for client {client_id}")
+    
     # First verify that the client exists and belongs to the current user
     client_query = select(Client).where(
         Client.id == client_id,
@@ -112,6 +116,7 @@ async def get_client_projects(
     client = client_result.scalar_one_or_none()
 
     if not client:
+        logger.warning(f"[ClientsAPI] Client {client_id} not found for user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Client with ID {client_id} not found"
@@ -125,23 +130,35 @@ async def get_client_projects(
     query = apply_tenant_scope(query, Project)
     query = query.order_by(Project.created_at.desc())
     
-    result = await db.execute(query)
-    projects = result.scalars().all()
-
-    return [
-        {
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
-            "client_id": p.client_id,
-            "etape": p.etape,
-            "annee_realisation": p.annee_realisation,
-            "created_at": p.created_at.isoformat() if p.created_at else None,
-            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
-        }
-        for p in projects
-    ]
+    try:
+        result = await db.execute(query)
+        projects = result.scalars().all()
+        
+        logger.info(f"[ClientsAPI] Found {len(projects)} projects for client {client_id}")
+        
+        # Return projects as list of dicts with all fields
+        projects_list = []
+        for p in projects:
+            project_dict = {
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
+                "client_id": p.client_id,
+                "etape": getattr(p, 'etape', None),
+                "annee_realisation": getattr(p, 'annee_realisation', None),
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            }
+            projects_list.append(project_dict)
+        
+        return projects_list
+    except Exception as e:
+        logger.error(f"[ClientsAPI] Error getting projects for client {client_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving projects: {str(e)}"
+        )
 
 
 @router.get("/{client_id}", response_model=ClientSchema)
