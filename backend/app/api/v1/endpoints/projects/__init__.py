@@ -61,7 +61,7 @@ async def _check_project_columns_exist(db: AsyncSession, column_names: List[str]
     return exists
 
 
-@router.get("/", response_model=List[ProjectSchema])
+@router.get("/")
 @rate_limit_decorator("200/hour")
 @cached(expire=300, key_prefix="projects")
 async def get_projects(
@@ -287,7 +287,8 @@ async def get_projects(
                 # Skip this project and continue with others
                 continue
         
-        return project_list
+        # Return JSONResponse explicitly to satisfy slowapi's requirement for Response object
+        return JSONResponse(content=project_list, status_code=200)
     except HTTPException as he:
         # Re-raise HTTP exceptions (like validation errors)
         logger.warning(
@@ -310,9 +311,8 @@ async def get_projects(
             },
             exc_info=e
         )
-        # Return empty list instead of raising to prevent slowapi Response error
-        # This ensures we always return a valid response
-        return []
+        # Return JSONResponse explicitly to satisfy slowapi's requirement for Response object
+        return JSONResponse(content=[], status_code=200)
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
