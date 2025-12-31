@@ -235,7 +235,14 @@ async def bulk_create_employee_portal_permissions(
         if existing.scalar_one_or_none():
             continue  # Skip duplicates
         
-        permission = EmployeePortalPermission(**perm_data.model_dump())
+        # Convert to dict and ensure metadata is properly handled
+        perm_dict = perm_data.model_dump(exclude_none=True, by_alias=True)
+        # Ensure metadata is None or a dict, never a SQLAlchemy MetaData object
+        if 'metadata' in perm_dict:
+            if not isinstance(perm_dict['metadata'], dict):
+                perm_dict['metadata'] = None
+        
+        permission = EmployeePortalPermission(**perm_dict)
         db.add(permission)
         created_permissions.append(permission)
     

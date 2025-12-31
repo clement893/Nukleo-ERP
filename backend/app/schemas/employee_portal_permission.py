@@ -28,6 +28,23 @@ class EmployeePortalPermissionBase(BaseModel):
             raise ValueError(f"permission_type must be one of {allowed_types}")
         return v
 
+    @field_validator('permission_metadata', mode='before')
+    @classmethod
+    def validate_metadata(cls, v: Any) -> Optional[Dict[str, Any]]:
+        """Convert metadata to dict if it's not already"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return v
+        # If it's a SQLAlchemy MetaData object or other non-dict, return None
+        # We don't want to serialize SQLAlchemy internals
+        if hasattr(v, '__class__') and 'MetaData' in str(type(v)):
+            return None
+        # Try to convert to dict if possible
+        if hasattr(v, '__dict__'):
+            return v.__dict__
+        return None
+
     @field_validator('user_id', 'employee_id', mode='before')
     @classmethod
     def validate_at_least_one(cls, v: Optional[int], info) -> Optional[int]:

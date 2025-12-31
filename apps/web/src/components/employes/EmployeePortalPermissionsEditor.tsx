@@ -155,6 +155,7 @@ export default function EmployeePortalPermissionsEditor({
         employee_id: number;
         permission_type: 'page' | 'module' | 'client';
         resource_id: string;
+        metadata?: null;
         can_view: boolean;
         can_edit: boolean;
         can_delete: boolean;
@@ -166,6 +167,7 @@ export default function EmployeePortalPermissionsEditor({
           employee_id: employeeId,
           permission_type: 'module',
           resource_id: moduleId,
+          metadata: null,
           can_view: true,
           can_edit: false,
           can_delete: false,
@@ -178,6 +180,7 @@ export default function EmployeePortalPermissionsEditor({
           employee_id: employeeId,
           permission_type: 'page',
           resource_id: pagePath,
+          metadata: null,
           can_view: true,
           can_edit: false,
           can_delete: false,
@@ -190,6 +193,7 @@ export default function EmployeePortalPermissionsEditor({
           employee_id: employeeId,
           permission_type: 'client',
           resource_id: clientId.toString(),
+          metadata: null,
           can_view: true,
           can_edit: false,
           can_delete: false,
