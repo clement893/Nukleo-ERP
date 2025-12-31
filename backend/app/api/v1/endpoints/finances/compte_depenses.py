@@ -14,7 +14,7 @@ import json
 from io import BytesIO
 
 from app.core.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, is_admin_or_superadmin
 from app.models.user import User
 from app.models.employee import Employee
 from app.models.expense_account import ExpenseAccount, ExpenseAccountStatus
@@ -311,6 +311,29 @@ async def update_compte_depenses(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot update expense account that is not in DRAFT status"
+        )
+    
+    # Check permissions: user must be the owner of the expense account or an admin
+    # Load employee to check user_id
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == account.employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee associated with this expense account not found"
+        )
+    
+    # Check if user is admin/superadmin or the owner
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    is_owner = employee.user_id == current_user.id if employee.user_id else False
+    
+    if not is_admin and not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to update this expense account"
         )
     
     # Update fields

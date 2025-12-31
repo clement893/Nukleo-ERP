@@ -8,11 +8,11 @@ import { Card, Loading, Alert, Button } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
-import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
+import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit } from 'lucide-react';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
-import { useSubmitExpenseAccount } from '@/lib/query/expenseAccounts';
+import { useSubmitExpenseAccount, useUpdateExpenseAccount } from '@/lib/query/expenseAccounts';
 
 interface EmployeePortalExpensesProps {
   employee: Employee;
@@ -24,11 +24,13 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseAccount | null>(null);
   const [creating, setCreating] = useState(false);
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
   const submitMutation = useSubmitExpenseAccount();
+  const updateMutation = useUpdateExpenseAccount();
 
   useEffect(() => {
     loadExpenses();
@@ -99,6 +101,30 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleUpdate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate): Promise<void> => {
+    if (!selectedExpense) return;
+
+    try {
+      await updateMutation.mutateAsync({
+        id: selectedExpense.id,
+        data: data as ExpenseAccountUpdate,
+      });
+      setShowEditModal(false);
+      setSelectedExpense(null);
+      showToast({
+        message: 'Compte de dépenses modifié avec succès',
+        type: 'success',
+      });
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification du compte de dépenses',
+        type: 'error',
+      });
     }
   };
 
@@ -381,6 +407,17 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
             {selectedExpense.status === 'draft' && (
               <div className="flex gap-2 pt-4 border-t">
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-1.5" />
+                  Modifier
+                </Button>
+                <Button
                   variant="primary"
                   size="sm"
                   onClick={() => handleSubmit(selectedExpense.id)}
@@ -409,6 +446,31 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
           employees={employees}
           defaultEmployeeId={employee.id}
         />
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal && selectedExpense !== null}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedExpense(null);
+        }}
+        title="Modifier le compte de dépenses"
+        size="lg"
+      >
+        {selectedExpense && (
+          <ExpenseAccountForm
+            expenseAccount={selectedExpense}
+            onSubmit={handleUpdate}
+            onCancel={() => {
+              setShowEditModal(false);
+              setSelectedExpense(null);
+            }}
+            loading={updateMutation.isPending}
+            employees={employees}
+            defaultEmployeeId={employee.id}
+          />
+        )}
       </Modal>
     </div>
   );
