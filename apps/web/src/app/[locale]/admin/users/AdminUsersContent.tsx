@@ -16,6 +16,7 @@ import { Column } from '@/components/ui/DataTable';
 import UserRolesEditor from '@/components/admin/UserRolesEditor';
 import UserPermissionsEditor from '@/components/admin/UserPermissionsEditor';
 import RoleDefaultPermissionsEditor from '@/components/admin/RoleDefaultPermissionsEditor';
+import EmployeePortalPermissionsEditor from '@/components/admin/EmployeePortalPermissionsEditor';
 import { useUserRoles, useUserPermissions } from '@/hooks/useRBAC';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { useToast } from '@/components/ui';
@@ -46,6 +47,7 @@ export default function AdminUsersContent() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [rolesModalOpen, setRolesModalOpen] = useState(false);
   const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
+  const [portalPermissionsModalOpen, setPortalPermissionsModalOpen] = useState(false);
   const [employeeLinkModalOpen, setEmployeeLinkModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
@@ -303,6 +305,16 @@ export default function AdminUsersContent() {
             variant="outline"
             onClick={() => {
               setSelectedUser(row);
+              setPortalPermissionsModalOpen(true);
+            }}
+          >
+            Portail
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedUser(row);
               // Pre-select the currently linked employee if any
               setSelectedEmployeeId(row.employee ? String(row.employee.id) : '');
               setEmployeeLinkModalOpen(true);
@@ -408,6 +420,26 @@ export default function AdminUsersContent() {
       >
         {selectedUser && (
           <UserPermissionsEditor
+            userId={parseInt(selectedUser.id)}
+            onUpdate={() => {
+              fetchUsers();
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Portal Permissions Modal */}
+      <Modal
+        isOpen={portalPermissionsModalOpen}
+        onClose={() => {
+          setPortalPermissionsModalOpen(false);
+          setSelectedUser(null);
+        }}
+        title={`Permissions du portail employé - ${selectedUser?.email}`}
+        size="lg"
+      >
+        {selectedUser && (
+          <EmployeePortalPermissionsEditor
             userId={parseInt(selectedUser.id)}
             onUpdate={() => {
               fetchUsers();

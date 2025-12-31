@@ -14,6 +14,7 @@ import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority }
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
 import TaskTimer from './TaskTimer';
+import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
 
 interface TaskKanbanProps {
   projectId?: number;
@@ -132,6 +133,15 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     if (!formData.title.trim()) {
       setError('Le titre de la tâche est requis');
       return;
+    }
+    
+    // Validate estimated hours
+    if (formData.estimated_hours !== null && formData.estimated_hours !== undefined) {
+      const validation = validateEstimatedHours(formData.estimated_hours);
+      if (!validation.valid) {
+        setError(validation.error || 'Heures prévues invalides');
+        return;
+      }
     }
 
     try {

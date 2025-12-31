@@ -10,6 +10,7 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { Upload, X, UserCircle } from 'lucide-react';
 import { useToast } from '@/components/ui';
+import { validateCapacityHoursPerWeek } from '@/lib/utils/capacity-validation';
 
 interface EmployeeFormProps {
   employee?: Employee | null;
@@ -168,6 +169,18 @@ export default function EmployeeForm({
         type: 'error',
       });
       return;
+    }
+    
+    // Validate capacity hours per week
+    if (formData.capacity_hours_per_week !== null && formData.capacity_hours_per_week !== undefined) {
+      const validation = validateCapacityHoursPerWeek(formData.capacity_hours_per_week);
+      if (!validation.valid) {
+        showToast({
+          message: validation.error || 'Capacité hebdomadaire invalide',
+          type: 'error',
+        });
+        return;
+      }
     }
 
     await onSubmit(formData);

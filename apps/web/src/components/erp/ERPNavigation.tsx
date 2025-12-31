@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { EMPLOYEE_PORTAL_NAVIGATION } from '@/lib/constants/portal';
 import { hasPermission, type PortalUser } from '@/lib/portal/utils';
 import { useAuthStore } from '@/lib/store';
+import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
 import { clsx } from 'clsx';
 
 /**
@@ -39,17 +40,39 @@ interface ERPNavigationProps {
 export function ERPNavigation({ className }: ERPNavigationProps) {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { hasPageAccess, hasModuleAccess, loading: permissionsLoading } = useEmployeePortalPermissions();
 
   // Filter navigation items based on permissions
   const visibleItems = EMPLOYEE_PORTAL_NAVIGATION.filter((item) => {
-    if (!item.permission || !user) return true;
-    // Convert store User to PortalUser format
-    const portalUser: PortalUser = {
-      ...user,
-      roles: user.is_admin ? ['admin'] : ['employee'],
-      permissions: [], // Permissions would come from API in production
-    };
-    return hasPermission(portalUser, item.permission).hasPermission;
+    // If admin, show all items
+    if (user?.is_admin) return true;
+    
+    // If permissions are loading, show nothing (or show a loading state)
+    if (permissionsLoading) return false;
+    
+    // Check portal permissions first (page-level)
+    if (item.path && !hasPageAccess(item.path)) {
+      return false;
+    }
+    
+    // Check module-level permissions
+    if (item.module && !hasModuleAccess(item.module)) {
+      return false;
+    }
+    
+    // Also check RBAC permissions (for backward compatibility)
+    if (item.permission && user) {
+      const portalUser: PortalUser = {
+        ...user,
+        roles: user.is_admin ? ['admin'] : ['employee'],
+        permissions: [],
+      };
+      if (!hasPermission(portalUser, item.permission).hasPermission) {
+        return false;
+      }
+    }
+    
+    return true;
   });
 
   // Group items by module
@@ -62,8 +85,35 @@ export function ERPNavigation({ className }: ERPNavigationProps) {
     return acc;
   }, {} as Record<string, typeof visibleItems>);
 
+  // Show loading state
+  if (permissionsLoading) {
+    return (
+      <nav className={clsx('flex flex-col space-y-6', className)}>
+        <div className="px-4 py-2 text-sm text-muted-foreground">
+          Chargement des permissions...
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className={clsx('flex flex-col space-y-6', className)}>
+      {/* Link to employee portal */}
+      <div className="px-4 py-2">
+        <Link
+          href="/erp/dashboard"
+          className={clsx(
+            'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
+            pathname === '/erp/dashboard' || pathname?.startsWith('/erp/')
+              ? 'border-2 border-primary text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border-2 border-transparent'
+          )}
+        >
+          <span className="text-lg" aria-hidden="true">🏠</span>
+          <span>Mon Portail</span>
+        </Link>
+      </div>
+
       {Object.entries(itemsByModule).map(([module, items]) => (
         <div key={module}>
           {module !== 'other' && (

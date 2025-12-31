@@ -103,6 +103,7 @@ export function isWorkingDay(
 
 /**
  * Count working days in a date range
+ * Optimized with caching for holidays and absences
  */
 export function countWorkingDays(
   startDate: Date,
@@ -110,13 +111,72 @@ export function countWorkingDays(
   holidays: PublicHoliday[],
   absences: Absence[]
 ): number {
+  // Early return for invalid ranges
+  if (startDate > endDate) return 0;
+  
+  // Create sets for faster lookup
+  const holidayDates = new Set<string>();
+  const absenceRanges: Array<{ start: string; end: string }> = [];
+  
+  // Pre-process holidays into a Set for O(1) lookup
+  const year = startDate.getFullYear();
+  holidays.forEach(holiday => {
+    if (!holiday.is_active || !holiday.date) return;
+    if (holiday.year === null || holiday.year === year) {
+      const holidayDate = new Date(holiday.date + 'T00:00:00Z').toISOString().split('T')[0];
+      if (holidayDate) holidayDates.add(holidayDate);
+    }
+  });
+  
+  // Pre-process absences into ranges
+  absences.forEach(absence => {
+    if (absence.status !== 'approved' || !absence.start_date || !absence.end_date) return;
+    const start = new Date(absence.start_date + 'T00:00:00Z').toISOString().split('T')[0];
+    const end = new Date(absence.end_date + 'T23:59:59Z').toISOString().split('T')[0];
+    if (start && end && start <= end) {
+      absenceRanges.push({ start, end });
+    }
+  });
+  
   let count = 0;
   const current = new Date(startDate);
+  current.setHours(0, 0, 0, 0); // Normalize to midnight
   
-  while (current <= endDate) {
-    if (isWorkingDay(current, holidays, absences)) {
-      count++;
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999); // Include the end date
+  
+  // Optimize: skip weekends in batches when possible
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    
+    // Skip weekends
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      current.setDate(current.getDate() + 1);
+      continue;
     }
+    
+    // Check if it's a working day
+    const dateStr = current.toISOString().split('T')[0];
+    if (!dateStr) {
+      current.setDate(current.getDate() + 1);
+      continue;
+    }
+    
+    // Check holiday (O(1) lookup)
+    if (holidayDates.has(dateStr)) {
+      current.setDate(current.getDate() + 1);
+      continue;
+    }
+    
+    // Check absence (O(n) but n is usually small)
+    const isAbsent = absenceRanges.some(range => dateStr >= range.start && dateStr <= range.end);
+    if (isAbsent) {
+      current.setDate(current.getDate() + 1);
+      continue;
+    }
+    
+    // It's a working day
+    count++;
     current.setDate(current.getDate() + 1);
   }
   
@@ -247,15 +307,6 @@ export function calculateWeeklyCapacity(
   }
   
   // Get start and end dates from weeks
-  if (weeks.length === 0) {
-    return {
-      totalWeeks: 0,
-      totalWorkingDays: 0,
-      totalCapacityHours: 0,
-      capacityHoursPerWeek: employee.capacity_hours_per_week || 35,
-    };
-  }
-  
   const firstWeek = weeks[0];
   const lastWeek = weeks[weeks.length - 1];
   if (!firstWeek || !lastWeek) {
