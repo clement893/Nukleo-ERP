@@ -1,4 +1,4 @@
-"""drop clients table and remove client_id from projects
+"""drop clients table (keep client_id in projects as it references companies.id)
 
 Revision ID: 050_drop_clients_table
 Revises: 049_add_team_id_to_employees
@@ -17,20 +17,35 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Drop clients table and remove client_id from projects"""
+    """
+    Drop clients table only.
+    
+    Note: client_id in projects table is KEPT because it now references companies.id
+    (not clients.id). The migration 046_add_client_resp_proj already set up client_id
+    to reference companies.id, so we only need to drop the unused clients table.
+    """
     bind = op.get_bind()
     inspector = inspect(bind)
     
-    # First, remove client_id from projects table if it exists
+    # Check if there's an old foreign key constraint pointing to clients table
+    # and update it to point to companies if needed
     if 'projects' in inspector.get_table_names():
-        columns = [col['name'] for col in inspector.get_columns('projects')]
+        # Get all foreign key constraints on projects table
+        fk_constraints = inspector.get_foreign_keys('projects')
         
-        # Remove client_id column if it exists
-        if 'client_id' in columns:
-            # Drop foreign key constraint first
-            op.drop_index('idx_projects_client_id', table_name='projects', if_exists=True)
-            op.drop_constraint('fk_projects_client_id', 'projects', type_='foreignkey', if_exists=True)
-            op.drop_column('projects', 'client_id')
+        for fk in fk_constraints:
+            # If there's a constraint named fk_projects_client_id pointing to clients table
+            if fk['name'] == 'fk_projects_client_id' and fk['referred_table'] == 'clients':
+                # Drop the old constraint
+                op.drop_constraint('fk_projects_client_id', 'projects', type_='foreignkey', if_exists=True)
+                # Recreate it pointing to companies table
+                op.create_foreign_key(
+                    'fk_projects_client_id',
+                    'projects', 'companies',
+                    ['client_id'], ['id'],
+                    ondelete='SET NULL'
+                )
+                break
     
     # Drop clients table if it exists
     if 'clients' in inspector.get_table_names():
@@ -54,7 +69,12 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Recreate clients table (reverse of upgrade)"""
+    """
+    Recreate clients table (reverse of upgrade).
+    
+    Note: client_id in projects is kept and continues to reference companies.id.
+    The clients table is recreated but projects.client_id does not reference it.
+    """
     # Recreate enum type
     op.execute("""
         DO $$ BEGIN
@@ -91,19 +111,5 @@ def downgrade() -> None:
         CREATE INDEX IF NOT EXISTS idx_clients_created_at ON clients (created_at);
     """)
     
-    # Re-add client_id to projects if projects table exists
-    bind = op.get_bind()
-    inspector = inspect(bind)
-    
-    if 'projects' in inspector.get_table_names():
-        columns = [col['name'] for col in inspector.get_columns('projects')]
-        
-        if 'client_id' not in columns:
-            op.add_column('projects', sa.Column('client_id', sa.Integer(), nullable=True))
-            op.create_foreign_key(
-                'fk_projects_client_id',
-                'projects', 'clients',
-                ['client_id'], ['id'],
-                ondelete='SET NULL'
-            )
-            op.create_index('idx_projects_client_id', 'projects', ['client_id'])
+    # Note: client_id in projects is NOT changed - it continues to reference companies.id
+    # This is intentional as the migration 046_add_client_resp_proj set it up that way
