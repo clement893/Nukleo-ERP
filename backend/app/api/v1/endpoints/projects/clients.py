@@ -3,9 +3,10 @@ Project Clients Endpoints
 API endpoints for managing project clients
 """
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from fastapi.responses import StreamingResponse
+from pydantic import BeforeValidator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, delete
 from sqlalchemy.orm import selectinload
@@ -31,6 +32,23 @@ from app.services.import_service import ImportService
 from app.services.export_service import ExportService
 from app.services.s3_service import S3Service
 from app.core.logging import logger
+
+
+def validate_int(value: any) -> int:
+    """Convert value to int, handling strings and None"""
+    if value is None:
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return 0
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return 0
 
 router = APIRouter(prefix="/projects/clients", tags=["project-clients"])
 
@@ -228,8 +246,8 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    skip: Annotated[int, BeforeValidator(validate_int)] = Query(0, ge=0, description="Number of records to skip"),
+    limit: Annotated[int, BeforeValidator(validate_int)] = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
