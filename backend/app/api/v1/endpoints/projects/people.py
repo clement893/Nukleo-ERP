@@ -36,6 +36,26 @@ async def list_people(
     """
     Get list of people
     """
+    # Log received parameters with their types
+    logger.info(f"[PeopleAPI] list_people() called - skip: {skip} (type: {type(skip).__name__}), limit: {limit} (type: {type(limit).__name__}), status: {status}, search: {search}")
+    logger.info(f"[PeopleAPI] Query params from request: {request.query_params}")
+    logger.info(f"[PeopleAPI] skip value: {repr(skip)}, limit value: {repr(limit)}")
+    
+    # Validate parameter types
+    if not isinstance(skip, int):
+        logger.error(f"[PeopleAPI] skip is not an int! Value: {repr(skip)}, Type: {type(skip).__name__}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"skip must be an integer, got {type(skip).__name__}: {repr(skip)}"
+        )
+    
+    if not isinstance(limit, int):
+        logger.error(f"[PeopleAPI] limit is not an int! Value: {repr(limit)}, Type: {type(limit).__name__}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"limit must be an integer, got {type(limit).__name__}: {repr(limit)}"
+        )
+    
     query = select(People)
 
     # Parse status
@@ -60,10 +80,21 @@ async def list_people(
         )
 
     query = query.order_by(People.created_at.desc()).offset(skip).limit(limit)
-    result = await db.execute(query)
-    people_list = result.scalars().all()
-
-    return [PeopleSchema.model_validate(person) for person in people_list]
+    
+    logger.info(f"[PeopleAPI] Executing query with offset={skip}, limit={limit}")
+    
+    try:
+        result = await db.execute(query)
+        people_list = result.scalars().all()
+        logger.info(f"[PeopleAPI] Query successful, returned {len(people_list)} people")
+        
+        return [PeopleSchema.model_validate(person) for person in people_list]
+    except Exception as e:
+        logger.error(f"[PeopleAPI] Error executing query: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
 
 
 @router.get("/{people_id}", response_model=PeopleSchema)
