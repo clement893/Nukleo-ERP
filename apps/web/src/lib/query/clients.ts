@@ -10,7 +10,37 @@ import { handleApiError } from '@/lib/errors/api';
 const QUERY_KEY = 'clients';
 
 /**
- * Hook to fetch clients with infinite scroll
+ * Hook to fetch clients with pagination
+ */
+export function useClients(
+  skip = 0,
+  limit = 100,
+  filters?: {
+    status?: ClientStatus;
+    responsible_id?: number;
+    search?: string;
+  }
+) {
+  return useQuery({
+    queryKey: [QUERY_KEY, skip, limit, filters],
+    queryFn: async () => {
+      // Ensure skip and limit are valid integers
+      const skipInt = Math.max(0, Math.floor(Number(skip)) || 0);
+      const limitInt = Math.max(1, Math.min(Math.floor(Number(limit)) || 100, 1000));
+      
+      return await clientsAPI.list(
+        skipInt,
+        limitInt,
+        filters?.status,
+        filters?.responsible_id,
+        filters?.search
+      );
+    },
+  });
+}
+
+/**
+ * Hook to fetch clients with infinite scroll (deprecated - use useClients instead)
  */
 export function useInfiniteClients(pageSize = 20, filters?: {
   status?: ClientStatus;
