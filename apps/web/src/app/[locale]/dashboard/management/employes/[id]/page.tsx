@@ -9,8 +9,13 @@ import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
 import EmployeeDetail from '@/components/employes/EmployeeDetail';
 import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Shield } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { useAuthStore } from '@/lib/store';
+import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import Card from '@/components/ui/Card';
+import Tabs, { TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
+import EmployeePortalPermissionsEditor from '@/components/employes/EmployeePortalPermissionsEditor';
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -200,7 +205,7 @@ export default function EmployeeDetailPage() {
       <div className="mt-6">
         {isAdmin ? (
           <Card>
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'details' | 'permissions')}>
+            <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as 'details' | 'permissions')}>
               <TabList className="border-b border-border px-4 sm:px-6 lg:px-8">
                 <Tab value="details">
                   Détails

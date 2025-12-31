@@ -39,7 +39,9 @@ export interface TabsProps {
   children?: ReactNode;
   tabs?: Tab[];
   defaultTab?: string;
+  value?: string;
   onChange?: (tabId: string) => void;
+  onValueChange?: (tabId: string) => void;
   className?: string;
   variant?: 'default' | 'pills' | 'underline';
 }
@@ -73,15 +75,22 @@ export default function Tabs({
   children,
   tabs,
   defaultTab,
+  value,
   onChange,
+  onValueChange,
   className,
   variant = 'default',
 }: TabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab ?? tabs?.[0]?.id ?? '');
+  const isControlled = value !== undefined;
+  const [internalActiveTab, setInternalActiveTab] = useState(defaultTab ?? tabs?.[0]?.id ?? '');
+  const activeTab = isControlled ? value : internalActiveTab;
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
+    if (!isControlled) {
+      setInternalActiveTab(tabId);
+    }
     onChange?.(tabId);
+    onValueChange?.(tabId);
   };
 
   // Simple API: render with tabs prop

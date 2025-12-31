@@ -136,7 +136,7 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
     }
 
     try {
-      const result = await submitMutation.mutateAsync(expenseId);
+      await submitMutation.mutateAsync(expenseId);
       // Recharger les données après succès pour avoir le statut à jour
       await loadExpenses();
       showToast({

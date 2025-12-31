@@ -32,7 +32,7 @@ const EMPLOYEE_PORTAL_PAGES = [
   { path: 'vacances', label: 'Mes vacances' },
   { path: 'profil', label: 'Mon profil' },
 ];
-import { Search, Plus, X, Trash2, Save } from 'lucide-react';
+import { Search, Plus, X, Save } from 'lucide-react';
 
 interface EmployeePortalPermissionsEditorProps {
   employeeId: number;
@@ -59,8 +59,8 @@ export default function EmployeePortalPermissionsEditor({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<EmployeePortalPermissionSummary | null>(null);
-  const [permissions, setPermissions] = useState<EmployeePortalPermission[]>([]);
+  const [_summary, setSummary] = useState<EmployeePortalPermissionSummary | null>(null);
+  const [_permissions, setPermissions] = useState<EmployeePortalPermission[]>([]);
   const [clients, setClients] = useState<Contact[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [showClientModal, setShowClientModal] = useState(false);
@@ -264,7 +264,7 @@ export default function EmployeePortalPermissionsEditor({
     setClients(prev => prev.filter(c => c.id !== clientId));
   };
 
-  const searchClients = async (searchTerm: string) => {
+  const _searchClients = async (searchTerm: string) => {
     if (searchTerm.length < 2) return [];
     try {
       const results = await contactsAPI.list(0, 20);
@@ -279,7 +279,7 @@ export default function EmployeePortalPermissionsEditor({
     }
   };
 
-  const filteredClients = useMemo(() => {
+  const _filteredClients = useMemo(() => {
     if (!clientSearchTerm) return [];
     // On va utiliser une recherche côté client pour l'instant
     return clients.filter(client => {
@@ -420,7 +420,7 @@ export default function EmployeePortalPermissionsEditor({
             placeholder="Rechercher par nom ou entreprise..."
             value={clientSearchTerm}
             onChange={(e) => setClientSearchTerm(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
+            leftIcon={<Search className="w-4 h-4" />}
           />
 
           <div className="max-h-96 overflow-y-auto space-y-2">

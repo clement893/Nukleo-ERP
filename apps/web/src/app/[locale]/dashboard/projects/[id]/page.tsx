@@ -29,7 +29,6 @@ import {
   GanttChart,
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
-import TaskTimeline from '@/components/projects/TaskTimeline';
 import ProjectGantt from '@/components/projects/ProjectGantt';
 import { teamsAPI } from '@/lib/api/teams';
 import { extractApiData } from '@/lib/api/utils';

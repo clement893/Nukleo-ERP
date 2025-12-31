@@ -158,7 +158,7 @@ export default function ProjectGantt({
     return { start: weekStart, end: weekEnd };
   };
 
-  const dateRange = calculateDateRange();
+  const _dateRange = calculateDateRange();
   const weekStart = startOfWeek(currentWeek);
   const weekEnd = endOfWeek(currentWeek);
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
@@ -263,7 +263,7 @@ export default function ProjectGantt({
     return { left, width };
   };
 
-  const getTaskPosition = (task: ProjectTask) => {
+  const _getTaskPosition = (task: ProjectTask) => {
     if (!task.due_date && !task.started_at) return null;
     
     const taskDate = task.due_date ? new Date(task.due_date) : (task.started_at ? new Date(task.started_at) : null);
