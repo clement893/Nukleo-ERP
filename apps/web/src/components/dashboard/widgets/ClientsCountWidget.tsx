@@ -23,14 +23,10 @@ export function ClientsCountWidget({ config, globalFilters }: WidgetProps) {
     );
   }
 
+  // Handle error state - show zero count instead of error message
+  // The hook now returns fallback empty data instead of throwing errors
   if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-red-600 dark:text-red-400">
-          Erreur de chargement
-        </p>
-      </div>
-    );
+    console.warn('ClientsCountWidget error:', error);
   }
 
   const count = data?.count || 0;

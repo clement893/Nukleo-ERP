@@ -23,14 +23,10 @@ export function KPICustomWidget({ config, globalFilters }: WidgetProps) {
     );
   }
 
+  // Handle error state - show zero values instead of error message
+  // The hook now returns fallback empty data instead of throwing errors
   if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-red-600 dark:text-red-400">
-          Erreur de chargement
-        </p>
-      </div>
-    );
+    console.warn('KPICustomWidget error:', error);
   }
 
   const value = data?.value || 0;

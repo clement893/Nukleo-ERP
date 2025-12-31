@@ -31,12 +31,18 @@ export function useWidgetData<T = any>({
       try {
         // TODO: Implémenter les appels API spécifiques par type de widget
         // Pour l'instant, on retourne des données factices
-        return await fetchWidgetData(widgetType, config, globalFilters);
+        const result = await fetchWidgetData(widgetType, config, globalFilters);
+        // Ensure we always return valid data
+        if (!result) {
+          throw new Error(`No data returned for widget ${widgetType}`);
+        }
+        return result;
       } catch (error) {
-        // Log error but don't throw - let React Query handle it
+        // Log error for debugging
         console.error(`Error fetching widget data for ${widgetType}:`, error);
-        // Re-throw so React Query can handle it properly
-        throw error;
+        // Return fallback data instead of throwing
+        // This ensures widgets always have data to display
+        return getFallbackData(widgetType) as T;
       }
     },
     enabled,
@@ -46,9 +52,67 @@ export function useWidgetData<T = any>({
     refetchInterval: config.refresh_interval 
       ? config.refresh_interval * 1000 
       : false,
-    // Don't throw errors - let components handle them
+    // Don't throw errors - return fallback data instead
     throwOnError: false,
+    retry: 1, // Retry once on failure
+    retryDelay: 1000,
   });
+}
+
+/**
+ * Get fallback data for a widget type when API calls fail
+ */
+function getFallbackData(widgetType: WidgetType): any {
+  switch (widgetType) {
+    case 'opportunities-list':
+      return {
+        opportunities: [],
+        total: 0,
+        page: 1,
+        page_size: 10,
+      };
+    
+    case 'clients-count':
+      return {
+        count: 0,
+        growth: 0,
+        previous_count: 0,
+        new_this_month: 0,
+        active_count: 0,
+      };
+    
+    case 'projects-active':
+      return {
+        projects: [],
+        total: 0,
+        page: 1,
+        page_size: 10,
+      };
+    
+    case 'revenue-chart':
+      return {
+        data: [],
+        total: 0,
+        growth: 0,
+        period: 'month',
+      };
+    
+    case 'kpi-custom':
+      return {
+        value: 0,
+        unit: '%',
+        label: 'KPI',
+        growth: 0,
+        target: 0,
+        progress: 0,
+      };
+    
+    default:
+      return {
+        message: 'Widget data not available',
+        widgetType,
+      };
+  }
 }
 
 /**
@@ -61,7 +125,7 @@ async function fetchWidgetData(
   globalFilters?: GlobalFilters
 ): Promise<any> {
   
-  // Appeler les vrais endpoints API
+  // Appeler les vrais endpoints API avec gestion d'erreur robuste
   switch (widgetType) {
     case 'opportunities-list':
       try {
@@ -70,23 +134,19 @@ async function fetchWidgetData(
           offset: 0,
           company_id: globalFilters?.company_id,
         });
-        return data;
+        // Validate data structure
+        if (data && typeof data === 'object' && 'opportunities' in data) {
+          return data;
+        }
+        throw new Error('Invalid data structure from API');
       } catch (error) {
-        console.error('Error fetching opportunities:', error);
-        // Fallback to sample data
+        console.warn('Error fetching opportunities, using empty data:', error);
+        // Return empty data instead of sample data
         return {
-          opportunities: [
-            {
-              id: 1,
-              name: 'Site Web CDÉNÉ',
-              company: 'CDÉNÉ',
-              amount: 45000,
-              stage: 'Proposition',
-              probability: 75,
-              created_at: '2025-01-15',
-            },
-          ],
-          total: 1,
+          opportunities: [],
+          total: 0,
+          page: 1,
+          page_size: 10,
         };
       }
     
@@ -96,13 +156,19 @@ async function fetchWidgetData(
         const data = await fetchClientsStats({
           period: period as 'day' | 'week' | 'month' | 'quarter' | 'year',
         });
-        return data;
+        // Validate data structure
+        if (data && typeof data === 'object' && 'count' in data) {
+          return data;
+        }
+        throw new Error('Invalid data structure from API');
       } catch (error) {
-        console.error('Error fetching clients stats:', error);
+        console.warn('Error fetching clients stats, using empty data:', error);
         return {
-          count: 155,
-          growth: 15.2,
-          previous_count: 135,
+          count: 0,
+          growth: 0,
+          previous_count: 0,
+          new_this_month: 0,
+          active_count: 0,
         };
       }
     
@@ -114,56 +180,52 @@ async function fetchWidgetData(
           status: 'ACTIVE',
           client_id: globalFilters?.company_id,
         });
-        return data;
+        // Validate data structure
+        if (data && typeof data === 'object' && 'projects' in data) {
+          return data;
+        }
+        throw new Error('Invalid data structure from API');
       } catch (error) {
-        console.error('Error fetching projects:', error);
+        console.warn('Error fetching projects, using empty data:', error);
         return {
-          projects: [
-            {
-              id: 1,
-              name: 'Site Web CDÉNÉ',
-              client: 'CDÉNÉ',
-              progress: 80,
-              status: 'ACTIVE',
-              due_date: '2025-02-28',
-            },
-          ],
-          total: 1,
+          projects: [],
+          total: 0,
+          page: 1,
+          page_size: 10,
         };
       }
     
     case 'revenue-chart':
+      const period = config?.period && config.period !== 'custom' ? config.period : 'month';
       try {
-        const period = config?.period && config.period !== 'custom' ? config.period : 'month';
         const data = await fetchDashboardRevenue({
           period: period as 'day' | 'week' | 'month' | 'quarter' | 'year',
           months: 6,
         });
-        return data;
+        // Validate data structure
+        if (data && typeof data === 'object' && 'data' in data) {
+          return data;
+        }
+        throw new Error('Invalid data structure from API');
       } catch (error) {
-        console.error('Error fetching revenue:', error);
+        console.warn('Error fetching revenue, using empty data:', error);
         return {
-          data: [
-            { month: 'Jan', value: 65000 },
-            { month: 'Fév', value: 59000 },
-            { month: 'Mar', value: 80000 },
-            { month: 'Avr', value: 81000 },
-            { month: 'Mai', value: 56000 },
-            { month: 'Jun', value: 55000 },
-          ],
-          total: 396000,
-          growth: 15.3,
+          data: [],
+          total: 0,
+          growth: 0,
+          period: period || 'month',
         };
       }
     
     case 'kpi-custom':
+      // KPI widget doesn't need API call, return default data
       return {
-        value: 42.5,
+        value: 0,
         unit: '%',
-        label: 'Taux de conversion',
-        growth: 5.2,
-        target: 45,
-        progress: 94,
+        label: 'KPI',
+        growth: 0,
+        target: config?.target || 0,
+        progress: 0,
       };
     
     default:
