@@ -60,16 +60,23 @@ function EquipesContent() {
   };
 
   const ensureTeamsExist = async (existingTeams: TeamType[]): Promise<TeamType[]> => {
+    console.log('[EquipesPage] ensureTeamsExist called with', existingTeams.length, 'existing teams');
+    console.log('[EquipesPage] Existing teams:', existingTeams.map(t => ({ name: t.name, slug: t.slug })));
+    
     const teamsToCreate: typeof REQUIRED_TEAMS = [];
     
     // Vérifier quelles équipes manquent
     for (const requiredTeam of REQUIRED_TEAMS) {
       const exists = existingTeams.some(
-        (team: TeamType) => 
-          team.name === requiredTeam.name || 
-          team.slug === requiredTeam.slug ||
-          team.slug === generateSlug(requiredTeam.name)
+        (team: TeamType) => {
+          const nameMatch = team.name === requiredTeam.name;
+          const slugMatch = team.slug === requiredTeam.slug;
+          const generatedSlugMatch = team.slug === generateSlug(requiredTeam.name);
+          return nameMatch || slugMatch || generatedSlugMatch;
+        }
       );
+      
+      console.log(`[EquipesPage] Checking team "${requiredTeam.name}" (slug: ${requiredTeam.slug}): exists=${exists}`);
       
       if (!exists) {
         teamsToCreate.push(requiredTeam);
@@ -78,46 +85,105 @@ function EquipesContent() {
     
     // Créer les équipes manquantes
     if (teamsToCreate.length > 0) {
-      console.log(`[EquipesPage] Creating ${teamsToCreate.length} missing teams...`);
+      console.log(`[EquipesPage] Creating ${teamsToCreate.length} missing teams:`, teamsToCreate.map(t => t.name));
       for (const teamToCreate of teamsToCreate) {
         try {
+          // Vérifier une dernière fois si l'équipe existe déjà (pour éviter les doublons)
+          const quickCheck = existingTeams.some(
+            (team: TeamType) => 
+              team.name === teamToCreate.name || 
+              team.slug === teamToCreate.slug ||
+              team.slug === generateSlug(teamToCreate.name)
+          );
+          
+          if (quickCheck) {
+            console.log(`[EquipesPage] Team "${teamToCreate.name}" already exists, skipping creation`);
+            continue;
+          }
+          
           const response = await teamsAPI.create({
             name: teamToCreate.name,
             slug: teamToCreate.slug,
             description: `Équipe ${teamToCreate.name}`,
           });
           if (response.data) {
-            console.log(`[EquipesPage] Successfully created team: ${teamToCreate.name}`);
+            console.log(`[EquipesPage] Successfully created team:`, response.data);
+          } else {
+            console.warn(`[EquipesPage] Team creation response missing data:`, response);
           }
-        } catch (err) {
-          console.error(`[EquipesPage] Erreur lors de la création de l'équipe ${teamToCreate.name}:`, err);
+        } catch (err: any) {
+          // Si l'erreur est que l'équipe existe déjà, c'est OK
+          if (err?.response?.status === 400 && err?.response?.data?.detail?.includes('already exists')) {
+            console.log(`[EquipesPage] Team "${teamToCreate.name}" already exists (caught in error)`);
+          } else {
+            console.error(`[EquipesPage] Erreur lors de la création de l'équipe ${teamToCreate.name}:`, err);
+          }
           // Continuer même en cas d'erreur
         }
       }
       
+      // Attendre un peu pour que la base de données se synchronise
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Recharger les équipes depuis l'API après création
       console.log('[EquipesPage] Reloading teams after creation...');
       const reloadResponse = await teamsAPI.list();
+      console.log('[EquipesPage] Reload response:', reloadResponse);
       const reloadedTeams = reloadResponse.data?.teams || [];
       console.log(`[EquipesPage] Reloaded ${reloadedTeams.length} teams from API`);
+      console.log('[EquipesPage] Reloaded teams:', reloadedTeams.map(t => ({ name: t.name, slug: t.slug, owner_id: t.owner_id })));
       existingTeams = reloadedTeams;
+      
+      // Si toujours aucune équipe trouvée, essayer une fois de plus après un court délai
+      if (reloadedTeams.length === 0) {
+        console.warn('[EquipesPage] No teams found after first reload, retrying...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const retryResponse = await teamsAPI.list();
+        const retryTeams = retryResponse.data?.teams || [];
+        console.log(`[EquipesPage] Retry reloaded ${retryTeams.length} teams from API`);
+        if (retryTeams.length > 0) {
+          existingTeams = retryTeams;
+        }
+      }
     }
     
     // Filtrer pour ne garder que les 3 équipes requises dans l'ordre spécifié
     const orderedTeams: TeamType[] = [];
     for (const requiredTeam of REQUIRED_TEAMS) {
       const foundTeam = existingTeams.find(
-        (team: TeamType) => 
-          team.name === requiredTeam.name || 
-          team.slug === requiredTeam.slug ||
-          team.slug === generateSlug(requiredTeam.name)
+        (team: TeamType) => {
+          const nameMatch = team.name === requiredTeam.name;
+          const slugMatch = team.slug === requiredTeam.slug;
+          const generatedSlugMatch = team.slug === generateSlug(requiredTeam.name);
+          const matches = nameMatch || slugMatch || generatedSlugMatch;
+          if (matches) {
+            console.log(`[EquipesPage] Found team "${requiredTeam.name}":`, {
+              teamName: team.name,
+              teamSlug: team.slug,
+              requiredName: requiredTeam.name,
+              requiredSlug: requiredTeam.slug,
+              nameMatch,
+              slugMatch,
+              generatedSlugMatch
+            });
+          }
+          return matches;
+        }
       );
       if (foundTeam) {
         orderedTeams.push(foundTeam);
+      } else {
+        console.warn(`[EquipesPage] Team "${requiredTeam.name}" not found in existing teams`);
+        console.log('[EquipesPage] Available teams:', existingTeams.map(t => ({ name: t.name, slug: t.slug })));
       }
     }
     
     console.log(`[EquipesPage] Found ${orderedTeams.length} required teams after filtering`);
+    if (orderedTeams.length === 0) {
+      console.error('[EquipesPage] No teams found after ensureTeamsExist!');
+      console.error('[EquipesPage] Existing teams:', existingTeams);
+      console.error('[EquipesPage] Required teams:', REQUIRED_TEAMS);
+    }
     return orderedTeams;
   };
 
