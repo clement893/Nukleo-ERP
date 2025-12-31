@@ -148,248 +148,177 @@ body {
 }
 
 /* ============================================
-   GLASSMORPHISM DESIGN SYSTEM
+/* ============================================
+   GLASSMORPHISM DESIGN SYSTEM - THEME INTEGRATED
+   ============================================
+   
+   This glassmorphism system uses CSS variables from the theme system
+   to ensure compatibility with all active themes.
+   
+   CSS Variables used:
+   - --color-background: Main background color
+   - --color-foreground: Main text color
+   - --color-primary-500: Primary brand color
+   - --color-border: Border color
+   - --color-muted: Muted background color
+   
+   All colors are dynamically set by GlobalThemeProvider based on active theme.
    ============================================ */
 
 /* Base Glassmorphism Effect */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.dark .glass {
-  background: rgba(17, 24, 39, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 18%, transparent);
 }
 
 /* Glass Card - For dashboard widgets and content cards */
 .glass-card {
-  background: rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--color-background) 75%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
   box-shadow: 
-    0 8px 32px 0 rgba(31, 38, 135, 0.07),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    0 8px 32px 0 color-mix(in srgb, var(--color-foreground) 7%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .glass-card {
-  background: rgba(17, 24, 39, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-}
-
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 30%, transparent);
   box-shadow: 
-    0 12px 40px 0 rgba(31, 38, 135, 0.12),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+    0 12px 40px 0 color-mix(in srgb, var(--color-foreground) 12%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 60%, transparent);
   transform: translateY(-2px);
-}
-
-.dark .glass-card:hover {
-  background: rgba(17, 24, 39, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 
-    0 12px 40px 0 rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
 /* Glass Sidebar - For navigation sidebar */
 .glass-sidebar {
-  background: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
   box-shadow: 
-    4px 0 24px 0 rgba(31, 38, 135, 0.05),
-    inset -1px 0 0 0 rgba(255, 255, 255, 0.5);
-}
-
-.dark .glass-sidebar {
-  background: rgba(17, 24, 39, 0.8);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    4px 0 24px 0 rgba(0, 0, 0, 0.2),
-    inset -1px 0 0 0 rgba(255, 255, 255, 0.05);
+    4px 0 24px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    inset -1px 0 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
 }
 
 /* Glass Modal - For modals and overlays */
 .glass-modal {
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--color-background) 90%, transparent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 25%, transparent);
   box-shadow: 
-    0 16px 48px 0 rgba(31, 38, 135, 0.15),
-    inset 0 2px 0 0 rgba(255, 255, 255, 0.6);
-}
-
-.dark .glass-modal {
-  background: rgba(17, 24, 39, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 
-    0 16px 48px 0 rgba(0, 0, 0, 0.5),
-    inset 0 2px 0 0 rgba(255, 255, 255, 0.1);
+    0 16px 48px 0 color-mix(in srgb, var(--color-foreground) 15%, transparent),
+    inset 0 2px 0 0 color-mix(in srgb, var(--color-background) 60%, transparent);
 }
 
 /* Glass Input - For form inputs */
 .glass-input {
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--color-background) 60%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: inset 0 2px 4px 0 rgba(31, 38, 135, 0.05);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 30%, transparent);
+  box-shadow: inset 0 2px 4px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent);
   transition: all 0.2s ease;
 }
 
-.dark .glass-input {
-  background: rgba(17, 24, 39, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-}
-
 .glass-input:focus {
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: color-mix(in srgb, var(--color-background) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary-500) 50%, transparent);
   box-shadow: 
-    inset 0 2px 4px 0 rgba(31, 38, 135, 0.05),
-    0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.dark .glass-input:focus {
-  background: rgba(17, 24, 39, 0.75);
-  border: 1px solid rgba(96, 165, 250, 0.5);
-  box-shadow: 
-    inset 0 2px 4px 0 rgba(0, 0, 0, 0.2),
-    0 0 0 3px rgba(96, 165, 250, 0.1);
+    inset 0 2px 4px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
 }
 
 /* Glass Button - For primary buttons */
 .glass-button {
-  background: rgba(59, 130, 246, 0.8);
+  background: color-mix(in srgb, var(--color-primary-500) 80%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid color-mix(in srgb, var(--color-background) 30%, transparent);
   box-shadow: 
-    0 4px 16px 0 rgba(59, 130, 246, 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
-  color: white;
+    0 4px 16px 0 color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 40%, transparent);
+  color: var(--color-background);
   transition: all 0.2s ease;
 }
 
 .glass-button:hover {
-  background: rgba(59, 130, 246, 0.9);
+  background: color-mix(in srgb, var(--color-primary-500) 90%, transparent);
   box-shadow: 
-    0 6px 20px 0 rgba(59, 130, 246, 0.4),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    0 6px 20px 0 color-mix(in srgb, var(--color-primary-500) 40%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
   transform: translateY(-1px);
 }
 
 .glass-button:active {
   transform: translateY(0);
   box-shadow: 
-    0 2px 8px 0 rgba(59, 130, 246, 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+    0 2px 8px 0 color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 30%, transparent);
 }
 
 /* Glass Navbar - For top navigation */
 .glass-navbar {
-  background: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
   box-shadow: 
-    0 4px 24px 0 rgba(31, 38, 135, 0.05),
-    inset 0 -1px 0 0 rgba(255, 255, 255, 0.5);
-}
-
-.dark .glass-navbar {
-  background: rgba(17, 24, 39, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 4px 24px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -1px 0 0 rgba(255, 255, 255, 0.05);
+    0 4px 24px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    inset 0 -1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
 }
 
 /* Glass Dropdown - For dropdown menus */
 .glass-dropdown {
-  background: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
   box-shadow: 
-    0 8px 32px 0 rgba(31, 38, 135, 0.1),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
-}
-
-.dark .glass-dropdown {
-  background: rgba(17, 24, 39, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    0 8px 32px 0 color-mix(in srgb, var(--color-foreground) 10%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
 }
 
 /* Glass Badge - For badges and tags */
 .glass-badge {
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.08);
-}
-
-.dark .glass-badge {
-  background: rgba(17, 24, 39, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 25%, transparent);
+  box-shadow: 0 2px 8px 0 color-mix(in srgb, var(--color-foreground) 8%, transparent);
 }
 
 /* Glass Tooltip - For tooltips */
 .glass-tooltip {
-  background: rgba(17, 24, 39, 0.95);
+  background: color-mix(in srgb, var(--color-foreground) 95%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
-  color: white;
+  border: 1px solid color-mix(in srgb, var(--color-background) 15%, transparent);
+  box-shadow: 0 4px 16px 0 color-mix(in srgb, var(--color-foreground) 30%, transparent);
+  color: var(--color-background);
 }
 
 /* Glass Panel - For side panels and drawers */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
   box-shadow: 
-    -4px 0 24px 0 rgba(31, 38, 135, 0.05),
-    inset 1px 0 0 0 rgba(255, 255, 255, 0.5);
-}
-
-.dark .glass-panel {
-  background: rgba(17, 24, 39, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    -4px 0 24px 0 rgba(0, 0, 0, 0.2),
-    inset 1px 0 0 0 rgba(255, 255, 255, 0.05);
+    -4px 0 24px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    inset 1px 0 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
 }
 
 /* Glass Overlay - For modal backdrops */
 .glass-overlay {
-  background: rgba(0, 0, 0, 0.3);
+  background: color-mix(in srgb, var(--color-foreground) 30%, transparent);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-}
-
-.dark .glass-overlay {
-  background: rgba(0, 0, 0, 0.5);
 }
 
 /* Glass Glow Effect - For hover states */
@@ -408,7 +337,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.2),
+    color-mix(in srgb, var(--color-background) 20%, transparent),
     transparent
   );
   transition: left 0.5s ease;
@@ -418,19 +347,10 @@ body {
   left: 100%;
 }
 
-.dark .glass-glow::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-}
-
 /* Glass Border Gradient - For premium cards */
 .glass-border-gradient {
   position: relative;
-  background: rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--color-background) 75%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -443,10 +363,10 @@ body {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.5),
-    rgba(59, 130, 246, 0.3),
-    rgba(139, 92, 246, 0.3),
-    rgba(255, 255, 255, 0.5)
+    color-mix(in srgb, var(--color-background) 50%, transparent),
+    color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    color-mix(in srgb, var(--color-background) 50%, transparent)
   );
   -webkit-mask: 
     linear-gradient(#fff 0 0) content-box, 
@@ -454,20 +374,6 @@ body {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-}
-
-.dark .glass-border-gradient {
-  background: rgba(17, 24, 39, 0.75);
-}
-
-.dark .glass-border-gradient::before {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.2),
-    rgba(96, 165, 250, 0.3),
-    rgba(167, 139, 250, 0.3),
-    rgba(255, 255, 255, 0.2)
-  );
 }
 
 /* Glass Shimmer Animation - For loading states */
@@ -483,21 +389,12 @@ body {
 .glass-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
+    transparent 0%,
+    color-mix(in srgb, var(--color-background) 30%, transparent) 50%,
+    transparent 100%
   );
   background-size: 200% 100%;
   animation: glass-shimmer 2s infinite;
-}
-
-.dark .glass-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
 }
 
 /* Utility Classes for Backdrop Blur */
