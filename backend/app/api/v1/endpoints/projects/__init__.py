@@ -302,6 +302,17 @@ async def get_projects(
                     responsable_name=responsable_name,
                     created_at=project.created_at,
                     updated_at=project.updated_at,
+                    # Extended fields
+                    equipe=getattr(project, 'equipe', None),
+                    etape=getattr(project, 'etape', None),
+                    annee_realisation=getattr(project, 'annee_realisation', None),
+                    contact=getattr(project, 'contact', None),
+                    proposal_url=getattr(project, 'proposal_url', None),
+                    drive_url=getattr(project, 'drive_url', None),
+                    slack_url=getattr(project, 'slack_url', None),
+                    echeancier_url=getattr(project, 'echeancier_url', None),
+                    temoignage_status=getattr(project, 'temoignage_status', None),
+                    portfolio_status=getattr(project, 'portfolio_status', None),
                 ))
             except Exception as e:
                 logger.warning(f"Error processing project {getattr(project, 'id', 'unknown')}: {e}")
