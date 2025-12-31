@@ -376,11 +376,27 @@ function OpportunitiesContent() {
     },
     {
       key: 'company_name',
-      label: 'Client ou entreprise lié',
+      label: 'Entreprise',
       sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
-      ),
+      render: (_value, opportunity) => {
+        if (!opportunity.company_name) return <span className="text-muted-foreground">-</span>;
+        
+        // Find company logo if available
+        const company = companies.find(c => c.id === opportunity.company_id);
+        
+        return (
+          <div className="flex items-center gap-2">
+            {company?.logo_url && (
+              <img 
+                src={company.logo_url} 
+                alt={opportunity.company_name} 
+                className="w-6 h-6 rounded object-cover"
+              />
+            )}
+            <span className="font-medium">{opportunity.company_name}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'status',
@@ -436,9 +452,15 @@ function OpportunitiesContent() {
       key: 'amount',
       label: 'Montant',
       sortable: true,
-      render: (value) => (
-        <span className="font-medium">{formatCurrency(value as number | null | undefined)}</span>
-      ),
+      render: (value) => {
+        const amount = value as number | null | undefined;
+        if (!amount) return <span className="text-muted-foreground">-</span>;
+        return (
+          <span className="font-semibold text-foreground">
+            {formatCurrency(amount)}
+          </span>
+        );
+      },
     },
   ];
 
