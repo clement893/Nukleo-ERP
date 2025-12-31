@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
