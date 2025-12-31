@@ -11,7 +11,7 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, is_admin_or_superadmin
 from app.models.vacation_request import VacationRequest
 from app.models.employee import Employee
 from app.models.user import User
@@ -86,16 +86,19 @@ async def list_vacation_requests(
     if status:
         conditions.append(VacationRequest.status == status)
     
-    # If user is not admin, only show their own requests
+    # Check if user is admin or superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    
     # Check if current_user is linked to an employee
     employee_query = select(Employee).where(Employee.user_id == current_user.id)
     employee_result = await db.execute(employee_query)
     employee = employee_result.scalar_one_or_none()
     
-    if employee:
-        # User is an employee, only show their requests
+    # If user is not admin and is an employee, only show their own requests
+    if not is_admin and employee:
+        # User is an employee (not admin), only show their requests
         conditions.append(VacationRequest.employee_id == employee.id)
-    # Otherwise, user is admin/manager and can see all requests
+    # Otherwise, user is admin/manager and can see all requests (no additional filter)
     
     if conditions:
         query = query.where(and_(*conditions))

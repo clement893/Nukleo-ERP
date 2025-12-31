@@ -10,6 +10,7 @@ import DayEventsModal, { type DayEvent } from './DayEventsModal';
 import { agendaAPI, type CalendarEvent as APICalendarEvent, type CalendarEventCreate } from '@/lib/api/agenda';
 import { handleApiError } from '@/lib/errors/api';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
+import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 
 // Types pour les différents événements
 export interface VacationEvent {
@@ -237,28 +238,38 @@ export default function CalendarView({ className }: CalendarViewProps) {
         setEmployees([]);
       }
 
-      // TODO: Charger les vacances et deadlines depuis leurs APIs respectives
-      // Pour l'instant, on garde les données mockées
-      setVacations([
-        {
-          id: 'vac-1',
-          title: 'Vacances - Jean Dupont',
-          start_date: '2025-07-15',
-          end_date: '2025-07-30',
-          employee_name: 'Jean Dupont',
-          type: 'vacation',
+      // Charger les vacances approuvées depuis l'API
+      try {
+        const approvedVacations = await vacationRequestsAPI.list({ 
           status: 'approved',
-        },
-        {
-          id: 'vac-2',
-          title: 'Vacances - Marie Martin',
-          start_date: '2025-08-10',
-          end_date: '2025-08-25',
-          employee_name: 'Marie Martin',
-          type: 'vacation',
-          status: 'approved',
-        },
-      ]);
+          limit: 1000 
+        });
+        
+        // Convertir les VacationRequest en VacationEvent
+        const vacationEvents: VacationEvent[] = approvedVacations.map((vacation: VacationRequest) => {
+          // Construire le nom de l'employé
+          const employeeName = vacation.employee_first_name && vacation.employee_last_name
+            ? `${vacation.employee_first_name} ${vacation.employee_last_name}`
+            : vacation.employee_email || `Employé #${vacation.employee_id}`;
+          
+          return {
+            id: `vac-${vacation.id}`,
+            title: `Vacances - ${employeeName}`,
+            start_date: vacation.start_date,
+            end_date: vacation.end_date,
+            employee_name: employeeName,
+            type: 'vacation',
+            status: vacation.status as VacationEvent['status'],
+          };
+        });
+        
+        console.log(`[CalendarView] Loaded ${vacationEvents.length} approved vacation requests`);
+        setVacations(vacationEvents);
+      } catch (err) {
+        // Log error for debugging but don't block calendar loading
+        console.error('Could not load vacation requests:', err);
+        setVacations([]);
+      }
 
       setDeadlines([
         {
@@ -334,11 +345,13 @@ export default function CalendarView({ className }: CalendarViewProps) {
 
         eventsList.push({
           id: `vacation-${vacation.id}`,
-          title: vacation.employee_name ? `${vacation.employee_name} - ${vacation.title}` : vacation.title,
+          title: vacation.title,
           date: new Date(vacation.start_date),
           endDate: new Date(vacation.end_date),
           color,
-          description: `Type: ${vacation.type}, Statut: ${vacation.status}`,
+          description: vacation.employee_name 
+            ? `Vacances de ${vacation.employee_name} - Type: ${vacation.type}, Statut: ${vacation.status}`
+            : `Type: ${vacation.type}, Statut: ${vacation.status}`,
         });
       });
     }
