@@ -283,7 +283,9 @@ export const useDashboardStore = create<DashboardStore>()(
           console.log('[DashboardStore] Successfully saved to server');
         } catch (error) {
           console.error('[DashboardStore] Error saving dashboard to server:', error);
-          // Ne pas bloquer l'utilisateur si la sauvegarde échoue
+          // The Zustand persist middleware will still save to localStorage
+          // So the data is not lost, it just won't be synced to the server
+          // We'll retry on next change or when loadFromServer is called
         }
       },
       

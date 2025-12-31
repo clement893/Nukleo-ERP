@@ -22,7 +22,11 @@ class ApiClient {
   constructor(baseURL?: string) {
     // Lazy evaluation of baseURL to avoid circular dependency
     if (!baseURL) {
-      baseURL = `${getApiUrlLazy().replace(/\/$/, '')}/api`;
+      let url = getApiUrlLazy();
+      // Remove trailing slash and any trailing /api to avoid double /api/api/
+      url = url.replace(/\/$/, ''); // Remove trailing slash
+      url = url.replace(/\/api$/, ''); // Remove trailing /api if present
+      baseURL = `${url}/api`;
     }
     this.client = axios.create({
       baseURL,

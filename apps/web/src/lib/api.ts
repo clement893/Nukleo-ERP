@@ -67,10 +67,14 @@ export const getApiUrl = () => {
     url = `https://${url}`;
   }
   
-  return url.replace(/\/$/, ''); // Remove trailing slash
+  // Remove trailing slash and any trailing /api to avoid double /api/api/
+  url = url.replace(/\/$/, ''); // Remove trailing slash
+  url = url.replace(/\/api$/, ''); // Remove trailing /api if present
+  
+  return url;
 };
 
-const API_URL = getApiUrl().replace(/\/$/, '');
+const API_URL = getApiUrl();
 
 /**
  * Axios client instance configured for API requests

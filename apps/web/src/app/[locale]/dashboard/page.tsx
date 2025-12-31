@@ -36,10 +36,11 @@ function DashboardContent() {
     const loadDashboard = async () => {
       try {
         // Attendre un peu pour que Zustand persist charge d'abord depuis localStorage
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
         await loadFromServer();
       } catch (error) {
         console.error('Error loading dashboard from server:', error);
+        // Continue even if server load fails - localStorage data will be used
       } finally {
         setIsLoading(false);
       }
