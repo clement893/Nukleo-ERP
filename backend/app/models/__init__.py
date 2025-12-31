@@ -43,7 +43,7 @@ from app.models.contact import Contact
 from app.models.company import Company
 from app.models.employee import Employee
 from app.models.vacation_request import VacationRequest
-from app.models.people import People, PeopleStatus
+from app.models.client import Client, ClientStatus
 from app.models.file import File
 from app.models.quote import Quote
 from app.models.quote_line_item import QuoteLineItem
@@ -132,8 +132,8 @@ __all__ = [
     "Company",
     "Employee",
     "VacationRequest",
-    "People",
-    "PeopleStatus",
+    "Client",
+    "ClientStatus",
     "Quote",
     "QuoteLineItem",
     "Submission",

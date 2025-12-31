@@ -20,7 +20,7 @@ from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
-from app.models.people import People
+from app.models.client import Client
 from app.models.employee import Employee
 from app.schemas.project import ProjectCreate
 from app.core.logging import logger
@@ -58,64 +58,64 @@ async def stream_import_logs(
     )
 
 
-async def find_people_by_name(
-    people_name: str,
+async def find_client_by_name(
+    client_name: str,
     db: AsyncSession,
 ) -> Optional[int]:
-    """Find a People ID by name using intelligent matching (searches first_name, last_name, and email)"""
-    if not people_name or not people_name.strip():
+    """Find a Client ID by name using intelligent matching (searches first_name, last_name, and email)"""
+    if not client_name or not client_name.strip():
         return None
     
-    people_name_normalized = people_name.strip().lower()
+    client_name_normalized = client_name.strip().lower()
     
     # Try exact match on first_name + last_name
-    name_parts = people_name_normalized.split()
+    name_parts = client_name_normalized.split()
     if len(name_parts) >= 2:
         first_name = name_parts[0]
         last_name = " ".join(name_parts[1:])
         result = await db.execute(
-            select(People).where(
+            select(Client).where(
                 and_(
-                    func.lower(People.first_name) == first_name,
-                    func.lower(People.last_name) == last_name
+                    func.lower(Client.first_name) == first_name,
+                    func.lower(Client.last_name) == last_name
                 )
             )
         )
-        people = result.scalar_one_or_none()
-        if people:
-            return people.id
+        client = result.scalar_one_or_none()
+        if client:
+            return client.id
     
     # Try exact match on email
     result = await db.execute(
-        select(People).where(func.lower(People.email) == people_name_normalized)
+        select(Client).where(func.lower(Client.email) == client_name_normalized)
     )
-    people = result.scalar_one_or_none()
-    if people:
-        return people.id
+    client = result.scalar_one_or_none()
+    if client:
+        return client.id
     
     # Try partial match on first_name
     result = await db.execute(
-        select(People).where(func.lower(People.first_name).contains(people_name_normalized))
+        select(Client).where(func.lower(Client.first_name).contains(client_name_normalized))
     )
-    people = result.scalar_one_or_none()
-    if people:
-        return people.id
+    client = result.scalar_one_or_none()
+    if client:
+        return client.id
     
     # Try partial match on last_name
     result = await db.execute(
-        select(People).where(func.lower(People.last_name).contains(people_name_normalized))
+        select(Client).where(func.lower(Client.last_name).contains(client_name_normalized))
     )
-    people = result.scalar_one_or_none()
-    if people:
-        return people.id
+    client = result.scalar_one_or_none()
+    if client:
+        return client.id
     
     # Try partial match on email
     result = await db.execute(
-        select(People).where(func.lower(People.email).contains(people_name_normalized))
+        select(Client).where(func.lower(Client.email).contains(client_name_normalized))
     )
-    people = result.scalar_one_or_none()
-    if people:
-        return people.id
+    client = result.scalar_one_or_none()
+    if client:
+        return client.id
     
     return None
 
@@ -285,7 +285,7 @@ async def import_projects(
                 
                 if not client_id and client_name_col and pd.notna(row.get(client_name_col)):
                     client_name = str(row[client_name_col]).strip()
-                    matched_client_id = await find_people_by_name(client_name, db)
+                    matched_client_id = await find_client_by_name(client_name, db)
                     if matched_client_id:
                         client_id = matched_client_id
                     else:

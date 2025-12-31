@@ -153,8 +153,8 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             icon: <FolderKanban className="w-5 h-5" />,
           },
           {
-            name: 'People',
-            href: '/dashboard/projets/people',
+            name: 'Clients',
+            href: '/dashboard/projets/clients',
             icon: <Users className="w-5 h-5" />,
           },
           {
