@@ -34,15 +34,30 @@ router.include_router(import_export.router, tags=["projects-import-export"])
 async def _check_project_columns_exist(db: AsyncSession, column_names: List[str]) -> dict[str, bool]:
     """Check if columns exist in the projects table"""
     exists = {col: False for col in column_names}
+    if not column_names:
+        return exists
+    
     try:
-        # Use inspect to check columns
-        inspector = await db.run_sync(lambda sync_conn: inspect(sync_conn).get_columns('projects'))
-        existing_columns = {col['name'] for col in inspector}
+        # Use raw SQL query to check columns (works with async sessions)
+        # Use IN clause with tuple unpacking for PostgreSQL
+        placeholders = ','.join([f':col_{i}' for i in range(len(column_names))])
+        query = text(f"""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_schema = 'public'
+            AND table_name = 'projects' 
+            AND column_name IN ({placeholders})
+        """)
+        params = {f'col_{i}': col for i, col in enumerate(column_names)}
+        result = await db.execute(query, params)
+        existing_columns = {row[0] for row in result}
         for col in column_names:
             if col in existing_columns:
                 exists[col] = True
     except Exception as e:
-        logger.warning(f"Could not inspect 'projects' table for columns: {e}")
+        logger.warning(f"Could not check 'projects' table columns: {e}")
+        # If check fails, assume columns don't exist (safer)
+        exists = {col: False for col in column_names}
     return exists
 
 
