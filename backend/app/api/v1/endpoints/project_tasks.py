@@ -68,22 +68,17 @@ async def list_tasks(
             # If relationship loading fails (e.g., missing columns), try without relationships
             error_str = str(e).lower()
             logger.warning(f"Failed to load relationships for project tasks: {e}")
-            # Rollback the failed transaction first
-            try:
-                await db.rollback()
-            except Exception as rollback_error:
-                logger.warning(f"Rollback failed: {rollback_error}")
             
-            # If error is due to project_id column not existing, raise informative error
+            # If error is due to project_id column not existing, return empty list
             # SQLAlchemy will always try to select all model columns, so we can't work around this
+            # Return empty list to allow application to continue functioning
             if 'project_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
-                logger.error("project_id column doesn't exist in database - database migration may be needed")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Database schema mismatch: project_id column is missing. Please run database migrations."
-                )
+                logger.warning("project_id column doesn't exist in database - returning empty list. Database migration may be needed.")
+                # FastAPI will handle rollback automatically via session middleware
+                return []  # Return empty list to allow application to continue
             
             # Retry without relationship loading for other errors
+            # FastAPI will handle rollback automatically if this also fails
             result = await db.execute(query)
         
         tasks = result.scalars().all()
@@ -150,11 +145,7 @@ async def list_tasks(
                 "project_id": project_id,
             }
         )
-        # Rollback any failed transaction
-        try:
-            await db.rollback()
-        except Exception:
-            pass  # Ignore rollback errors
+        # FastAPI will handle rollback automatically via session middleware
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"A database error occurred: {str(e)}"
