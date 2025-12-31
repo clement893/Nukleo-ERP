@@ -33,7 +33,7 @@ class EmployeePortalPermission(Base):
     resource_id = Column(String(255), nullable=False, default="*")  # "*" means all resources of this type
     
     # Additional metadata (JSON) for complex permissions
-    metadata = Column(JSON, nullable=True)  # e.g., {"projects": [1, 2, 3], "clients": [5, 6]}
+    permission_metadata = Column("metadata", JSON, nullable=True)  # e.g., {"projects": [1, 2, 3], "clients": [5, 6]}
     
     # Access control
     can_view = Column(Boolean, default=True, nullable=False)

@@ -14,7 +14,7 @@ class EmployeePortalPermissionBase(BaseModel):
     employee_id: Optional[int] = Field(None, description="Employee ID (if permission is for an employee)")
     permission_type: str = Field(..., description="Type: 'page', 'module', 'project', 'client'")
     resource_id: str = Field(default="*", description="Resource identifier (* for all)")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    permission_metadata: Optional[Dict[str, Any]] = Field(None, alias="metadata", description="Additional metadata")
     can_view: bool = Field(default=True, description="Can view this resource")
     can_edit: bool = Field(default=False, description="Can edit this resource")
     can_delete: bool = Field(default=False, description="Can delete this resource")
@@ -49,7 +49,7 @@ class EmployeePortalPermissionUpdate(BaseModel):
     """Schema for updating an employee portal permission"""
     permission_type: Optional[str] = None
     resource_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    permission_metadata: Optional[Dict[str, Any]] = Field(None, alias="metadata")
     can_view: Optional[bool] = None
     can_edit: Optional[bool] = None
     can_delete: Optional[bool] = None
@@ -71,7 +71,7 @@ class EmployeePortalPermissionResponse(EmployeePortalPermissionBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class BulkEmployeePortalPermissionCreate(BaseModel):
