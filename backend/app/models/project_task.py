@@ -45,8 +45,8 @@ class ProjectTask(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    status = Column(SQLEnum(TaskStatus, native_enum=False, values_callable=lambda obj: [e.value for e in obj]), default=TaskStatus.TODO, nullable=False, index=True)
-    priority = Column(SQLEnum(TaskPriority, native_enum=False, values_callable=lambda obj: [e.value for e in obj]), default=TaskPriority.MEDIUM, nullable=False, index=True)
+    status = Column(SQLEnum(TaskStatus, native_enum=False), default=TaskStatus.TODO, nullable=False, index=True)
+    priority = Column(SQLEnum(TaskPriority, native_enum=False), default=TaskPriority.MEDIUM, nullable=False, index=True)
     
     # Relations
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
