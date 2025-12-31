@@ -118,9 +118,8 @@ function ProjectsContent() {
     const total = filteredProjects.length;
     const active = filteredProjects.filter(p => p.status === 'ACTIVE').length;
     const completed = filteredProjects.filter(p => p.status === 'COMPLETED').length;
-    const withBudget = filteredProjects.filter(p => (p as Project & { budget?: number | null }).budget).length;
 
-    return { total, active, completed, withBudget };
+    return { total, active, completed };
   }, [filteredProjects]);
 
   const getStatusBadge = (status: string) => {
@@ -199,16 +198,6 @@ function ProjectsContent() {
       ),
     },
     {
-      key: 'budget',
-      label: 'Budget',
-      sortable: true,
-      render: (value) => (
-        <span className="text-sm font-medium text-foreground">
-          {formatCurrency(value as number)}
-        </span>
-      ),
-    },
-    {
       key: 'status',
       label: 'Statut',
       sortable: true,
@@ -247,7 +236,7 @@ function ProjectsContent() {
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="glass-card p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -280,18 +269,6 @@ function ProjectsContent() {
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="glass-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Avec budget</p>
-                <p className="text-3xl font-bold text-purple-600">{stats.withBudget}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </Card>
