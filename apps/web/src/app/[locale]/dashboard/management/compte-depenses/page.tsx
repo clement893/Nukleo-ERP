@@ -9,13 +9,12 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Textarea } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
-import { type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate, type ExpenseAccountStatus, type ExpenseAccountAction } from '@/lib/api/finances/expenseAccounts';
+import { type ExpenseAccount, type ExpenseAccountStatus, type ExpenseAccountAction } from '@/lib/api/finances/expenseAccounts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
 import SearchBar from '@/components/ui/SearchBar';
 import MultiSelect from '@/components/ui/MultiSelect';
-import Select from '@/components/ui/Select';
 import { 
   CheckCircle,
   XCircle,
