@@ -198,6 +198,77 @@ async def list_companies(
     return company_list
 
 
+@router.get("/stats")
+async def get_companies_stats(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = Query("month", description="Time period: day, week, month, quarter, year"),
+) -> Dict:
+    """
+    Get companies statistics for dashboard widget
+    
+    Args:
+        period: Time period for comparison ('day' | 'week' | 'month' | 'quarter' | 'year')
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dictionary with companies statistics
+    """
+    from datetime import datetime, timedelta
+    
+    # Calculate period start date
+    now = datetime.utcnow()
+    period_map = {
+        'day': timedelta(days=1),
+        'week': timedelta(weeks=1),
+        'month': timedelta(days=30),
+        'quarter': timedelta(days=90),
+        'year': timedelta(days=365),
+    }
+    period_delta = period_map.get(period.lower(), timedelta(days=30))
+    period_start = now - period_delta
+    
+    # Get current count
+    current_count_result = await db.execute(select(func.count(Company.id)))
+    current_count = current_count_result.scalar_one() or 0
+    
+    # Get count from period start
+    previous_count_result = await db.execute(
+        select(func.count(Company.id))
+        .where(Company.created_at < period_start)
+    )
+    previous_count = previous_count_result.scalar_one() or 0
+    
+    # Get new companies in period
+    new_count_result = await db.execute(
+        select(func.count(Company.id))
+        .where(Company.created_at >= period_start)
+    )
+    new_this_period = new_count_result.scalar_one() or 0
+    
+    # Get active clients count
+    active_count_result = await db.execute(
+        select(func.count(Company.id))
+        .where(Company.is_client == True)
+    )
+    active_count = active_count_result.scalar_one() or 0
+    
+    # Calculate growth percentage
+    growth = 0.0
+    if previous_count > 0:
+        growth = ((current_count - previous_count) / previous_count) * 100
+    
+    return {
+        "count": current_count,
+        "growth": round(growth, 1),
+        "previous_count": previous_count,
+        "new_this_month": new_this_period,
+        "active_count": active_count,
+    }
+
+
 @router.get("/{company_id}", response_model=CompanySchema)
 async def get_company(
     company_id: int,

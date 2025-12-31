@@ -285,7 +285,7 @@ async def list_teams(
                 "first_name": team.owner.first_name,
                 "last_name": team.owner.last_name,
             } if team.owner else None,
-            "members": [],
+            "members": [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in team.members] if team.members else [],
         }
         teams_response.append(TeamResponse.model_validate(team_dict))
     
