@@ -1,7 +1,7 @@
 """create employee portal permissions table
 
-Revision ID: 062_create_employee_portal_permissions
-Revises: 061_create_public_holidays_table
+Revision ID: 062_emp_portal_perms
+Revises: 061_create_public_holidays
 Create Date: 2025-01-30 12:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '062_create_employee_portal_permissions'
+revision = '062_emp_portal_perms'  # Shortened to fit 32 char limit
 down_revision = '061_create_public_holidays'
 branch_labels = None
 depends_on = None

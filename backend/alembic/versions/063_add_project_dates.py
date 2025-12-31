@@ -1,7 +1,7 @@
 """add project dates (start_date, end_date, deadline)
 
 Revision ID: 063_add_project_dates
-Revises: 062_create_employee_portal_permissions
+Revises: 062_emp_portal_perms
 Create Date: 2025-01-30 14:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision = '063_add_project_dates'
-down_revision = '062_create_employee_portal_permissions'
+down_revision = '062_emp_portal_perms'
 branch_labels = None
 depends_on = None
 
