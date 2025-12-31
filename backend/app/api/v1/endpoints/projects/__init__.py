@@ -18,7 +18,7 @@ from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
 from app.models.company import Company
-from app.models.people import People
+from app.models.employee import Employee
 from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
 from sqlalchemy.orm import aliased
 from app.core.logging import logger
@@ -56,7 +56,7 @@ async def get_projects(
     """
     # Use explicit joins to avoid lazy loading issues
     client_alias = aliased(Company)
-    responsable_alias = aliased(People)
+    responsable_alias = aliased(Employee)
     
     query = select(
         Project,
