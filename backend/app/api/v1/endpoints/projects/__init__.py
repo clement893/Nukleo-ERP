@@ -182,38 +182,6 @@ async def get_projects(
         ))
     
     return project_list
-        
-        # Return the list directly - FastAPI will serialize it correctly
-        return project_list
-    
-    except Exception as e:
-        # Log detailed error information before re-raising
-        error_type = type(e).__name__
-        error_message = str(e)
-        
-        # Get SQL statement if available (for SQLAlchemy errors)
-        sql_statement = None
-        if hasattr(e, "statement"):
-            sql_statement = str(e.statement)
-        elif hasattr(e, "orig") and hasattr(e.orig, "statement"):
-            sql_statement = str(e.orig.statement)
-        
-        logger.error(
-            f"Database error in get_projects: {error_type} - {error_message}",
-            context={
-                "error_type": error_type,
-                "error_message": error_message,
-                "sql_statement": sql_statement[:500] if sql_statement else None,
-                "user_id": current_user.id,
-                "status_filter": str(status) if status else None,
-                "skip": skip,
-                "limit": limit,
-            },
-            exc_info=e,
-        )
-        
-        # Re-raise to let the global exception handler deal with it
-        raise
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
