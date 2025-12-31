@@ -68,23 +68,23 @@ export function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay">
+      <div className="glass-modal rounded-lg w-full max-w-4xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-white/20 dark:border-white/10">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Bibliothèque de Widgets
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/40 dark:hover:bg-white/10 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search and filters */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 space-y-4">
+        <div className="p-6 border-b border-white/20 dark:border-white/10 space-y-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

@@ -53,16 +53,15 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
   return (
     <div 
       className={`
-        h-full w-full bg-white dark:bg-gray-800 
-        border border-gray-200 dark:border-gray-700 
-        rounded-lg shadow-sm
+        h-full w-full glass-card
+        rounded-lg
         flex flex-col
         transition-all duration-200
-        ${isEditMode ? 'hover:shadow-md hover:border-blue-400 dark:hover:border-blue-600' : ''}
+        ${isEditMode ? 'hover:shadow-lg hover:border-blue-400/50 dark:hover:border-blue-500/50' : ''}
       `}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-white/10">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {isEditMode && (
             <div className="cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -79,7 +78,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
           {!isEditMode && (
             <button
               onClick={handleRefresh}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/40 dark:hover:bg-white/10 rounded transition-colors"
               title="Actualiser"
             >
               <RefreshCw className="w-4 h-4" />
@@ -89,7 +88,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
           {widgetDef.configurable && (
             <button
               onClick={() => setIsConfigOpen(!isConfigOpen)}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/40 dark:hover:bg-white/10 rounded transition-colors"
               title="Configurer"
             >
               <Settings className="w-4 h-4" />
@@ -99,7 +98,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
           {isEditMode && (
             <button
               onClick={handleRemove}
-              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/20 rounded transition-colors"
               title="Supprimer"
             >
               <X className="w-4 h-4" />
@@ -136,7 +135,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
 
       {/* Config Panel (si ouvert) */}
       {isConfigOpen && (
-        <div className="absolute inset-0 bg-white dark:bg-gray-800 z-50 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg p-4 overflow-auto">
+        <div className="absolute inset-0 glass-modal z-50 rounded-lg p-4 overflow-auto">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white">
               Configuration

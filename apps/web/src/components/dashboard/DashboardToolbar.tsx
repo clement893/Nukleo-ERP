@@ -29,7 +29,7 @@ export function DashboardToolbar({ onAddWidget }: DashboardToolbarProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div className="glass-navbar px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left: Config selector */}
         <div className="flex items-center gap-4">

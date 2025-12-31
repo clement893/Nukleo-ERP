@@ -46,7 +46,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex h-screen pt-0 md:pt-0 md:ml-64">
         {/* Mobile Header with Menu Button */}
-        <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background shadow border-b border-border">
+        <header className="md:hidden fixed top-0 left-0 right-0 z-30 glass-navbar">
           <div className="px-4 py-3 flex items-center justify-between">
             <Button
               variant="ghost"

@@ -280,7 +280,7 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
       {/* Mobile Overlay - only show on mobile when sidebar is open */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 dark:bg-black/70 md:hidden"
+          className="fixed inset-0 z-30 glass-overlay md:hidden"
           onClick={handleClose}
           aria-hidden="true"
         />
@@ -289,7 +289,7 @@ export default function Sidebar({ isOpen: controlledIsOpen, onClose }: SidebarPr
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-40 h-screen w-64 bg-background/50 backdrop-blur-sm border-r border-border/30 flex flex-col',
+          'fixed left-0 top-0 z-40 h-screen w-64 glass-sidebar flex flex-col',
           'transition-transform duration-normal ease-smooth',
           // Mobile: slide in/out from left
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
