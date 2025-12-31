@@ -4,6 +4,10 @@
  * Page Dashboard Personnalisable
  */
 
+// Force dynamic rendering to avoid static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 import React, { useEffect, useState } from 'react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
