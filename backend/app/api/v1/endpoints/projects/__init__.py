@@ -54,42 +54,33 @@ async def get_projects(
     Returns:
         List of projects
     """
-    # Use explicit joins to avoid lazy loading issues
-    client_alias = aliased(Company)
-    responsable_alias = aliased(Employee)
-    
-    query = select(
-        Project,
-        client_alias.name.label('client_name'),
-        responsable_alias.first_name.label('responsable_first_name'),
-        responsable_alias.last_name.label('responsable_last_name')
-    ).outerjoin(client_alias, Project.client_id == client_alias.id)\
-     .outerjoin(responsable_alias, Project.responsable_id == responsable_alias.id)\
-     .where(Project.user_id == current_user.id)
+    # Use selectinload to eagerly load relationships
+    query = select(Project).where(Project.user_id == current_user.id)
     
     if status:
         query = query.where(Project.status == status)
     
     # Apply tenant scoping if tenancy is enabled
-    # Note: This works because scope_query adds a where clause on Project.team_id
     query = apply_tenant_scope(query, Project)
+    
+    # Eagerly load relationships to avoid N+1 queries
+    query = query.options(
+        selectinload(Project.client),
+        selectinload(Project.responsable)
+    )
     
     query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
     
     result = await db.execute(query)
-    rows = result.all()
+    projects = result.scalars().all()
     
     # Convert to response format with client and responsable names
     project_list = []
-    for row in rows:
-        project = row[0]  # Project object
-        client_name = row[1]  # client_name from join
-        responsable_first_name = row[2]  # responsable_first_name from join
-        responsable_last_name = row[3]  # responsable_last_name from join
-        
+    for project in projects:
+        client_name = project.client.name if project.client else None
         responsable_name = None
-        if responsable_first_name and responsable_last_name:
-            responsable_name = f"{responsable_first_name} {responsable_last_name}"
+        if project.responsable:
+            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
         
         project_dict = {
             "id": project.id,
