@@ -70,23 +70,24 @@ export const clientsAPI = {
     const skipInt = Math.max(0, Math.floor(Number(skip)) || 0);
     const limitInt = Math.max(1, Math.min(Math.floor(Number(limit)) || 100, 1000));
     
-    const params: Record<string, string | number> = { 
-      skip: skipInt, 
-      limit: limitInt,
-    };
+    // Build query string manually to ensure proper formatting
+    const queryParams = new URLSearchParams();
+    queryParams.append('skip', String(skipInt));
+    queryParams.append('limit', String(limitInt));
     
     // Only add optional parameters if they have valid values
-    if (status) params.status = status;
+    if (status) queryParams.append('status', status);
     if (responsible_id !== undefined && responsible_id !== null && !isNaN(Number(responsible_id))) {
-      params.responsible_id = Number(responsible_id);
+      queryParams.append('responsible_id', String(responsible_id));
     }
     if (search && search.trim()) {
-      params.search = search.trim();
+      queryParams.append('search', search.trim());
     }
 
-    const response = await apiClient.get<Client[]>('/v1/projects/clients', { 
-      params,
-    });
+    const queryString = queryParams.toString();
+    const url = `/v1/projects/clients${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiClient.get<Client[]>(url);
     const data = extractApiData<Client[]>(response);
     return Array.isArray(data) ? data : [];
   },
