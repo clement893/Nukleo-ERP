@@ -106,6 +106,19 @@ async def validation_exception_handler(
     request: Request, exc: PydanticValidationError
 ) -> JSONResponse:
     """Handle Pydantic validation errors"""
+    # Log raw query parameters for debugging
+    query_params_dict = dict(request.query_params)
+    logger.error(
+        f"VALIDATION ERROR DETECTED - Path: {request.url.path} | Full URL: {request.url}",
+        context={
+            "path": request.url.path,
+            "method": request.method,
+            "query_params_raw": query_params_dict,
+            "query_params_items": list(request.query_params.items()),
+            "query_string": str(request.url.query),
+        },
+    )
+    
     errors = []
     for error in exc.errors():
         error_msg = error["msg"]
@@ -117,13 +130,14 @@ async def validation_exception_handler(
         # Log each validation error with full details (use error level to ensure visibility)
         field_path = ".".join(str(loc) for loc in error['loc'])
         logger.error(
-            f"VALIDATION ERROR - Path: {request.url.path} | Field: {field_path} | Message: {error_msg} | Type: {error['type']}",
+            f"VALIDATION ERROR - Path: {request.url.path} | Field: {field_path} | Message: {error_msg} | Type: {error['type']} | Input: {error.get('input', 'N/A')}",
             context={
                 "field": field_path,
                 "error_message": error_msg,  # Use 'error_message' instead of 'message' to avoid conflict
                 "code": error["type"],
                 "path": request.url.path,
                 "method": request.method,
+                "input_value": error.get('input', None),
                 "full_error": error,
             },
         )
