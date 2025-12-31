@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '065_convert_task_enums'
-down_revision = '064_create_project_attachments_and_comments'
+down_revision = '064_proj_attachments_comments'  # Matches the actual revision ID from 064
 branch_labels = None
 depends_on = None
 
