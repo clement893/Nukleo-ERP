@@ -129,12 +129,12 @@ function DashboardContent() {
   }, [configs.length, addConfig, setActiveConfig, isLoading]);
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 dark:from-gray-900 dark:via-blue-900/10 dark:to-purple-900/10">
+    <div className="h-screen flex flex-col gradient-bg-subtle">
       {/* Toolbar */}
       <DashboardToolbar onAddWidget={() => setIsLibraryOpen(true)} />
 
       {/* Grid */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-6 spacing-generous">
         <DashboardGrid />
       </div>
 
