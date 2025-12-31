@@ -125,9 +125,23 @@ async def get_projects(
                         detail=f"Invalid status value: {status}. Must be one of: active, archived, completed (case-insensitive)"
                     )
         
-        # Check if client_id and responsable_id columns exist BEFORE querying
+        # Check if client_id, responsable_id and extended fields columns exist BEFORE querying
         # This prevents transaction errors
-        columns_exist = await _check_project_columns_exist(db, ['client_id', 'responsable_id'])
+        columns_exist = await _check_project_columns_exist(db, [
+            'client_id', 
+            'responsable_id',
+            'equipe',
+            'etape',
+            'annee_realisation',
+            'contact',
+            'budget',
+            'proposal_url',
+            'drive_url',
+            'slack_url',
+            'echeancier_url',
+            'temoignage_status',
+            'portfolio_status'
+        ])
         
         projects = []
         use_explicit_columns = False
@@ -163,7 +177,7 @@ async def get_projects(
         # Use explicit column selection if columns don't exist or query failed
         if use_explicit_columns or not columns_exist.get('client_id', False) or not columns_exist.get('responsable_id', False):
             try:
-                # Build column list - include client_id and responsable_id if they exist
+                # Build column list - include only columns that exist
                 columns_to_select = [
                     Project.id,
                     Project.name,
@@ -172,18 +186,6 @@ async def get_projects(
                     Project.user_id,
                     Project.created_at,
                     Project.updated_at,
-                    # Extended fields
-                    Project.equipe,
-                    Project.etape,
-                    Project.annee_realisation,
-                    Project.contact,
-                    Project.budget,
-                    Project.proposal_url,
-                    Project.drive_url,
-                    Project.slack_url,
-                    Project.echeancier_url,
-                    Project.temoignage_status,
-                    Project.portfolio_status,
                 ]
                 
                 # Track which optional columns we're trying to select
@@ -208,6 +210,28 @@ async def get_projects(
                         logger.warning(f"Could not add responsable_id to query: {e}")
                         has_responsable_id_col = False
                 
+                # Add extended fields only if they exist
+                extended_fields = [
+                    ('equipe', Project.equipe),
+                    ('etape', Project.etape),
+                    ('annee_realisation', Project.annee_realisation),
+                    ('contact', Project.contact),
+                    ('budget', Project.budget),
+                    ('proposal_url', Project.proposal_url),
+                    ('drive_url', Project.drive_url),
+                    ('slack_url', Project.slack_url),
+                    ('echeancier_url', Project.echeancier_url),
+                    ('temoignage_status', Project.temoignage_status),
+                    ('portfolio_status', Project.portfolio_status),
+                ]
+                
+                for field_name, field_column in extended_fields:
+                    if columns_exist.get(field_name, False):
+                        try:
+                            columns_to_select.append(field_column)
+                        except (AttributeError, ProgrammingError) as e:
+                            logger.warning(f"Could not add {field_name} to query: {e}")
+                
                 query = select(*columns_to_select).where(Project.user_id == current_user.id)
                 
                 if status_enum:
@@ -222,7 +246,7 @@ async def get_projects(
                 # Convert rows to ProjectRow objects
                 # SQLAlchemy Row objects from explicit column selection can be accessed by index or attribute
                 class ProjectRow:
-                    def __init__(self, row, has_client_id=False, has_responsable_id=False):
+                    def __init__(self, row, has_client_id=False, has_responsable_id=False, columns_exist=None):
                         self.id = row.id
                         self.name = row.name
                         self.description = row.description
@@ -239,12 +263,27 @@ async def get_projects(
                             self.responsable_id = getattr(row, 'responsable_id', None) if has_responsable_id else None
                         except (AttributeError, KeyError):
                             self.responsable_id = None
+                        # Set extended fields if they exist
+                        extended_field_names = [
+                            'equipe', 'etape', 'annee_realisation', 'contact', 'budget',
+                            'proposal_url', 'drive_url', 'slack_url', 'echeancier_url',
+                            'temoignage_status', 'portfolio_status'
+                        ]
+                        for field_name in extended_field_names:
+                            if columns_exist and columns_exist.get(field_name, False):
+                                try:
+                                    setattr(self, field_name, getattr(row, field_name, None))
+                                except (AttributeError, KeyError):
+                                    setattr(self, field_name, None)
+                            else:
+                                setattr(self, field_name, None)
                 
                 projects = [
                     ProjectRow(
                         row,
                         has_client_id=has_client_id_col,
-                        has_responsable_id=has_responsable_id_col
+                        has_responsable_id=has_responsable_id_col,
+                        columns_exist=columns_exist
                     )
                     for row in rows
                 ]
@@ -291,6 +330,22 @@ async def get_projects(
                     except Exception:
                         responsable_name = None
                 
+                # Build extended fields dict, only including fields that exist
+                extended_fields_dict = {}
+                extended_field_names = [
+                    'equipe', 'etape', 'annee_realisation', 'contact', 'budget',
+                    'proposal_url', 'drive_url', 'slack_url', 'echeancier_url',
+                    'temoignage_status', 'portfolio_status'
+                ]
+                for field_name in extended_field_names:
+                    if columns_exist.get(field_name, True):  # Default to True for backward compatibility
+                        try:
+                            extended_fields_dict[field_name] = getattr(project, field_name, None)
+                        except (AttributeError, KeyError):
+                            extended_fields_dict[field_name] = None
+                    else:
+                        extended_fields_dict[field_name] = None
+                
                 project_list.append(ProjectSchema(
                     id=project.id,
                     name=project.name,
@@ -304,17 +359,7 @@ async def get_projects(
                     created_at=project.created_at,
                     updated_at=project.updated_at,
                     # Extended fields
-                    equipe=getattr(project, 'equipe', None),
-                    etape=getattr(project, 'etape', None),
-                    annee_realisation=getattr(project, 'annee_realisation', None),
-                    contact=getattr(project, 'contact', None),
-                    budget=getattr(project, 'budget', None),
-                    proposal_url=getattr(project, 'proposal_url', None),
-                    drive_url=getattr(project, 'drive_url', None),
-                    slack_url=getattr(project, 'slack_url', None),
-                    echeancier_url=getattr(project, 'echeancier_url', None),
-                    temoignage_status=getattr(project, 'temoignage_status', None),
-                    portfolio_status=getattr(project, 'portfolio_status', None),
+                    **extended_fields_dict
                 ))
             except Exception as e:
                 logger.warning(f"Error processing project {getattr(project, 'id', 'unknown')}: {e}")
