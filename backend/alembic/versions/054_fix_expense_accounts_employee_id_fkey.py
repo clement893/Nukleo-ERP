@@ -1,6 +1,6 @@
 """fix expense_accounts employee_id foreign key constraint
 
-Revision ID: 054_fix_expense_accounts_employee_id_fkey
+Revision ID: 054_fix_expense_emp_fk
 Revises: 053_ensure_client_id_in_projects
 Create Date: 2025-01-27 18:00:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
-revision = '054_fix_expense_accounts_employee_id_fkey'
+revision = '054_fix_expense_emp_fk'
 down_revision = '053_ensure_client_id_in_projects'
 branch_labels = None
 depends_on = None
