@@ -11,26 +11,56 @@ import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import EmployeePortalTabs from '@/components/employes/EmployeePortalTabs';
+import { useAuthStore } from '@/lib/store';
+import { checkMySuperAdminStatus } from '@/lib/api/admin';
 
 export default function EmployeePortalPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
+  const { user } = useAuthStore();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
+  const currentUserId = user?.id ? parseInt(user.id) : null;
 
   useEffect(() => {
     if (!employeeId) {
       setError('ID d\'employé invalide');
       setLoading(false);
+      setCheckingPermissions(false);
       return;
     }
 
-    loadEmployee();
-  }, [employeeId]);
+    checkPermissions();
+  }, [employeeId, currentUserId]);
+
+  const checkPermissions = async () => {
+    if (!employeeId || !currentUserId) {
+      setError('ID d\'employé ou utilisateur invalide');
+      setLoading(false);
+      setCheckingPermissions(false);
+      return;
+    }
+
+    try {
+      // Check if user is superadmin
+      const status = await checkMySuperAdminStatus();
+      setIsSuperAdmin(status.is_superadmin === true);
+
+      // Load employee to check user_id
+      await loadEmployee();
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la vérification des permissions');
+      setLoading(false);
+      setCheckingPermissions(false);
+    }
+  };
 
   const loadEmployee = async () => {
     if (!employeeId) return;
@@ -40,6 +70,16 @@ export default function EmployeePortalPage() {
       setError(null);
       const data = await employeesAPI.get(employeeId);
       setEmployee(data);
+
+      // Check if user has permission to access this employee's portal
+      if (!isSuperAdmin && data.user_id !== currentUserId) {
+        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé. Seuls les superadmins peuvent accéder aux portails des autres employés.');
+        setLoading(false);
+        setCheckingPermissions(false);
+        return;
+      }
+
+      setCheckingPermissions(false);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors du chargement de l\'employé');
@@ -47,6 +87,7 @@ export default function EmployeePortalPage() {
         message: appError.message || 'Erreur lors du chargement de l\'employé',
         type: 'error',
       });
+      setCheckingPermissions(false);
     } finally {
       setLoading(false);
     }
@@ -57,7 +98,7 @@ export default function EmployeePortalPage() {
     router.push(`/${locale}/dashboard/management/employes`);
   };
 
-  if (loading) {
+  if (loading || checkingPermissions) {
     return (
       <div className="w-full py-12 text-center">
         <Loading />
@@ -70,12 +111,6 @@ export default function EmployeePortalPage() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Erreur"
-          breadcrumbs={[
-            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-            { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-            { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
-            { label: 'Portail' },
-          ]}
         />
         <Alert variant="error">{error}</Alert>
         <div className="mt-4">
@@ -93,12 +128,6 @@ export default function EmployeePortalPage() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Employé non trouvé"
-          breadcrumbs={[
-            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-            { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-            { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
-            { label: 'Portail' },
-          ]}
         />
         <Alert variant="error">L'employé demandé n'existe pas.</Alert>
         <div className="mt-4">
@@ -117,13 +146,6 @@ export default function EmployeePortalPage() {
         <PageHeader
           title={`Portail de ${employee.first_name} ${employee.last_name}`}
           description="Accédez à toutes les informations et outils de l'employé"
-          breadcrumbs={[
-            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-            { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-            { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
-            { label: `${employee.first_name} ${employee.last_name}`, href: `/${params?.locale || 'fr'}/dashboard/management/employes/${employee.id}` },
-            { label: 'Portail' },
-          ]}
           actions={
             <Button variant="outline" size="sm" onClick={handleBack}>
               <ArrowLeft className="w-4 h-4 mr-2" />

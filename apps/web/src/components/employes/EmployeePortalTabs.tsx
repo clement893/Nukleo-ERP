@@ -71,13 +71,13 @@ export default function EmployeePortalTabs({ employee }: EmployeePortalTabsProps
             <EmployeePortalTimeSheets employeeId={employee.id} />
           </TabPanel>
           <TabPanel value="leo">
-            <EmployeePortalLeo employeeId={employee.id} />
+            <EmployeePortalLeo employee={employee} />
           </TabPanel>
           <TabPanel value="deadlines">
             <EmployeePortalDeadlines employeeId={employee.id} />
           </TabPanel>
           <TabPanel value="expenses">
-            <EmployeePortalExpenses employeeId={employee.id} />
+            <EmployeePortalExpenses employee={employee} />
           </TabPanel>
           <TabPanel value="profile">
             <EmployeePortalProfile employee={employee} />

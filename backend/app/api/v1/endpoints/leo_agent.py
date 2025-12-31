@@ -3,9 +3,10 @@ Leo Agent API Endpoints
 Endpoints for managing Leo AI assistant conversations and messages
 """
 
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.models.user import User
 from app.schemas.leo import (
@@ -29,17 +30,34 @@ router = APIRouter(prefix="/ai/leo", tags=["leo-agent"])
 async def get_conversations(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=100, description="Maximum number of records"),
+    user_id: Optional[int] = Query(None, description="Optional user ID to filter conversations (superadmin only)"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Get conversations for the current user
+    Get conversations for the current user or specified user (superadmin only)
     
     Returns a paginated list of conversations ordered by most recently updated.
+    If user_id is provided, only superadmins can use it to view another user's conversations.
     """
+    from app.dependencies import is_superadmin
+    
+    # Determine which user_id to use
+    target_user_id = current_user.id
+    
+    # If user_id is provided, check if current user is superadmin
+    if user_id is not None:
+        user_is_superadmin = await is_superadmin(current_user, db)
+        if not user_is_superadmin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only superadmins can view other users' conversations"
+            )
+        target_user_id = user_id
+    
     leo_service = LeoAgentService(db)
     conversations, total = await leo_service.get_user_conversations(
-        user_id=current_user.id,
+        user_id=target_user_id,
         limit=limit,
         skip=skip
     )
@@ -62,9 +80,25 @@ async def get_conversation(
     Get a specific conversation
     
     Only returns the conversation if it belongs to the current user.
+    Superadmins can view any conversation.
     """
+    from app.dependencies import is_superadmin
+    
     leo_service = LeoAgentService(db)
+    
+    # Try to get conversation for current user first
     conversation = await leo_service.get_conversation(conversation_id, current_user.id)
+    
+    # If not found and user is superadmin, try to get conversation without user filter
+    if not conversation:
+        user_is_superadmin = await is_superadmin(current_user, db)
+        if user_is_superadmin:
+            # For superadmins, get conversation without user filter
+            from app.modules.leo.models import LeoConversation as LeoConversationModel
+            result = await db.execute(
+                select(LeoConversationModel).where(LeoConversationModel.id == conversation_id)
+            )
+            conversation = result.scalar_one_or_none()
     
     if not conversation:
         raise HTTPException(
@@ -85,11 +119,26 @@ async def get_conversation_messages(
     Get all messages for a conversation
     
     Only returns messages if the conversation belongs to the current user.
+    Superadmins can view messages from any conversation.
     """
+    from app.dependencies import is_superadmin
+    
     leo_service = LeoAgentService(db)
     
     # Verify conversation belongs to user
     conversation = await leo_service.get_conversation(conversation_id, current_user.id)
+    
+    # If not found and user is superadmin, try to get conversation without user filter
+    if not conversation:
+        user_is_superadmin = await is_superadmin(current_user, db)
+        if user_is_superadmin:
+            # For superadmins, get conversation without user filter
+            from app.modules.leo.models import LeoConversation as LeoConversationModel
+            result = await db.execute(
+                select(LeoConversationModel).where(LeoConversationModel.id == conversation_id)
+            )
+            conversation = result.scalar_one_or_none()
+    
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

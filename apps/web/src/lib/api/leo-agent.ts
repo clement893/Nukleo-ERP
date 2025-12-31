@@ -60,11 +60,12 @@ export interface LeoConversationUpdate {
  */
 export const leoAgentAPI = {
   /**
-   * List conversations for the current user
+   * List conversations for the current user (or specified user_id for superadmins)
    */
   listConversations: async (params?: {
     skip?: number;
     limit?: number;
+    user_id?: number; // Optional: for superadmins to view other users' conversations
   }): Promise<LeoConversationListResponse> => {
     const response = await apiClient.get<LeoConversationListResponse>('/v1/ai/leo/conversations', {
       params: { skip: 0, limit: 20, ...params },

@@ -12,7 +12,11 @@ import { leoAgentAPI, type LeoConversation, type LeoMessage } from '@/lib/api/le
 import { LeoChat } from './LeoChat';
 import { LeoSidebar } from './LeoSidebar';
 
-export function LeoContainer() {
+interface LeoContainerProps {
+  userId?: number; // Optional user ID to filter conversations (for superadmins viewing other users' conversations)
+}
+
+export function LeoContainer({ userId }: LeoContainerProps = {}) {
   const [conversations, setConversations] = useState<LeoConversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [messages, setMessages] = useState<LeoMessage[]>([]);
@@ -22,10 +26,10 @@ export function LeoContainer() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { error: showError } = useToast();
 
-  // Load conversations on mount
+  // Load conversations on mount or when userId changes
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [userId]);
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -39,7 +43,7 @@ export function LeoContainer() {
   const loadConversations = useCallback(async () => {
     setIsLoadingConversations(true);
     try {
-      const response = await leoAgentAPI.listConversations({ limit: 50 });
+      const response = await leoAgentAPI.listConversations({ limit: 50, user_id: userId });
       setConversations(response.items);
     } catch (err) {
       const errorMessage = getErrorMessage(err);
@@ -48,7 +52,7 @@ export function LeoContainer() {
     } finally {
       setIsLoadingConversations(false);
     }
-  }, [showError]);
+  }, [showError, userId]);
 
   const loadMessages = useCallback(async (conversationId: number) => {
     setIsLoadingMessages(true);

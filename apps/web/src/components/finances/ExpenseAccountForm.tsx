@@ -16,6 +16,7 @@ interface ExpenseAccountFormProps {
   onCancel: () => void;
   loading?: boolean;
   employees?: Array<{ id: number; first_name: string; last_name: string }>;
+  defaultEmployeeId?: number; // Optional default employee ID to pre-fill
 }
 
 const CURRENCY_OPTIONS = [
@@ -31,9 +32,10 @@ export default function ExpenseAccountForm({
   onCancel,
   loading = false,
   employees = [],
+  defaultEmployeeId,
 }: ExpenseAccountFormProps) {
   const [formData, setFormData] = useState<ExpenseAccountCreate>({
-    employee_id: expenseAccount?.employee_id || 0,
+    employee_id: expenseAccount?.employee_id || defaultEmployeeId || 0,
     title: expenseAccount?.title || '',
     description: expenseAccount?.description || null,
     expense_period_start: expenseAccount?.expense_period_start 
@@ -310,7 +312,13 @@ export default function ExpenseAccountForm({
           ]}
           error={errors.employee_id}
           fullWidth
+          disabled={!!defaultEmployeeId && !expenseAccount} // Disable if defaultEmployeeId is provided and not editing
         />
+        {defaultEmployeeId && !expenseAccount && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Le compte de dépense sera créé pour cet employé
+          </p>
+        )}
       </div>
 
       {/* Titre */}
