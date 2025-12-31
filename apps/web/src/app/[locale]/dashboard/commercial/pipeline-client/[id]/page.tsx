@@ -187,13 +187,10 @@ function PipelineDetailContent() {
   useEffect(() => {
     const loadContacts = async () => {
       try {
-        setLoadingContacts(true);
         const contactsList = await contactsAPI.list(0, 1000);
         setContacts(contactsList);
       } catch (err) {
         console.error('Error loading contacts:', err);
-      } finally {
-        setLoadingContacts(false);
       }
     };
     
