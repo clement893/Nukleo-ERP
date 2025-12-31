@@ -49,13 +49,12 @@ export default function PipelineOpportunityCard({
   };
 
   // Get contact details from contacts array if available
-  const displayContacts = contact_ids.length > 0 && contacts.length > 0
+  const displayContacts = contact_ids && contact_ids.length > 0 && contacts && contacts.length > 0
     ? contacts.filter(c => contact_ids.includes(c.id))
     : [];
 
   return (
     <div
-      draggable
       onClick={onClick}
       className={clsx(
         'bg-background dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-shadow flex-shrink-0',

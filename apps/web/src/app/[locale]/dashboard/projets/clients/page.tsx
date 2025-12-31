@@ -6,7 +6,6 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -25,14 +24,12 @@ import {
   FileSpreadsheet, 
   MoreVertical, 
   Trash2,
-  HelpCircle
 } from 'lucide-react';
 import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery, useMutation, useQueryClient as useRQClient } from '@tanstack/react-query';
-import { companiesAPI } from '@/lib/api/companies';
-import { usersAPI } from '@/lib/api';
+import type { Company } from '@/lib/api/companies';
 
 function ClientsContent() {
   const router = useRouter();
@@ -65,16 +62,23 @@ function ClientsContent() {
     queryFn: () => clientsAPI.count(),
   });
   
-  // Fetch companies and users for dropdowns
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies'],
-    queryFn: () => companiesAPI.list(0, 1000),
-  });
-  
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersAPI.list(),
-  });
+  // Fetch users for dropdowns - extract from clients
+  const users = useMemo(() => {
+    const userMap = new Map<number, { id: number; first_name: string; last_name: string }>();
+    clients.forEach((client) => {
+      if (client.responsable_id && client.responsable_name) {
+        const nameParts = client.responsable_name.split(' ');
+        if (nameParts.length >= 2 && nameParts[0]) {
+          userMap.set(client.responsable_id, {
+            id: client.responsable_id,
+            first_name: nameParts[0],
+            last_name: nameParts.slice(1).join(' '),
+          });
+        }
+      }
+    });
+    return Array.from(userMap.values());
+  }, [clients]);
   
   // Mutations
   const createMutation = useMutation({
@@ -108,18 +112,6 @@ function ClientsContent() {
     },
   });
   
-  // Extract unique values for filters
-  const uniqueValues = useMemo(() => {
-    const responsables = new Set<string>();
-    clients.forEach((client) => {
-      if (client.responsable_id) {
-        responsables.add(client.responsable_id.toString());
-      }
-    });
-    return {
-      responsables: Array.from(responsables),
-    };
-  }, [clients]);
   
   // Filtered clients
   const filteredClients = useMemo(() => {
@@ -321,11 +313,32 @@ function ClientsContent() {
       key: 'company_logo_url',
       label: '',
       sortable: false,
-      render: (_value, client) => (
-        <div className="flex items-center">
-          <CompanyAvatar company={{ id: client.company_id, name: client.company_name || '', logo_url: client.company_logo_url }} size="md" />
-        </div>
-      ),
+      render: (_value, client) => {
+        const companyForAvatar = {
+          id: client.company_id,
+          name: client.company_name || '',
+          logo_url: client.company_logo_url,
+          parent_company_id: null,
+          description: null,
+          website: null,
+          email: null,
+          phone: null,
+          address: null,
+          city: null,
+          country: null,
+          is_client: true,
+          facebook: null,
+          instagram: null,
+          linkedin: null,
+          created_at: '',
+          updated_at: '',
+        } as Company;
+        return (
+          <div className="flex items-center">
+            <CompanyAvatar company={companyForAvatar} size="md" />
+          </div>
+        );
+      },
     },
     {
       key: 'company_name',
@@ -336,7 +349,7 @@ function ClientsContent() {
           <div>
             <div className="font-medium">{client.company_name || '-'}</div>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -346,6 +359,17 @@ function ClientsContent() {
               }}
             >
               Modifier
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(client.id);
+              }}
+              className="text-destructive hover:text-destructive"
+            >
+              Supprimer
             </Button>
           </div>
         </div>
@@ -373,7 +397,7 @@ function ClientsContent() {
             variant="default" 
             className={`capitalize text-white ${statusColors[value as ClientStatus] || 'bg-gray-500'}`}
           >
-            {statusLabels[value as ClientStatus] || value}
+            {statusLabels[value as ClientStatus] || String(value)}
           </Badge>
         );
       },
@@ -435,8 +459,8 @@ function ClientsContent() {
                 { value: ClientStatus.INACTIVE, label: 'Inactif' },
                 { value: ClientStatus.MAINTENANCE, label: 'Maintenance' },
               ]}
-              selectedValues={filterStatus}
-              onSelectionChange={setFilterStatus}
+              selectedValues={filterStatus.map(s => s.toString())}
+              onSelectionChange={(values) => setFilterStatus(values.map(v => v as ClientStatus))}
               className="min-w-[120px]"
             />
             
@@ -444,10 +468,10 @@ function ClientsContent() {
             {users.length > 0 && (
               <MultiSelectFilter
                 label="Responsable"
-                options={users.map((user) => ({
-                  value: user.id.toString(),
-                  label: `${user.first_name} ${user.last_name}`,
-                }))}
+              options={users.map((user: { id: number; first_name: string; last_name: string }) => ({
+                value: user.id.toString(),
+                label: `${user.first_name} ${user.last_name}`,
+              }))}
                 selectedValues={filterResponsable}
                 onSelectionChange={setFilterResponsable}
                 className="min-w-[150px]"
@@ -653,7 +677,7 @@ function ClientsContent() {
           title="Logs d'import en temps réel"
           size="xl"
         >
-          {currentImportId ? (
+            {currentImportId ? (
             <ImportLogsViewer
               endpointUrl={`/v1/projects/clients/import/${currentImportId}/logs`}
               importId={currentImportId}
@@ -662,7 +686,7 @@ function ClientsContent() {
           ) : (
             <div className="p-4 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
+              <p className="text-muted-foreground">Initialisation de l&apos;import...</p>
             </div>
           )}
         </Modal>

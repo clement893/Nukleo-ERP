@@ -6,9 +6,6 @@ import { clientsAPI } from '@/lib/api/clients';
 import { companiesAPI } from '@/lib/api/companies';
 import { contactsAPI } from '@/lib/api/contacts';
 import { projectsAPI } from '@/lib/api/projects';
-import type { Client } from '@/lib/api/clients';
-import type { Company } from '@/lib/api/companies';
-import type { Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
@@ -52,11 +49,17 @@ export default function ClientDetailPage() {
   }, [allProjects, client?.company_id]);
   
   // Fetch contacts for this company
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['contacts', 'company', client?.company_id],
-    queryFn: () => contactsAPI.list(0, 1000, undefined, client?.company_id),
+  const { data: allContacts = [] } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: () => contactsAPI.list(0, 1000),
     enabled: !!client?.company_id,
   });
+  
+  // Filter contacts by company_id
+  const contacts = useMemo(() => {
+    if (!client?.company_id || !allContacts) return [];
+    return allContacts.filter(c => c.company_id === client.company_id);
+  }, [allContacts, client?.company_id]);
   
   const handleEdit = () => {
     if (client) {

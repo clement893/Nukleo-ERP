@@ -581,14 +581,15 @@ function PipelineDetailContent() {
               const opportunity = opportunities.find(opp => opp.id === card.id);
               return (
                 <PipelineOpportunityCard
+                  key={card.id}
                   id={card.id}
                   title={card.title}
                   description={card.description}
                   priority={card.priority}
                   dueDate={card.dueDate}
                   tags={card.tags}
-                  contact_ids={opportunity?.contact_ids}
-                  contact_names={opportunity?.contact_names}
+                  contact_ids={opportunity?.contact_ids || []}
+                  contact_names={opportunity?.contact_names || []}
                   contacts={contacts}
                   onAddContact={() => {
                     if (opportunity) {

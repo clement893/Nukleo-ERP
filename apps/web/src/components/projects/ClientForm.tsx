@@ -57,7 +57,7 @@ export default function ClientForm({
         company_id: client.company_id,
         company_name: client.company_name,
         status: client.status,
-        responsible_id: client.responsible_id,
+        responsable_id: client.responsable_id,
         notes: client.notes,
         comments: client.comments,
         portal_url: client.portal_url,
