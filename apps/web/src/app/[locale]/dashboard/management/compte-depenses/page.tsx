@@ -21,15 +21,19 @@ import {
   MessageSquare,
   Eye,
   Filter,
+  Plus,
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteExpenseAccounts, 
+  useCreateExpenseAccount,
   useApproveExpenseAccount,
   useRejectExpenseAccount,
   useRequestClarification,
 } from '@/lib/query/expenseAccounts';
+import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
+import { type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/finances/expenseAccounts';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 
 function ManagementCompteDepensesContent() {
@@ -46,6 +50,7 @@ function ManagementCompteDepensesContent() {
   } = useInfiniteExpenseAccounts(20);
   
   // Mutations
+  const createExpenseAccountMutation = useCreateExpenseAccount();
   const approveExpenseAccountMutation = useApproveExpenseAccount();
   const rejectExpenseAccountMutation = useRejectExpenseAccount();
   const requestClarificationMutation = useRequestClarification();
@@ -55,6 +60,7 @@ function ManagementCompteDepensesContent() {
     return expenseAccountsData?.pages.flat() || [];
   }, [expenseAccountsData]);
   
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [selectedExpenseAccount, setSelectedExpenseAccount] = useState<ExpenseAccount | null>(null);
@@ -127,6 +133,24 @@ function ManagementCompteDepensesContent() {
     setFilterEmployee([]);
     setSearchQuery('');
   }, []);
+
+  // Handle create
+  const handleCreate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate) => {
+    try {
+      await createExpenseAccountMutation.mutateAsync(data as ExpenseAccountCreate);
+      setShowCreateModal(false);
+      showToast({
+        message: 'Compte de dépenses créé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création du compte de dépenses',
+        type: 'error',
+      });
+    }
+  };
 
   // Handle approve/reject/clarification
   const handleAction = async () => {
@@ -324,44 +348,55 @@ function ManagementCompteDepensesContent() {
             className="w-full"
           />
           
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Statut */}
-            <MultiSelect
-              options={statusOptions.map((status) => ({
-                label: status === 'submitted' ? 'Soumis' :
-                       status === 'under_review' ? 'En révision' :
-                       status === 'approved' ? 'Approuvé' :
-                       status === 'rejected' ? 'Rejeté' :
-                       status === 'needs_clarification' ? 'Précisions requises' : status,
-                value: status,
-              }))}
-              value={filterStatus}
-              onChange={setFilterStatus}
-              placeholder="Filtrer par statut"
-              className="min-w-[180px]"
-            />
-
-            {/* Employé */}
-            {employees.length > 0 && (
+          {/* Filters and Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Statut */}
               <MultiSelect
-                options={employees.map((emp) => ({
-                  label: `${emp.first_name} ${emp.last_name}`,
-                  value: emp.id.toString(),
+                options={statusOptions.map((status) => ({
+                  label: status === 'submitted' ? 'Soumis' :
+                         status === 'under_review' ? 'En révision' :
+                         status === 'approved' ? 'Approuvé' :
+                         status === 'rejected' ? 'Rejeté' :
+                         status === 'needs_clarification' ? 'Précisions requises' : status,
+                  value: status,
                 }))}
-                value={filterEmployee}
-                onChange={setFilterEmployee}
-                placeholder="Filtrer par employé"
+                value={filterStatus}
+                onChange={setFilterStatus}
+                placeholder="Filtrer par statut"
                 className="min-w-[180px]"
               />
-            )}
 
-            {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                <Filter className="w-4 h-4 mr-1.5" />
-                Réinitialiser les filtres
-              </Button>
-            )}
+              {/* Employé */}
+              {employees.length > 0 && (
+                <MultiSelect
+                  options={employees.map((emp) => ({
+                    label: `${emp.first_name} ${emp.last_name}`,
+                    value: emp.id.toString(),
+                  }))}
+                  value={filterEmployee}
+                  onChange={setFilterEmployee}
+                  placeholder="Filtrer par employé"
+                  className="min-w-[180px]"
+                />
+              )}
+
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                  <Filter className="w-4 h-4 mr-1.5" />
+                  Réinitialiser les filtres
+                </Button>
+              )}
+            </div>
+
+            {/* Create Button */}
+            <Button
+              size="sm"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Nouveau compte de dépenses
+            </Button>
           </div>
         </div>
       </Card>
@@ -615,6 +650,21 @@ function ManagementCompteDepensesContent() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Create Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Créer un nouveau compte de dépenses"
+        size="lg"
+      >
+        <ExpenseAccountForm
+          onSubmit={handleCreate}
+          onCancel={() => setShowCreateModal(false)}
+          loading={createExpenseAccountMutation.isPending}
+          employees={employees}
+        />
       </Modal>
     </MotionDiv>
   );
