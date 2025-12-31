@@ -32,6 +32,13 @@ interface TeamWithStats extends TeamType {
   inProgressTasks: number;
 }
 
+// Définition des 3 équipes à créer/afficher
+const REQUIRED_TEAMS = [
+  { name: 'Le Bureau', slug: 'le-bureau' },
+  { name: 'Le Studio', slug: 'le-studio' },
+  { name: 'Le Lab', slug: 'le-lab' },
+];
+
 function EquipesContent() {
   const router = useRouter();
   const { showToast } = useToast();
@@ -43,6 +50,69 @@ function EquipesContent() {
     loadTeams();
   }, []);
 
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const ensureTeamsExist = async (existingTeams: TeamType[]): Promise<TeamType[]> => {
+    const teamsToCreate: typeof REQUIRED_TEAMS = [];
+    
+    // Vérifier quelles équipes manquent
+    for (const requiredTeam of REQUIRED_TEAMS) {
+      const exists = existingTeams.some(
+        (team: TeamType) => 
+          team.name === requiredTeam.name || 
+          team.slug === requiredTeam.slug ||
+          team.slug === generateSlug(requiredTeam.name)
+      );
+      
+      if (!exists) {
+        teamsToCreate.push(requiredTeam);
+      }
+    }
+    
+    // Créer les équipes manquantes
+    const createdTeams: TeamType[] = [];
+    for (const teamToCreate of teamsToCreate) {
+      try {
+        const response = await teamsAPI.create({
+          name: teamToCreate.name,
+          slug: teamToCreate.slug,
+          description: `Équipe ${teamToCreate.name}`,
+        });
+        if (response.data) {
+          createdTeams.push(response.data);
+        }
+      } catch (err) {
+        console.error(`Erreur lors de la création de l'équipe ${teamToCreate.name}:`, err);
+        // Continuer même en cas d'erreur
+      }
+    }
+    
+    // Retourner toutes les équipes (existantes + créées)
+    const allTeams = [...existingTeams, ...createdTeams];
+    
+    // Filtrer pour ne garder que les 3 équipes requises dans l'ordre spécifié
+    const orderedTeams: TeamType[] = [];
+    for (const requiredTeam of REQUIRED_TEAMS) {
+      const foundTeam = allTeams.find(
+        (team: TeamType) => 
+          team.name === requiredTeam.name || 
+          team.slug === requiredTeam.slug ||
+          team.slug === generateSlug(requiredTeam.name)
+      );
+      if (foundTeam) {
+        orderedTeams.push(foundTeam);
+      }
+    }
+    return orderedTeams;
+  };
+
   const loadTeams = async () => {
     try {
       setLoading(true);
@@ -52,10 +122,13 @@ function EquipesContent() {
       const teamsResponse = await teamsAPI.list();
       const teamsData = teamsResponse.data?.teams || [];
       
-      // Filtrer les 3 équipes spécifiques (Bureau, Studio, Lab)
-      const targetTeams = teamsData.filter((team: TeamType) => 
-        ['bureau', 'studio', 'lab'].includes(team.slug)
-      );
+      // S'assurer que les 3 équipes existent
+      const targetTeams = await ensureTeamsExist(teamsData);
+      
+      if (targetTeams.length === 0) {
+        setError('Impossible de charger ou créer les équipes');
+        return;
+      }
       
       // Charger les tâches et statistiques pour chaque équipe
       const teamsWithStats: TeamWithStats[] = await Promise.all(
@@ -181,45 +254,63 @@ function EquipesContent() {
 
                   {/* Employés */}
                   <div className="mt-4 pt-4 border-t border-border">
-                    <h4 className="text-sm font-semibold text-foreground mb-3">Employés</h4>
-                    <div className="space-y-3">
-                      {team.employees.map((employee) => (
-                        <div key={employee.id} className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary font-semibold text-sm">
-                              {employee.name.charAt(0)}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {employee.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {employee.email}
-                            </p>
-                            <div className="mt-2 space-y-1">
-                              {employee.tasks.map((task) => {
-                                const statusInfo = getStatusBadge(task.status);
-                                return (
-                                  <div
-                                    key={task.id}
-                                    className="flex items-center gap-2 text-xs"
-                                  >
-                                    <span className="flex-1 truncate">{task.title}</span>
-                                    <Badge
-                                      variant={statusInfo.variant}
-                                      className="text-xs px-2 py-0.5"
-                                    >
-                                      {statusInfo.label}
-                                    </Badge>
-                                  </div>
-                                );
-                              })}
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-foreground">Employés</h4>
+                      <Badge variant="default" className="text-xs">
+                        {team.employees.length}
+                      </Badge>
+                    </div>
+                    {team.employees.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">
+                        Aucun employé dans cette équipe
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {team.employees.map((employee) => (
+                          <div key={employee.id} className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center flex-shrink-0">
+                              <span className="text-primary font-semibold text-sm">
+                                {employee.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {employee.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {employee.email}
+                              </p>
+                              {employee.tasks.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {employee.tasks.slice(0, 3).map((task) => {
+                                    const statusInfo = getStatusBadge(task.status);
+                                    return (
+                                      <div
+                                        key={task.id}
+                                        className="flex items-center gap-2 text-xs"
+                                      >
+                                        <span className="flex-1 truncate">{task.title}</span>
+                                        <Badge
+                                          variant={statusInfo.variant}
+                                          className="text-xs px-2 py-0.5"
+                                        >
+                                          {statusInfo.label}
+                                        </Badge>
+                                      </div>
+                                    );
+                                  })}
+                                  {employee.tasks.length > 3 && (
+                                    <p className="text-xs text-muted-foreground italic">
+                                      +{employee.tasks.length - 3} autre(s) tâche(s)
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
