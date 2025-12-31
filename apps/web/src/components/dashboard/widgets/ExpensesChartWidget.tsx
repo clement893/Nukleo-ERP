@@ -11,15 +11,13 @@ import EmptyState from '@/components/ui/EmptyState';
 import { expenseAccountsAPI } from '@/lib/api/finances/expenseAccounts';
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Area,
   AreaChart,
+  Area,
 } from 'recharts';
 
 // Custom Tooltip avec glassmorphism

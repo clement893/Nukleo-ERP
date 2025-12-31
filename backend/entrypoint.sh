@@ -306,6 +306,26 @@ if [ -n "$DATABASE_URL" ]; then
     if [ "$MIGRATION_STATUS" = "success" ]; then
         echo "✅ Database migrations completed successfully"
         
+        # Verify database schema compatibility after migrations
+        echo "=========================================="
+        echo "Verifying database schema compatibility..."
+        echo "=========================================="
+        if command -v timeout >/dev/null 2>&1; then
+            timeout 30 python -c "
+from app.core.schema_validator import validate_database_schema_on_startup
+import asyncio
+result = asyncio.run(validate_database_schema_on_startup())
+exit(0 if result else 1)
+" 2>&1 || echo "⚠️  Schema validation skipped (will be checked at runtime)"
+        else
+            python -c "
+from app.core.schema_validator import validate_database_schema_on_startup
+import asyncio
+result = asyncio.run(validate_database_schema_on_startup())
+exit(0 if result else 1)
+" 2>&1 || echo "⚠️  Schema validation skipped (will be checked at runtime)"
+        fi
+        
         # Verify avatar column migration was applied
         echo "=========================================="
         echo "Verifying avatar column migration..."

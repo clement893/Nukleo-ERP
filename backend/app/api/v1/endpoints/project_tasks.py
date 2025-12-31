@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import ProgrammingError
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -18,6 +19,7 @@ from app.schemas.project_task import (
     ProjectTaskResponse,
     ProjectTaskWithAssignee,
 )
+from app.core.logging import logger
 
 router = APIRouter(prefix="/project-tasks", tags=["project-tasks"])
 
@@ -34,55 +36,105 @@ async def list_tasks(
     db: AsyncSession = Depends(get_db),
 ):
     """List project tasks"""
-    query = select(ProjectTask)
-    
-    if team_id:
-        query = query.where(ProjectTask.team_id == team_id)
-    if project_id:
-        query = query.where(ProjectTask.project_id == project_id)
-    if assignee_id:
-        query = query.where(ProjectTask.assignee_id == assignee_id)
-    if status:
-        query = query.where(ProjectTask.status == status)
-    
-    query = query.offset(skip).limit(limit).order_by(ProjectTask.order, ProjectTask.created_at.desc())
-    
-    result = await db.execute(query.options(
-        selectinload(ProjectTask.assignee),
-        selectinload(ProjectTask.team),
-        selectinload(ProjectTask.project),
-    ))
-    tasks = result.scalars().all()
-    
-    # Convert to response format
-    task_responses = []
-    for task in tasks:
-        task_dict = {
-            "id": task.id,
-            "title": task.title,
-            "description": task.description,
-            "status": task.status,
-            "priority": task.priority,
-            "team_id": task.team_id,
-            "project_id": task.project_id,
-            "assignee_id": task.assignee_id,
-            "created_by_id": task.created_by_id,
-            "due_date": task.due_date,
-            "started_at": task.started_at,
-            "completed_at": task.completed_at,
-            "order": task.order,
-            "created_at": task.created_at,
-            "updated_at": task.updated_at,
-            "assignee_name": None,
-            "assignee_email": None,
-        }
-        if task.assignee:
-            task_dict["assignee_name"] = f"{task.assignee.first_name or ''} {task.assignee.last_name or ''}".strip()
-            task_dict["assignee_email"] = task.assignee.email
+    try:
+        query = select(ProjectTask)
         
-        task_responses.append(ProjectTaskWithAssignee(**task_dict))
-    
-    return task_responses
+        if team_id:
+            query = query.where(ProjectTask.team_id == team_id)
+        if project_id:
+            query = query.where(ProjectTask.project_id == project_id)
+        if assignee_id:
+            query = query.where(ProjectTask.assignee_id == assignee_id)
+        if status:
+            query = query.where(ProjectTask.status == status)
+        
+        # Try to order by order field, fallback to created_at if order doesn't exist
+        try:
+            query = query.offset(skip).limit(limit).order_by(ProjectTask.order, ProjectTask.created_at.desc())
+        except (AttributeError, ProgrammingError):
+            # If order column doesn't exist, just order by created_at
+            query = query.offset(skip).limit(limit).order_by(ProjectTask.created_at.desc())
+        
+        # Try to load relationships, but handle errors gracefully
+        try:
+            result = await db.execute(query.options(
+                selectinload(ProjectTask.assignee),
+                selectinload(ProjectTask.team),
+                selectinload(ProjectTask.project),
+            ))
+        except (ProgrammingError, AttributeError) as e:
+            # If relationship loading fails (e.g., missing columns), try without relationships
+            logger.warning(f"Failed to load relationships for project tasks: {e}")
+            result = await db.execute(query)
+        
+        tasks = result.scalars().all()
+        
+        # Convert to response format
+        task_responses = []
+        for task in tasks:
+            try:
+                # Safely access all fields with getattr and defaults
+                task_dict = {
+                    "id": task.id,
+                    "title": task.title or "Untitled Task",
+                    "description": getattr(task, 'description', None),
+                    "status": task.status,
+                    "priority": task.priority,
+                    "team_id": getattr(task, 'team_id', None),
+                    "project_id": getattr(task, 'project_id', None),
+                    "assignee_id": getattr(task, 'assignee_id', None),
+                    "created_by_id": getattr(task, 'created_by_id', None),
+                    "due_date": getattr(task, 'due_date', None),
+                    "started_at": getattr(task, 'started_at', None),
+                    "completed_at": getattr(task, 'completed_at', None),
+                    "order": getattr(task, 'order', 0),
+                    "created_at": task.created_at,
+                    "updated_at": task.updated_at,
+                    "assignee_name": None,
+                    "assignee_email": None,
+                }
+                
+                # Try to get assignee information if available
+                try:
+                    if hasattr(task, 'assignee') and task.assignee:
+                        assignee = task.assignee
+                        first_name = getattr(assignee, 'first_name', '') or ''
+                        last_name = getattr(assignee, 'last_name', '') or ''
+                        task_dict["assignee_name"] = f"{first_name} {last_name}".strip() or None
+                        task_dict["assignee_email"] = getattr(assignee, 'email', None)
+                except (AttributeError, ProgrammingError) as e:
+                    logger.debug(f"Could not load assignee info for task {task.id}: {e}")
+                    # Keep assignee_name and assignee_email as None
+                
+                # Ensure title is not empty (required by schema)
+                if not task_dict["title"] or not task_dict["title"].strip():
+                    task_dict["title"] = "Untitled Task"
+                
+                task_responses.append(ProjectTaskWithAssignee(**task_dict))
+            except Exception as e:
+                logger.warning(
+                    f"Error processing task {getattr(task, 'id', 'unknown')}: {e}",
+                    exc_info=True,
+                    context={"task_id": getattr(task, 'id', None)}
+                )
+                # Skip this task and continue with others
+                continue
+        
+        return task_responses
+    except Exception as e:
+        logger.error(
+            f"Unexpected error in list_tasks: {type(e).__name__}: {str(e)}",
+            exc_info=True,
+            context={
+                "user_id": getattr(current_user, 'id', None),
+                "team_id": team_id,
+                "project_id": project_id,
+            }
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
 
 
 @router.get("/{task_id}", response_model=ProjectTaskWithAssignee)
@@ -92,47 +144,83 @@ async def get_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a project task by ID"""
-    result = await db.execute(
-        select(ProjectTask)
-        .where(ProjectTask.id == task_id)
-        .options(
-            selectinload(ProjectTask.assignee),
-            selectinload(ProjectTask.team),
-            selectinload(ProjectTask.project),
+    try:
+        # Try to load with relationships first
+        try:
+            result = await db.execute(
+                select(ProjectTask)
+                .where(ProjectTask.id == task_id)
+                .options(
+                    selectinload(ProjectTask.assignee),
+                    selectinload(ProjectTask.team),
+                    selectinload(ProjectTask.project),
+                )
+            )
+        except (ProgrammingError, AttributeError) as e:
+            # If relationship loading fails, try without relationships
+            logger.warning(f"Failed to load relationships for task {task_id}: {e}")
+            result = await db.execute(
+                select(ProjectTask).where(ProjectTask.id == task_id)
+            )
+        
+        task = result.scalar_one_or_none()
+        
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Task not found"
+            )
+        
+        # Safely access all fields with getattr and defaults
+        task_dict = {
+            "id": task.id,
+            "title": task.title or "Untitled Task",
+            "description": getattr(task, 'description', None),
+            "status": task.status,
+            "priority": task.priority,
+            "team_id": getattr(task, 'team_id', None),
+            "project_id": getattr(task, 'project_id', None),
+            "assignee_id": getattr(task, 'assignee_id', None),
+            "created_by_id": getattr(task, 'created_by_id', None),
+            "due_date": getattr(task, 'due_date', None),
+            "started_at": getattr(task, 'started_at', None),
+            "completed_at": getattr(task, 'completed_at', None),
+            "order": getattr(task, 'order', 0),
+            "created_at": task.created_at,
+            "updated_at": task.updated_at,
+            "assignee_name": None,
+            "assignee_email": None,
+        }
+        
+        # Try to get assignee information if available
+        try:
+            if hasattr(task, 'assignee') and task.assignee:
+                assignee = task.assignee
+                first_name = getattr(assignee, 'first_name', '') or ''
+                last_name = getattr(assignee, 'last_name', '') or ''
+                task_dict["assignee_name"] = f"{first_name} {last_name}".strip() or None
+                task_dict["assignee_email"] = getattr(assignee, 'email', None)
+        except (AttributeError, ProgrammingError):
+            # Keep assignee_name and assignee_email as None
+            pass
+        
+        # Ensure title is not empty (required by schema)
+        if not task_dict["title"] or not task_dict["title"].strip():
+            task_dict["title"] = "Untitled Task"
+        
+        return ProjectTaskWithAssignee(**task_dict)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Unexpected error in get_task: {type(e).__name__}: {str(e)}",
+            exc_info=True,
+            context={"task_id": task_id, "user_id": getattr(current_user, 'id', None)}
         )
-    )
-    task = result.scalar_one_or_none()
-    
-    if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
         )
-    
-    task_dict = {
-        "id": task.id,
-        "title": task.title,
-        "description": task.description,
-        "status": task.status,
-        "priority": task.priority,
-        "team_id": task.team_id,
-        "project_id": task.project_id,
-        "assignee_id": task.assignee_id,
-        "created_by_id": task.created_by_id,
-        "due_date": task.due_date,
-        "started_at": task.started_at,
-        "completed_at": task.completed_at,
-        "order": task.order,
-        "created_at": task.created_at,
-        "updated_at": task.updated_at,
-        "assignee_name": None,
-        "assignee_email": None,
-    }
-    if task.assignee:
-        task_dict["assignee_name"] = f"{task.assignee.first_name or ''} {task.assignee.last_name or ''}".strip()
-        task_dict["assignee_email"] = task.assignee.email
-    
-    return ProjectTaskWithAssignee(**task_dict)
 
 
 @router.post("", response_model=ProjectTaskResponse, status_code=status.HTTP_201_CREATED)

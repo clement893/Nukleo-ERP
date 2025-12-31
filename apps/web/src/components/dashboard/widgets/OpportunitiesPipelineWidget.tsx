@@ -123,6 +123,8 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
             const percentage = (count / maxCount) * 100;
             const stageAmount = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
             const colors = getStageColor(stageName);
+            
+            if (!colors) return null;
 
             return (
               <div 
@@ -191,11 +193,14 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
                     }).format(opp.amount)}
                   </p>
                 )}
-                {opp.stage_name && (
-                  <p className={`text-xs ${getStageColor(opp.stage_name).text} mt-1`}>
-                    {opp.stage_name}
-                  </p>
-                )}
+                {opp.stage_name && (() => {
+                  const stageColors = getStageColor(opp.stage_name);
+                  return stageColors ? (
+                    <p className={`text-xs ${stageColors.text} mt-1`}>
+                      {opp.stage_name}
+                    </p>
+                  ) : null;
+                })()}
               </Link>
             ))}
           </div>

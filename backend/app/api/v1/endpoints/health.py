@@ -282,3 +282,54 @@ async def detailed_health_check() -> Dict[str, Any]:
     
     return health_status
 
+
+@router.get("/schema", response_model=Dict[str, Any])
+async def schema_health_check() -> Dict[str, Any]:
+    """
+    Database schema health check endpoint
+    Validates that database schema is compatible with application code
+    
+    Returns:
+        Schema validation status with details
+    """
+    try:
+        from app.core.schema_validator import SchemaValidator
+        
+        validation_result = await SchemaValidator.validate_schema()
+        
+        response = {
+            "status": "valid" if validation_result['valid'] else "invalid",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "valid": validation_result['valid'],
+            "tables": {},
+            "issues": validation_result['issues'],
+            "warnings": validation_result['warnings'],
+        }
+        
+        # Include table details (simplified for response)
+        for table_name, table_result in validation_result['tables'].items():
+            response['tables'][table_name] = {
+                "exists": table_result.get('exists', False),
+                "status": table_result.get('status', 'unknown'),
+                "missing_required": table_result.get('missing_required', []),
+                "missing_optional": table_result.get('missing_optional', []),
+            }
+        
+        # Return 200 even if invalid (for monitoring purposes)
+        # But include status in response
+        if not validation_result['valid']:
+            response["message"] = (
+                "Database schema is not compatible with application code. "
+                "Please run migrations: alembic upgrade head"
+            )
+        
+        return response
+    except Exception as e:
+        return {
+            "status": "error",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "valid": False,
+            "error": str(e),
+            "message": "Could not validate database schema"
+        }
+

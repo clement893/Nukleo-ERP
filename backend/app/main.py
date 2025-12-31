@@ -123,6 +123,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 logger.warning(warning_msg, exc_info=True)
             print(f"⚠ {warning_msg}", file=sys.stderr)
         
+        # Validate database schema compatibility - run after DB init
+        try:
+            from app.core.schema_validator import validate_database_schema_on_startup
+            schema_valid = await validate_database_schema_on_startup()
+            if not schema_valid and logger:
+                logger.warning(
+                    "Database schema validation found issues. "
+                    "The application will continue but some features may not work correctly. "
+                    "Please run migrations: alembic upgrade head"
+                )
+        except Exception as e:
+            if logger:
+                logger.warning(f"Schema validation skipped: {e}")
+        
         # Ensure required columns exist (auto-migration) - only if DB is available
         try:
             await ensure_theme_preference_column()
@@ -361,6 +375,19 @@ def create_app() -> FastAPI:
         logger.info("Rate limiting enabled")
     else:
         logger.warning("Rate limiting is DISABLED - not recommended for production")
+
+    # Database Health Monitoring Middleware (optional, can be disabled)
+    # Monitors database schema health and logs warnings
+    if not os.getenv("DISABLE_DB_HEALTH_CHECK", "").lower() == "true":
+        try:
+            from app.core.database_health_middleware import DatabaseHealthMiddleware
+            app.add_middleware(
+                DatabaseHealthMiddleware,
+                check_interval=100  # Check every 100 requests
+            )
+            logger.info("Database health monitoring enabled")
+        except Exception as e:
+            logger.warning(f"Failed to enable database health monitoring: {e}")
 
     # Include API router
     app.include_router(api_router, prefix=settings.API_V1_STR)
