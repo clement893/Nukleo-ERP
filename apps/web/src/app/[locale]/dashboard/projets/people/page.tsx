@@ -103,11 +103,6 @@ function PeopleContent() {
   const clearAllFilters = useCallback(() => {
     setSearchQuery('');
   }, []);
-  
-  // Clear all filters function
-  const clearAllFilters = useCallback(() => {
-    setSearchQuery('');
-  }, []);
 
   // Handle create
   const handleCreate = async (data: PeopleCreate | PeopleUpdate) => {

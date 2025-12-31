@@ -1,90 +1,57 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee, EmployeeCreate, EmployeeUpdate } from '@/lib/api/employees';
+import { peopleAPI } from '@/lib/api/people';
+import type { People, PeopleCreate, PeopleUpdate } from '@/lib/api/people';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import EmployeeForm from '@/components/employes/EmployeeForm';
+import PeopleForm from '@/components/projects/PeopleForm';
 import { Loading, Alert, Card } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { usePerson } from '@/lib/query/people';
 
 export default function PeopleEditPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
+  const peopleId = params?.id ? parseInt(String(params.id)) : null;
   const locale = params?.locale as string || 'fr';
 
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID de personne invalide');
-      setLoading(false);
-      return;
-    }
+  // Fetch person using React Query
+  const { data: person, isLoading: loading, error: personError } = usePerson(peopleId || 0, !!peopleId);
 
-    loadEmployee();
-  }, [employeeId]);
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
+  const handleUpdate = async (data: PeopleCreate | PeopleUpdate) => {
+    if (!peopleId) return;
 
     try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de la personne');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de la personne',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdate = async (data: EmployeeCreate | EmployeeUpdate) => {
-    if (!employeeId) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-      await employeesAPI.update(employeeId, data as EmployeeUpdate);
+      await peopleAPI.update(peopleId, data as PeopleUpdate);
       showToast({
         message: 'Personne modifiée avec succès',
         type: 'success',
       });
-      router.push(`/${locale}/dashboard/projets/people/${employeeId}`);
+      router.push(`/${locale}/dashboard/projets/people/${peopleId}`);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la modification de la personne');
+      const errorMessage = appError.message || 'Erreur lors de la modification de la personne';
       showToast({
-        message: appError.message || 'Erreur lors de la modification de la personne',
+        message: errorMessage,
         type: 'error',
       });
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    if (employeeId) {
-      router.push(`/${locale}/dashboard/projets/people/${employeeId}`);
+    if (peopleId) {
+      router.push(`/${locale}/dashboard/projets/people/${peopleId}`);
     } else {
       router.push(`/${locale}/dashboard/projets/people`);
     }
   };
+
+  const error = personError ? handleApiError(personError).message : null;
 
   if (loading) {
     return (
@@ -96,7 +63,7 @@ export default function PeopleEditPage() {
     );
   }
 
-  if (error && !employee) {
+  if (error && !person) {
     return (
       <PageContainer>
         <PageHeader
@@ -119,7 +86,7 @@ export default function PeopleEditPage() {
     );
   }
 
-  if (!employee) {
+  if (!person) {
     return (
       <PageContainer>
         <PageHeader
@@ -145,12 +112,12 @@ export default function PeopleEditPage() {
   return (
     <PageContainer>
       <PageHeader
-        title={`Modifier ${employee.first_name} ${employee.last_name}`}
+        title={`Modifier ${person.first_name} ${person.last_name}`}
         breadcrumbs={[
           { label: 'Dashboard', href: `/${locale}/dashboard` },
           { label: 'Modules Opérations', href: `/${locale}/dashboard/projets` },
           { label: 'People', href: `/${locale}/dashboard/projets/people` },
-          { label: employee.first_name + ' ' + employee.last_name, href: `/${locale}/dashboard/projets/people/${employee.id}` },
+          { label: person.first_name + ' ' + person.last_name, href: `/${locale}/dashboard/projets/people/${person.id}` },
           { label: 'Modification' },
         ]}
       />
@@ -164,11 +131,11 @@ export default function PeopleEditPage() {
       <div className="mt-6">
         <Card>
           <div className="p-6">
-            <EmployeeForm
-              employee={employee}
+            <PeopleForm
+              person={person}
               onSubmit={handleUpdate}
               onCancel={handleCancel}
-              loading={saving}
+              loading={false}
             />
           </div>
         </Card>
