@@ -58,7 +58,7 @@ export default function ImportOpportunitiesInstructions({
                 <p className="font-medium mb-2 text-red-600 dark:text-red-400">Colonnes requises:</p>
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• <strong>name</strong> / nom / nom_opportunité</li>
-                  <li>• <strong>pipeline_id</strong> / id_pipeline</li>
+                  <li>• <strong>pipeline_id</strong> / id_pipeline / <strong>nom_pipeline</strong> / pipeline_name</li>
                 </ul>
               </div>
               <div>
@@ -73,9 +73,10 @@ export default function ImportOpportunitiesInstructions({
               <div>
                 <p className="font-medium mb-2">Pipeline et stade:</p>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>• <strong>pipeline_id</strong> / id_pipeline (UUID requis)</li>
-                  <li>• <strong>stage_id</strong> / id_stade / id_stage (UUID optionnel)</li>
+                  <li>• <strong>pipeline_id</strong> / id_pipeline / <strong>nom_pipeline</strong> / pipeline_name (UUID ou nom requis)</li>
+                  <li>• <strong>stage_id</strong> / id_stade / id_stage / <strong>nom_stade</strong> / stage_name (UUID ou nom optionnel)</li>
                 </ul>
+                <p className="text-xs text-muted-foreground mt-2">💡 Vous pouvez utiliser le nom du pipeline et du stade au lieu de l'ID (UUID)</p>
               </div>
               <div>
                 <p className="font-medium mb-2">Relations:</p>
@@ -139,7 +140,8 @@ export default function ImportOpportunitiesInstructions({
                 <thead>
                   <tr className="bg-muted">
                     <th className="border p-2 text-left">name</th>
-                    <th className="border p-2 text-left">pipeline_id</th>
+                    <th className="border p-2 text-left">pipeline_id / nom_pipeline</th>
+                    <th className="border p-2 text-left">nom_stade</th>
                     <th className="border p-2 text-left">company_name</th>
                     <th className="border p-2 text-left">amount</th>
                     <th className="border p-2 text-left">status</th>
@@ -149,7 +151,8 @@ export default function ImportOpportunitiesInstructions({
                 <tbody>
                   <tr>
                     <td className="border p-2">Nouveau projet web</td>
-                    <td className="border p-2">c7b4d752-0705-4618-8519-14a756d0fd0f</td>
+                    <td className="border p-2">Pipeline Commercial</td>
+                    <td className="border p-2">Qualification</td>
                     <td className="border p-2">Acme Corp</td>
                     <td className="border p-2">50000</td>
                     <td className="border p-2">open</td>
@@ -157,7 +160,8 @@ export default function ImportOpportunitiesInstructions({
                   </tr>
                   <tr>
                     <td className="border p-2">Refonte site e-commerce</td>
-                    <td className="border p-2">c7b4d752-0705-4618-8519-14a756d0fd0f</td>
+                    <td className="border p-2">Pipeline Commercial</td>
+                    <td className="border p-2">Proposition</td>
                     <td className="border p-2">Tech Solutions</td>
                     <td className="border p-2">75000</td>
                     <td className="border p-2">qualified</td>
@@ -177,11 +181,11 @@ export default function ImportOpportunitiesInstructions({
             <ul className="space-y-2 text-sm text-yellow-800 dark:text-yellow-200">
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>
-                <span>Le <code className="bg-yellow-100 dark:bg-yellow-900 px-1 py-0.5 rounded">pipeline_id</code> doit être un UUID valide d'un pipeline existant. Vous pouvez le trouver dans Module Commercial &gt; Pipeline Client</span>
+                <span>Le <code className="bg-yellow-100 dark:bg-yellow-900 px-1 py-0.5 rounded">pipeline_id</code> ou <code className="bg-yellow-100 dark:bg-yellow-900 px-1 py-0.5 rounded">nom_pipeline</code> peut être un UUID ou le nom du pipeline. Le nom est plus facile à utiliser !</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>
-                <span>Le <code className="bg-yellow-100 dark:bg-yellow-900 px-1 py-0.5 rounded">stage_id</code> (si fourni) doit appartenir au pipeline spécifié</span>
+                <span>Le <code className="bg-yellow-100 dark:bg-yellow-900 px-1 py-0.5 rounded">stage_id</code> ou <code className="bg-yellow-100 dark:bg-yellow-900 px-1 py-0.5 rounded">nom_stade</code> (si fourni) peut être un UUID ou le nom du stade. Il doit appartenir au pipeline spécifié.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>

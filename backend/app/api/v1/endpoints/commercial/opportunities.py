@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_, and_
+from sqlalchemy import select, func, or_, and_, delete
 from datetime import datetime as dt
 from sqlalchemy.orm import selectinload
 import zipfile
@@ -638,6 +638,44 @@ async def update_opportunity(
     return OpportunitySchema(**opportunity_dict)
 
 
+@router.delete("/bulk", status_code=status.HTTP_200_OK)
+async def delete_all_opportunities(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """
+    Delete all opportunities from the database
+    
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dictionary with count of deleted opportunities
+    """
+    # Count opportunities before deletion
+    count_result = await db.execute(select(func.count(Opportunite.id)))
+    count = count_result.scalar_one()
+    
+    if count == 0:
+        return {
+            "message": "No opportunities found",
+            "deleted_count": 0
+        }
+    
+    # Delete all opportunities
+    await db.execute(delete(Opportunite))
+    await db.commit()
+    
+    logger.info(f"User {current_user.id} deleted all {count} opportunities")
+    
+    return {
+        "message": f"Successfully deleted {count} opportunity(ies)",
+        "deleted_count": count
+    }
+
+
 @router.delete("/{opportunity_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_opportunity(
     request: Request,
@@ -741,6 +779,31 @@ async def import_opportunities(
                 contact_name_to_id[full_name] = contact.id
         add_import_log(import_id, f"{len(contact_name_to_id)} contact(s) chargé(s) pour le matching", "info")
         
+        # Load all pipelines and stages once to create name -> ID mappings
+        add_import_log(import_id, "Chargement des pipelines et stades existants...", "info")
+        pipelines_result = await db.execute(
+            select(Pipeline).options(selectinload(Pipeline.stages))
+        )
+        all_pipelines = pipelines_result.scalars().all()
+        pipeline_name_to_id = {}
+        pipeline_stage_name_to_id = {}  # (pipeline_name, stage_name) -> stage_id
+        for pipeline in all_pipelines:
+            if pipeline.name:
+                pipeline_name_normalized = pipeline.name.strip().lower()
+                pipeline_name_to_id[pipeline_name_normalized] = pipeline.id
+                # Also store case-insensitive variations
+                pipeline_name_to_id[pipeline.name.strip()] = pipeline.id
+                # Store stages mapping
+                for stage in pipeline.stages:
+                    if stage.name:
+                        stage_name_normalized = stage.name.strip().lower()
+                        key = (pipeline_name_normalized, stage_name_normalized)
+                        pipeline_stage_name_to_id[key] = stage.id
+                        # Also store case-insensitive variations
+                        key_original = (pipeline.name.strip(), stage.name.strip())
+                        pipeline_stage_name_to_id[key_original] = stage.id
+        add_import_log(import_id, f"{len(pipeline_name_to_id)} pipeline(s) et {len(pipeline_stage_name_to_id)} stade(s) chargé(s) pour le matching", "info")
+        
         # Process imported data
         created_opportunities = []
         errors = []
@@ -791,6 +854,85 @@ async def import_opportunities(
             
             return None
         
+        async def resolve_pipeline_id(pipeline_value: str) -> Optional[UUID]:
+            """Resolve pipeline ID from name or UUID string"""
+            if not pipeline_value:
+                return None
+            
+            pipeline_value = pipeline_value.strip()
+            
+            # First try as UUID
+            try:
+                pipeline_uuid = UUID(pipeline_value)
+                # Verify it exists
+                pipeline_result = await db.execute(
+                    select(Pipeline).where(Pipeline.id == pipeline_uuid)
+                )
+                if pipeline_result.scalar_one_or_none():
+                    return pipeline_uuid
+            except ValueError:
+                pass  # Not a UUID, try as name
+            
+            # Try as name (case-insensitive)
+            pipeline_name_normalized = pipeline_value.lower()
+            if pipeline_name_normalized in pipeline_name_to_id:
+                return pipeline_name_to_id[pipeline_name_normalized]
+            
+            # Try exact match (case-sensitive)
+            if pipeline_value in pipeline_name_to_id:
+                return pipeline_name_to_id[pipeline_value]
+            
+            return None
+        
+        async def resolve_stage_id(pipeline_id: UUID, stage_value: str) -> Optional[UUID]:
+            """Resolve stage ID from name or UUID string, given a pipeline_id"""
+            if not stage_value:
+                return None
+            
+            stage_value = stage_value.strip()
+            
+            # First try as UUID
+            try:
+                stage_uuid = UUID(stage_value)
+                # Verify it exists and belongs to the pipeline
+                stage_result = await db.execute(
+                    select(PipelineStage).where(
+                        and_(
+                            PipelineStage.id == stage_uuid,
+                            PipelineStage.pipeline_id == pipeline_id
+                        )
+                    )
+                )
+                if stage_result.scalar_one_or_none():
+                    return stage_uuid
+            except ValueError:
+                pass  # Not a UUID, try as name
+            
+            # Get pipeline name for lookup
+            pipeline_result = await db.execute(
+                select(Pipeline).where(Pipeline.id == pipeline_id)
+            )
+            pipeline = pipeline_result.scalar_one_or_none()
+            if not pipeline:
+                return None
+            
+            pipeline_name_normalized = pipeline.name.strip().lower() if pipeline.name else None
+            if not pipeline_name_normalized:
+                return None
+            
+            # Try as name (case-insensitive)
+            stage_name_normalized = stage_value.lower()
+            key = (pipeline_name_normalized, stage_name_normalized)
+            if key in pipeline_stage_name_to_id:
+                return pipeline_stage_name_to_id[key]
+            
+            # Try exact match (case-sensitive)
+            key_original = (pipeline.name.strip(), stage_value)
+            if key_original in pipeline_stage_name_to_id:
+                return pipeline_stage_name_to_id[key_original]
+            
+            return None
+        
         add_import_log(import_id, f"Début du traitement de {total_rows} ligne(s)...", "info")
         
         # Get default pipeline if available (for cases where pipeline_id is not in Excel)
@@ -829,50 +971,36 @@ async def import_opportunities(
                     })
                     continue
                 
-                # Get pipeline_id (try to find in Excel, or use default)
-                pipeline_id_str = get_field_value(row_data, [
-                    'pipeline_id', 'pipeline', 'pipeline_id', 'id_pipeline', 'pipeline uuid'
+                # Get pipeline_id or pipeline name (try to find in Excel, or use default)
+                pipeline_value = get_field_value(row_data, [
+                    'pipeline_id', 'pipeline', 'id_pipeline', 'pipeline uuid', 
+                    'nom_pipeline', 'pipeline_name', 'nom pipeline', 'pipeline nom'
                 ])
                 
-                if not pipeline_id_str and default_pipeline:
-                    pipeline_id_str = str(default_pipeline.id)
-                    add_import_log(import_id, f"Ligne {idx + 2}: Pipeline ID non trouvé, utilisation du pipeline par défaut: {default_pipeline.name}", "info")
-                elif not pipeline_id_str:
+                pipeline_id = None
+                if pipeline_value:
+                    pipeline_id = await resolve_pipeline_id(pipeline_value)
+                    if not pipeline_id:
+                        stats["errors"] += 1
+                        error_msg = f"Ligne {idx + 2}: ❌ Pipeline non trouvé (ID ou nom): {pipeline_value}"
+                        add_import_log(import_id, error_msg, "error", {"row": idx + 2, "pipeline_value": pipeline_value})
+                        errors.append({
+                            'row': idx + 2,
+                            'data': row_data,
+                            'error': f'Pipeline not found: {pipeline_value}'
+                        })
+                        continue
+                elif default_pipeline:
+                    pipeline_id = default_pipeline.id
+                    add_import_log(import_id, f"Ligne {idx + 2}: Pipeline non trouvé, utilisation du pipeline par défaut: {default_pipeline.name}", "info")
+                else:
                     stats["errors"] += 1
-                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline ID requis mais non trouvé et aucun pipeline par défaut disponible"
+                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline requis mais non trouvé et aucun pipeline par défaut disponible"
                     add_import_log(import_id, error_msg, "error", {"row": idx + 2, "available_columns": list(row_data.keys())[:10]})
                     errors.append({
                         'row': idx + 2,
                         'data': row_data,
-                        'error': 'Pipeline ID is required'
-                    })
-                    continue
-                
-                try:
-                    pipeline_id = UUID(pipeline_id_str)
-                except ValueError:
-                    stats["errors"] += 1
-                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline ID invalide: {pipeline_id_str}"
-                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "pipeline_id_str": pipeline_id_str})
-                    errors.append({
-                        'row': idx + 2,
-                        'data': row_data,
-                        'error': f'Invalid pipeline ID: {pipeline_id_str}'
-                    })
-                    continue
-                
-                # Validate pipeline exists
-                pipeline_result = await db.execute(
-                    select(Pipeline).where(Pipeline.id == pipeline_id)
-                )
-                if not pipeline_result.scalar_one_or_none():
-                    stats["errors"] += 1
-                    error_msg = f"Ligne {idx + 2}: ❌ Pipeline non trouvé: {pipeline_id}"
-                    add_import_log(import_id, error_msg, "error", {"row": idx + 2, "pipeline_id": str(pipeline_id)})
-                    errors.append({
-                        'row': idx + 2,
-                        'data': row_data,
-                        'error': f'Pipeline not found: {pipeline_id}'
+                        'error': 'Pipeline is required'
                     })
                     continue
                 
@@ -991,13 +1119,15 @@ async def import_opportunities(
                 service_offer_link = get_field_value(row_data, ['service_offer_link', 'lien_offre', 'lien', 'url'])
                 notes = get_field_value(row_data, ['notes', 'Notes', 'note', 'commentaires', 'commentaire'])
                 
-                stage_id_str = get_field_value(row_data, ['stage_id', 'stage', 'stade', 'Stage', 'Stade'])
+                stage_value = get_field_value(row_data, [
+                    'stage_id', 'stage', 'stade', 'Stage', 'Stade', 
+                    'nom_stade', 'stage_name', 'nom stade', 'stade nom', 'nom_stage'
+                ])
                 stage_id = None
-                if stage_id_str:
-                    try:
-                        stage_id = UUID(stage_id_str)
-                    except ValueError:
-                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Stage ID invalide: {stage_id_str}, ignoré", "warning")
+                if stage_value:
+                    stage_id = await resolve_stage_id(pipeline_id, stage_value)
+                    if not stage_id:
+                        add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Stade non trouvé (ID ou nom): {stage_value}, ignoré", "warning")
                 
                 assigned_to_id_str = get_field_value(row_data, ['assigned_to_id', 'assigned_to', 'assigné', 'assigné_à', 'assigned to'])
                 assigned_to_id = None

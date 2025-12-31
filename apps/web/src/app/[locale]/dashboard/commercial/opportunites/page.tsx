@@ -22,7 +22,8 @@ import {
   Download, 
   Upload, 
   FileSpreadsheet, 
-  MoreVertical
+  MoreVertical,
+  Trash2
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -236,6 +237,41 @@ function OpportunitiesContent() {
 
   // Get query client for cache invalidation
   const queryClient = useQueryClient();
+  
+  // Handle delete all opportunities
+  const handleDeleteAll = async () => {
+    if (opportunities.length === 0) {
+      showToast({
+        message: 'Aucune opportunité à supprimer',
+        type: 'info',
+      });
+      return;
+    }
+    
+    const confirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer toutes les ${opportunities.length} opportunité${opportunities.length > 1 ? 's' : ''} ?\n\nCette action est irréversible.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+    
+    try {
+      const result = await opportunitiesAPI.deleteAll();
+      // Invalidate opportunities query to refetch after deletion
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      showToast({
+        message: result.message || `Suppression réussie : ${result.deleted_count} opportunité${result.deleted_count > 1 ? 's' : ''} supprimée${result.deleted_count > 1 ? 's' : ''}`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression des opportunités',
+        type: 'error',
+      });
+    }
+  };
   
   // Handle import
   const handleImport = async (file: File) => {
@@ -603,6 +639,16 @@ function OpportunitiesContent() {
                         >
                           <Download className="w-3.5 h-3.5" />
                           Exporter
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDeleteAll();
+                            setShowActionsMenu(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 border-t border-border"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Supprimer toutes les opportunités
                         </button>
                       </div>
                     </div>

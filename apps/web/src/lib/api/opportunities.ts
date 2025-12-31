@@ -150,6 +150,14 @@ export const opportunitiesAPI = {
   },
 
   /**
+   * Delete all opportunities
+   */
+  deleteAll: async (): Promise<{ message: string; deleted_count: number }> => {
+    const response = await apiClient.delete<{ message: string; deleted_count: number }>('/v1/commercial/opportunities/bulk');
+    return extractApiData(response) || { message: 'No opportunities deleted', deleted_count: 0 };
+  },
+
+  /**
    * Import opportunities from Excel
    */
   import: async (file: File, importId?: string): Promise<{
