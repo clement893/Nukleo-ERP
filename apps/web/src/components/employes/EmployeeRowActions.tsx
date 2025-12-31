@@ -39,9 +39,12 @@ export default function EmployeeRowActions({
   }, [isOpen]);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className="p-1 rounded hover:bg-muted transition-colors"
         aria-label="Actions"
       >
@@ -51,7 +54,8 @@ export default function EmployeeRowActions({
         <div className="absolute right-0 top-8 w-48 bg-background border border-border rounded-md shadow-lg z-10">
           <div className="py-1">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 const locale = window.location.pathname.split('/')[1] || 'fr';
                 router.push(`/${locale}/portail-employe/${employee.id}`);
                 setIsOpen(false);
@@ -63,7 +67,8 @@ export default function EmployeeRowActions({
             </button>
             {onView && (
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onView();
                   setIsOpen(false);
                 }}
@@ -75,7 +80,8 @@ export default function EmployeeRowActions({
             )}
             {onEdit && (
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onEdit();
                   setIsOpen(false);
                 }}
@@ -87,7 +93,8 @@ export default function EmployeeRowActions({
             )}
             {onDelete && (
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onDelete();
                   setIsOpen(false);
                 }}
