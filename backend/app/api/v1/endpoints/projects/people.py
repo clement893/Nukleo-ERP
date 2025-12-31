@@ -78,9 +78,9 @@ async def list_people(
         )
     
     # Log received parameters with their types
-    logger.info(f"[PeopleAPI] list_people() called - skip: {skip_int} (parsed from {repr(skip)}), limit: {limit_int} (parsed from {repr(limit)}), status: {status}, search: {search}")
+    logger.info(f"[PeopleAPI] list_people() called - skip: {skip_int} (parsed from {repr(skip_str)}), limit: {limit_int} (parsed from {repr(limit_str)}), status: {status}, search: {search}")
     logger.info(f"[PeopleAPI] Query params from request: {request.query_params}")
-    logger.info(f"[PeopleAPI] Original skip value: {repr(skip)} (type: {type(skip).__name__}), Original limit value: {repr(limit)} (type: {type(limit).__name__})")
+    logger.info(f"[PeopleAPI] Original skip value: {repr(skip_str)} (type: {type(skip_str).__name__}), Original limit value: {repr(limit_str)} (type: {type(limit_str).__name__})")
     
     query = select(People)
 
