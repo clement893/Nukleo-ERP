@@ -34,17 +34,17 @@ from app.core.logging import logger
 
 
 def get_pagination_params(
-    skip: Union[str, int] = Query(0, description="Number of records to skip"),
-    limit: Union[str, int] = Query(100, description="Maximum number of records to return"),
+    skip: str = Query("0", description="Number of records to skip"),
+    limit: str = Query("100", description="Maximum number of records to return"),
 ) -> tuple[int, int]:
     """Convert pagination parameters to integers"""
     try:
-        skip_int = int(skip) if skip is not None else 0
+        skip_int = int(skip) if skip and skip.strip() else 0
     except (ValueError, TypeError):
         skip_int = 0
     
     try:
-        limit_int = int(limit) if limit is not None else 100
+        limit_int = int(limit) if limit and limit.strip() else 100
     except (ValueError, TypeError):
         limit_int = 100
     
