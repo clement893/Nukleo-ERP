@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func, delete
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.cache import cached, invalidate_cache_pattern
@@ -63,17 +63,17 @@ async def get_projects(
     # Apply tenant scoping if tenancy is enabled
     query = apply_tenant_scope(query, Project)
     
-    # Use joinedload instead of selectinload - may work better with tenant scoping
-    query = query.options(
-        joinedload(Project.client),
-        joinedload(Project.responsable)
-    )
-    
     query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+    
+    # Use selectinload like get_project endpoint
+    query = query.options(
+        selectinload(Project.client),
+        selectinload(Project.responsable)
+    )
     
     # Execute query
     result = await db.execute(query)
-    projects = result.unique().scalars().all()
+    projects = result.scalars().all()
     
     # Convert to response format with client and responsable names
     project_list = []
@@ -81,22 +81,21 @@ async def get_projects(
         client_name = project.client.name if project.client else None
         responsable_name = None
         if project.responsable:
-            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
+            responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}".strip()
         
-        project_dict = {
-            "id": project.id,
-            "name": project.name,
-            "description": project.description,
-            "status": project.status,
-            "user_id": project.user_id,
-            "client_id": project.client_id,
-            "client_name": client_name,
-            "responsable_id": project.responsable_id,
-            "responsable_name": responsable_name,
-            "created_at": project.created_at,
-            "updated_at": project.updated_at,
-        }
-        project_list.append(ProjectSchema(**project_dict))
+        project_list.append(ProjectSchema(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            status=project.status,
+            user_id=project.user_id,
+            client_id=project.client_id,
+            client_name=client_name,
+            responsable_id=project.responsable_id,
+            responsable_name=responsable_name,
+            created_at=project.created_at,
+            updated_at=project.updated_at,
+        ))
     
     # Return the list directly - FastAPI will serialize it correctly
     return project_list
