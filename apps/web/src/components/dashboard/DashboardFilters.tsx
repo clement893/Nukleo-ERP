@@ -86,7 +86,7 @@ export function DashboardFilters() {
   const handleDatePreset = (preset: string) => {
     const now = new Date();
     let start_date: string;
-    let end_date = now.toISOString().split('T')[0];
+    const end_date = now.toISOString().split('T')[0] || '';
 
     switch (preset) {
       case 'today':
@@ -95,22 +95,22 @@ export function DashboardFilters() {
       case 'week':
         const weekAgo = new Date(now);
         weekAgo.setDate(weekAgo.getDate() - 7);
-        start_date = weekAgo.toISOString().split('T')[0];
+        start_date = weekAgo.toISOString().split('T')[0] || '';
         break;
       case 'month':
         const monthAgo = new Date(now);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
-        start_date = monthAgo.toISOString().split('T')[0];
+        start_date = monthAgo.toISOString().split('T')[0] || '';
         break;
       case 'quarter':
         const quarterAgo = new Date(now);
         quarterAgo.setMonth(quarterAgo.getMonth() - 3);
-        start_date = quarterAgo.toISOString().split('T')[0];
+        start_date = quarterAgo.toISOString().split('T')[0] || '';
         break;
       case 'year':
         const yearAgo = new Date(now);
         yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-        start_date = yearAgo.toISOString().split('T')[0];
+        start_date = yearAgo.toISOString().split('T')[0] || '';
         break;
       default:
         return;

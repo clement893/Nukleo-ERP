@@ -54,17 +54,20 @@ export async function fetchDashboardRevenue(params?: {
       date.setMonth(date.getMonth() - i);
       
       const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-      const monthName = monthNames[date.getMonth()];
+      const monthIndex = date.getMonth();
+      const monthName = monthNames[monthIndex] || 'Jan';
       
       // Generate realistic revenue data with some variation
       const baseRevenue = 50000;
       const variation = Math.random() * 30000 - 10000;
       const trend = (months - i) * 2000; // Slight upward trend
       
+      const dateStr = date.toISOString().split('T')[0] || '';
+      
       data.push({
         month: monthName,
         value: Math.round(baseRevenue + variation + trend),
-        date: date.toISOString().split('T')[0],
+        date: dateStr,
       });
     }
     

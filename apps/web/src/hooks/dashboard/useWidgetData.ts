@@ -83,8 +83,9 @@ async function fetchWidgetData(
     
     case 'clients-count':
       try {
+        const period = config?.period && config.period !== 'custom' ? config.period : 'month';
         const data = await fetchClientsStats({
-          period: config.period || 'month',
+          period: period as 'day' | 'week' | 'month' | 'quarter' | 'year',
         });
         return data;
       } catch (error) {
@@ -124,8 +125,9 @@ async function fetchWidgetData(
     
     case 'revenue-chart':
       try {
+        const period = config?.period && config.period !== 'custom' ? config.period : 'month';
         const data = await fetchDashboardRevenue({
-          period: config.period || 'month',
+          period: period as 'day' | 'week' | 'month' | 'quarter' | 'year',
           months: 6,
         });
         return data;
