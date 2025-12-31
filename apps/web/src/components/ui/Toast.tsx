@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { clsx } from 'clsx';
-import Text from './Text';
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 export interface ToastProps {
   id: string;
@@ -11,6 +11,7 @@ export interface ToastProps {
   duration?: number;
   onClose: (id: string) => void;
   icon?: ReactNode;
+  title?: string;
 }
 
 export default function Toast({
@@ -20,6 +21,7 @@ export default function Toast({
   duration = 5000,
   onClose,
   icon,
+  title,
 }: ToastProps) {
   useEffect(() => {
     if (duration > 0) {
@@ -32,74 +34,99 @@ export default function Toast({
     return undefined;
   }, [id, duration, onClose]);
 
+  // Default icons for each type
+  const defaultIcons = {
+    success: <CheckCircle className="w-5 h-5" />,
+    error: <XCircle className="w-5 h-5" />,
+    warning: <AlertTriangle className="w-5 h-5" />,
+    info: <Info className="w-5 h-5" />,
+  };
+
   const variants = {
     success: {
-      bg: 'bg-secondary-50 dark:bg-secondary-900',
-      border: 'border-secondary-200 dark:border-secondary-800',
-      text: 'text-secondary-800 dark:text-secondary-200',
-      icon: 'text-secondary-400',
+      icon: 'text-green-500',
+      border: 'border-green-500/30',
+      bg: 'bg-green-500/10',
     },
     error: {
-      bg: 'bg-danger-50 dark:bg-danger-900',
-      border: 'border-danger-200 dark:border-danger-800',
-      text: 'text-danger-800 dark:text-danger-200',
-      icon: 'text-danger-400',
+      icon: 'text-red-500',
+      border: 'border-red-500/30',
+      bg: 'bg-red-500/10',
     },
     warning: {
-      bg: 'bg-warning-50 dark:bg-warning-900',
-      border: 'border-warning-200 dark:border-warning-800',
-      text: 'text-warning-800 dark:text-warning-200',
-      icon: 'text-warning-400',
+      icon: 'text-orange-500',
+      border: 'border-orange-500/30',
+      bg: 'bg-orange-500/10',
     },
     info: {
-      bg: 'bg-primary-50 dark:bg-primary-900',
-      border: 'border-primary-200 dark:border-primary-800',
-      text: 'text-primary-800 dark:text-primary-200',
-      icon: 'text-primary-400',
+      icon: 'text-blue-500',
+      border: 'border-blue-500/30',
+      bg: 'bg-blue-500/10',
     },
   };
 
   const styles = variants[type];
+  const displayIcon = icon || defaultIcons[type];
 
   return (
     <div
       className={clsx(
-        'rounded-lg border p-lg shadow-lg min-w-[300px] max-w-md',
+        'glass-card rounded-xl border p-4 shadow-lg min-w-[320px] max-w-md',
         'animate-slide-in-right',
-        styles.bg,
-        styles.border
+        styles.border,
+        styles.bg
       )}
+      role="alert"
+      aria-live="polite"
     >
-      <div className="flex items-start">
-        {icon && (
-          <div className={clsx('flex-shrink-0 mr-4', styles.icon)}>
-            {icon}
-          </div>
-        )}
-        <Text variant="small" className={clsx('flex-1 font-medium', styles.text)}>
-          {message}
-        </Text>
+      <div className="flex items-start gap-3">
+        {/* Icon */}
+        <div className={clsx('flex-shrink-0 mt-0.5', styles.icon)}>
+          {displayIcon}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {title && (
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {title}
+            </p>
+          )}
+          <p className="text-sm text-foreground/80">
+            {message}
+          </p>
+        </div>
+
+        {/* Close button */}
         <button
           onClick={() => onClose(id)}
-          className={clsx('ml-4 flex-shrink-0 p-1 rounded-md hover:bg-opacity-20 transition-colors', styles.text)}
-          aria-label="Close toast"
+          className={clsx(
+            'flex-shrink-0 p-1 rounded-lg transition-all duration-200',
+            'hover:bg-foreground/10 text-foreground/60 hover:text-foreground'
+          )}
+          aria-label="Fermer la notification"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Progress bar */}
+      {duration > 0 && (
+        <div className="mt-3 h-1 bg-foreground/10 rounded-full overflow-hidden">
+          <div
+            className={clsx(
+              'h-full rounded-full transition-all',
+              type === 'success' && 'bg-green-500',
+              type === 'error' && 'bg-red-500',
+              type === 'warning' && 'bg-orange-500',
+              type === 'info' && 'bg-blue-500'
+            )}
+            style={{
+              animation: `shrink ${duration}ms linear forwards`,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
-

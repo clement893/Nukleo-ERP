@@ -1,13 +1,13 @@
 /**
  * Notification Bell Component
- * Notification indicator with dropdown
+ * Notification indicator with glassmorphism dropdown
  */
 
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Bell } from 'lucide-react';
+import { Bell, MoreVertical } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Dropdown from '@/components/ui/Dropdown';
 import type { DropdownItem } from '@/components/ui/Dropdown';
@@ -61,7 +61,7 @@ export default function NotificationBell({
 
   const dropdownItems: DropdownItem[] = [
     {
-      label: 'View All Notifications',
+      label: 'Voir toutes les notifications',
       onClick: () => {
         setIsOpen(false);
         onViewAll?.();
@@ -70,7 +70,7 @@ export default function NotificationBell({
     ...(unreadCount > 0 && onMarkAllAsRead
       ? [
           {
-            label: 'Mark All as Read',
+            label: 'Tout marquer comme lu',
             onClick: async () => {
               await onMarkAllAsRead();
             },
@@ -81,62 +81,93 @@ export default function NotificationBell({
 
   return (
     <div ref={bellRef} className={clsx('relative', className)}>
+      {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          'relative p-2 rounded-lg transition-colors',
-          'text-gray-700 dark:text-gray-300',
-          'hover:bg-gray-100 dark:hover:bg-gray-700',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400'
+          'relative p-2.5 rounded-xl transition-all duration-200',
+          'text-foreground/70 hover:text-foreground',
+          'hover:glass-card-hover',
+          isOpen && 'glass-card-active text-primary',
+          'focus:outline-none focus:ring-2 focus:ring-primary/20'
         )}
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ''}`}
       >
-        <Bell className="w-5 h-5" />
+        <Bell className={clsx(
+          'w-5 h-5 transition-transform duration-200',
+          isOpen && 'scale-110',
+          unreadCount > 0 && 'animate-pulse'
+        )} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1">
-            <Badge variant="error" className="text-xs px-1.5 py-0.5">
+          <span className="absolute -top-0.5 -right-0.5">
+            <Badge 
+              variant="error" 
+              className="text-xs px-1.5 py-0.5 min-w-[20px] h-5 flex items-center justify-center rounded-full shadow-lg"
+            >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           </span>
         )}
       </button>
 
+      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-96 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-96 z-[9999] animate-scale-in">
+          <div className="glass-modal rounded-2xl shadow-2xl max-h-[600px] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Notifications
-              </h3>
-              <Dropdown trigger={<button className="p-1">⋯</button>} items={dropdownItems} />
+            <div className="flex items-center justify-between p-4 border-b border-border/30">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Notifications
+                </h3>
+                {unreadCount > 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {unreadCount} non lue{unreadCount > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <Dropdown 
+                trigger={
+                  <button className="p-2 rounded-lg hover:glass-card-hover transition-all">
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                } 
+                items={dropdownItems} 
+              />
             </div>
 
-            {/* Notifications */}
-            <div className="overflow-y-auto flex-1">
-              <NotificationCenter
-                notifications={recentNotifications}
-                onMarkAsRead={onMarkAsRead}
-                onMarkAllAsRead={onMarkAllAsRead}
-                onDelete={onDelete}
-                onActionClick={(notification) => {
-                  setIsOpen(false);
-                  onActionClick?.(notification);
-                }}
-              />
+            {/* Notifications List */}
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
+              {recentNotifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4">
+                  <Bell className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">Aucune notification</p>
+                </div>
+              ) : (
+                <NotificationCenter
+                  notifications={recentNotifications}
+                  onMarkAsRead={onMarkAsRead}
+                  onMarkAllAsRead={onMarkAllAsRead}
+                  onDelete={onDelete}
+                  onActionClick={(notification) => {
+                    setIsOpen(false);
+                    onActionClick?.(notification);
+                  }}
+                />
+              )}
             </div>
 
             {/* Footer */}
             {notifications.length > 5 && (
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-t border-border/30">
                 <button
                   onClick={() => {
                     setIsOpen(false);
                     onViewAll?.();
                   }}
-                  className="w-full text-center text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                  className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 transition-colors py-2 rounded-lg hover:glass-card-hover"
                 >
-                  View All Notifications ({notifications.length})
+                  Voir toutes les notifications ({notifications.length})
                 </button>
               </div>
             )}
@@ -146,4 +177,3 @@ export default function NotificationBell({
     </div>
   );
 }
-

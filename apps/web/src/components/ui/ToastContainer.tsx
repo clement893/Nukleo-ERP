@@ -19,15 +19,23 @@ export function ToastContainer() {
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3 pointer-events-none">
+    <div 
+      className="fixed top-4 right-4 z-[9999] space-y-3 pointer-events-none max-w-md"
+      role="region"
+      aria-label="Notifications"
+    >
       {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
+        <div 
+          key={toast.id} 
+          className="pointer-events-auto transform transition-all duration-300 ease-out"
+        >
           <Toast
             id={toast.id}
             message={toast.message}
             type={toast.type}
             duration={toast.duration}
             icon={toast.icon}
+            title={toast.title}
             onClose={removeToast}
           />
         </div>

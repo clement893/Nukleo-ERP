@@ -1,0 +1,309 @@
+/* ============================================
+   GLASSMORPHISM DESIGN SYSTEM - THEME INTEGRATED
+   ============================================
+   
+   This glassmorphism system uses CSS variables from the theme system
+   to ensure compatibility with all active themes.
+   
+   CSS Variables used:
+   - --color-background: Main background color
+   - --color-foreground: Main text color
+   - --color-primary-500: Primary brand color
+   - --color-border: Border color
+   - --color-muted: Muted background color
+   
+   All colors are dynamically set by GlobalThemeProvider based on active theme.
+   ============================================ */
+
+/* Base Glassmorphism Effect */
+.glass {
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 18%, transparent);
+}
+
+/* Glass Card - For dashboard widgets and content cards */
+.glass-card {
+  background: color-mix(in srgb, var(--color-background) 75%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
+  box-shadow: 
+    0 8px 32px 0 color-mix(in srgb, var(--color-foreground) 7%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 30%, transparent);
+  box-shadow: 
+    0 12px 40px 0 color-mix(in srgb, var(--color-foreground) 12%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 60%, transparent);
+  transform: translateY(-2px);
+}
+
+/* Glass Sidebar - For navigation sidebar */
+.glass-sidebar {
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
+  box-shadow: 
+    4px 0 24px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    inset -1px 0 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+}
+
+/* Glass Modal - For modals and overlays */
+.glass-modal {
+  background: color-mix(in srgb, var(--color-background) 90%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 25%, transparent);
+  box-shadow: 
+    0 16px 48px 0 color-mix(in srgb, var(--color-foreground) 15%, transparent),
+    inset 0 2px 0 0 color-mix(in srgb, var(--color-background) 60%, transparent);
+}
+
+/* Glass Input - For form inputs */
+.glass-input {
+  background: color-mix(in srgb, var(--color-background) 60%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 30%, transparent);
+  box-shadow: inset 0 2px 4px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: color-mix(in srgb, var(--color-background) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary-500) 50%, transparent);
+  box-shadow: 
+    inset 0 2px 4px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+}
+
+/* Glass Button - For primary buttons */
+.glass-button {
+  background: color-mix(in srgb, var(--color-primary-500) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-background) 30%, transparent);
+  box-shadow: 
+    0 4px 16px 0 color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 40%, transparent);
+  color: var(--color-background);
+  transition: all 0.2s ease;
+}
+
+.glass-button:hover {
+  background: color-mix(in srgb, var(--color-primary-500) 90%, transparent);
+  box-shadow: 
+    0 6px 20px 0 color-mix(in srgb, var(--color-primary-500) 40%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+  transform: translateY(-1px);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 8px 0 color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 30%, transparent);
+}
+
+/* Glass Navbar - For top navigation */
+.glass-navbar {
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
+  box-shadow: 
+    0 4px 24px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    inset 0 -1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+}
+
+/* Glass Dropdown - For dropdown menus */
+.glass-dropdown {
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
+  box-shadow: 
+    0 8px 32px 0 color-mix(in srgb, var(--color-foreground) 10%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+}
+
+/* Glass Badge - For badges and tags */
+.glass-badge {
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 25%, transparent);
+  box-shadow: 0 2px 8px 0 color-mix(in srgb, var(--color-foreground) 8%, transparent);
+}
+
+/* Glass Tooltip - For tooltips */
+.glass-tooltip {
+  background: color-mix(in srgb, var(--color-foreground) 95%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-background) 15%, transparent);
+  box-shadow: 0 4px 16px 0 color-mix(in srgb, var(--color-foreground) 30%, transparent);
+  color: var(--color-background);
+}
+
+/* Glass Panel - For side panels and drawers */
+.glass-panel {
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
+  box-shadow: 
+    -4px 0 24px 0 color-mix(in srgb, var(--color-foreground) 5%, transparent),
+    inset 1px 0 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+}
+
+/* Glass Overlay - For modal backdrops */
+.glass-overlay {
+  background: color-mix(in srgb, var(--color-foreground) 30%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Glass Glow Effect - For hover states */
+.glass-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-background) 20%, transparent),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.glass-glow:hover::before {
+  left: 100%;
+}
+
+/* Glass Border Gradient - For premium cards */
+.glass-border-gradient {
+  position: relative;
+  background: color-mix(in srgb, var(--color-background) 75%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-background) 50%, transparent),
+    color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    color-mix(in srgb, var(--color-primary-500) 30%, transparent),
+    color-mix(in srgb, var(--color-background) 50%, transparent)
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glass Shimmer Animation - For loading states */
+@keyframes glass-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.glass-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-background) 30%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: glass-shimmer 2s infinite;
+}
+
+/* Utility Classes for Backdrop Blur */
+.backdrop-blur-xs {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.backdrop-blur-lg {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.backdrop-blur-2xl {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Performance Optimization for Glassmorphism */
+.glass,
+.glass-card,
+.glass-sidebar,
+.glass-modal,
+.glass-navbar,
+.glass-panel {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Reduce blur on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  .glass,
+  .glass-card,
+  .glass-sidebar,
+  .glass-modal,
+  .glass-input,
+  .glass-button,
+  .glass-navbar,
+  .glass-dropdown,
+  .glass-badge,
+  .glass-tooltip,
+  .glass-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
