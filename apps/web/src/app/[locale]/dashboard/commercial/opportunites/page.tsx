@@ -462,6 +462,14 @@ function OpportunitiesContent() {
         );
       },
     },
+    {
+      key: 'region',
+      label: 'Région',
+      sortable: true,
+      render: (value) => (
+        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
+      ),
+    },
   ];
 
   return (
