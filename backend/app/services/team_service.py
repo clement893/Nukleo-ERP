@@ -60,12 +60,16 @@ class TeamService:
         return team
 
     async def get_team(self, team_id: int) -> Optional[Team]:
-        """Get a team by ID"""
+        """Get a team by ID with all relationships loaded"""
         result = await self.db.execute(
             select(Team)
             .where(Team.id == team_id)
             .where(Team.is_active == True)
-            .options(selectinload(Team.members), selectinload(Team.owner))
+            .options(
+                selectinload(Team.owner),
+                selectinload(Team.members).selectinload(TeamMember.user),
+                selectinload(Team.members).selectinload(TeamMember.role)
+            )
         )
         return result.scalar_one_or_none()
 
@@ -75,7 +79,11 @@ class TeamService:
             select(Team)
             .where(Team.slug == slug)
             .where(Team.is_active == True)
-            .options(selectinload(Team.members), selectinload(Team.owner))
+            .options(
+                selectinload(Team.owner),
+                selectinload(Team.members).selectinload(TeamMember.user),
+                selectinload(Team.members).selectinload(TeamMember.role)
+            )
         )
         return result.scalar_one_or_none()
 

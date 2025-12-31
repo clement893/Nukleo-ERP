@@ -49,6 +49,64 @@ def parse_team_settings(settings_value):
     return None
 
 
+def team_member_to_dict(member: TeamMember) -> dict:
+    """
+    Convert TeamMember SQLAlchemy model to dict for TeamMemberResponse.
+    Safely accesses loaded relationships. Relationships should be loaded via selectinload.
+    """
+    from sqlalchemy.orm import attributes as sqlalchemy_attributes
+    from sqlalchemy import inspect as sqlalchemy_inspect
+    
+    member_dict = {
+        "id": member.id,
+        "team_id": member.team_id,
+        "user_id": member.user_id,
+        "role_id": member.role_id,
+        "is_active": member.is_active,
+        "joined_at": member.joined_at.isoformat() if hasattr(member.joined_at, 'isoformat') else str(member.joined_at),
+        "updated_at": member.updated_at.isoformat() if hasattr(member.updated_at, 'isoformat') else str(member.updated_at),
+        "user": None,
+        "role": None,
+    }
+    
+    # Access user relationship (should be loaded via selectinload)
+    try:
+        member_inspect = sqlalchemy_inspect(member)
+        user_attr = member_inspect.attrs.user
+        # Check if relationship is loaded (not NO_VALUE)
+        if user_attr.loaded_value is not sqlalchemy_attributes.NO_VALUE:
+            user = member.user
+            if user:
+                member_dict["user"] = {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                }
+    except (AttributeError, KeyError, Exception):
+        # Relationship not loaded or access failed, skip
+        pass
+    
+    # Access role relationship (should be loaded via selectinload)
+    try:
+        member_inspect = sqlalchemy_inspect(member)
+        role_attr = member_inspect.attrs.role
+        # Check if relationship is loaded (not NO_VALUE)
+        if role_attr.loaded_value is not sqlalchemy_attributes.NO_VALUE:
+            role = member.role
+            if role:
+                member_dict["role"] = {
+                    "id": role.id,
+                    "name": role.name,
+                    "slug": role.slug,
+                }
+    except (AttributeError, KeyError, Exception):
+        # Relationship not loaded or access failed, skip
+        pass
+    
+    return member_dict
+
+
 @router.post("", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 async def create_team(
     team_data: TeamCreate,
@@ -102,7 +160,7 @@ async def create_team(
                 }
             
             if team.members:
-                team_dict["members"] = [TeamMemberResponse.model_validate(m) for m in team.members]
+                team_dict["members"] = [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in team.members]
             
             return TeamResponse.model_validate(team_dict)
         else:
@@ -159,7 +217,7 @@ async def create_team(
     
     # Safely access members relationship (should be loaded via selectinload)
     if team.members:
-        team_dict["members"] = [TeamMemberResponse.model_validate(m) for m in team.members]
+        team_dict["members"] = [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in team.members]
     
     return TeamResponse.model_validate(team_dict)
 
@@ -266,7 +324,7 @@ async def get_team(
             "first_name": team.owner.first_name,
             "last_name": team.owner.last_name,
         } if team.owner else None,
-        "members": [TeamMemberResponse.model_validate(m) for m in team.members],
+        "members": [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in team.members],
     }
     
     return TeamResponse.model_validate(team_dict)
@@ -315,7 +373,7 @@ async def update_team(
             "first_name": team.owner.first_name,
             "last_name": team.owner.last_name,
         } if team.owner else None,
-        "members": [TeamMemberResponse.model_validate(m) for m in team.members],
+        "members": [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in team.members],
     }
     
     return TeamResponse.model_validate(team_dict)
@@ -355,7 +413,7 @@ async def list_team_members(
     team_service = TeamService(db)
     members = await team_service.get_team_members(team_id)
     
-    return [TeamMemberResponse.model_validate(m) for m in members]
+    return [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in members]
 
 
 @router.post("/{team_id}/members", response_model=TeamMemberResponse, status_code=status.HTTP_201_CREATED)
@@ -379,7 +437,16 @@ async def add_team_member(
     await invalidate_cache_pattern_async(f"team:{team_id}:*")
     await invalidate_cache_pattern_async("teams:*")
     
-    return TeamMemberResponse.model_validate(team_member)
+    # Reload member with relationships
+    result = await db.execute(
+        select(TeamMember)
+        .where(TeamMember.id == team_member.id)
+        .options(selectinload(TeamMember.user), selectinload(TeamMember.role))
+    )
+    reloaded_member = result.scalar_one_or_none()
+    if reloaded_member:
+        return TeamMemberResponse.model_validate(team_member_to_dict(reloaded_member))
+    return TeamMemberResponse.model_validate(team_member_to_dict(team_member))
 
 
 @router.put("/{team_id}/members/{user_id}", response_model=TeamMemberResponse)
@@ -407,7 +474,16 @@ async def update_team_member(
     await invalidate_cache_pattern_async(f"team:{team_id}:*")
     await invalidate_cache_pattern_async("teams:*")
     
-    return TeamMemberResponse.model_validate(team_member)
+    # Reload member with relationships
+    result = await db.execute(
+        select(TeamMember)
+        .where(TeamMember.id == team_member.id)
+        .options(selectinload(TeamMember.user), selectinload(TeamMember.role))
+    )
+    reloaded_member = result.scalar_one_or_none()
+    if reloaded_member:
+        return TeamMemberResponse.model_validate(team_member_to_dict(reloaded_member))
+    return TeamMemberResponse.model_validate(team_member_to_dict(team_member))
 
 
 @router.delete("/{team_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
