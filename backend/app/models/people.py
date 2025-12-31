@@ -6,7 +6,8 @@ Modèle indépendant pour les personnes (non lié à Employee)
 
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import Column, DateTime, Integer, String, Text, func, Enum, Index, Date
+from sqlalchemy import Column, DateTime, Integer, String, Text, func, Enum, Index, Date, ForeignKey
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -16,6 +17,12 @@ class PeopleStatus(PyEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     MAINTENANCE = "maintenance"
+
+
+class PeopleType(PyEnum):
+    """People type enum"""
+    PERSON = "person"
+    COMPANY = "company"
 
 
 class People(Base):
@@ -32,9 +39,14 @@ class People(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     
+    # Type and company info
+    type = Column(Enum(PeopleType), default=PeopleType.PERSON, nullable=False, index=True)
+    company_name = Column(String(255), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    
     # Informations personnelles
-    first_name = Column(String(100), nullable=False, index=True)
-    last_name = Column(String(100), nullable=False, index=True)
+    first_name = Column(String(100), nullable=True, index=True)  # Nullable for companies
+    last_name = Column(String(100), nullable=True, index=True)  # Nullable for companies
     email = Column(String(255), nullable=True, index=True)
     phone = Column(String(50), nullable=True)
     linkedin = Column(String(500), nullable=True)
