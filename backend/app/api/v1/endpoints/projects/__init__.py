@@ -18,15 +18,14 @@ from app.core.tenancy_helpers import apply_tenant_scope
 from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
-from app.models.client import Client
+from app.models.client import Client, ClientStatus
 from app.models.employee import Employee
 from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
+from app.schemas.client import Client as ClientSchema
 from sqlalchemy.orm import aliased
 from app.core.logging import logger
 from . import import_export
 from . import clients as projects_clients
-from app.models.client import Client, ClientStatus
-from app.schemas.client import Client as ClientSchema
 
 router = APIRouter()
 
@@ -331,7 +330,7 @@ async def get_projects(
 
 
 # Explicit route handler for /clients to ensure it's matched before /{project_id}
-# This is a workaround for FastAPI route matching - we forward to the clients router
+# This is a workaround for FastAPI route matching
 @router.get("/clients", response_model=List[ClientSchema], include_in_schema=False)
 async def get_clients_list(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -344,9 +343,44 @@ async def get_clients_list(
     """
     Get list of clients - explicit route to ensure proper matching before /{project_id}
     """
-    # Forward to the actual clients router handler
-    from .clients import list_clients
-    return await list_clients(skip=skip, limit=limit, status=status, search=search, db=db, current_user=current_user)
+    # Use the same logic as the clients router
+    status_filter = status
+    
+    query = select(Client)
+
+    # Parse status
+    parsed_status: Optional[ClientStatus] = None
+    if status_filter:
+        try:
+            parsed_status = ClientStatus(status_filter.lower())
+        except ValueError:
+            raise HTTPException(
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid status value: {status_filter}. Must be one of {', '.join([s.value for s in ClientStatus])}"
+            )
+
+    if parsed_status:
+        query = query.where(Client.status == parsed_status)
+    if search:
+        search_term = f"%{search.lower()}%"
+        query = query.where(
+            func.lower(Client.first_name).like(search_term) |
+            func.lower(Client.last_name).like(search_term) |
+            func.lower(func.concat(Client.first_name, ' ', Client.last_name)).like(search_term)
+        )
+
+    query = query.order_by(Client.created_at.desc()).offset(skip).limit(limit)
+    
+    try:
+        result = await db.execute(query)
+        clients_list = result.scalars().all()
+        return [ClientSchema.model_validate(client) for client in clients_list]
+    except Exception as e:
+        logger.error(f"Error executing clients query: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
