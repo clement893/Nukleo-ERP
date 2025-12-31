@@ -77,30 +77,36 @@ function EquipesContent() {
     }
     
     // Créer les équipes manquantes
-    const createdTeams: TeamType[] = [];
-    for (const teamToCreate of teamsToCreate) {
-      try {
-        const response = await teamsAPI.create({
-          name: teamToCreate.name,
-          slug: teamToCreate.slug,
-          description: `Équipe ${teamToCreate.name}`,
-        });
-        if (response.data) {
-          createdTeams.push(response.data);
+    if (teamsToCreate.length > 0) {
+      console.log(`[EquipesPage] Creating ${teamsToCreate.length} missing teams...`);
+      for (const teamToCreate of teamsToCreate) {
+        try {
+          const response = await teamsAPI.create({
+            name: teamToCreate.name,
+            slug: teamToCreate.slug,
+            description: `Équipe ${teamToCreate.name}`,
+          });
+          if (response.data) {
+            console.log(`[EquipesPage] Successfully created team: ${teamToCreate.name}`);
+          }
+        } catch (err) {
+          console.error(`[EquipesPage] Erreur lors de la création de l'équipe ${teamToCreate.name}:`, err);
+          // Continuer même en cas d'erreur
         }
-      } catch (err) {
-        console.error(`Erreur lors de la création de l'équipe ${teamToCreate.name}:`, err);
-        // Continuer même en cas d'erreur
       }
+      
+      // Recharger les équipes depuis l'API après création
+      console.log('[EquipesPage] Reloading teams after creation...');
+      const reloadResponse = await teamsAPI.list();
+      const reloadedTeams = reloadResponse.data?.teams || [];
+      console.log(`[EquipesPage] Reloaded ${reloadedTeams.length} teams from API`);
+      existingTeams = reloadedTeams;
     }
-    
-    // Retourner toutes les équipes (existantes + créées)
-    const allTeams = [...existingTeams, ...createdTeams];
     
     // Filtrer pour ne garder que les 3 équipes requises dans l'ordre spécifié
     const orderedTeams: TeamType[] = [];
     for (const requiredTeam of REQUIRED_TEAMS) {
-      const foundTeam = allTeams.find(
+      const foundTeam = existingTeams.find(
         (team: TeamType) => 
           team.name === requiredTeam.name || 
           team.slug === requiredTeam.slug ||
@@ -110,6 +116,8 @@ function EquipesContent() {
         orderedTeams.push(foundTeam);
       }
     }
+    
+    console.log(`[EquipesPage] Found ${orderedTeams.length} required teams after filtering`);
     return orderedTeams;
   };
 
