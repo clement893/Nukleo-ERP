@@ -104,10 +104,12 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
         rowHeight={100}
         width={width}
         onLayoutChange={handleLayoutChange}
-        compactType="vertical"
-        preventCollision={false}
-        margin={[16, 16]}
-        containerPadding={[0, 0]}
+        {...({
+          compactType: 'vertical',
+          preventCollision: false,
+          margin: [16, 16],
+          containerPadding: [0, 0],
+        } as any)}
       >
         {activeConfig.layouts.map((widget) => (
           <div key={widget.id} className="widget-grid-item">
