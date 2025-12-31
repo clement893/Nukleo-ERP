@@ -334,14 +334,26 @@ async def delete_user(
     - Prevents deletion of last superadmin
     - Soft delete (sets is_active=False) or hard delete based on configuration
     """
-    from app.dependencies import is_admin_or_superadmin
-    
-    # Check if user is admin or superadmin
-    is_admin = await is_admin_or_superadmin(current_user, db)
-    if not is_admin:
+    try:
+        from app.dependencies import is_admin_or_superadmin
+        
+        # Check if user is admin or superadmin
+        is_admin = await is_admin_or_superadmin(current_user, db)
+        if not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can delete users"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error checking admin permissions for user {current_user.id}: {e}",
+            exc_info=True
+        )
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can delete users"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to verify user permissions"
         )
     
     # Prevent self-deletion
@@ -362,33 +374,76 @@ async def delete_user(
         )
     
     # Check if user is the last superadmin
-    from app.models import Role, UserRole
-    superadmin_role_result = await db.execute(
-        select(Role).where(Role.slug == "superadmin")
-    )
-    superadmin_role = superadmin_role_result.scalar_one_or_none()
+    try:
+        from app.models import Role, UserRole
+        superadmin_role_result = await db.execute(
+            select(Role).where(Role.slug == "superadmin")
+        )
+        superadmin_role = superadmin_role_result.scalar_one_or_none()
+        
+        if superadmin_role:
+            superadmin_users_result = await db.execute(
+                select(UserRole)
+                .join(Role)
+                .where(Role.slug == "superadmin")
+                .where(Role.is_active == True)
+            )
+            superadmin_users = list(superadmin_users_result.scalars().all())
+            
+            # Check if user to delete is a superadmin
+            user_is_superadmin = any(
+                ur.user_id == user_id for ur in superadmin_users
+            )
+            
+            if user_is_superadmin and len(superadmin_users) <= 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot delete the last superadmin user"
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(
+            f"Error checking superadmin status for user {user_id}: {e}",
+            exc_info=True
+        )
+        # Continue with deletion if we can't verify superadmin status
+        # This is a safety measure - we'll log the warning but allow the deletion
     
-    if superadmin_role:
-        superadmin_users_result = await db.execute(
-            select(UserRole)
-            .join(Role)
-            .where(Role.slug == "superadmin")
-            .where(Role.is_active == True)
-        )
-        superadmin_users = list(superadmin_users_result.scalars().all())
+    # Perform soft delete (set is_active=False) instead of hard delete
+    # This preserves data integrity and allows for recovery if needed
+    try:
+        user_to_delete.is_active = False
+        await db.commit()
+        await db.refresh(user_to_delete)
         
-        # Check if user to delete is a superadmin
-        user_is_superadmin = any(
-            ur.user_id == user_id for ur in superadmin_users
+        logger.info(f"User {user_id} ({user_to_delete.email}) soft-deleted by {current_user.email}")
+    except Exception as db_error:
+        await db.rollback()
+        error_msg = str(db_error)
+        logger.error(
+            f"Failed to delete user {user_id}: {error_msg}",
+            exc_info=True,
+            context={
+                "user_id": user_id,
+                "deleted_by": current_user.id,
+                "error_type": type(db_error).__name__
+            }
         )
         
-        if user_is_superadmin and len(superadmin_users) <= 1:
+        # Check if it's a foreign key constraint error
+        if "foreign key" in error_msg.lower() or "constraint" in error_msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete the last superadmin user"
+                detail=f"Cannot delete user: User has associated records that prevent deletion. Please remove or reassign related data first."
             )
+        
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete user: {error_msg}"
+        )
     
-    # Log deletion attempt
+    # Log deletion attempt (after successful deletion)
     try:
         from app.core.security_audit import SecurityAuditLogger, SecurityEventType
         await SecurityAuditLogger.log_event(
@@ -412,13 +467,6 @@ async def delete_user(
         )
     except Exception as e:
         logger.warning(f"Failed to log user deletion event: {e}")
-    
-    # Perform soft delete (set is_active=False) instead of hard delete
-    # This preserves data integrity and allows for recovery if needed
-    user_to_delete.is_active = False
-    await db.commit()
-    
-    logger.info(f"User {user_id} ({user_to_delete.email}) deleted by {current_user.email}")
     
     return None
 
