@@ -8,11 +8,11 @@ import { Card, Loading, Alert, Button } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
-import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit } from 'lucide-react';
+import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit, Trash2 } from 'lucide-react';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
-import { useSubmitExpenseAccount, useUpdateExpenseAccount } from '@/lib/query/expenseAccounts';
+import { useSubmitExpenseAccount, useUpdateExpenseAccount, useDeleteExpenseAccount } from '@/lib/query/expenseAccounts';
 
 interface EmployeePortalExpensesProps {
   employee: Employee;
@@ -31,6 +31,7 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
   const submitMutation = useSubmitExpenseAccount();
   const updateMutation = useUpdateExpenseAccount();
+  const deleteMutation = useDeleteExpenseAccount();
 
   useEffect(() => {
     loadExpenses();
@@ -140,6 +141,29 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la soumission',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleDelete = async (expenseId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce compte de dépenses ?')) {
+      return;
+    }
+
+    try {
+      await deleteMutation.mutateAsync(expenseId);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      showToast({
+        message: 'Compte de dépenses supprimé avec succès',
+        type: 'success',
+      });
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression du compte de dépenses',
         type: 'error',
       });
     }
@@ -425,6 +449,31 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
                 >
                   <Send className="w-4 h-4 mr-1.5" />
                   Soumettre pour validation
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedExpense.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+            {/* Allow deletion for non-approved accounts (not draft) */}
+            {selectedExpense.status !== 'draft' && selectedExpense.status !== 'approved' && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedExpense.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Supprimer
                 </Button>
               </div>
             )}

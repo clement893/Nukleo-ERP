@@ -701,7 +701,9 @@ async def delete_compte_depenses(
 ):
     """
     Delete an expense account
-    Only allowed for DRAFT status
+    - Non-approved accounts (draft, submitted, under_review, rejected, needs_clarification): 
+      can be deleted by the owner
+    - Approved accounts: can only be deleted by admins
     """
     result = await db.execute(
         select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
@@ -714,12 +716,36 @@ async def delete_compte_depenses(
             detail="Expense account not found"
         )
     
-    # Only allow deletion for DRAFT status
-    if account.status != ExpenseAccountStatus.DRAFT.value:
+    # Load employee to check user_id
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == account.employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete expense account that is not in DRAFT status"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee associated with this expense account not found"
         )
+    
+    # Check if user is admin/superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    is_owner = employee.user_id == current_user.id if employee.user_id else False
+    
+    # Approved accounts can only be deleted by admins
+    if account.status == ExpenseAccountStatus.APPROVED.value:
+        if not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only admins can delete approved expense accounts"
+            )
+    else:
+        # Non-approved accounts can be deleted by owner or admin
+        if not is_admin and not is_owner:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete this expense account"
+            )
     
     await db.delete(account)
     await db.commit()
