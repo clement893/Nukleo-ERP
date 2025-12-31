@@ -19,7 +19,7 @@ from app.models.contact import Contact
 from app.schemas.client import ClientCreate, ClientUpdate, Client as ClientSchema
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/projects/clients", tags=["clients"])
+router = APIRouter(prefix="", tags=["clients"])  # Prefix will be /clients when included in projects router
 
 
 @router.get("/test", response_model=List[ClientSchema])

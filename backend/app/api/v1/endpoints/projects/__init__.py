@@ -24,8 +24,12 @@ from app.schemas.project import Project as ProjectSchema, ProjectCreate, Project
 from sqlalchemy.orm import aliased
 from app.core.logging import logger
 from . import import_export
+from . import clients as projects_clients
 
 router = APIRouter()
+
+# Include clients routes FIRST (before /{project_id} route) to ensure proper route matching
+router.include_router(projects_clients.router, prefix="/clients", tags=["clients"])
 
 # Include import/export routes
 router.include_router(import_export.router, tags=["projects-import-export"])

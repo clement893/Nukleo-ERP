@@ -3,7 +3,6 @@ API v1 router registration.
 """
 from fastapi import APIRouter
 from app.api.v1.endpoints import themes, theme_fonts, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings, organization_settings, general_settings, pages, forms, menus, support_tickets, seo, teams, invitations, rbac, notifications, api_connection_check, reports, media, insights, analytics, posts, subscriptions, project_tasks, leo_documentation, employees
-from app.api.v1.endpoints.projects import clients as projects_clients
 from app.api.v1.endpoints.employes import router as employes_router
 from app.modules.leo.api import router as leo_router
 from app.api.v1.endpoints.commercial import contacts as commercial_contacts
@@ -99,14 +98,7 @@ api_router.include_router(
 # Uncomment to use unified router instead:
 # api_router.include_router(themes_module_router)
 
-# Register clients endpoints (under projects module) - MUST be before /projects/{project_id} route
-api_router.include_router(
-    projects_clients.router,
-    prefix="",  # Router already has /projects/clients prefix
-    tags=["clients"]
-)
-
-# Register project endpoints
+# Register project endpoints (includes clients routes)
 api_router.include_router(
     projects.router,
     prefix="/projects",
