@@ -1,181 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import { PageHeader } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import EmployeePortalTabs from '@/components/employes/EmployeePortalTabs';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
-import { ERPDashboard } from '@/components/erp';
-import Card from '@/components/ui/Card';
+import { Loading } from '@/components/ui';
 
 export default function EmployeePortalPage() {
   const params = useParams();
   const router = useRouter();
-  const { showToast } = useToast();
-  const { user } = useAuthStore();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [checkingPermissions, setCheckingPermissions] = useState(true);
-
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const currentUserId = user?.id ? parseInt(user.id) : null;
+  const employeeId = params?.id;
 
   useEffect(() => {
-    if (!employeeId) {
-      setError('ID d\'employé invalide');
-      setLoading(false);
-      setCheckingPermissions(false);
-      return;
+    if (employeeId) {
+      const locale = params?.locale as string || 'fr';
+      router.replace(`/${locale}/portail-employe/${employeeId}/dashboard`);
     }
-
-    checkPermissions();
-  }, [employeeId, currentUserId]);
-
-  const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
-      setLoading(false);
-      setCheckingPermissions(false);
-      return;
-    }
-
-    try {
-      // Check if user is superadmin
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-
-      // Load employee to check user_id
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-      setCheckingPermissions(false);
-    }
-  };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      // Check if user has permission to access this employee's portal
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
-        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé. Seuls les superadmins peuvent accéder aux portails des autres employés.');
-        setLoading(false);
-        setCheckingPermissions(false);
-        return;
-      }
-
-      setCheckingPermissions(false);
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
-        type: 'error',
-      });
-      setCheckingPermissions(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
-  };
-
-  if (loading || checkingPermissions) {
-    return (
-      <div className="w-full py-12 text-center">
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error && !employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader
-          title="Erreur"
-        />
-        <Alert variant="error">{error}</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader
-          title="Employé non trouvé"
-        />
-        <Alert variant="error">L'employé demandé n'existe pas.</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  }, [employeeId, router, params?.locale]);
 
   return (
-    <div className="w-full">
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader
-          title={`Portail de ${employee.first_name} ${employee.last_name}`}
-          description="Accédez à toutes les informations et outils de l'employé"
-          actions={
-            <Button variant="outline" size="sm" onClick={handleBack}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour à la liste
-            </Button>
-          }
-        />
-
-        {error && (
-          <div className="mb-4">
-            <Alert variant="error">{error}</Alert>
-          </div>
-        )}
-      </div>
-
-      {/* Dashboard Widget */}
-      <div className="px-4 sm:px-6 lg:px-8 pb-6">
-        <Card className="glass-card p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            Vue d'ensemble
-          </h3>
-          <ERPDashboard />
-        </Card>
-      </div>
-
-      <div className="w-full">
-        <EmployeePortalTabs employee={employee} />
-      </div>
+    <div className="w-full py-12 text-center">
+      <Loading />
     </div>
   );
 }
