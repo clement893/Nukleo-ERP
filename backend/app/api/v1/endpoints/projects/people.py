@@ -45,26 +45,54 @@ async def list_people_test(
 # Temporarily removed @cache_query to debug validation issue
 async def list_people(
     request: Request,
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    search: Optional[str] = Query(None, description="Search by name"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> List[PeopleSchema]:
     """
     Get list of people
     """
+    # Read query parameters directly from request to bypass FastAPI validation
+    # This is a workaround for the validation issue
+    query_params = dict(request.query_params)
+    
+    # Parse skip parameter
+    skip_str = query_params.get("skip", "0")
+    try:
+        skip = int(skip_str)
+        if skip < 0:
+            skip = 0
+    except (ValueError, TypeError):
+        logger.warning(f"[PeopleAPI] Invalid skip parameter: {skip_str}, using default 0")
+        skip = 0
+    
+    # Parse limit parameter
+    limit_str = query_params.get("limit", "20")
+    try:
+        limit = int(limit_str)
+        if limit < 1:
+            limit = 20
+        elif limit > 1000:
+            limit = 1000
+    except (ValueError, TypeError):
+        logger.warning(f"[PeopleAPI] Invalid limit parameter: {limit_str}, using default 20")
+        limit = 20
+    
+    # Parse status parameter
+    status = query_params.get("status")
+    
+    # Parse search parameter
+    search = query_params.get("search")
+    
     # Log that we've reached the endpoint with detailed information
     logger.info(f"[PeopleAPI] ========================================")
     logger.info(f"[PeopleAPI] ✅ ENDPOINT REACHED")
     logger.info(f"[PeopleAPI] URL: {request.url}")
     logger.info(f"[PeopleAPI] Method: {request.method}")
-    logger.info(f"[PeopleAPI] Query params (raw): {dict(request.query_params)}")
-    logger.info(f"[PeopleAPI] Query params (items): {list(request.query_params.items())}")
+    logger.info(f"[PeopleAPI] Query params (raw): {query_params}")
     logger.info(f"[PeopleAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
     logger.info(f"[PeopleAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
     logger.info(f"[PeopleAPI] Status: {status}")
+    logger.info(f"[PeopleAPI] Search: {search}")
     logger.info(f"[PeopleAPI] ========================================")
     
     query = select(People)
