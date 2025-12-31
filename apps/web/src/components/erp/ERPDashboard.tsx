@@ -79,7 +79,7 @@ export const ERPDashboard = memo(function ERPDashboard() {
         />
         <StatsCard
           title="Total Clients"
-          value={stats.total_clients.toString()}
+          value={(stats.total_clients ?? 0).toString()}
           className="bg-purple-100 dark:bg-purple-900/40 border-purple-200 dark:border-purple-800"
         />
       </div>
@@ -114,7 +114,7 @@ export const ERPDashboard = memo(function ERPDashboard() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Active Clients</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.active_clients} / {stats.total_clients}
+                {stats.active_clients ?? 0} / {stats.total_clients ?? 0}
               </p>
             </div>
           </div>

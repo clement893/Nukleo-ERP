@@ -24,6 +24,8 @@ export interface ERPDashboardStats {
   low_stock_products: number;
   total_revenue: string; // Decimal as string
   pending_revenue: string; // Decimal as string
+  total_clients?: number;
+  active_clients?: number;
   department_stats?: Record<string, unknown>;
 }
 
