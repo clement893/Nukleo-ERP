@@ -6,7 +6,7 @@ import { handleApiError } from '@/lib/errors/api';
 import Card from '@/components/ui/Card';
 import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
-import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 // Date utilities
 const startOfWeek = (date: Date): Date => {
@@ -72,7 +72,7 @@ interface ProjectGanttProps {
   endDate?: string | null;
 }
 
-export default function ProjectGantt({ projectId, startDate, endDate }: ProjectGanttProps) {
+export default function ProjectGantt({ projectId }: ProjectGanttProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
@@ -110,20 +110,6 @@ export default function ProjectGantt({ projectId, startDate, endDate }: ProjectG
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Terminé';
-      case 'in_progress':
-        return 'En cours';
-      case 'blocked':
-        return 'Bloqué';
-      case 'to_transfer':
-        return 'À transférer';
-      default:
-        return 'À faire';
-    }
-  };
 
   const weekStart = startOfWeek(currentWeek); // Monday
   const weekEnd = endOfWeek(currentWeek);
@@ -198,7 +184,7 @@ export default function ProjectGantt({ projectId, startDate, endDate }: ProjectG
           <div className="min-w-[800px]">
             {/* Header */}
             <div className="grid grid-cols-7 gap-2 mb-4">
-              {weekDays.map((day, index) => (
+              {weekDays.map((day: Date, index: number) => (
                 <div
                   key={index}
                   className={`text-center p-2 rounded ${

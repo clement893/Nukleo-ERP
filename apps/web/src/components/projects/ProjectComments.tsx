@@ -163,7 +163,7 @@ export default function ProjectComments({ projectId, taskId, onCommentAdded }: P
   };
 
   const renderComment = (comment: ProjectComment, depth = 0) => {
-    const isOwner = comment.user_id === user?.id;
+    const isOwner = user?.id !== undefined && comment.user_id === Number(user.id);
     const isEditing = editingId === comment.id;
 
     return (

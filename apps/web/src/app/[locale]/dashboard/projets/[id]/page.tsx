@@ -28,7 +28,6 @@ import {
   CheckSquare,
   TrendingUp,
   AlertCircle,
-  MessageSquare,
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
 import TaskTimeline from '@/components/projects/TaskTimeline';
