@@ -31,16 +31,16 @@ export async function fetchClientsStats(params?: {
   
   try {
     const response = await apiClient.get(`/api/v1/commercial/companies/stats?period=${period}`);
-    return response.data;
+    return response.data as ClientsStatsResponse;
   } catch (error) {
     // Fallback: calculate from companies list if stats endpoint doesn't exist
     const companiesResponse = await apiClient.get('/api/v1/commercial/companies');
-    const companies = companiesResponse.data.items || companiesResponse.data || [];
+    const companiesData = companiesResponse.data as { items?: any[] } | any[] | undefined;
+    const companies = (Array.isArray(companiesData) ? companiesData : companiesData?.items || []) as any[];
     
     // Calculate stats from raw data
     const now = new Date();
     const periodStart = getPeriodStart(now, period);
-    const previousPeriodStart = getPeriodStart(periodStart, period);
     
     const currentCount = companies.length;
     const newThisMonth = companies.filter((c: any) => 

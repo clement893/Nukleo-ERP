@@ -74,6 +74,8 @@ export interface WidgetConfig {
   };
   filters?: Record<string, any>;
   refresh_interval?: number; // en secondes
+  kpi_name?: string; // Nom du KPI pour les widgets KPI personnalisés
+  target?: number; // Cible pour les widgets KPI
   style?: {
     color?: string;
     icon?: string;
@@ -116,9 +118,14 @@ export interface GlobalFilters {
     start: string;
     end: string;
   };
+  start_date?: string; // Date de début (format ISO)
+  end_date?: string; // Date de fin (format ISO)
   clients?: number[];
   projects?: number[];
   employees?: number[];
+  company_id?: number; // ID d'une entreprise spécifique
+  employee_id?: number; // ID d'un employé spécifique
+  project_id?: number; // ID d'un projet spécifique
   statuses?: string[];
   tags?: string[];
 }

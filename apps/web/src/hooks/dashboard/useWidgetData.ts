@@ -30,7 +30,7 @@ export function useWidgetData<T = any>({
     queryFn: async () => {
       // TODO: Implémenter les appels API spécifiques par type de widget
       // Pour l'instant, on retourne des données factices
-      return fetchWidgetData(widgetType);
+      return fetchWidgetData(widgetType, config, globalFilters);
     },
     enabled,
     staleTime: config.refresh_interval 
@@ -47,7 +47,9 @@ export function useWidgetData<T = any>({
  * Utilise les vrais appels API avec fallback sur données factices
  */
 async function fetchWidgetData(
-  widgetType: WidgetType
+  widgetType: WidgetType,
+  config?: WidgetConfig,
+  globalFilters?: GlobalFilters
 ): Promise<any> {
   
   // Appeler les vrais endpoints API

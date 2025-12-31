@@ -59,7 +59,8 @@ export async function fetchDashboardProjects(params?: {
       `/api/v1/projects?${queryParams.toString()}`
     );
 
-    const items = response.data.items || response.data || [];
+    const data = response.data as { items?: any[] } | any[] | undefined;
+    const items = (Array.isArray(data) ? data : data?.items || []) as any[];
     
     // Transform data to match widget format
     const projects = items.map((project: any) => ({
@@ -74,11 +75,12 @@ export async function fetchDashboardProjects(params?: {
       updated_at: project.updated_at,
     }));
 
+    const responseData = response.data as { total?: number; page?: number; page_size?: number } | undefined;
     return {
       projects,
-      total: response.data.total || projects.length,
-      page: response.data.page || 1,
-      page_size: response.data.page_size || 10,
+      total: (responseData && 'total' in responseData ? responseData.total : undefined) || projects.length,
+      page: (responseData && 'page' in responseData ? responseData.page : undefined) || 1,
+      page_size: (responseData && 'page_size' in responseData ? responseData.page_size : undefined) || 10,
     };
   } catch (error) {
     console.error('Error fetching dashboard projects:', error);
@@ -105,11 +107,18 @@ export async function fetchProjectsStats(): Promise<{
 }> {
   try {
     const response = await apiClient.get('/api/v1/projects/stats');
-    return response.data;
+    return response.data as {
+      total: number;
+      active: number;
+      completed: number;
+      archived: number;
+      avg_progress: number;
+    };
   } catch (error) {
     // Fallback: calculate from projects list
     const projectsResponse = await apiClient.get('/api/v1/projects');
-    const projects = projectsResponse.data.items || projectsResponse.data || [];
+    const projectsData = projectsResponse.data as { items?: any[] } | any[] | undefined;
+    const projects = (Array.isArray(projectsData) ? projectsData : projectsData?.items || []) as any[];
     
     const active = projects.filter((p: any) => p.status === 'ACTIVE').length;
     const completed = projects.filter((p: any) => p.status === 'COMPLETED').length;

@@ -60,7 +60,7 @@ export default function OpportunityDetailPage() {
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return '-';
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   const formatDate = (date: string | null | undefined) => {
@@ -102,7 +102,7 @@ export default function OpportunityDetailPage() {
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
       <PageHeader
         title={opportunity.name}
-        description={`Opportunité commerciale - ${opportunity.status || 'Non défini'}`}
+        description={`Opportunité commerciale - ${opportunity.stage_name || 'Non défini'}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Module Commercial', href: '/dashboard/commercial' },
@@ -135,17 +135,13 @@ export default function OpportunityDetailPage() {
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Statut</h3>
-                <Badge variant="default" className="capitalize">{opportunity.status || 'Non défini'}</Badge>
+                <Badge variant="default" className="bg-blue-500 hover:bg-blue-600 text-white">
+                  {opportunity.stage_name || 'Non défini'}
+                </Badge>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pipeline</p>
-                  <p className="font-medium">{opportunity.pipeline_name || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Stade</p>
-                  <p className="font-medium">{opportunity.stage_name || '-'}</p>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pipeline</p>
+                <p className="font-medium">{opportunity.pipeline_name || '-'}</p>
               </div>
             </div>
           </Card>

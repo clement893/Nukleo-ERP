@@ -203,7 +203,7 @@ export default function ImportOpportunitiesInstructions({
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>
-                <span>Le montant doit être un nombre (sans devise, en euros)</span>
+                <span>Le montant doit être un nombre (sans devise, en dollars)</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 dark:text-yellow-400">•</span>

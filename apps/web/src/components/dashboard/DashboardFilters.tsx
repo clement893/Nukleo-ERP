@@ -16,7 +16,7 @@
  * @component
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Building2, User, FolderKanban, X, Filter } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { apiClient } from '@/lib/api/client';
@@ -56,12 +56,14 @@ export function DashboardFilters() {
     try {
       // Load companies
       const companiesRes = await apiClient.get('/api/v1/commercial/companies');
-      setCompanies((companiesRes.data.items || companiesRes.data || []).slice(0, 50));
+      const companiesData = companiesRes.data as { items?: Company[] } | Company[] | undefined;
+      setCompanies((Array.isArray(companiesData) ? companiesData : companiesData?.items || []).slice(0, 50) as Company[]);
 
       // Load employees
       try {
         const employeesRes = await apiClient.get('/api/v1/management/employees');
-        setEmployees((employeesRes.data.items || employeesRes.data || []).slice(0, 50));
+        const employeesData = employeesRes.data as { items?: Employee[] } | Employee[] | undefined;
+        setEmployees((Array.isArray(employeesData) ? employeesData : employeesData?.items || []).slice(0, 50) as Employee[]);
       } catch (e) {
         console.warn('Employees endpoint not available');
       }
@@ -69,7 +71,8 @@ export function DashboardFilters() {
       // Load projects
       try {
         const projectsRes = await apiClient.get('/api/v1/projects');
-        setProjects((projectsRes.data.items || projectsRes.data || []).slice(0, 50));
+        const projectsData = projectsRes.data as { items?: Project[] } | Project[] | undefined;
+        setProjects((Array.isArray(projectsData) ? projectsData : projectsData?.items || []).slice(0, 50) as Project[]);
       } catch (e) {
         console.warn('Projects endpoint not available');
       }
@@ -184,13 +187,13 @@ export function DashboardFilters() {
                   <input
                     type="date"
                     value={globalFilters.start_date || ''}
-                    onChange={(e) => setGlobalFilters({ ...globalFilters, start_date: e.target.value })}
+                    onChange={(e) => setGlobalFilters({ ...globalFilters, start_date: e.target.value || undefined })}
                     className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                   <input
                     type="date"
                     value={globalFilters.end_date || ''}
-                    onChange={(e) => setGlobalFilters({ ...globalFilters, end_date: e.target.value })}
+                    onChange={(e) => setGlobalFilters({ ...globalFilters, end_date: e.target.value || undefined })}
                     className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>

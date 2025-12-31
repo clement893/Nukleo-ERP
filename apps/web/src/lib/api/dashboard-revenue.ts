@@ -41,7 +41,7 @@ export async function fetchDashboardRevenue(params?: {
     const response = await apiClient.get(
       `/api/v1/finances/revenue?period=${period}&months=${months}`
     );
-    return response.data;
+    return response.data as RevenueResponse;
   } catch (error) {
     console.warn('Revenue endpoint not available, generating sample data');
     
@@ -64,7 +64,7 @@ export async function fetchDashboardRevenue(params?: {
       data.push({
         month: monthName,
         value: Math.round(baseRevenue + variation + trend),
-        date: date.toISOString(),
+        date: date.toISOString().split('T')[0],
       });
     }
     
@@ -97,7 +97,12 @@ export async function fetchRevenueStats(): Promise<{
 }> {
   try {
     const response = await apiClient.get('/api/v1/finances/stats');
-    return response.data;
+    return response.data as {
+      total_revenue: number;
+      total_expenses: number;
+      net_profit: number;
+      profit_margin: number;
+    };
   } catch (error) {
     // Fallback data
     return {

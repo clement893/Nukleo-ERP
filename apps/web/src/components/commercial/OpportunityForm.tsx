@@ -145,7 +145,7 @@ export default function OpportunityForm({
         </div>
 
         <Input
-          label="Montant (€)"
+          label="Montant ($)"
           type="number"
           step="0.01"
           value={formData.amount?.toString() || ''}

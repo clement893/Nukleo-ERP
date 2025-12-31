@@ -55,11 +55,13 @@ export async function fetchDashboardOpportunities(params?: {
     `/api/v1/commercial/opportunities?${queryParams.toString()}`
   );
 
+  const data = response.data as { items?: OpportunityListItem[]; total?: number; page?: number; page_size?: number } | undefined;
+
   return {
-    opportunities: response.data.items || [],
-    total: response.data.total || 0,
-    page: response.data.page || 1,
-    page_size: response.data.page_size || 10,
+    opportunities: (data && 'items' in data ? data.items : []) || [],
+    total: (data && 'total' in data ? data.total : undefined) || 0,
+    page: (data && 'page' in data ? data.page : undefined) || 1,
+    page_size: (data && 'page_size' in data ? data.page_size : undefined) || 10,
   };
 }
 
@@ -75,5 +77,10 @@ export async function fetchOpportunitiesStats(): Promise<{
   avg_probability: number;
 }> {
   const response = await apiClient.get('/api/v1/commercial/opportunities/stats');
-  return response.data;
+  return response.data as {
+    total: number;
+    by_stage: Record<string, number>;
+    total_amount: number;
+    avg_probability: number;
+  };
 }

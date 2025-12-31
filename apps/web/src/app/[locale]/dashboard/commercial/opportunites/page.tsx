@@ -109,7 +109,14 @@ function OpportunitiesContent() {
   const hasMore = hasNextPage ?? false;
   const error = queryError ? handleApiError(queryError).message : null;
 
-  const statusOptions = ['open', 'qualified', 'proposal', 'negotiation', 'won', 'lost', 'cancelled'];
+  // Extract unique stage names from opportunities for filter
+  const stageOptions = useMemo(() => {
+    const stages = new Set<string>();
+    opportunities.forEach((opp) => {
+      if (opp.stage_name) stages.add(opp.stage_name);
+    });
+    return Array.from(stages).sort();
+  }, [opportunities]);
 
   // Load more opportunities for infinite scroll
   const loadMore = useCallback(() => {
@@ -137,8 +144,8 @@ function OpportunitiesContent() {
   // Filtered opportunities with debounced search
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
-      // Status filter
-      const matchesStatus = filterStatus.length === 0 || (opp.status && filterStatus.includes(opp.status));
+      // Stage filter (using stage_name instead of status)
+      const matchesStatus = filterStatus.length === 0 || (opp.stage_name && filterStatus.includes(opp.stage_name));
       
       // Pipeline filter
       const matchesPipeline = filterPipeline.length === 0 || 
@@ -336,7 +343,7 @@ function OpportunitiesContent() {
   // Format currency
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return '-';
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   // Table columns
@@ -379,38 +386,19 @@ function OpportunitiesContent() {
       },
     },
     {
-      key: 'status',
+      key: 'stage_name',
       label: 'Statut',
       sortable: true,
-      render: (value) => {
-        if (!value) return <span className="text-muted-foreground">-</span>;
-        
-        const statusColors: Record<string, string> = {
-          open: 'bg-blue-500 hover:bg-blue-600',
-          qualified: 'bg-green-500 hover:bg-green-600',
-          proposal: 'bg-purple-500 hover:bg-purple-600',
-          negotiation: 'bg-orange-500 hover:bg-orange-600',
-          won: 'bg-emerald-500 hover:bg-emerald-600',
-          lost: 'bg-red-500 hover:bg-red-600',
-          cancelled: 'bg-gray-500 hover:bg-gray-600',
-        };
-        
-        const statusLabels: Record<string, string> = {
-          open: 'Ouverte',
-          qualified: 'Qualifiée',
-          proposal: 'Proposition',
-          negotiation: 'Négociation',
-          won: 'Gagnée',
-          lost: 'Perdue',
-          cancelled: 'Annulée',
-        };
+      render: (value, opportunity) => {
+        const stageName = opportunity.stage_name || value;
+        if (!stageName) return <span className="text-muted-foreground">-</span>;
         
         return (
           <Badge 
             variant="default" 
-            className={`text-white ${statusColors[String(value)] || 'bg-gray-500'}`}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
           >
-            {statusLabels[String(value)] || String(value)}
+            {String(stageName)}
           </Badge>
         );
       },
@@ -420,12 +408,7 @@ function OpportunitiesContent() {
       label: 'Pipeline',
       sortable: true,
       render: (_value, opportunity) => (
-        <div>
-          <div className="font-medium">{opportunity.pipeline_name || '-'}</div>
-          {opportunity.stage_name && (
-            <div className="text-sm text-muted-foreground">{opportunity.stage_name}</div>
-          )}
-        </div>
+        <div className="font-medium">{opportunity.pipeline_name || '-'}</div>
       ),
     },
     {
@@ -492,21 +475,15 @@ function OpportunitiesContent() {
           
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Statut */}
+            {/* Statut (Stage) */}
             <MultiSelect
-              options={statusOptions.map((status) => ({
-                label: status === 'open' ? 'Ouverte' : 
-                       status === 'qualified' ? 'Qualifiée' :
-                       status === 'proposal' ? 'Proposition' :
-                       status === 'negotiation' ? 'Négociation' :
-                       status === 'won' ? 'Gagnée' :
-                       status === 'lost' ? 'Perdue' :
-                       status === 'cancelled' ? 'Annulée' : status,
-                value: status,
+              options={stageOptions.map((stage) => ({
+                label: stage,
+                value: stage,
               }))}
               value={filterStatus}
               onChange={setFilterStatus}
-              placeholder="Filtrer par statut"
+              placeholder="Filtrer par stade"
               className="min-w-[180px]"
             />
 
