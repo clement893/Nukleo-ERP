@@ -276,11 +276,15 @@ async def create_task(
     
     # Create task
     try:
+        # Convert enum to its value for SQLAlchemy (ensures lowercase values are used)
+        status_value = task_data.status.value if hasattr(task_data.status, 'value') else str(task_data.status).lower()
+        priority_value = task_data.priority.value if hasattr(task_data.priority, 'value') else str(task_data.priority).lower()
+        
         task = ProjectTask(
             title=task_data.title,
             description=task_data.description,
-            status=task_data.status,
-            priority=task_data.priority,
+            status=status_value,  # Use .value to ensure lowercase
+            priority=priority_value,  # Use .value to ensure lowercase
             team_id=task_data.team_id,
             project_id=task_data.project_id,
             assignee_id=task_data.assignee_id,
