@@ -124,7 +124,11 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
             const stageAmount = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
             const colors = getStageColor(stageName);
             
+            // TypeScript guard: getStageColor always returns a value, but we check for safety
             if (!colors) return null;
+            
+            // TypeScript now knows colors is not undefined
+            const { bg, gradient } = colors;
 
             return (
               <div 
@@ -134,17 +138,17 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
               >
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${colors.bg}`} />
+                    <span className={`w-2 h-2 rounded-full ${bg}`} />
                     {stageName}
                   </span>
                   <span className="text-gray-500 dark:text-gray-400 font-semibold">{count}</span>
                 </div>
                 <div className="relative w-full bg-gray-200/50 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden backdrop-blur-sm">
                   <div
-                    className={`${colors.bg} h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden`}
+                    className={`${bg} h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden`}
                     style={{ width: `${percentage}%` }}
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} animate-pulse`} />
+                    <div className={`absolute inset-0 bg-gradient-to-r ${gradient} animate-pulse`} />
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs">
@@ -195,11 +199,12 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
                 )}
                 {opp.stage_name && (() => {
                   const stageColors = getStageColor(opp.stage_name);
-                  return stageColors ? (
+                  if (!stageColors) return null;
+                  return (
                     <p className={`text-xs ${stageColors.text} mt-1`}>
                       {opp.stage_name}
                     </p>
-                  ) : null;
+                  );
                 })()}
               </Link>
             ))}
