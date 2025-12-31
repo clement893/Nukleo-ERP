@@ -3,10 +3,9 @@ Project Clients Endpoints
 API endpoints for managing project clients
 """
 
-from typing import List, Optional, Dict, Annotated
+from typing import List, Optional, Dict, Annotated, Union
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from fastapi.responses import StreamingResponse
-from pydantic import BeforeValidator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, delete
 from sqlalchemy.orm import selectinload
@@ -34,21 +33,26 @@ from app.services.s3_service import S3Service
 from app.core.logging import logger
 
 
-def validate_int(value: any) -> int:
-    """Convert value to int, handling strings and None"""
-    if value is None:
-        return 0
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str):
-        try:
-            return int(value)
-        except ValueError:
-            return 0
+def get_pagination_params(
+    skip: Union[str, int] = Query(0, description="Number of records to skip"),
+    limit: Union[str, int] = Query(100, description="Maximum number of records to return"),
+) -> tuple[int, int]:
+    """Convert pagination parameters to integers"""
     try:
-        return int(value)
+        skip_int = int(skip) if skip is not None else 0
     except (ValueError, TypeError):
-        return 0
+        skip_int = 0
+    
+    try:
+        limit_int = int(limit) if limit is not None else 100
+    except (ValueError, TypeError):
+        limit_int = 100
+    
+    # Validate ranges
+    skip_int = max(0, skip_int)
+    limit_int = min(max(1, limit_int), 1000)
+    
+    return skip_int, limit_int
 
 router = APIRouter(prefix="/projects/clients", tags=["project-clients"])
 
@@ -246,8 +250,7 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: Annotated[int, BeforeValidator(validate_int)] = Query(0, ge=0, description="Number of records to skip"),
-    limit: Annotated[int, BeforeValidator(validate_int)] = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    pagination: Annotated[tuple[int, int], Depends(get_pagination_params)] = Depends(get_pagination_params),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
@@ -258,8 +261,7 @@ async def list_clients(
     Get list of clients
     
     Args:
-        skip: Number of records to skip
-        limit: Maximum number of records to return
+        pagination: Tuple of (skip, limit) from dependency
         status: Optional status filter
         responsible_id: Optional responsible filter
         company_id: Optional company filter
@@ -270,10 +272,7 @@ async def list_clients(
     Returns:
         List of clients
     """
-    # FastAPI automatically converts query string parameters to integers
-    # Validate ranges (already validated by FastAPI Query, but ensure defaults)
-    skip_int = max(0, skip)
-    limit_int = min(max(1, limit), 1000)
+    skip_int, limit_int = pagination
     
     # Use integer parameters directly
     responsible_id_int = responsible_id
