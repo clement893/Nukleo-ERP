@@ -23,7 +23,7 @@ router = APIRouter(prefix="/projects/people", tags=["people"])
 
 
 @router.get("/", response_model=List[PeopleSchema])
-@cache_query(expire=60, tags=["people"])
+# Temporarily removed @cache_query to debug validation issue
 async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
