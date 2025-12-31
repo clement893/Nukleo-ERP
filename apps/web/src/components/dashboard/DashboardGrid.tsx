@@ -57,11 +57,33 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
       maxH: 4,
     }));
 
+    // Optimized responsive layouts
+    // lg (desktop): 12 cols - full layout
+    // md (tablet landscape): 8 cols - slightly compressed
+    // sm (tablet portrait): 6 cols - single column for most widgets
+    // xs (mobile): 4 cols - full width single column
     return {
       lg: gridLayouts,
-      md: gridLayouts.map((l: any) => ({ ...l, w: Math.min(l.w, 8) })),
-      sm: gridLayouts.map((l: any) => ({ ...l, w: Math.min(l.w, 6), x: 0 })),
-      xs: gridLayouts.map((l: any) => ({ ...l, w: 4, x: 0 })),
+      md: gridLayouts.map((l: any) => ({ 
+        ...l, 
+        w: Math.min(l.w, 8),
+        // Adjust height for medium screens
+        h: l.h,
+      })),
+      sm: gridLayouts.map((l: any) => ({ 
+        ...l, 
+        w: 6, // Full width on tablet portrait
+        x: 0,
+        // Slightly increase height for better mobile UX
+        h: Math.max(l.h, 2),
+      })),
+      xs: gridLayouts.map((l: any) => ({ 
+        ...l, 
+        w: 4, // Full width on mobile
+        x: 0,
+        // Increase height for mobile readability
+        h: Math.max(l.h, 2),
+      })),
     };
   }, [activeConfig]);
 
@@ -114,15 +136,17 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
       <Responsive
         className="layout"
         layouts={layouts}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
+        breakpoints={{ lg: 1024, md: 768, sm: 640, xs: 0 }}
         cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
-        rowHeight={100}
+        rowHeight={120}
         width={width}
         onLayoutChange={handleLayoutChange}
         compactType="vertical"
         preventCollision={false}
         margin={[16, 16]}
         containerPadding={[0, 0]}
+        useCSSTransforms={true}
+        transformScale={1}
         {...({
           isDraggable: isEditMode,
           isResizable: isEditMode,
@@ -149,9 +173,23 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
       </Responsive>
 
       <style jsx global>{`
+        /* Responsive Grid Styles */
         .react-grid-layout {
           position: relative;
-          transition: height 200ms ease;
+          transition: height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+          .react-grid-layout {
+            /* Increase touch target size on mobile */
+            padding: 8px 0;
+          }
+          
+          .widget-grid-item {
+            /* Ensure widgets are touch-friendly */
+            min-height: 200px;
+          }
         }
         
         .react-grid-item {
