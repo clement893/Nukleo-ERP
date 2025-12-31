@@ -182,18 +182,9 @@ async def get_projects(
         use_explicit_columns = False
         
         # Try to use normal query with relationships if columns exist
-        if columns_exist.get('client_id', False) and columns_exist.get('responsable_id', False):
-            try:
-                query = select(Project).where(Project.user_id == current_user.id)
-                
-                if status_enum:
-                    query = query.where(Project.status == status_enum)
-                
-                query = apply_tenant_scope(query, Project)
-                query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
-                
-                result = await db.execute(query)
-                projects = result.scalars().all()
+        # NOTE: We always use explicit column selection to avoid lazy loading issues in async context
+        # Even if columns exist, we load relationships manually to prevent MissingGreenlet errors
+        use_explicit_columns = True  # Always use explicit columns to avoid lazy loading issues
             except (ProgrammingError, Exception) as e:
                 # If query fails, rollback and use explicit column selection
                 error_str = str(e).lower()
