@@ -608,13 +608,17 @@ async def get_project(
                 }
             )
             
-            # Rollback the failed transaction first
+            # Rollback the failed transaction first and ensure it's complete
             try:
                 await db.rollback()
+                # Ensure rollback is complete by flushing any pending operations
+                await db.flush()
             except Exception as rollback_error:
                 logger.warning(f"Rollback failed: {rollback_error}")
+                # If rollback fails, try to continue anyway - the next query will use a fresh transaction
             
             # Retry query with explicit column selection (excluding budget which may not exist)
+            # Use a fresh query context to avoid any async context issues
             columns_to_select = [
                 Project.id,
                 Project.name,
@@ -679,14 +683,23 @@ async def get_project(
                 # If tenant context access fails, skip tenant scoping (user_id filter is sufficient)
                 pass
             
-            result = await db.execute(query)
-            row = result.first()
-            
-            if not row:
+            try:
+                result = await db.execute(query)
+                # Fetch the row immediately to avoid any async context issues
+                row = result.first()
+                
+                if not row:
+                    raise HTTPException(
+                        status_code=http_status.HTTP_404_NOT_FOUND,
+                        detail="Project not found"
+                    )
+            except Exception as query_error:
+                # If the retry query also fails, raise the original error
+                logger.error(f"Retry query failed after rollback: {query_error}")
                 raise HTTPException(
-                    status_code=http_status.HTTP_404_NOT_FOUND,
-                    detail="Project not found"
-                )
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Database error occurred"
+                ) from pe
             
             # Extract values from row immediately to avoid any lazy loading issues
             # Convert row to a simple object with all values extracted

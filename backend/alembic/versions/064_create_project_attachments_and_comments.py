@@ -1,6 +1,6 @@
 """create project attachments and comments tables
 
-Revision ID: 064_create_project_attachments_and_comments
+Revision ID: 064_proj_attachments_comments
 Revises: 063_add_project_dates
 Create Date: 2025-01-30 15:00:00.000000
 
@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import UUID
 
 # revision identifiers, used by Alembic.
-revision = '064_create_project_attachments_and_comments'
+revision = '064_proj_attachments_comments'  # Shortened to fit 32 char limit
 down_revision = '063_add_project_dates'
 branch_labels = None
 depends_on = None
