@@ -27,12 +27,28 @@ import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import type { DashboardConfig } from '@/lib/dashboard/types';
 
 function DashboardContent() {
-  const { configs, addConfig, setActiveConfig } = useDashboardStore();
+  const { configs, addConfig, setActiveConfig, loadFromServer } = useDashboardStore();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load dashboard configs from server on mount
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        await loadFromServer();
+      } catch (error) {
+        console.error('Error loading dashboard from server:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadDashboard();
+  }, [loadFromServer]);
 
   // Initialize with default configuration if none exists
   useEffect(() => {
-    if (configs.length === 0) {
+    if (!isLoading && configs.length === 0) {
       const defaultConfig: DashboardConfig = {
         id: 'default',
         name: 'My Dashboard',
@@ -108,7 +124,7 @@ function DashboardContent() {
       addConfig(defaultConfig);
       setActiveConfig(defaultConfig.id);
     }
-  }, [configs.length, addConfig, setActiveConfig]);
+  }, [configs.length, addConfig, setActiveConfig, isLoading]);
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 dark:from-gray-900 dark:via-blue-900/10 dark:to-purple-900/10">
