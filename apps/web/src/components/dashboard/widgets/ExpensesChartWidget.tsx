@@ -2,6 +2,7 @@
 
 /**
  * Widget : Graphique des Dépenses
+ * Optimisé avec glassmorphism et gradients pour un look premium
  */
 
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
@@ -17,7 +18,30 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from 'recharts';
+
+// Custom Tooltip avec glassmorphism
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-tooltip px-3 py-2 rounded-lg shadow-lg">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+          {new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR',
+            maximumFractionDigits: 0,
+          }).format(payload[0].value)}
+        </p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+          Dépenses
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function ExpensesChartWidget({ }: WidgetProps) {
   const [_expenses, setExpenses] = useState<any[]>([]);
@@ -85,7 +109,7 @@ export function ExpensesChartWidget({ }: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -105,8 +129,8 @@ export function ExpensesChartWidget({ }: WidgetProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header stats */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header stats avec glassmorphism */}
+      <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
         <div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {new Intl.NumberFormat('fr-FR', {
@@ -119,7 +143,7 @@ export function ExpensesChartWidget({ }: WidgetProps) {
             Dépenses totales
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="glass-badge px-3 py-2 rounded-lg flex items-center gap-2">
           {isPositive ? (
             <TrendingUp className="w-5 h-5 text-red-600 dark:text-red-400" />
           ) : (
@@ -137,39 +161,49 @@ export function ExpensesChartWidget({ }: WidgetProps) {
         </div>
       </div>
 
-      {/* Chart */}
+      {/* Chart avec gradient */}
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="currentColor" 
+              className="text-gray-200 dark:text-gray-700"
+              opacity={0.3}
+            />
             <XAxis 
               dataKey="month" 
-              stroke="#6b7280"
+              stroke="currentColor"
+              className="text-gray-500 dark:text-gray-400"
               fontSize={12}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis 
-              stroke="#6b7280"
+              stroke="currentColor"
+              className="text-gray-500 dark:text-gray-400"
               fontSize={12}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
             />
-            <Tooltip
-              formatter={(value: number) => [
-                new Intl.NumberFormat('fr-FR', {
-                  style: 'currency',
-                  currency: 'EUR',
-                  maximumFractionDigits: 0,
-                }).format(value),
-                'Dépenses'
-              ]}
-            />
-            <Line
+            <Tooltip content={<CustomTooltip />} />
+            <Area
               type="monotone"
               dataKey="amount"
               stroke="#ef4444"
-              strokeWidth={2}
-              dot={{ fill: '#ef4444', r: 4 }}
+              strokeWidth={3}
+              fill="url(#expensesGradient)"
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
