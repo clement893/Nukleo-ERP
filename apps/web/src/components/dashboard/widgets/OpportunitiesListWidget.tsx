@@ -8,6 +8,7 @@ import { TrendingUp, ExternalLink } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
+import { SkeletonWidget } from '@/components/ui/Skeleton';
 
 export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
@@ -17,11 +18,7 @@ export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) 
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <SkeletonWidget />;
   }
 
   if (error) {
