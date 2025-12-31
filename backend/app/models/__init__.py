@@ -40,6 +40,7 @@ from app.models.post import Post
 from app.models.calendar_event import CalendarEvent
 from app.models.project import Project, ProjectStatus
 from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
+from app.models.time_entry import TimeEntry
 from app.models.contact import Contact
 from app.models.company import Company
 from app.models.employee import Employee
@@ -143,6 +144,7 @@ __all__ = [
     "ProjectTask",
     "TaskStatus",
     "TaskPriority",
+    "TimeEntry",
     "Pipeline",
     "PipelineStage",
     "Opportunite",

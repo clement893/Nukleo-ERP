@@ -6,6 +6,7 @@ import Badge from '@/components/ui/Badge';
 import { projectTasksAPI, type ProjectTask, type TaskPriority } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { Calendar, User, AlertCircle } from 'lucide-react';
+import TaskTimer from './TaskTimer';
 
 interface TaskTimelineProps {
   projectId?: number;
@@ -221,22 +222,25 @@ export default function TaskTimeline({ projectId, assigneeId }: TaskTimelineProp
                         </p>
                       )}
 
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        {task.due_date && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(task.due_date).toLocaleDateString('fr-FR', {
-                              day: 'numeric',
-                              month: 'short',
-                            })}
-                          </div>
-                        )}
-                        {task.assignee_name && (
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {task.assignee_name}
-                          </div>
-                        )}
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {task.due_date && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(task.due_date).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'short',
+                              })}
+                            </div>
+                          )}
+                          {task.assignee_name && (
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {task.assignee_name}
+                            </div>
+                          )}
+                        </div>
+                        <TaskTimer taskId={task.id} onTimeTracked={loadTasks} />
                       </div>
                     </Card>
                   );

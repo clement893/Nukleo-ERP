@@ -140,6 +140,12 @@ export const EMPLOYEE_PORTAL_ROUTES: PortalRoute[] = [
     permission: 'erp:view:tasks',
   },
   {
+    path: '/erp/timesheet',
+    label: 'Timesheet',
+    icon: 'Clock',
+    permission: 'erp:view:tasks',
+  },
+  {
     path: '/erp/reports',
     label: 'Reports',
     icon: 'BarChart',
@@ -269,6 +275,14 @@ export const EMPLOYEE_PORTAL_NAVIGATION: EmployeePortalNavigation[] = [
     icon: 'CheckSquare',
     permission: 'erp:view:tasks',
     module: 'tasks',
+  },
+  {
+    id: 'timesheet',
+    label: 'Timesheet',
+    path: '/erp/timesheet',
+    icon: 'Clock',
+    permission: 'erp:view:tasks',
+    module: 'timesheet',
   },
   {
     id: 'reports',

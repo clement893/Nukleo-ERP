@@ -13,6 +13,7 @@ import Loading from '@/components/ui/Loading';
 import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical } from 'lucide-react';
+import TaskTimer from './TaskTimer';
 
 interface TaskKanbanProps {
   projectId?: number;
@@ -94,7 +95,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   }, [loadTasks]);
 
   const getTasksByStatus = (status: TaskStatus) => {
-    return tasks.filter(task => task.status === status).sort((a, b) => a.order - b.order);
+    return tasks.filter(task => task.status === status).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   };
 
   const handleCreateTask = () => {
@@ -144,14 +145,18 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
         });
       } else {
-        // Create new task
+        // Create new task - team_id is required
+        if (!teamId) {
+          setError('Une équipe est requise pour créer une tâche');
+          return;
+        }
         await projectTasksAPI.create({
           title: formData.title,
           description: formData.description || null,
           status: formData.status,
           priority: formData.priority,
           team_id: teamId,
-          project_id: projectId,
+          project_id: projectId ?? null,
           assignee_id: formData.assignee_id,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           order: tasks.length,
@@ -300,19 +305,22 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                         {task.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      {task.due_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(task.due_date)}
-                        </div>
-                      )}
-                      {task.assignee_name && (
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {task.assignee_name}
-                        </div>
-                      )}
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {task.due_date && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(task.due_date)}
+                          </div>
+                        )}
+                        {task.assignee_name && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {task.assignee_name}
+                          </div>
+                        )}
+                      </div>
+                      <TaskTimer taskId={task.id} onTimeTracked={loadTasks} />
                     </div>
                   </Card>
                 ))}

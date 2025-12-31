@@ -5,11 +5,12 @@ import { useAuthStore } from '@/lib/store';
 import Container from '@/components/ui/Container';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
 import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import TaskKanban from '@/components/projects/TaskKanban';
 import TaskTimeline from '@/components/projects/TaskTimeline';
+import TaskTimer from '@/components/projects/TaskTimer';
+import GlobalTimer from '@/components/projects/GlobalTimer';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { teamsAPI } from '@/lib/api/teams';
@@ -39,7 +40,10 @@ export default function EmployeeTasksPage() {
       const response = await teamsAPI.getMyTeams();
       const data = extractApiData<TeamListResponse>(response);
       if (data?.teams && data.teams.length > 0) {
-        setTeamId(data.teams[0].id);
+        const firstTeam = data.teams[0];
+        if (firstTeam) {
+          setTeamId(firstTeam.id);
+        }
       }
     } catch (err) {
       console.warn('Could not load team ID:', err);
@@ -105,6 +109,9 @@ export default function EmployeeTasksPage() {
             {error}
           </Alert>
         )}
+
+        {/* Global Timer */}
+        <GlobalTimer />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
@@ -248,7 +255,7 @@ export default function EmployeeTasksPage() {
                           <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
                         )}
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <Badge variant="outline">{task.status}</Badge>
+                          <Badge variant="default">{task.status}</Badge>
                           <Badge variant="default">{task.priority}</Badge>
                           {task.due_date && (
                             <div className="flex items-center gap-1">
@@ -258,6 +265,7 @@ export default function EmployeeTasksPage() {
                           )}
                         </div>
                       </div>
+                      <TaskTimer taskId={task.id} onTimeTracked={loadMyTasks} />
                     </div>
                   </div>
                 ))

@@ -143,86 +143,11 @@ function TeamProjectManagementContent() {
     }
   };
 
-  // Convertir les tâches en format Kanban
-  const kanbanCards = tasks.map((task: ProjectTask) => ({
-    id: task.id.toString(),
-    title: task.title,
-    description: task.description || undefined,
-    priority: (task.priority === 'urgent' ? 'high' : task.priority) as 'low' | 'medium' | 'high' | undefined,
-    assignee: task.assignee_name || undefined,
-    status: task.status,
-  }));
-
-  // Colonnes du Kanban
-  const columns = [
-    {
-      id: 'todo',
-      title: 'The Shelf',
-      status: 'todo',
-      icon: <Package className="w-5 h-5" />,
-    },
-    {
-      id: 'in_progress',
-      title: 'En cours',
-      status: 'in_progress',
-      icon: <Clock className="w-5 h-5" />,
-    },
-    {
-      id: 'blocked',
-      title: 'The Storage',
-      status: 'blocked',
-      icon: <AlertCircle className="w-5 h-5" />,
-    },
-    {
-      id: 'to_transfer',
-      title: 'The Checkout',
-      status: 'to_transfer',
-      icon: <ShoppingCart className="w-5 h-5" />,
-    },
-  ];
-
   // Grouper les tâches par employé
   const tasksByEmployee = employees.map((employee) => ({
     employee,
     tasks: tasks.filter((task) => task.assignee_id === employee.id && task.status === 'in_progress'),
   }));
-
-  const handleCardMove = async (cardId: string, newStatus: string) => {
-    const taskId = parseInt(cardId);
-    const task = tasks.find((t) => t.id === taskId);
-    
-    if (!task) return;
-    
-    try {
-      setUpdatingTask(cardId);
-      await projectTasksAPI.update(taskId, { status: newStatus as ProjectTask['status'] });
-      
-      // Mettre à jour localement
-      setTasks((prevTasks) =>
-        prevTasks.map((t) =>
-          t.id === taskId ? { ...t, status: newStatus as ProjectTask['status'] } : t
-        )
-      );
-      
-      showToast({
-        message: 'Tâche mise à jour avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la mise à jour de la tâche',
-        type: 'error',
-      });
-    } finally {
-      setUpdatingTask(null);
-    }
-  };
-
-  const handleCardClick = (card: { id: string }) => {
-    // TODO: Ouvrir modal de détails de la tâche
-    console.log('Card clicked:', card.id);
-  };
 
   const handleCreateTask = async () => {
     if (!team) return;
