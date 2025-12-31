@@ -1080,7 +1080,8 @@ async def import_opportunities(
                     'société', 'societe', 'organisation', 'organization'
                 ])
                 company_id_raw = get_field_value(row_data, [
-                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company', 'ID Entreprise'
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company', 'ID Entreprise',
+                    'entreprise', 'Entreprise'  # Support direct de la colonne "entreprise" comme nom ou ID
                 ])
                 
                 if company_id_raw:

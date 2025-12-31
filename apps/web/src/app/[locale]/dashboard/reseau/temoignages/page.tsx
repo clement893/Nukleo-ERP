@@ -40,6 +40,7 @@ import { companiesAPI } from '@/lib/api/companies';
 import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
 import TestimonialForm from '@/components/reseau/TestimonialForm';
 import ImportTestimonialsInstructions from '@/components/reseau/ImportTestimonialsInstructions';
+import TestimonialContact from '@/components/reseau/TestimonialContact';
 
 function TemoignagesContent() {
   const { showToast } = useToast();
@@ -356,7 +357,13 @@ function TemoignagesContent() {
       label: 'Contact',
       sortable: true,
       render: (_value, testimonial) => (
-        <span>{testimonial.contact_name || '-'}</span>
+        <TestimonialContact
+          testimonial={testimonial}
+          onUpdate={() => {
+            queryClient.invalidateQueries({ queryKey: ['reseau-testimonials'] });
+          }}
+          compact={true}
+        />
       ),
     },
     {
