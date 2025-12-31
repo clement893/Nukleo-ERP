@@ -252,8 +252,10 @@ function DataTable<T extends Record<string, unknown>>({
                     >
                       {columns.map((column) => {
                         const cellValue = row[column.key];
+                        // Allow first column (typically name/title) to wrap for truncation
+                        const shouldWrap = column.key === columns[0]?.key;
                         return (
-                          <TableCell key={column.key}>
+                          <TableCell key={column.key} className={shouldWrap ? 'whitespace-normal' : undefined}>
                             {column.render
                               ? column.render(cellValue, row)
                               : cellValue?.toString() || '-'}

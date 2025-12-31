@@ -352,10 +352,10 @@ function OpportunitiesContent() {
       label: 'Nom de l\'opportunité',
       sortable: true,
       render: (_value, opportunity) => (
-        <div className="max-w-xs">
+        <div style={{ maxWidth: '300px' }} className="whitespace-normal">
           <div className="font-medium truncate block" title={opportunity.name}>{opportunity.name}</div>
           {opportunity.description && (
-            <div className="text-sm text-muted-foreground line-clamp-1 truncate">{opportunity.description}</div>
+            <div className="text-sm text-muted-foreground line-clamp-1">{opportunity.description}</div>
           )}
         </div>
       ),

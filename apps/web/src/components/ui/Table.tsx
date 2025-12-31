@@ -139,11 +139,17 @@ interface TableCellProps {
 }
 
 export function TableCell({ children, className, colSpan, onClick, style }: TableCellProps) {
+  // If className includes whitespace-normal, it will override whitespace-nowrap
+  const hasWhitespaceOverride = className?.includes('whitespace-normal');
   return (
     <td
       colSpan={colSpan}
       onClick={onClick}
-      className={clsx('px-6 py-4 whitespace-nowrap text-sm text-foreground', className)}
+      className={clsx(
+        'px-6 py-4 text-sm text-foreground',
+        !hasWhitespaceOverride && 'whitespace-nowrap',
+        className
+      )}
       style={style}
     >
       {children}
