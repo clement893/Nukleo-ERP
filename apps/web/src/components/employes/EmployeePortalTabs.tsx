@@ -27,9 +27,9 @@ interface EmployeePortalTabsProps {
 
 export default function EmployeePortalTabs({ employee }: EmployeePortalTabsProps) {
   return (
-    <Card>
+    <Card className="w-full rounded-none border-x-0">
       <Tabs defaultTab="tasks">
-        <TabList className="border-b border-border">
+        <TabList className="border-b border-border px-4 sm:px-6 lg:px-8">
           <Tab value="tasks">
             <CheckSquare className="w-4 h-4 mr-2" />
             Mes tâches
@@ -60,7 +60,7 @@ export default function EmployeePortalTabs({ employee }: EmployeePortalTabsProps
           </Tab>
         </TabList>
 
-        <TabPanels>
+        <TabPanels className="px-4 sm:px-6 lg:px-8 py-6">
           <TabPanel value="tasks">
             <EmployeePortalTasks employeeId={employee.id} />
           </TabPanel>

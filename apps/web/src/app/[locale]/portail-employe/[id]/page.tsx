@@ -6,7 +6,7 @@ import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { PageHeader, PageContainer } from '@/components/layout';
+import { PageHeader } from '@/components/layout';
 import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -59,17 +59,15 @@ export default function EmployeePortalPage() {
 
   if (loading) {
     return (
-      <PageContainer>
-        <div className="py-12 text-center">
-          <Loading />
-        </div>
-      </PageContainer>
+      <div className="w-full py-12 text-center">
+        <Loading />
+      </div>
     );
   }
 
   if (error && !employee) {
     return (
-      <PageContainer>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Erreur"
           breadcrumbs={[
@@ -86,13 +84,13 @@ export default function EmployeePortalPage() {
             Retour aux employés
           </Button>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   if (!employee) {
     return (
-      <PageContainer>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Employé non trouvé"
           breadcrumbs={[
@@ -109,39 +107,41 @@ export default function EmployeePortalPage() {
             Retour aux employés
           </Button>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        title={`Portail de ${employee.first_name} ${employee.last_name}`}
-        description="Accédez à toutes les informations et outils de l'employé"
-        breadcrumbs={[
-          { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-          { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-          { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
-          { label: `${employee.first_name} ${employee.last_name}`, href: `/${params?.locale || 'fr'}/dashboard/management/employes/${employee.id}` },
-          { label: 'Portail' },
-        ]}
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
-      />
+    <div className="w-full">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title={`Portail de ${employee.first_name} ${employee.last_name}`}
+          description="Accédez à toutes les informations et outils de l'employé"
+          breadcrumbs={[
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
+            { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
+            { label: `${employee.first_name} ${employee.last_name}`, href: `/${params?.locale || 'fr'}/dashboard/management/employes/${employee.id}` },
+            { label: 'Portail' },
+          ]}
+          actions={
+            <Button variant="outline" size="sm" onClick={handleBack}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour à la liste
+            </Button>
+          }
+        />
 
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
-        </div>
-      )}
+        {error && (
+          <div className="mb-4">
+            <Alert variant="error">{error}</Alert>
+          </div>
+        )}
+      </div>
 
-      <div className="mt-6">
+      <div className="w-full">
         <EmployeePortalTabs employee={employee} />
       </div>
-    </PageContainer>
+    </div>
   );
 }
