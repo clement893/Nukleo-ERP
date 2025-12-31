@@ -36,7 +36,7 @@ class ExpenseAccount(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Employee relationship
-    employee_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"), nullable=False, index=True)
     
     # Account details
     account_number = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "EXP-2024-001"
@@ -75,7 +75,7 @@ class ExpenseAccount(Base):
     )
 
     # Relationships
-    employee = relationship("User", foreign_keys=[employee_id], backref="expense_accounts", lazy="select")
+    employee = relationship("Employee", foreign_keys=[employee_id], backref="expense_accounts", lazy="select")
     reviewer = relationship("User", foreign_keys=[reviewed_by_id], lazy="select")
 
     def __repr__(self):

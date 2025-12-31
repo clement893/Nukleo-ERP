@@ -34,6 +34,7 @@ from app.models import menu  # noqa: F401
 from app.models import support_ticket  # noqa: F401
 from app.models import employee  # noqa: F401
 from app.models import vacation_request  # noqa: F401
+from app.models import expense_account  # noqa: F401
 from app.core.security_audit import SecurityAuditLog  # noqa: F401
 # Import Leo module models for Alembic autogenerate
 from app.modules.leo.models import LeoConversation, LeoMessage, LeoDocumentation  # noqa: F401
