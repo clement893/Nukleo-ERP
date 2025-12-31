@@ -7,6 +7,18 @@ import { persist } from 'zustand/middleware';
 import type { DashboardConfig, WidgetLayout, GlobalFilters } from './types';
 import { preferencesAPI } from '@/lib/api/preferences';
 
+// Debounce pour éviter trop de sauvegardes
+let saveTimeout: NodeJS.Timeout | null = null;
+const debouncedSave = (saveFn: () => Promise<void>, delay: number = 1000) => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+  saveTimeout = setTimeout(() => {
+    saveFn().catch(console.error);
+    saveTimeout = null;
+  }, delay);
+};
+
 interface DashboardStore {
   // État
   configs: DashboardConfig[];
@@ -74,7 +86,7 @@ export const useDashboardStore = create<DashboardStore>()(
           activeConfigId: config.id,
         }));
         // Sauvegarder automatiquement après ajout de config
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       updateConfig: (id, updates) => {
@@ -84,7 +96,7 @@ export const useDashboardStore = create<DashboardStore>()(
           ),
         }));
         // Sauvegarder automatiquement après mise à jour de config
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       deleteConfig: (id) => {
@@ -100,13 +112,13 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après suppression de config
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       setActiveConfig: (id) => {
         set({ activeConfigId: id });
         // Sauvegarder automatiquement après changement de config active
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       duplicateConfig: (id) => {
@@ -129,7 +141,7 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après duplication de config
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       // Actions - Widgets
@@ -154,7 +166,7 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après ajout de widget
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       updateWidget: (id, updates) => {
@@ -175,7 +187,7 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après mise à jour de widget
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       removeWidget: (id) => {
@@ -194,7 +206,7 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après suppression de widget
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       updateWidgetPosition: (id, x, y) => {
@@ -215,7 +227,7 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après changement de position
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       updateWidgetSize: (id, w, h) => {
@@ -236,7 +248,7 @@ export const useDashboardStore = create<DashboardStore>()(
           };
         });
         // Sauvegarder automatiquement après changement de taille
-        setTimeout(() => get().saveToServer(), 500);
+        debouncedSave(() => get().saveToServer());
       },
       
       // Actions - Filtres globaux
@@ -245,26 +257,42 @@ export const useDashboardStore = create<DashboardStore>()(
       clearGlobalFilters: () => set({ globalFilters: {} }),
       
       // Actions - Mode édition
-      setEditMode: (isEditMode) => set({ isEditMode }),
+      setEditMode: (isEditMode) => {
+        set({ isEditMode });
+        // Sauvegarder automatiquement quand on quitte le mode édition
+        if (!isEditMode) {
+          // Sauvegarder immédiatement (sans debounce) quand on quitte le mode édition
+          get().saveToServer().catch(console.error);
+        }
+      },
       
       // Actions - Persistance
       saveToServer: async () => {
         try {
           const { configs, activeConfigId, globalFilters } = get();
+          console.log('[DashboardStore] Saving to server:', { 
+            configsCount: configs.length, 
+            activeConfigId,
+            widgetsCount: configs.find(c => c.id === activeConfigId)?.layouts.length || 0
+          });
           await preferencesAPI.set('dashboard_configs', {
             configs,
             activeConfigId,
             globalFilters,
           });
+          console.log('[DashboardStore] Successfully saved to server');
         } catch (error) {
-          console.error('Error saving dashboard to server:', error);
+          console.error('[DashboardStore] Error saving dashboard to server:', error);
           // Ne pas bloquer l'utilisateur si la sauvegarde échoue
         }
       },
       
       loadFromServer: async () => {
         try {
+          console.log('[DashboardStore] Loading from server...');
           const preference = await preferencesAPI.get('dashboard_configs');
+          const currentState = get();
+          
           if (preference && preference.value && typeof preference.value === 'object') {
             const data = preference.value as {
               configs?: DashboardConfig[];
@@ -273,15 +301,51 @@ export const useDashboardStore = create<DashboardStore>()(
             };
             
             if (data.configs && Array.isArray(data.configs) && data.configs.length > 0) {
-              set({
-                configs: data.configs,
-                activeConfigId: data.activeConfigId || null,
-                globalFilters: data.globalFilters || {},
+              // Comparer les timestamps pour déterminer quelle version est la plus récente
+              const serverLatestUpdate = Math.max(
+                ...data.configs.map(c => new Date(c.updated_at || c.created_at || 0).getTime())
+              );
+              const localLatestUpdate = currentState.configs.length > 0
+                ? Math.max(
+                    ...currentState.configs.map(c => new Date(c.updated_at || c.created_at || 0).getTime())
+                  )
+                : 0;
+              
+              console.log('[DashboardStore] Comparing versions:', {
+                serverLatest: new Date(serverLatestUpdate).toISOString(),
+                localLatest: new Date(localLatestUpdate).toISOString(),
+                serverNewer: serverLatestUpdate >= localLatestUpdate
               });
+              
+              // Utiliser la version la plus récente
+              if (serverLatestUpdate >= localLatestUpdate) {
+                // Les données serveur sont plus récentes ou égales
+                console.log('[DashboardStore] Using server data');
+                set({
+                  configs: data.configs,
+                  activeConfigId: data.activeConfigId || currentState.activeConfigId || null,
+                  globalFilters: data.globalFilters || currentState.globalFilters || {},
+                });
+              } else if (currentState.configs.length > 0) {
+                // Les données locales sont plus récentes, sauvegarder sur le serveur
+                console.log('[DashboardStore] Local data is newer, saving to server');
+                await get().saveToServer();
+              }
+            } else if (currentState.configs.length > 0) {
+              // Si le serveur n'a pas de données mais localStorage oui, sauvegarder sur le serveur
+              console.log('[DashboardStore] No server data, saving local data to server');
+              await get().saveToServer();
+            }
+          } else {
+            // Si pas de données serveur, sauvegarder les données locales si elles existent
+            if (currentState.configs.length > 0) {
+              console.log('[DashboardStore] No server preference, saving local data to server');
+              await get().saveToServer();
             }
           }
+          console.log('[DashboardStore] Load from server completed');
         } catch (error) {
-          console.error('Error loading dashboard from server:', error);
+          console.error('[DashboardStore] Error loading dashboard from server:', error);
           // Continuer avec les données du localStorage si le chargement échoue
         }
       },

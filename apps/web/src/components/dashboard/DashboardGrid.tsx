@@ -65,18 +65,32 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   }, [activeConfig]);
 
   // Handler pour les changements de layout
-  const handleLayoutChange = (currentLayout: any) => {
-    if (!isEditMode || !activeConfig) return;
+  const handleLayoutChange = (currentLayout: any, allLayouts: any) => {
+    if (!activeConfig) return;
+    
+    // Permettre les changements même en mode non-édition pour la persistance
+    // (react-grid-layout peut déclencher des changements lors du redimensionnement de la fenêtre)
 
+    let hasChanges = false;
     currentLayout.forEach((item: any) => {
       const widget = activeConfig.layouts.find((w) => w.id === item.i);
-      if (widget && (widget.x !== item.x || widget.y !== item.y)) {
+      if (!widget) return;
+      
+      // Mettre à jour la position si elle a changé
+      if (widget.x !== item.x || widget.y !== item.y) {
+        hasChanges = true;
         updateWidgetPosition(item.i, item.x, item.y);
       }
-      if (widget && (widget.w !== item.w || widget.h !== item.h)) {
+      // Mettre à jour la taille si elle a changé
+      if (widget.w !== item.w || widget.h !== item.h) {
+        hasChanges = true;
         updateWidgetSize(item.i, item.w, item.h);
       }
     });
+    
+    if (hasChanges) {
+      console.log('[DashboardGrid] Layout changed, saving...');
+    }
   };
 
   if (!activeConfig || activeConfig.layouts.length === 0) {
@@ -104,12 +118,12 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
         rowHeight={100}
         width={width}
         onLayoutChange={handleLayoutChange}
-        {...({
-          compactType: 'vertical',
-          preventCollision: false,
-          margin: [16, 16],
-          containerPadding: [0, 0],
-        } as any)}
+        isDraggable={isEditMode}
+        isResizable={isEditMode}
+        compactType="vertical"
+        preventCollision={false}
+        margin={[16, 16]}
+        containerPadding={[0, 0]}
       >
         {activeConfig.layouts.map((widget) => (
           <div key={widget.id} className="widget-grid-item">
