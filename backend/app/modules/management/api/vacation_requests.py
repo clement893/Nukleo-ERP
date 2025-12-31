@@ -26,7 +26,7 @@ from app.schemas.vacation_request import (
 )
 from app.core.logging import logger
 
-router = APIRouter(prefix="/management/vacation-requests", tags=["vacation-requests"])
+router = APIRouter(prefix="/vacation-requests", tags=["vacation-requests"])
 
 
 def vacation_request_to_dict(vr: VacationRequest) -> dict:
