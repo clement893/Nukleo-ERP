@@ -73,22 +73,28 @@ async def get_projects(
     # Convert status string to enum if provided (case-insensitive)
     status_enum: ProjectStatus | None = None
     if status:
-        status_lower = status.lower()
-        try:
-            # Map common status values (case-insensitive)
-            status_map = {
-                'active': ProjectStatus.ACTIVE,
-                'archived': ProjectStatus.ARCHIVED,
-                'completed': ProjectStatus.COMPLETED,
-            }
-            status_enum = status_map.get(status_lower)
-            if status_enum is None:
-                raise ValueError(f"Invalid status: {status}. Must be one of: active, archived, completed")
-        except (ValueError, KeyError) as e:
-            raise HTTPException(
-                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid status value: {status}. Must be one of: active, archived, completed"
-            )
+        status_lower = status.strip().lower()
+        # Map common status values (case-insensitive)
+        # Also handle enum values that might come from the frontend
+        status_map = {
+            'active': ProjectStatus.ACTIVE,
+            'archived': ProjectStatus.ARCHIVED,
+            'completed': ProjectStatus.COMPLETED,
+            # Handle enum string values
+            'projectstatus.active': ProjectStatus.ACTIVE,
+            'projectstatus.archived': ProjectStatus.ARCHIVED,
+            'projectstatus.completed': ProjectStatus.COMPLETED,
+        }
+        status_enum = status_map.get(status_lower)
+        if status_enum is None:
+            # Try to match enum name directly
+            try:
+                status_enum = ProjectStatus[status.upper()]
+            except (KeyError, AttributeError):
+                raise HTTPException(
+                    status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Invalid status value: {status}. Must be one of: active, archived, completed (case-insensitive)"
+                )
     
     # Check if client_id and responsable_id columns exist BEFORE querying
     # This prevents transaction errors
