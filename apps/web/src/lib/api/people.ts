@@ -80,7 +80,7 @@ export const peopleAPI = {
     try {
       const response = await apiClient.get<People[]>('/v1/projects/people', { params });
       console.log('[PeopleAPI] Response received:', {
-        status: response.status,
+        success: response.success,
         dataLength: Array.isArray(response.data) ? response.data.length : 'not array',
       });
     
