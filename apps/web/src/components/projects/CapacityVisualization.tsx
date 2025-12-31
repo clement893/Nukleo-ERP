@@ -38,6 +38,7 @@ export default function CapacityVisualization({
   holidays = [],
 }: CapacityVisualizationProps) {
   const [vacations, setVacations] = useState<VacationRequest[]>([]);
+  const [loadingVacations, setLoadingVacations] = useState(false);
   // Calculate weeks in date range
   const weeks = useMemo(() => {
     if (!startDate || !endDate) {
@@ -114,19 +115,33 @@ export default function CapacityVisualization({
     }));
   }, [vacations]);
 
+  // Create mapping: user_id -> employee AND employee_id -> employee (for fallback)
+  const employeeByIdMap = useMemo(() => {
+    const map = new Map<number, Employee>();
+    employees.forEach((employee) => {
+      map.set(employee.id, employee);
+    });
+    return map;
+  }, [employees]);
+
+  const employeeByUserIdMap = useMemo(() => {
+    const map = new Map<number, Employee>();
+    employees.forEach((employee) => {
+      if (employee.user_id) {
+        map.set(employee.user_id, employee);
+      }
+    });
+    return map;
+  }, [employees]);
+
   // Calculate capacity per employee
   const employeeCapacities = useMemo<EmployeeCapacity[]>(() => {
     const capacityMap = new Map<number, EmployeeCapacity>();
 
     employees.forEach((employee) => {
-      // Use user_id as key for mapping with tasks (assignee_id = user_id)
-      // If no user_id, we can't map tasks to this employee
-      if (!employee.user_id) {
-        console.warn(`Employee ${employee.id} has no user_id, skipping capacity calculation`);
-        return;
-      }
-      
-      const key = employee.user_id;
+      // Use user_id as primary key for mapping with tasks (assignee_id = user_id)
+      // If no user_id, still calculate capacity but tasks won't be mapped
+      const key = employee.user_id || employee.id;
       
       // Calculate actual capacity considering holidays and absences
       const capacityInfo = calculateWeeklyCapacity(employee, weeks, holidays, absences);
@@ -154,12 +169,26 @@ export default function CapacityVisualization({
       // Optionally exclude completed tasks (they're already done)
       // if (task.status === 'completed') return;
       
-      const capacity = capacityMap.get(task.assignee_id);
+      // Try to find capacity by user_id first (primary mapping)
+      let capacity = capacityMap.get(task.assignee_id);
+      
+      // If not found, try to find employee by user_id and use employee.id as fallback
+      if (!capacity) {
+        const employee = employeeByUserIdMap.get(task.assignee_id);
+        if (employee) {
+          capacity = capacityMap.get(employee.id);
+        }
+      }
+      
       if (capacity) {
         capacity.estimatedHours += task.estimated_hours;
       } else {
         // Task assigned to a user_id that doesn't match any employee
-        console.warn(`Task ${task.id} assigned to user_id ${task.assignee_id} but no matching employee found`);
+        // This is expected if the user doesn't have an employee record
+        // Only log in development to avoid console spam
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`Task ${task.id} assigned to user_id ${task.assignee_id} but no matching employee found`);
+        }
       }
     });
 
@@ -180,7 +209,7 @@ export default function CapacityVisualization({
     });
 
     return Array.from(capacityMap.values()).sort((a, b) => b.utilization - a.utilization);
-  }, [employees, filteredTasks, weeks, holidays, absences]);
+  }, [employees, filteredTasks, weeks, holidays, absences, employeeByUserIdMap]);
 
   // Calculate team totals
   const teamStats = useMemo(() => {
