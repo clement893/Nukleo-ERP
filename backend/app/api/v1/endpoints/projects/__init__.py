@@ -579,6 +579,33 @@ async def get_project(
     Raises:
         HTTPException: If project not found or user doesn't have access
     """
+    # Define ProjectRow class outside try/except so it's always available
+    class ProjectRow:
+        def __init__(self, row):
+            # Extract all values immediately to avoid any async/lazy loading issues
+            self.id = int(row.id) if row.id is not None else None
+            self.name = str(row.name) if row.name is not None else ""
+            self.description = str(row.description) if row.description is not None else None
+            self.status = row.status
+            self.user_id = int(row.user_id) if row.user_id is not None else None
+            self.created_at = row.created_at
+            self.updated_at = row.updated_at
+            self.client_id = int(row.client_id) if hasattr(row, 'client_id') and row.client_id is not None else None
+            self.responsable_id = int(row.responsable_id) if hasattr(row, 'responsable_id') and row.responsable_id is not None else None
+            self.equipe = str(row.equipe) if hasattr(row, 'equipe') and row.equipe is not None else None
+            self.etape = str(row.etape) if hasattr(row, 'etape') and row.etape is not None else None
+            self.annee_realisation = str(row.annee_realisation) if hasattr(row, 'annee_realisation') and row.annee_realisation is not None else None
+            self.contact = str(row.contact) if hasattr(row, 'contact') and row.contact is not None else None
+            self.proposal_url = str(row.proposal_url) if hasattr(row, 'proposal_url') and row.proposal_url is not None else None
+            self.drive_url = str(row.drive_url) if hasattr(row, 'drive_url') and row.drive_url is not None else None
+            self.slack_url = str(row.slack_url) if hasattr(row, 'slack_url') and row.slack_url is not None else None
+            self.echeancier_url = str(row.echeancier_url) if hasattr(row, 'echeancier_url') and row.echeancier_url is not None else None
+            self.temoignage_status = str(row.temoignage_status) if hasattr(row, 'temoignage_status') and row.temoignage_status is not None else None
+            self.portfolio_status = str(row.portfolio_status) if hasattr(row, 'portfolio_status') and row.portfolio_status is not None else None
+            self.start_date = row.start_date if hasattr(row, 'start_date') else None
+            self.end_date = row.end_date if hasattr(row, 'end_date') else None
+            self.deadline = row.deadline if hasattr(row, 'deadline') else None
+    
     try:
         query = select(Project).where(
             and_(
@@ -703,32 +730,6 @@ async def get_project(
             
             # Extract values from row immediately to avoid any lazy loading issues
             # Convert row to a simple object with all values extracted
-            class ProjectRow:
-                def __init__(self, row):
-                    # Extract all values immediately to avoid any async/lazy loading issues
-                    self.id = int(row.id) if row.id is not None else None
-                    self.name = str(row.name) if row.name is not None else ""
-                    self.description = str(row.description) if row.description is not None else None
-                    self.status = row.status
-                    self.user_id = int(row.user_id) if row.user_id is not None else None
-                    self.created_at = row.created_at
-                    self.updated_at = row.updated_at
-                    self.client_id = int(row.client_id) if hasattr(row, 'client_id') and row.client_id is not None else None
-                    self.responsable_id = int(row.responsable_id) if hasattr(row, 'responsable_id') and row.responsable_id is not None else None
-                    self.equipe = str(row.equipe) if hasattr(row, 'equipe') and row.equipe is not None else None
-                    self.etape = str(row.etape) if hasattr(row, 'etape') and row.etape is not None else None
-                    self.annee_realisation = str(row.annee_realisation) if hasattr(row, 'annee_realisation') and row.annee_realisation is not None else None
-                    self.contact = str(row.contact) if hasattr(row, 'contact') and row.contact is not None else None
-                    self.proposal_url = str(row.proposal_url) if hasattr(row, 'proposal_url') and row.proposal_url is not None else None
-                    self.drive_url = str(row.drive_url) if hasattr(row, 'drive_url') and row.drive_url is not None else None
-                    self.slack_url = str(row.slack_url) if hasattr(row, 'slack_url') and row.slack_url is not None else None
-                    self.echeancier_url = str(row.echeancier_url) if hasattr(row, 'echeancier_url') and row.echeancier_url is not None else None
-                    self.temoignage_status = str(row.temoignage_status) if hasattr(row, 'temoignage_status') and row.temoignage_status is not None else None
-                    self.portfolio_status = str(row.portfolio_status) if hasattr(row, 'portfolio_status') and row.portfolio_status is not None else None
-                    self.start_date = row.start_date if hasattr(row, 'start_date') else None
-                    self.end_date = row.end_date if hasattr(row, 'end_date') else None
-                    self.deadline = row.deadline if hasattr(row, 'deadline') else None
-            
             project = ProjectRow(row)
             
             # Load client and responsable names manually since ProjectRow doesn't have relationships
