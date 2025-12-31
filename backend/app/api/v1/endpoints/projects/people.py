@@ -30,7 +30,6 @@ async def list_people(
     limit: int = Query(100, ge=1, le=1000),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
-    _t: Optional[int] = Query(None, description="Cache-busting timestamp (ignored)", include_in_schema=False),
 ) -> List[PeopleSchema]:
     """
     Get list of people
