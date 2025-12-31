@@ -175,7 +175,7 @@ export default function ProjectComments({ projectId, taskId, onCommentAdded }: P
                 <img src={comment.user_avatar} alt={comment.user_name || ''} className="w-8 h-8 rounded-full" />
               ) : (
                 <span className="text-sm font-medium text-primary">
-                  {(comment.user_name || comment.user_email || 'U')[0].toUpperCase()}
+                  {((comment.user_name || comment.user_email || 'U') as string)[0].toUpperCase()}
                 </span>
               )}
             </div>
