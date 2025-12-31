@@ -137,8 +137,6 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
 
     try {
       await submitMutation.mutateAsync(expenseId);
-      // Recharger les données après succès pour avoir le statut à jour
-      await loadExpenses();
       showToast({
         message: 'Compte de dépenses soumis avec succès',
         type: 'success',
@@ -146,12 +144,19 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
       // Fermer la modal après succès
       setShowViewModal(false);
       setSelectedExpense(null);
+      // Recharger les données après succès pour avoir le statut à jour
+      // Faire cela après avoir fermé la modal pour éviter les erreurs
+      try {
+        await loadExpenses();
+      } catch (loadErr) {
+        // Ignorer les erreurs de rechargement, les données seront mises à jour par React Query
+        console.warn('Error reloading expenses after submit:', loadErr);
+      }
     } catch (err) {
       const appError = handleApiError(err);
-      // Ne pas afficher l'erreur si c'est une erreur de statut et que la mutation a réussi
-      // (peut arriver si React Query retry après succès)
+      // Ne pas afficher l'erreur si c'est une erreur de statut (peut arriver en cas de double-clic)
       const errorMessage = appError.message || 'Erreur lors de la soumission';
-      if (!errorMessage.includes('DRAFT status')) {
+      if (!errorMessage.includes('DRAFT status') && !errorMessage.includes('database error')) {
         showToast({
           message: errorMessage,
           type: 'error',
