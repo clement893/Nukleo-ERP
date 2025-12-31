@@ -30,7 +30,7 @@ async def list_people(
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Filter by status"),
+    status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
     """
@@ -45,20 +45,20 @@ async def list_people(
     logger.info(f"[PeopleAPI] Query params (items): {list(request.query_params.items())}")
     logger.info(f"[PeopleAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
     logger.info(f"[PeopleAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
-    logger.info(f"[PeopleAPI] Status filter: {status_filter}")
+    logger.info(f"[PeopleAPI] Status: {status}")
     logger.info(f"[PeopleAPI] ========================================")
     
     query = select(People)
 
     # Parse status
     parsed_status: Optional[PeopleStatus] = None
-    if status_filter:
+    if status:
         try:
-            parsed_status = PeopleStatus(status_filter.lower())
+            parsed_status = PeopleStatus(status.lower())
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid status value: {status_filter}. Must be one of {', '.join([s.value for s in PeopleStatus])}"
+                detail=f"Invalid status value: {status}. Must be one of {', '.join([s.value for s in PeopleStatus])}"
             )
 
     if parsed_status:
