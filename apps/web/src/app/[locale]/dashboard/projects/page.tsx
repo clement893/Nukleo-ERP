@@ -400,7 +400,9 @@ function ProjectsContent() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
+            {filteredProjects.map((project) => {
+              const description: string | null = project.description;
+              return (
               <Card 
                 key={project.id} 
                 className="glass-card p-6 cursor-pointer hover:shadow-lg transition-shadow"
@@ -422,9 +424,9 @@ function ProjectsContent() {
                 </div>
 
                 {/* Description */}
-                {project.description ? (
+                {description ? (
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {project.description}
+                    {description}
                   </p>
                 ) : null}
 
@@ -503,7 +505,8 @@ function ProjectsContent() {
                   </div>
                 )}
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </Container>

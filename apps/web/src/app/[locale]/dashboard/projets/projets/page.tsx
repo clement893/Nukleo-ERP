@@ -422,11 +422,14 @@ function ProjectsContent() {
                 </div>
 
                 {/* Description */}
-                {project.description ? (
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-                ) : null}
+                {(() => {
+                  const description: string | null = project.description;
+                  return description ? (
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {description}
+                    </p>
+                  ) : null;
+                })()}
 
                 {/* Metadata */}
                 <div className="space-y-2 mb-4">
