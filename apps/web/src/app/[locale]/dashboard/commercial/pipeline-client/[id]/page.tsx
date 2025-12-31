@@ -18,7 +18,6 @@ import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { companiesAPI, type Company } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 import PipelineOpportunityCard from '@/components/commercial/PipelineOpportunityCard';
-import { type KanbanCard } from '@/components/ui/KanbanBoard';
 
 // Helper function to convert Opportunity to Opportunite
 const convertOpportunityToOpportunite = (opp: Opportunity): Opportunite => {
@@ -578,7 +577,7 @@ function PipelineDetailContent() {
               return (card.data?.amount as number) || 0;
             }}
             formatValue={(value) => `$${value.toLocaleString('en-US')}`}
-            renderCard={(card: KanbanCard, isDragged: boolean, onDragStart: () => void) => {
+            renderCard={(card: KanbanCard, isDragged: boolean, _onDragStart: () => void) => {
               const opportunity = opportunities.find(opp => opp.id === card.id);
               return (
                 <PipelineOpportunityCard

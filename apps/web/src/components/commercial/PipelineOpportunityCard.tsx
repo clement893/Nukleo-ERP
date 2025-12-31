@@ -22,7 +22,7 @@ interface PipelineOpportunityCardProps {
 }
 
 export default function PipelineOpportunityCard({
-  id,
+  id: _id,
   title,
   description,
   priority,

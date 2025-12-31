@@ -64,14 +64,14 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
     }
   };
 
-  const handleCreate = async (data: ExpenseAccountCreate) => {
+  const handleCreate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate) => {
     try {
       setCreating(true);
       // Ensure employee_id is set to the current employee
       const expenseData: ExpenseAccountCreate = {
         ...data,
         employee_id: employee.id,
-      };
+      } as ExpenseAccountCreate;
       await expenseAccountsAPI.create(expenseData);
       setShowCreateModal(false);
       showToast({
