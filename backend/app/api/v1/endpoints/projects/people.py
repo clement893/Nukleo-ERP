@@ -3,7 +3,7 @@ People API Endpoints
 API endpoints for managing people
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -22,39 +22,63 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/people", tags=["people"])
 
 
+def parse_int_param(value: Union[str, int], param_name: str) -> int:
+    """Parse integer parameter, handling both string and int inputs"""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            logger.error(f"[PeopleAPI] Failed to parse {param_name} as integer: {repr(value)}")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"{param_name} must be a valid integer, got: {repr(value)}"
+            )
+    logger.error(f"[PeopleAPI] Unexpected type for {param_name}: {type(value).__name__}, value: {repr(value)}")
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=f"{param_name} must be an integer, got {type(value).__name__}: {repr(value)}"
+    )
+
+
 @router.get("/", response_model=List[PeopleSchema])
 @cache_query(expire=60, tags=["people"])
 async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    skip: Union[str, int] = Query(0, ge=0),
+    limit: Union[str, int] = Query(100, ge=1, le=1000),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
     """
     Get list of people
     """
+    # Parse and validate integer parameters (handle both string and int inputs)
+    try:
+        skip_int = parse_int_param(skip, "skip")
+        limit_int = parse_int_param(limit, "limit")
+    except HTTPException:
+        raise  # Re-raise HTTPException as-is
+    
+    # Validate ranges
+    if skip_int < 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"skip must be >= 0, got: {skip_int}"
+        )
+    if limit_int < 1 or limit_int > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"limit must be between 1 and 1000, got: {limit_int}"
+        )
+    
     # Log received parameters with their types
-    logger.info(f"[PeopleAPI] list_people() called - skip: {skip} (type: {type(skip).__name__}), limit: {limit} (type: {type(limit).__name__}), status: {status}, search: {search}")
+    logger.info(f"[PeopleAPI] list_people() called - skip: {skip_int} (parsed from {repr(skip)}), limit: {limit_int} (parsed from {repr(limit)}), status: {status}, search: {search}")
     logger.info(f"[PeopleAPI] Query params from request: {request.query_params}")
-    logger.info(f"[PeopleAPI] skip value: {repr(skip)}, limit value: {repr(limit)}")
-    
-    # Validate parameter types
-    if not isinstance(skip, int):
-        logger.error(f"[PeopleAPI] skip is not an int! Value: {repr(skip)}, Type: {type(skip).__name__}")
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"skip must be an integer, got {type(skip).__name__}: {repr(skip)}"
-        )
-    
-    if not isinstance(limit, int):
-        logger.error(f"[PeopleAPI] limit is not an int! Value: {repr(limit)}, Type: {type(limit).__name__}")
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"limit must be an integer, got {type(limit).__name__}: {repr(limit)}"
-        )
+    logger.info(f"[PeopleAPI] Original skip value: {repr(skip)} (type: {type(skip).__name__}), Original limit value: {repr(limit)} (type: {type(limit).__name__})")
     
     query = select(People)
 
@@ -79,9 +103,9 @@ async def list_people(
             func.lower(func.concat(People.first_name, ' ', People.last_name)).like(search_term)
         )
 
-    query = query.order_by(People.created_at.desc()).offset(skip).limit(limit)
+    query = query.order_by(People.created_at.desc()).offset(skip_int).limit(limit_int)
     
-    logger.info(f"[PeopleAPI] Executing query with offset={skip}, limit={limit}")
+    logger.info(f"[PeopleAPI] Executing query with offset={skip_int}, limit={limit_int}")
     
     try:
         result = await db.execute(query)
