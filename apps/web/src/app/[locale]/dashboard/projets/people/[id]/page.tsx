@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { peopleAPI } from '@/lib/api/people';
+import { Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
@@ -158,7 +159,17 @@ export default function PeopleDetailPage() {
       <div className="mt-6">
         <PeopleDetail
           person={person}
-          projects={projects.map(p => ({ ...p, status: p.status || 'active' }))}
+          projects={projects.map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description || null,
+            status: (p.status || 'active') as 'active' | 'archived' | 'completed',
+            responsable_id: person.id,
+            user_id: 0, // Required by Project type but not provided by API
+            client_id: p.client_id || null,
+            created_at: new Date().toISOString(), // Required by Project type but not provided by API
+            updated_at: new Date().toISOString(), // Required by Project type but not provided by API
+          })) as Project[]}
           contacts={contacts}
           portalUrl={person.portal_url || null}
           notes={person.notes || null}

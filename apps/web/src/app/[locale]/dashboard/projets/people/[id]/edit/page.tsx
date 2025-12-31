@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { peopleAPI } from '@/lib/api/people';
-import type { People, PeopleCreate, PeopleUpdate } from '@/lib/api/people';
+import type { PeopleCreate, PeopleUpdate } from '@/lib/api/people';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';

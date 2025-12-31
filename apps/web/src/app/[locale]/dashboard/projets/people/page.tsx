@@ -6,7 +6,6 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -23,8 +22,7 @@ import PeopleRowActions from '@/components/projects/PeopleRowActions';
 import SearchBar from '@/components/ui/SearchBar';
 import { 
   Plus, 
-  MoreVertical, 
-  Trash2
+  MoreVertical
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -32,8 +30,7 @@ import {
   useInfinitePeople, 
   useCreatePerson, 
   useUpdatePerson, 
-  useDeletePerson,
-  peopleAPI 
+  useDeletePerson
 } from '@/lib/query/people';
 
 function PeopleContent() {
