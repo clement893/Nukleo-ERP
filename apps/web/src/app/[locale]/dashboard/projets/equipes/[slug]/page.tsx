@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
-import { Card, Badge, Button, Loading, Alert } from '@/components/ui';
+import { Card, Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
 import KanbanBoard from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
@@ -15,6 +15,7 @@ import { teamsAPI } from '@/lib/api';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { extractApiData } from '@/lib/api/utils';
 import type { Team, TeamMember } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
 
@@ -36,6 +37,14 @@ function TeamProjectManagementContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [_updatingTask, setUpdatingTask] = useState<string | null>(null);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [creatingTask, setCreatingTask] = useState(false);
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as ProjectTask['priority'],
+    assignee_id: null as number | null,
+  });
 
   useEffect(() => {
     if (teamSlug) {
@@ -50,7 +59,8 @@ function TeamProjectManagementContent() {
       
       // Trouver l'équipe par slug
       const teamsResponse = await teamsAPI.list();
-      const teams = teamsResponse.data?.teams || [];
+      const teamsListData = extractApiData<{ teams: Team[]; total: number }>(teamsResponse);
+      const teams = teamsListData?.teams || [];
       const foundTeam = teams.find((t: Team) => t.slug === teamSlug);
       
       if (!foundTeam) {
@@ -168,6 +178,52 @@ function TeamProjectManagementContent() {
     console.log('Card clicked:', card.id);
   };
 
+  const handleCreateTask = async () => {
+    if (!team) return;
+    
+    if (!taskForm.title.trim()) {
+      showToast({
+        message: 'Le titre de la tâche est requis',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      setCreatingTask(true);
+      const newTask = await projectTasksAPI.create({
+        title: taskForm.title,
+        description: taskForm.description || null,
+        priority: taskForm.priority,
+        team_id: team.id,
+        assignee_id: taskForm.assignee_id || null,
+        status: 'todo',
+      });
+      
+      setTasks([...tasks, newTask]);
+      setShowCreateTaskModal(false);
+      setTaskForm({
+        title: '',
+        description: '',
+        priority: 'medium',
+        assignee_id: null,
+      });
+      
+      showToast({
+        message: 'Tâche créée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création de la tâche',
+        type: 'error',
+      });
+    } finally {
+      setCreatingTask(false);
+    }
+  };
+
   const getPriorityColor = (priority?: 'low' | 'medium' | 'high' | 'urgent') => {
     const colors = {
       low: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
@@ -242,7 +298,7 @@ function TeamProjectManagementContent() {
               <Users className="w-5 h-5" />
               Employés et tâches en cours
             </h2>
-            <Button size="sm">
+            <Button size="sm" onClick={() => setShowCreateTaskModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Ajouter une tâche
             </Button>
@@ -321,6 +377,106 @@ function TeamProjectManagementContent() {
           />
         </div>
       </Card>
+
+      {/* Modal de création de tâche */}
+      <Modal
+        isOpen={showCreateTaskModal}
+        onClose={() => {
+          setShowCreateTaskModal(false);
+          setTaskForm({
+            title: '',
+            description: '',
+            priority: 'medium',
+            assignee_id: null,
+          });
+        }}
+        title="Créer une nouvelle tâche"
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateTaskModal(false);
+                setTaskForm({
+                  title: '',
+                  description: '',
+                  priority: 'medium',
+                  assignee_id: null,
+                });
+              }}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleCreateTask} loading={creatingTask}>
+              Créer
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Input
+              label="Titre de la tâche *"
+              value={taskForm.title}
+              onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+              placeholder="Ex: Réaliser le design de la page d'accueil"
+              fullWidth
+            />
+          </div>
+          <div>
+            <Textarea
+              label="Description"
+              value={taskForm.description}
+              onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+              placeholder="Description de la tâche..."
+              rows={4}
+              fullWidth
+            />
+          </div>
+          <div>
+            <Select
+              label="Priorité"
+              value={taskForm.priority}
+              onChange={(e) =>
+                setTaskForm({
+                  ...taskForm,
+                  priority: e.target.value as ProjectTask['priority'],
+                })
+              }
+              fullWidth
+              options={[
+                { value: 'low', label: 'Basse' },
+                { value: 'medium', label: 'Moyenne' },
+                { value: 'high', label: 'Haute' },
+                { value: 'urgent', label: 'Urgente' },
+              ]}
+            />
+          </div>
+          {employees.length > 0 && (
+            <div>
+              <Select
+                label="Assigner à (optionnel)"
+                value={taskForm.assignee_id?.toString() || ''}
+                onChange={(e) =>
+                  setTaskForm({
+                    ...taskForm,
+                    assignee_id: e.target.value ? parseInt(e.target.value) : null,
+                  })
+                }
+                fullWidth
+                options={[
+                  { value: '', label: 'Non assigné' },
+                  ...employees.map((emp) => ({
+                    value: emp.id.toString(),
+                    label: emp.name,
+                  })),
+                ]}
+              />
+            </div>
+          )}
+        </div>
+      </Modal>
     </MotionDiv>
   );
 }
