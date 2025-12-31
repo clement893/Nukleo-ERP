@@ -72,6 +72,71 @@ async def get_projects(
         result = await db.execute(query)
         projects = result.scalars().all()
         
+        # Convert to response format - safely handle missing columns
+        project_list = []
+        for project in projects:
+            # Safely get client_id and responsable_id first
+            client_id = None
+            responsable_id = None
+            try:
+                client_id = getattr(project, 'client_id', None)
+            except (AttributeError, ProgrammingError):
+                pass
+            
+            try:
+                responsable_id = getattr(project, 'responsable_id', None)
+            except (AttributeError, ProgrammingError):
+                pass
+            
+            # Try to load client name if client_id exists
+            client_name = None
+            if client_id:
+                try:
+                    # Manually load the People if client_id exists
+                    from app.models.people import People
+                    client_result = await db.execute(
+                        select(People).where(People.id == client_id)
+                    )
+                    client = client_result.scalar_one_or_none()
+                    if client:
+                        client_name = f"{client.first_name} {client.last_name}".strip()
+                except (AttributeError, ProgrammingError, Exception):
+                    # If loading fails, just leave client_name as None
+                    client_name = None
+            
+            # Try to load responsable name if responsable_id exists
+            responsable_name = None
+            if responsable_id:
+                try:
+                    # Manually load the Employee if responsable_id exists
+                    from app.models.employee import Employee
+                    responsable_result = await db.execute(
+                        select(Employee).where(Employee.id == responsable_id)
+                    )
+                    responsable = responsable_result.scalar_one_or_none()
+                    if responsable:
+                        responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
+                except (AttributeError, ProgrammingError, Exception):
+                    # If loading fails, just leave responsable_name as None
+                    responsable_name = None
+            
+            project_list.append(ProjectSchema(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                status=project.status,
+                user_id=project.user_id,
+                client_id=client_id,
+                client_name=client_name,
+                responsable_id=responsable_id,
+                responsable_name=responsable_name,
+                created_at=project.created_at,
+                updated_at=project.updated_at,
+            ))
+        
+        # Return the list directly - FastAPI will serialize it correctly
+        return project_list
+        
     except ProgrammingError as pe:
         # If the error is about missing columns, query with explicit column selection
         error_msg = str(pe).lower()
@@ -123,71 +188,71 @@ async def get_projects(
         else:
             # Re-raise if it's a different ProgrammingError
             raise
-    
-    # Convert to response format - safely handle missing columns
-    project_list = []
-    for project in projects:
-        # Safely get client_id and responsable_id first
-        client_id = None
-        responsable_id = None
-        try:
-            client_id = getattr(project, 'client_id', None)
-        except (AttributeError, ProgrammingError):
-            pass
         
-        try:
-            responsable_id = getattr(project, 'responsable_id', None)
-        except (AttributeError, ProgrammingError):
-            pass
-        
-        # Try to load client name if client_id exists
-        client_name = None
-        if client_id:
+        # Convert to response format - safely handle missing columns
+        project_list = []
+        for project in projects:
+            # Safely get client_id and responsable_id first
+            client_id = None
+            responsable_id = None
             try:
-                # Manually load the People if client_id exists
-                from app.models.people import People
-                client_result = await db.execute(
-                    select(People).where(People.id == client_id)
-                )
-                client = client_result.scalar_one_or_none()
-                if client:
-                    client_name = f"{client.first_name} {client.last_name}".strip()
-            except (AttributeError, ProgrammingError, Exception):
-                # If loading fails, just leave client_name as None
-                client_name = None
-        
-        # Try to load responsable name if responsable_id exists
-        responsable_name = None
-        if responsable_id:
+                client_id = getattr(project, 'client_id', None)
+            except (AttributeError, ProgrammingError):
+                pass
+            
             try:
-                # Manually load the Employee if responsable_id exists
-                from app.models.employee import Employee
-                responsable_result = await db.execute(
-                    select(Employee).where(Employee.id == responsable_id)
-                )
-                responsable = responsable_result.scalar_one_or_none()
-                if responsable:
-                    responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
-            except (AttributeError, ProgrammingError, Exception):
-                # If loading fails, just leave responsable_name as None
-                responsable_name = None
+                responsable_id = getattr(project, 'responsable_id', None)
+            except (AttributeError, ProgrammingError):
+                pass
+            
+            # Try to load client name if client_id exists
+            client_name = None
+            if client_id:
+                try:
+                    # Manually load the People if client_id exists
+                    from app.models.people import People
+                    client_result = await db.execute(
+                        select(People).where(People.id == client_id)
+                    )
+                    client = client_result.scalar_one_or_none()
+                    if client:
+                        client_name = f"{client.first_name} {client.last_name}".strip()
+                except (AttributeError, ProgrammingError, Exception):
+                    # If loading fails, just leave client_name as None
+                    client_name = None
+            
+            # Try to load responsable name if responsable_id exists
+            responsable_name = None
+            if responsable_id:
+                try:
+                    # Manually load the Employee if responsable_id exists
+                    from app.models.employee import Employee
+                    responsable_result = await db.execute(
+                        select(Employee).where(Employee.id == responsable_id)
+                    )
+                    responsable = responsable_result.scalar_one_or_none()
+                    if responsable:
+                        responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
+                except (AttributeError, ProgrammingError, Exception):
+                    # If loading fails, just leave responsable_name as None
+                    responsable_name = None
+            
+            project_list.append(ProjectSchema(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                status=project.status,
+                user_id=project.user_id,
+                client_id=client_id,
+                client_name=client_name,
+                responsable_id=responsable_id,
+                responsable_name=responsable_name,
+                created_at=project.created_at,
+                updated_at=project.updated_at,
+            ))
         
-        project_list.append(ProjectSchema(
-            id=project.id,
-            name=project.name,
-            description=project.description,
-            status=project.status,
-            user_id=project.user_id,
-            client_id=client_id,
-            client_name=client_name,
-            responsable_id=responsable_id,
-            responsable_name=responsable_name,
-            created_at=project.created_at,
-            updated_at=project.updated_at,
-        ))
-    
-    # Return the list directly - FastAPI will serialize it correctly
-    return project_list
+        # Return the list directly - FastAPI will serialize it correctly
+        return project_list
     
     except Exception as e:
         # Log detailed error information before re-raising
