@@ -26,12 +26,12 @@ router = APIRouter(prefix="/projects/people", tags=["people"])
 # Temporarily removed @cache_query to debug validation issue
 async def list_people(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> List[PeopleSchema]:
     """
     Get list of people
