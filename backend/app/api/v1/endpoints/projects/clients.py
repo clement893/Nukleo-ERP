@@ -3,7 +3,7 @@ Clients API Endpoints
 API endpoints for managing clients
 """
 
-from typing import List, Optional, Annotated
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -44,12 +44,12 @@ async def list_clients_test(
 @router.get("/", response_model=List[ClientSchema])
 # Temporarily removed @cache_query to debug validation issue
 async def list_clients(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)],
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search term"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> List[ClientSchema]:
     """
     Get list of clients
