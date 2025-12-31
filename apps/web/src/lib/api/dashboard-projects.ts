@@ -56,7 +56,7 @@ export async function fetchDashboardProjects(params?: {
 
   try {
     const response = await apiClient.get(
-      `/api/v1/projects?${queryParams.toString()}`
+      `/v1/projects?${queryParams.toString()}`
     );
 
     const data = response.data as { items?: any[] } | any[] | undefined;
@@ -106,7 +106,7 @@ export async function fetchProjectsStats(): Promise<{
   avg_progress: number;
 }> {
   try {
-    const response = await apiClient.get('/api/v1/projects/stats');
+    const response = await apiClient.get('/v1/projects/stats');
     return response.data as {
       total: number;
       active: number;
@@ -116,7 +116,7 @@ export async function fetchProjectsStats(): Promise<{
     };
   } catch (error) {
     // Fallback: calculate from projects list
-    const projectsResponse = await apiClient.get('/api/v1/projects');
+    const projectsResponse = await apiClient.get('/v1/projects');
     const projectsData = projectsResponse.data as { items?: any[] } | any[] | undefined;
     const projects = (Array.isArray(projectsData) ? projectsData : projectsData?.items || []) as any[];
     

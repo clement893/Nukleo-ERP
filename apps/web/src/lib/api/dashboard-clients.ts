@@ -30,11 +30,11 @@ export async function fetchClientsStats(params?: {
   const period = params?.period || 'month';
   
   try {
-    const response = await apiClient.get(`/api/v1/commercial/companies/stats?period=${period}`);
+    const response = await apiClient.get(`/v1/commercial/companies/stats?period=${period}`);
     return response.data as ClientsStatsResponse;
   } catch (error) {
     // Fallback: calculate from companies list if stats endpoint doesn't exist
-    const companiesResponse = await apiClient.get('/api/v1/commercial/companies');
+    const companiesResponse = await apiClient.get('/v1/commercial/companies');
     const companiesData = companiesResponse.data as { items?: any[] } | any[] | undefined;
     const companies = (Array.isArray(companiesData) ? companiesData : companiesData?.items || []) as any[];
     

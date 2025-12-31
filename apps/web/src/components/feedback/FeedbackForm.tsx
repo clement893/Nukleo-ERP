@@ -44,7 +44,7 @@ export function FeedbackForm({ className = '', onSuccess }: FeedbackFormProps) {
 
     setIsSubmitting(true);
     try {
-      await apiClient.post('/api/v1/feedback/feedback', {
+      await apiClient.post('/v1/feedback/feedback', {
         type,
         subject: subject.trim(),
         message: message.trim(),

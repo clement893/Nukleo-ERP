@@ -39,7 +39,7 @@ export async function fetchDashboardRevenue(params?: {
   
   try {
     const response = await apiClient.get(
-      `/api/v1/finances/revenue?period=${period}&months=${months}`
+      `/v1/finances/revenue?period=${period}&months=${months}`
     );
     return response.data as RevenueResponse;
   } catch (error) {
@@ -99,7 +99,7 @@ export async function fetchRevenueStats(): Promise<{
   profit_margin: number;
 }> {
   try {
-    const response = await apiClient.get('/api/v1/finances/stats');
+    const response = await apiClient.get('/v1/finances/stats');
     return response.data as {
       total_revenue: number;
       total_expenses: number;

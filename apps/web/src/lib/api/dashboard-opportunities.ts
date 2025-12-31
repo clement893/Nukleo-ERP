@@ -52,7 +52,7 @@ export async function fetchDashboardOpportunities(params?: {
   if (params?.company_id) queryParams.append('company_id', params.company_id.toString());
 
   const response = await apiClient.get(
-    `/api/v1/commercial/opportunities?${queryParams.toString()}`
+    `/v1/commercial/opportunities?${queryParams.toString()}`
   );
 
   const data = response.data as { items?: OpportunityListItem[]; total?: number; page?: number; page_size?: number } | undefined;
@@ -76,7 +76,7 @@ export async function fetchOpportunitiesStats(): Promise<{
   total_amount: number;
   avg_probability: number;
 }> {
-  const response = await apiClient.get('/api/v1/commercial/opportunities/stats');
+  const response = await apiClient.get('/v1/commercial/opportunities/stats');
   return response.data as {
     total: number;
     by_stage: Record<string, number>;

@@ -55,13 +55,13 @@ export function DashboardFilters() {
     setIsLoading(true);
     try {
       // Load companies
-      const companiesRes = await apiClient.get('/api/v1/commercial/companies');
+      const companiesRes = await apiClient.get('/v1/commercial/companies');
       const companiesData = companiesRes.data as { items?: Company[] } | Company[] | undefined;
       setCompanies((Array.isArray(companiesData) ? companiesData : companiesData?.items || []).slice(0, 50) as Company[]);
 
       // Load employees
       try {
-        const employeesRes = await apiClient.get('/api/v1/management/employees');
+        const employeesRes = await apiClient.get('/v1/management/employees');
         const employeesData = employeesRes.data as { items?: Employee[] } | Employee[] | undefined;
         setEmployees((Array.isArray(employeesData) ? employeesData : employeesData?.items || []).slice(0, 50) as Employee[]);
       } catch (e) {
@@ -70,7 +70,7 @@ export function DashboardFilters() {
 
       // Load projects
       try {
-        const projectsRes = await apiClient.get('/api/v1/projects');
+        const projectsRes = await apiClient.get('/v1/projects');
         const projectsData = projectsRes.data as { items?: Project[] } | Project[] | undefined;
         setProjects((Array.isArray(projectsData) ? projectsData : projectsData?.items || []).slice(0, 50) as Project[]);
       } catch (e) {
