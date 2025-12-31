@@ -368,19 +368,19 @@ function ProjectDetailContent() {
               <div className="p-6 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
                 <p className="text-sm text-green-700 mb-2">Budget total</p>
                 <p className="text-3xl font-bold text-green-900">
-                  {formatCurrency(project.budget)}
+                  {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
                 </p>
               </div>
 
               <div className="p-6 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
                 <p className="text-sm text-blue-700 mb-2">Taux horaire</p>
                 <p className="text-3xl font-bold text-blue-900">
-                  {project.taux_horaire ? `${formatCurrency(project.taux_horaire)}/h` : '-'}
+                  {(project as Project & { taux_horaire?: number | null }).taux_horaire ? `${formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h` : '-'}
                 </p>
               </div>
             </div>
 
-            {!project.budget && !project.taux_horaire && (
+            {!((project as Project & { budget?: number | null }).budget) && !((project as Project & { taux_horaire?: number | null }).taux_horaire) && (
               <div className="text-center py-8 text-muted-foreground">
                 <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Aucune information financière disponible</p>

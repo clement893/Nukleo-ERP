@@ -118,7 +118,7 @@ function ProjectsContent() {
     const total = filteredProjects.length;
     const active = filteredProjects.filter(p => p.status === 'ACTIVE').length;
     const completed = filteredProjects.filter(p => p.status === 'COMPLETED').length;
-    const withBudget = filteredProjects.filter(p => p.budget).length;
+    const withBudget = filteredProjects.filter(p => (p as Project & { budget?: number | null }).budget).length;
 
     return { total, active, completed, withBudget };
   }, [filteredProjects]);
@@ -451,12 +451,12 @@ function ProjectsContent() {
                 </div>
 
                 {/* Budget */}
-                {project.budget && (
+                {'budget' in project && project.budget && (
                   <div className="pt-4 border-t border-border">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Budget</span>
                       <span className="text-lg font-semibold text-foreground">
-                        {formatCurrency(project.budget)}
+                        {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
                       </span>
                     </div>
                   </div>
