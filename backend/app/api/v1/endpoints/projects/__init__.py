@@ -139,11 +139,14 @@ async def get_projects(
                 # If query fails, rollback and use explicit column selection
                 try:
                     await db.rollback()
-                except Exception:
-                    pass  # Ignore rollback errors
+                except Exception as rollback_error:
+                    logger.warning(
+                        f"Rollback failed: {rollback_error}",
+                        context={"original_error": str(e)}
+                    )
                 logger.warning(
                     "Query failed, using explicit column selection",
-                    context={"error": str(e)}
+                    context={"error": str(e), "error_type": type(e).__name__}
                 )
                 use_explicit_columns = True
         
