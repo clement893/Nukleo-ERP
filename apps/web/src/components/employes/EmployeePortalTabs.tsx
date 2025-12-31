@@ -11,7 +11,8 @@ import {
   Bot, 
   Calendar, 
   Receipt, 
-  User 
+  User,
+  Plane 
 } from 'lucide-react';
 import EmployeePortalTasks from './EmployeePortalTasks';
 import EmployeePortalProjects from './EmployeePortalProjects';
@@ -20,6 +21,7 @@ import EmployeePortalLeo from './EmployeePortalLeo';
 import EmployeePortalDeadlines from './EmployeePortalDeadlines';
 import EmployeePortalExpenses from './EmployeePortalExpenses';
 import EmployeePortalProfile from './EmployeePortalProfile';
+import EmployeePortalVacations from './EmployeePortalVacations';
 
 interface EmployeePortalTabsProps {
   employee: Employee;
@@ -54,6 +56,10 @@ export default function EmployeePortalTabs({ employee }: EmployeePortalTabsProps
             <Receipt className="w-4 h-4 mr-2" />
             Mes comptes de dépenses
           </Tab>
+          <Tab value="vacations">
+            <Plane className="w-4 h-4 mr-2" />
+            Mes vacances
+          </Tab>
           <Tab value="profile">
             <User className="w-4 h-4 mr-2" />
             Mon profil
@@ -78,6 +84,9 @@ export default function EmployeePortalTabs({ employee }: EmployeePortalTabsProps
           </TabPanel>
           <TabPanel value="expenses">
             <EmployeePortalExpenses employee={employee} />
+          </TabPanel>
+          <TabPanel value="vacations">
+            <EmployeePortalVacations employee={employee} />
           </TabPanel>
           <TabPanel value="profile">
             <EmployeePortalProfile employee={employee} />

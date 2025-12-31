@@ -193,8 +193,8 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             icon: <UserPlus className="w-5 h-5" />,
           },
           {
-            name: 'Vacances',
-            href: '/dashboard/management/vacances',
+            name: 'Demandes de vacances',
+            href: '/dashboard/management/vacations-requests',
             icon: <Calendar className="w-5 h-5" />,
           },
         ],

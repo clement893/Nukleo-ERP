@@ -1,8 +1,7 @@
 """
-Management Module API
-API endpoints for management operations
+Management Module API Package
 """
 
-from .router import router
+from app.modules.management.api import vacation_requests
 
-__all__ = ["router"]
+__all__ = ["vacation_requests"]

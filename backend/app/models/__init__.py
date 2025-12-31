@@ -42,6 +42,7 @@ from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
 from app.models.contact import Contact
 from app.models.company import Company
 from app.models.employee import Employee
+from app.models.vacation_request import VacationRequest
 from app.models.people import People, PeopleStatus
 from app.models.file import File
 from app.models.quote import Quote
@@ -130,6 +131,7 @@ __all__ = [
     "Contact",
     "Company",
     "Employee",
+    "VacationRequest",
     "People",
     "PeopleStatus",
     "Quote",

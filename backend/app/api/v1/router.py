@@ -525,9 +525,8 @@ api_router.include_router(
 # api_router.include_router(projects_module_router)
 
 
-# Register management module unified router (alternative to individual routers above)
-# Uncomment to use unified router instead:
-# api_router.include_router(management_module_router)
+# Register management module unified router
+api_router.include_router(management_module_router)
 
 # Register API connection check endpoints
 api_router.include_router(
