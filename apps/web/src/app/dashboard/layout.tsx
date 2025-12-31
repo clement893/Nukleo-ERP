@@ -72,6 +72,10 @@ function DashboardLayoutContent({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-muted dark:to-muted">
+      {/* Skip link for keyboard navigation */}
+      <a href="#main-content" className="skip-link">
+        Aller au contenu principal
+      </a>
           {/* Mobile Header */}
       <header className="lg:hidden bg-background shadow border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -173,8 +177,11 @@ function DashboardLayoutContent({
 
           {/* Page Content */}
           <main 
+            id="main-content"
             key={pathname}
             className="flex-1 overflow-y-auto"
+            role="main"
+            aria-label="Contenu principal"
             style={{
               animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
