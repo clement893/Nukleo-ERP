@@ -353,15 +353,15 @@ function TemoignagesContent() {
       label: 'Entreprise',
       sortable: true,
       render: (_value, testimonial) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {testimonial.company_logo_url && (
             <img 
               src={testimonial.company_logo_url} 
               alt={testimonial.company_name || ''} 
-              className="w-8 h-8 rounded object-cover"
+              className="w-8 h-8 rounded object-cover flex-shrink-0"
             />
           )}
-          <span>{testimonial.company_name || '-'}</span>
+          <span className="truncate" title={testimonial.company_name || undefined}>{testimonial.company_name || '-'}</span>
         </div>
       ),
     },
@@ -384,7 +384,7 @@ function TemoignagesContent() {
       label: 'Titre',
       sortable: true,
       render: (_value, testimonial) => (
-        <span className="font-medium">{testimonial.title || '-'}</span>
+        <span className="font-medium truncate block" title={testimonial.title || undefined}>{testimonial.title || '-'}</span>
       ),
     },
     {

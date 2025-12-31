@@ -354,10 +354,10 @@ function CompaniesContent() {
       sortable: true,
       render: (_value, company) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium">{company.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate" title={company.name}>{company.name}</div>
             {company.parent_company_name && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground truncate">
                 Filiale de {company.parent_company_name}
               </div>
             )}

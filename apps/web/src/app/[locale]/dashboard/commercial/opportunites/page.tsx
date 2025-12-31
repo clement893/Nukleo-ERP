@@ -353,13 +353,13 @@ function OpportunitiesContent() {
       sortable: true,
       render: (_value, opportunity) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium">{opportunity.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate" title={opportunity.name}>{opportunity.name}</div>
             {opportunity.description && (
               <div className="text-sm text-muted-foreground line-clamp-1">{opportunity.description}</div>
             )}
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
             <Button
               variant="ghost"
               size="sm"
@@ -385,15 +385,15 @@ function OpportunitiesContent() {
         const company = companies.find(c => c.id === opportunity.company_id);
         
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {company?.logo_url && (
               <img 
                 src={company.logo_url} 
                 alt={opportunity.company_name} 
-                className="w-6 h-6 rounded object-cover"
+                className="w-6 h-6 rounded object-cover flex-shrink-0"
               />
             )}
-            <span className="font-medium">{opportunity.company_name}</span>
+            <span className="font-medium truncate" title={opportunity.company_name}>{opportunity.company_name}</span>
           </div>
         );
       },

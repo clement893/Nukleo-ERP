@@ -352,8 +352,8 @@ function ClientsContent() {
       sortable: true,
       render: (_value, client) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium">{client.company_name || '-'}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate" title={client.company_name || undefined}>{client.company_name || '-'}</div>
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
             <Button

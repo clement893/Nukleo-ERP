@@ -420,10 +420,10 @@ function ContactsContent() {
       sortable: true,
       render: (_value, contact) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium">{contact.first_name} {contact.last_name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate" title={`${contact.first_name} ${contact.last_name}`}>{contact.first_name} {contact.last_name}</div>
             {contact.position && (
-              <div className="text-sm text-muted-foreground">{contact.position}</div>
+              <div className="text-sm text-muted-foreground truncate">{contact.position}</div>
             )}
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity">

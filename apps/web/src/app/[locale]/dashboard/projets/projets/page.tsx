@@ -273,8 +273,8 @@ function ProjectsContent() {
       sortable: true,
       render: (_value, project) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium cursor-pointer hover:text-primary" onClick={() => openDetailPage(project)}>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium cursor-pointer hover:text-primary truncate" onClick={() => openDetailPage(project)} title={project.name}>
               {project.name}
             </div>
             {project.description && (
