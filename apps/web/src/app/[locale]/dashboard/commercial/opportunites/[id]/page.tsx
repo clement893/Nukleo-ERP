@@ -9,6 +9,7 @@ import { PageHeader, PageContainer } from '@/components/layout';
 import { Loading, Alert, Card, Badge, Button } from '@/components/ui';
 import { ArrowLeft, Edit, FileText, Calendar, MessageSquare, Users, Link as LinkIcon, MapPin, Tag } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
+import OpportunityContacts from '@/components/commercial/OpportunityContacts';
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -287,16 +288,13 @@ export default function OpportunityDetailPage() {
                 </div>
               )}
 
-              {opportunity.contact_names && opportunity.contact_names.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Contacts liés</p>
-                  <div className="space-y-1">
-                    {opportunity.contact_names.map((name, idx) => (
-                      <p key={idx} className="text-sm">{name}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Contacts liés</p>
+                <OpportunityContacts
+                  opportunity={opportunity}
+                  onUpdate={loadOpportunity}
+                />
+              </div>
             </div>
           </Card>
 

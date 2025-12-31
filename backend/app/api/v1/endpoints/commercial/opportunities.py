@@ -1080,36 +1080,46 @@ async def import_opportunities(
                     'société', 'societe', 'organisation', 'organization'
                 ])
                 company_id_raw = get_field_value(row_data, [
-                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company'
+                    'company_id', 'id_entreprise', 'entreprise_id', 'company id', 'id company', 'ID Entreprise'
                 ])
                 
                 if company_id_raw:
+                    # Try to parse as ID first
                     try:
-                        company_id = int(float(str(company_id_raw)))
-                        # Verify company exists
+                        potential_id = int(float(str(company_id_raw)))
+                        # Verify company exists with this ID
                         company_result = await db.execute(
-                            select(Company).where(Company.id == company_id)
+                            select(Company).where(Company.id == potential_id)
                         )
-                        if not company_result.scalar_one_or_none():
-                            stats["errors"] += 1
-                            error_msg = f"Ligne {idx + 2}: ❌ Entreprise ID {company_id} non trouvée"
-                            add_import_log(import_id, error_msg, "error", {"row": idx + 2, "company_id": company_id})
-                            errors.append({
-                                'row': idx + 2,
-                                'data': row_data,
-                                'error': f'Company ID {company_id} not found'
-                            })
-                            continue
+                        if company_result.scalar_one_or_none():
+                            company_id = potential_id
+                            add_import_log(import_id, f"Ligne {idx + 2}: Entreprise trouvée par ID: {company_id}", "info")
+                        else:
+                            # ID doesn't exist, try as name
+                            matched_company_id = await find_company_by_name(
+                                company_name=str(company_id_raw).strip(),
+                                db=db,
+                                all_companies=all_companies,
+                                company_name_to_id=company_name_to_id
+                            )
+                            if matched_company_id:
+                                company_id = matched_company_id
+                                add_import_log(import_id, f"Ligne {idx + 2}: '{company_id_raw}' traité comme nom d'entreprise et matché avec ID {matched_company_id}", "info")
+                            else:
+                                add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_id_raw}' non trouvée (ID ou nom), opportunité créée sans entreprise", "warning")
                     except (ValueError, TypeError):
-                        stats["errors"] += 1
-                        error_msg = f"Ligne {idx + 2}: ❌ ID entreprise invalide: {company_id_raw}"
-                        add_import_log(import_id, error_msg, "error", {"row": idx + 2, "company_id_raw": company_id_raw})
-                        errors.append({
-                            'row': idx + 2,
-                            'data': row_data,
-                            'error': f'Invalid company ID: {company_id_raw}'
-                        })
-                        continue
+                        # Not a number, try as name
+                        matched_company_id = await find_company_by_name(
+                            company_name=str(company_id_raw).strip(),
+                            db=db,
+                            all_companies=all_companies,
+                            company_name_to_id=company_name_to_id
+                        )
+                        if matched_company_id:
+                            company_id = matched_company_id
+                            add_import_log(import_id, f"Ligne {idx + 2}: '{company_id_raw}' traité comme nom d'entreprise et matché avec ID {matched_company_id}", "info")
+                        else:
+                            add_import_log(import_id, f"Ligne {idx + 2}: ⚠️ Entreprise '{company_id_raw}' non trouvée, opportunité créée sans entreprise", "warning")
                 elif company_name:
                     # Try to find existing company by name
                     matched_company_id = await find_company_by_name(

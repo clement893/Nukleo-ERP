@@ -82,12 +82,13 @@ export default function ImportOpportunitiesInstructions({
               <div>
                 <p className="font-medium mb-2">Relations:</p>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>• <strong>company_id</strong> / id_entreprise / id_company</li>
+                  <li>• <strong>company_id</strong> / <strong>ID Entreprise</strong> / id_entreprise / id_company (ID ou nom)</li>
                   <li>• <strong>company_name</strong> / nom_entreprise</li>
                   <li>• <strong>contact_id</strong> / id_contact</li>
                   <li>• <strong>contact_ids</strong> / ids_contacts (séparés par virgules)</li>
                   <li>• <strong>assigned_to_id</strong> / id_assigné</li>
                 </ul>
+                <p className="text-xs text-muted-foreground mt-2">💡 La colonne "ID Entreprise" accepte aussi le nom de l'entreprise si l'ID n'est pas trouvé</p>
               </div>
               <div>
                 <p className="font-medium mb-2">Dates:</p>

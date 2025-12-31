@@ -250,7 +250,7 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    pagination: Annotated[tuple[int, int], Depends(get_pagination_params)] = Depends(get_pagination_params),
+    pagination: tuple[int, int] = Depends(get_pagination_params),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
