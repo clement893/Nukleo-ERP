@@ -80,6 +80,7 @@
     "**/*.stories.ts",
     "tests/**",
     "src/test/**",
+    "**/testrefactor/**",
     "playwright.config.ts"
   ]
 }
