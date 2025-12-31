@@ -12,7 +12,7 @@ import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
 import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
-import { Plus, Edit, Trash2, Calendar, User, AlertCircle, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, User, GripVertical } from 'lucide-react';
 
 interface TaskKanbanProps {
   projectId: number;
@@ -48,13 +48,20 @@ export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
   const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    assignee_id: number | null;
+    due_date: string | undefined;
+  }>({
     title: '',
     description: '',
-    status: 'todo' as TaskStatus,
-    priority: 'medium' as TaskPriority,
-    assignee_id: null as number | null,
-    due_date: '',
+    status: 'todo',
+    priority: 'medium',
+    assignee_id: null,
+    due_date: undefined,
   });
 
   const loadTasks = useCallback(async () => {
@@ -87,7 +94,7 @@ export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
       status: 'todo',
       priority: 'medium',
       assignee_id: null,
-      due_date: '',
+      due_date: undefined,
     });
     setShowTaskModal(true);
   };
@@ -100,7 +107,7 @@ export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
       status: task.status,
       priority: task.priority,
       assignee_id: task.assignee_id || null,
-      due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
+      due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
     });
     setShowTaskModal(true);
   };
@@ -340,35 +347,21 @@ export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Statut
-              </label>
               <Select
+                label="Statut"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-              >
-                {STATUS_COLUMNS.map(({ status, label }) => (
-                  <option key={status} value={status}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
+                options={STATUS_COLUMNS.map(({ status, label }) => ({ value: status, label }))}
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Priorité
-              </label>
               <Select
+                label="Priorité"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-              >
-                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
+                options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))}
+              />
             </div>
           </div>
 

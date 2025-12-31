@@ -26,9 +26,9 @@ export default function ClientAvatar({
   const getInitials = () => {
     const name = client.company_name || '';
     if (!name) return '?';
-    const parts = name.trim().split(/\s+/);
+    const parts = name.trim().split(/\s+/).filter(p => p.length > 0);
     if (parts.length >= 2) {
-      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+      return ((parts[0]?.charAt(0) || '') + (parts[parts.length - 1]?.charAt(0) || '')).toUpperCase();
     }
     return name.charAt(0).toUpperCase() || '?';
   };

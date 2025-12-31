@@ -422,11 +422,11 @@ function ProjectsContent() {
                 </div>
 
                 {/* Description */}
-                {project.description && (
+                {project.description ? (
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {String(project.description)}
+                    {project.description}
                   </p>
-                )}
+                ) : null}
 
                 {/* Metadata */}
                 <div className="space-y-2 mb-4">

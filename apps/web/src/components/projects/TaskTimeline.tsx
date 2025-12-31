@@ -72,8 +72,15 @@ export default function TaskTimeline({ projectId }: TaskTimelineProps) {
       }
 
       const dueDate = new Date(task.due_date);
+      if (isNaN(dueDate.getTime())) {
+        // Invalid date, skip this task
+        return;
+      }
       dueDate.setHours(0, 0, 0, 0);
       const dateKey = dueDate.toISOString().split('T')[0];
+      if (!dateKey) {
+        return;
+      }
 
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -90,7 +97,7 @@ export default function TaskTimeline({ projectId }: TaskTimelineProps) {
 
     return sortedDates.map((date) => ({
       date,
-      tasks: grouped[date],
+      tasks: grouped[date] || [],
     }));
   }, [tasks]);
 
@@ -190,7 +197,7 @@ export default function TaskTimeline({ projectId }: TaskTimelineProps) {
                           >
                             {PRIORITY_LABELS[task.priority]}
                           </Badge>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="default" className="text-xs">
                             {STATUS_LABELS[task.status]}
                           </Badge>
                         </div>

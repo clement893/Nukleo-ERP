@@ -2,7 +2,7 @@
 
 import { Client } from '@/lib/api/clients';
 import Card from '@/components/ui/Card';
-import { Mail, Phone, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useRef } from 'react';
 import ClientAvatar from './ClientAvatar';
