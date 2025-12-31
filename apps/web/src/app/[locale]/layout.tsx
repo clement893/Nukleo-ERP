@@ -10,6 +10,7 @@ import { routing } from '@/i18n/routing';
 import type { Metadata, Viewport } from 'next';
 import { aktivGrotesk } from '@/lib/fonts';
 import '../globals.css';
+import '../typography.css';
 import AppProviders from '@/components/providers/AppProviders';
 import { App } from '../app';
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter';
