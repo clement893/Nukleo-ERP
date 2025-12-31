@@ -253,6 +253,7 @@ async def list_contacts(
     limit: int = Query(100, ge=1, le=1000),
     circle: Optional[str] = Query(None),
     company_id: Optional[int] = Query(None),
+    skip_photo_urls: bool = Query(False, description="Skip presigned URL regeneration for performance (use for large lists)"),
 ) -> List[Contact]:
     """
     Get list of contacts
@@ -262,6 +263,7 @@ async def list_contacts(
         limit: Maximum number of records to return
         circle: Optional circle filter
         company_id: Optional company filter
+        skip_photo_urls: If True, skip presigned URL regeneration for better performance
         current_user: Current authenticated user
         db: Database session
         
@@ -301,9 +303,37 @@ async def list_contacts(
     # Convert to response format with company and employee names
     contact_list = []
     
+    # Auto-enable skip_photo_urls for large lists to prevent timeout
+    if limit > 100 and not skip_photo_urls:
+        skip_photo_urls = True
+        logger.debug(f"Auto-enabling skip_photo_urls for large list (limit={limit})")
+    
     for contact in contacts:
-        # Regenerate presigned URL for photo if it exists
-        photo_url = regenerate_photo_url(contact.photo_url, contact.id)
+        # Regenerate presigned URL for photo if it exists and not skipped
+        if skip_photo_urls:
+            # Use original URL or cached URL if available, but don't generate new ones
+            photo_url = contact.photo_url
+            # Try to get from cache if available
+            if photo_url and S3Service.is_configured():
+                try:
+                    from urllib.parse import urlparse, parse_qs, unquote
+                    import time
+                    parsed = urlparse(photo_url)
+                    path = parsed.path.strip('/')
+                    if 'contacts/photos' in path:
+                        idx = path.find('contacts/photos')
+                        if idx != -1:
+                            file_key = path[idx:]
+                            if file_key in _presigned_url_cache:
+                                cached_url, expiration_timestamp = _presigned_url_cache[file_key]
+                                current_time = time.time()
+                                buffer_seconds = 3600
+                                if current_time < (expiration_timestamp - buffer_seconds):
+                                    photo_url = cached_url
+                except Exception:
+                    pass  # Use original URL if cache lookup fails
+        else:
+            photo_url = regenerate_photo_url(contact.photo_url, contact.id)
         
         contact_dict = {
             "id": contact.id,
