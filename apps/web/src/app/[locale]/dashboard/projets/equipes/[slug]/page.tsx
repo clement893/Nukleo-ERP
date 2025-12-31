@@ -77,6 +77,7 @@ function TeamProjectManagementContent() {
             { name: 'Le Bureau', slug: 'le-bureau' },
             { name: 'Le Studio', slug: 'le-studio' },
             { name: 'Le Lab', slug: 'le-lab' },
+            { name: 'Équipe Gestion', slug: 'equipe-gestion' },
           ];
           
           const teamToCreate = requiredTeams.find(t => t.slug === teamSlug);
