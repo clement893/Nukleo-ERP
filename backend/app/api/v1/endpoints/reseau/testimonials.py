@@ -285,6 +285,100 @@ def regenerate_logo_url(logo_url: Optional[str], testimonial_id: Optional[int] =
         return None
 
 
+def regenerate_company_logo_url(logo_url: Optional[str], company_id: Optional[int] = None) -> Optional[str]:
+    """
+    Regenerate presigned URL for a company logo.
+    
+    Args:
+        logo_url: The logo URL (can be a file_key or presigned URL)
+        company_id: Optional company ID for logging
+        
+    Returns:
+        Presigned URL if successful, None if generation fails or no logo_url
+    """
+    if not logo_url:
+        return None
+    
+    if not S3Service.is_configured():
+        # If S3 is not configured, return the original URL (might be a direct URL)
+        logger.warning(f"S3 not configured, returning original logo_url for company {company_id}")
+        return logo_url
+    
+    try:
+        s3_service = S3Service()
+        file_key = None
+        
+        # If it's a presigned URL, try to extract the file_key from it
+        if logo_url.startswith('http'):
+            # Try to extract file_key from presigned URL
+            from urllib.parse import urlparse, parse_qs, unquote
+            parsed = urlparse(logo_url)
+            
+            # Check query params for 'key' parameter (some S3 presigned URLs have it)
+            query_params = parse_qs(parsed.query)
+            if 'key' in query_params:
+                file_key = unquote(query_params['key'][0])
+            else:
+                # Extract from path - remove bucket name if present
+                path = parsed.path.strip('/')
+                # Look for 'companies/logos' in the path
+                if 'companies/logos' in path:
+                    # Find the position of 'companies/logos' and take everything after
+                    idx = path.find('companies/logos')
+                    if idx != -1:
+                        file_key = path[idx:]
+                elif path.startswith('companies/'):
+                    file_key = path
+        else:
+            # Assume it's already a file_key
+            file_key = logo_url
+        
+        if file_key:
+            # Check cache first
+            import time
+            if file_key in _presigned_url_cache:
+                cached_url, expiration_timestamp = _presigned_url_cache[file_key]
+                # If URL is still valid (not expired and not close to expiration), return cached version
+                current_time = time.time()
+                buffer_seconds = 3600  # Regenerate 1 hour before expiration
+                if current_time < (expiration_timestamp - buffer_seconds):
+                    logger.debug(f"Using cached presigned URL for company {company_id} with file_key: {file_key[:60]}...")
+                    return cached_url
+                # Remove expired entry from cache
+                else:
+                    del _presigned_url_cache[file_key]
+            
+            # Generate new presigned URL
+            try:
+                expiration_seconds = 604800  # 7 days (AWS S3 maximum)
+                presigned_url = s3_service.generate_presigned_url(file_key, expiration=expiration_seconds)
+                if presigned_url:
+                    # Cache the URL with expiration timestamp
+                    expiration_timestamp = time.time() + expiration_seconds
+                    _presigned_url_cache[file_key] = (presigned_url, expiration_timestamp)
+                    
+                    # Limit cache size (LRU eviction - remove oldest entry)
+                    if len(_presigned_url_cache) > _cache_max_size:
+                        oldest_key = next(iter(_presigned_url_cache))
+                        del _presigned_url_cache[oldest_key]
+                    
+                    logger.debug(f"Generated and cached presigned URL for company {company_id} with file_key: {file_key[:60]}...")
+                    return presigned_url
+                else:
+                    logger.error(f"generate_presigned_url returned None for company {company_id} with file_key: {file_key}")
+                    return None
+            except Exception as e:
+                logger.error(f"Failed to generate presigned URL for company {company_id} with file_key '{file_key}': {e}", exc_info=True)
+                return None
+        else:
+            # Could not extract file_key, return original URL
+            logger.warning(f"Could not extract file_key from logo_url for company {company_id}: {logo_url}")
+            return logo_url  # Return original URL instead of None
+    except Exception as e:
+        logger.error(f"Failed to regenerate presigned URL for company {company_id}: {e}", exc_info=True)
+        return None
+
+
 @router.get("/", response_model=List[TestimonialSchema])
 @cache_query(expire=60, tags=["testimonials"])
 async def list_testimonials(
@@ -369,6 +463,11 @@ async def list_testimonials(
             if contact:
                 contact_name = f"{contact.first_name} {contact.last_name}"
         
+        # Regenerate presigned URL for company logo if it exists
+        company_logo_url = None
+        if testimonial.company and testimonial.company.logo_url:
+            company_logo_url = regenerate_company_logo_url(testimonial.company.logo_url, testimonial.company.id)
+        
         testimonial_dict = {
             "id": testimonial.id,
             "contact_id": testimonial.contact_id,
@@ -383,7 +482,7 @@ async def list_testimonials(
             "rating": testimonial.rating,
             "contact_name": contact_name,
             "company_name": testimonial.company.name if testimonial.company else None,
-            "company_logo_url": testimonial.company.logo_url if testimonial.company else None,
+            "company_logo_url": company_logo_url,
             "created_at": testimonial.created_at,
             "updated_at": testimonial.updated_at,
         }
@@ -428,6 +527,9 @@ async def get_testimonial(
             detail="Testimonial not found"
         )
     
+    # Load relationships
+    await db.refresh(testimonial, ["company", "contact"])
+    
     # Regenerate presigned URL for logo if it exists
     logo_url = regenerate_logo_url(testimonial.logo_url, testimonial.id)
     
@@ -435,6 +537,11 @@ async def get_testimonial(
     contact_name = None
     if testimonial.contact:
         contact_name = f"{testimonial.contact.first_name} {testimonial.contact.last_name}"
+    
+    # Regenerate presigned URL for company logo if it exists
+    company_logo_url = None
+    if testimonial.company and testimonial.company.logo_url:
+        company_logo_url = regenerate_company_logo_url(testimonial.company.logo_url, testimonial.company.id)
     
     testimonial_dict = {
         "id": testimonial.id,
@@ -450,7 +557,7 @@ async def get_testimonial(
         "rating": testimonial.rating,
         "contact_name": contact_name,
         "company_name": testimonial.company.name if testimonial.company else None,
-        "company_logo_url": testimonial.company.logo_url if testimonial.company else None,
+        "company_logo_url": company_logo_url,
         "created_at": testimonial.created_at,
         "updated_at": testimonial.updated_at,
     }
@@ -575,6 +682,11 @@ async def create_testimonial(
     if testimonial.contact:
         contact_name = f"{testimonial.contact.first_name} {testimonial.contact.last_name}"
     
+    # Regenerate presigned URL for company logo if it exists
+    company_logo_url = None
+    if testimonial.company and testimonial.company.logo_url:
+        company_logo_url = regenerate_company_logo_url(testimonial.company.logo_url, testimonial.company.id)
+    
     # Convert to response format
     testimonial_dict = {
         "id": testimonial.id,
@@ -590,7 +702,7 @@ async def create_testimonial(
         "rating": testimonial.rating,
         "contact_name": contact_name,
         "company_name": testimonial.company.name if testimonial.company else None,
-        "company_logo_url": testimonial.company.logo_url if testimonial.company else None,
+        "company_logo_url": company_logo_url,
         "created_at": testimonial.created_at,
         "updated_at": testimonial.updated_at,
     }
@@ -723,6 +835,11 @@ async def update_testimonial(
     if testimonial.contact:
         contact_name = f"{testimonial.contact.first_name} {testimonial.contact.last_name}"
     
+    # Regenerate presigned URL for company logo if it exists
+    company_logo_url = None
+    if testimonial.company and testimonial.company.logo_url:
+        company_logo_url = regenerate_company_logo_url(testimonial.company.logo_url, testimonial.company.id)
+    
     testimonial_dict = {
         "id": testimonial.id,
         "contact_id": testimonial.contact_id,
@@ -737,7 +854,7 @@ async def update_testimonial(
         "rating": testimonial.rating,
         "contact_name": contact_name,
         "company_name": testimonial.company.name if testimonial.company else None,
-        "company_logo_url": testimonial.company.logo_url if testimonial.company else None,
+        "company_logo_url": company_logo_url,
         "created_at": testimonial.created_at,
         "updated_at": testimonial.updated_at,
     }

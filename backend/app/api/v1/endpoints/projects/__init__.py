@@ -386,11 +386,38 @@ async def get_projects(
                 
                 try:
                     # Build project schema with safe defaults
+                    # Ensure name is not empty (required by schema validation)
+                    project_name = project.name or "Unnamed Project"
+                    if not project_name.strip():
+                        project_name = "Unnamed Project"
+                    
+                    # Ensure status is valid - convert to ProjectStatus enum if needed
+                    project_status = project.status
+                    if project_status is None:
+                        from app.models.project import ProjectStatus as ModelProjectStatus
+                        project_status = ModelProjectStatus.ACTIVE
+                    # Convert model enum to schema enum if needed
+                    if hasattr(project_status, 'value'):
+                        project_status_value = project_status.value
+                    elif isinstance(project_status, str):
+                        project_status_value = project_status
+                    else:
+                        project_status_value = str(project_status)
+                    
+                    # Map to valid ProjectStatus enum value
+                    from app.schemas.project import ProjectStatus as SchemaProjectStatus
+                    status_map = {
+                        'active': SchemaProjectStatus.ACTIVE,
+                        'archived': SchemaProjectStatus.ARCHIVED,
+                        'completed': SchemaProjectStatus.COMPLETED,
+                    }
+                    schema_status = status_map.get(project_status_value.lower(), SchemaProjectStatus.ACTIVE)
+                    
                     project_data = {
                         "id": project.id,
-                        "name": project.name or "",
+                        "name": project_name.strip(),
                         "description": project.description,
-                        "status": project.status,
+                        "status": schema_status,
                         "user_id": project.user_id,
                         "client_id": client_id,
                         "client_name": client_name,
@@ -412,7 +439,9 @@ async def get_projects(
                         exc_info=True,
                         context={
                             "project_id": getattr(project, 'id', None),
-                            "error_type": type(schema_error).__name__
+                            "error_type": type(schema_error).__name__,
+                            "project_name": getattr(project, 'name', None),
+                            "project_status": getattr(project, 'status', None),
                         }
                     )
                     # Skip this project and continue with others
