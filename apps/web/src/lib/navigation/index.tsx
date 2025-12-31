@@ -26,7 +26,6 @@ import {
   Target,
   TrendingUp,
   FolderOpen,
-  Building,
   Clock,
   UserPlus,
   Calendar,
