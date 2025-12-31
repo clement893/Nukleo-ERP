@@ -7,7 +7,7 @@ from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status as http_status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func, delete, text, inspect
+from sqlalchemy import select, and_, func, delete, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import ProgrammingError
 
