@@ -445,6 +445,20 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
               {selectedTask ? 'Modifier' : 'Créer'}
             </Button>
           </div>
+
+          {/* Files and Comments for existing tasks */}
+          {selectedTask && (
+            <div className="mt-8 space-y-6 border-t border-border pt-6">
+              <div>
+                <h4 className="text-md font-semibold text-foreground mb-4">Fichiers attachés</h4>
+                <ProjectAttachments taskId={selectedTask.id} projectId={selectedTask.project_id || undefined} />
+              </div>
+              <div>
+                <h4 className="text-md font-semibold text-foreground mb-4">Discussions</h4>
+                <ProjectComments taskId={selectedTask.id} projectId={selectedTask.project_id || undefined} />
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
