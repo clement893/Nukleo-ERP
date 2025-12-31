@@ -6,7 +6,7 @@ SQLAlchemy model for projects
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, func, Index, Enum
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, func, Index, Enum, Numeric
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -38,6 +38,21 @@ class Project(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     client_id = Column(Integer, ForeignKey("clients.id", ondelete="SET NULL"), nullable=True, index=True)  # Client connected to the project
     responsable_id = Column(Integer, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True, index=True)  # Employee linked to the project
+    
+    # Extended fields for project management
+    equipe = Column(String(50), nullable=True)  # Team number
+    etape = Column(String(100), nullable=True, index=True)  # Project stage
+    annee_realisation = Column(String(50), nullable=True, index=True)  # Year of realization
+    contact = Column(String(255), nullable=True)  # Contact name
+    taux_horaire = Column(Numeric(10, 2), nullable=True)  # Hourly rate
+    budget = Column(Numeric(15, 2), nullable=True)  # Budget
+    proposal_url = Column(String(500), nullable=True)  # Proposal link
+    drive_url = Column(String(500), nullable=True)  # Drive link
+    slack_url = Column(String(500), nullable=True)  # Slack link
+    echeancier_url = Column(String(500), nullable=True)  # Schedule link
+    temoignage_status = Column(String(50), nullable=True)  # Testimonial status
+    portfolio_status = Column(String(50), nullable=True)  # Portfolio status
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
         DateTime(timezone=True),

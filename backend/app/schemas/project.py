@@ -6,6 +6,7 @@ Pydantic v2 models for project management
 from datetime import datetime
 from typing import Optional
 from enum import Enum
+from decimal import Decimal
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
@@ -25,6 +26,20 @@ class ProjectBase(BaseModel):
     client_id: Optional[int] = Field(None, description="Client (company) ID")
     client_name: Optional[str] = Field(None, max_length=255, description="Client name (will be matched to existing company if client_id not provided)")
     responsable_id: Optional[int] = Field(None, description="Responsable (employee) ID")
+    
+    # Extended fields
+    equipe: Optional[str] = Field(None, max_length=50, description="Team number")
+    etape: Optional[str] = Field(None, max_length=100, description="Project stage")
+    annee_realisation: Optional[str] = Field(None, max_length=50, description="Year of realization")
+    contact: Optional[str] = Field(None, max_length=255, description="Contact name")
+    taux_horaire: Optional[Decimal] = Field(None, description="Hourly rate")
+    budget: Optional[Decimal] = Field(None, description="Budget")
+    proposal_url: Optional[str] = Field(None, max_length=500, description="Proposal link")
+    drive_url: Optional[str] = Field(None, max_length=500, description="Drive link")
+    slack_url: Optional[str] = Field(None, max_length=500, description="Slack link")
+    echeancier_url: Optional[str] = Field(None, max_length=500, description="Schedule link")
+    temoignage_status: Optional[str] = Field(None, max_length=50, description="Testimonial status")
+    portfolio_status: Optional[str] = Field(None, max_length=50, description="Portfolio status")
     
     @field_validator('name')
     @classmethod
@@ -61,6 +76,20 @@ class ProjectUpdate(BaseModel):
     client_id: Optional[int] = Field(None, description="Client (company) ID")
     client_name: Optional[str] = Field(None, max_length=255, description="Client name (will be matched to existing company if client_id not provided)")
     responsable_id: Optional[int] = Field(None, description="Responsable (employee) ID")
+    
+    # Extended fields
+    equipe: Optional[str] = Field(None, max_length=50, description="Team number")
+    etape: Optional[str] = Field(None, max_length=100, description="Project stage")
+    annee_realisation: Optional[str] = Field(None, max_length=50, description="Year of realization")
+    contact: Optional[str] = Field(None, max_length=255, description="Contact name")
+    taux_horaire: Optional[Decimal] = Field(None, description="Hourly rate")
+    budget: Optional[Decimal] = Field(None, description="Budget")
+    proposal_url: Optional[str] = Field(None, max_length=500, description="Proposal link")
+    drive_url: Optional[str] = Field(None, max_length=500, description="Drive link")
+    slack_url: Optional[str] = Field(None, max_length=500, description="Slack link")
+    echeancier_url: Optional[str] = Field(None, max_length=500, description="Schedule link")
+    temoignage_status: Optional[str] = Field(None, max_length=50, description="Testimonial status")
+    portfolio_status: Optional[str] = Field(None, max_length=50, description="Portfolio status")
     
     @field_validator('name')
     @classmethod
