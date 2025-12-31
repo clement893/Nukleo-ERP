@@ -174,6 +174,7 @@ export const projectsAPI = {
       const apiUrl = getApiUrl();
       const TokenStorage = (await import('../auth/tokenStorage')).TokenStorage;
       
+      // getApiUrl() already returns base URL without /api, so we need to add /api/v1/...
       const response = await axios.get(`${apiUrl}/api/v1/projects/export`, {
         responseType: 'blob',
         withCredentials: true,

@@ -13,7 +13,7 @@ function AgendaContent() {
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
       <PageHeader
         title="Module Agenda"
-        description="Gérez votre calendrier, événements, absences/vacances et deadlines"
+        description="Gérez votre calendrier, événements et deadlines"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Module Agenda' },

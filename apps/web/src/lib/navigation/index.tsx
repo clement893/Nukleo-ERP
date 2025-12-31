@@ -31,7 +31,6 @@ import {
   Calendar,
   CalendarDays,
   CalendarCheck,
-  CalendarOff,
   CalendarClock,
   Sparkles,
   DollarSign,
@@ -220,11 +219,6 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Événements',
             href: '/dashboard/agenda/evenements',
             icon: <CalendarCheck className="w-5 h-5" />,
-          },
-          {
-            name: 'Absences/Vacances',
-            href: '/dashboard/agenda/absences-vacances',
-            icon: <CalendarOff className="w-5 h-5" />,
           },
           {
             name: 'Deadlines',
