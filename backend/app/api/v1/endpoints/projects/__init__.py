@@ -117,9 +117,10 @@ async def get_projects(
         columns_exist = await _check_project_columns_exist(db, ['client_id', 'responsable_id'])
         
         projects = []
-        # Build query based on column existence
-        if columns_exist['client_id'] and columns_exist['responsable_id']:
-            # Both columns exist - use normal query with relationships
+        use_explicit_columns = False
+        
+        # Try to use normal query with relationships if columns exist
+        if columns_exist.get('client_id', False) and columns_exist.get('responsable_id', False):
             try:
                 query = select(Project).where(Project.user_id == current_user.id)
                 
@@ -131,51 +132,62 @@ async def get_projects(
                 
                 result = await db.execute(query)
                 projects = result.scalars().all()
-            except ProgrammingError as pe:
+            except (ProgrammingError, Exception) as e:
                 # If query fails, rollback and use explicit column selection
-                await db.rollback()
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass  # Ignore rollback errors
                 logger.warning(
                     "Query failed, using explicit column selection",
-                    context={"error": str(pe)}
+                    context={"error": str(e)}
                 )
-                # Fall through to explicit column selection below
-                columns_exist = {'client_id': False, 'responsable_id': False}
+                use_explicit_columns = True
         
         # Use explicit column selection if columns don't exist or query failed
-        if not projects and (not columns_exist['client_id'] or not columns_exist['responsable_id']):
-            query = select(
-                Project.id,
-                Project.name,
-                Project.description,
-                Project.status,
-                Project.user_id,
-                Project.created_at,
-                Project.updated_at
-            ).where(Project.user_id == current_user.id)
-            
-            if status_enum:
-                query = query.where(Project.status == status_enum)
-            
-            query = apply_tenant_scope(query, Project)
-            query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
-            
-            result = await db.execute(query)
-            rows = result.all()
-            
-            # Convert rows to ProjectRow objects
-            class ProjectRow:
-                def __init__(self, row):
-                    self.id = row.id
-                    self.name = row.name
-                    self.description = row.description
-                    self.status = row.status
-                    self.user_id = row.user_id
-                    self.created_at = row.created_at
-                    self.updated_at = row.updated_at
-                    self.client_id = None
-                    self.responsable_id = None
-            
-            projects = [ProjectRow(row) for row in rows]
+        if use_explicit_columns or not columns_exist.get('client_id', False) or not columns_exist.get('responsable_id', False):
+            try:
+                query = select(
+                    Project.id,
+                    Project.name,
+                    Project.description,
+                    Project.status,
+                    Project.user_id,
+                    Project.created_at,
+                    Project.updated_at
+                ).where(Project.user_id == current_user.id)
+                
+                if status_enum:
+                    query = query.where(Project.status == status_enum)
+                
+                query = apply_tenant_scope(query, Project)
+                query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+                
+                result = await db.execute(query)
+                rows = result.all()
+                
+                # Convert rows to ProjectRow objects
+                class ProjectRow:
+                    def __init__(self, row):
+                        self.id = row.id
+                        self.name = row.name
+                        self.description = row.description
+                        self.status = row.status
+                        self.user_id = row.user_id
+                        self.created_at = row.created_at
+                        self.updated_at = row.updated_at
+                        self.client_id = None
+                        self.responsable_id = None
+                
+                projects = [ProjectRow(row) for row in rows]
+            except Exception as e:
+                logger.error(
+                    f"Failed to execute explicit column query: {e}",
+                    context={"user_id": current_user.id},
+                    exc_info=e
+                )
+                # Return empty list if even explicit query fails
+                projects = []
         
         # Convert to response format
         project_list = []
