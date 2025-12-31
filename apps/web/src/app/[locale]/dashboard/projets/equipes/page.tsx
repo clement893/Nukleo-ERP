@@ -119,13 +119,26 @@ function EquipesContent() {
       setError(null);
       
       // Charger les équipes
+      console.log('[EquipesPage] Loading teams...');
       const teamsResponse = await teamsAPI.list();
+      console.log('[EquipesPage] Teams response:', {
+        success: teamsResponse.success,
+        hasData: !!teamsResponse.data,
+        dataType: typeof teamsResponse.data,
+        dataKeys: teamsResponse.data ? Object.keys(teamsResponse.data) : [],
+        teamsCount: teamsResponse.data?.teams?.length || 0,
+        total: teamsResponse.data?.total || 0,
+      });
+      
       const teamsData = teamsResponse.data?.teams || [];
+      console.log('[EquipesPage] Teams data extracted:', teamsData.length, 'teams');
       
       // S'assurer que les 3 équipes existent
       const targetTeams = await ensureTeamsExist(teamsData);
+      console.log('[EquipesPage] Target teams after ensureTeamsExist:', targetTeams.length);
       
       if (targetTeams.length === 0) {
+        console.error('[EquipesPage] No teams found after ensureTeamsExist');
         setError('Impossible de charger ou créer les équipes');
         return;
       }

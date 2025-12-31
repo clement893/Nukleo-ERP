@@ -7,7 +7,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_
 
 from app.core.database import get_db
 from app.core.cache import cached, invalidate_cache_pattern, invalidate_cache_pattern_async
@@ -262,9 +262,46 @@ async def list_teams(
         )
         total = len(count_result.scalars().all())
     else:
-        # Regular users see only teams they belong to
-        teams = await team_service.get_user_teams(current_user.id, skip=skip, limit=limit)
-        total = len(teams)
+        # Regular users see teams they belong to OR teams they own
+        from app.models.team import Team, TeamMember
+        
+        # Get teams where user is a member (active) OR owner
+        # Query 1: Teams where user is an active member
+        member_teams_result = await db.execute(
+            select(Team)
+            .join(TeamMember, Team.id == TeamMember.team_id)
+            .where(TeamMember.user_id == current_user.id)
+            .where(TeamMember.is_active == True)
+            .where(Team.is_active == True)
+            .options(
+                selectinload(Team.owner),
+                selectinload(Team.members).selectinload(TeamMember.user),
+                selectinload(Team.members).selectinload(TeamMember.role)
+            )
+        )
+        member_teams = list(member_teams_result.scalars().all())
+        
+        # Query 2: Teams where user is owner
+        owner_teams_result = await db.execute(
+            select(Team)
+            .where(Team.owner_id == current_user.id)
+            .where(Team.is_active == True)
+            .options(
+                selectinload(Team.owner),
+                selectinload(Team.members).selectinload(TeamMember.user),
+                selectinload(Team.members).selectinload(TeamMember.role)
+            )
+        )
+        owner_teams = list(owner_teams_result.scalars().all())
+        
+        # Combine and deduplicate by team ID
+        all_teams_dict = {team.id: team for team in member_teams}
+        all_teams_dict.update({team.id: team for team in owner_teams})
+        
+        # Sort by created_at desc and apply pagination
+        all_teams = sorted(all_teams_dict.values(), key=lambda t: t.created_at, reverse=True)
+        total = len(all_teams)
+        teams = all_teams[skip:skip + limit]
     
     # Convert teams to response format
     teams_response = []
