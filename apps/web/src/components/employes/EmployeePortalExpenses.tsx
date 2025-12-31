@@ -132,11 +132,14 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
   const handleSubmit = async (expenseId: number) => {
     try {
       await submitMutation.mutateAsync(expenseId);
+      // React Query invalide déjà les queries, pas besoin de recharger manuellement
       showToast({
         message: 'Compte de dépenses soumis avec succès',
         type: 'success',
       });
-      await loadExpenses();
+      // Fermer la modal après succès
+      setShowViewModal(false);
+      setSelectedExpense(null);
     } catch (err) {
       const appError = handleApiError(err);
       showToast({

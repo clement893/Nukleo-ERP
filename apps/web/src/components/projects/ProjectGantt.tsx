@@ -69,11 +69,29 @@ const formatDate = (date: Date, formatStr: string): string => {
 
 interface ProjectGanttProps {
   projectId: number;
+  projectName?: string;
   startDate?: string | null;
   endDate?: string | null;
+  deadline?: string | null;
 }
 
-export default function ProjectGantt({ projectId }: ProjectGanttProps) {
+interface GanttItem {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date | null;
+  type: 'project' | 'deadline' | 'task';
+  status?: string;
+  color: string;
+}
+
+export default function ProjectGantt({ 
+  projectId, 
+  projectName = 'Projet',
+  startDate,
+  endDate,
+  deadline 
+}: ProjectGanttProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
@@ -112,9 +130,138 @@ export default function ProjectGantt({ projectId }: ProjectGanttProps) {
   };
 
 
-  const weekStart = startOfWeek(currentWeek); // Monday
+  // Calculate date range based on project dates and tasks
+  const calculateDateRange = () => {
+    const dates: Date[] = [];
+    
+    if (startDate) dates.push(new Date(startDate));
+    if (endDate) dates.push(new Date(endDate));
+    if (deadline) dates.push(new Date(deadline));
+    
+    tasks.forEach(task => {
+      if (task.due_date) dates.push(new Date(task.due_date));
+      if (task.started_at) dates.push(new Date(task.started_at));
+    });
+    
+    if (dates.length === 0) {
+      // Default to current week if no dates
+      return { start: startOfWeek(new Date()), end: endOfWeek(new Date()) };
+    }
+    
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    
+    // Extend range to show full weeks
+    const weekStart = startOfWeek(minDate);
+    const weekEnd = endOfWeek(maxDate);
+    
+    return { start: weekStart, end: weekEnd };
+  };
+
+  const dateRange = calculateDateRange();
+  const weekStart = startOfWeek(currentWeek);
   const weekEnd = endOfWeek(currentWeek);
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  // Build Gantt items
+  const buildGanttItems = (): GanttItem[] => {
+    const items: GanttItem[] = [];
+    
+    // Project timeline
+    if (startDate) {
+      const start = new Date(startDate);
+      const end = endDate ? new Date(endDate) : null;
+      items.push({
+        id: 'project',
+        name: projectName,
+        startDate: start,
+        endDate: end,
+        type: 'project',
+        color: 'bg-primary',
+      });
+    }
+    
+    // Deadline
+    if (deadline) {
+      const deadlineDate = new Date(deadline);
+      items.push({
+        id: 'deadline',
+        name: 'Échéance',
+        startDate: deadlineDate,
+        endDate: deadlineDate,
+        type: 'deadline',
+        color: 'bg-red-500',
+      });
+    }
+    
+    // Tasks
+    tasks.forEach(task => {
+      if (task.due_date || task.started_at) {
+        const taskStart = task.started_at ? new Date(task.started_at) : (task.due_date ? new Date(task.due_date) : null);
+        const taskEnd = task.due_date ? new Date(task.due_date) : null;
+        
+        if (taskStart) {
+          items.push({
+            id: `task-${task.id}`,
+            name: task.title,
+            startDate: taskStart,
+            endDate: taskEnd,
+            type: 'task',
+            status: task.status,
+            color: getStatusColor(task.status),
+          });
+        }
+      }
+    });
+    
+    return items;
+  };
+
+  const getItemPosition = (item: GanttItem) => {
+    const itemStart = new Date(item.startDate);
+    itemStart.setHours(0, 0, 0, 0);
+    const itemEnd = item.endDate ? new Date(item.endDate) : new Date(item.startDate);
+    itemEnd.setHours(23, 59, 59, 999);
+    
+    // Check if item overlaps with current week
+    const weekStartDate = new Date(weekStart);
+    weekStartDate.setHours(0, 0, 0, 0);
+    const weekEndDate = new Date(weekEnd);
+    weekEndDate.setHours(23, 59, 59, 999);
+    
+    // Item is completely outside the week
+    if (itemEnd < weekStartDate || itemStart > weekEndDate) {
+      return null;
+    }
+    
+    // Find visible start and end within the week
+    const visibleStart = itemStart > weekStartDate ? itemStart : weekStartDate;
+    const visibleEnd = itemEnd < weekEndDate ? itemEnd : weekEndDate;
+    
+    // Find day indices
+    const startIndex = weekDays.findIndex(day => {
+      const dayDate = new Date(day);
+      dayDate.setHours(0, 0, 0, 0);
+      return dayDate >= visibleStart;
+    });
+    
+    const endIndex = weekDays.findIndex(day => {
+      const dayDate = new Date(day);
+      dayDate.setHours(23, 59, 59, 999);
+      return dayDate >= visibleEnd;
+    });
+    
+    // If item starts before week, startIndex will be 0
+    const actualStartIndex = startIndex >= 0 ? startIndex : 0;
+    // If item ends after week, endIndex will be last day
+    const actualEndIndex = endIndex >= 0 ? endIndex : (weekDays.length - 1);
+    
+    // Calculate position
+    const left = (actualStartIndex / weekDays.length) * 100;
+    const width = ((actualEndIndex - actualStartIndex + 1) / weekDays.length) * 100;
+    
+    return { left, width };
+  };
 
   const getTaskPosition = (task: ProjectTask) => {
     if (!task.due_date && !task.started_at) return null;
@@ -130,6 +277,14 @@ export default function ProjectGantt({ projectId }: ProjectGanttProps) {
     setCurrentWeek(prev => direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1));
   };
 
+  // Auto-adjust current week to show project dates if available
+  useEffect(() => {
+    if (startDate && !loading && !tasks.length) {
+      const projectStart = new Date(startDate);
+      setCurrentWeek(projectStart);
+    }
+  }, [startDate, loading, tasks.length]);
+
   if (loading) {
     return <Loading />;
   }
@@ -138,14 +293,15 @@ export default function ProjectGantt({ projectId }: ProjectGanttProps) {
     return <Alert variant="error">{error}</Alert>;
   }
 
-  const tasksWithDates = tasks.filter(task => task.due_date || task.started_at);
+  const ganttItems = buildGanttItems();
+  const hasAnyDates = startDate || endDate || deadline || tasks.some(t => t.due_date || t.started_at);
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Calendar className="w-5 h-5" />
-          Vue Gantt
+          Vue temporelle (Gantt)
         </h3>
         <div className="flex items-center gap-2">
           <Button
@@ -175,83 +331,108 @@ export default function ProjectGantt({ projectId }: ProjectGanttProps) {
         </div>
       </div>
 
-      {tasksWithDates.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>Aucune tâche avec date</p>
-        </div>
+      {!hasAnyDates ? (
+        <Card className="p-6">
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>Aucune date renseignée pour ce projet</p>
+            <p className="text-sm mt-2">Ajoutez des dates de début/fin ou des dates aux tâches pour voir la vue Gantt</p>
+          </div>
+        </Card>
       ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            {/* Header */}
-            <div className="grid grid-cols-7 gap-2 mb-4">
-              {weekDays.map((day: Date, index: number) => (
-                <div
-                  key={index}
-                  className={`text-center p-2 rounded ${
-                    isSameDay(day, new Date())
-                      ? 'bg-primary/10 border-2 border-primary'
-                      : 'bg-muted/30'
-                  }`}
-                >
-                  <div className="text-xs text-muted-foreground">
-                    {formatDate(day, 'EEE')}
-                  </div>
-                  <div className="text-sm font-medium text-foreground">
-                    {day.getDate()}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Tasks */}
-            <div className="space-y-2">
-              {tasksWithDates.map((task) => {
-                const position = getTaskPosition(task);
-                if (position === null) return null;
-
-                return (
-                  <div key={task.id} className="relative h-12">
-                    <div
-                      className={`absolute top-0 left-0 h-full rounded flex items-center px-2 ${getStatusColor(task.status)} text-white text-sm font-medium`}
-                      style={{
-                        left: `${(position / 7) * 100}%`,
-                        width: `${(1 / 7) * 100}%`,
-                      }}
-                    >
-                      <span className="truncate">{task.title}</span>
+        <Card className="p-6">
+          <div className="overflow-x-auto">
+            <div className="min-w-[800px]">
+              {/* Header */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {weekDays.map((day: Date, index: number) => (
+                  <div
+                    key={index}
+                    className={`text-center p-2 rounded ${
+                      isSameDay(day, new Date())
+                        ? 'bg-primary/10 border-2 border-primary'
+                        : 'bg-muted/30'
+                    }`}
+                  >
+                    <div className="text-xs text-muted-foreground">
+                      {formatDate(day, 'EEE')}
+                    </div>
+                    <div className="text-sm font-medium text-foreground">
+                      {day.getDate()}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
 
-            {/* Legend */}
-            <div className="mt-6 flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-400 rounded"></div>
-                <span>À faire</span>
+              {/* Gantt Items */}
+              <div className="space-y-3">
+                {ganttItems.map((item) => {
+                  const position = getItemPosition(item);
+                  if (!position) return null;
+
+                  return (
+                    <div key={item.id} className="relative h-10">
+                      <div
+                        className={`absolute top-0 left-0 h-full rounded flex items-center px-3 ${item.color} text-white text-sm font-medium shadow-sm`}
+                        style={{
+                          left: `${position.left}%`,
+                          width: `${position.width}%`,
+                          minWidth: '60px',
+                        }}
+                        title={`${item.name}${item.startDate ? ` - ${formatDate(item.startDate, 'd MMM yyyy')}` : ''}${item.endDate && !isSameDay(item.startDate, item.endDate) ? ` au ${formatDate(item.endDate, 'd MMM yyyy')}` : ''}`}
+                      >
+                        <span className="truncate font-medium">{item.name}</span>
+                        {item.type === 'deadline' && (
+                          <span className="ml-2 text-xs">⚠️</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                <span>En cours</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span>Terminé</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded"></div>
-                <span>Bloqué</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                <span>À transférer</span>
+
+              {/* Legend */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <p className="text-sm font-medium text-foreground mb-3">Légende :</p>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {startDate && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-primary rounded"></div>
+                      <span>Projet</span>
+                    </div>
+                  )}
+                  {deadline && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500 rounded"></div>
+                      <span>Échéance</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-gray-400 rounded"></div>
+                    <span>À faire</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <span>En cours</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span>Terminé</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 rounded"></div>
+                    <span>Bloqué</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                    <span>À transférer</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
-    </Card>
+    </div>
   );
 }

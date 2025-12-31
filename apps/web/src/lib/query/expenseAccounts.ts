@@ -95,8 +95,10 @@ export function useUpdateExpenseAccount() {
     mutationFn: ({ id, data }: { id: number; data: ExpenseAccountUpdate }) =>
       expenseAccountsAPI.update(id, data),
     onSuccess: (data) => {
+      // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
+      queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
+      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
       queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.detail(data.id) });
     },
   });
 }
@@ -124,8 +126,10 @@ export function useSubmitExpenseAccount() {
   return useMutation({
     mutationFn: (id: number) => expenseAccountsAPI.submit(id),
     onSuccess: (data) => {
+      // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
+      queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
+      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
       queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.detail(data.id) });
     },
   });
 }
@@ -140,8 +144,10 @@ export function useApproveExpenseAccount() {
     mutationFn: ({ id, action }: { id: number; action: ExpenseAccountAction }) =>
       expenseAccountsAPI.approve(id, action),
     onSuccess: (data) => {
+      // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
+      queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
+      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
       queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.detail(data.id) });
     },
   });
 }

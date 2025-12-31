@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
 import TaskTimeline from '@/components/projects/TaskTimeline';
+import ProjectGantt from '@/components/projects/ProjectGantt';
 import { teamsAPI } from '@/lib/api/teams';
 import { extractApiData } from '@/lib/api/utils';
 import type { TeamListResponse } from '@/lib/api/teams';
@@ -590,9 +591,13 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'timeline' && (
-          <Card className="glass-card p-6">
-            <TaskTimeline projectId={projectId} />
-          </Card>
+          <ProjectGantt
+            projectId={projectId}
+            projectName={project.name}
+            startDate={project.start_date}
+            endDate={project.end_date}
+            deadline={project.deadline}
+          />
         )}
       </Container>
     </div>
