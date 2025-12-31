@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui';
 import { teamsAPI } from '@/lib/api/teams';
 import type { Team as TeamType, TeamMember } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
+import { extractApiData } from '@/lib/api/utils';
 
 // Types
 interface Employee {
@@ -106,8 +107,9 @@ function EquipesContent() {
             slug: teamToCreate.slug,
             description: `Équipe ${teamToCreate.name}`,
           });
-          if (response.data) {
-            console.log(`[EquipesPage] Successfully created team:`, response.data);
+          const createdTeam = extractApiData<TeamType>(response);
+          if (createdTeam) {
+            console.log(`[EquipesPage] Successfully created team:`, createdTeam);
           } else {
             console.warn(`[EquipesPage] Team creation response missing data:`, response);
           }
@@ -128,8 +130,10 @@ function EquipesContent() {
       // Recharger les équipes depuis l'API après création
       console.log('[EquipesPage] Reloading teams after creation...');
       const reloadResponse = await teamsAPI.list();
+      const reloadListData = extractApiData<{ teams: TeamType[]; total: number }>(reloadResponse);
       console.log('[EquipesPage] Reload response:', reloadResponse);
-      const reloadedTeams = reloadResponse.data?.teams || [];
+      console.log('[EquipesPage] Reload extracted data:', reloadListData);
+      const reloadedTeams = reloadListData?.teams || [];
       console.log(`[EquipesPage] Reloaded ${reloadedTeams.length} teams from API`);
       console.log('[EquipesPage] Reloaded teams:', reloadedTeams.map(t => ({ name: t.name, slug: t.slug, owner_id: t.owner_id })));
       existingTeams = reloadedTeams;
@@ -139,7 +143,8 @@ function EquipesContent() {
         console.warn('[EquipesPage] No teams found after first reload, retrying...');
         await new Promise(resolve => setTimeout(resolve, 1000));
         const retryResponse = await teamsAPI.list();
-        const retryTeams = retryResponse.data?.teams || [];
+        const retryListData = extractApiData<{ teams: TeamType[]; total: number }>(retryResponse);
+        const retryTeams = retryListData?.teams || [];
         console.log(`[EquipesPage] Retry reloaded ${retryTeams.length} teams from API`);
         if (retryTeams.length > 0) {
           existingTeams = retryTeams;
@@ -195,16 +200,15 @@ function EquipesContent() {
       // Charger les équipes
       console.log('[EquipesPage] Loading teams...');
       const teamsResponse = await teamsAPI.list();
+      const teamsListData = extractApiData<{ teams: TeamType[]; total: number }>(teamsResponse);
       console.log('[EquipesPage] Teams response:', {
-        success: teamsResponse.success,
-        hasData: !!teamsResponse.data,
-        dataType: typeof teamsResponse.data,
-        dataKeys: teamsResponse.data ? Object.keys(teamsResponse.data) : [],
-        teamsCount: teamsResponse.data?.teams?.length || 0,
-        total: teamsResponse.data?.total || 0,
+        rawResponse: teamsResponse,
+        extractedData: teamsListData,
+        teamsCount: teamsListData?.teams?.length || 0,
+        total: teamsListData?.total || 0,
       });
       
-      const teamsData = teamsResponse.data?.teams || [];
+      const teamsData = teamsListData?.teams || [];
       console.log('[EquipesPage] Teams data extracted:', teamsData.length, 'teams');
       
       // S'assurer que les 3 équipes existent

@@ -13,12 +13,12 @@ import Modal from '@/components/ui/Modal';
 import { type Client, type ClientCreate, type ClientUpdate } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import PeopleGallery from '@/components/projects/PeopleGallery';
-import PeopleForm from '@/components/projects/PeopleForm';
-import PeopleAvatar from '@/components/projects/PeopleAvatar';
-import PeopleCounter from '@/components/projects/PeopleCounter';
+import ClientGallery from '@/components/projects/ClientGallery';
+import ClientForm from '@/components/projects/ClientForm';
+import ClientAvatar from '@/components/projects/ClientAvatar';
+import ClientCounter from '@/components/projects/ClientCounter';
 import ViewModeToggle, { type ViewMode } from '@/components/employes/ViewModeToggle';
-import PeopleRowActions from '@/components/projects/PeopleRowActions';
+import ClientRowActions from '@/components/projects/ClientRowActions';
 import SearchBar from '@/components/ui/SearchBar';
 import { 
   Plus, 
@@ -188,14 +188,14 @@ function ClientsContent() {
       render: (_value, client) => (
         <div className="flex items-center justify-between group">
           <div className="min-w-0 flex-1 flex items-center gap-3">
-            <PeopleAvatar person={client} size="sm" />
+            <ClientAvatar client={client} size="sm" />
             <div className="font-medium truncate" title={`${client.first_name} ${client.last_name}`}>
               {client.first_name} {client.last_name}
             </div>
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-            <PeopleRowActions
-              person={client}
+            <ClientRowActions
+              client={client}
               onView={() => openDetailPage(client)}
               onEdit={() => openEditModal(client)}
               onDelete={() => handleDelete(client.id)}
@@ -249,7 +249,7 @@ function ClientsContent() {
         <div className="space-y-3">
           {/* Clients count */}
           <div className="flex items-center justify-between">
-            <PeopleCounter
+            <ClientCounter
               filtered={filteredClients.length}
               total={clients.length}
               showFilteredBadge={hasActiveFilters}
@@ -363,9 +363,9 @@ function ClientsContent() {
           />
         </Card>
       ) : (
-        <PeopleGallery
-          people={filteredClients}
-          onPersonClick={openDetailPage}
+        <ClientGallery
+          clients={filteredClients}
+          onClientClick={openDetailPage}
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={loadMore}
@@ -379,7 +379,7 @@ function ClientsContent() {
         title="Créer un nouveau client"
         size="lg"
       >
-        <PeopleForm
+        <ClientForm
           onSubmit={handleCreate}
           onCancel={() => setShowCreateModal(false)}
           loading={loading}
@@ -397,8 +397,8 @@ function ClientsContent() {
         size="lg"
       >
         {selectedClient && (
-          <PeopleForm
-            person={selectedClient}
+          <ClientForm
+            client={selectedClient}
             onSubmit={handleUpdate}
             onCancel={() => {
               setShowEditModal(false);
