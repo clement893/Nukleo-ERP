@@ -19,29 +19,10 @@ from app.models.contact import Contact
 from app.schemas.client import ClientCreate, ClientUpdate, Client as ClientSchema
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="", tags=["clients"])  # Prefix will be /clients when included in projects router
+router = APIRouter(prefix="/clients", tags=["clients"])  # Full prefix /clients
 
 
-@router.get("/test", response_model=List[ClientSchema])
-async def list_clients_test(
-    request: Request,
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
-) -> List[ClientSchema]:
-    """
-    TEST endpoint without dependencies to isolate validation issue
-    """
-    logger.info(f"[ClientsAPI] ========================================")
-    logger.info(f"[ClientsAPI] ✅ TEST ENDPOINT REACHED")
-    logger.info(f"[ClientsAPI] URL: {request.url}")
-    logger.info(f"[ClientsAPI] Query params (raw): {dict(request.query_params)}")
-    logger.info(f"[ClientsAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
-    logger.info(f"[ClientsAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
-    logger.info(f"[ClientsAPI] ========================================")
-    return []
-
-
-@router.get("/", response_model=List[ClientSchema])
+@router.get("", response_model=List[ClientSchema])  # Empty string to match /projects/clients (no trailing slash)
 # Temporarily removed @cache_query to debug validation issue
 async def list_clients(
     skip: int = Query(0, ge=0, description="Number of records to skip"),

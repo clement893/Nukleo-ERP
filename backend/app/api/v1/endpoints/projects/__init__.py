@@ -25,11 +25,18 @@ from sqlalchemy.orm import aliased
 from app.core.logging import logger
 from . import import_export
 from . import clients as projects_clients
+from app.models.client import Client, ClientStatus
+from app.schemas.client import Client as ClientSchema
 
 router = APIRouter()
 
 # Include clients routes FIRST (before /{project_id} route) to ensure proper route matching
-router.include_router(projects_clients.router, prefix="/clients", tags=["clients"])
+# Use explicit prefix to ensure route is registered before path parameters
+router.include_router(
+    projects_clients.router, 
+    prefix="/clients",
+    tags=["clients"]
+)
 
 # Include import/export routes
 router.include_router(import_export.router, tags=["projects-import-export"])
@@ -321,6 +328,25 @@ async def get_projects(
         )
         # Return JSONResponse explicitly to satisfy slowapi's requirement for Response object
         return JSONResponse(content=[], status_code=200)
+
+
+# Explicit route handler for /clients to ensure it's matched before /{project_id}
+# This is a workaround for FastAPI route matching - we forward to the clients router
+@router.get("/clients", response_model=List[ClientSchema], include_in_schema=False)
+async def get_clients_list(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search term"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> List[ClientSchema]:
+    """
+    Get list of clients - explicit route to ensure proper matching before /{project_id}
+    """
+    # Forward to the actual clients router handler
+    from .clients import list_clients
+    return await list_clients(skip=skip, limit=limit, status=status, search=search, db=db, current_user=current_user)
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
