@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Card, Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
-import KanbanBoard from '@/components/ui/KanbanBoard';
+import TaskKanban from '@/components/projects/TaskKanban';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
 import { teamsAPI } from '@/lib/api/teams';
@@ -404,23 +404,12 @@ function TeamProjectManagementContent() {
         </div>
       </Card>
 
-      {/* Kanban Board avec les 3 sections */}
+      {/* Kanban Board avec le nouveau composant TaskKanban */}
       <Card>
         <div className="p-6">
-          <h2 className="text-xl font-bold text-foreground mb-6">Gestion des tâches</h2>
-          <KanbanBoard
-            columns={columns.map(col => ({ id: col.id, title: col.title, status: col.status }))}
-            cards={kanbanCards.map(card => ({
-              id: card.id,
-              title: card.title,
-              description: card.description,
-              status: card.status,
-              priority: card.priority as 'low' | 'medium' | 'high' | undefined,
-              assignee: card.assignee,
-            }))}
-            onCardMove={handleCardMove}
-            onCardClick={(card) => handleCardClick({ id: card.id })}
-          />
+          {team && (
+            <TaskKanban teamId={team.id} />
+          )}
         </div>
       </Card>
 

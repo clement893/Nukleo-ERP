@@ -8,7 +8,8 @@ import { handleApiError } from '@/lib/errors/api';
 import { Calendar, User, AlertCircle } from 'lucide-react';
 
 interface TaskTimelineProps {
-  projectId: number;
+  projectId?: number;
+  assigneeId?: number;
 }
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
@@ -33,7 +34,7 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Terminé',
 };
 
-export default function TaskTimeline({ projectId }: TaskTimelineProps) {
+export default function TaskTimeline({ projectId, assigneeId }: TaskTimelineProps) {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +47,14 @@ export default function TaskTimeline({ projectId }: TaskTimelineProps) {
     setLoading(true);
     setError(null);
     try {
-      const data = await projectTasksAPI.list({ project_id: projectId });
+      const params: { project_id?: number; assignee_id?: number } = {};
+      if (projectId && projectId > 0) {
+        params.project_id = projectId;
+      }
+      if (assigneeId) {
+        params.assignee_id = assigneeId;
+      }
+      const data = await projectTasksAPI.list(params);
       setTasks(data || []);
     } catch (err) {
       const appError = handleApiError(err);

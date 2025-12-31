@@ -134,6 +134,12 @@ export const EMPLOYEE_PORTAL_ROUTES: PortalRoute[] = [
     ],
   },
   {
+    path: '/erp/tasks',
+    label: 'My Tasks',
+    icon: 'CheckSquare',
+    permission: 'erp:view:tasks',
+  },
+  {
     path: '/erp/reports',
     label: 'Reports',
     icon: 'BarChart',
@@ -255,6 +261,14 @@ export const EMPLOYEE_PORTAL_NAVIGATION: EmployeePortalNavigation[] = [
         permission: 'accounting:view:invoices',
       },
     ],
+  },
+  {
+    id: 'tasks',
+    label: 'My Tasks',
+    path: '/erp/tasks',
+    icon: 'CheckSquare',
+    permission: 'erp:view:tasks',
+    module: 'tasks',
   },
   {
     id: 'reports',

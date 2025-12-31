@@ -15,8 +15,9 @@ import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical } from 'lucide-react';
 
 interface TaskKanbanProps {
-  projectId: number;
-  teamId: number;
+  projectId?: number;
+  teamId?: number;
+  assigneeId?: number;
 }
 
 const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
@@ -41,7 +42,7 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
   urgent: 'Urgente',
 };
 
-export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
+export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanbanProps) {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,17 @@ export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
     setLoading(true);
     setError(null);
     try {
-      const data = await projectTasksAPI.list({ project_id: projectId });
+      const params: { project_id?: number; team_id?: number; assignee_id?: number } = {};
+      if (projectId && projectId > 0) {
+        params.project_id = projectId;
+      }
+      if (teamId) {
+        params.team_id = teamId;
+      }
+      if (assigneeId) {
+        params.assignee_id = assigneeId;
+      }
+      const data = await projectTasksAPI.list(params);
       setTasks(data || []);
     } catch (err) {
       const appError = handleApiError(err);
@@ -76,7 +87,7 @@ export default function TaskKanban({ projectId, teamId }: TaskKanbanProps) {
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, teamId, assigneeId]);
 
   useEffect(() => {
     loadTasks();
