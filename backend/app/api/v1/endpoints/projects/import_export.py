@@ -6,7 +6,7 @@ from typing import Optional, Dict, List, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 from io import BytesIO
 import pandas as pd
@@ -20,7 +20,7 @@ from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
-from app.models.company import Company
+from app.models.people import People
 from app.models.employee import Employee
 from app.schemas.project import ProjectCreate
 from app.core.logging import logger
@@ -58,31 +58,64 @@ async def stream_import_logs(
     )
 
 
-async def find_company_by_name(
-    company_name: str,
+async def find_people_by_name(
+    people_name: str,
     db: AsyncSession,
 ) -> Optional[int]:
-    """Find a company ID by name using intelligent matching"""
-    if not company_name or not company_name.strip():
+    """Find a People ID by name using intelligent matching (searches first_name, last_name, and email)"""
+    if not people_name or not people_name.strip():
         return None
     
-    company_name_normalized = company_name.strip().lower()
+    people_name_normalized = people_name.strip().lower()
     
-    # Try exact match first
-    result = await db.execute(
-        select(Company).where(func.lower(Company.name) == company_name_normalized)
-    )
-    company = result.scalar_one_or_none()
-    if company:
-        return company.id
+    # Try exact match on first_name + last_name
+    name_parts = people_name_normalized.split()
+    if len(name_parts) >= 2:
+        first_name = name_parts[0]
+        last_name = " ".join(name_parts[1:])
+        result = await db.execute(
+            select(People).where(
+                and_(
+                    func.lower(People.first_name) == first_name,
+                    func.lower(People.last_name) == last_name
+                )
+            )
+        )
+        people = result.scalar_one_or_none()
+        if people:
+            return people.id
     
-    # Try partial match
+    # Try exact match on email
     result = await db.execute(
-        select(Company).where(func.lower(Company.name).contains(company_name_normalized))
+        select(People).where(func.lower(People.email) == people_name_normalized)
     )
-    company = result.scalar_one_or_none()
-    if company:
-        return company.id
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
+    
+    # Try partial match on first_name
+    result = await db.execute(
+        select(People).where(func.lower(People.first_name).contains(people_name_normalized))
+    )
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
+    
+    # Try partial match on last_name
+    result = await db.execute(
+        select(People).where(func.lower(People.last_name).contains(people_name_normalized))
+    )
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
+    
+    # Try partial match on email
+    result = await db.execute(
+        select(People).where(func.lower(People.email).contains(people_name_normalized))
+    )
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
     
     return None
 
@@ -252,7 +285,7 @@ async def import_projects(
                 
                 if not client_id and client_name_col and pd.notna(row.get(client_name_col)):
                     client_name = str(row[client_name_col]).strip()
-                    matched_client_id = await find_company_by_name(client_name, db)
+                    matched_client_id = await find_people_by_name(client_name, db)
                     if matched_client_id:
                         client_id = matched_client_id
                     else:
@@ -398,7 +431,7 @@ async def export_projects(
                 "Nom du projet": project.name,
                 "Description": project.description or "",
                 "Statut": project.status.value if project.status else "",
-                "Client": project.client.name if project.client else "",
+                "Client": f"{project.client.first_name} {project.client.last_name}".strip() if project.client else "",
                 "Client ID": project.client_id or "",
                 "Responsable": f"{project.responsable.first_name} {project.responsable.last_name}" if project.responsable else "",
                 "Responsable ID": project.responsable_id or "",

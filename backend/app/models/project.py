@@ -36,8 +36,8 @@ class Project(Base):
     description = Column(Text, nullable=True)
     status = Column(Enum(ProjectStatus), default=ProjectStatus.ACTIVE, nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    client_id = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
-    responsable_id = Column(Integer, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True, index=True)
+    client_id = Column(Integer, ForeignKey("people.id", ondelete="SET NULL"), nullable=True, index=True)  # People connected to the project
+    responsable_id = Column(Integer, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True, index=True)  # Employee linked to the project
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
         DateTime(timezone=True),
@@ -49,8 +49,8 @@ class Project(Base):
 
     # Relationships
     user = relationship("User", backref="projects")
-    client = relationship("Company", foreign_keys=[client_id], backref="projects")
-    responsable = relationship("Employee", foreign_keys=[responsable_id], backref="projects")
+    client = relationship("People", foreign_keys=[client_id], backref="projects")  # People connected to the project
+    responsable = relationship("Employee", foreign_keys=[responsable_id], backref="projects")  # Employee linked to the project
 
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name={self.name}, status={self.status})>"

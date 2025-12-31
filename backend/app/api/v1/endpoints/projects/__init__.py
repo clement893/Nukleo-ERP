@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func, delete
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import ProgrammingError
 
 from app.core.database import get_db
 from app.core.cache import cached, invalidate_cache_pattern
@@ -17,7 +18,7 @@ from app.core.tenancy_helpers import apply_tenant_scope
 from app.dependencies import get_current_user
 from app.models.project import Project, ProjectStatus
 from app.models.user import User
-from app.models.company import Company
+from app.models.people import People
 from app.models.employee import Employee
 from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
 from sqlalchemy.orm import aliased
@@ -66,40 +67,113 @@ async def get_projects(
         
         query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
         
-        # Use selectinload like get_project endpoint
-        query = query.options(
-            selectinload(Project.client),
-            selectinload(Project.responsable)
-        )
-        
-        # Execute query
-        result = await db.execute(query)
-        projects = result.scalars().all()
-        
-        # Convert to response format with client and responsable names
-        project_list = []
-        for project in projects:
-            client_name = project.client.name if project.client else None
-            responsable_name = None
-            if project.responsable:
-                responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}".strip()
+        # Try to load relationships, but handle case where columns don't exist
+        try:
+            # Use selectinload like get_project endpoint
+            query = query.options(
+                selectinload(Project.client),
+                selectinload(Project.responsable)
+            )
             
-            project_list.append(ProjectSchema(
-                id=project.id,
-                name=project.name,
-                description=project.description,
-                status=project.status,
-                user_id=project.user_id,
-                client_id=project.client_id,
-                client_name=client_name,
-                responsable_id=project.responsable_id,
-                responsable_name=responsable_name,
-                created_at=project.created_at,
-                updated_at=project.updated_at,
-            ))
-        
-        # Return the list directly - FastAPI will serialize it correctly
-        return project_list
+            # Execute query
+            result = await db.execute(query)
+            projects = result.scalars().all()
+            
+            # Convert to response format with client and responsable names
+            project_list = []
+            for project in projects:
+                client_name = None
+                try:
+                    if project.client:
+                        client_name = f"{project.client.first_name} {project.client.last_name}".strip()
+                except (AttributeError, ProgrammingError):
+                    # Column doesn't exist or relationship failed
+                    client_name = None
+                
+                responsable_name = None
+                try:
+                    if project.responsable:
+                        responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}".strip()
+                except (AttributeError, ProgrammingError):
+                    # Column doesn't exist or relationship failed
+                    responsable_name = None
+                
+                # Safely get client_id and responsable_id
+                client_id = None
+                responsable_id = None
+                try:
+                    client_id = getattr(project, 'client_id', None)
+                except (AttributeError, ProgrammingError):
+                    pass
+                
+                try:
+                    responsable_id = getattr(project, 'responsable_id', None)
+                except (AttributeError, ProgrammingError):
+                    pass
+                
+                project_list.append(ProjectSchema(
+                    id=project.id,
+                    name=project.name,
+                    description=project.description,
+                    status=project.status,
+                    user_id=project.user_id,
+                    client_id=client_id,
+                    client_name=client_name,
+                    responsable_id=responsable_id,
+                    responsable_name=responsable_name,
+                    created_at=project.created_at,
+                    updated_at=project.updated_at,
+                ))
+            
+            # Return the list directly - FastAPI will serialize it correctly
+            return project_list
+            
+        except ProgrammingError as pe:
+            # If the error is about missing columns (client_id or responsable_id), 
+            # retry without relationship loading
+            error_msg = str(pe).lower()
+            if 'client_id' in error_msg or 'responsable_id' in error_msg or 'column' in error_msg:
+                logger.warning(
+                    "Missing column detected in projects table, retrying without relationship loading",
+                    context={
+                        "error": str(pe),
+                        "user_id": current_user.id,
+                    }
+                )
+                
+                # Retry query without relationship loading
+                query_no_rels = select(Project).where(Project.user_id == current_user.id)
+                
+                if status:
+                    query_no_rels = query_no_rels.where(Project.status == status)
+                
+                query_no_rels = apply_tenant_scope(query_no_rels, Project)
+                query_no_rels = query_no_rels.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+                
+                result = await db.execute(query_no_rels)
+                projects = result.scalars().all()
+                
+                # Convert to response format without client/responsable names
+                project_list = []
+                for project in projects:
+                    project_list.append(ProjectSchema(
+                        id=project.id,
+                        name=project.name,
+                        description=project.description,
+                        status=project.status,
+                        user_id=project.user_id,
+                        client_id=None,  # Column doesn't exist
+                        client_name=None,
+                        responsable_id=None,  # Column might not exist
+                        responsable_name=None,
+                        created_at=project.created_at,
+                        updated_at=project.updated_at,
+                    ))
+                
+                return project_list
+            else:
+                # Re-raise if it's a different ProgrammingError
+                raise
     
     except Exception as e:
         # Log detailed error information before re-raising
@@ -152,20 +226,49 @@ async def get_project(
     Raises:
         HTTPException: If project not found or user doesn't have access
     """
-    query = select(Project).where(
-        and_(
-            Project.id == project_id,
-            Project.user_id == current_user.id
+    try:
+        query = select(Project).where(
+            and_(
+                Project.id == project_id,
+                Project.user_id == current_user.id
+            )
         )
-    )
-    query = apply_tenant_scope(query, Project)
-    query = query.options(
-        selectinload(Project.client),
-        selectinload(Project.responsable)
-    )
-    
-    result = await db.execute(query)
-    project = result.scalar_one_or_none()
+        query = apply_tenant_scope(query, Project)
+        query = query.options(
+            selectinload(Project.client),
+            selectinload(Project.responsable)
+        )
+        
+        result = await db.execute(query)
+        project = result.scalar_one_or_none()
+        
+    except ProgrammingError as pe:
+        # If the error is about missing columns, retry without relationship loading
+        error_msg = str(pe).lower()
+        if 'client_id' in error_msg or 'responsable_id' in error_msg or 'column' in error_msg:
+            logger.warning(
+                "Missing column detected in projects table, retrying without relationship loading",
+                context={
+                    "error": str(pe),
+                    "user_id": current_user.id,
+                    "project_id": project_id,
+                }
+            )
+            
+            # Retry query without relationship loading
+            query = select(Project).where(
+                and_(
+                    Project.id == project_id,
+                    Project.user_id == current_user.id
+                )
+            )
+            query = apply_tenant_scope(query, Project)
+            
+            result = await db.execute(query)
+            project = result.scalar_one_or_none()
+        else:
+            # Re-raise if it's a different ProgrammingError
+            raise
     
     if not project:
         raise HTTPException(
@@ -176,20 +279,33 @@ async def get_project(
     # Convert to response format with client and responsable names
     # Safely access relationships - check if they exist before accessing attributes
     client_name = None
-    if project.client:
-        try:
-            client_name = project.client.name
-        except Exception:
-            # If lazy load fails, client_name remains None
-            pass
+    try:
+        if project.client:
+            client_name = f"{project.client.first_name} {project.client.last_name}".strip()
+    except (AttributeError, ProgrammingError):
+        # If lazy load fails or column doesn't exist, client_name remains None
+        pass
     
     responsable_name = None
-    if project.responsable:
-        try:
+    try:
+        if project.responsable:
             responsable_name = f"{project.responsable.first_name} {project.responsable.last_name}"
-        except Exception:
-            # If lazy load fails or attributes don't exist, responsable_name remains None
-            pass
+    except (AttributeError, ProgrammingError):
+        # If lazy load fails or attributes don't exist, responsable_name remains None
+        pass
+    
+    # Safely get client_id and responsable_id
+    client_id = None
+    responsable_id = None
+    try:
+        client_id = getattr(project, 'client_id', None)
+    except (AttributeError, ProgrammingError):
+        pass
+    
+    try:
+        responsable_id = getattr(project, 'responsable_id', None)
+    except (AttributeError, ProgrammingError):
+        pass
     
     project_dict = {
         "id": project.id,
@@ -197,9 +313,9 @@ async def get_project(
         "description": project.description,
         "status": project.status,
         "user_id": project.user_id,
-        "client_id": project.client_id,
+        "client_id": client_id,
         "client_name": client_name,
-        "responsable_id": project.responsable_id,
+        "responsable_id": responsable_id,
         "responsable_name": responsable_name,
         "created_at": project.created_at,
         "updated_at": project.updated_at,
@@ -208,31 +324,64 @@ async def get_project(
     return ProjectSchema(**project_dict)
 
 
-async def find_company_by_name(
-    company_name: str,
+async def find_people_by_name(
+    people_name: str,
     db: AsyncSession,
 ) -> Optional[int]:
-    """Find a company ID by name using intelligent matching"""
-    if not company_name or not company_name.strip():
+    """Find a People ID by name using intelligent matching (searches first_name, last_name, and email)"""
+    if not people_name or not people_name.strip():
         return None
     
-    company_name_normalized = company_name.strip().lower()
+    people_name_normalized = people_name.strip().lower()
     
-    # Try exact match first
-    result = await db.execute(
-        select(Company).where(func.lower(Company.name) == company_name_normalized)
-    )
-    company = result.scalar_one_or_none()
-    if company:
-        return company.id
+    # Try exact match on first_name + last_name
+    name_parts = people_name_normalized.split()
+    if len(name_parts) >= 2:
+        first_name = name_parts[0]
+        last_name = " ".join(name_parts[1:])
+        result = await db.execute(
+            select(People).where(
+                and_(
+                    func.lower(People.first_name) == first_name,
+                    func.lower(People.last_name) == last_name
+                )
+            )
+        )
+        people = result.scalar_one_or_none()
+        if people:
+            return people.id
     
-    # Try partial match
+    # Try exact match on email
     result = await db.execute(
-        select(Company).where(func.lower(Company.name).contains(company_name_normalized))
+        select(People).where(func.lower(People.email) == people_name_normalized)
     )
-    company = result.scalar_one_or_none()
-    if company:
-        return company.id
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
+    
+    # Try partial match on first_name
+    result = await db.execute(
+        select(People).where(func.lower(People.first_name).contains(people_name_normalized))
+    )
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
+    
+    # Try partial match on last_name
+    result = await db.execute(
+        select(People).where(func.lower(People.last_name).contains(people_name_normalized))
+    )
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
+    
+    # Try partial match on email
+    result = await db.execute(
+        select(People).where(func.lower(People.email).contains(people_name_normalized))
+    )
+    people = result.scalar_one_or_none()
+    if people:
+        return people.id
     
     return None
 
@@ -257,17 +406,17 @@ async def create_project(
     Returns:
         Created project object
     """
-    # Handle client matching: if client_name is provided but client_id is not, try to find the company
+    # Handle client matching: if client_name is provided but client_id is not, try to find the people
     final_client_id = project_data.client_id
     
     if final_client_id is None and project_data.client_name:
-        matched_client_id = await find_company_by_name(
-            company_name=project_data.client_name,
+        matched_client_id = await find_people_by_name(
+            people_name=project_data.client_name,
             db=db
         )
         if matched_client_id:
             final_client_id = matched_client_id
-            logger.info(f"Auto-matched client '{project_data.client_name}' to company ID {matched_client_id}")
+            logger.info(f"Auto-matched client '{project_data.client_name}' to people ID {matched_client_id}")
     
     project = Project(
         name=project_data.name,
@@ -287,7 +436,7 @@ async def create_project(
     client_name = None
     if project.client:
         try:
-            client_name = project.client.name
+            client_name = f"{project.client.first_name} {project.client.last_name}".strip()
         except Exception:
             # If lazy load fails, client_name remains None
             pass
@@ -356,17 +505,17 @@ async def update_project(
             detail="Project not found"
         )
     
-    # Handle client matching: if client_name is provided but client_id is not, try to find the company
+    # Handle client matching: if client_name is provided but client_id is not, try to find the people
     final_client_id = project_data.client_id
     
     if final_client_id is None and project_data.client_name:
-        matched_client_id = await find_company_by_name(
-            company_name=project_data.client_name,
+        matched_client_id = await find_people_by_name(
+            people_name=project_data.client_name,
             db=db
         )
         if matched_client_id:
             final_client_id = matched_client_id
-            logger.info(f"Auto-matched client '{project_data.client_name}' to company ID {matched_client_id} for project {project_id}")
+            logger.info(f"Auto-matched client '{project_data.client_name}' to people ID {matched_client_id} for project {project_id}")
     
     # Update fields
     update_data = project_data.model_dump(exclude_unset=True)
@@ -387,7 +536,7 @@ async def update_project(
     client_name = None
     if project.client:
         try:
-            client_name = project.client.name
+            client_name = f"{project.client.first_name} {project.client.last_name}".strip()
         except Exception:
             # If lazy load fails, client_name remains None
             pass

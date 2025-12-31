@@ -38,8 +38,25 @@ class StructuredLogger:
         """Internal logging method"""
         # Build extra dict for structured logging
         extra = context.copy() if context else {}
+        
+        # Remove reserved LogRecord attributes from extra to avoid KeyError
+        # These are set by Python's logging system and cannot be overwritten
+        reserved_attrs = {
+            'message', 'name', 'msg', 'args', 'created', 'filename', 
+            'funcName', 'levelname', 'levelno', 'lineno', 'module', 
+            'msecs', 'pathname', 'process', 'processName', 'relativeCreated',
+            'thread', 'threadName', 'exc_info', 'exc_text', 'stack_info'
+        }
+        
+        # Filter out reserved attributes
+        filtered_extra = {k: v for k, v in extra.items() if k not in reserved_attrs}
+        
+        # If 'message' was in context, rename it
+        if "message" in extra and "message" not in filtered_extra:
+            filtered_extra["log_message"] = extra["message"]
+        
         if exc_info:
-            extra["exception"] = {
+            filtered_extra["exception"] = {
                 "type": type(exc_info).__name__,
                 "message": str(exc_info),
             }
@@ -47,16 +64,16 @@ class StructuredLogger:
         # Use logger.log with extra dict - ensure it's passed correctly
         try:
             if exc_info:
-                self.logger.log(level, message, extra=extra, exc_info=exc_info)
+                self.logger.log(level, message, extra=filtered_extra, exc_info=exc_info)
             else:
-                self.logger.log(level, message, extra=extra)
-        except TypeError as e:
-            # Fallback if extra is not supported - log without extra
-            if "extra" in str(e).lower():
+                self.logger.log(level, message, extra=filtered_extra)
+        except (TypeError, KeyError) as e:
+            # Fallback if extra is not supported or there's a KeyError - log without extra
+            if "extra" in str(e).lower() or "message" in str(e).lower():
                 if exc_info:
-                    self.logger.log(level, f"{message} | Context: {extra}", exc_info=exc_info)
+                    self.logger.log(level, f"{message} | Context: {filtered_extra}", exc_info=exc_info)
                 else:
-                    self.logger.log(level, f"{message} | Context: {extra}")
+                    self.logger.log(level, f"{message} | Context: {filtered_extra}")
             else:
                 raise
 

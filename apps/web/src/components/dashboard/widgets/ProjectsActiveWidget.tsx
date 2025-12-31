@@ -7,8 +7,6 @@
 import { FolderKanban, ExternalLink, AlertCircle } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
-import EmptyState from '@/components/ui/EmptyState';
-import { SkeletonWidget } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 
 export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {

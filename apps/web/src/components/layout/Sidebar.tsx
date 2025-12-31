@@ -10,7 +10,7 @@ import Input from '@/components/ui/Input';
 import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
 import { getNavigationConfig, type NavigationItem, type NavigationGroup } from '@/lib/navigation';
 import { clsx } from 'clsx';
-import { ChevronDown, ChevronRight, Search, X, LogOut } from 'lucide-react';
+import { ChevronDown, Search, X, LogOut } from 'lucide-react';
 
 export interface SidebarProps {
   isOpen?: boolean;

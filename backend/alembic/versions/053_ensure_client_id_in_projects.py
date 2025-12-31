@@ -32,10 +32,10 @@ def upgrade() -> None:
         # Add client_id column
         op.add_column('projects', sa.Column('client_id', sa.Integer(), nullable=True))
         
-        # Create foreign key constraint to companies table
+        # Create foreign key constraint to people table (People connected to the project)
         op.create_foreign_key(
             'fk_projects_client_id',
-            'projects', 'companies',
+            'projects', 'people',
             ['client_id'], ['id'],
             ondelete='SET NULL'
         )
@@ -45,21 +45,21 @@ def upgrade() -> None:
         
         print("Added client_id column to projects table")
     else:
-        # Verify foreign key constraint points to companies (not clients)
+        # Verify foreign key constraint points to people (not companies or clients)
         fk_constraints = inspector.get_foreign_keys('projects')
         for fk in fk_constraints:
             if fk['constrained_columns'] == ['client_id']:
-                if fk['referred_table'] != 'companies':
+                if fk['referred_table'] != 'people':
                     # Drop old constraint
                     op.drop_constraint(fk['name'], 'projects', type_='foreignkey', if_exists=True)
-                    # Create new constraint pointing to companies
+                    # Create new constraint pointing to people
                     op.create_foreign_key(
                         'fk_projects_client_id',
-                        'projects', 'companies',
+                        'projects', 'people',
                         ['client_id'], ['id'],
                         ondelete='SET NULL'
                     )
-                    print(f"Updated client_id foreign key to point to companies table")
+                    print(f"Updated client_id foreign key to point to people table")
                 break
 
 
