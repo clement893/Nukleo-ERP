@@ -95,12 +95,19 @@ export function groupByWeek(entries: TimeEntry[]): GroupedTimeEntry[] {
   });
 
   return Object.entries(grouped)
-    .map(([key, entries]) => ({
-      key,
-      label: formatWeekRange(new Date(entries[0].date)),
-      entries,
-      totalDuration: entries.reduce((sum, e) => sum + e.duration, 0),
-    }))
+    .map(([key, entries]) => {
+      const firstEntry = entries[0];
+      if (!firstEntry?.date) {
+        return null;
+      }
+      return {
+        key,
+        label: formatWeekRange(new Date(firstEntry.date)),
+        entries,
+        totalDuration: entries.reduce((sum, e) => sum + e.duration, 0),
+      };
+    })
+    .filter((item): item is GroupedTimeEntry => item !== null)
     .sort((a, b) => b.key.localeCompare(a.key)); // Most recent first
 }
 

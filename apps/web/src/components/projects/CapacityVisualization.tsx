@@ -38,7 +38,6 @@ export default function CapacityVisualization({
   holidays = [],
 }: CapacityVisualizationProps) {
   const [vacations, setVacations] = useState<VacationRequest[]>([]);
-  const [loadingVacations, setLoadingVacations] = useState(false);
   // Calculate weeks in date range
   const weeks = useMemo(() => {
     if (!startDate || !endDate) {
@@ -72,21 +71,36 @@ export default function CapacityVisualization({
     });
   }, [tasks, teamId, startDate, endDate]);
 
-  // Load vacations
+  // Load vacations - only for employees being analyzed
   useEffect(() => {
     const loadVacations = async () => {
+      if (employees.length === 0) return;
+      
       try {
         setLoadingVacations(true);
+        // Get employee IDs from the employees list
+        const employeeIds = employees.map(emp => emp.id).filter(Boolean);
+        
+        // Load vacations for these specific employees
+        // Note: API might not support filtering by multiple employee_ids, so we load all and filter
         const allVacations = await vacationRequestsAPI.list({ status: 'approved' });
-        setVacations(allVacations);
+        
+        // Filter to only include vacations for employees in the current analysis
+        const relevantVacations = allVacations.filter(vac => 
+          employeeIds.includes(vac.employee_id)
+        );
+        
+        setVacations(relevantVacations);
       } catch (err) {
         console.error('Error loading vacations:', err);
+        // Don't fail the entire component if vacations can't be loaded
+        setVacations([]);
       } finally {
         setLoadingVacations(false);
       }
     };
     loadVacations();
-  }, []);
+  }, [employees]);
 
   // Convert vacations to absences format
   const absences = useMemo(() => {
@@ -105,8 +119,14 @@ export default function CapacityVisualization({
     const capacityMap = new Map<number, EmployeeCapacity>();
 
     employees.forEach((employee) => {
-      // Use user_id if available, otherwise use employee.id
-      const key = employee.user_id || employee.id;
+      // Use user_id as key for mapping with tasks (assignee_id = user_id)
+      // If no user_id, we can't map tasks to this employee
+      if (!employee.user_id) {
+        console.warn(`Employee ${employee.id} has no user_id, skipping capacity calculation`);
+        return;
+      }
+      
+      const key = employee.user_id;
       
       // Calculate actual capacity considering holidays and absences
       const capacityInfo = calculateWeeklyCapacity(employee, weeks, holidays, absences);
@@ -123,12 +143,23 @@ export default function CapacityVisualization({
     });
 
     // Sum estimated hours per assignee
+    // Only count tasks that are within the analyzed period and not completed
     filteredTasks.forEach((task) => {
-      if (task.assignee_id && task.estimated_hours) {
-        const capacity = capacityMap.get(task.assignee_id);
-        if (capacity) {
-          capacity.estimatedHours += task.estimated_hours;
-        }
+      if (!task.assignee_id || !task.estimated_hours) return;
+      
+      // Check if task is in the analyzed period
+      if (startDate && task.due_date && new Date(task.due_date) < startDate) return;
+      if (endDate && task.due_date && new Date(task.due_date) > endDate) return;
+      
+      // Optionally exclude completed tasks (they're already done)
+      // if (task.status === 'completed') return;
+      
+      const capacity = capacityMap.get(task.assignee_id);
+      if (capacity) {
+        capacity.estimatedHours += task.estimated_hours;
+      } else {
+        // Task assigned to a user_id that doesn't match any employee
+        console.warn(`Task ${task.id} assigned to user_id ${task.assignee_id} but no matching employee found`);
       }
     });
 
