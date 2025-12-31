@@ -23,7 +23,6 @@ import {
   MoreVertical, 
   Trash2,
   Edit,
-  Star,
   HelpCircle
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -396,21 +395,6 @@ function TemoignagesContent() {
         <span className="text-sm text-muted-foreground line-clamp-2">
           {testimonial.testimonial_fr || '-'}
         </span>
-      ),
-    },
-    {
-      key: 'rating',
-      label: 'Note',
-      sortable: true,
-      render: (_value, testimonial) => (
-        testimonial.rating ? (
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span>{testimonial.rating}/5</span>
-          </div>
-        ) : (
-          <span>-</span>
-        )
       ),
     },
     {

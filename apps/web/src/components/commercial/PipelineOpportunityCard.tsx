@@ -116,7 +116,7 @@ export default function PipelineOpportunityCard({
         </div>
       )}
       
-      {/* Add contact button if no contacts */}
+      {/* Add company button if no contacts */}
       {displayContacts.length === 0 && contact_names.length === 0 && onAddContact && (
         <div className="mb-3">
           <Button
@@ -129,7 +129,7 @@ export default function PipelineOpportunityCard({
             className="h-6 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
           >
             <Plus className="w-3 h-3" />
-            Ajouter un contact
+            Ajouter une entreprise
           </Button>
         </div>
       )}

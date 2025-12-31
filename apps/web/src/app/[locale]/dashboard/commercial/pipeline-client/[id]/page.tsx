@@ -10,7 +10,8 @@ import { PageHeader } from '@/components/layout';
 import { Card, Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
 import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown, X, UserCircle, Search } from 'lucide-react';
+import Image from 'next/image';
 import { useToast } from '@/components/ui';
 import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
 import { pipelinesAPI, type Pipeline, type PipelineStage } from '@/lib/api/pipelines';
@@ -77,6 +78,10 @@ function PipelineDetailContent() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  
+  // Contact selection modal
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
   
   // Modals
   const [showOpportunityModal, setShowOpportunityModal] = useState(false);
@@ -688,26 +693,56 @@ function PipelineDetailContent() {
             <label className="block text-sm font-medium mb-2">
               Contacts
             </label>
-            <select
-              multiple
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[100px]"
-              value={opportunityForm.contact_ids.map(id => id.toString())}
-              onChange={(e) => {
-                const selectedIds = Array.from(e.target.selectedOptions, option => parseInt(option.value));
-                setOpportunityForm({ ...opportunityForm, contact_ids: selectedIds });
-              }}
-              disabled={loadingContacts}
+            
+            {/* Display selected contacts */}
+            {opportunityForm.contact_ids.length > 0 && (
+              <div className="mb-3 flex items-center gap-2 flex-wrap">
+                {contacts
+                  .filter(c => opportunityForm.contact_ids.includes(c.id))
+                  .map((contact) => (
+                    <div key={contact.id} className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-lg">
+                      {contact.photo_url ? (
+                        <Image
+                          src={contact.photo_url}
+                          alt={`${contact.first_name} ${contact.last_name}`}
+                          width={20}
+                          height={20}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <UserCircle className="w-5 h-5 text-muted-foreground" />
+                      )}
+                      <span className="text-xs text-foreground">
+                        {contact.first_name} {contact.last_name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setOpportunityForm({
+                            ...opportunityForm,
+                            contact_ids: opportunityForm.contact_ids.filter(id => id !== contact.id)
+                          });
+                        }}
+                        className="h-4 w-4 p-0 text-muted-foreground hover:text-red-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            )}
+            
+            {/* Add contact button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowContactModal(true)}
+              className="flex items-center gap-2"
             >
-              {contacts.map((contact) => (
-                <option key={contact.id} value={contact.id.toString()}>
-                  {contact.first_name} {contact.last_name}
-                  {contact.company_name && ` - ${contact.company_name}`}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs contacts
-            </p>
+              <Plus className="w-4 h-4" />
+              Ajouter un contact
+            </Button>
           </div>
           <div className="flex justify-between items-center">
             {editingOpportunity && (
@@ -878,6 +913,88 @@ function PipelineDetailContent() {
             <Button onClick={handleSaveStage} disabled={!stageForm.name}>
               {editingStage ? 'Modifier' : 'Ajouter'}
             </Button>
+          </div>
+        </div>
+      </Modal>
+      
+      {/* Contact Selection Modal */}
+      <Modal
+        isOpen={showContactModal}
+        onClose={() => {
+          setShowContactModal(false);
+          setContactSearchQuery('');
+        }}
+        title="Ajouter un contact"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <Input
+            placeholder="Rechercher un contact par nom, entreprise, email..."
+            value={contactSearchQuery}
+            onChange={(e) => setContactSearchQuery(e.target.value)}
+            leftIcon={<Search className="w-4 h-4" />}
+            fullWidth
+          />
+          <div className="max-h-80 overflow-y-auto border rounded-md">
+            {(() => {
+              const availableContacts = contacts
+                .filter((contact) => {
+                  if (!contactSearchQuery) return true;
+                  const query = contactSearchQuery.toLowerCase();
+                  return (
+                    contact.first_name.toLowerCase().includes(query) ||
+                    contact.last_name.toLowerCase().includes(query) ||
+                    contact.email?.toLowerCase().includes(query) ||
+                    contact.company_name?.toLowerCase().includes(query) ||
+                    contact.position?.toLowerCase().includes(query)
+                  );
+                })
+                .filter((contact) => !opportunityForm.contact_ids.includes(contact.id));
+              
+              if (availableContacts.length === 0) {
+                return (
+                  <p className="p-4 text-center text-muted-foreground text-sm">
+                    Aucun contact trouvé ou disponible.
+                  </p>
+                );
+              }
+              
+              return availableContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="flex items-center justify-between p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                  onClick={() => {
+                    setOpportunityForm({
+                      ...opportunityForm,
+                      contact_ids: [...opportunityForm.contact_ids, contact.id]
+                    });
+                    setShowContactModal(false);
+                    setContactSearchQuery('');
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {contact.photo_url ? (
+                      <Image
+                        src={contact.photo_url}
+                        alt={`${contact.first_name} ${contact.last_name}`}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                      />
+                    ) : (
+                      <UserCircle className="w-8 h-8 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium">{contact.first_name} {contact.last_name}</p>
+                      {contact.company_name && (
+                        <p className="text-xs text-muted-foreground">{contact.company_name}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Plus className="w-4 h-4 text-muted-foreground" />
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </Modal>
