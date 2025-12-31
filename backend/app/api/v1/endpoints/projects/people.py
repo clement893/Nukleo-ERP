@@ -3,7 +3,7 @@ People API Endpoints
 API endpoints for managing people
 """
 
-from typing import List, Optional
+from typing import List, Optional, Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -28,18 +28,26 @@ async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
+    skip: Annotated[int, Query(ge=0, description="Number of records to skip")] = 0,
+    limit: Annotated[int, Query(ge=1, le=1000, description="Maximum number of records")] = 20,
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
     """
     Get list of people
     """
-    # Log that we've reached the endpoint
-    logger.info(f"[PeopleAPI] ✅ ENDPOINT REACHED - URL: {request.url}, Method: {request.method}")
-    logger.info(f"[PeopleAPI] ✅ Query params: {dict(request.query_params)}")
-    logger.info(f"[PeopleAPI] ✅ Received skip: {skip} (type: {type(skip).__name__}), limit: {limit} (type: {type(limit).__name__})")
+    # Log that we've reached the endpoint with detailed information
+    logger.info(f"[PeopleAPI] ========================================")
+    logger.info(f"[PeopleAPI] ✅ ENDPOINT REACHED")
+    logger.info(f"[PeopleAPI] URL: {request.url}")
+    logger.info(f"[PeopleAPI] Method: {request.method}")
+    logger.info(f"[PeopleAPI] Query params (raw): {dict(request.query_params)}")
+    logger.info(f"[PeopleAPI] Query params (items): {list(request.query_params.items())}")
+    logger.info(f"[PeopleAPI] Received skip: {repr(skip)} (type: {type(skip).__name__}, value: {skip})")
+    logger.info(f"[PeopleAPI] Received limit: {repr(limit)} (type: {type(limit).__name__}, value: {limit})")
+    logger.info(f"[PeopleAPI] Skip from query_params: {request.query_params.get('skip', 'NOT_FOUND')}")
+    logger.info(f"[PeopleAPI] Limit from query_params: {request.query_params.get('limit', 'NOT_FOUND')}")
+    logger.info(f"[PeopleAPI] ========================================")
     
     query = select(People)
 
