@@ -389,8 +389,8 @@ function ProjectsContent() {
           <Card className="glass-card">
             <div className="p-6">
               <DataTable
-                data={filteredProjects as Array<Record<string, unknown>>}
-                columns={columns as Column<Record<string, unknown>>[]}
+                data={filteredProjects as unknown as Array<Record<string, unknown>>}
+                columns={columns as unknown as Column<Record<string, unknown>>[]}
                 pageSize={20}
                 searchable={false}
                 emptyMessage="Aucun projet trouvé"
