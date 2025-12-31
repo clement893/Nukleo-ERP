@@ -123,7 +123,52 @@ async def get_client_projects(
         )
 
     # Get projects for this client, filtered by user_id and tenant scope
-    query = select(Project).where(
+    # Use explicit column selection to avoid issues with missing columns like budget
+    columns_to_select = [
+        Project.id,
+        Project.name,
+        Project.description,
+        Project.status,
+        Project.user_id,
+        Project.created_at,
+        Project.updated_at,
+    ]
+    
+    # Try to add optional columns
+    try:
+        columns_to_select.append(Project.client_id)
+    except AttributeError:
+        pass
+    
+    try:
+        columns_to_select.append(Project.responsable_id)
+    except AttributeError:
+        pass
+    
+    # Add extended fields (excluding budget which may not exist)
+    extended_fields = [
+        ('equipe', Project.equipe),
+        ('etape', Project.etape),
+        ('annee_realisation', Project.annee_realisation),
+        ('contact', Project.contact),
+        ('proposal_url', Project.proposal_url),
+        ('drive_url', Project.drive_url),
+        ('slack_url', Project.slack_url),
+        ('echeancier_url', Project.echeancier_url),
+        ('temoignage_status', Project.temoignage_status),
+        ('portfolio_status', Project.portfolio_status),
+        ('start_date', Project.start_date),
+        ('end_date', Project.end_date),
+        ('deadline', Project.deadline),
+    ]
+    
+    for field_name, field_column in extended_fields:
+        try:
+            columns_to_select.append(field_column)
+        except AttributeError:
+            pass
+    
+    query = select(*columns_to_select).where(
         Project.client_id == client_id,
         Project.user_id == current_user.id
     )
@@ -132,22 +177,22 @@ async def get_client_projects(
     
     try:
         result = await db.execute(query)
-        projects = result.scalars().all()
+        rows = result.all()
         
-        logger.info(f"[ClientsAPI] Found {len(projects)} projects for client {client_id}")
+        logger.info(f"[ClientsAPI] Found {len(rows)} projects for client {client_id}")
         
         # Return projects as list of dicts with all fields
         projects_list = []
-        for p in projects:
+        for row in rows:
             project_dict = {
-                "id": p.id,
-                "name": p.name,
-                "description": p.description,
-                "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
-                "client_id": p.client_id,
-                "etape": getattr(p, 'etape', None),
-                "annee_realisation": getattr(p, 'annee_realisation', None),
-                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "id": row.id,
+                "name": row.name,
+                "description": row.description,
+                "status": row.status.value if hasattr(row.status, 'value') else str(row.status),
+                "client_id": getattr(row, 'client_id', None),
+                "etape": getattr(row, 'etape', None),
+                "annee_realisation": getattr(row, 'annee_realisation', None),
+                "created_at": row.created_at.isoformat() if row.created_at else None,
                 "updated_at": p.updated_at.isoformat() if p.updated_at else None,
             }
             projects_list.append(project_dict)

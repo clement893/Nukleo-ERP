@@ -221,19 +221,22 @@ async def get_projects(
                         logger.warning(f"Could not add responsable_id to query: {e}")
                         has_responsable_id_col = False
                 
-                # Add extended fields only if they exist
+                # Add extended fields only if they exist (excluding budget which may not exist)
                 extended_fields = [
                     ('equipe', Project.equipe),
                     ('etape', Project.etape),
                     ('annee_realisation', Project.annee_realisation),
                     ('contact', Project.contact),
-                    ('budget', Project.budget),
+                    # Skip budget - it doesn't exist in DB
                     ('proposal_url', Project.proposal_url),
                     ('drive_url', Project.drive_url),
                     ('slack_url', Project.slack_url),
                     ('echeancier_url', Project.echeancier_url),
                     ('temoignage_status', Project.temoignage_status),
                     ('portfolio_status', Project.portfolio_status),
+                    ('start_date', Project.start_date),
+                    ('end_date', Project.end_date),
+                    ('deadline', Project.deadline),
                 ]
                 
                 for field_name, field_column in extended_fields:
@@ -274,11 +277,11 @@ async def get_projects(
                             self.responsable_id = getattr(row, 'responsable_id', None) if has_responsable_id else None
                         except (AttributeError, KeyError):
                             self.responsable_id = None
-                        # Set extended fields if they exist
+                        # Set extended fields if they exist (excluding budget)
                         extended_field_names = [
-                            'equipe', 'etape', 'annee_realisation', 'contact', 'budget',
+                            'equipe', 'etape', 'annee_realisation', 'contact',
                             'proposal_url', 'drive_url', 'slack_url', 'echeancier_url',
-                            'temoignage_status', 'portfolio_status'
+                            'temoignage_status', 'portfolio_status', 'start_date', 'end_date', 'deadline'
                         ]
                         for field_name in extended_field_names:
                             if columns_exist and columns_exist.get(field_name, False):
@@ -363,12 +366,12 @@ async def get_projects(
                         )
                         responsable_name = None
                 
-                # Build extended fields dict, only including fields that exist
+                # Build extended fields dict, only including fields that exist (excluding budget)
                 extended_fields_dict = {}
                 extended_field_names = [
-                    'equipe', 'etape', 'annee_realisation', 'contact', 'budget',
+                    'equipe', 'etape', 'annee_realisation', 'contact',
                     'proposal_url', 'drive_url', 'slack_url', 'echeancier_url',
-                    'temoignage_status', 'portfolio_status'
+                    'temoignage_status', 'portfolio_status', 'start_date', 'end_date', 'deadline'
                 ]
                 for field_name in extended_field_names:
                     if columns_exist.get(field_name, True):  # Default to True for backward compatibility
@@ -592,12 +595,12 @@ async def get_project(
         result = await db.execute(query)
         project = result.scalar_one_or_none()
         
-    except ProgrammingError as pe:
-        # If the error is about missing columns, retry without relationship loading
+    except (ProgrammingError, Exception) as pe:
+        # If the error is about missing columns, retry with explicit column selection
         error_msg = str(pe).lower()
-        if 'client_id' in error_msg or 'responsable_id' in error_msg or 'column' in error_msg:
+        if 'client_id' in error_msg or 'responsable_id' in error_msg or 'column' in error_msg or 'budget' in error_msg:
             logger.warning(
-                "Missing column detected in projects table, retrying without relationship loading",
+                "Missing column detected in projects table, retrying with explicit column selection",
                 context={
                     "error": str(pe),
                     "user_id": current_user.id,
@@ -605,8 +608,59 @@ async def get_project(
                 }
             )
             
-            # Retry query without relationship loading
-            query = select(Project).where(
+            # Rollback the failed transaction first
+            try:
+                await db.rollback()
+            except Exception as rollback_error:
+                logger.warning(f"Rollback failed: {rollback_error}")
+            
+            # Retry query with explicit column selection (excluding budget which may not exist)
+            columns_to_select = [
+                Project.id,
+                Project.name,
+                Project.description,
+                Project.status,
+                Project.user_id,
+                Project.created_at,
+                Project.updated_at,
+            ]
+            
+            # Try to add optional columns if they exist
+            try:
+                columns_to_select.append(Project.client_id)
+            except AttributeError:
+                pass
+            
+            try:
+                columns_to_select.append(Project.responsable_id)
+            except AttributeError:
+                pass
+            
+            # Add extended fields (excluding budget)
+            extended_fields = [
+                ('equipe', Project.equipe),
+                ('etape', Project.etape),
+                ('annee_realisation', Project.annee_realisation),
+                ('contact', Project.contact),
+                # Skip budget - it doesn't exist in DB
+                ('proposal_url', Project.proposal_url),
+                ('drive_url', Project.drive_url),
+                ('slack_url', Project.slack_url),
+                ('echeancier_url', Project.echeancier_url),
+                ('temoignage_status', Project.temoignage_status),
+                ('portfolio_status', Project.portfolio_status),
+                ('start_date', Project.start_date),
+                ('end_date', Project.end_date),
+                ('deadline', Project.deadline),
+            ]
+            
+            for field_name, field_column in extended_fields:
+                try:
+                    columns_to_select.append(field_column)
+                except AttributeError:
+                    pass
+            
+            query = select(*columns_to_select).where(
                 and_(
                     Project.id == project_id,
                     Project.user_id == current_user.id
@@ -615,9 +669,47 @@ async def get_project(
             query = apply_tenant_scope(query, Project)
             
             result = await db.execute(query)
-            project = result.scalar_one_or_none()
+            row = result.first()
+            
+            if not row:
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail="Project not found"
+                )
+            
+            # Convert row to a simple object
+            class ProjectRow:
+                def __init__(self, row):
+                    self.id = row.id
+                    self.name = row.name
+                    self.description = row.description
+                    self.status = row.status
+                    self.user_id = row.user_id
+                    self.created_at = row.created_at
+                    self.updated_at = row.updated_at
+                    self.client_id = getattr(row, 'client_id', None)
+                    self.responsable_id = getattr(row, 'responsable_id', None)
+                    self.equipe = getattr(row, 'equipe', None)
+                    self.etape = getattr(row, 'etape', None)
+                    self.annee_realisation = getattr(row, 'annee_realisation', None)
+                    self.contact = getattr(row, 'contact', None)
+                    self.proposal_url = getattr(row, 'proposal_url', None)
+                    self.drive_url = getattr(row, 'drive_url', None)
+                    self.slack_url = getattr(row, 'slack_url', None)
+                    self.echeancier_url = getattr(row, 'echeancier_url', None)
+                    self.temoignage_status = getattr(row, 'temoignage_status', None)
+                    self.portfolio_status = getattr(row, 'portfolio_status', None)
+                    self.start_date = getattr(row, 'start_date', None)
+                    self.end_date = getattr(row, 'end_date', None)
+                    self.deadline = getattr(row, 'deadline', None)
+            
+            project = ProjectRow(row)
         else:
-            # Re-raise if it's a different ProgrammingError
+            # Rollback and re-raise if it's a different ProgrammingError
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             raise
     
     if not project:

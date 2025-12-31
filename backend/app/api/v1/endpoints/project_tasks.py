@@ -29,7 +29,7 @@ async def list_tasks(
     team_id: Optional[int] = Query(None, description="Filter by team ID"),
     project_id: Optional[int] = Query(None, description="Filter by project ID"),
     assignee_id: Optional[int] = Query(None, description="Filter by assignee ID"),
-    status: Optional[TaskStatus] = Query(None, description="Filter by status"),
+    task_status: Optional[TaskStatus] = Query(None, description="Filter by status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: User = Depends(get_current_user),
@@ -41,12 +41,19 @@ async def list_tasks(
         
         if team_id:
             query = query.where(ProjectTask.team_id == team_id)
+        # Note: project_id filter is skipped if column doesn't exist in database
+        # Try to filter by project_id, but handle gracefully if column doesn't exist
         if project_id:
-            query = query.where(ProjectTask.project_id == project_id)
+            try:
+                query = query.where(ProjectTask.project_id == project_id)
+            except (AttributeError, ProgrammingError):
+                # Column doesn't exist, skip this filter
+                logger.warning(f"project_id column doesn't exist, skipping project_id filter")
+                pass
         if assignee_id:
             query = query.where(ProjectTask.assignee_id == assignee_id)
-        if status:
-            query = query.where(ProjectTask.status == status)
+        if task_status:
+            query = query.where(ProjectTask.status == task_status)
         
         # Try to order by order field, fallback to created_at if order doesn't exist
         try:
@@ -56,15 +63,21 @@ async def list_tasks(
             query = query.offset(skip).limit(limit).order_by(ProjectTask.created_at.desc())
         
         # Try to load relationships, but handle errors gracefully
+        # Don't load project relationship as project_id column may not exist
         try:
             result = await db.execute(query.options(
                 selectinload(ProjectTask.assignee),
                 selectinload(ProjectTask.team),
-                selectinload(ProjectTask.project),
             ))
-        except (ProgrammingError, AttributeError) as e:
+        except (ProgrammingError, AttributeError, Exception) as e:
             # If relationship loading fails (e.g., missing columns), try without relationships
             logger.warning(f"Failed to load relationships for project tasks: {e}")
+            # Rollback the failed transaction first
+            try:
+                await db.rollback()
+            except Exception as rollback_error:
+                logger.warning(f"Rollback failed: {rollback_error}")
+            # Retry without relationship loading
             result = await db.execute(query)
         
         tasks = result.scalars().all()
@@ -131,6 +144,11 @@ async def list_tasks(
                 "project_id": project_id,
             }
         )
+        # Rollback any failed transaction
+        try:
+            await db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"A database error occurred: {str(e)}"
