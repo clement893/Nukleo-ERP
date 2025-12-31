@@ -194,7 +194,7 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
           },
           {
             name: 'Demandes de vacances',
-            href: '/dashboard/management/vacations-requests',
+            href: '/dashboard/management/vacances',
             icon: <Calendar className="w-5 h-5" />,
           },
           {
