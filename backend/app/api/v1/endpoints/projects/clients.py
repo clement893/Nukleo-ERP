@@ -4,7 +4,7 @@ API endpoints for managing project clients
 """
 
 from typing import List, Optional, Dict, Union
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, delete
@@ -229,10 +229,9 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 @router.get("/", response_model=List[ClientResponse])
 @cache_query(expire=60, tags=["clients"])
 async def list_clients(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: Union[str, int] = Query("0", description="Number of records to skip"),
-    limit: Union[str, int] = Query("100", description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
@@ -243,8 +242,7 @@ async def list_clients(
     Get list of clients
     
     Args:
-        skip: Number of records to skip (can be string or int)
-        limit: Maximum number of records to return (can be string or int)
+        request: FastAPI Request object to access query parameters
         status: Optional status filter
         responsible_id: Optional responsible filter
         company_id: Optional company filter
@@ -255,15 +253,20 @@ async def list_clients(
     Returns:
         List of clients
     """
+    # Parse skip and limit from query parameters manually to avoid validation issues
+    query_params = request.query_params
+    skip_str = query_params.get("skip", "0")
+    limit_str = query_params.get("limit", "100")
+    
     # Convert skip and limit to integers, handling both string and int inputs
     try:
-        skip_int = int(skip) if skip is not None else 0
+        skip_int = int(skip_str) if skip_str else 0
     except (ValueError, TypeError):
         skip_int = 0
     skip_int = max(0, skip_int)
     
     try:
-        limit_int = int(limit) if limit is not None else 100
+        limit_int = int(limit_str) if limit_str else 100
     except (ValueError, TypeError):
         limit_int = 100
     limit_int = min(max(1, limit_int), 1000)
