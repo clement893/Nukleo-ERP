@@ -36,13 +36,29 @@ class StructuredLogger:
         exc_info: Optional[Exception] = None,
     ) -> None:
         """Internal logging method"""
-        extra = context or {}
+        # Build extra dict for structured logging
+        extra = context.copy() if context else {}
         if exc_info:
             extra["exception"] = {
                 "type": type(exc_info).__name__,
                 "message": str(exc_info),
             }
-        self.logger.log(level, message, extra=extra)
+        
+        # Use logger.log with extra dict - ensure it's passed correctly
+        try:
+            if exc_info:
+                self.logger.log(level, message, extra=extra, exc_info=exc_info)
+            else:
+                self.logger.log(level, message, extra=extra)
+        except TypeError as e:
+            # Fallback if extra is not supported - log without extra
+            if "extra" in str(e).lower():
+                if exc_info:
+                    self.logger.log(level, f"{message} | Context: {extra}", exc_info=exc_info)
+                else:
+                    self.logger.log(level, f"{message} | Context: {extra}")
+            else:
+                raise
 
     def debug(self, message: str, context: Optional[Dict[str, Any]] = None) -> None:
         """Log debug message"""
