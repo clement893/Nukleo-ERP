@@ -7,46 +7,79 @@ import { useAuthStore } from '@/lib/store';
 import { employeePortalPermissionsAPI, type EmployeePortalPermissionSummary } from '@/lib/api/employee-portal-permissions';
 import { handleApiError } from '@/lib/errors/api';
 
-export function useEmployeePortalPermissions() {
+interface UseEmployeePortalPermissionsOptions {
+  employeeId?: number;
+}
+
+export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissionsOptions) {
   const { user } = useAuthStore();
+  const { employeeId } = options || {};
   const [permissions, setPermissions] = useState<EmployeePortalPermissionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.id) {
+    // If employeeId is provided, use it; otherwise use user.id
+    if (employeeId) {
+      const loadPermissions = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const summary = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
+          setPermissions(summary);
+        } catch (err) {
+          const appError = handleApiError(err);
+          setError(appError.message || 'Erreur lors du chargement des permissions');
+          // Don't fail silently - set empty permissions
+          setPermissions({
+            user_id: null,
+            employee_id: employeeId,
+            pages: [],
+            modules: [],
+            projects: [],
+            clients: [],
+            all_projects: false,
+            all_clients: false,
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadPermissions();
+    } else if (user?.id) {
+      const userId = typeof user.id === 'string' ? parseInt(user.id) : user.id;
+      
+      const loadPermissions = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const summary = await employeePortalPermissionsAPI.getSummary(userId);
+          setPermissions(summary);
+        } catch (err) {
+          const appError = handleApiError(err);
+          setError(appError.message || 'Erreur lors du chargement des permissions');
+          // Don't fail silently - set empty permissions
+          setPermissions({
+            user_id: userId,
+            employee_id: null,
+            pages: [],
+            modules: [],
+            projects: [],
+            clients: [],
+            all_projects: false,
+            all_clients: false,
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadPermissions();
+    } else {
       setLoading(false);
-      return;
     }
-
-    const userId = typeof user.id === 'string' ? parseInt(user.id) : user.id;
-    
-    const loadPermissions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const summary = await employeePortalPermissionsAPI.getSummary(userId);
-        setPermissions(summary);
-      } catch (err) {
-        const appError = handleApiError(err);
-        setError(appError.message || 'Erreur lors du chargement des permissions');
-        // Don't fail silently - set empty permissions
-        setPermissions({
-          user_id: userId,
-          pages: [],
-          modules: [],
-          projects: [],
-          clients: [],
-          all_projects: false,
-          all_clients: false,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPermissions();
-  }, [user?.id]);
+  }, [user?.id, employeeId]);
 
   /**
    * Check if user has access to a page

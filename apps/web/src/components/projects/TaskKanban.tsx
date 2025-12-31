@@ -10,6 +10,7 @@ import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
+import { useToast } from '@/components/ui';
 import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
@@ -47,8 +48,10 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
 };
 
 export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanbanProps) {
+  const { success, error: showErrorToast } = useToast();
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
@@ -71,9 +74,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     estimated_hours: null,
   });
 
-  const loadTasks = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadTasks = useCallback(async (showToastOnError = false) => {
     try {
       const params: { project_id?: number; team_id?: number; assignee_id?: number } = {};
       if (projectId && projectId > 0) {
@@ -85,19 +86,46 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       if (assigneeId) {
         params.assignee_id = assigneeId;
       }
+      // Force cache refresh by making a fresh API call
       const data = await projectTasksAPI.list(params);
       setTasks(data || []);
+      setError(null);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement des tâches');
-    } finally {
-      setLoading(false);
+      const errorMessage = appError.message || 'Erreur lors du chargement des tâches';
+      setError(errorMessage);
+      if (showToastOnError) {
+        showErrorToast(errorMessage);
+      }
     }
-  }, [projectId, teamId, assigneeId]);
+  }, [projectId, teamId, assigneeId, showErrorToast]);
 
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    const fetchTasks = async () => {
+      setLoading(true);
+      try {
+        const params: { project_id?: number; team_id?: number; assignee_id?: number } = {};
+        if (projectId && projectId > 0) {
+          params.project_id = projectId;
+        }
+        if (teamId) {
+          params.team_id = teamId;
+        }
+        if (assigneeId) {
+          params.assignee_id = assigneeId;
+        }
+        const data = await projectTasksAPI.list(params);
+        setTasks(data || []);
+        setError(null);
+      } catch (err) {
+        const appError = handleApiError(err);
+        setError(appError.message || 'Erreur lors du chargement des tâches');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTasks();
+  }, [projectId, teamId, assigneeId]);
 
   const getTasksByStatus = (status: TaskStatus) => {
     return tasks.filter(task => task.status === status).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -133,7 +161,9 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
 
   const handleSaveTask = async () => {
     if (!formData.title.trim()) {
-      setError('Le titre de la tâche est requis');
+      const errorMsg = 'Le titre de la tâche est requis';
+      setError(errorMsg);
+      showErrorToast(errorMsg);
       return;
     }
     
@@ -141,13 +171,15 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     if (formData.estimated_hours !== null && formData.estimated_hours !== undefined) {
       const validation = validateEstimatedHours(formData.estimated_hours);
       if (!validation.valid) {
-        setError(validation.error || 'Heures prévues invalides');
+        const errorMsg = validation.error || 'Heures prévues invalides';
+        setError(errorMsg);
+        showErrorToast(errorMsg);
         return;
       }
     }
 
     try {
-      setLoading(true);
+      setSaving(true);
       setError(null);
 
       if (selectedTask) {
@@ -161,10 +193,14 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
         });
+        success('Tâche modifiée avec succès');
       } else {
         // Create new task - team_id is required
         if (!teamId) {
-          setError('Une équipe est requise pour créer une tâche');
+          const errorMsg = 'Une équipe est requise pour créer une tâche';
+          setError(errorMsg);
+          showErrorToast(errorMsg);
+          setSaving(false);
           return;
         }
         await projectTasksAPI.create({
@@ -179,15 +215,33 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           estimated_hours: formData.estimated_hours || null,
           order: tasks.length,
         });
+        success('Tâche créée avec succès');
       }
 
-      setShowTaskModal(false);
+      // Refresh tasks BEFORE closing modal to ensure UI is updated
       await loadTasks();
+      
+      // Close modal only after successful refresh
+      setShowTaskModal(false);
+      
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        assignee_id: null,
+        due_date: undefined,
+        estimated_hours: null,
+      });
+      setSelectedTask(null);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la sauvegarde de la tâche');
+      const errorMessage = appError.message || 'Erreur lors de la sauvegarde de la tâche';
+      setError(errorMessage);
+      showErrorToast(errorMessage);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -199,10 +253,13 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     try {
       setLoading(true);
       await projectTasksAPI.delete(taskId);
+      success('Tâche supprimée avec succès');
       await loadTasks();
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la suppression de la tâche');
+      const errorMessage = appError.message || 'Erreur lors de la suppression de la tâche';
+      setError(errorMessage);
+      showErrorToast(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -232,8 +289,9 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       await loadTasks();
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du déplacement de la tâche');
-    } finally {
+      const errorMessage = appError.message || 'Erreur lors du déplacement de la tâche';
+      setError(errorMessage);
+      showErrorToast(errorMessage);
       setDraggedTask(null);
     }
   };
@@ -438,10 +496,10 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowTaskModal(false)}>
+            <Button variant="outline" onClick={() => setShowTaskModal(false)} disabled={saving}>
               Annuler
             </Button>
-            <Button onClick={handleSaveTask} loading={loading}>
+            <Button onClick={handleSaveTask} loading={saving}>
               {selectedTask ? 'Modifier' : 'Créer'}
             </Button>
           </div>
