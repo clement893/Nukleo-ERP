@@ -106,12 +106,8 @@ async def get_projects(
         }
         project_list.append(ProjectSchema(**project_dict))
     
-    # Return JSONResponse for slowapi compatibility
-    # slowapi's rate limiting middleware requires a Response object to inject headers
-    return JSONResponse(
-        content=[project.model_dump(mode='json') for project in project_list],
-        status_code=200
-    )
+    # Return the list directly - FastAPI will serialize it correctly
+    return project_list
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
