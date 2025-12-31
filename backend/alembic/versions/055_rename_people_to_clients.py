@@ -1,7 +1,7 @@
 """rename people table to clients
 
 Revision ID: 055_rename_people_to_clients
-Revises: 054_fix_expense_accounts_employee_id_fkey
+Revises: 054_fix_expense_emp_fk
 Create Date: 2025-12-31 16:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision = '055_rename_people_to_clients'
-down_revision = '054_fix_expense_accounts_employee_id_fkey'
+down_revision = '054_fix_expense_emp_fk'
 branch_labels = None
 depends_on = None
 
