@@ -388,6 +388,18 @@ def create_app() -> FastAPI:
         import time
         from datetime import datetime, timezone
         
+        # Log requests to /api/v1/projects/people for debugging
+        if request.url.path == "/api/v1/projects/people":
+            logger.error(
+                f"🔵 REQUEST TO /api/v1/projects/people - Method: {request.method} | Query params: {dict(request.query_params)} | Full URL: {request.url}",
+                context={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "query_params": dict(request.query_params),
+                    "full_url": str(request.url),
+                },
+            )
+        
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time

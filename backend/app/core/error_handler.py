@@ -108,12 +108,9 @@ async def validation_exception_handler(
     """Handle Pydantic validation errors"""
     # Log raw query parameters for debugging
     query_params_dict = dict(request.query_params)
-    # Use print to ensure logs are visible even if logging is filtered
-    print(f"[VALIDATION ERROR] Path: {request.url.path} | Full URL: {request.url}")
-    print(f"[VALIDATION ERROR] Query params: {query_params_dict}")
-    print(f"[VALIDATION ERROR] Validation errors: {exc.errors()}")
+    # Log with ERROR level to ensure visibility
     logger.error(
-        f"VALIDATION ERROR DETECTED - Path: {request.url.path} | Full URL: {request.url}",
+        f"🔴 VALIDATION ERROR DETECTED - Path: {request.url.path} | Full URL: {request.url}",
         context={
             "path": request.url.path,
             "method": request.method,
@@ -123,6 +120,20 @@ async def validation_exception_handler(
             "validation_errors": exc.errors(),
         },
     )
+    # Also log each error individually with ERROR level
+    for error in exc.errors():
+        logger.error(
+            f"🔴 VALIDATION ERROR DETAIL - Path: {request.url.path} | Field: {'.'.join(str(loc) for loc in error['loc'])} | Message: {error['msg']} | Type: {error['type']} | Input: {error.get('input', 'N/A')}",
+            context={
+                "field": ".".join(str(loc) for loc in error['loc']),
+                "error_message": error['msg'],
+                "code": error["type"],
+                "path": request.url.path,
+                "method": request.method,
+                "input_value": error.get('input', None),
+                "full_error": error,
+            },
+        )
     
     errors = []
     for error in exc.errors():
@@ -135,10 +146,8 @@ async def validation_exception_handler(
         # Log each validation error with full details (use error level to ensure visibility)
         field_path = ".".join(str(loc) for loc in error['loc'])
         input_value = error.get('input', 'N/A')
-        # Use print to ensure logs are visible even if logging is filtered
-        print(f"[VALIDATION ERROR] Field: {field_path} | Message: {error_msg} | Type: {error['type']} | Input: {input_value}")
         logger.error(
-            f"VALIDATION ERROR - Path: {request.url.path} | Field: {field_path} | Message: {error_msg} | Type: {error['type']} | Input: {input_value}",
+            f"🔴 VALIDATION ERROR - Path: {request.url.path} | Field: {field_path} | Message: {error_msg} | Type: {error['type']} | Input: {input_value}",
             context={
                 "field": field_path,
                 "error_message": error_msg,  # Use 'error_message' instead of 'message' to avoid conflict
