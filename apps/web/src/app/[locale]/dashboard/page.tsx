@@ -24,6 +24,7 @@ import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DashboardToolbar } from '@/components/dashboard/DashboardToolbar';
 import { WidgetLibrary } from '@/components/dashboard/WidgetLibrary';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
+import QuickActions from '@/components/ui/QuickActions';
 import type { DashboardConfig } from '@/lib/dashboard/types';
 
 function DashboardContent() {
@@ -153,6 +154,9 @@ function DashboardContent() {
         isOpen={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
       />
+
+      {/* Quick Actions FAB */}
+      <QuickActions />
     </div>
   );
 }
