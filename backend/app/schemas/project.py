@@ -3,7 +3,7 @@ Project Schemas
 Pydantic v2 models for project management
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 from enum import Enum
 from decimal import Decimal
@@ -88,6 +88,11 @@ class ProjectUpdate(BaseModel):
     echeancier_url: Optional[str] = Field(None, max_length=500, description="Schedule link")
     temoignage_status: Optional[str] = Field(None, max_length=50, description="Testimonial status")
     portfolio_status: Optional[str] = Field(None, max_length=50, description="Portfolio status")
+    
+    # Project dates
+    start_date: Optional[date] = Field(None, description="Project start date")
+    end_date: Optional[date] = Field(None, description="Project end date (planned)")
+    deadline: Optional[date] = Field(None, description="Main project deadline")
     
     @field_validator('name')
     @classmethod

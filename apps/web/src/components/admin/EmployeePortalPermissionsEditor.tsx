@@ -5,7 +5,6 @@ import { useToast } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Checkbox from '@/components/ui/Checkbox';
 import Loading from '@/components/ui/Loading';
@@ -15,7 +14,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { EMPLOYEE_PORTAL_NAVIGATION } from '@/lib/constants/portal';
 import { projectsAPI } from '@/lib/api/projects';
 import { contactsAPI } from '@/lib/api/contacts';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 interface EmployeePortalPermissionsEditorProps {
   userId: number;
@@ -62,14 +61,14 @@ export default function EmployeePortalPermissionsEditor({
       const [summaryData, permissionsData, projectsData, clientsData] = await Promise.all([
         employeePortalPermissionsAPI.getSummary(userId),
         employeePortalPermissionsAPI.list({ user_id: userId }),
-        projectsAPI.list({ page: 1, page_size: 1000 }).then(res => res.items || []),
-        contactsAPI.list({ page: 1, page_size: 1000 }).then(res => res.items || []),
+        projectsAPI.list(0, 1000),
+        contactsAPI.list(0, 1000),
       ]);
 
       setSummary(summaryData);
       setPermissions(permissionsData);
-      setProjects(projectsData.map(p => ({ id: p.id, name: p.name })));
-      setClients(clientsData.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
+      setProjects(projectsData.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })));
+      setClients(clientsData.map((c: { id: number; first_name: string; last_name: string }) => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors du chargement des permissions');
@@ -321,7 +320,7 @@ export default function EmployeePortalPermissionsEditor({
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline">{permission.permission_type}</Badge>
+                    <Badge variant="default">{permission.permission_type}</Badge>
                     <span className="font-medium">{getResourceLabel(permission)}</span>
                   </div>
                   <div className="flex gap-2 text-xs text-muted-foreground">

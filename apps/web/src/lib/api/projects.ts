@@ -28,6 +28,9 @@ export interface Project {
   echeancier_url?: string | null;
   temoignage_status?: string | null;
   portfolio_status?: string | null;
+  start_date?: string | null; // ISO date string
+  end_date?: string | null; // ISO date string
+  deadline?: string | null; // ISO date string
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +54,9 @@ export interface ProjectCreate {
   echeancier_url?: string | null;
   temoignage_status?: string | null;
   portfolio_status?: string | null;
+  start_date?: string | null; // ISO date string
+  end_date?: string | null; // ISO date string
+  deadline?: string | null; // ISO date string
 }
 
 export interface ProjectUpdate extends Partial<ProjectCreate> {}

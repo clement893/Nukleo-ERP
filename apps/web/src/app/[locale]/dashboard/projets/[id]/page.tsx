@@ -25,9 +25,15 @@ import {
   Award,
   Briefcase,
   Clock,
+  CheckSquare,
+  TrendingUp,
+  AlertCircle,
 } from 'lucide-react';
+import TaskKanban from '@/components/projects/TaskKanban';
+import TaskTimeline from '@/components/projects/TaskTimeline';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
 
-type Tab = 'overview' | 'financial' | 'links' | 'deliverables';
+type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables';
 
 function ProjectDetailContent() {
   const router = useRouter();
@@ -38,10 +44,26 @@ function ProjectDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [tasksCount, setTasksCount] = useState({ total: 0, completed: 0, inProgress: 0 });
 
   useEffect(() => {
     loadProject();
+    loadTasksStats();
   }, [projectId]);
+
+  const loadTasksStats = async () => {
+    try {
+      const tasks = await projectTasksAPI.list({ project_id: projectId });
+      setTasksCount({
+        total: tasks.length,
+        completed: tasks.filter(t => t.status === 'completed').length,
+        inProgress: tasks.filter(t => t.status === 'in_progress').length,
+      });
+    } catch (err) {
+      // Silently fail - tasks might not be available
+      console.warn('Could not load task stats:', err);
+    }
+  };
 
   const loadProject = async () => {
     setLoading(true);
@@ -103,6 +125,31 @@ function ProjectDetailContent() {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const formatDateShort = (date: string | null | undefined) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getDaysUntilDeadline = (deadline: string | null | undefined): number | null => {
+    if (!deadline) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadlineDate = new Date(deadline);
+    deadlineDate.setHours(0, 0, 0, 0);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getProjectProgress = (): number => {
+    if (tasksCount.total === 0) return 0;
+    return Math.round((tasksCount.completed / tasksCount.total) * 100);
   };
 
   if (loading) {
@@ -259,6 +306,41 @@ function ProjectDetailContent() {
             </button>
 
             <button
+              onClick={() => setActiveTab('tasks')}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                activeTab === 'tasks'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <CheckSquare className="w-4 h-4 inline mr-2" />
+              Tâches
+              {tasksCount.total > 0 && (
+                <Badge variant="default" className="ml-2 text-xs">
+                  {tasksCount.completed}/{tasksCount.total}
+                </Badge>
+              )}
+              {activeTab === 'tasks' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                activeTab === 'timeline'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 inline mr-2" />
+              Timeline
+              {activeTab === 'timeline' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+
+            <button
               onClick={() => setActiveTab('financial')}
               className={`px-6 py-3 font-medium transition-colors relative ${
                 activeTab === 'financial'
@@ -307,7 +389,33 @@ function ProjectDetailContent() {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            {/* Project Progress */}
+            {tasksCount.total > 0 && (
+              <Card className="glass-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    Progression du projet
+                  </h3>
+                  <Badge variant="default" className="text-lg">
+                    {getProjectProgress()}%
+                  </Badge>
+                </div>
+                <div className="w-full bg-muted-foreground/20 rounded-full h-4 mb-2">
+                  <div
+                    className="bg-primary h-4 rounded-full transition-all"
+                    style={{ width: `${getProjectProgress()}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{tasksCount.completed} tâche{tasksCount.completed > 1 ? 's' : ''} terminée{tasksCount.completed > 1 ? 's' : ''}</span>
+                  <span>{tasksCount.total} tâche{tasksCount.total > 1 ? 's' : ''} au total</span>
+                </div>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="glass-card p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -336,16 +444,61 @@ function ProjectDetailContent() {
             <Card className="glass-card p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Dates
+                Dates et Deadlines
               </h3>
               <div className="space-y-4">
-                <div>
+                {project.start_date && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Date de début</p>
+                    <p className="text-foreground font-medium">{formatDateShort(project.start_date)}</p>
+                  </div>
+                )}
+                {project.end_date && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Date de fin prévue</p>
+                    <p className="text-foreground font-medium">{formatDateShort(project.end_date)}</p>
+                  </div>
+                )}
+                {project.deadline && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Deadline</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-foreground font-medium">{formatDateShort(project.deadline)}</p>
+                      {(() => {
+                        const daysLeft = getDaysUntilDeadline(project.deadline);
+                        if (daysLeft === null) return null;
+                        if (daysLeft < 0) {
+                          return (
+                            <Badge variant="error" className="flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              {Math.abs(daysLeft)} jour{Math.abs(daysLeft) > 1 ? 's' : ''} de retard
+                            </Badge>
+                          );
+                        } else if (daysLeft <= 7) {
+                          return (
+                            <Badge variant="warning" className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {daysLeft} jour{daysLeft > 1 ? 's' : ''} restant{daysLeft > 1 ? 's' : ''}
+                            </Badge>
+                          );
+                        } else {
+                          return (
+                            <Badge variant="default" className="flex items-center gap-1">
+                              {daysLeft} jour{daysLeft > 1 ? 's' : ''} restant{daysLeft > 1 ? 's' : ''}
+                            </Badge>
+                          );
+                        }
+                      })()}
+                    </div>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-border">
                   <p className="text-sm text-muted-foreground mb-1">Créé le</p>
-                  <p className="text-foreground">{formatDate(project.created_at)}</p>
+                  <p className="text-foreground text-sm">{formatDate(project.created_at)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Modifié le</p>
-                  <p className="text-foreground">{formatDate(project.updated_at)}</p>
+                  <p className="text-foreground text-sm">{formatDate(project.updated_at)}</p>
                 </div>
                 {project.annee_realisation && (
                   <div>

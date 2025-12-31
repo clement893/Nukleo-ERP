@@ -5,6 +5,7 @@
 
 import type { Employee } from '@/lib/api/employees';
 import type { PublicHoliday, Absence } from './capacity';
+import { countWorkingDays } from './capacity';
 
 /**
  * Optimized count working days using mathematical approach
@@ -23,7 +24,7 @@ export function countWorkingDaysOptimized(
   
   // Count weekends (approximately)
   const weeks = Math.floor(totalDays / 7);
-  const weekendDays = weeks * 2;
+  let weekendDays = weeks * 2;
   const remainingDays = totalDays % 7;
   
   // Adjust for partial week weekends

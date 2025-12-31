@@ -4,7 +4,7 @@
  */
 
 import type { Employee } from '@/lib/api/employees';
-import type { PublicHoliday, Absence } from './capacity';
+import type { PublicHoliday } from './capacity';
 
 /**
  * Validate estimated hours

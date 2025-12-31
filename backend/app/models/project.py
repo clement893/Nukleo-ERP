@@ -6,7 +6,7 @@ SQLAlchemy model for projects
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, func, Index, Enum, Numeric
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, func, Index, Enum, Numeric, Date
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -51,6 +51,11 @@ class Project(Base):
     echeancier_url = Column(String(500), nullable=True)  # Schedule link
     temoignage_status = Column(String(50), nullable=True)  # Testimonial status
     portfolio_status = Column(String(50), nullable=True)  # Portfolio status
+    
+    # Project dates
+    start_date = Column(Date, nullable=True, index=True)  # Project start date
+    end_date = Column(Date, nullable=True, index=True)  # Project end date (planned)
+    deadline = Column(Date, nullable=True, index=True)  # Main project deadline
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(

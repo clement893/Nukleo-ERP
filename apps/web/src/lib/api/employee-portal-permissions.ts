@@ -66,50 +66,50 @@ class EmployeePortalPermissionsAPI {
     if (params?.employee_id) queryParams.append('employee_id', params.employee_id.toString());
     if (params?.permission_type) queryParams.append('permission_type', params.permission_type);
 
-    const response = await apiClient.get(
+    const response = await apiClient.get<EmployeePortalPermission[]>(
       `/v1/employee-portal-permissions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
     );
-    return extractApiData<EmployeePortalPermission[]>(response);
+    return extractApiData<EmployeePortalPermission[]>(response as any);
   }
 
   /**
    * Get a specific permission
    */
   async get(permissionId: number): Promise<EmployeePortalPermission> {
-    const response = await apiClient.get(`/v1/employee-portal-permissions/${permissionId}`);
-    return extractApiData<EmployeePortalPermission>(response);
+    const response = await apiClient.get<EmployeePortalPermission>(`/v1/employee-portal-permissions/${permissionId}`);
+    return extractApiData<EmployeePortalPermission>(response as any);
   }
 
   /**
    * Get summary of permissions for a user
    */
   async getSummary(userId: number): Promise<EmployeePortalPermissionSummary> {
-    const response = await apiClient.get(`/v1/users/${userId}/employee-portal-permissions/summary`);
-    return extractApiData<EmployeePortalPermissionSummary>(response);
+    const response = await apiClient.get<EmployeePortalPermissionSummary>(`/v1/users/${userId}/employee-portal-permissions/summary`);
+    return extractApiData<EmployeePortalPermissionSummary>(response as any);
   }
 
   /**
    * Create a new permission
    */
   async create(data: EmployeePortalPermissionCreate): Promise<EmployeePortalPermission> {
-    const response = await apiClient.post('/v1/employee-portal-permissions', data);
-    return extractApiData<EmployeePortalPermission>(response);
+    const response = await apiClient.post<EmployeePortalPermission>('/v1/employee-portal-permissions', data);
+    return extractApiData<EmployeePortalPermission>(response as any);
   }
 
   /**
    * Bulk create permissions
    */
   async bulkCreate(data: BulkEmployeePortalPermissionCreate): Promise<EmployeePortalPermission[]> {
-    const response = await apiClient.post('/v1/employee-portal-permissions/bulk', data);
-    return extractApiData<EmployeePortalPermission[]>(response);
+    const response = await apiClient.post<EmployeePortalPermission[]>('/v1/employee-portal-permissions/bulk', data);
+    return extractApiData<EmployeePortalPermission[]>(response as any);
   }
 
   /**
    * Update a permission
    */
   async update(permissionId: number, data: EmployeePortalPermissionUpdate): Promise<EmployeePortalPermission> {
-    const response = await apiClient.put(`/v1/employee-portal-permissions/${permissionId}`, data);
-    return extractApiData<EmployeePortalPermission>(response);
+    const response = await apiClient.put<EmployeePortalPermission>(`/v1/employee-portal-permissions/${permissionId}`, data);
+    return extractApiData<EmployeePortalPermission>(response as any);
   }
 
   /**

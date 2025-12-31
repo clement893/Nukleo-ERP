@@ -38,6 +38,9 @@ export default function ProjectForm({
     client_id: project?.client_id || null,
     client_name: project?.client_name || null,
     responsable_id: project?.responsable_id || null,
+    start_date: project?.start_date || null,
+    end_date: project?.end_date || null,
+    deadline: project?.deadline || null,
   });
   
   // Track company name input separately for better UX
