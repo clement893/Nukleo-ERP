@@ -22,6 +22,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/people", tags=["people"])
 
 
+@router.get("/test", response_model=List[PeopleSchema])
+async def list_people_test(
+    request: Request,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
+) -> List[PeopleSchema]:
+    """
+    TEST endpoint without dependencies to isolate validation issue
+    """
+    logger.info(f"[PeopleAPI] ========================================")
+    logger.info(f"[PeopleAPI] ✅ TEST ENDPOINT REACHED")
+    logger.info(f"[PeopleAPI] URL: {request.url}")
+    logger.info(f"[PeopleAPI] Query params (raw): {dict(request.query_params)}")
+    logger.info(f"[PeopleAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
+    logger.info(f"[PeopleAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
+    logger.info(f"[PeopleAPI] ========================================")
+    return []
+
+
 @router.get("/", response_model=List[PeopleSchema])
 # Temporarily removed @cache_query to debug validation issue
 async def list_people(
