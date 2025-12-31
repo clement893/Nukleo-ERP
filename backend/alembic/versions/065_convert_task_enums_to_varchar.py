@@ -26,40 +26,37 @@ def upgrade() -> None:
         return
     
     # Check if columns are ENUM type using SQL query
-    with conn.connection.cursor() as cursor:
-        # Check status column type
-        cursor.execute("""
-            SELECT data_type, udt_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'project_tasks' AND column_name = 'status'
-        """)
-        status_info = cursor.fetchone()
-        
-        # Check priority column type
-        cursor.execute("""
-            SELECT data_type, udt_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'project_tasks' AND column_name = 'priority'
-        """)
-        priority_info = cursor.fetchone()
-        
-        # Convert status column from ENUM to VARCHAR if it's currently USER-DEFINED (enum type)
-        if status_info and status_info[0] == 'USER-DEFINED':
-            # Convert enum values to lowercase strings
-            op.execute("""
-                ALTER TABLE project_tasks 
-                ALTER COLUMN status TYPE VARCHAR(50) 
-                USING LOWER(status::text)
-            """)
-        
-        # Convert priority column from ENUM to VARCHAR if it's currently USER-DEFINED (enum type)
-        if priority_info and priority_info[0] == 'USER-DEFINED':
-            # Convert enum values to lowercase strings
-            op.execute("""
-                ALTER TABLE project_tasks 
-                ALTER COLUMN priority TYPE VARCHAR(50) 
-                USING LOWER(priority::text)
-            """)
+    result = conn.execute(sa.text("""
+        SELECT data_type, udt_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'project_tasks' AND column_name = 'status'
+    """))
+    status_info = result.fetchone()
+    
+    result = conn.execute(sa.text("""
+        SELECT data_type, udt_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'project_tasks' AND column_name = 'priority'
+    """))
+    priority_info = result.fetchone()
+    
+    # Convert status column from ENUM to VARCHAR if it's currently USER-DEFINED (enum type)
+    if status_info and status_info[0] == 'USER-DEFINED':
+        # Convert enum values to lowercase strings
+        op.execute(sa.text("""
+            ALTER TABLE project_tasks 
+            ALTER COLUMN status TYPE VARCHAR(50) 
+            USING LOWER(status::text)
+        """))
+    
+    # Convert priority column from ENUM to VARCHAR if it's currently USER-DEFINED (enum type)
+    if priority_info and priority_info[0] == 'USER-DEFINED':
+        # Convert enum values to lowercase strings
+        op.execute(sa.text("""
+            ALTER TABLE project_tasks 
+            ALTER COLUMN priority TYPE VARCHAR(50) 
+            USING LOWER(priority::text)
+        """))
 
 
 def downgrade() -> None:
