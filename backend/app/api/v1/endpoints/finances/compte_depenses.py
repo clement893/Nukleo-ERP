@@ -16,6 +16,7 @@ from io import BytesIO
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.models.employee import Employee
 from app.models.expense_account import ExpenseAccount, ExpenseAccountStatus
 from app.schemas.expense_account import (
     ExpenseAccountCreate,
@@ -206,26 +207,46 @@ async def create_compte_depenses(
     """
     Create a new expense account
     """
+    # Validate that the employee exists
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == expense_account.employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Employee with ID {expense_account.employee_id} not found"
+        )
+    
     # Generate account number
     account_number = await generate_account_number(db)
     
     # Create expense account
-    new_account = ExpenseAccount(
-        account_number=account_number,
-        employee_id=expense_account.employee_id,
-        title=expense_account.title,
-        description=expense_account.description,
-        expense_period_start=expense_account.expense_period_start,
-        expense_period_end=expense_account.expense_period_end,
-        total_amount=expense_account.total_amount,
-        currency=expense_account.currency,
-        account_metadata=expense_account.metadata,
-        status=ExpenseAccountStatus.DRAFT.value,
-    )
-    
-    db.add(new_account)
-    await db.commit()
-    await db.refresh(new_account, ["employee", "reviewer"])
+    try:
+        new_account = ExpenseAccount(
+            account_number=account_number,
+            employee_id=expense_account.employee_id,
+            title=expense_account.title,
+            description=expense_account.description,
+            expense_period_start=expense_account.expense_period_start,
+            expense_period_end=expense_account.expense_period_end,
+            total_amount=expense_account.total_amount,
+            currency=expense_account.currency,
+            account_metadata=expense_account.metadata,
+            status=ExpenseAccountStatus.DRAFT.value,
+        )
+        
+        db.add(new_account)
+        await db.commit()
+        await db.refresh(new_account, ["employee", "reviewer"])
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Database error creating expense account: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
     
     account_dict = {
         "id": new_account.id,
