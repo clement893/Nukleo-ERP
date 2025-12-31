@@ -152,7 +152,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
               console.error(`Widget error for ${widgetLayout.widget_type}:`, error, errorInfo);
             }}
             showDetails={process.env.NODE_ENV === 'development'}
-            fallback={(error, errorInfo) => (
+            fallback={(error) => (
               <WidgetErrorFallback 
                 error={error || new Error('Widget rendering error')} 
                 widgetType={widgetLayout.widget_type}

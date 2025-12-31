@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Client, ClientCreate, ClientUpdate } from '@/lib/api/clients';
+import { Client, ClientCreate, ClientUpdate, ClientStatus } from '@/lib/api/clients';
 import { mediaAPI } from '@/lib/api/media';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -40,7 +40,7 @@ export default function ClientForm({
     notes: client?.notes || null,
     comments: client?.comments || null,
     portal_url: client?.portal_url || null,
-    status: client?.status || 'active',
+    status: client?.status || 'ACTIVE',
   });
   
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function ClientForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+    if (!formData.first_name?.trim() || !formData.last_name?.trim()) {
       showToast({
         message: 'Le prénom et le nom sont requis',
         type: 'error',
@@ -260,12 +260,12 @@ export default function ClientForm({
       {/* Statut */}
       <Select
         label="Statut"
-        value={formData.status || 'active'}
-        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' | 'maintenance' })}
+        value={formData.status || 'ACTIVE'}
+        onChange={(e) => setFormData({ ...formData, status: e.target.value as ClientStatus })}
         options={[
-          { value: 'active', label: 'Actif' },
-          { value: 'inactive', label: 'Inactif' },
-          { value: 'maintenance', label: 'Maintenance' },
+          { value: 'ACTIVE', label: 'Actif' },
+          { value: 'INACTIVE', label: 'Inactif' },
+          { value: 'ARCHIVED', label: 'Archivé' },
         ]}
         fullWidth
       />
