@@ -6,7 +6,7 @@ Modèle indépendant pour les clients (non lié à Employee)
 
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import Column, DateTime, Integer, String, Text, func, Enum, Index, Date
+from sqlalchemy import Column, DateTime, Integer, String, Text, func, Enum, Index, Date, ForeignKey
 
 from app.core.database import Base
 
@@ -16,6 +16,12 @@ class ClientStatus(PyEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     MAINTENANCE = "maintenance"
+
+
+class ClientType(PyEnum):
+    """Client type enum"""
+    PERSON = "person"
+    COMPANY = "company"
 
 
 class Client(Base):
@@ -32,9 +38,14 @@ class Client(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     
+    # Type and company info
+    type = Column(String(20), default='person', nullable=False, index=True)
+    company_name = Column(String(255), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    
     # Informations personnelles
-    first_name = Column(String(100), nullable=False, index=True)
-    last_name = Column(String(100), nullable=False, index=True)
+    first_name = Column(String(100), nullable=True, index=True)  # Nullable for companies
+    last_name = Column(String(100), nullable=True, index=True)  # Nullable for companies
     email = Column(String(255), nullable=True, index=True)
     phone = Column(String(50), nullable=True)
     linkedin = Column(String(500), nullable=True)
