@@ -10,7 +10,6 @@ import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import EmptyState from '@/components/ui/EmptyState';
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
