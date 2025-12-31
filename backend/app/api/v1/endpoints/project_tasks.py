@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text, insert
 from sqlalchemy.orm import selectinload
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, PendingRollbackError
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -294,14 +294,19 @@ async def create_task(
         await db.refresh(task)
         
         return task
-    except (ProgrammingError, Exception) as e:
+    except (ProgrammingError, PendingRollbackError, Exception) as e:
         error_str = str(e).lower()
         # If error is due to project_id column not existing, create task without project_id
         if 'project_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
             logger.warning("project_id column doesn't exist, creating task without project_id")
-            # Create task without project_id using SQL insert
+            # Rollback the failed transaction before retrying
+            try:
+                await db.rollback()
+            except Exception as rollback_error:
+                # Rollback may fail if already rolled back, which is fine
+                logger.debug(f"Rollback attempted (may already be rolled back): {rollback_error}")
             
-            # Build insert statement without project_id
+            # Create task without project_id using SQL insert
             from datetime import datetime, timezone
             
             insert_stmt = text("""
