@@ -43,9 +43,7 @@ export function useWidgetData<T = any>({
  * À implémenter avec les vrais appels API
  */
 async function fetchWidgetData(
-  widgetType: WidgetType,
-  config: WidgetConfig,
-  globalFilters?: GlobalFilters
+  widgetType: WidgetType
 ): Promise<any> {
   // Simuler un délai réseau
   await new Promise(resolve => setTimeout(resolve, 500));

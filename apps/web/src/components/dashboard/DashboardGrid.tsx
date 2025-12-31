@@ -4,8 +4,10 @@
  * Composant de grille drag & drop pour le dashboard
  */
 
-import React, { useMemo } from 'react';
-import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
+import { useMemo } from 'react';
+import { Responsive, Layout, Layouts } from 'react-grid-layout';
+// @ts-ignore - WidthProvider is not properly typed in react-grid-layout
+import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { WidgetContainer } from './WidgetContainer';
 import 'react-grid-layout/css/styles.css';
@@ -28,7 +30,7 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   const activeConfig = getActiveConfig();
 
   // Convertir les layouts du store au format react-grid-layout
-  const layouts = useMemo(() => {
+  const layouts = useMemo((): Layouts => {
     if (!activeConfig) return { lg: [], md: [], sm: [], xs: [] };
 
     const gridLayouts: Layout[] = activeConfig.layouts.map((widget) => ({
@@ -52,7 +54,7 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
   }, [activeConfig]);
 
   // Handler pour les changements de layout
-  const handleLayoutChange = (currentLayout: Layout[], allLayouts: any) => {
+  const handleLayoutChange = (currentLayout: Layout[]) => {
     if (!isEditMode || !activeConfig) return;
 
     currentLayout.forEach((item) => {

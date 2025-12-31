@@ -4,13 +4,12 @@
  * Widget : Projets Actifs
  */
 
-import React from 'react';
 import { FolderKanban, ExternalLink, AlertCircle } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
 
-export function ProjectsActiveWidget({ id, config, globalFilters }: WidgetProps) {
+export function ProjectsActiveWidget({ config }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'projects-active',
     config,

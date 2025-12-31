@@ -4,7 +4,7 @@
  * Page Dashboard Personnalisable
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DashboardToolbar } from '@/components/dashboard/DashboardToolbar';

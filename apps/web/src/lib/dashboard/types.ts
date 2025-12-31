@@ -2,7 +2,7 @@
  * Types pour le système de dashboard personnalisable
  */
 
-import { ReactNode } from 'react';
+import type { ComponentType } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 /**
@@ -132,7 +132,7 @@ export interface WidgetDefinition {
   description: string;
   category: WidgetCategory;
   icon: LucideIcon;
-  component: React.ComponentType<WidgetProps>;
+  component: ComponentType<WidgetProps>;
   default_size: {
     w: number;
     h: number;

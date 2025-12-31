@@ -4,12 +4,11 @@
  * Widget : Compteur de Clients
  */
 
-import React from 'react';
 import { Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 
-export function ClientsCountWidget({ id, config, globalFilters }: WidgetProps) {
+export function ClientsCountWidget({ config }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'clients-count',
     config,

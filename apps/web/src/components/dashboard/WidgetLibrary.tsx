@@ -4,10 +4,10 @@
  * Bibliothèque de widgets - Modal pour ajouter des widgets
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Search, Plus } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
-import { widgetRegistry, getCategories, getWidgetsByCategory } from '@/lib/dashboard/widgetRegistry';
+import { widgetRegistry, getCategories } from '@/lib/dashboard/widgetRegistry';
 import type { WidgetType } from '@/lib/dashboard/types';
 
 interface WidgetLibraryProps {

@@ -4,7 +4,7 @@
  * Conteneur pour un widget individuel
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Settings, RefreshCw, X, GripVertical } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { getWidget } from '@/lib/dashboard/widgetRegistry';

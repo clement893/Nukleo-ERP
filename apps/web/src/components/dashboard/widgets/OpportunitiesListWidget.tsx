@@ -4,13 +4,12 @@
  * Widget : Liste des Opportunités
  */
 
-import React from 'react';
 import { TrendingUp, ExternalLink } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
 
-export function OpportunitiesListWidget({ id, config, globalFilters }: WidgetProps) {
+export function OpportunitiesListWidget({ config }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'opportunities-list',
     config,

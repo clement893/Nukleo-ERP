@@ -4,8 +4,7 @@
  * Barre d'outils du dashboard personnalisable
  */
 
-import React, { useState } from 'react';
-import { Plus, Edit3, Save, X, LayoutGrid } from 'lucide-react';
+import { Plus, Edit3, Save, LayoutGrid } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 
 interface DashboardToolbarProps {

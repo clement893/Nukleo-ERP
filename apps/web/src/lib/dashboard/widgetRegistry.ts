@@ -15,7 +15,6 @@ import {
   LineChart,
   MessageSquare,
   CheckSquare,
-  Calendar,
   Briefcase,
 } from 'lucide-react';
 

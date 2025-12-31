@@ -4,7 +4,6 @@
  * Widget : Graphique des Revenus
  */
 
-import React from 'react';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
@@ -18,7 +17,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export function RevenueChartWidget({ id, config, globalFilters }: WidgetProps) {
+export function RevenueChartWidget({ config }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
     widgetType: 'revenue-chart',
     config,
