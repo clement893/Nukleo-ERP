@@ -154,6 +154,15 @@ async def list_employees(
         employees = result.scalars().all()
     except Exception as e:
         error_str = str(e).lower()
+        
+        # Check if error is due to failed transaction - rollback first
+        if 'transaction is aborted' in error_str or 'infailed' in error_str:
+            logger.warning(f"Transaction error detected, rolling back: {e}")
+            try:
+                await db.rollback()
+            except Exception as rollback_error:
+                logger.error(f"Error during rollback: {rollback_error}", exc_info=True)
+        
         # Check if error is due to missing columns
         if 'does not exist' in error_str or 'undefinedcolumn' in error_str or 'column' in error_str:
             logger.warning(f"Some columns not found in database. Using fallback query. Error: {e}")
@@ -198,6 +207,11 @@ async def list_employees(
                     employees.append(emp)
             except Exception as fallback_error:
                 logger.error(f"Fallback query also failed: {fallback_error}", exc_info=True)
+                # Try rollback again if fallback fails
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"A database error occurred: {str(fallback_error)}"
