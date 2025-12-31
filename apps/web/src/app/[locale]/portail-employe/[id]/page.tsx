@@ -13,6 +13,8 @@ import Button from '@/components/ui/Button';
 import EmployeePortalTabs from '@/components/employes/EmployeePortalTabs';
 import { useAuthStore } from '@/lib/store';
 import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { ERPDashboard } from '@/components/erp';
+import Card from '@/components/ui/Card';
 
 export default function EmployeePortalPage() {
   const params = useParams();
@@ -159,6 +161,16 @@ export default function EmployeePortalPage() {
             <Alert variant="error">{error}</Alert>
           </div>
         )}
+      </div>
+
+      {/* Dashboard Widget */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-6">
+        <Card className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            Vue d'ensemble
+          </h3>
+          <ERPDashboard />
+        </Card>
       </div>
 
       <div className="w-full">
