@@ -324,6 +324,54 @@ async def list_teams(
     return TeamListResponse(teams=teams_response, total=total)
 
 
+@router.get("/slug/{slug}", response_model=TeamResponse)
+async def get_team_by_slug(
+    slug: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a team by slug"""
+    team_service = TeamService(db)
+    team = await team_service.get_team_by_slug(slug)
+    
+    if not team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+    
+    # Check if user has access (is member or owner or superadmin)
+    from app.dependencies import is_superadmin
+    user_is_superadmin = await is_superadmin(current_user, db)
+    is_owner = team.owner_id == current_user.id
+    is_member = any(m.user_id == current_user.id and m.is_active for m in team.members) if team.members else False
+    
+    if not (user_is_superadmin or is_owner or is_member):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this team"
+        )
+    
+    # Convert to dict with owner and members
+    team_dict = {
+        "id": team.id,
+        "name": team.name,
+        "slug": team.slug,
+        "description": team.description,
+        "owner_id": team.owner_id,
+        "is_active": team.is_active,
+        "settings": parse_team_settings(team.settings),
+        "created_at": team.created_at,
+        "updated_at": team.updated_at,
+        "owner": {
+            "id": team.owner.id,
+            "email": team.owner.email,
+            "first_name": team.owner.first_name,
+            "last_name": team.owner.last_name,
+        } if team.owner else None,
+        "members": [TeamMemberResponse.model_validate(team_member_to_dict(m)) for m in team.members],
+    }
+    
+    return TeamResponse.model_validate(team_dict)
+
+
 @router.get("/{team_id}", response_model=TeamResponse)
 async def get_team(
     team_id: int,

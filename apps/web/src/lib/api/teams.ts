@@ -93,6 +93,9 @@ export const teamsAPI = {
   getTeam: async (teamId: number): Promise<ApiResponse<Team>> => {
     return apiClient.get<Team>(`/v1/teams/${teamId}`);
   },
+  getTeamBySlug: async (slug: string): Promise<ApiResponse<Team>> => {
+    return apiClient.get<Team>(`/v1/teams/slug/${slug}`);
+  },
   create: async (data: TeamCreate): Promise<ApiResponse<Team>> => {
     return apiClient.post<Team>('/v1/teams', data);
   },

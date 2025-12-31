@@ -57,22 +57,67 @@ function TeamProjectManagementContent() {
       setLoading(true);
       setError(null);
       
-      // Trouver l'équipe par slug
-      const teamsResponse = await teamsAPI.list();
-      const teamsListData = extractApiData<{ teams: Team[]; total: number }>(teamsResponse as any);
-      const teams = teamsListData?.teams || [];
-      const foundTeam = teams.find((t: Team) => t.slug === teamSlug);
+      let foundTeam: Team | null = null;
       
+      // Récupérer l'équipe directement par slug
+      try {
+        const teamResponse = await teamsAPI.getTeamBySlug(teamSlug);
+        foundTeam = extractApiData<Team>(teamResponse);
+        
+        if (!foundTeam) {
+          setError('Équipe non trouvée');
+          return;
+        }
+      } catch (err) {
+        // Si l'équipe n'existe pas, essayer de la créer automatiquement
+        const appError = handleApiError(err);
+        if (appError.statusCode === 404) {
+          // Essayer de créer l'équipe si elle correspond aux équipes requises
+          const requiredTeams = [
+            { name: 'Le Bureau', slug: 'le-bureau' },
+            { name: 'Le Studio', slug: 'le-studio' },
+            { name: 'Le Lab', slug: 'le-lab' },
+          ];
+          
+          const teamToCreate = requiredTeams.find(t => t.slug === teamSlug);
+          if (teamToCreate) {
+            try {
+              const createResponse = await teamsAPI.create({
+                name: teamToCreate.name,
+                slug: teamToCreate.slug,
+                description: `Équipe ${teamToCreate.name}`,
+              });
+              foundTeam = extractApiData<Team>(createResponse);
+            } catch (createErr) {
+              console.error('Error creating team:', createErr);
+            }
+          }
+        }
+        
+        if (!foundTeam) {
+          setError(appError.message || 'Équipe non trouvée');
+          return;
+        }
+      }
+      
+      // S'assurer qu'on a une équipe avant de continuer
       if (!foundTeam) {
         setError('Équipe non trouvée');
         return;
       }
       
+      // Mettre à jour le state avec l'équipe trouvée
       setTeam(foundTeam);
       
       // Charger les tâches de l'équipe
-      const teamTasks = await projectTasksAPI.list({ team_id: foundTeam.id });
-      setTasks(teamTasks);
+      try {
+        const teamTasks = await projectTasksAPI.list({ team_id: foundTeam.id });
+        setTasks(teamTasks);
+      } catch (taskErr) {
+        console.error('Error loading team tasks:', taskErr);
+        // Continuer même si les tâches ne peuvent pas être chargées
+        setTasks([]);
+      }
       
       // Grouper les membres
       const teamEmployees: Employee[] = (foundTeam.members || []).map((member: TeamMember) => ({
