@@ -19,7 +19,6 @@ import {
   useRejectVacationRequest,
 } from '@/lib/query/vacationRequests';
 import { CheckCircle, XCircle, Clock, Calendar, User } from 'lucide-react';
-import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 
 function VacationRequestsContent() {
@@ -359,7 +358,7 @@ function VacationRequestsContent() {
               Annuler
             </Button>
             <Button
-              variant="destructive"
+              variant="danger"
               onClick={handleReject}
               disabled={rejectMutation.isPending}
             >

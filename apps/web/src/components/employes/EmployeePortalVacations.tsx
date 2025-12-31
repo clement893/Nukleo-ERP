@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Employee } from '@/lib/api/employees';
 import { type VacationRequest, type VacationRequestCreate } from '@/lib/api/vacationRequests';
 import { handleApiError } from '@/lib/errors/api';

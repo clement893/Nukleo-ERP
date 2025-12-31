@@ -7,6 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+import logging
 
 from app.core.database import get_db
 from app.core.cache_enhanced import cache_query
@@ -17,6 +18,7 @@ from app.models.project import Project
 from app.models.contact import Contact
 from app.schemas.people import PeopleCreate, PeopleUpdate, People as PeopleSchema
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/people", tags=["people"])
 
 

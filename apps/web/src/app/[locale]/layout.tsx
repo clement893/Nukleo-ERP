@@ -227,7 +227,7 @@ export default async function LocaleLayout({
         <meta name="twitter:card" content="summary_large_image" />
       </head>
       <body 
-        className={`${inter.className} bg-background text-foreground`}
+        className={`${aktivGrotesk.className} bg-background text-foreground`}
         style={{ 
           fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
           backgroundColor: 'var(--color-background)',

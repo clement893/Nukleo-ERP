@@ -55,23 +55,59 @@ export const peopleAPI = {
    * Get list of people with pagination
    */
   list: async (skip = 0, limit = 100, filters?: { status?: string; search?: string }): Promise<People[]> => {
-    const response = await apiClient.get<People[]>('/v1/projects/people', {
-      params: { 
-        skip: Number(skip), 
-        limit: Number(limit),
-        ...(filters?.status && { status: filters.status }),
-        ...(filters?.search && { search: filters.search }),
-      },
+    const skipNum = Number(skip);
+    const limitNum = Number(limit);
+    
+    // Log parameters before sending
+    console.log('[PeopleAPI] list() called with:', {
+      skip: { original: skip, type: typeof skip, converted: skipNum, isNaN: isNaN(skipNum) },
+      limit: { original: limit, type: typeof limit, converted: limitNum, isNaN: isNaN(limitNum) },
+      filters,
     });
     
-    const data = extractApiData<People[] | { items: People[] }>(response);
-    if (Array.isArray(data)) {
-      return data;
+    const params = { 
+      skip: skipNum, 
+      limit: limitNum,
+      ...(filters?.status && { status: filters.status }),
+      ...(filters?.search && { search: filters.search }),
+    };
+    
+    console.log('[PeopleAPI] Sending request with params:', params, 'Types:', {
+      skip: typeof params.skip,
+      limit: typeof params.limit,
+    });
+    
+    try {
+      const response = await apiClient.get<People[]>('/v1/projects/people', { params });
+      console.log('[PeopleAPI] Response received:', {
+        status: response.status,
+        dataLength: Array.isArray(response.data) ? response.data.length : 'not array',
+      });
+    
+      const data = extractApiData<People[] | { items: People[] }>(response);
+      console.log('[PeopleAPI] Extracted data:', {
+        isArray: Array.isArray(data),
+        hasItems: data && typeof data === 'object' && 'items' in data,
+        dataType: typeof data,
+      });
+      
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (data && typeof data === 'object' && 'items' in data) {
+        return (data as { items: People[] }).items;
+      }
+      return [];
+    } catch (error: any) {
+      console.error('[PeopleAPI] Error in list():', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        params: { skip: skipNum, limit: limitNum, filters },
+      });
+      throw error;
     }
-    if (data && typeof data === 'object' && 'items' in data) {
-      return (data as { items: People[] }).items;
-    }
-    return [];
   },
 
   /**

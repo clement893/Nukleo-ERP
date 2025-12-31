@@ -6,11 +6,8 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { 
   vacationRequestsAPI,
-  VacationRequest,
-  VacationRequestCreate,
-  VacationRequestUpdate,
-  VacationRequestApprove,
-  VacationRequestReject,
+  type VacationRequestCreate,
+  type VacationRequestUpdate,
 } from '@/lib/api/vacationRequests';
 
 // Query Keys
