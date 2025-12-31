@@ -10,8 +10,7 @@ import {
   FileText, 
   Search,
   Bell,
-  Calendar,
-  MessageSquare
+  Calendar
 } from 'lucide-react';
 
 interface QuickAction {

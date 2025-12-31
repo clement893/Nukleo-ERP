@@ -17,6 +17,7 @@ class ProjectTaskBase(BaseModel):
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
     due_date: Optional[datetime] = None
+    estimated_hours: Optional[float] = Field(None, ge=0, description="Estimated hours to complete the task")
 
 
 class ProjectTaskCreate(ProjectTaskBase):
@@ -24,6 +25,7 @@ class ProjectTaskCreate(ProjectTaskBase):
     team_id: int
     project_id: Optional[int] = None
     assignee_id: Optional[int] = None
+    estimated_hours: Optional[float] = Field(None, ge=0, description="Estimated hours to complete the task")
     order: int = 0
 
 
@@ -37,6 +39,7 @@ class ProjectTaskUpdate(BaseModel):
     project_id: Optional[int] = None
     assignee_id: Optional[int] = None
     due_date: Optional[datetime] = None
+    estimated_hours: Optional[float] = Field(None, ge=0, description="Estimated hours to complete the task")
     order: Optional[int] = None
 
 
@@ -49,6 +52,7 @@ class ProjectTaskResponse(ProjectTaskBase):
     created_by_id: Optional[int] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    estimated_hours: Optional[float] = None
     order: int
     created_at: datetime
     updated_at: datetime

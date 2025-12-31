@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
@@ -401,7 +401,7 @@ function ProjectsContent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project: Project) => {
-              const desc = (project.description ?? null) as string | null;
+              const description = project.description ?? null;
               return (
               <Card 
                 key={project.id} 
@@ -424,11 +424,11 @@ function ProjectsContent() {
                 </div>
 
                 {/* Description */}
-                {desc ? (
+                {description && typeof description === 'string' && (
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {desc as string}
+                    {description}
                   </p>
-                ) : null}
+                )}
 
                 {/* Metadata */}
                 <div className="space-y-2 mb-4">

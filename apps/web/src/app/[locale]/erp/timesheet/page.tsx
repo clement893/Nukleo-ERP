@@ -5,14 +5,14 @@ import { useAuthStore } from '@/lib/store';
 import Container from '@/components/ui/Container';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
 import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
 import { handleApiError } from '@/lib/errors/api';
-import { Calendar, Clock, User, Briefcase, Building, FileText, Download } from 'lucide-react';
+import { Calendar, Clock, User, Briefcase, Building, ChevronDown, ChevronUp } from 'lucide-react';
+import { groupByWeek, groupByMonth, groupByProject, groupByClient, formatDuration, type GroupedTimeEntry } from '@/lib/utils/timesheet';
 
 export default function TimesheetPage() {
   const { user } = useAuthStore();
@@ -25,6 +25,8 @@ export default function TimesheetPage() {
     project_id: '',
     client_id: '',
   });
+  const [groupBy, setGroupBy] = useState<'week' | 'month' | 'project' | 'client' | 'none'>('week');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user?.id) {
@@ -71,14 +73,14 @@ export default function TimesheetPage() {
     }
   };
 
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+  const toggleGroup = (key: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(key)) {
+      newExpanded.delete(key);
+    } else {
+      newExpanded.add(key);
     }
-    return `${minutes}m`;
+    setExpandedGroups(newExpanded);
   };
 
   const formatDate = (dateString: string): string => {
@@ -89,18 +91,30 @@ export default function TimesheetPage() {
     });
   };
 
-  const formatTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const totalDuration = entries.reduce((sum, entry) => sum + entry.duration, 0);
 
   // Get unique projects and clients for filters
   const uniqueProjects = Array.from(new Set(entries.map(e => e.project_name).filter(Boolean)));
   const uniqueClients = Array.from(new Set(entries.map(e => e.client_name).filter(Boolean)));
+
+  // Group entries based on selected grouping
+  let groupedEntries: GroupedTimeEntry[] = [];
+  if (groupBy === 'week') {
+    groupedEntries = groupByWeek(entries);
+  } else if (groupBy === 'month') {
+    groupedEntries = groupByMonth(entries);
+  } else if (groupBy === 'project') {
+    groupedEntries = groupByProject(entries);
+  } else if (groupBy === 'client') {
+    groupedEntries = groupByClient(entries);
+  } else {
+    groupedEntries = [{
+      key: 'all',
+      label: 'Toutes les entrées',
+      entries,
+      totalDuration,
+    }];
+  }
 
   if (loading && entries.length === 0) {
     return (
@@ -148,8 +162,22 @@ export default function TimesheetPage() {
 
         {/* Filters */}
         <Card className="glass-card p-6 mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Filtres</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Filtres et regroupement</h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <div>
+              <Select
+                label="Regrouper par"
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as 'week' | 'month' | 'project' | 'client' | 'none')}
+                options={[
+                  { value: 'week', label: 'Semaine' },
+                  { value: 'month', label: 'Mois' },
+                  { value: 'project', label: 'Projet' },
+                  { value: 'client', label: 'Client' },
+                  { value: 'none', label: 'Aucun' },
+                ]}
+              />
+            </div>
             <div>
               <Input
                 type="date"
@@ -169,92 +197,127 @@ export default function TimesheetPage() {
             <div>
               <Select
                 label="Projet"
-                value={filters.project_id}
+                value={filters.project_id || ''}
                 onChange={(e) => setFilters({ ...filters, project_id: e.target.value })}
-              >
-                <option value="">Tous les projets</option>
-                {uniqueProjects.map((project) => (
-                  <option key={project} value={project}>
-                    {project}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: '', label: 'Tous les projets' },
+                  ...uniqueProjects.map((project) => ({
+                    value: project || '',
+                    label: project || '',
+                  })),
+                ]}
+              />
             </div>
             <div>
               <Select
                 label="Client"
-                value={filters.client_id}
+                value={filters.client_id || ''}
                 onChange={(e) => setFilters({ ...filters, client_id: e.target.value })}
-              >
-                <option value="">Tous les clients</option>
-                {uniqueClients.map((client) => (
-                  <option key={client} value={client}>
-                    {client}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: '', label: 'Tous les clients' },
+                  ...uniqueClients.map((client) => ({
+                    value: client || '',
+                    label: client || '',
+                  })),
+                ]}
+              />
             </div>
           </div>
         </Card>
 
-        {/* Entries List */}
+        {/* Entries List - Grouped */}
         <Card className="glass-card p-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {entries.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Aucune entrée de temps</p>
               </div>
             ) : (
-              entries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="p-4 rounded-lg border border-border hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-medium text-foreground">
-                          {entry.task_title || 'Tâche sans titre'}
-                        </h3>
-                        <Badge variant="outline">{formatDuration(entry.duration)}</Badge>
-                      </div>
-                      
-                      {entry.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{entry.description}</p>
-                      )}
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span>{formatDate(entry.date)}</span>
+              groupedEntries.map((group) => {
+                const isExpanded = expandedGroups.has(group.key);
+                return (
+                  <div key={group.key} className="border border-border rounded-lg overflow-hidden">
+                    {/* Group Header */}
+                    <button
+                      onClick={() => toggleGroup(group.key)}
+                      className="w-full p-4 bg-accent hover:bg-accent/80 transition-colors flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-foreground text-left">{group.label}</h3>
+                          <p className="text-sm text-muted-foreground text-left">
+                            {group.entries.length} entrée{group.entries.length > 1 ? 's' : ''}
+                          </p>
                         </div>
-                        
-                        {entry.project_name && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Briefcase className="w-4 h-4" />
-                            <span>{entry.project_name}</span>
-                          </div>
-                        )}
-                        
-                        {entry.client_name && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Building className="w-4 h-4" />
-                            <span>{entry.client_name}</span>
-                          </div>
-                        )}
-                        
-                        {entry.user_name && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <User className="w-4 h-4" />
-                            <span>{entry.user_name}</span>
-                          </div>
-                        )}
                       </div>
-                    </div>
+                      <Badge variant="default" className="text-lg">
+                        {formatDuration(group.totalDuration)}
+                      </Badge>
+                    </button>
+
+                    {/* Group Entries */}
+                    {isExpanded && (
+                      <div className="p-4 space-y-3">
+                        {group.entries.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h4 className="font-medium text-foreground">
+                                    {entry.task_title || 'Tâche sans titre'}
+                                  </h4>
+                                  <Badge variant="default">{formatDuration(entry.duration)}</Badge>
+                                </div>
+                                
+                                {entry.description && (
+                                  <p className="text-sm text-muted-foreground mb-3">{entry.description}</p>
+                                )}
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{formatDate(entry.date)}</span>
+                                  </div>
+                                  
+                                  {entry.project_name && (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Briefcase className="w-4 h-4" />
+                                      <span>{entry.project_name}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {entry.client_name && (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Building className="w-4 h-4" />
+                                      <span>{entry.client_name}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {entry.user_name && (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <User className="w-4 h-4" />
+                                      <span>{entry.user_name}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </Card>

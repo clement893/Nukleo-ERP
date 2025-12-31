@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout';
 import { Card, Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
 import TaskKanban from '@/components/projects/TaskKanban';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Users, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { teamsAPI } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
@@ -36,7 +36,6 @@ function TeamProjectManagementContent() {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [_updatingTask, setUpdatingTask] = useState<string | null>(null);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [creatingTask, setCreatingTask] = useState(false);
   const [taskForm, setTaskForm] = useState({

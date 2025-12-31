@@ -19,6 +19,7 @@ class EmployeeBase(BaseModel):
     photo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
     hire_date: Optional[date] = Field(None, description="Hire date")
     birthday: Optional[date] = Field(None, description="Birthday")
+    capacity_hours_per_week: Optional[float] = Field(40.0, ge=0, le=168, description="Capacity in hours per week (default: 40)")
     team_id: Optional[int] = Field(None, description="Team ID")
     
     @field_validator('first_name', 'last_name')
@@ -54,6 +55,7 @@ class EmployeeUpdate(BaseModel):
     photo_filename: Optional[str] = Field(None, max_length=500, description="Filename for photo matching during import")
     hire_date: Optional[date] = Field(None, description="Hire date")
     birthday: Optional[date] = Field(None, description="Birthday")
+    capacity_hours_per_week: Optional[float] = Field(None, ge=0, le=168, description="Capacity in hours per week")
     team_id: Optional[int] = Field(None, description="Team ID")
 
 
@@ -62,6 +64,7 @@ class Employee(EmployeeBase):
     id: int
     user_id: Optional[int] = Field(None, description="Linked user ID")
     team_id: Optional[int] = Field(None, description="Team ID")
+    capacity_hours_per_week: Optional[float] = Field(40.0, description="Capacity in hours per week")
     created_at: datetime
     updated_at: datetime
 

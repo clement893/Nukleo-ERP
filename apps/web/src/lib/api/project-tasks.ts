@@ -20,6 +20,7 @@ export interface ProjectTask {
   assignee_id?: number | null;
   created_by_id?: number | null;
   due_date?: string | null;
+  estimated_hours?: number | null;
   started_at?: string | null;
   completed_at?: string | null;
   order: number;
@@ -38,6 +39,7 @@ export interface ProjectTaskCreate {
   project_id?: number | null;
   assignee_id?: number | null;
   due_date?: string | null;
+  estimated_hours?: number | null;
   order?: number;
 }
 

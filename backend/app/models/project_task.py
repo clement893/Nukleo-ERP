@@ -5,7 +5,7 @@ SQLAlchemy model for project tasks
 
 from datetime import datetime
 import enum
-from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SQLEnum, func, Index
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SQLEnum, Numeric, func, Index
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -56,6 +56,9 @@ class ProjectTask(Base):
     due_date = Column(DateTime(timezone=True), nullable=True)
     started_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Estimated hours (in hours, can be decimal)
+    estimated_hours = Column(Numeric(10, 2), nullable=True)
     
     # Order for drag & drop
     order = Column(Integer, default=0, nullable=False)

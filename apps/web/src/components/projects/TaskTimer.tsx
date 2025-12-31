@@ -50,6 +50,7 @@ export default function TaskTimer({ taskId, onTimeTracked }: TaskTimerProps) {
       }, 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [timerStatus, taskId]);
 
   const formatTime = (seconds: number): string => {

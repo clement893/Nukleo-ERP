@@ -4,11 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
 import { timeEntriesAPI, type TimerStatus } from '@/lib/api/time-entries';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Play, Square, Clock, AlertCircle } from 'lucide-react';
+import { Square, Clock } from 'lucide-react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 
 export default function GlobalTimer() {
@@ -25,6 +24,7 @@ export default function GlobalTimer() {
       const interval = setInterval(loadTimerStatus, 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [user?.id]);
 
   useEffect(() => {
@@ -48,6 +48,7 @@ export default function GlobalTimer() {
     } else {
       setElapsedSeconds(0);
     }
+    return undefined;
   }, [timerStatus]);
 
   const loadTimerStatus = async () => {
