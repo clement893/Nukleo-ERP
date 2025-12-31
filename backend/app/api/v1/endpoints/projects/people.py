@@ -28,14 +28,16 @@ async def list_people(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: Annotated[int, Query(ge=0, description="Number of records to skip")] = 0,
-    limit: Annotated[int, Query(ge=1, le=1000, description="Maximum number of records")] = 20,
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name"),
 ) -> List[PeopleSchema]:
     """
     Get list of people
     """
+    # Read skip and limit directly from query params to avoid FastAPI validation issues
+    skip_str = request.query_params.get("skip", "0")
+    limit_str = request.query_params.get("limit", "20")
+    
     # Log that we've reached the endpoint with detailed information
     logger.info(f"[PeopleAPI] ========================================")
     logger.info(f"[PeopleAPI] ✅ ENDPOINT REACHED")
@@ -43,10 +45,40 @@ async def list_people(
     logger.info(f"[PeopleAPI] Method: {request.method}")
     logger.info(f"[PeopleAPI] Query params (raw): {dict(request.query_params)}")
     logger.info(f"[PeopleAPI] Query params (items): {list(request.query_params.items())}")
-    logger.info(f"[PeopleAPI] Received skip: {repr(skip)} (type: {type(skip).__name__}, value: {skip})")
-    logger.info(f"[PeopleAPI] Received limit: {repr(limit)} (type: {type(limit).__name__}, value: {limit})")
-    logger.info(f"[PeopleAPI] Skip from query_params: {request.query_params.get('skip', 'NOT_FOUND')}")
-    logger.info(f"[PeopleAPI] Limit from query_params: {request.query_params.get('limit', 'NOT_FOUND')}")
+    logger.info(f"[PeopleAPI] Skip from query_params (raw): {repr(skip_str)} (type: {type(skip_str).__name__})")
+    logger.info(f"[PeopleAPI] Limit from query_params (raw): {repr(limit_str)} (type: {type(limit_str).__name__})")
+    
+    # Convert skip and limit to integers manually
+    try:
+        skip = int(skip_str)
+        if skip < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"skip must be >= 0, got: {skip}"
+            )
+    except (ValueError, TypeError) as e:
+        logger.error(f"[PeopleAPI] Failed to parse skip: {repr(skip_str)} - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"skip must be a valid integer, got: {repr(skip_str)}"
+        )
+    
+    try:
+        limit = int(limit_str)
+        if limit < 1 or limit > 1000:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"limit must be between 1 and 1000, got: {limit}"
+            )
+    except (ValueError, TypeError) as e:
+        logger.error(f"[PeopleAPI] Failed to parse limit: {repr(limit_str)} - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"limit must be a valid integer, got: {repr(limit_str)}"
+        )
+    
+    logger.info(f"[PeopleAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
+    logger.info(f"[PeopleAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
     logger.info(f"[PeopleAPI] ========================================")
     
     query = select(People)
