@@ -779,40 +779,6 @@ async def import_opportunities(
                 contact_name_to_id[full_name] = contact.id
         add_import_log(import_id, f"{len(contact_name_to_id)} contact(s) chargé(s) pour le matching", "info")
         
-        # Load all pipelines and stages once to create name -> ID mappings
-        add_import_log(import_id, "Chargement des pipelines et stades existants...", "info")
-        pipelines_result = await db.execute(
-            select(Pipeline).options(selectinload(Pipeline.stages))
-        )
-        all_pipelines = pipelines_result.scalars().all()
-        pipeline_name_to_id = {}
-        pipeline_stage_name_to_id = {}  # (pipeline_name, stage_name) -> stage_id
-        for pipeline in all_pipelines:
-            if pipeline.name:
-                pipeline_name_normalized = pipeline.name.strip().lower()
-                pipeline_name_to_id[pipeline_name_normalized] = pipeline.id
-                # Also store case-insensitive variations
-                pipeline_name_to_id[pipeline.name.strip()] = pipeline.id
-                # Store stages mapping
-                for stage in pipeline.stages:
-                    if stage.name:
-                        stage_name_normalized = stage.name.strip().lower()
-                        key = (pipeline_name_normalized, stage_name_normalized)
-                        pipeline_stage_name_to_id[key] = stage.id
-                        # Also store case-insensitive variations
-                        key_original = (pipeline.name.strip(), stage.name.strip())
-                        pipeline_stage_name_to_id[key_original] = stage.id
-        add_import_log(import_id, f"{len(pipeline_name_to_id)} pipeline(s) et {len(pipeline_stage_name_to_id)} stade(s) chargé(s) pour le matching", "info")
-        
-        # Process imported data
-        created_opportunities = []
-        errors = []
-        stats = {
-            "total_processed": 0,
-            "created_new": 0,
-            "errors": 0
-        }
-        
         # Helper function to normalize column names (case-insensitive, accent-insensitive)
         import unicodedata
         import re
@@ -825,6 +791,56 @@ async def import_opportunities(
             normalized = unicodedata.normalize('NFD', normalized)
             normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
             return normalized
+        
+        # Load all pipelines and stages once to create name -> ID mappings
+        add_import_log(import_id, "Chargement des pipelines et stades existants...", "info")
+        pipelines_result = await db.execute(
+            select(Pipeline).options(selectinload(Pipeline.stages))
+        )
+        all_pipelines = pipelines_result.scalars().all()
+        pipeline_name_to_id = {}
+        pipeline_stage_name_to_id = {}  # (pipeline_name, stage_name) -> stage_id
+        stage_name_to_id_by_pipeline = {}  # pipeline_id -> {stage_name -> stage_id}
+        
+        for pipeline in all_pipelines:
+            if pipeline.name:
+                pipeline_name_normalized = normalize_key(pipeline.name)
+                pipeline_name_to_id[pipeline_name_normalized] = pipeline.id
+                # Also store case-insensitive variations
+                pipeline_name_to_id[pipeline.name.strip().lower()] = pipeline.id
+                pipeline_name_to_id[pipeline.name.strip()] = pipeline.id
+                
+                # Store stages mapping with multiple variations
+                stage_name_to_id_by_pipeline[pipeline.id] = {}
+                for stage in pipeline.stages:
+                    if stage.name:
+                        stage_name_original = stage.name.strip()
+                        stage_name_lower = stage_name_original.lower()
+                        stage_name_normalized = normalize_key(stage_name_original)
+                        
+                        # Store in pipeline_stage_name_to_id with different key formats
+                        key_normalized = (pipeline_name_normalized, stage_name_normalized)
+                        key_lower = (pipeline.name.strip().lower(), stage_name_lower)
+                        key_original = (pipeline.name.strip(), stage_name_original)
+                        
+                        pipeline_stage_name_to_id[key_normalized] = stage.id
+                        pipeline_stage_name_to_id[key_lower] = stage.id
+                        pipeline_stage_name_to_id[key_original] = stage.id
+                        
+                        # Store in stage_name_to_id_by_pipeline for direct lookup
+                        stage_name_to_id_by_pipeline[pipeline.id][stage_name_normalized] = stage.id
+                        stage_name_to_id_by_pipeline[pipeline.id][stage_name_lower] = stage.id
+                        stage_name_to_id_by_pipeline[pipeline.id][stage_name_original] = stage.id
+        add_import_log(import_id, f"{len(pipeline_name_to_id)} pipeline(s) et {len(pipeline_stage_name_to_id)} stade(s) chargé(s) pour le matching", "info")
+        
+        # Process imported data
+        created_opportunities = []
+        errors = []
+        stats = {
+            "total_processed": 0,
+            "created_new": 0,
+            "errors": 0
+        }
         
         def get_field_value(row: dict, possible_names: list) -> Optional[str]:
             """Get field value trying multiple possible column names"""
@@ -916,20 +932,73 @@ async def import_opportunities(
             if not pipeline:
                 return None
             
-            pipeline_name_normalized = pipeline.name.strip().lower() if pipeline.name else None
+            pipeline_name_normalized = normalize_key(pipeline.name) if pipeline.name else None
             if not pipeline_name_normalized:
                 return None
             
-            # Try as name (case-insensitive)
-            stage_name_normalized = stage_value.lower()
-            key = (pipeline_name_normalized, stage_name_normalized)
-            if key in pipeline_stage_name_to_id:
-                return pipeline_stage_name_to_id[key]
+            # Try multiple variations of stage name matching
+            stage_value_normalized = normalize_key(stage_value)
+            stage_value_lower = stage_value.lower()
+            
+            # Try with normalized pipeline name and normalized stage name
+            key_normalized = (pipeline_name_normalized, stage_value_normalized)
+            if key_normalized in pipeline_stage_name_to_id:
+                return pipeline_stage_name_to_id[key_normalized]
+            
+            # Try with normalized pipeline name and lower stage name
+            key_normalized_lower = (pipeline_name_normalized, stage_value_lower)
+            if key_normalized_lower in pipeline_stage_name_to_id:
+                return pipeline_stage_name_to_id[key_normalized_lower]
+            
+            # Try with original pipeline name and normalized stage name
+            key_original_normalized = (pipeline.name.strip(), stage_value_normalized)
+            if key_original_normalized in pipeline_stage_name_to_id:
+                return pipeline_stage_name_to_id[key_original_normalized]
+            
+            # Try with original pipeline name and lower stage name
+            key_original_lower = (pipeline.name.strip(), stage_value_lower)
+            if key_original_lower in pipeline_stage_name_to_id:
+                return pipeline_stage_name_to_id[key_original_lower]
             
             # Try exact match (case-sensitive)
             key_original = (pipeline.name.strip(), stage_value)
             if key_original in pipeline_stage_name_to_id:
                 return pipeline_stage_name_to_id[key_original]
+            
+            # If still not found, try direct lookup in the pipeline's stages
+            if pipeline_id in stage_name_to_id_by_pipeline:
+                stage_map = stage_name_to_id_by_pipeline[pipeline_id]
+                # Try normalized
+                if stage_value_normalized in stage_map:
+                    return stage_map[stage_value_normalized]
+                # Try lower
+                if stage_value_lower in stage_map:
+                    return stage_map[stage_value_lower]
+                # Try original
+                if stage_value in stage_map:
+                    return stage_map[stage_value]
+                # Try partial match (contains)
+                for stored_name, stored_id in stage_map.items():
+                    if stage_value_normalized in stored_name or stored_name in stage_value_normalized:
+                        return stored_id
+                    if stage_value_lower in stored_name.lower() or stored_name.lower() in stage_value_lower:
+                        return stored_id
+            
+            # Last resort: query database directly with LIKE for partial match
+            stage_result = await db.execute(
+                select(PipelineStage).where(
+                    and_(
+                        PipelineStage.pipeline_id == pipeline_id,
+                        or_(
+                            PipelineStage.name.ilike(f"%{stage_value}%"),
+                            PipelineStage.name.ilike(f"%{stage_value_normalized}%")
+                        )
+                    )
+                ).limit(1)
+            )
+            stage = stage_result.scalar_one_or_none()
+            if stage:
+                return stage.id
             
             return None
         
@@ -1116,12 +1185,19 @@ async def import_opportunities(
                 status_val = get_field_value(row_data, ['status', 'statut', 'Statut', 'état', 'etat'])
                 segment = get_field_value(row_data, ['segment', 'Segment', 'segmentation'])
                 region = get_field_value(row_data, ['region', 'région', 'Région', 'Region'])
-                service_offer_link = get_field_value(row_data, ['service_offer_link', 'lien_offre', 'lien', 'url'])
+                service_offer_link = get_field_value(row_data, [
+                    'service_offer_link', 'lien_offre', 'lien', 'url',
+                    'lien offre de service', 'lien_offre_service', 'lien offre service',
+                    'liens vers les documents', 'liens documents soumission', 'documents soumission',
+                    'lien soumission', 'lien_soumission', 'soumission'
+                ])
                 notes = get_field_value(row_data, ['notes', 'Notes', 'note', 'commentaires', 'commentaire'])
                 
                 stage_value = get_field_value(row_data, [
                     'stage_id', 'stage', 'stade', 'Stage', 'Stade', 
-                    'nom_stade', 'stage_name', 'nom stade', 'stade nom', 'nom_stage'
+                    'nom_stade', 'stage_name', 'nom stade', 'stade nom', 'nom_stage',
+                    'id stade du pipeline', 'id_stade_du_pipeline', 'id stade pipeline',
+                    'stade du pipeline', 'stade_du_pipeline', 'stage du pipeline'
                 ])
                 stage_id = None
                 if stage_value:

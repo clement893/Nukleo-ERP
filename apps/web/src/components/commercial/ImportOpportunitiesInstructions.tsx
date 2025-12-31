@@ -68,15 +68,16 @@ export default function ImportOpportunitiesInstructions({
                   <li>• <strong>amount</strong> / montant / valeur</li>
                   <li>• <strong>probability</strong> / probabilité / proba</li>
                   <li>• <strong>status</strong> / statut</li>
+                  <li>• <strong>service_offer_link</strong> / <strong>Lien offre de service</strong> / liens documents soumission</li>
                 </ul>
               </div>
               <div>
                 <p className="font-medium mb-2">Pipeline et stade:</p>
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• <strong>pipeline_id</strong> / id_pipeline / <strong>nom_pipeline</strong> / pipeline_name (UUID ou nom requis)</li>
-                  <li>• <strong>stage_id</strong> / id_stade / id_stage / <strong>nom_stade</strong> / stage_name (UUID ou nom optionnel)</li>
+                  <li>• <strong>stage_id</strong> / id_stade / id_stage / <strong>nom_stade</strong> / stage_name / <strong>ID Stade du pipeline</strong> (UUID ou nom optionnel)</li>
                 </ul>
-                <p className="text-xs text-muted-foreground mt-2">💡 Vous pouvez utiliser le nom du pipeline et du stade au lieu de l'ID (UUID)</p>
+                <p className="text-xs text-muted-foreground mt-2">💡 Vous pouvez utiliser le nom du pipeline et du stade au lieu de l'ID (UUID). Le nom du stade sera recherché dans tous les stades du pipeline spécifié.</p>
               </div>
               <div>
                 <p className="font-medium mb-2">Relations:</p>
