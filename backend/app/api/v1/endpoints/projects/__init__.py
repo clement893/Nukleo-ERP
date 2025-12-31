@@ -660,13 +660,24 @@ async def get_project(
                 except AttributeError:
                     pass
             
+            # Build query without apply_tenant_scope to avoid context issues after rollback
+            # The user_id filter already provides the necessary scoping
             query = select(*columns_to_select).where(
                 and_(
                     Project.id == project_id,
                     Project.user_id == current_user.id
                 )
             )
-            query = apply_tenant_scope(query, Project)
+            # Only apply tenant scope if tenancy is enabled and we can safely get tenant
+            try:
+                from app.core.tenancy import TenancyConfig, get_current_tenant
+                if TenancyConfig.is_enabled():
+                    tenant_id = get_current_tenant()
+                    if tenant_id is not None and hasattr(Project, 'team_id'):
+                        query = query.where(Project.team_id == tenant_id)
+            except Exception:
+                # If tenant context access fails, skip tenant scoping (user_id filter is sufficient)
+                pass
             
             result = await db.execute(query)
             row = result.first()
@@ -677,37 +688,40 @@ async def get_project(
                     detail="Project not found"
                 )
             
-            # Convert row to a simple object
+            # Extract values from row immediately to avoid any lazy loading issues
+            # Convert row to a simple object with all values extracted
             class ProjectRow:
                 def __init__(self, row):
-                    self.id = row.id
-                    self.name = row.name
-                    self.description = row.description
+                    # Extract all values immediately to avoid any async/lazy loading issues
+                    self.id = int(row.id) if row.id is not None else None
+                    self.name = str(row.name) if row.name is not None else ""
+                    self.description = str(row.description) if row.description is not None else None
                     self.status = row.status
-                    self.user_id = row.user_id
+                    self.user_id = int(row.user_id) if row.user_id is not None else None
                     self.created_at = row.created_at
                     self.updated_at = row.updated_at
-                    self.client_id = getattr(row, 'client_id', None)
-                    self.responsable_id = getattr(row, 'responsable_id', None)
-                    self.equipe = getattr(row, 'equipe', None)
-                    self.etape = getattr(row, 'etape', None)
-                    self.annee_realisation = getattr(row, 'annee_realisation', None)
-                    self.contact = getattr(row, 'contact', None)
-                    self.proposal_url = getattr(row, 'proposal_url', None)
-                    self.drive_url = getattr(row, 'drive_url', None)
-                    self.slack_url = getattr(row, 'slack_url', None)
-                    self.echeancier_url = getattr(row, 'echeancier_url', None)
-                    self.temoignage_status = getattr(row, 'temoignage_status', None)
-                    self.portfolio_status = getattr(row, 'portfolio_status', None)
-                    self.start_date = getattr(row, 'start_date', None)
-                    self.end_date = getattr(row, 'end_date', None)
-                    self.deadline = getattr(row, 'deadline', None)
+                    self.client_id = int(row.client_id) if hasattr(row, 'client_id') and row.client_id is not None else None
+                    self.responsable_id = int(row.responsable_id) if hasattr(row, 'responsable_id') and row.responsable_id is not None else None
+                    self.equipe = str(row.equipe) if hasattr(row, 'equipe') and row.equipe is not None else None
+                    self.etape = str(row.etape) if hasattr(row, 'etape') and row.etape is not None else None
+                    self.annee_realisation = str(row.annee_realisation) if hasattr(row, 'annee_realisation') and row.annee_realisation is not None else None
+                    self.contact = str(row.contact) if hasattr(row, 'contact') and row.contact is not None else None
+                    self.proposal_url = str(row.proposal_url) if hasattr(row, 'proposal_url') and row.proposal_url is not None else None
+                    self.drive_url = str(row.drive_url) if hasattr(row, 'drive_url') and row.drive_url is not None else None
+                    self.slack_url = str(row.slack_url) if hasattr(row, 'slack_url') and row.slack_url is not None else None
+                    self.echeancier_url = str(row.echeancier_url) if hasattr(row, 'echeancier_url') and row.echeancier_url is not None else None
+                    self.temoignage_status = str(row.temoignage_status) if hasattr(row, 'temoignage_status') and row.temoignage_status is not None else None
+                    self.portfolio_status = str(row.portfolio_status) if hasattr(row, 'portfolio_status') and row.portfolio_status is not None else None
+                    self.start_date = row.start_date if hasattr(row, 'start_date') else None
+                    self.end_date = row.end_date if hasattr(row, 'end_date') else None
+                    self.deadline = row.deadline if hasattr(row, 'deadline') else None
             
             project = ProjectRow(row)
             
             # Load client and responsable names manually since ProjectRow doesn't have relationships
+            # Do this in a new try block to ensure we're in a clean async context
             client_name = None
-            client_id = getattr(project, 'client_id', None)
+            client_id = project.client_id
             if client_id:
                 try:
                     client_result = await db.execute(
@@ -728,7 +742,7 @@ async def get_project(
                     client_name = None
             
             responsable_name = None
-            responsable_id = getattr(project, 'responsable_id', None)
+            responsable_id = project.responsable_id
             if responsable_id:
                 try:
                     responsable_result = await db.execute(
