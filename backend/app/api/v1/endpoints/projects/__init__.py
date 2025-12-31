@@ -288,7 +288,11 @@ async def get_projects(
                 continue
         
         # Return JSONResponse explicitly to satisfy slowapi's requirement for Response object
-        return JSONResponse(content=project_list, status_code=200)
+        # Convert Pydantic models to dicts using model_dump with mode='json' for datetime serialization
+        return JSONResponse(
+            content=[project.model_dump(mode='json') for project in project_list],
+            status_code=200
+        )
     except HTTPException as he:
         # Re-raise HTTP exceptions (like validation errors)
         logger.warning(
