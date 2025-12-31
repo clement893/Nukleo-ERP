@@ -424,7 +424,7 @@ function ProjectsContent() {
                 {/* Description */}
                 {project.description && (
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {project.description}
+                    {String(project.description)}
                   </p>
                 )}
 

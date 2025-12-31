@@ -53,7 +53,7 @@ export default function ClientDetail({
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {client.first_name} {client.last_name}
+                {client.company_name}
               </h2>
             </div>
             <div className="flex gap-2">
@@ -130,28 +130,28 @@ export default function ClientDetail({
       )}
 
       {/* Notes et commentaires */}
-      {(notes || comments || client.notes || client.comments) && (
+      {(notes || comments) && (
         <Card title="Notes et commentaires">
           <div className="space-y-4">
-            {(notes || client.notes) && (
+            {notes && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <h3 className="font-medium">Notes</h3>
                 </div>
                 <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                  {notes || client.notes}
+                  {notes}
                 </div>
               </div>
             )}
-            {(comments || client.comments) && (
+            {comments && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <MessageSquare className="w-4 h-4 text-muted-foreground" />
                   <h3 className="font-medium">Commentaires</h3>
                 </div>
                 <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                  {comments || client.comments}
+                  {comments}
                 </div>
               </div>
             )}

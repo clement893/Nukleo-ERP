@@ -112,12 +112,12 @@ export default function ClientEditPage() {
   return (
     <PageContainer>
       <PageHeader
-        title={`Modifier ${client.first_name} ${client.last_name}`}
+        title={`Modifier ${client.company_name}`}
         breadcrumbs={[
           { label: 'Dashboard', href: `/${locale}/dashboard` },
           { label: 'Modules Opérations', href: `/${locale}/dashboard/projets` },
           { label: 'Clients', href: `/${locale}/dashboard/projets/clients` },
-          { label: client.first_name + ' ' + client.last_name, href: `/${locale}/dashboard/projets/clients/${client.id}` },
+          { label: client.company_name, href: `/${locale}/dashboard/projets/clients/${client.id}` },
           { label: 'Modification' },
         ]}
       />

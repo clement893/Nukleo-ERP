@@ -85,10 +85,7 @@ function ClientsContent() {
     return clients.filter((client) => {
       const matchesSearch = !debouncedSearchQuery || 
         client.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        `${client.first_name} ${client.last_name}`.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        client.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        client.phone?.includes(debouncedSearchQuery) ||
-        client.linkedin?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+        client.type?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       return matchesSearch;
     });
@@ -183,15 +180,15 @@ function ClientsContent() {
   // Table columns - Only Nom, Statut
   const columns: Column<Client>[] = [
     {
-      key: 'first_name',
+      key: 'company_name',
       label: 'Nom',
       sortable: true,
       render: (_value, client) => (
         <div className="flex items-center justify-between group">
           <div className="min-w-0 flex-1 flex items-center gap-3">
             <ClientAvatar client={client} size="sm" />
-            <div className="font-medium truncate" title={client.company_name || `${client.first_name} ${client.last_name}`}>
-              {client.company_name || `${client.first_name} ${client.last_name}`}
+            <div className="font-medium truncate" title={client.company_name}>
+              {client.company_name}
             </div>
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">

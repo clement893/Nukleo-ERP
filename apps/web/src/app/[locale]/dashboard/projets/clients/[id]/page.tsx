@@ -135,12 +135,12 @@ export default function ClientDetailPage() {
   return (
     <PageContainer>
       <PageHeader
-        title={`${client.first_name} ${client.last_name}`}
+        title={client.company_name}
         breadcrumbs={[
           { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
           { label: 'Modules Opérations', href: `/${params?.locale || 'fr'}/dashboard/projets` },
           { label: 'Clients', href: `/${params?.locale || 'fr'}/dashboard/projets/clients` },
-          { label: `${client.first_name} ${client.last_name}` },
+          { label: client.company_name },
         ]}
         actions={
           <Button variant="outline" size="sm" onClick={handleBack}>
@@ -176,8 +176,6 @@ export default function ClientDetailPage() {
           }) as Project[]}
           contacts={contacts}
           portalUrl={client.portal_url || null}
-          notes={client.notes || null}
-          comments={client.comments || null}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />

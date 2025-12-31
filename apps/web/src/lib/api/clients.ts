@@ -151,4 +151,30 @@ export const clientsAPI = {
     }
     return data;
   },
+
+  /**
+   * Get contacts for a client (from commercial contacts API)
+   */
+  getContacts: async (clientId: number): Promise<Array<{
+    id: number;
+    first_name: string;
+    last_name: string;
+    company_id: number | null;
+    email: string | null;
+    phone: string | null;
+    [key: string]: unknown;
+  }>> => {
+    // Use commercial contacts API filtered by company_id
+    // Note: This assumes clients map to companies in the commercial module
+    const response = await apiClient.get<Array<{
+      id: number;
+      first_name: string;
+      last_name: string;
+      company_id: number | null;
+      email: string | null;
+      phone: string | null;
+      [key: string]: unknown;
+    }>>('/v1/commercial/contacts', { params: { company_id: clientId } });
+    return extractApiData(response) || [];
+  },
 };

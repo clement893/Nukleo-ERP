@@ -75,18 +75,11 @@ export default function ClientGallery({
               </div>
               <div className="px-3 pb-3">
                 <h3 className="font-semibold text-foreground text-center">
-                  {client.first_name} {client.last_name}
+                  {client.company_name}
                 </h3>
-                {client.email && (
+                {client.status && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Mail className="w-3.5 h-3.5" />
-                    <span className="truncate">{client.email}</span>
-                  </div>
-                )}
-                {client.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{client.phone}</span>
+                    <span className="truncate">{client.status}</span>
                   </div>
                 )}
               </div>

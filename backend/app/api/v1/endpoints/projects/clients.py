@@ -10,6 +10,7 @@ from sqlalchemy import select, func
 import logging
 
 from app.core.database import get_db
+from app.core.tenancy_helpers import apply_tenant_scope
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.client import Client, ClientStatus
@@ -91,6 +92,56 @@ async def list_clients(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
         )
+
+
+@router.get("/{client_id}/projects", response_model=List[dict])
+async def get_client_projects(
+    client_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> List[dict]:
+    """
+    Get all projects for a client
+    """
+    # First verify that the client exists and belongs to the current user
+    client_query = select(Client).where(
+        Client.id == client_id,
+        Client.user_id == current_user.id
+    )
+    client_result = await db.execute(client_query)
+    client = client_result.scalar_one_or_none()
+
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Client with ID {client_id} not found"
+        )
+
+    # Get projects for this client, filtered by user_id and tenant scope
+    query = select(Project).where(
+        Project.client_id == client_id,
+        Project.user_id == current_user.id
+    )
+    query = apply_tenant_scope(query, Project)
+    query = query.order_by(Project.created_at.desc())
+    
+    result = await db.execute(query)
+    projects = result.scalars().all()
+
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
+            "client_id": p.client_id,
+            "etape": p.etape,
+            "annee_realisation": p.annee_realisation,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+        }
+        for p in projects
+    ]
 
 
 @router.get("/{client_id}", response_model=ClientSchema)
@@ -245,35 +296,6 @@ async def delete_client(
 
     await db.delete(client)
     await db.commit()
-
-
-@router.get("/{client_id}/projects", response_model=List[dict])
-async def get_client_projects(
-    client_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> List[dict]:
-    """
-    Get all projects for a client
-    """
-    query = select(Project).where(Project.client_id == client_id)
-    result = await db.execute(query)
-    projects = result.scalars().all()
-
-    return [
-        {
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "status": p.status.value if hasattr(p.status, 'value') else p.status,
-            "client_id": p.client_id,
-            "etape": p.etape,
-            "annee_realisation": p.annee_realisation,
-            "created_at": p.created_at.isoformat(),
-            "updated_at": p.updated_at.isoformat(),
-        }
-        for p in projects
-    ]
 
 
 @router.post("/{client_id}/portal", response_model=ClientSchema)

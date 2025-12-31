@@ -56,7 +56,7 @@ function ProjectDetailContent() {
     try {
       const response = await teamsAPI.getMyTeams();
       const data = extractApiData<TeamListResponse>(response);
-      if (data?.teams && data.teams.length > 0) {
+      if (data && data.teams && data.teams.length > 0) {
         setTeamId(data.teams[0].id);
       }
     } catch (err) {

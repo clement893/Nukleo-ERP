@@ -38,6 +38,7 @@ from app.models.notification import Notification, NotificationType
 from app.models.report import Report
 from app.models.post import Post
 from app.models.calendar_event import CalendarEvent
+from app.models.project import Project, ProjectStatus
 from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
 from app.models.contact import Contact
 from app.models.company import Company
@@ -137,6 +138,8 @@ __all__ = [
     "Quote",
     "QuoteLineItem",
     "Submission",
+    "Project",
+    "ProjectStatus",
     "ProjectTask",
     "TaskStatus",
     "TaskPriority",

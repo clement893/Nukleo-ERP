@@ -207,45 +207,54 @@ async def create_compte_depenses(
     """
     Create a new expense account
     """
-    # Validate that the employee exists
-    employee_result = await db.execute(
-        select(Employee).where(Employee.id == expense_account.employee_id)
-    )
-    employee = employee_result.scalar_one_or_none()
-    
-    if not employee:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Employee with ID {expense_account.employee_id} not found"
-        )
-    
-    # Generate account number
-    account_number = await generate_account_number(db)
-    
-    # Create expense account
     try:
-        new_account = ExpenseAccount(
-            account_number=account_number,
-            employee_id=expense_account.employee_id,
-            title=expense_account.title,
-            description=expense_account.description,
-            expense_period_start=expense_account.expense_period_start,
-            expense_period_end=expense_account.expense_period_end,
-            total_amount=expense_account.total_amount,
-            currency=expense_account.currency,
-            account_metadata=expense_account.metadata,
-            status=ExpenseAccountStatus.DRAFT.value,
+        # Validate that the employee exists
+        employee_result = await db.execute(
+            select(Employee).where(Employee.id == expense_account.employee_id)
         )
+        employee = employee_result.scalar_one_or_none()
         
-        db.add(new_account)
-        await db.commit()
-        await db.refresh(new_account, ["employee", "reviewer"])
+        if not employee:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee with ID {expense_account.employee_id} not found"
+            )
+        
+        # Generate account number
+        account_number = await generate_account_number(db)
+        
+        # Create expense account
+        try:
+            new_account = ExpenseAccount(
+                account_number=account_number,
+                employee_id=expense_account.employee_id,
+                title=expense_account.title,
+                description=expense_account.description,
+                expense_period_start=expense_account.expense_period_start,
+                expense_period_end=expense_account.expense_period_end,
+                total_amount=expense_account.total_amount,
+                currency=expense_account.currency or "EUR",
+                account_metadata=expense_account.metadata,
+                status=ExpenseAccountStatus.DRAFT.value,
+            )
+            
+            db.add(new_account)
+            await db.commit()
+            await db.refresh(new_account, ["employee", "reviewer"])
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"Database error creating expense account: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"A database error occurred: {str(e)}"
+            )
+    except HTTPException:
+        raise
     except Exception as e:
-        await db.rollback()
-        logger.error(f"Database error creating expense account: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error creating expense account: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"A database error occurred: {str(e)}"
+            detail=f"An unexpected error occurred: {str(e)}"
         )
     
     account_dict = {

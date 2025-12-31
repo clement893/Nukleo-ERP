@@ -11,7 +11,7 @@ import { Card, Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } f
 import KanbanBoard from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react';
-import { teamsAPI } from '@/lib/api';
+import { teamsAPI } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
@@ -87,7 +87,7 @@ function TeamProjectManagementContent() {
                 slug: teamToCreate.slug,
                 description: `Équipe ${teamToCreate.name}`,
               });
-              foundTeam = extractApiData<Team>(createResponse);
+              foundTeam = extractApiData<Team>(createResponse) as Team | null;
             } catch (createErr) {
               console.error('Error creating team:', createErr);
             }
