@@ -6,6 +6,7 @@
 
 import { Plus, Edit3, Save, LayoutGrid } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
+import { DashboardFilters } from './DashboardFilters';
 
 interface DashboardToolbarProps {
   onAddWidget: () => void;
@@ -58,8 +59,9 @@ export function DashboardToolbar({ onAddWidget }: DashboardToolbarProps) {
           )}
         </div>
 
-        {/* Right: Actions */}
+        {/* Right: Filters and Actions */}
         <div className="flex items-center gap-2">
+          {!isEditMode && <DashboardFilters />}
           {isEditMode ? (
             <>
               <button

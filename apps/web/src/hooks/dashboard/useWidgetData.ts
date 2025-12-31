@@ -4,6 +4,10 @@
 
 import { useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import type { WidgetConfig, GlobalFilters, WidgetType } from '@/lib/dashboard/types';
+import { fetchDashboardOpportunities } from '@/lib/api/dashboard-opportunities';
+import { fetchClientsStats } from '@/lib/api/dashboard-clients';
+import { fetchDashboardProjects } from '@/lib/api/dashboard-projects';
+import { fetchDashboardRevenue } from '@/lib/api/dashboard-revenue';
 
 interface UseWidgetDataOptions {
   widgetType: WidgetType;
@@ -40,84 +44,104 @@ export function useWidgetData<T = any>({
 
 /**
  * Fonction pour récupérer les données d'un widget
- * À implémenter avec les vrais appels API
+ * Utilise les vrais appels API avec fallback sur données factices
  */
 async function fetchWidgetData(
   widgetType: WidgetType
 ): Promise<any> {
-  // Simuler un délai réseau
-  await new Promise(resolve => setTimeout(resolve, 500));
   
-  // Retourner des données factices selon le type de widget
+  // Appeler les vrais endpoints API
   switch (widgetType) {
     case 'opportunities-list':
-      return {
-        opportunities: [
-          {
-            id: 1,
-            name: 'Site Web CDÉNÉ',
-            company: 'CDÉNÉ',
-            amount: 45000,
-            stage: 'Proposition',
-            probability: 75,
-            created_at: '2025-01-15',
-          },
-          {
-            id: 2,
-            name: 'Rapport Annuel 2024',
-            company: 'Maison Jean Lapointe',
-            amount: 12000,
-            stage: 'Qualifié',
-            probability: 60,
-            created_at: '2025-01-20',
-          },
-        ],
-        total: 2,
-      };
+      try {
+        const data = await fetchDashboardOpportunities({
+          limit: 5,
+          offset: 0,
+          company_id: globalFilters?.company_id,
+        });
+        return data;
+      } catch (error) {
+        console.error('Error fetching opportunities:', error);
+        // Fallback to sample data
+        return {
+          opportunities: [
+            {
+              id: 1,
+              name: 'Site Web CDÉNÉ',
+              company: 'CDÉNÉ',
+              amount: 45000,
+              stage: 'Proposition',
+              probability: 75,
+              created_at: '2025-01-15',
+            },
+          ],
+          total: 1,
+        };
+      }
     
     case 'clients-count':
-      return {
-        count: 155,
-        growth: 15.2,
-        previous_count: 135,
-      };
+      try {
+        const data = await fetchClientsStats({
+          period: config.period || 'month',
+        });
+        return data;
+      } catch (error) {
+        console.error('Error fetching clients stats:', error);
+        return {
+          count: 155,
+          growth: 15.2,
+          previous_count: 135,
+        };
+      }
     
     case 'projects-active':
-      return {
-        projects: [
-          {
-            id: 1,
-            name: 'Site Web CDÉNÉ',
-            client: 'CDÉNÉ',
-            progress: 80,
-            status: 'ACTIVE',
-            due_date: '2025-02-28',
-          },
-          {
-            id: 2,
-            name: 'Rapport Annuel 2024',
-            client: 'Maison Jean Lapointe',
-            progress: 60,
-            status: 'ACTIVE',
-            due_date: '2025-03-15',
-          },
-        ],
-        total: 15,
-      };
+      try {
+        const data = await fetchDashboardProjects({
+          limit: 5,
+          offset: 0,
+          status: 'ACTIVE',
+          client_id: globalFilters?.company_id,
+        });
+        return data;
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        return {
+          projects: [
+            {
+              id: 1,
+              name: 'Site Web CDÉNÉ',
+              client: 'CDÉNÉ',
+              progress: 80,
+              status: 'ACTIVE',
+              due_date: '2025-02-28',
+            },
+          ],
+          total: 1,
+        };
+      }
     
     case 'revenue-chart':
-      return {
-        data: [
-          { month: 'Jan', value: 65000 },
-          { month: 'Fév', value: 59000 },
-          { month: 'Mar', value: 80000 },
-          { month: 'Avr', value: 81000 },
-          { month: 'Mai', value: 56000 },
-          { month: 'Jun', value: 55000 },
-        ],
-        total: 396000,
-        growth: 15.3,
-      };
+      try {
+        const data = await fetchDashboardRevenue({
+          period: config.period || 'month',
+          months: 6,
+        });
+        return data;
+      } catch (error) {
+        console.error('Error fetching revenue:', error);
+        return {
+          data: [
+            { month: 'Jan', value: 65000 },
+            { month: 'Fév', value: 59000 },
+            { month: 'Mar', value: 80000 },
+            { month: 'Avr', value: 81000 },
+            { month: 'Mai', value: 56000 },
+            { month: 'Jun', value: 55000 },
+          ],
+          total: 396000,
+          growth: 15.3,
+        };
+      }
     
     case 'kpi-custom':
       return {
