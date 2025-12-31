@@ -5,6 +5,7 @@ API endpoints for managing project clients
 
 from typing import List, Optional, Dict, Annotated, Union
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from pydantic import BeforeValidator
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, delete
@@ -34,6 +35,23 @@ from app.core.logging import logger
 
 
 router = APIRouter(prefix="/projects/clients", tags=["project-clients"])
+
+
+def validate_int_param(value: Union[str, int, None]) -> int:
+    """Convert query parameter to int, handling string values"""
+    if value is None:
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return 0
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return 0
 
 # In-memory store for import logs (in production, use Redis)
 import_logs: Dict[str, List[Dict[str, any]]] = {}
@@ -229,8 +247,8 @@ def update_import_status(import_id: str, status: str, progress: Optional[int] = 
 async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    skip: Annotated[int, BeforeValidator(validate_int_param)] = Query(0, ge=0, description="Number of records to skip"),
+    limit: Annotated[int, BeforeValidator(validate_int_param)] = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
     responsible_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
