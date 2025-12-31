@@ -177,8 +177,6 @@ async def get_projects(
                     Project.etape,
                     Project.annee_realisation,
                     Project.contact,
-                    Project.taux_horaire,
-                    Project.budget,
                     Project.proposal_url,
                     Project.drive_url,
                     Project.slack_url,
