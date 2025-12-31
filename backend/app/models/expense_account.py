@@ -54,7 +54,7 @@ class ExpenseAccount(Base):
     reviewed_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # Financial information
-    total_amount = Column(Numeric(10, 2), default=0, nullable=False)  # Montant total
+    total_amount = Column(Numeric(18, 2), default=0, nullable=False)  # Montant total (max: 999,999,999,999,999,999.99)
     currency = Column(String(3), default="EUR", nullable=False)  # Devise
     
     # Review information
