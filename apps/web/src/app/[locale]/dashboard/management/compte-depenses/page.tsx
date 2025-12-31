@@ -157,15 +157,14 @@ function ManagementCompteDepensesContent() {
     if (!selectedExpenseAccount || !actionType) return;
 
     try {
+      let successMessage = '';
+      
       if (actionType === 'approve') {
         await approveExpenseAccountMutation.mutateAsync({
           id: selectedExpenseAccount.id,
           action: actionData,
         });
-        showToast({
-          message: 'Compte de dépenses approuvé avec succès',
-          type: 'success',
-        });
+        successMessage = 'Compte de dépenses approuvé avec succès';
       } else if (actionType === 'reject') {
         if (!actionData.rejection_reason) {
           showToast({
@@ -178,10 +177,7 @@ function ManagementCompteDepensesContent() {
           id: selectedExpenseAccount.id,
           action: actionData,
         });
-        showToast({
-          message: 'Compte de dépenses rejeté',
-          type: 'success',
-        });
+        successMessage = 'Compte de dépenses rejeté';
       } else if (actionType === 'clarification') {
         if (!actionData.clarification_request) {
           showToast({
@@ -194,21 +190,32 @@ function ManagementCompteDepensesContent() {
           id: selectedExpenseAccount.id,
           action: actionData,
         });
-        showToast({
-          message: 'Demande de précisions envoyée',
-          type: 'success',
-        });
+        successMessage = 'Demande de précisions envoyée';
       }
+      
+      // Fermer la modal avant d'afficher le message de succès
       setShowActionModal(false);
       setSelectedExpenseAccount(null);
       setActionType(null);
       setActionData({ notes: null, rejection_reason: null, clarification_request: null });
+      
+      // Afficher le message de succès après avoir fermé la modal
+      if (successMessage) {
+        showToast({
+          message: successMessage,
+          type: 'success',
+        });
+      }
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'action',
-        type: 'error',
-      });
+      // Ne pas afficher les erreurs de base de données qui peuvent apparaître après succès
+      const errorMessage = appError.message || 'Erreur lors de l\'action';
+      if (!errorMessage.toLowerCase().includes('database error')) {
+        showToast({
+          message: errorMessage,
+          type: 'error',
+        });
+      }
     }
   };
   

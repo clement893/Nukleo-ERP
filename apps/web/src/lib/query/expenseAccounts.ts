@@ -163,9 +163,12 @@ export function useRejectExpenseAccount() {
   return useMutation({
     mutationFn: ({ id, action }: { id: number; action: ExpenseAccountAction }) =>
       expenseAccountsAPI.reject(id, action),
+    retry: false, // Désactiver le retry pour éviter les erreurs après succès
     onSuccess: (data) => {
+      // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
+      queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
+      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
       queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.detail(data.id) });
     },
   });
 }
@@ -179,9 +182,12 @@ export function useRequestClarification() {
   return useMutation({
     mutationFn: ({ id, action }: { id: number; action: ExpenseAccountAction }) =>
       expenseAccountsAPI.requestClarification(id, action),
+    retry: false, // Désactiver le retry pour éviter les erreurs après succès
     onSuccess: (data) => {
+      // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
+      queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
+      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
       queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.detail(data.id) });
     },
   });
 }
