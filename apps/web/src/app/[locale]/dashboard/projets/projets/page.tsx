@@ -81,8 +81,8 @@ function ProjectsContent() {
   }, [projects]);
 
   // Filter and search projects
-  const filteredProjects = useMemo(() => {
-    return projects.filter(project => {
+  const filteredProjects = useMemo((): Project[] => {
+    return projects.filter((project: Project) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -400,11 +400,13 @@ function ProjectsContent() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
+            {filteredProjects.map((project: Project) => {
+              const desc: string | null = project.description ?? null;
+              return (
               <Card 
                 key={project.id} 
                 className="glass-card p-6 cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                onClick={() => router.push(`/dashboard/projets/${project.id}`)}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -422,14 +424,11 @@ function ProjectsContent() {
                 </div>
 
                 {/* Description */}
-                {(() => {
-                  const description: string | null = project.description;
-                  return description ? (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {description}
-                    </p>
-                  ) : null;
-                })()}
+                {desc && (
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {desc}
+                  </p>
+                )}
 
                 {/* Metadata */}
                 <div className="space-y-2 mb-4">
@@ -506,7 +505,8 @@ function ProjectsContent() {
                   </div>
                 )}
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </Container>

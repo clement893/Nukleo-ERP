@@ -81,8 +81,8 @@ function ProjectsContent() {
   }, [projects]);
 
   // Filter and search projects
-  const filteredProjects = useMemo(() => {
-    return projects.filter(project => {
+  const filteredProjects = useMemo((): Project[] => {
+    return projects.filter((project: Project) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -400,8 +400,8 @@ function ProjectsContent() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => {
-              const description: string | null = project.description;
+            {filteredProjects.map((project: Project) => {
+              const desc: string | null = project.description ?? null;
               return (
               <Card 
                 key={project.id} 
@@ -424,11 +424,11 @@ function ProjectsContent() {
                 </div>
 
                 {/* Description */}
-                {description ? (
+                {desc && (
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {description}
+                    {desc}
                   </p>
-                ) : null}
+                )}
 
                 {/* Metadata */}
                 <div className="space-y-2 mb-4">
