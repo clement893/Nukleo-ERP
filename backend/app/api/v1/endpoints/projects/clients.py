@@ -45,8 +45,8 @@ async def list_clients_test(
 # Temporarily removed @cache_query to debug validation issue
 async def list_clients(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> List[ClientSchema]:
     """
     Get list of clients
