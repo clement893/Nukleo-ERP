@@ -42,8 +42,8 @@ export const projectsAPI = {
   list: async (skip = 0, limit = 100): Promise<Project[]> => {
     const response = await apiClient.get<Project[]>('/v1/projects', {
       params: { 
-        skip, 
-        limit,
+        skip: Number(skip), 
+        limit: Number(limit),
         _t: Date.now(), // Cache-busting timestamp
       },
     });

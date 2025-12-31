@@ -57,8 +57,8 @@ export const peopleAPI = {
   list: async (skip = 0, limit = 100, filters?: { status?: string; search?: string }): Promise<People[]> => {
     const response = await apiClient.get<People[]>('/v1/projects/people', {
       params: { 
-        skip, 
-        limit,
+        skip: Number(skip), 
+        limit: Number(limit),
         ...(filters?.status && { status: filters.status }),
         ...(filters?.search && { search: filters.search }),
         _t: Date.now(), // Cache-busting timestamp
