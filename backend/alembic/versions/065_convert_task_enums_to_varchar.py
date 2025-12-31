@@ -25,28 +25,41 @@ def upgrade() -> None:
     if 'project_tasks' not in inspector.get_table_names():
         return
     
-    # Check current column types
-    columns = inspector.get_columns('project_tasks')
-    status_col = next((c for c in columns if c['name'] == 'status'), None)
-    priority_col = next((c for c in columns if c['name'] == 'priority'), None)
-    
-    # Convert status column from ENUM to VARCHAR if it's currently an ENUM
-    if status_col and isinstance(status_col['type'], postgresql.ENUM):
-        # Convert enum values to lowercase strings
-        op.execute("""
-            ALTER TABLE project_tasks 
-            ALTER COLUMN status TYPE VARCHAR(50) 
-            USING LOWER(status::text)
+    # Check if columns are ENUM type using SQL query
+    with conn.connection.cursor() as cursor:
+        # Check status column type
+        cursor.execute("""
+            SELECT data_type, udt_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'project_tasks' AND column_name = 'status'
         """)
-    
-    # Convert priority column from ENUM to VARCHAR if it's currently an ENUM
-    if priority_col and isinstance(priority_col['type'], postgresql.ENUM):
-        # Convert enum values to lowercase strings
-        op.execute("""
-            ALTER TABLE project_tasks 
-            ALTER COLUMN priority TYPE VARCHAR(50) 
-            USING LOWER(priority::text)
+        status_info = cursor.fetchone()
+        
+        # Check priority column type
+        cursor.execute("""
+            SELECT data_type, udt_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'project_tasks' AND column_name = 'priority'
         """)
+        priority_info = cursor.fetchone()
+        
+        # Convert status column from ENUM to VARCHAR if it's currently USER-DEFINED (enum type)
+        if status_info and status_info[0] == 'USER-DEFINED':
+            # Convert enum values to lowercase strings
+            op.execute("""
+                ALTER TABLE project_tasks 
+                ALTER COLUMN status TYPE VARCHAR(50) 
+                USING LOWER(status::text)
+            """)
+        
+        # Convert priority column from ENUM to VARCHAR if it's currently USER-DEFINED (enum type)
+        if priority_info and priority_info[0] == 'USER-DEFINED':
+            # Convert enum values to lowercase strings
+            op.execute("""
+                ALTER TABLE project_tasks 
+                ALTER COLUMN priority TYPE VARCHAR(50) 
+                USING LOWER(priority::text)
+            """)
 
 
 def downgrade() -> None:
