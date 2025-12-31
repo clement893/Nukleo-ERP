@@ -7,7 +7,7 @@ from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func, delete, text
+from sqlalchemy import select, and_, func, delete, text, inspect
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import ProgrammingError
 
@@ -29,6 +29,21 @@ router = APIRouter()
 
 # Include import/export routes
 router.include_router(import_export.router, tags=["projects-import-export"])
+
+
+async def _check_project_columns_exist(db: AsyncSession, column_names: List[str]) -> dict[str, bool]:
+    """Check if columns exist in the projects table"""
+    exists = {col: False for col in column_names}
+    try:
+        # Use inspect to check columns
+        inspector = await db.run_sync(lambda sync_conn: inspect(sync_conn).get_columns('projects'))
+        existing_columns = {col['name'] for col in inspector}
+        for col in column_names:
+            if col in existing_columns:
+                exists[col] = True
+    except Exception as e:
+        logger.warning(f"Could not inspect 'projects' table for columns: {e}")
+    return exists
 
 
 @router.get("/", response_model=List[ProjectSchema])
@@ -55,110 +70,15 @@ async def get_projects(
     Returns:
         List of projects
     """
-    try:
-        # Build query WITHOUT relationship loading first - this is safer
-        # We'll load relationships separately if needed
-        query = select(Project).where(Project.user_id == current_user.id)
-        
-        if status:
-            query = query.where(Project.status == status)
-        
-        # Apply tenant scoping if tenancy is enabled
-        query = apply_tenant_scope(query, Project)
-        
-        query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
-        
-        # Execute query WITHOUT relationship loading to avoid foreign key issues
-        result = await db.execute(query)
-        projects = result.scalars().all()
-        
-        # Convert to response format - safely handle missing columns
-        project_list = []
-        for project in projects:
-            # Safely get client_id and responsable_id first
-            client_id = None
-            responsable_id = None
-            try:
-                client_id = getattr(project, 'client_id', None)
-            except (AttributeError, ProgrammingError):
-                pass
-            
-            try:
-                responsable_id = getattr(project, 'responsable_id', None)
-            except (AttributeError, ProgrammingError):
-                pass
-            
-            # Try to load client name if client_id exists
-            client_name = None
-            if client_id:
-                try:
-                    # Manually load the People if client_id exists
-                    from app.models.people import People
-                    client_result = await db.execute(
-                        select(People).where(People.id == client_id)
-                    )
-                    client = client_result.scalar_one_or_none()
-                    if client:
-                        client_name = f"{client.first_name} {client.last_name}".strip()
-                except (AttributeError, ProgrammingError, Exception):
-                    # If loading fails, just leave client_name as None
-                    client_name = None
-            
-            # Try to load responsable name if responsable_id exists
-            responsable_name = None
-            if responsable_id:
-                try:
-                    # Manually load the Employee if responsable_id exists
-                    from app.models.employee import Employee
-                    responsable_result = await db.execute(
-                        select(Employee).where(Employee.id == responsable_id)
-                    )
-                    responsable = responsable_result.scalar_one_or_none()
-                    if responsable:
-                        responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
-                except (AttributeError, ProgrammingError, Exception):
-                    # If loading fails, just leave responsable_name as None
-                    responsable_name = None
-            
-            project_list.append(ProjectSchema(
-                id=project.id,
-                name=project.name,
-                description=project.description,
-                status=project.status,
-                user_id=project.user_id,
-                client_id=client_id,
-                client_name=client_name,
-                responsable_id=responsable_id,
-                responsable_name=responsable_name,
-                created_at=project.created_at,
-                updated_at=project.updated_at,
-            ))
-        
-        # Return the list directly - FastAPI will serialize it correctly
-        return project_list
-        
-    except ProgrammingError as pe:
-        # If the error is about missing columns, query with explicit column selection
-        error_msg = str(pe).lower()
-        if 'client_id' in error_msg or 'responsable_id' in error_msg or 'column' in error_msg:
-            logger.warning(
-                "Missing columns detected, querying with explicit column selection",
-                context={
-                    "error": str(pe),
-                    "user_id": current_user.id,
-                }
-            )
-            
-            # Build query with only columns that exist (excluding client_id and responsable_id)
-            query = select(
-                Project.id,
-                Project.name,
-                Project.description,
-                Project.status,
-                Project.user_id,
-                Project.created_at,
-                Project.updated_at
-            ).where(Project.user_id == current_user.id)
+    # Check if client_id and responsable_id columns exist BEFORE querying
+    # This prevents transaction errors
+    columns_exist = await _check_project_columns_exist(db, ['client_id', 'responsable_id'])
+    
+    # Build query based on column existence
+    if columns_exist['client_id'] and columns_exist['responsable_id']:
+        # Both columns exist - use normal query with relationships
+        try:
+            query = select(Project).where(Project.user_id == current_user.id)
             
             if status:
                 query = query.where(Project.status == status)
@@ -167,89 +87,101 @@ async def get_projects(
             query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
             
             result = await db.execute(query)
-            # Convert rows to dict-like objects
-            rows = result.all()
-            projects = []
-            for row in rows:
-                # Create a simple object with the row data
-                class ProjectRow:
-                    def __init__(self, row):
-                        self.id = row.id
-                        self.name = row.name
-                        self.description = row.description
-                        self.status = row.status
-                        self.user_id = row.user_id
-                        self.created_at = row.created_at
-                        self.updated_at = row.updated_at
-                        # These columns don't exist, so set to None
-                        self.client_id = None
-                        self.responsable_id = None
-                projects.append(ProjectRow(row))
-        else:
-            # Re-raise if it's a different ProgrammingError
-            raise
+            projects = result.scalars().all()
+        except ProgrammingError as pe:
+            # If query fails, rollback and use explicit column selection
+            await db.rollback()
+            logger.warning(
+                "Query failed, using explicit column selection",
+                context={"error": str(pe)}
+            )
+            # Fall through to explicit column selection below
+            columns_exist = {'client_id': False, 'responsable_id': False}
+    
+    # Use explicit column selection if columns don't exist or query failed
+    if not columns_exist['client_id'] or not columns_exist['responsable_id']:
+        query = select(
+            Project.id,
+            Project.name,
+            Project.description,
+            Project.status,
+            Project.user_id,
+            Project.created_at,
+            Project.updated_at
+        ).where(Project.user_id == current_user.id)
         
-        # Convert to response format - safely handle missing columns
-        project_list = []
-        for project in projects:
-            # Safely get client_id and responsable_id first
-            client_id = None
-            responsable_id = None
+        if status:
+            query = query.where(Project.status == status)
+        
+        query = apply_tenant_scope(query, Project)
+        query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+        
+        result = await db.execute(query)
+        rows = result.all()
+        
+        # Convert rows to ProjectRow objects
+        class ProjectRow:
+            def __init__(self, row):
+                self.id = row.id
+                self.name = row.name
+                self.description = row.description
+                self.status = row.status
+                self.user_id = row.user_id
+                self.created_at = row.created_at
+                self.updated_at = row.updated_at
+                self.client_id = None
+                self.responsable_id = None
+        
+        projects = [ProjectRow(row) for row in rows]
+    
+    # Convert to response format
+    project_list = []
+    for project in projects:
+        # Get client_id and responsable_id
+        client_id = getattr(project, 'client_id', None) if columns_exist['client_id'] else None
+        responsable_id = getattr(project, 'responsable_id', None) if columns_exist['responsable_id'] else None
+        
+        # Try to load client name if client_id exists
+        client_name = None
+        if client_id:
             try:
-                client_id = getattr(project, 'client_id', None)
-            except (AttributeError, ProgrammingError):
-                pass
-            
+                client_result = await db.execute(
+                    select(People).where(People.id == client_id)
+                )
+                client = client_result.scalar_one_or_none()
+                if client:
+                    client_name = f"{client.first_name} {client.last_name}".strip()
+            except Exception:
+                client_name = None
+        
+        # Try to load responsable name if responsable_id exists
+        responsable_name = None
+        if responsable_id:
             try:
-                responsable_id = getattr(project, 'responsable_id', None)
-            except (AttributeError, ProgrammingError):
-                pass
-            
-            # Try to load client name if client_id exists
-            client_name = None
-            if client_id:
-                try:
-                    # Manually load the People if client_id exists
-                    from app.models.people import People
-                    client_result = await db.execute(
-                        select(People).where(People.id == client_id)
-                    )
-                    client = client_result.scalar_one_or_none()
-                    if client:
-                        client_name = f"{client.first_name} {client.last_name}".strip()
-                except (AttributeError, ProgrammingError, Exception):
-                    # If loading fails, just leave client_name as None
-                    client_name = None
-            
-            # Try to load responsable name if responsable_id exists
-            responsable_name = None
-            if responsable_id:
-                try:
-                    # Manually load the Employee if responsable_id exists
-                    from app.models.employee import Employee
-                    responsable_result = await db.execute(
-                        select(Employee).where(Employee.id == responsable_id)
-                    )
-                    responsable = responsable_result.scalar_one_or_none()
-                    if responsable:
-                        responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
-                except (AttributeError, ProgrammingError, Exception):
-                    # If loading fails, just leave responsable_name as None
-                    responsable_name = None
-            
-            project_list.append(ProjectSchema(
-                id=project.id,
-                name=project.name,
-                description=project.description,
-                status=project.status,
-                user_id=project.user_id,
-                client_id=client_id,
-                client_name=client_name,
-                responsable_id=responsable_id,
-                responsable_name=responsable_name,
-                created_at=project.created_at,
-                updated_at=project.updated_at,
-            ))
+                responsable_result = await db.execute(
+                    select(Employee).where(Employee.id == responsable_id)
+                )
+                responsable = responsable_result.scalar_one_or_none()
+                if responsable:
+                    responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
+            except Exception:
+                responsable_name = None
+        
+        project_list.append(ProjectSchema(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            status=project.status,
+            user_id=project.user_id,
+            client_id=client_id,
+            client_name=client_name,
+            responsable_id=responsable_id,
+            responsable_name=responsable_name,
+            created_at=project.created_at,
+            updated_at=project.updated_at,
+        ))
+    
+    return project_list
         
         # Return the list directly - FastAPI will serialize it correctly
         return project_list
