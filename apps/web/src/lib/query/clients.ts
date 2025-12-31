@@ -20,19 +20,24 @@ export function useInfiniteClients(pageSize = 20, filters?: {
   return useInfiniteQuery({
     queryKey: [QUERY_KEY, 'infinite', filters],
     queryFn: async ({ pageParam = 0 }) => {
+      // Ensure pageParam and pageSize are valid integers
+      const skip = Math.max(0, Math.floor(Number(pageParam)) || 0);
+      const limit = Math.max(1, Math.min(Math.floor(Number(pageSize)) || 20, 1000));
+      
       return await clientsAPI.list(
-        pageParam,
-        pageSize,
+        skip,
+        limit,
         filters?.status,
         filters?.responsible_id,
         filters?.search
       );
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < pageSize) {
+      const limit = Math.max(1, Math.min(Math.floor(Number(pageSize)) || 20, 1000));
+      if (lastPage.length < limit) {
         return undefined;
       }
-      return allPages.length * pageSize;
+      return allPages.length * limit;
     },
     initialPageParam: 0,
   });

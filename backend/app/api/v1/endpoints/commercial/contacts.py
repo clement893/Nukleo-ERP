@@ -332,6 +332,46 @@ async def list_contacts(
     return contact_list
 
 
+@router.get("/count")
+@cache_query(expire=60, tags=["contacts"])
+async def count_contacts(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    circle: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
+) -> Dict[str, int]:
+    """
+    Get total count of contacts in the database
+    
+    Args:
+        circle: Optional circle filter
+        company_id: Optional company filter
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Dictionary with total count
+    """
+    query = select(func.count(Contact.id))
+    
+    if circle:
+        query = query.where(Contact.circle == circle)
+    if company_id:
+        query = query.where(Contact.company_id == company_id)
+    
+    try:
+        result = await db.execute(query)
+        total_count = result.scalar_one()
+    except Exception as e:
+        logger.error(f"Database error in count_contacts: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
+    
+    return {"total": total_count}
+
+
 @router.get("/{contact_id}", response_model=ContactSchema)
 async def get_contact(
     contact_id: int,

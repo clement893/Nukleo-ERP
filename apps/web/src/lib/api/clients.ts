@@ -66,37 +66,26 @@ export const clientsAPI = {
     responsible_id?: number,
     search?: string
   ): Promise<Client[]> => {
-    // Ensure skip and limit are integers (not strings)
-    const skipInt = typeof skip === 'string' ? parseInt(skip, 10) : Math.floor(Number(skip));
-    const limitInt = typeof limit === 'string' ? parseInt(limit, 10) : Math.floor(Number(limit));
+    // Ensure skip and limit are valid integers (not strings, NaN, or undefined)
+    const skipInt = Math.max(0, Math.floor(Number(skip)) || 0);
+    const limitInt = Math.max(1, Math.min(Math.floor(Number(limit)) || 100, 1000));
     
-    const params: Record<string, any> = { 
+    const params: Record<string, string | number> = { 
       skip: skipInt, 
       limit: limitInt,
-      _t: Date.now() 
     };
+    
+    // Only add optional parameters if they have valid values
     if (status) params.status = status;
-    if (responsible_id !== undefined && responsible_id !== null) {
+    if (responsible_id !== undefined && responsible_id !== null && !isNaN(Number(responsible_id))) {
       params.responsible_id = Number(responsible_id);
     }
-    if (search) params.search = search;
+    if (search && search.trim()) {
+      params.search = search.trim();
+    }
 
     const response = await apiClient.get<Client[]>('/v1/projects/clients', { 
       params,
-      paramsSerializer: (params) => {
-        // Ensure numeric params are sent as numbers, not strings
-        const searchParams = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== null && value !== undefined) {
-            if (typeof value === 'number') {
-              searchParams.append(key, value.toString());
-            } else {
-              searchParams.append(key, String(value));
-            }
-          }
-        });
-        return searchParams.toString();
-      }
     });
     const data = extractApiData<Client[]>(response);
     return Array.isArray(data) ? data : [];

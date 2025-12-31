@@ -43,6 +43,7 @@ import {
   useUpdateReseauContact, 
   useDeleteReseauContact, 
   useDeleteAllReseauContacts,
+  useReseauContactsCount,
   reseauContactsAPI 
 } from '@/lib/query/reseau-contacts';
 
@@ -61,6 +62,9 @@ function ContactsContent() {
     isLoading,
     error: queryError,
   } = useInfiniteReseauContacts(20);
+  
+  // Get total count from database
+  const { data: totalCount = 0 } = useReseauContactsCount();
   
   // Mutations
   const createContactMutation = useCreateReseauContact();
@@ -127,9 +131,9 @@ function ContactsContent() {
     };
   }, [contacts]);
 
-  // Filtered contacts with debounced search
+  // Filtered contacts with debounced search and alphabetical sorting
   const filteredContacts = useMemo(() => {
-    return contacts.filter((contact) => {
+    const filtered = contacts.filter((contact) => {
       // City filter: match if no filter or contact city is in filter array
       const matchesCity = filterCity.length === 0 || (contact.city && filterCity.includes(contact.city));
       
@@ -151,6 +155,21 @@ function ContactsContent() {
         contact.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       return matchesCity && matchesPhone && matchesCircle && matchesCompany && matchesSearch;
+    });
+    
+    // Sort alphabetically by first name, then last name
+    return filtered.sort((a, b) => {
+      const aFirstName = (a.first_name || '').toLowerCase();
+      const bFirstName = (b.first_name || '').toLowerCase();
+      const aLastName = (a.last_name || '').toLowerCase();
+      const bLastName = (b.last_name || '').toLowerCase();
+      
+      // Compare first names first
+      if (aFirstName !== bFirstName) {
+        return aFirstName.localeCompare(bFirstName, 'fr', { sensitivity: 'base' });
+      }
+      // If first names are equal, compare last names
+      return aLastName.localeCompare(bLastName, 'fr', { sensitivity: 'base' });
     });
   }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, debouncedSearchQuery]);
   
@@ -498,7 +517,7 @@ function ContactsContent() {
           <div className="flex items-center justify-between">
             <ContactCounter
               filtered={filteredContacts.length}
-              total={contacts.length}
+              total={totalCount}
               showFilteredBadge={hasActiveFilters}
             />
           </div>

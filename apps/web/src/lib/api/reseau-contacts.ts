@@ -40,6 +40,15 @@ export const reseauContactsAPI = {
   },
 
   /**
+   * Get total count of contacts in the database
+   */
+  count: async (): Promise<number> => {
+    const response = await apiClient.get<{ total: number }>('/v1/reseau/contacts/count');
+    const data = extractApiData<{ total: number }>(response);
+    return data?.total || 0;
+  },
+
+  /**
    * Get a contact by ID
    */
   get: async (contactId: number): Promise<Contact> => {

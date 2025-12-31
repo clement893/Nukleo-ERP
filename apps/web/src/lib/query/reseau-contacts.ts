@@ -74,6 +74,18 @@ export function useInfiniteReseauContacts(
 }
 
 /**
+ * Hook to fetch total count of contacts in the database
+ */
+export function useReseauContactsCount() {
+  return useQuery({
+    queryKey: [...reseauContactKeys.all, 'count'],
+    queryFn: () => reseauContactsAPI.count(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+  });
+}
+
+/**
  * Hook to fetch a single contact by ID
  */
 export function useReseauContact(contactId: number, enabled = true) {

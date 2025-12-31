@@ -44,6 +44,22 @@ async def list_contacts(
         company_id=company_id,
     )
 
+@router.get("/count")
+async def count_contacts(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    circle: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
+):
+    """Get total count of contacts in the database for network module"""
+    return await commercial_contacts.count_contacts(
+        db=db,
+        current_user=current_user,
+        circle=circle,
+        company_id=company_id,
+    )
+
 @router.post("/", response_model=ContactSchema, status_code=commercial_contacts.status.HTTP_201_CREATED)
 async def create_contact(
     request: Request,
