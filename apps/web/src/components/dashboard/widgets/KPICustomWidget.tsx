@@ -7,7 +7,6 @@
 import { Target, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
-import { SkeletonWidget } from '@/components/ui/Skeleton';
 
 export function KPICustomWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
