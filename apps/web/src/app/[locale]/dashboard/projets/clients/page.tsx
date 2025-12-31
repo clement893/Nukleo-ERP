@@ -53,7 +53,13 @@ function ClientsContent() {
   // Fetch clients
   const { data: clients = [], isLoading, error: queryError } = useQuery({
     queryKey: ['clients', filterStatus, filterResponsable, debouncedSearchQuery],
-    queryFn: () => clientsAPI.list(0, 1000, filterStatus[0], filterResponsable[0] ? parseInt(filterResponsable[0]) : undefined, debouncedSearchQuery || undefined),
+    queryFn: () => {
+      const status = filterStatus.length > 0 ? filterStatus[0] : undefined;
+      const responsableId = filterResponsable.length > 0 && filterResponsable[0] 
+        ? parseInt(filterResponsable[0], 10) 
+        : undefined;
+      return clientsAPI.list(0, 1000, status, responsableId, debouncedSearchQuery || undefined);
+    },
   });
   
   // Fetch count

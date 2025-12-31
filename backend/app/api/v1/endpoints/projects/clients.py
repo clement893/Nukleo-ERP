@@ -232,9 +232,9 @@ async def list_clients(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    status: Optional[ClientStatus] = Query(None, description="Filter by client status"),
-    responsable_id: Optional[int] = Query(None, description="Filter by responsible employee ID"),
-    company_id: Optional[int] = Query(None, description="Filter by company ID"),
+    status: Optional[str] = Query(None, description="Filter by client status"),
+    responsable_id: Optional[str] = Query(None, description="Filter by responsible employee ID"),
+    company_id: Optional[str] = Query(None, description="Filter by company ID"),
     search: Optional[str] = Query(None, description="Search by company name or responsible employee name"),
     _t: Optional[int] = Query(None, description="Cache-busting timestamp (ignored)", include_in_schema=False),
 ) -> List[Client]:
@@ -271,14 +271,36 @@ async def list_clients(
         limit_int = 100
     limit_int = min(max(1, limit_int), 1000)
     
-    # Use integer parameters directly
-    responsable_id_int = responsable_id
-    company_id_int = company_id
+    # Parse status enum
+    status_enum = None
+    if status:
+        try:
+            status_enum = ClientStatus(status)
+        except (ValueError, TypeError):
+            # Invalid status value, ignore filter
+            pass
+    
+    # Parse integer parameters
+    responsable_id_int = None
+    if responsable_id:
+        try:
+            responsable_id_int = int(responsable_id)
+        except (ValueError, TypeError):
+            # Invalid responsable_id, ignore filter
+            pass
+    
+    company_id_int = None
+    if company_id:
+        try:
+            company_id_int = int(company_id)
+        except (ValueError, TypeError):
+            # Invalid company_id, ignore filter
+            pass
     
     query = select(Client)
     
-    if status:
-        query = query.where(Client.status == status)
+    if status_enum:
+        query = query.where(Client.status == status_enum)
     if responsable_id_int is not None:
         query = query.where(Client.responsable_id == responsable_id_int)
     if company_id_int is not None:
