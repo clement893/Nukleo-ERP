@@ -18,7 +18,7 @@ from app.models.project import Project
 from app.schemas.client import ClientCreate, ClientUpdate, Client as ClientSchema
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/clients", tags=["clients"])
+router = APIRouter(tags=["clients"])
 
 # IMPORTANT: Define /{client_id}/projects BEFORE /{client_id} to ensure proper route matching
 
