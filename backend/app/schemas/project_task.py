@@ -23,35 +23,44 @@ class ProjectTaskBase(BaseModel):
     @classmethod
     def normalize_status(cls, v):
         """Normalize status value to lowercase enum"""
+        # If already an enum, return as-is
+        if isinstance(v, TaskStatus):
+            return v
+        # If string, normalize to lowercase and try to match enum values
         if isinstance(v, str):
-            v = v.lower()
-            # Map common variations to correct enum values
+            v_lower = v.lower()
+            # Try to find matching enum by value
+            for status in TaskStatus:
+                if status.value == v_lower:
+                    return status
+            # Try common variations
             status_map = {
-                'blocked': TaskStatus.BLOCKED,
-                'todo': TaskStatus.TODO,
-                'in_progress': TaskStatus.IN_PROGRESS,
                 'inprogress': TaskStatus.IN_PROGRESS,
-                'to_transfer': TaskStatus.TO_TRANSFER,
                 'totransfer': TaskStatus.TO_TRANSFER,
-                'completed': TaskStatus.COMPLETED,
             }
-            return status_map.get(v, v)
+            if v_lower in status_map:
+                return status_map[v_lower]
+            # If no match, try to use the normalized value directly
+            # Pydantic will validate it against the enum
+            return v_lower
         return v
     
     @field_validator('priority', mode='before')
     @classmethod
     def normalize_priority(cls, v):
         """Normalize priority value to lowercase enum"""
+        # If already an enum, return as-is
+        if isinstance(v, TaskPriority):
+            return v
+        # If string, normalize to lowercase and try to match enum values
         if isinstance(v, str):
-            v = v.lower()
-            # Map common variations to correct enum values
-            priority_map = {
-                'low': TaskPriority.LOW,
-                'medium': TaskPriority.MEDIUM,
-                'high': TaskPriority.HIGH,
-                'urgent': TaskPriority.URGENT,
-            }
-            return priority_map.get(v, v)
+            v_lower = v.lower()
+            # Try to find matching enum by value
+            for priority in TaskPriority:
+                if priority.value == v_lower:
+                    return priority
+            # If no match, return normalized value - Pydantic will validate it
+            return v_lower
         return v
 
 
@@ -83,19 +92,25 @@ class ProjectTaskUpdate(BaseModel):
         """Normalize status value to lowercase enum"""
         if v is None:
             return v
+        # If already an enum, return as-is
+        if isinstance(v, TaskStatus):
+            return v
+        # If string, normalize to lowercase and try to match enum values
         if isinstance(v, str):
-            v = v.lower()
-            # Map common variations to correct enum values
+            v_lower = v.lower()
+            # Try to find matching enum by value
+            for status in TaskStatus:
+                if status.value == v_lower:
+                    return status
+            # Try common variations
             status_map = {
-                'blocked': TaskStatus.BLOCKED,
-                'todo': TaskStatus.TODO,
-                'in_progress': TaskStatus.IN_PROGRESS,
                 'inprogress': TaskStatus.IN_PROGRESS,
-                'to_transfer': TaskStatus.TO_TRANSFER,
                 'totransfer': TaskStatus.TO_TRANSFER,
-                'completed': TaskStatus.COMPLETED,
             }
-            return status_map.get(v, v)
+            if v_lower in status_map:
+                return status_map[v_lower]
+            # If no match, return normalized value - Pydantic will validate it
+            return v_lower
         return v
     
     @field_validator('priority', mode='before')
@@ -104,16 +119,18 @@ class ProjectTaskUpdate(BaseModel):
         """Normalize priority value to lowercase enum"""
         if v is None:
             return v
+        # If already an enum, return as-is
+        if isinstance(v, TaskPriority):
+            return v
+        # If string, normalize to lowercase and try to match enum values
         if isinstance(v, str):
-            v = v.lower()
-            # Map common variations to correct enum values
-            priority_map = {
-                'low': TaskPriority.LOW,
-                'medium': TaskPriority.MEDIUM,
-                'high': TaskPriority.HIGH,
-                'urgent': TaskPriority.URGENT,
-            }
-            return priority_map.get(v, v)
+            v_lower = v.lower()
+            # Try to find matching enum by value
+            for priority in TaskPriority:
+                if priority.value == v_lower:
+                    return priority
+            # If no match, return normalized value - Pydantic will validate it
+            return v_lower
         return v
 
 
