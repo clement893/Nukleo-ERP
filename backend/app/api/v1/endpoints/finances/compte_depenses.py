@@ -441,6 +441,7 @@ async def approve_compte_depenses(
     """
     Approve an expense account
     Admin only - Changes status to APPROVED
+    Can approve from any status except already APPROVED
     """
     result = await db.execute(
         select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
@@ -453,10 +454,19 @@ async def approve_compte_depenses(
             detail="Expense account not found"
         )
     
-    if account.status not in [ExpenseAccountStatus.SUBMITTED.value, ExpenseAccountStatus.UNDER_REVIEW.value]:
+    # Check if already approved
+    if account.status == ExpenseAccountStatus.APPROVED.value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Can only approve expense accounts in SUBMITTED or UNDER_REVIEW status"
+            detail=f"Expense account is already approved (current status: {account.status})"
+        )
+    
+    # Check if user is admin/superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    if not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can approve expense accounts"
         )
     
     account.status = ExpenseAccountStatus.APPROVED.value
@@ -504,6 +514,7 @@ async def reject_compte_depenses(
     """
     Reject an expense account
     Admin only - Changes status to REJECTED
+    Can reject from any status except already REJECTED or APPROVED
     """
     if not action.rejection_reason:
         raise HTTPException(
@@ -522,10 +533,25 @@ async def reject_compte_depenses(
             detail="Expense account not found"
         )
     
-    if account.status not in [ExpenseAccountStatus.SUBMITTED.value, ExpenseAccountStatus.UNDER_REVIEW.value]:
+    # Check if already rejected or approved
+    if account.status == ExpenseAccountStatus.REJECTED.value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Can only reject expense accounts in SUBMITTED or UNDER_REVIEW status"
+            detail=f"Expense account is already rejected (current status: {account.status})"
+        )
+    
+    if account.status == ExpenseAccountStatus.APPROVED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot reject an already approved expense account"
+        )
+    
+    # Check if user is admin/superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    if not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can reject expense accounts"
         )
     
     account.status = ExpenseAccountStatus.REJECTED.value
@@ -574,6 +600,7 @@ async def request_clarification_compte_depenses(
     """
     Request clarification for an expense account
     Admin only - Changes status to NEEDS_CLARIFICATION
+    Can request clarification from any status except already APPROVED
     """
     if not action.clarification_request:
         raise HTTPException(
@@ -592,10 +619,19 @@ async def request_clarification_compte_depenses(
             detail="Expense account not found"
         )
     
-    if account.status not in [ExpenseAccountStatus.SUBMITTED.value, ExpenseAccountStatus.UNDER_REVIEW.value]:
+    # Check if already approved
+    if account.status == ExpenseAccountStatus.APPROVED.value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Can only request clarification for expense accounts in SUBMITTED or UNDER_REVIEW status"
+            detail="Cannot request clarification for an already approved expense account"
+        )
+    
+    # Check if user is admin/superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    if not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can request clarification for expense accounts"
         )
     
     account.status = ExpenseAccountStatus.NEEDS_CLARIFICATION.value
