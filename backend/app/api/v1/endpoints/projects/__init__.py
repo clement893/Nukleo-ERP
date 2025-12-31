@@ -4,7 +4,7 @@ Project Management Endpoints
 
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status as http_status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func, delete, text, inspect
@@ -55,7 +55,7 @@ async def get_projects(
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records"),
-    status: ProjectStatus | None = Query(None, description="Filter by status"),
+    status: str | None = Query(None, description="Filter by status (active, archived, completed)"),
 ) -> List[ProjectSchema]:
     """
     Get list of projects for the current user
@@ -70,6 +70,26 @@ async def get_projects(
     Returns:
         List of projects
     """
+    # Convert status string to enum if provided (case-insensitive)
+    status_enum: ProjectStatus | None = None
+    if status:
+        status_lower = status.lower()
+        try:
+            # Map common status values (case-insensitive)
+            status_map = {
+                'active': ProjectStatus.ACTIVE,
+                'archived': ProjectStatus.ARCHIVED,
+                'completed': ProjectStatus.COMPLETED,
+            }
+            status_enum = status_map.get(status_lower)
+            if status_enum is None:
+                raise ValueError(f"Invalid status: {status}. Must be one of: active, archived, completed")
+        except (ValueError, KeyError) as e:
+            raise HTTPException(
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid status value: {status}. Must be one of: active, archived, completed"
+            )
+    
     # Check if client_id and responsable_id columns exist BEFORE querying
     # This prevents transaction errors
     columns_exist = await _check_project_columns_exist(db, ['client_id', 'responsable_id'])
@@ -80,8 +100,8 @@ async def get_projects(
         try:
             query = select(Project).where(Project.user_id == current_user.id)
             
-            if status:
-                query = query.where(Project.status == status)
+            if status_enum:
+                query = query.where(Project.status == status_enum)
             
             query = apply_tenant_scope(query, Project)
             query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
@@ -110,8 +130,8 @@ async def get_projects(
             Project.updated_at
         ).where(Project.user_id == current_user.id)
         
-        if status:
-            query = query.where(Project.status == status)
+        if status_enum:
+            query = query.where(Project.status == status_enum)
         
         query = apply_tenant_scope(query, Project)
         query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
@@ -251,7 +271,7 @@ async def get_project(
     
     if not project:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     
@@ -365,7 +385,7 @@ async def find_people_by_name(
     return None
 
 
-@router.post("/", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ProjectSchema, status_code=http_status.HTTP_201_CREATED)
 @rate_limit_decorator("30/hour")
 @invalidate_cache_pattern("projects:*")
 async def create_project(
@@ -480,7 +500,7 @@ async def update_project(
     
     if not project:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     
@@ -545,7 +565,7 @@ async def update_project(
     return ProjectSchema(**project_dict)
 
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{project_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 @rate_limit_decorator("50/hour")
 @invalidate_cache_pattern("projects:*")
 @invalidate_cache_pattern("project:*")
@@ -575,7 +595,7 @@ async def delete_project(
     
     if not project:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     
@@ -583,7 +603,7 @@ async def delete_project(
     await db.commit()
 
 
-@router.delete("/bulk", status_code=status.HTTP_200_OK)
+@router.delete("/bulk", status_code=http_status.HTTP_200_OK)
 async def delete_all_projects(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
