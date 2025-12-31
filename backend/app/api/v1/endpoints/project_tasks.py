@@ -276,24 +276,24 @@ async def create_task(
     
     # Create task
     try:
-        task = ProjectTask(
-            title=task_data.title,
-            description=task_data.description,
-            status=task_data.status,
-            priority=task_data.priority,
-            team_id=task_data.team_id,
-            project_id=task_data.project_id,
-            assignee_id=task_data.assignee_id,
-            created_by_id=current_user.id,
-            due_date=task_data.due_date,
-            order=task_data.order,
-        )
-        
-        db.add(task)
-        await db.commit()
-        await db.refresh(task)
-        
-        return task
+    task = ProjectTask(
+        title=task_data.title,
+        description=task_data.description,
+        status=task_data.status,
+        priority=task_data.priority,
+        team_id=task_data.team_id,
+        project_id=task_data.project_id,
+        assignee_id=task_data.assignee_id,
+        created_by_id=current_user.id,
+        due_date=task_data.due_date,
+        order=task_data.order,
+    )
+    
+    db.add(task)
+    await db.commit()
+    await db.refresh(task)
+    
+    return task
     except (ProgrammingError, PendingRollbackError, Exception) as e:
         error_str = str(e).lower()
         # If error is due to project_id column not existing, create task without project_id
