@@ -422,11 +422,11 @@ function CompteDepensesContent() {
       sortable: true,
       render: (_value, account) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium">{account.account_number}</div>
-            <div className="text-sm text-muted-foreground">{account.title}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate" title={account.account_number}>{account.account_number}</div>
+            <div className="text-sm text-muted-foreground truncate" title={account.title}>{account.title}</div>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
             <Button
               variant="ghost"
               size="sm"

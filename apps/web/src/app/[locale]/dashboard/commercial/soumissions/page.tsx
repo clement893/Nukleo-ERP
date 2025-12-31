@@ -227,6 +227,9 @@ function SoumissionsContent() {
       key: 'title',
       label: 'Titre',
       sortable: true,
+      render: (value) => (
+        <span className="truncate block" title={value ? String(value) : undefined}>{value ? String(value) : '-'}</span>
+      ),
     },
     {
       key: 'company_name',
@@ -287,6 +290,9 @@ function SoumissionsContent() {
       key: 'title',
       label: 'Titre',
       sortable: true,
+      render: (value) => (
+        <span className="truncate block" title={value ? String(value) : undefined}>{value ? String(value) : '-'}</span>
+      ),
     },
     {
       key: 'company_name',

@@ -313,10 +313,10 @@ function EmployeesContent() {
       sortable: true,
       render: (_value, employee) => (
         <div className="flex items-center justify-between group">
-          <div>
-            <div className="font-medium">{employee.first_name} {employee.last_name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate" title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
             <EmployeeRowActions
               employee={employee}
               onView={() => openDetailPage(employee)}

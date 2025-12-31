@@ -287,7 +287,7 @@ function TemoignagesContent() {
       label: 'Entreprise',
       sortable: true,
       render: (value) => (
-        <span className="font-medium">{value ? String(value) : '-'}</span>
+        <span className="font-medium truncate block" title={value ? String(value) : undefined}>{value ? String(value) : '-'}</span>
       ),
     },
     {

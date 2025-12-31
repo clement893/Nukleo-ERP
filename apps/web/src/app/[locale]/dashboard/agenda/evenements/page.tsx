@@ -229,8 +229,8 @@ function EvenementsContent() {
       label: 'Titre',
       sortable: true,
       render: (_value, event) => (
-        <div>
-          <div className="font-medium text-foreground">{event.title}</div>
+        <div className="min-w-0">
+          <div className="font-medium text-foreground truncate" title={event.title}>{event.title}</div>
           {event.description && (
             <div className="text-sm text-muted-foreground line-clamp-1">{event.description}</div>
           )}
