@@ -5,39 +5,12 @@ SQLAlchemy model for project tasks
 
 from datetime import datetime
 import enum
-from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SQLEnum, Numeric, func, Index, TypeDecorator
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SQLEnum, Numeric, func, Index
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
 
-class EnumValueType(TypeDecorator):
-    """Custom type that stores enum values (not names) as strings"""
-    impl = String
-    cache_ok = True
-    
-    def __init__(self, enum_class, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.enum_class = enum_class
-        self.length = kwargs.get('length', 50)
-        self.impl = String(self.length)
-    
-    def process_bind_param(self, value, dialect):
-        """Convert enum to its value when inserting"""
-        if value is None:
-            return None
-        if isinstance(value, enum.Enum):
-            return value.value
-        return value
-    
-    def process_result_value(self, value, dialect):
-        """Convert value back to enum when reading"""
-        if value is None:
-            return None
-        try:
-            return self.enum_class(value)
-        except ValueError:
-            return value
 
 
 class TaskStatus(str, enum.Enum):
@@ -72,8 +45,8 @@ class ProjectTask(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    status = Column(EnumValueType(TaskStatus, length=20), default=TaskStatus.TODO, nullable=False, index=True)
-    priority = Column(EnumValueType(TaskPriority, length=20), default=TaskPriority.MEDIUM, nullable=False, index=True)
+    status = Column(SQLEnum(TaskStatus, native_enum=False, values_callable=lambda obj: [e.value for e in obj]), default=TaskStatus.TODO, nullable=False, index=True)
+    priority = Column(SQLEnum(TaskPriority, native_enum=False, values_callable=lambda obj: [e.value for e in obj]), default=TaskPriority.MEDIUM, nullable=False, index=True)
     
     # Relations
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
