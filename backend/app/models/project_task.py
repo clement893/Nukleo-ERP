@@ -5,10 +5,39 @@ SQLAlchemy model for project tasks
 
 from datetime import datetime
 import enum
-from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SQLEnum, Numeric, func, Index
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SQLEnum, Numeric, func, Index, TypeDecorator
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+
+
+class EnumValueType(TypeDecorator):
+    """Custom type that stores enum values (not names) as strings"""
+    impl = String
+    cache_ok = True
+    
+    def __init__(self, enum_class, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.enum_class = enum_class
+        self.length = kwargs.get('length', 50)
+        self.impl = String(self.length)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to its value when inserting"""
+        if value is None:
+            return None
+        if isinstance(value, enum.Enum):
+            return value.value
+        return value
+    
+    def process_result_value(self, value, dialect):
+        """Convert value back to enum when reading"""
+        if value is None:
+            return None
+        try:
+            return self.enum_class(value)
+        except ValueError:
+            return value
 
 
 class TaskStatus(str, enum.Enum):
