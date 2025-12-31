@@ -4,15 +4,17 @@
  * Bibliothèque de widgets - Modal pour ajouter des widgets
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, Search, Plus } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { widgetRegistry, getCategories } from '@/lib/dashboard/widgetRegistry';
+import { getFilteredWidgetRegistry } from '@/lib/dashboard/widgetPermissions';
 import type { WidgetType } from '@/lib/dashboard/types';
 
 interface WidgetLibraryProps {
   isOpen: boolean;
   onClose: () => void;
+  hasModuleAccess?: (module: string) => boolean; // Optional permission checker for ERP portal
 }
 
 const categoryLabels: Record<string, string> = {
@@ -24,15 +26,26 @@ const categoryLabels: Record<string, string> = {
   system: 'Système',
 };
 
-export function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
+export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibraryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { addWidget } = useDashboardStore();
 
-  const categories = getCategories();
+  // Filter widgets based on permissions if provided
+  const filteredRegistry = useMemo(() => {
+    if (hasModuleAccess) {
+      return getFilteredWidgetRegistry(hasModuleAccess);
+    }
+    return widgetRegistry;
+  }, [hasModuleAccess]);
+
+  const categories = useMemo(() => {
+    const cats = new Set(Object.values(filteredRegistry).map(w => w.category));
+    return Array.from(cats);
+  }, [filteredRegistry]);
 
   const handleAddWidget = (widgetType: WidgetType) => {
-    const widgetDef = widgetRegistry[widgetType];
+    const widgetDef = filteredRegistry[widgetType];
     if (!widgetDef) return;
 
     // Trouver la position disponible (en bas de la grille)
@@ -53,7 +66,7 @@ export function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
     onClose();
   };
 
-  const filteredWidgets = Object.values(widgetRegistry).filter((widget) => {
+  const filteredWidgets = Object.values(filteredRegistry).filter((widget) => {
     const matchesSearch =
       searchQuery === '' ||
       widget.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
