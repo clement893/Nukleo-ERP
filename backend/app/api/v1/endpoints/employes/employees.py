@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
+from sqlalchemy.exc import OperationalError
+import asyncpg
 from io import BytesIO
 from datetime import datetime as dt
 import json
@@ -148,20 +150,50 @@ async def list_employees(
     """
     # Handle case where columns might not exist yet (migration not applied)
     # Try normal query first, fallback to explicit column selection if columns are missing
+    employees = []
     try:
         query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(query)
         employees = result.scalars().all()
     except Exception as e:
+        # Check if it's a transaction error (asyncpg wraps it in OperationalError)
         error_str = str(e).lower()
+        is_transaction_error = False
         
-        # Check if error is due to failed transaction - rollback first
+        # Check error message
         if 'transaction is aborted' in error_str or 'infailed' in error_str:
+            is_transaction_error = True
+        
+        # Check if it's the specific asyncpg exception type
+        if isinstance(e, OperationalError) and hasattr(e, 'orig'):
+            if isinstance(e.orig, asyncpg.exceptions.InFailedSQLTransactionError):
+                is_transaction_error = True
+        
+        if is_transaction_error:
+            # This is a transaction error - rollback and retry
             logger.warning(f"Transaction error detected, rolling back: {e}")
             try:
                 await db.rollback()
-            except Exception as rollback_error:
-                logger.error(f"Error during rollback: {rollback_error}", exc_info=True)
+                # Retry the query after rollback
+                query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
+                result = await db.execute(query)
+                employees = result.scalars().all()
+            except Exception as retry_error:
+                logger.error(f"Query failed after rollback retry: {retry_error}", exc_info=True)
+                # Fall through to handle as regular error
+                error_str = str(retry_error).lower()
+                # Check if it's still a transaction error
+                if 'transaction is aborted' in error_str or 'infailed' in error_str:
+                    # Try one more rollback
+                    try:
+                        await db.rollback()
+                    except Exception:
+                        pass
+                # Re-raise to fall through to column check logic
+                raise retry_error
+        
+        # Not a transaction error, check for other error types
+        error_str = str(e).lower()
         
         # Check if error is due to missing columns
         if 'does not exist' in error_str or 'undefinedcolumn' in error_str or 'column' in error_str:
