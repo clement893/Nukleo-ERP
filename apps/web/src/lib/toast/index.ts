@@ -13,6 +13,7 @@ export interface ToastData {
   type?: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
   icon?: React.ReactNode;
+  title?: string;
 }
 
 interface ToastStore {

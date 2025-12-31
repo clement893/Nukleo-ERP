@@ -46,9 +46,7 @@ export default function Tooltip({
   useEffect(() => {
     if (isVisible && tooltipRef.current && containerRef.current) {
       const tooltip = tooltipRef.current;
-      const container = containerRef.current;
       const rect = tooltip.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
 
       // Check if tooltip goes off screen and adjust position
       let newPosition = position;
