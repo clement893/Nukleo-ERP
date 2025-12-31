@@ -34,6 +34,7 @@ export interface KanbanBoardProps {
   showColumnTotals?: boolean;
   getCardValue?: (card: KanbanCard) => number;
   formatValue?: (value: number) => string;
+  renderCard?: (card: KanbanCard, isDragged: boolean, onDragStart: () => void) => React.ReactNode;
 }
 
 export default function KanbanBoard({
@@ -46,6 +47,7 @@ export default function KanbanBoard({
   showColumnTotals = false,
   getCardValue,
   formatValue = (value) => value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }),
+  renderCard,
 }: KanbanBoardProps) {
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
@@ -136,51 +138,63 @@ export default function KanbanBoard({
 
             {/* Cards - Scrollable area */}
             <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
-              {columnCards.map((card) => (
-                <div
-                  key={card.id}
-                  draggable
-                  onDragStart={() => handleDragStart(card.id)}
-                  onClick={() => onCardClick?.(card)}
-                  className={clsx(
-                    'bg-background dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-shadow flex-shrink-0',
-                    draggedCard === card.id && 'opacity-50'
-                  )}
-                >
-                  <h4 className="font-medium text-foreground dark:text-white mb-2">
-                    {card.title}
-                  </h4>
-                  {card.description && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {card.description}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    {card.priority && (
-                      <span className={clsx('text-xs px-2 py-1 rounded', getPriorityColor(card.priority))}>
-                        {card.priority}
-                      </span>
+              {columnCards.map((card) => {
+                if (renderCard) {
+                  return (
+                    <div
+                      key={card.id}
+                      onDragStart={() => handleDragStart(card.id)}
+                    >
+                      {renderCard(card, draggedCard === card.id, () => handleDragStart(card.id))}
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={card.id}
+                    draggable
+                    onDragStart={() => handleDragStart(card.id)}
+                    onClick={() => onCardClick?.(card)}
+                    className={clsx(
+                      'bg-background dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-shadow flex-shrink-0',
+                      draggedCard === card.id && 'opacity-50'
                     )}
-                    {card.tags && card.tags.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {card.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="text-xs px-2 py-1 bg-muted dark:bg-gray-700 text-muted-foreground rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                  >
+                    <h4 className="font-medium text-foreground dark:text-white mb-2">
+                      {card.title}
+                    </h4>
+                    {card.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {card.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      {card.priority && (
+                        <span className={clsx('text-xs px-2 py-1 rounded', getPriorityColor(card.priority))}>
+                          {card.priority}
+                        </span>
+                      )}
+                      {card.tags && card.tags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {card.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="text-xs px-2 py-1 bg-muted dark:bg-gray-700 text-muted-foreground rounded"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {card.dueDate && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {new Date(card.dueDate).toLocaleDateString()}
                       </div>
                     )}
                   </div>
-                  {card.dueDate && (
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      {new Date(card.dueDate).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Column Footer with Total */}

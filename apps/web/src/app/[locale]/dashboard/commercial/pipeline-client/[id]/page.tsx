@@ -17,6 +17,8 @@ import { pipelinesAPI, type Pipeline, type PipelineStage } from '@/lib/api/pipel
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { companiesAPI, type Company } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
+import PipelineOpportunityCard from '@/components/commercial/PipelineOpportunityCard';
+import { type KanbanCard } from '@/components/ui/KanbanBoard';
 
 // Helper function to convert Opportunity to Opportunite
 const convertOpportunityToOpportunite = (opp: Opportunity): Opportunite => {
@@ -112,9 +114,11 @@ function PipelineDetailContent() {
         priority: opp.probability && opp.probability >= 70 ? 'high' : opp.probability && opp.probability >= 40 ? 'medium' : 'low',
         dueDate: opp.expected_close_date ? new Date(opp.expected_close_date) : undefined,
         tags: opp.amount ? [`$${opp.amount.toLocaleString('en-US')}`] : [],
-        // Store amount in data for total calculation
+        // Store amount and contact info in data for display
         data: {
           amount: opp.amount || 0,
+          contact_ids: opp.contact_ids || [],
+          contact_names: opp.contact_names || [],
         },
       }));
   }, [opportunities, pipeline, pipelineId]);
@@ -574,6 +578,29 @@ function PipelineDetailContent() {
               return (card.data?.amount as number) || 0;
             }}
             formatValue={(value) => `$${value.toLocaleString('en-US')}`}
+            renderCard={(card: KanbanCard, isDragged: boolean, onDragStart: () => void) => {
+              const opportunity = opportunities.find(opp => opp.id === card.id);
+              return (
+                <PipelineOpportunityCard
+                  id={card.id}
+                  title={card.title}
+                  description={card.description}
+                  priority={card.priority}
+                  dueDate={card.dueDate}
+                  tags={card.tags}
+                  contact_ids={opportunity?.contact_ids}
+                  contact_names={opportunity?.contact_names}
+                  contacts={contacts}
+                  onAddContact={() => {
+                    if (opportunity) {
+                      handleCardClick(card);
+                    }
+                  }}
+                  onClick={() => handleCardClick(card)}
+                  dragged={isDragged}
+                />
+              );
+            }}
           />
         </div>
       </div>

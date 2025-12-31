@@ -16,6 +16,8 @@ import os
 import uuid
 import json
 import asyncio
+import unicodedata
+import re
 from io import BytesIO
 
 from app.core.database import get_db
@@ -34,6 +36,19 @@ from app.utils.import_logs import (
 )
 
 router = APIRouter(prefix="/commercial/opportunities", tags=["commercial-opportunities"])
+
+
+# Helper function to normalize column names (case-insensitive, accent-insensitive)
+def normalize_key(key: str) -> str:
+    """Normalize column name for matching"""
+    if not key:
+        return ""
+    # Convert to lowercase
+    key = key.lower().strip()
+    # Remove accents
+    key = unicodedata.normalize('NFD', key)
+    key = ''.join(char for char in key if unicodedata.category(char) != 'Mn')
+    return key
 
 
 async def find_company_by_name(
@@ -67,23 +82,49 @@ async def find_company_by_name(
         companies_result = await db.execute(select(Company))
         all_companies = companies_result.scalars().all()
         company_name_to_id = {}
+        company_name_normalized_to_id = {}  # For accent-insensitive matching
         for company in all_companies:
             if company.name:
-                company_name_to_id[company.name.lower().strip()] = company.id
+                name_lower = company.name.lower().strip()
+                company_name_to_id[name_lower] = company.id
+                # Also create normalized version (without accents) for better matching
+                name_normalized = normalize_key(company.name).lower().strip()
+                if name_normalized != name_lower:  # Only add if different
+                    company_name_normalized_to_id[name_normalized] = company.id
+    else:
+        # Build normalized mapping if not already done
+        company_name_normalized_to_id = {}
+        for company in all_companies:
+            if company.name:
+                name_normalized = normalize_key(company.name).lower().strip()
+                name_lower = company.name.lower().strip()
+                if name_normalized != name_lower:
+                    company_name_normalized_to_id[name_normalized] = company.id
     
     company_name_normalized = company_name.strip().lower()
+    company_name_normalized_no_accents = normalize_key(company_name).lower().strip()
+    
     # Remove common prefixes/suffixes for better matching
     company_name_clean = company_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+    company_name_clean_no_accents = company_name_normalized_no_accents.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
     
-    # Try exact match first
+    # Try exact match first (with accents)
     if company_name_normalized in company_name_to_id:
         return company_name_to_id[company_name_normalized]
     
-    # Try match without legal form
+    # Try exact match without accents
+    if company_name_normalized_no_accents in company_name_normalized_to_id:
+        return company_name_normalized_to_id[company_name_normalized_no_accents]
+    
+    # Try match without legal form (with accents)
     if company_name_clean and company_name_clean in company_name_to_id:
         return company_name_to_id[company_name_clean]
     
-    # Try partial match (contains)
+    # Try match without legal form (without accents)
+    if company_name_clean_no_accents and company_name_clean_no_accents in company_name_normalized_to_id:
+        return company_name_normalized_to_id[company_name_clean_no_accents]
+    
+    # Try partial match (contains) - with accents
     matched_company_id = None
     for stored_name, stored_id in company_name_to_id.items():
         stored_clean = stored_name.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
@@ -92,10 +133,26 @@ async def find_company_by_name(
             matched_company_id = stored_id
             break
     
-    # If no match with cleaned, try original normalized
+    # Try partial match (contains) - without accents
+    if not matched_company_id:
+        for stored_name_normalized, stored_id in company_name_normalized_to_id.items():
+            stored_clean = stored_name_normalized.replace('sarl', '').replace('sa', '').replace('sas', '').replace('eurl', '').strip()
+            if (company_name_clean_no_accents and stored_clean and 
+                (company_name_clean_no_accents in stored_clean or stored_clean in company_name_clean_no_accents)):
+                matched_company_id = stored_id
+                break
+    
+    # If no match with cleaned, try original normalized (with accents)
     if not matched_company_id:
         for stored_name, stored_id in company_name_to_id.items():
             if (company_name_normalized in stored_name or stored_name in company_name_normalized):
+                matched_company_id = stored_id
+                break
+    
+    # If still no match, try original normalized (without accents)
+    if not matched_company_id:
+        for stored_name_normalized, stored_id in company_name_normalized_to_id.items():
+            if (company_name_normalized_no_accents in stored_name_normalized or stored_name_normalized in company_name_normalized_no_accents):
                 matched_company_id = stored_id
                 break
     
@@ -778,19 +835,6 @@ async def import_opportunities(
                 full_name = f"{contact.first_name.strip().lower()} {contact.last_name.strip().lower()}"
                 contact_name_to_id[full_name] = contact.id
         add_import_log(import_id, f"{len(contact_name_to_id)} contact(s) chargé(s) pour le matching", "info")
-        
-        # Helper function to normalize column names (case-insensitive, accent-insensitive)
-        import unicodedata
-        import re
-        
-        def normalize_key(key: str) -> str:
-            """Normalize column name for matching"""
-            if not key:
-                return ''
-            normalized = str(key).lower().strip()
-            normalized = unicodedata.normalize('NFD', normalized)
-            normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
-            return normalized
         
         # Load all pipelines and stages once to create name -> ID mappings
         add_import_log(import_id, "Chargement des pipelines et stades existants...", "info")
