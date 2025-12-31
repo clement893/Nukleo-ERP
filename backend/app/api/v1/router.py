@@ -102,6 +102,7 @@ api_router.include_router(
 # Register clients endpoints (under projects module) - MUST be before /projects/{project_id} route
 api_router.include_router(
     projects_clients.router,
+    prefix="",  # Router already has /projects/clients prefix
     tags=["clients"]
 )
 
