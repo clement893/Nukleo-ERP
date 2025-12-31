@@ -61,7 +61,8 @@ const formatDate = (date: Date, formatStr: string): string => {
     return `${day} ${monthNames[month - 1]} ${year}`;
   }
   if (formatStr === 'EEE') {
-    return dayNames[date.getDay()] || dayNames[0];
+    const dayIndex = date.getDay();
+    return dayNames[dayIndex] ?? dayNames[0] ?? 'dim';
   }
   return date.toLocaleDateString('fr-FR');
 };
