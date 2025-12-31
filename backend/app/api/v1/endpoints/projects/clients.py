@@ -45,50 +45,24 @@ async def list_clients_test(
 # Temporarily removed @cache_query to debug validation issue
 async def list_clients(
     request: Request,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, ge=1, le=1000, description="Maximum number of records"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search term"),
+    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    current_user: Annotated[User, Depends(get_current_user)] = None,
 ) -> List[ClientSchema]:
     """
     Get list of clients
     """
-    # Read query parameters directly from request to bypass FastAPI validation
-    # This is a workaround for the validation issue
-    query_params = dict(request.query_params)
-    
-    # Parse skip parameter
-    skip_str = query_params.get("skip", "0")
-    try:
-        skip = int(skip_str)
-        if skip < 0:
-            skip = 0
-    except (ValueError, TypeError):
-        logger.warning(f"[ClientsAPI] Invalid skip parameter: {skip_str}, using default 0")
-        skip = 0
-    
-    # Parse limit parameter
-    limit_str = query_params.get("limit", "20")
-    try:
-        limit = int(limit_str)
-        if limit < 1:
-            limit = 20
-        elif limit > 1000:
-            limit = 1000
-    except (ValueError, TypeError):
-        logger.warning(f"[ClientsAPI] Invalid limit parameter: {limit_str}, using default 20")
-        limit = 20
-    
     # Parse status parameter
-    status_filter = query_params.get("status")
-    
-    # Parse search parameter
-    search = query_params.get("search")
+    status_filter = status
     
     # Log that we've reached the endpoint with detailed information
     logger.info(f"[ClientsAPI] ========================================")
     logger.info(f"[ClientsAPI] ✅ ENDPOINT REACHED")
     logger.info(f"[ClientsAPI] URL: {request.url}")
     logger.info(f"[ClientsAPI] Method: {request.method}")
-    logger.info(f"[ClientsAPI] Query params (raw): {query_params}")
     logger.info(f"[ClientsAPI] Parsed skip: {skip} (type: {type(skip).__name__})")
     logger.info(f"[ClientsAPI] Parsed limit: {limit} (type: {type(limit).__name__})")
     logger.info(f"[ClientsAPI] Status: {status_filter}")
