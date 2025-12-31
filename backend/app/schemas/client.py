@@ -5,7 +5,7 @@ Pydantic v2 models for clients
 
 from datetime import datetime, date
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from app.models.client import ClientStatus
 
 
@@ -13,6 +13,19 @@ class ClientBase(BaseModel):
     """Base client schema"""
     first_name: str = Field(..., min_length=1, max_length=100, description="First name")
     last_name: str = Field(..., min_length=1, max_length=100, description="Last name")
+    
+    @field_validator('first_name', 'last_name', mode='before')
+    @classmethod
+    def validate_name_fields(cls, v: str) -> str:
+        """Validate and clean name fields - handle empty strings from database"""
+        if v is None:
+            return "N/A"
+        if isinstance(v, str):
+            cleaned = v.strip()
+            if not cleaned:
+                return "N/A"
+            return cleaned
+        return str(v) if v else "N/A"
     email: Optional[EmailStr] = Field(None, description="Email address")
     phone: Optional[str] = Field(None, max_length=50, description="Phone number")
     linkedin: Optional[str] = Field(None, max_length=500, description="LinkedIn URL")

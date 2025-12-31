@@ -73,6 +73,7 @@ async def list_clients(
         clients_list = result.scalars().all()
         logger.info(f"[ClientsAPI] Found {len(clients_list)} clients")
         
+        # The validator in ClientSchema will handle empty strings
         return [ClientSchema.model_validate(client) for client in clients_list]
     except Exception as e:
         logger.error(f"[ClientsAPI] Error: {e}", exc_info=True)
@@ -104,6 +105,7 @@ async def get_client(
             detail=f"Client with ID {client_id} not found"
         )
 
+    # The validator in ClientSchema will handle empty strings
     return ClientSchema.model_validate(client)
 
 
@@ -128,6 +130,7 @@ async def create_client(
     await db.commit()
     await db.refresh(client)
 
+    # The validator in ClientSchema will handle empty strings
     return ClientSchema.model_validate(client)
 
 
@@ -162,6 +165,7 @@ async def update_client(
     await db.commit()
     await db.refresh(client)
 
+    # The validator in ClientSchema will handle empty strings
     return ClientSchema.model_validate(client)
 
 
