@@ -6,7 +6,7 @@ API endpoints for project task management
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text, insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import ProgrammingError
 
@@ -275,24 +275,83 @@ async def create_task(
             )
     
     # Create task
-    task = ProjectTask(
-        title=task_data.title,
-        description=task_data.description,
-        status=task_data.status,
-        priority=task_data.priority,
-        team_id=task_data.team_id,
-        project_id=task_data.project_id,
-        assignee_id=task_data.assignee_id,
-        created_by_id=current_user.id,
-        due_date=task_data.due_date,
-        order=task_data.order,
-    )
-    
-    db.add(task)
-    await db.commit()
-    await db.refresh(task)
-    
-    return task
+    try:
+        task = ProjectTask(
+            title=task_data.title,
+            description=task_data.description,
+            status=task_data.status,
+            priority=task_data.priority,
+            team_id=task_data.team_id,
+            project_id=task_data.project_id,
+            assignee_id=task_data.assignee_id,
+            created_by_id=current_user.id,
+            due_date=task_data.due_date,
+            order=task_data.order,
+        )
+        
+        db.add(task)
+        await db.commit()
+        await db.refresh(task)
+        
+        return task
+    except (ProgrammingError, Exception) as e:
+        error_str = str(e).lower()
+        # If error is due to project_id column not existing, create task without project_id
+        if 'project_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
+            logger.warning("project_id column doesn't exist, creating task without project_id")
+            # Create task without project_id using SQL insert
+            
+            # Build insert statement without project_id
+            from datetime import datetime, timezone
+            
+            insert_stmt = text("""
+                INSERT INTO project_tasks (
+                    title, description, status, priority, team_id, 
+                    assignee_id, created_by_id, due_date, "order", created_at, updated_at
+                ) VALUES (
+                    :title, :description, :status::taskstatus, :priority::taskpriority, :team_id,
+                    :assignee_id, :created_by_id, :due_date, :order, NOW(), NOW()
+                ) RETURNING id, created_at, updated_at
+            """)
+            
+            result = await db.execute(insert_stmt, {
+                "title": task_data.title,
+                "description": task_data.description,
+                "status": task_data.status.value,
+                "priority": task_data.priority.value,
+                "team_id": task_data.team_id,
+                "assignee_id": task_data.assignee_id,
+                "created_by_id": current_user.id,
+                "due_date": task_data.due_date,
+                "order": task_data.order or 0,
+            })
+            row = result.fetchone()
+            task_id, created_at, updated_at = row
+            await db.commit()
+            
+            # Create response manually since we can't use ORM (project_id column missing)
+            from app.schemas.project_task import ProjectTaskResponse
+            return ProjectTaskResponse(
+                id=task_id,
+                title=task_data.title,
+                description=task_data.description,
+                status=task_data.status,
+                priority=task_data.priority,
+                team_id=task_data.team_id,
+                project_id=None,  # Column doesn't exist
+                assignee_id=task_data.assignee_id,
+                created_by_id=current_user.id,
+                due_date=task_data.due_date,
+                started_at=None,
+                completed_at=None,
+                estimated_hours=task_data.estimated_hours,
+                order=task_data.order or 0,
+                created_at=created_at,
+                updated_at=updated_at,
+            )
+        else:
+            # Re-raise if it's a different error
+            raise
 
 
 @router.patch("/{task_id}", response_model=ProjectTaskResponse)
