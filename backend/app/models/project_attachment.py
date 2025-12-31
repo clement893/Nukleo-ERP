@@ -18,7 +18,7 @@ class ProjectAttachment(Base):
     __table_args__ = (
         Index("idx_project_attachments_project", "project_id"),
         Index("idx_project_attachments_task", "task_id"),
-        Index("idx_project_attachments_user", "user_id"),
+        Index("idx_project_attachments_user", "uploaded_by_id"),
         Index("idx_project_attachments_created_at", "created_at"),
     )
 
