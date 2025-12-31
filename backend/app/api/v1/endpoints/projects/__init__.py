@@ -85,41 +85,73 @@ async def get_projects(
     Returns:
         List of projects
     """
-    # Convert status string to enum if provided (case-insensitive)
-    status_enum: ProjectStatus | None = None
-    if status:
-        status_lower = status.strip().lower()
-        # Map common status values (case-insensitive)
-        # Also handle enum values that might come from the frontend
-        status_map = {
-            'active': ProjectStatus.ACTIVE,
-            'archived': ProjectStatus.ARCHIVED,
-            'completed': ProjectStatus.COMPLETED,
-            # Handle enum string values
-            'projectstatus.active': ProjectStatus.ACTIVE,
-            'projectstatus.archived': ProjectStatus.ARCHIVED,
-            'projectstatus.completed': ProjectStatus.COMPLETED,
-        }
-        status_enum = status_map.get(status_lower)
-        if status_enum is None:
-            # Try to match enum name directly
+    try:
+        # Convert status string to enum if provided (case-insensitive)
+        status_enum: ProjectStatus | None = None
+        if status:
+            status_lower = status.strip().lower()
+            # Map common status values (case-insensitive)
+            # Also handle enum values that might come from the frontend
+            status_map = {
+                'active': ProjectStatus.ACTIVE,
+                'archived': ProjectStatus.ARCHIVED,
+                'completed': ProjectStatus.COMPLETED,
+                # Handle enum string values
+                'projectstatus.active': ProjectStatus.ACTIVE,
+                'projectstatus.archived': ProjectStatus.ARCHIVED,
+                'projectstatus.completed': ProjectStatus.COMPLETED,
+            }
+            status_enum = status_map.get(status_lower)
+            if status_enum is None:
+                # Try to match enum name directly
+                try:
+                    status_enum = ProjectStatus[status.upper()]
+                except (KeyError, AttributeError):
+                    raise HTTPException(
+                        status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"Invalid status value: {status}. Must be one of: active, archived, completed (case-insensitive)"
+                    )
+        
+        # Check if client_id and responsable_id columns exist BEFORE querying
+        # This prevents transaction errors
+        columns_exist = await _check_project_columns_exist(db, ['client_id', 'responsable_id'])
+        
+        projects = []
+        # Build query based on column existence
+        if columns_exist['client_id'] and columns_exist['responsable_id']:
+            # Both columns exist - use normal query with relationships
             try:
-                status_enum = ProjectStatus[status.upper()]
-            except (KeyError, AttributeError):
-                raise HTTPException(
-                    status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Invalid status value: {status}. Must be one of: active, archived, completed (case-insensitive)"
+                query = select(Project).where(Project.user_id == current_user.id)
+                
+                if status_enum:
+                    query = query.where(Project.status == status_enum)
+                
+                query = apply_tenant_scope(query, Project)
+                query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
+                
+                result = await db.execute(query)
+                projects = result.scalars().all()
+            except ProgrammingError as pe:
+                # If query fails, rollback and use explicit column selection
+                await db.rollback()
+                logger.warning(
+                    "Query failed, using explicit column selection",
+                    context={"error": str(pe)}
                 )
-    
-    # Check if client_id and responsable_id columns exist BEFORE querying
-    # This prevents transaction errors
-    columns_exist = await _check_project_columns_exist(db, ['client_id', 'responsable_id'])
-    
-    # Build query based on column existence
-    if columns_exist['client_id'] and columns_exist['responsable_id']:
-        # Both columns exist - use normal query with relationships
-        try:
-            query = select(Project).where(Project.user_id == current_user.id)
+                # Fall through to explicit column selection below
+                columns_exist = {'client_id': False, 'responsable_id': False}
+        
+        # Use explicit column selection if columns don't exist or query failed
+        if not projects and (not columns_exist['client_id'] or not columns_exist['responsable_id']):
+            query = select(
+                Project.id,
+                Project.name,
+                Project.description,
+                Project.status,
+                Project.user_id,
+                Project.created_at,
+                Project.updated_at
+            ).where(Project.user_id == current_user.id)
             
             if status_enum:
                 query = query.where(Project.status == status_enum)
@@ -128,101 +160,88 @@ async def get_projects(
             query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
             
             result = await db.execute(query)
-            projects = result.scalars().all()
-        except ProgrammingError as pe:
-            # If query fails, rollback and use explicit column selection
-            await db.rollback()
-            logger.warning(
-                "Query failed, using explicit column selection",
-                context={"error": str(pe)}
-            )
-            # Fall through to explicit column selection below
-            columns_exist = {'client_id': False, 'responsable_id': False}
-    
-    # Use explicit column selection if columns don't exist or query failed
-    if not columns_exist['client_id'] or not columns_exist['responsable_id']:
-        query = select(
-            Project.id,
-            Project.name,
-            Project.description,
-            Project.status,
-            Project.user_id,
-            Project.created_at,
-            Project.updated_at
-        ).where(Project.user_id == current_user.id)
+            rows = result.all()
+            
+            # Convert rows to ProjectRow objects
+            class ProjectRow:
+                def __init__(self, row):
+                    self.id = row.id
+                    self.name = row.name
+                    self.description = row.description
+                    self.status = row.status
+                    self.user_id = row.user_id
+                    self.created_at = row.created_at
+                    self.updated_at = row.updated_at
+                    self.client_id = None
+                    self.responsable_id = None
+            
+            projects = [ProjectRow(row) for row in rows]
         
-        if status_enum:
-            query = query.where(Project.status == status_enum)
-        
-        query = apply_tenant_scope(query, Project)
-        query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
-        
-        result = await db.execute(query)
-        rows = result.all()
-        
-        # Convert rows to ProjectRow objects
-        class ProjectRow:
-            def __init__(self, row):
-                self.id = row.id
-                self.name = row.name
-                self.description = row.description
-                self.status = row.status
-                self.user_id = row.user_id
-                self.created_at = row.created_at
-                self.updated_at = row.updated_at
-                self.client_id = None
-                self.responsable_id = None
-        
-        projects = [ProjectRow(row) for row in rows]
-    
-    # Convert to response format
-    project_list = []
-    for project in projects:
-        # Get client_id and responsable_id
-        client_id = getattr(project, 'client_id', None) if columns_exist['client_id'] else None
-        responsable_id = getattr(project, 'responsable_id', None) if columns_exist['responsable_id'] else None
-        
-        # Try to load client name if client_id exists
-        client_name = None
-        if client_id:
+        # Convert to response format
+        project_list = []
+        for project in projects:
             try:
-                client_result = await db.execute(
-                    select(People).where(People.id == client_id)
-                )
-                client = client_result.scalar_one_or_none()
-                if client:
-                    client_name = f"{client.first_name} {client.last_name}".strip()
-            except Exception:
+                # Get client_id and responsable_id
+                client_id = getattr(project, 'client_id', None) if columns_exist.get('client_id', False) else None
+                responsable_id = getattr(project, 'responsable_id', None) if columns_exist.get('responsable_id', False) else None
+                
+                # Try to load client name if client_id exists
                 client_name = None
-        
-        # Try to load responsable name if responsable_id exists
-        responsable_name = None
-        if responsable_id:
-            try:
-                responsable_result = await db.execute(
-                    select(Employee).where(Employee.id == responsable_id)
-                )
-                responsable = responsable_result.scalar_one_or_none()
-                if responsable:
-                    responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
-            except Exception:
+                if client_id:
+                    try:
+                        client_result = await db.execute(
+                            select(People).where(People.id == client_id)
+                        )
+                        client = client_result.scalar_one_or_none()
+                        if client:
+                            client_name = f"{client.first_name} {client.last_name}".strip()
+                    except Exception:
+                        client_name = None
+                
+                # Try to load responsable name if responsable_id exists
                 responsable_name = None
+                if responsable_id:
+                    try:
+                        responsable_result = await db.execute(
+                            select(Employee).where(Employee.id == responsable_id)
+                        )
+                        responsable = responsable_result.scalar_one_or_none()
+                        if responsable:
+                            responsable_name = f"{responsable.first_name} {responsable.last_name}".strip()
+                    except Exception:
+                        responsable_name = None
+                
+                project_list.append(ProjectSchema(
+                    id=project.id,
+                    name=project.name,
+                    description=project.description,
+                    status=project.status,
+                    user_id=project.user_id,
+                    client_id=client_id,
+                    client_name=client_name,
+                    responsable_id=responsable_id,
+                    responsable_name=responsable_name,
+                    created_at=project.created_at,
+                    updated_at=project.updated_at,
+                ))
+            except Exception as e:
+                logger.warning(f"Error processing project {getattr(project, 'id', 'unknown')}: {e}")
+                # Skip this project and continue with others
+                continue
         
-        project_list.append(ProjectSchema(
-            id=project.id,
-            name=project.name,
-            description=project.description,
-            status=project.status,
-            user_id=project.user_id,
-            client_id=client_id,
-            client_name=client_name,
-            responsable_id=responsable_id,
-            responsable_name=responsable_name,
-            created_at=project.created_at,
-            updated_at=project.updated_at,
-        ))
-    
-    return project_list
+        return project_list
+    except HTTPException:
+        # Re-raise HTTP exceptions (like validation errors)
+        raise
+    except Exception as e:
+        # Log unexpected errors and return empty list to prevent slowapi error
+        logger.error(
+            f"Unexpected error in get_projects: {e}",
+            context={"user_id": current_user.id, "skip": skip, "limit": limit},
+            exc_info=e
+        )
+        # Return empty list instead of raising to prevent slowapi Response error
+        return []
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
