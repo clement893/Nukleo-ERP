@@ -511,6 +511,37 @@ function ProjectDetailContent() {
           </div>
         )}
 
+        {activeTab === 'tasks' && (
+          <div className="space-y-6">
+            <Card className="glass-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <CheckSquare className="w-5 h-5" />
+                  Tâches du projet
+                </h3>
+                <div className="flex gap-2">
+                  <Badge variant="default">{tasksCount.total} total</Badge>
+                  <Badge variant="success">{tasksCount.completed} terminées</Badge>
+                  <Badge variant="info">{tasksCount.inProgress} en cours</Badge>
+                </div>
+              </div>
+              <TaskKanban projectId={projectId} />
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'timeline' && (
+          <div className="space-y-6">
+            <Card className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Timeline du projet
+              </h3>
+              <TaskTimeline projectId={projectId} />
+            </Card>
+          </div>
+        )}
+
         {activeTab === 'financial' && (
           <Card className="glass-card p-6">
             <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
