@@ -34,7 +34,7 @@ export function usePeople(
 ) {
   return useQuery({
     queryKey: peopleKeys.list({ skip, limit, ...filters }),
-    queryFn: () => peopleAPI.list(skip, limit, filters),
+    queryFn: () => peopleAPI.list(Number(skip), Number(limit), filters),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -53,7 +53,7 @@ export function useInfinitePeople(
 ) {
   return useInfiniteQuery({
     queryKey: [...peopleKeys.lists(), 'infinite', { limit, ...filters }],
-    queryFn: ({ pageParam = 0 }) => peopleAPI.list(pageParam, limit, filters),
+    queryFn: ({ pageParam = 0 }) => peopleAPI.list(Number(pageParam), Number(limit), filters),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < limit) {
         return undefined;
