@@ -1,55 +1,29 @@
 /**
  * Clients API
- * API client for clients endpoints
+ * API client for clients (companies) endpoints
+ * Simplified for companies only
  */
 
 import { apiClient } from './client';
 import { extractApiData } from './utils';
 
-export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-export type ClientType = 'person' | 'company';
+export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
 
 export interface Client {
   id: number;
-  first_name: string;
-  last_name: string;
-  company_name?: string | null;
-  type: ClientType;
-  email?: string | null;
-  phone?: string | null;
-  linkedin?: string | null;
-  photo_url?: string | null;
-  photo_filename?: string | null;
-  birthday?: string | null; // ISO date string
-  city?: string | null;
-  country?: string | null;
-  notes?: string | null;
-  comments?: string | null;
-  portal_url?: string | null;
-  status: ClientStatus;
+  company_name: string;
+  type: string;
   user_id: number;
+  portal_url: string | null;
+  status: ClientStatus;
+  project_count?: number;
   created_at: string;
   updated_at: string;
-  // Computed fields
-  project_count?: number;
-  total_budget?: number;
 }
 
 export interface ClientCreate {
-  first_name?: string;
-  last_name?: string;
-  company_name?: string | null;
-  type?: ClientType;
-  email?: string | null;
-  phone?: string | null;
-  linkedin?: string | null;
-  photo_url?: string | null;
-  photo_filename?: string | null;
-  birthday?: string | null; // ISO date string (YYYY-MM-DD)
-  city?: string | null;
-  country?: string | null;
-  notes?: string | null;
-  comments?: string | null;
+  company_name: string;
+  type?: string;
   portal_url?: string | null;
   status?: ClientStatus;
 }
@@ -63,7 +37,7 @@ export const clientsAPI = {
   /**
    * Get list of clients with pagination
    */
-  list: async (skip = 0, limit = 1000, filters?: { status?: string; search?: string; type?: string }): Promise<Client[]> => {
+  list: async (skip = 0, limit = 1000, filters?: { status?: string; search?: string }): Promise<Client[]> => {
     const skipNum = Number(skip);
     const limitNum = Number(limit);
     
@@ -72,7 +46,6 @@ export const clientsAPI = {
       limit: limitNum,
       ...(filters?.status && { status: filters.status }),
       ...(filters?.search && { search: filters.search }),
-      ...(filters?.type && { type: filters.type }),
     };
     
     try {
@@ -146,7 +119,6 @@ export const clientsAPI = {
     client_id?: number | null;
     etape?: string | null;
     annee_realisation?: string | null;
-    budget?: number | null;
     created_at: string;
     updated_at: string;
   }>> => {
@@ -158,7 +130,6 @@ export const clientsAPI = {
       client_id?: number | null;
       etape?: string | null;
       annee_realisation?: string | null;
-      budget?: number | null;
       created_at: string;
       updated_at: string;
     }>>(`/v1/projects/clients/${clientId}/projects`);
@@ -166,10 +137,18 @@ export const clientsAPI = {
   },
 
   /**
-   * Get contacts for a client
+   * Create/update portal URL for a client
    */
-  getContacts: async (clientId: number): Promise<Array<Record<string, unknown>>> => {
-    const response = await apiClient.get<Array<Record<string, unknown>>>(`/v1/projects/clients/${clientId}/contacts`);
-    return extractApiData(response) || [];
+  createPortal: async (clientId: number, portalUrl: string): Promise<Client> => {
+    const response = await apiClient.post<Client>(
+      `/v1/projects/clients/${clientId}/portal`,
+      null,
+      { params: { portal_url: portalUrl } }
+    );
+    const data = extractApiData<Client>(response);
+    if (!data) {
+      throw new Error('Failed to create portal: no data returned');
+    }
+    return data;
   },
 };

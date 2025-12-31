@@ -1,43 +1,29 @@
 """
 Client Schemas
 Pydantic v2 models for clients
+Simplified for companies only
 """
 
-from datetime import datetime, date
+from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from app.models.client import ClientStatus
 
 
 class ClientBase(BaseModel):
     """Base client schema"""
-    first_name: str = Field(..., min_length=1, max_length=100, description="First name")
-    last_name: str = Field(..., min_length=1, max_length=100, description="Last name")
-    
-    @field_validator('first_name', 'last_name', mode='before')
-    @classmethod
-    def validate_name_fields(cls, v: str) -> str:
-        """Validate and clean name fields - handle empty strings from database"""
-        if v is None:
-            return "N/A"
-        if isinstance(v, str):
-            cleaned = v.strip()
-            if not cleaned:
-                return "N/A"
-            return cleaned
-        return str(v) if v else "N/A"
-    email: Optional[EmailStr] = Field(None, description="Email address")
-    phone: Optional[str] = Field(None, max_length=50, description="Phone number")
-    linkedin: Optional[str] = Field(None, max_length=500, description="LinkedIn URL")
-    photo_url: Optional[str] = Field(None, max_length=1000, description="Photo URL")
-    photo_filename: Optional[str] = Field(None, max_length=500, description="Photo filename")
-    birthday: Optional[date] = Field(None, description="Birthday")
-    city: Optional[str] = Field(None, max_length=100, description="City")
-    country: Optional[str] = Field(None, max_length=100, description="Country")
-    notes: Optional[str] = Field(None, description="Notes")
-    comments: Optional[str] = Field(None, description="Comments")
+    company_name: str = Field(..., min_length=1, max_length=255, description="Company name")
+    type: str = Field(default="company", max_length=20, description="Client type")
     portal_url: Optional[str] = Field(None, max_length=500, description="Portal URL")
     status: ClientStatus = Field(default=ClientStatus.ACTIVE, description="Client status")
+    
+    @field_validator('company_name')
+    @classmethod
+    def validate_company_name(cls, v: str) -> str:
+        """Validate company name"""
+        if not v or not v.strip():
+            raise ValueError('Company name cannot be empty')
+        return v.strip()
 
 
 class ClientCreate(ClientBase):
@@ -47,18 +33,8 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(BaseModel):
     """Client update schema"""
-    first_name: Optional[str] = Field(None, min_length=1, max_length=100, description="First name")
-    last_name: Optional[str] = Field(None, min_length=1, max_length=100, description="Last name")
-    email: Optional[EmailStr] = Field(None, description="Email address")
-    phone: Optional[str] = Field(None, max_length=50, description="Phone number")
-    linkedin: Optional[str] = Field(None, max_length=500, description="LinkedIn URL")
-    photo_url: Optional[str] = Field(None, max_length=1000, description="Photo URL")
-    photo_filename: Optional[str] = Field(None, max_length=500, description="Photo filename")
-    birthday: Optional[date] = Field(None, description="Birthday")
-    city: Optional[str] = Field(None, max_length=100, description="City")
-    country: Optional[str] = Field(None, max_length=100, description="Country")
-    notes: Optional[str] = Field(None, description="Notes")
-    comments: Optional[str] = Field(None, description="Comments")
+    company_name: Optional[str] = Field(None, min_length=1, max_length=255, description="Company name")
+    type: Optional[str] = Field(None, max_length=20, description="Client type")
     portal_url: Optional[str] = Field(None, max_length=500, description="Portal URL")
     status: Optional[ClientStatus] = Field(None, description="Client status")
 
@@ -66,8 +42,11 @@ class ClientUpdate(BaseModel):
 class Client(ClientBase):
     """Client response schema"""
     id: int
+    user_id: int
     created_at: datetime
     updated_at: datetime
+    # Computed field for number of projects
+    project_count: Optional[int] = Field(None, description="Number of active projects")
 
     model_config = ConfigDict(from_attributes=True)
 

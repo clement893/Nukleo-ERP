@@ -1,6 +1,6 @@
 """
 Clients API Endpoints
-API endpoints for managing clients
+API endpoints for managing clients (companies)
 """
 
 from typing import List, Optional
@@ -26,24 +26,24 @@ async def list_clients(
     limit: int = Query(1000, ge=1, le=10000, description="Maximum number of records"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search term"),
-    type: Optional[str] = Query(None, description="Filter by type (person/company)"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> List[ClientSchema]:
     """
-    Get list of clients
+    Get list of clients (companies only)
     """
-    logger.info(f"[ClientsAPI] List clients - skip={skip}, limit={limit}, status={status}, search={search}, type={type}")
+    logger.info(f"[ClientsAPI] List clients - skip={skip}, limit={limit}, status={status}, search={search}")
     
-    # Build query - filter by user_id
-    query = select(Client).where(Client.user_id == current_user.id)
-    
-    # Filter by type (default to company)
-    if type:
-        query = query.where(Client.type == type.lower())
-    else:
-        # Default: only companies
-        query = query.where(Client.type == 'company')
+    # Build query - filter by user_id and type=company
+    query = select(
+        Client,
+        func.count(Project.id).label('project_count')
+    ).outerjoin(
+        Project, Client.id == Project.client_id
+    ).where(
+        Client.user_id == current_user.id,
+        Client.type == 'company'
+    ).group_by(Client.id)
 
     # Filter by status
     if status:
@@ -59,22 +59,32 @@ async def list_clients(
     # Search filter
     if search:
         search_term = f"%{search.lower()}%"
-        query = query.where(
-            func.lower(Client.company_name).like(search_term) |
-            func.lower(Client.first_name).like(search_term) |
-            func.lower(Client.last_name).like(search_term) |
-            func.lower(func.concat(Client.first_name, ' ', Client.last_name)).like(search_term)
-        )
+        query = query.where(func.lower(Client.company_name).like(search_term))
 
     query = query.order_by(Client.created_at.desc()).offset(skip).limit(limit)
     
     try:
         result = await db.execute(query)
-        clients_list = result.scalars().all()
-        logger.info(f"[ClientsAPI] Found {len(clients_list)} clients")
+        rows = result.all()
         
-        # The validator in ClientSchema will handle empty strings
-        return [ClientSchema.model_validate(client) for client in clients_list]
+        # Build response with project count
+        clients_list = []
+        for client, project_count in rows:
+            client_dict = {
+                "id": client.id,
+                "company_name": client.company_name,
+                "type": client.type,
+                "user_id": client.user_id,
+                "portal_url": client.portal_url,
+                "status": client.status,
+                "created_at": client.created_at,
+                "updated_at": client.updated_at,
+                "project_count": project_count or 0,
+            }
+            clients_list.append(ClientSchema(**client_dict))
+        
+        logger.info(f"[ClientsAPI] Found {len(clients_list)} clients")
+        return clients_list
     except Exception as e:
         logger.error(f"[ClientsAPI] Error: {e}", exc_info=True)
         raise HTTPException(
@@ -92,21 +102,39 @@ async def get_client(
     """
     Get a client by ID
     """
-    query = select(Client).where(
+    # Get client with project count
+    query = select(
+        Client,
+        func.count(Project.id).label('project_count')
+    ).outerjoin(
+        Project, Client.id == Project.client_id
+    ).where(
         Client.id == client_id,
         Client.user_id == current_user.id
-    )
+    ).group_by(Client.id)
+    
     result = await db.execute(query)
-    client = result.scalar_one_or_none()
+    row = result.first()
 
-    if not client:
+    if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Client with ID {client_id} not found"
         )
 
-    # The validator in ClientSchema will handle empty strings
-    return ClientSchema.model_validate(client)
+    client, project_count = row
+    client_dict = {
+        "id": client.id,
+        "company_name": client.company_name,
+        "type": client.type,
+        "user_id": client.user_id,
+        "portal_url": client.portal_url,
+        "status": client.status,
+        "created_at": client.created_at,
+        "updated_at": client.updated_at,
+        "project_count": project_count or 0,
+    }
+    return ClientSchema(**client_dict)
 
 
 @router.post("/", response_model=ClientSchema, status_code=status.HTTP_201_CREATED)
@@ -120,18 +148,26 @@ async def create_client(
     """
     client_dict = client_data.model_dump()
     client_dict["user_id"] = current_user.id
-    
-    # Default type to company if not specified
-    if "type" not in client_dict or not client_dict["type"]:
-        client_dict["type"] = "company"
+    client_dict["type"] = "company"  # Force type to company
     
     client = Client(**client_dict)
     db.add(client)
     await db.commit()
     await db.refresh(client)
 
-    # The validator in ClientSchema will handle empty strings
-    return ClientSchema.model_validate(client)
+    return ClientSchema(
+        **{
+            "id": client.id,
+            "company_name": client.company_name,
+            "type": client.type,
+            "user_id": client.user_id,
+            "portal_url": client.portal_url,
+            "status": client.status,
+            "created_at": client.created_at,
+            "updated_at": client.updated_at,
+            "project_count": 0,
+        }
+    )
 
 
 @router.put("/{client_id}", response_model=ClientSchema)
@@ -165,8 +201,24 @@ async def update_client(
     await db.commit()
     await db.refresh(client)
 
-    # The validator in ClientSchema will handle empty strings
-    return ClientSchema.model_validate(client)
+    # Get project count
+    count_query = select(func.count(Project.id)).where(Project.client_id == client_id)
+    count_result = await db.execute(count_query)
+    project_count = count_result.scalar() or 0
+
+    return ClientSchema(
+        **{
+            "id": client.id,
+            "company_name": client.company_name,
+            "type": client.type,
+            "user_id": client.user_id,
+            "portal_url": client.portal_url,
+            "status": client.status,
+            "created_at": client.created_at,
+            "updated_at": client.updated_at,
+            "project_count": project_count,
+        }
+    )
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -217,7 +269,6 @@ async def get_client_projects(
             "client_id": p.client_id,
             "etape": p.etape,
             "annee_realisation": p.annee_realisation,
-            "budget": float(p.budget) if p.budget else None,
             "created_at": p.created_at.isoformat(),
             "updated_at": p.updated_at.isoformat(),
         }
@@ -225,14 +276,48 @@ async def get_client_projects(
     ]
 
 
-@router.get("/{client_id}/contacts", response_model=List[dict])
-async def get_client_contacts(
+@router.post("/{client_id}/portal", response_model=ClientSchema)
+async def create_client_portal(
     client_id: int,
+    portal_url: str = Query(..., description="Portal URL to assign"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> List[dict]:
+) -> ClientSchema:
     """
-    Get contacts linked to a client
+    Create/update portal URL for a client
     """
-    # TODO: Implement contact linking logic
-    return []
+    query = select(Client).where(
+        Client.id == client_id,
+        Client.user_id == current_user.id
+    )
+    result = await db.execute(query)
+    client = result.scalar_one_or_none()
+
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Client with ID {client_id} not found"
+        )
+
+    client.portal_url = portal_url
+    await db.commit()
+    await db.refresh(client)
+
+    # Get project count
+    count_query = select(func.count(Project.id)).where(Project.client_id == client_id)
+    count_result = await db.execute(count_query)
+    project_count = count_result.scalar() or 0
+
+    return ClientSchema(
+        **{
+            "id": client.id,
+            "company_name": client.company_name,
+            "type": client.type,
+            "user_id": client.user_id,
+            "portal_url": client.portal_url,
+            "status": client.status,
+            "created_at": client.created_at,
+            "updated_at": client.updated_at,
+            "project_count": project_count,
+        }
+    )
