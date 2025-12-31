@@ -14,7 +14,7 @@ from app.core.cache import cached, invalidate_cache_pattern, invalidate_cache_pa
 from app.dependencies import get_current_user
 from app.dependencies.rbac import require_team_permission, require_team_owner, require_team_member
 from app.models import User
-from app.models.team import TeamMember
+from app.models.team import Team, TeamMember
 from app.schemas.team import (
     TeamCreate,
     TeamUpdate,
@@ -239,9 +239,6 @@ async def list_teams(
     
     if user_is_superadmin:
         # Superadmin sees all teams
-        from sqlalchemy import select
-        from app.models.team import Team
-        
         result = await db.execute(
             select(Team)
             .where(Team.is_active == True)
@@ -263,8 +260,6 @@ async def list_teams(
         total = len(count_result.scalars().all())
     else:
         # Regular users see teams they belong to OR teams they own
-        from app.models.team import Team, TeamMember
-        
         # Get teams where user is a member (active) OR owner
         # Query 1: Teams where user is an active member
         member_teams_result = await db.execute(
