@@ -57,6 +57,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     priority: TaskPriority;
     assignee_id: number | null;
     due_date: string | undefined;
+    estimated_hours: number | null;
   }>({
     title: '',
     description: '',
@@ -64,6 +65,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     priority: 'medium',
     assignee_id: null,
     due_date: undefined,
+    estimated_hours: null,
   });
 
   const loadTasks = useCallback(async () => {
@@ -120,6 +122,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       priority: task.priority,
       assignee_id: task.assignee_id || null,
       due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
+      estimated_hours: task.estimated_hours || null,
     });
     setShowTaskModal(true);
   };
@@ -143,6 +146,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           priority: formData.priority,
           assignee_id: formData.assignee_id,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
+          estimated_hours: formData.estimated_hours || null,
         });
       } else {
         // Create new task - team_id is required
@@ -159,6 +163,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           project_id: projectId ?? null,
           assignee_id: formData.assignee_id,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
+          estimated_hours: formData.estimated_hours || null,
           order: tasks.length,
         });
       }
