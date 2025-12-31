@@ -85,6 +85,9 @@ async def get_projects(
     Returns:
         List of projects
     """
+    # Initialize variables outside try block to ensure they're always defined
+    project_list: List[ProjectSchema] = []
+    
     try:
         # Convert status string to enum if provided (case-insensitive)
         status_enum: ProjectStatus | None = None
@@ -282,17 +285,30 @@ async def get_projects(
                 continue
         
         return project_list
-    except HTTPException:
+    except HTTPException as he:
         # Re-raise HTTP exceptions (like validation errors)
+        logger.warning(
+            f"HTTPException in get_projects: {he.detail}",
+            context={"status_code": he.status_code, "user_id": current_user.id}
+        )
         raise
     except Exception as e:
-        # Log unexpected errors and return empty list to prevent slowapi error
+        # Log unexpected errors with full context
+        error_type = type(e).__name__
+        error_msg = str(e)
         logger.error(
-            f"Unexpected error in get_projects: {e}",
-            context={"user_id": current_user.id, "skip": skip, "limit": limit},
+            f"Unexpected error in get_projects: {error_type}: {error_msg}",
+            context={
+                "user_id": getattr(current_user, 'id', None),
+                "skip": skip,
+                "limit": limit,
+                "status": status,
+                "error_type": error_type
+            },
             exc_info=e
         )
         # Return empty list instead of raising to prevent slowapi Response error
+        # This ensures we always return a valid response
         return []
 
 
