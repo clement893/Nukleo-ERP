@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func, delete
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from app.core.database import get_db
 from app.core.cache import cached, invalidate_cache_pattern
@@ -54,7 +54,7 @@ async def get_projects(
     Returns:
         List of projects
     """
-    # Use selectinload to eagerly load relationships
+    # Build query
     query = select(Project).where(Project.user_id == current_user.id)
     
     if status:
@@ -63,16 +63,17 @@ async def get_projects(
     # Apply tenant scoping if tenancy is enabled
     query = apply_tenant_scope(query, Project)
     
-    # Eagerly load relationships to avoid N+1 queries
+    # Use joinedload instead of selectinload - may work better with tenant scoping
     query = query.options(
-        selectinload(Project.client),
-        selectinload(Project.responsable)
+        joinedload(Project.client),
+        joinedload(Project.responsable)
     )
     
     query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
     
+    # Execute query
     result = await db.execute(query)
-    projects = result.scalars().all()
+    projects = result.unique().scalars().all()
     
     # Convert to response format with client and responsable names
     project_list = []
