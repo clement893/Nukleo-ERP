@@ -8,6 +8,7 @@ import { useMemo, useEffect, useState } from 'react';
 import { Responsive } from 'react-grid-layout';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { WidgetContainer } from './WidgetContainer';
+import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -129,10 +130,20 @@ export function DashboardGrid({ className = '' }: DashboardGridProps) {
       >
         {activeConfig.layouts.map((widget) => (
           <div key={widget.id} className="widget-grid-item">
-            <WidgetContainer
-              widgetLayout={widget}
-              isEditMode={isEditMode}
-            />
+            <ErrorBoundary
+              fallback={
+                <div className="h-full w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center justify-center">
+                  <p className="text-red-600 dark:text-red-400 text-sm">
+                    Erreur de chargement du widget
+                  </p>
+                </div>
+              }
+            >
+              <WidgetContainer
+                widgetLayout={widget}
+                isEditMode={isEditMode}
+              />
+            </ErrorBoundary>
           </div>
         ))}
       </Responsive>

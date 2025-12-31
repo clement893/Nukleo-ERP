@@ -28,9 +28,16 @@ export function useWidgetData<T = any>({
   return useQuery({
     queryKey: ['widget-data', widgetType, config, globalFilters],
     queryFn: async () => {
-      // TODO: Implémenter les appels API spécifiques par type de widget
-      // Pour l'instant, on retourne des données factices
-      return fetchWidgetData(widgetType, config, globalFilters);
+      try {
+        // TODO: Implémenter les appels API spécifiques par type de widget
+        // Pour l'instant, on retourne des données factices
+        return await fetchWidgetData(widgetType, config, globalFilters);
+      } catch (error) {
+        // Log error but don't throw - let React Query handle it
+        console.error(`Error fetching widget data for ${widgetType}:`, error);
+        // Re-throw so React Query can handle it properly
+        throw error;
+      }
     },
     enabled,
     staleTime: config.refresh_interval 
@@ -39,6 +46,8 @@ export function useWidgetData<T = any>({
     refetchInterval: config.refresh_interval 
       ? config.refresh_interval * 1000 
       : false,
+    // Don't throw errors - let components handle them
+    throwOnError: false,
   });
 }
 

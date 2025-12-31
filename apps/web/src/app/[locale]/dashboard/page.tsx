@@ -41,6 +41,10 @@ function DashboardContent() {
       } catch (error) {
         console.error('Error loading dashboard from server:', error);
         // Continue even if server load fails - localStorage data will be used
+        // Log error but don't crash the dashboard
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Dashboard load error details:', error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -52,80 +56,85 @@ function DashboardContent() {
   // Initialize with default configuration if none exists
   useEffect(() => {
     if (!isLoading && configs.length === 0) {
-      const defaultConfig: DashboardConfig = {
-        id: 'default',
-        name: 'My Dashboard',
-        is_default: true,
-        layouts: [
-          {
-            id: 'widget-1',
-            widget_type: 'opportunities-list',
-            x: 0,
-            y: 0,
-            w: 4,
-            h: 2,
-            config: { 
-              title: 'Recent Opportunities',
-              period: 'month' 
+      try {
+        const defaultConfig: DashboardConfig = {
+          id: 'default',
+          name: 'My Dashboard',
+          is_default: true,
+          layouts: [
+            {
+              id: 'widget-1',
+              widget_type: 'opportunities-list',
+              x: 0,
+              y: 0,
+              w: 4,
+              h: 2,
+              config: { 
+                title: 'Recent Opportunities',
+                period: 'month' 
+              },
             },
-          },
-          {
-            id: 'widget-2',
-            widget_type: 'clients-count',
-            x: 4,
-            y: 0,
-            w: 2,
-            h: 1,
-            config: { 
-              title: 'Total Clients',
-              period: 'month' 
+            {
+              id: 'widget-2',
+              widget_type: 'clients-count',
+              x: 4,
+              y: 0,
+              w: 2,
+              h: 1,
+              config: { 
+                title: 'Total Clients',
+                period: 'month' 
+              },
             },
-          },
-          {
-            id: 'widget-3',
-            widget_type: 'projects-active',
-            x: 6,
-            y: 0,
-            w: 4,
-            h: 2,
-            config: { 
-              title: 'Active Projects',
-              period: 'month' 
+            {
+              id: 'widget-3',
+              widget_type: 'projects-active',
+              x: 6,
+              y: 0,
+              w: 4,
+              h: 2,
+              config: { 
+                title: 'Active Projects',
+                period: 'month' 
+              },
             },
-          },
-          {
-            id: 'widget-4',
-            widget_type: 'revenue-chart',
-            x: 0,
-            y: 2,
-            w: 6,
-            h: 2,
-            config: { 
-              title: 'Revenue Trend',
-              period: 'month' 
+            {
+              id: 'widget-4',
+              widget_type: 'revenue-chart',
+              x: 0,
+              y: 2,
+              w: 6,
+              h: 2,
+              config: { 
+                title: 'Revenue Trend',
+                period: 'month' 
+              },
             },
-          },
-          {
-            id: 'widget-5',
-            widget_type: 'kpi-custom',
-            x: 6,
-            y: 2,
-            w: 2,
-            h: 1,
-            config: { 
-              title: 'Monthly Growth',
-              period: 'month',
-              kpi_name: 'Growth',
-              target: 100000,
+            {
+              id: 'widget-5',
+              widget_type: 'kpi-custom',
+              x: 6,
+              y: 2,
+              w: 2,
+              h: 1,
+              config: { 
+                title: 'Monthly Growth',
+                period: 'month',
+                kpi_name: 'Growth',
+                target: 100000,
+              },
             },
-          },
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+          ],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
-      addConfig(defaultConfig);
-      setActiveConfig(defaultConfig.id);
+        addConfig(defaultConfig);
+        setActiveConfig(defaultConfig.id);
+      } catch (error) {
+        console.error('Error initializing default dashboard config:', error);
+        // Don't crash if default config fails - user can still add widgets manually
+      }
     }
   }, [configs.length, addConfig, setActiveConfig, isLoading]);
 

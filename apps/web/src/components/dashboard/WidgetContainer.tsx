@@ -5,14 +5,37 @@
  */
 
 import { useState } from 'react';
-import { Settings, RefreshCw, X, GripVertical } from 'lucide-react';
+import { Settings, RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { getWidget } from '@/lib/dashboard/widgetRegistry';
 import type { WidgetLayout } from '@/lib/dashboard/types';
+import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 
 interface WidgetContainerProps {
   widgetLayout: WidgetLayout;
   isEditMode: boolean;
+}
+
+// Widget Error Fallback Component
+function WidgetErrorFallback({ error, widgetType }: { error: Error; widgetType: string }) {
+  return (
+    <div className="h-full w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center justify-center">
+      <div className="text-center">
+        <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
+        <p className="text-red-600 dark:text-red-400 text-sm font-medium mb-1">
+          Erreur de chargement du widget
+        </p>
+        <p className="text-red-500 dark:text-red-500 text-xs">
+          {widgetType}
+        </p>
+        {process.env.NODE_ENV === 'development' && (
+          <p className="text-red-400 dark:text-red-600 text-xs mt-2">
+            {error.message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerProps) {
@@ -110,14 +133,24 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
       {/* Content */}
       <div className="flex-1 p-4 overflow-auto">
         {WidgetComponent ? (
-          <WidgetComponent
-            id={widgetLayout.id}
-            config={widgetLayout.config}
-            globalFilters={globalFilters}
-            onConfigChange={handleConfigChange}
-            onRemove={handleRemove}
-            onRefresh={handleRefresh}
-          />
+          <ErrorBoundary
+            fallback={
+              <WidgetErrorFallback 
+                error={new Error('Widget rendering error')} 
+                widgetType={widgetLayout.widget_type}
+              />
+            }
+            showDetails={process.env.NODE_ENV === 'development'}
+          >
+            <WidgetComponent
+              id={widgetLayout.id}
+              config={widgetLayout.config}
+              globalFilters={globalFilters}
+              onConfigChange={handleConfigChange}
+              onRemove={handleRemove}
+              onRefresh={handleRefresh}
+            />
+          </ErrorBoundary>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
