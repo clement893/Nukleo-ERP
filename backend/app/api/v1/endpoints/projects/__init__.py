@@ -147,7 +147,8 @@ async def get_projects(
         # Use explicit column selection if columns don't exist or query failed
         if use_explicit_columns or not columns_exist.get('client_id', False) or not columns_exist.get('responsable_id', False):
             try:
-                query = select(
+                # Build column list - include client_id and responsable_id if they exist
+                columns_to_select = [
                     Project.id,
                     Project.name,
                     Project.description,
@@ -155,7 +156,31 @@ async def get_projects(
                     Project.user_id,
                     Project.created_at,
                     Project.updated_at
-                ).where(Project.user_id == current_user.id)
+                ]
+                
+                # Track which optional columns we're trying to select
+                has_client_id_col = False
+                has_responsable_id_col = False
+                
+                # Try to add client_id and responsable_id if columns exist
+                # Wrap in try-except in case column check was wrong
+                if columns_exist.get('client_id', False):
+                    try:
+                        columns_to_select.append(Project.client_id)
+                        has_client_id_col = True
+                    except (AttributeError, ProgrammingError) as e:
+                        logger.warning(f"Could not add client_id to query: {e}")
+                        has_client_id_col = False
+                
+                if columns_exist.get('responsable_id', False):
+                    try:
+                        columns_to_select.append(Project.responsable_id)
+                        has_responsable_id_col = True
+                    except (AttributeError, ProgrammingError) as e:
+                        logger.warning(f"Could not add responsable_id to query: {e}")
+                        has_responsable_id_col = False
+                
+                query = select(*columns_to_select).where(Project.user_id == current_user.id)
                 
                 if status_enum:
                     query = query.where(Project.status == status_enum)
@@ -167,8 +192,9 @@ async def get_projects(
                 rows = result.all()
                 
                 # Convert rows to ProjectRow objects
+                # SQLAlchemy Row objects from explicit column selection can be accessed by index or attribute
                 class ProjectRow:
-                    def __init__(self, row):
+                    def __init__(self, row, has_client_id=False, has_responsable_id=False):
                         self.id = row.id
                         self.name = row.name
                         self.description = row.description
@@ -176,14 +202,28 @@ async def get_projects(
                         self.user_id = row.user_id
                         self.created_at = row.created_at
                         self.updated_at = row.updated_at
-                        self.client_id = None
-                        self.responsable_id = None
+                        # Set client_id and responsable_id if they were selected
+                        try:
+                            self.client_id = getattr(row, 'client_id', None) if has_client_id else None
+                        except (AttributeError, KeyError):
+                            self.client_id = None
+                        try:
+                            self.responsable_id = getattr(row, 'responsable_id', None) if has_responsable_id else None
+                        except (AttributeError, KeyError):
+                            self.responsable_id = None
                 
-                projects = [ProjectRow(row) for row in rows]
+                projects = [
+                    ProjectRow(
+                        row,
+                        has_client_id=has_client_id_col,
+                        has_responsable_id=has_responsable_id_col
+                    )
+                    for row in rows
+                ]
             except Exception as e:
                 logger.error(
                     f"Failed to execute explicit column query: {e}",
-                    context={"user_id": current_user.id},
+                    context={"user_id": current_user.id, "error_type": type(e).__name__},
                     exc_info=e
                 )
                 # Return empty list if even explicit query fails
