@@ -232,8 +232,6 @@ async def list_clients(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: str = Query("0", description="Number of records to skip"),
-    limit: str = Query("100", description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by client status"),
     responsable_id: Optional[str] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[str] = Query(None, description="Filter by company ID"),
@@ -245,8 +243,6 @@ async def list_clients(
     
     Args:
         request: FastAPI Request object to access query parameters
-        skip: Number of records to skip (as string, will be converted to int)
-        limit: Maximum number of records to return (as string, will be converted to int)
         status: Optional status filter
         responsable_id: Optional responsible filter
         company_id: Optional company filter
@@ -257,14 +253,19 @@ async def list_clients(
     Returns:
         List of clients
     """
-    # Convert skip and limit from string to integer (query params always come as strings)
+    # Extract skip and limit directly from query params to avoid FastAPI validation issues
+    query_params = request.query_params
+    skip_str = query_params.get("skip", "0")
+    limit_str = query_params.get("limit", "100")
+    
+    # Convert skip and limit from string to integer
     try:
-        skip_int = max(0, int(skip))
+        skip_int = max(0, int(skip_str))
     except (ValueError, TypeError):
         raise HTTPException(status_code=422, detail="Skip parameter must be a valid integer")
     
     try:
-        limit_int = min(max(1, int(limit)), 1000)
+        limit_int = min(max(1, int(limit_str)), 1000)
     except (ValueError, TypeError):
         raise HTTPException(status_code=422, detail="Limit parameter must be a valid integer")
     
