@@ -232,6 +232,8 @@ async def list_clients(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    skip: Union[int, str] = Query(0, ge=0, description="Number of records to skip"),
+    limit: Union[int, str] = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by client status"),
     responsable_id: Optional[str] = Query(None, description="Filter by responsible employee ID"),
     company_id: Optional[str] = Query(None, description="Filter by company ID"),
@@ -243,6 +245,8 @@ async def list_clients(
     
     Args:
         request: FastAPI Request object to access query parameters
+        skip: Number of records to skip (can be int or string)
+        limit: Maximum number of records to return (can be int or string)
         status: Optional status filter
         responsable_id: Optional responsible filter
         company_id: Optional company filter
@@ -253,23 +257,16 @@ async def list_clients(
     Returns:
         List of clients
     """
-    # Parse skip and limit from query parameters manually to avoid validation issues
-    query_params = request.query_params
-    skip_str = query_params.get("skip", "0")
-    limit_str = query_params.get("limit", "100")
-    
-    # Convert skip and limit to integers, handling both string and int inputs
+    # Explicitly convert skip and limit to integers, handling potential string inputs
     try:
-        skip_int = int(skip_str) if skip_str else 0
+        skip_int = max(0, int(skip))
     except (ValueError, TypeError):
-        skip_int = 0
-    skip_int = max(0, skip_int)
+        raise HTTPException(status_code=422, detail="Skip parameter must be a valid integer")
     
     try:
-        limit_int = int(limit_str) if limit_str else 100
+        limit_int = min(max(1, int(limit)), 1000)
     except (ValueError, TypeError):
-        limit_int = 100
-    limit_int = min(max(1, limit_int), 1000)
+        raise HTTPException(status_code=422, detail="Limit parameter must be a valid integer")
     
     # Parse status enum
     status_enum = None
