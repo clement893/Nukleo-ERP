@@ -28,19 +28,6 @@ interface EmployeePortalPermissionsEditorProps {
   onUpdate?: () => void;
 }
 
-// Pages de base du portail employé (toujours visibles)
-const EMPLOYEE_PORTAL_BASE_PAGES = [
-  { path: 'dashboard', label: 'Tableau de bord' },
-  { path: 'taches', label: 'Mes tâches' },
-  { path: 'projets', label: 'Mes projets' },
-  { path: 'feuilles-de-temps', label: 'Mes feuilles de temps' },
-  { path: 'leo', label: 'Mon Leo' },
-  { path: 'deadlines', label: 'Mes deadlines' },
-  { path: 'depenses', label: 'Mes comptes de dépenses' },
-  { path: 'vacances', label: 'Mes vacances' },
-  { path: 'profil', label: 'Mon profil' },
-];
-
 export default function EmployeePortalPermissionsEditor({
   employeeId,
   onUpdate,

@@ -23,13 +23,6 @@ import {
   User,
   Plane,
   LayoutDashboard,
-  Briefcase,
-  Users,
-  FolderOpen,
-  CalendarDays,
-  DollarSign,
-  Settings,
-  Sparkles,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
