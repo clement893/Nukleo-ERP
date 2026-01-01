@@ -516,6 +516,24 @@ button[class*="bg-primary"] {
   color: white !important;
 }
 
+/* Forcer texte blanc pour les boutons avec bg-[#523DC9] même s'ils ont text-white - Règle très spécifique pour surcharger tout */
+button[class*="bg-[#523DC9]"],
+button.bg-\[#523DC9\] {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour TOUS les éléments enfants dans les boutons avec bg-[#523DC9] */
+button[class*="bg-[#523DC9]"] *,
+button.bg-\[#523DC9\] * {
+  color: white !important;
+}
+
+/* Surcharger spécifiquement pour les boutons avec bg-[#523DC9] et text-white - règle très spécifique */
+button[class*="bg-[#523DC9]"][class*="text-white"],
+button.bg-\[#523DC9\].text-white {
+  color: #ffffff !important;
+}
+
 /* S'assurer que les boutons avec [background-color:var(--color-primary-500)] ont du texte blanc */
 button[style*="--color-primary"] {
   color: white !important;
