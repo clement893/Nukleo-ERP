@@ -97,7 +97,7 @@ async def list_time_entries(
         if entry.project:
             entry_dict["project_name"] = entry.project.name
         if entry.client:
-            entry_dict["client_name"] = entry.client.name
+            entry_dict["client_name"] = entry.client.company_name
         if entry.user:
             entry_dict["user_name"] = f"{entry.user.first_name or ''} {entry.user.last_name or ''}".strip() or entry.user.email
             entry_dict["user_email"] = entry.user.email
