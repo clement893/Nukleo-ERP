@@ -49,8 +49,8 @@ export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) 
           const amount = opp.amount ?? 0;
           const probability = opp.probability ?? 0;
           const created_at = opp.created_at ? new Date(opp.created_at).toLocaleDateString('fr-FR') : 'N/A';
-          const stage = opp.stage || 'Non défini';
-          const company = opp.company || 'N/A';
+          const stage = opp.stage_name || opp.stage || 'Non défini';
+          const company = opp.company_name || opp.company || 'N/A';
           const name = opp.name || 'Sans nom';
           
           return (
