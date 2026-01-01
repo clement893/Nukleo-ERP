@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Plus,
   Search,
   LayoutGrid,
-  List,
+  List as ListIcon,
   Calendar,
   TrendingUp,
   AlertCircle,
@@ -19,15 +19,20 @@ import {
   Share2,
   ExternalLink,
   BarChart3,
+  ArrowUpDown,
+  CheckSquare,
 } from 'lucide-react';
 
-type ViewMode = 'cards' | 'kanban' | 'table';
+type ViewMode = 'cards' | 'kanban' | 'list';
 type ProjectStatus = 'active' | 'completed' | 'archived' | 'at_risk' | 'delayed';
+type SortBy = 'name' | 'deadline' | 'budget' | 'progress';
 
 interface Project {
   id: string;
   name: string;
   client: string;
+  clientLogo: string; // Initiales
+  clientColor: string; // Couleur du logo
   status: ProjectStatus;
   progress: number;
   budget: number;
@@ -36,20 +41,27 @@ interface Project {
   deadline: string;
   tags: string[];
   isFavorite: boolean;
+  tasksTotal: number;
+  tasksCompleted: number;
 }
 
 export default function ProjectsListDemo() {
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
   const [showAnalytics, setShowAnalytics] = useState(true);
+  const [sortBy, setSortBy] = useState<SortBy>('deadline');
+  const [sortAsc, setSortAsc] = useState(true);
 
-  // Mock data - 12 projets
+  // Mock data - 12 projets avec logos et tâches
   const projects: Project[] = [
     {
       id: '1',
       name: 'Site Web E-commerce',
       client: 'TechCorp Inc.',
+      clientLogo: 'TC',
+      clientColor: 'bg-blue-500',
       status: 'active',
       progress: 65,
       budget: 45000,
@@ -58,11 +70,15 @@ export default function ProjectsListDemo() {
       deadline: '2025-02-28',
       tags: ['Web', 'E-commerce', 'React'],
       isFavorite: true,
+      tasksTotal: 24,
+      tasksCompleted: 16,
     },
     {
       id: '2',
       name: 'App Mobile Banking',
       client: 'FinanceHub',
+      clientLogo: 'FH',
+      clientColor: 'bg-green-500',
       status: 'active',
       progress: 40,
       budget: 80000,
@@ -71,11 +87,15 @@ export default function ProjectsListDemo() {
       deadline: '2025-03-15',
       tags: ['Mobile', 'Finance', 'React Native'],
       isFavorite: false,
+      tasksTotal: 32,
+      tasksCompleted: 13,
     },
     {
       id: '3',
       name: 'Refonte Intranet',
       client: 'GlobalCorp',
+      clientLogo: 'GC',
+      clientColor: 'bg-purple-500',
       status: 'completed',
       progress: 100,
       budget: 35000,
@@ -84,11 +104,15 @@ export default function ProjectsListDemo() {
       deadline: '2024-12-15',
       tags: ['Web', 'Intranet', 'Vue.js'],
       isFavorite: false,
+      tasksTotal: 18,
+      tasksCompleted: 18,
     },
     {
       id: '4',
       name: 'Dashboard Analytics',
       client: 'DataViz Ltd',
+      clientLogo: 'DV',
+      clientColor: 'bg-orange-500',
       status: 'active',
       progress: 80,
       budget: 25000,
@@ -97,11 +121,15 @@ export default function ProjectsListDemo() {
       deadline: '2025-01-31',
       tags: ['Web', 'Analytics', 'D3.js'],
       isFavorite: true,
+      tasksTotal: 15,
+      tasksCompleted: 12,
     },
     {
       id: '5',
       name: 'API REST Microservices',
       client: 'CloudTech',
+      clientLogo: 'CT',
+      clientColor: 'bg-red-500',
       status: 'delayed',
       progress: 55,
       budget: 50000,
@@ -110,11 +138,15 @@ export default function ProjectsListDemo() {
       deadline: '2024-12-20',
       tags: ['Backend', 'API', 'Node.js'],
       isFavorite: false,
+      tasksTotal: 28,
+      tasksCompleted: 15,
     },
     {
       id: '6',
       name: 'Site Vitrine Corporate',
       client: 'BrandCo',
+      clientLogo: 'BC',
+      clientColor: 'bg-pink-500',
       status: 'completed',
       progress: 100,
       budget: 15000,
@@ -123,11 +155,15 @@ export default function ProjectsListDemo() {
       deadline: '2024-11-30',
       tags: ['Web', 'Vitrine', 'Next.js'],
       isFavorite: false,
+      tasksTotal: 10,
+      tasksCompleted: 10,
     },
     {
       id: '7',
       name: 'CRM Custom',
       client: 'SalesPro',
+      clientLogo: 'SP',
+      clientColor: 'bg-indigo-500',
       status: 'active',
       progress: 30,
       budget: 90000,
@@ -136,11 +172,15 @@ export default function ProjectsListDemo() {
       deadline: '2025-04-30',
       tags: ['Web', 'CRM', 'React'],
       isFavorite: true,
+      tasksTotal: 45,
+      tasksCompleted: 14,
     },
     {
       id: '8',
       name: 'Migration Cloud AWS',
       client: 'LegacyTech',
+      clientLogo: 'LT',
+      clientColor: 'bg-yellow-500',
       status: 'at_risk',
       progress: 20,
       budget: 60000,
@@ -149,11 +189,15 @@ export default function ProjectsListDemo() {
       deadline: '2025-02-15',
       tags: ['Cloud', 'AWS', 'DevOps'],
       isFavorite: false,
+      tasksTotal: 35,
+      tasksCompleted: 7,
     },
     {
       id: '9',
       name: 'Marketplace B2B',
       client: 'TradeCo',
+      clientLogo: 'TC',
+      clientColor: 'bg-teal-500',
       status: 'active',
       progress: 50,
       budget: 100000,
@@ -162,11 +206,15 @@ export default function ProjectsListDemo() {
       deadline: '2025-05-31',
       tags: ['Web', 'Marketplace', 'Next.js'],
       isFavorite: false,
+      tasksTotal: 52,
+      tasksCompleted: 26,
     },
     {
       id: '10',
       name: 'App IoT Dashboard',
       client: 'SmartHome Inc',
+      clientLogo: 'SH',
+      clientColor: 'bg-cyan-500',
       status: 'completed',
       progress: 100,
       budget: 40000,
@@ -175,11 +223,15 @@ export default function ProjectsListDemo() {
       deadline: '2024-12-10',
       tags: ['IoT', 'Dashboard', 'React'],
       isFavorite: false,
+      tasksTotal: 22,
+      tasksCompleted: 22,
     },
     {
       id: '11',
       name: 'Plateforme E-learning',
       client: 'EduTech',
+      clientLogo: 'ET',
+      clientColor: 'bg-gray-500',
       status: 'archived',
       progress: 0,
       budget: 0,
@@ -188,11 +240,15 @@ export default function ProjectsListDemo() {
       deadline: '-',
       tags: ['Web', 'E-learning', 'Vue.js'],
       isFavorite: false,
+      tasksTotal: 0,
+      tasksCompleted: 0,
     },
     {
       id: '12',
       name: 'Chatbot IA Support',
       client: 'SupportAI',
+      clientLogo: 'SA',
+      clientColor: 'bg-emerald-500',
       status: 'active',
       progress: 70,
       budget: 35000,
@@ -201,17 +257,51 @@ export default function ProjectsListDemo() {
       deadline: '2025-02-20',
       tags: ['IA', 'Chatbot', 'Python'],
       isFavorite: true,
+      tasksTotal: 20,
+      tasksCompleted: 14,
     },
   ];
 
-  // Filtrer les projets
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Get unique clients for filter
+  const uniqueClients = useMemo(() => {
+    return Array.from(new Set(projects.map(p => p.client))).sort();
+  }, []);
+
+  // Filter and sort projects
+  const filteredAndSortedProjects = useMemo(() => {
+    let filtered = projects.filter(project => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           project.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+      const matchesClient = clientFilter === 'all' || project.client === clientFilter;
+      return matchesSearch && matchesStatus && matchesClient;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'deadline':
+          if (a.deadline === '-') return 1;
+          if (b.deadline === '-') return -1;
+          comparison = new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+          break;
+        case 'budget':
+          comparison = a.budget - b.budget;
+          break;
+        case 'progress':
+          comparison = a.progress - b.progress;
+          break;
+      }
+      return sortAsc ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [projects, searchQuery, statusFilter, clientFilter, sortBy, sortAsc]);
 
   // Calculer les KPIs
   const totalProjects = projects.length;
@@ -248,6 +338,16 @@ export default function ProjectsListDemo() {
     return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
   };
 
+  // Toggle sort
+  const handleSort = (newSortBy: SortBy) => {
+    if (sortBy === newSortBy) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortBy(newSortBy);
+      setSortAsc(true);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6">
       {/* Header */}
@@ -261,7 +361,7 @@ export default function ProjectsListDemo() {
           </div>
           <Link
             href="/dashboard/projects/new"
-            className="glass-button px-6 py-3 rounded-lg flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-all"
+            className="px-6 py-3 rounded-lg flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors border border-blue-500/20"
           >
             <Plus className="w-5 h-5" />
             <span className="font-medium">Nouveau projet</span>
@@ -272,9 +372,9 @@ export default function ProjectsListDemo() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         {/* Total */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
           <div className="flex items-center justify-between mb-2">
-            <div className="glass-badge p-2 rounded-lg bg-gray-500/10">
+            <div className="p-2 rounded-lg bg-gray-500/10">
               <LayoutGrid className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </div>
           </div>
@@ -283,9 +383,9 @@ export default function ProjectsListDemo() {
         </div>
 
         {/* Actifs */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl border border-blue-500/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="glass-badge p-2 rounded-lg bg-blue-500/10">
+            <div className="p-2 rounded-lg bg-blue-500/10">
               <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
@@ -294,9 +394,9 @@ export default function ProjectsListDemo() {
         </div>
 
         {/* Terminés */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl border border-green-500/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="glass-badge p-2 rounded-lg bg-green-500/10">
+            <div className="p-2 rounded-lg bg-green-500/10">
               <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
           </div>
@@ -305,9 +405,9 @@ export default function ProjectsListDemo() {
         </div>
 
         {/* En retard */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl border border-red-500/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="glass-badge p-2 rounded-lg bg-red-500/10">
+            <div className="p-2 rounded-lg bg-red-500/10">
               <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
           </div>
@@ -316,9 +416,9 @@ export default function ProjectsListDemo() {
         </div>
 
         {/* Budget total */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="glass-badge p-2 rounded-lg bg-purple-500/10">
+            <div className="p-2 rounded-lg bg-purple-500/10">
               <DollarSign className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
@@ -327,9 +427,9 @@ export default function ProjectsListDemo() {
         </div>
 
         {/* Échéances proches */}
-        <div className="glass-card p-4 rounded-xl">
+        <div className="glass-card p-4 rounded-xl border border-orange-500/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="glass-badge p-2 rounded-lg bg-orange-500/10">
+            <div className="p-2 rounded-lg bg-orange-500/10">
               <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
             </div>
           </div>
@@ -339,7 +439,7 @@ export default function ProjectsListDemo() {
       </div>
 
       {/* Filters & Views */}
-      <div className="glass-card p-4 rounded-xl mb-6">
+      <div className="glass-card p-4 rounded-xl mb-6 border border-gray-200/50 dark:border-gray-700/50">
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
           {/* Search & Filters */}
           <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
@@ -369,10 +469,42 @@ export default function ProjectsListDemo() {
               <option value="archived">Archivés</option>
             </select>
 
+            {/* Client Filter */}
+            <select
+              value={clientFilter}
+              onChange={(e) => setClientFilter(e.target.value)}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+            >
+              <option value="all">Tous les clients</option>
+              {uniqueClients.map(client => (
+                <option key={client} value={client}>{client}</option>
+              ))}
+            </select>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+            >
+              <option value="deadline">Trier par échéance</option>
+              <option value="name">Trier par nom</option>
+              <option value="budget">Trier par budget</option>
+              <option value="progress">Trier par progression</option>
+            </select>
+
+            {/* Sort Direction */}
+            <button
+              onClick={() => setSortAsc(!sortAsc)}
+              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-500/10 transition-colors"
+            >
+              <ArrowUpDown className={`w-4 h-4 ${sortAsc ? '' : 'rotate-180'} transition-transform`} />
+            </button>
+
             {/* Analytics Toggle */}
             <button
               onClick={() => setShowAnalytics(!showAnalytics)}
-              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-500/10 transition-all"
+              className="px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700"
             >
               <BarChart3 className="w-4 h-4" />
               <span className="text-sm font-medium">Analytics</span>
@@ -383,30 +515,30 @@ export default function ProjectsListDemo() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('cards')}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-2 rounded-lg transition-colors border ${
                 viewMode === 'cards'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10'
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
               }`}
             >
               <LayoutGrid className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setViewMode('kanban')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'kanban'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10'
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-colors border ${
+                viewMode === 'list'
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
               }`}
             >
-              <List className="w-5 h-5" />
+              <ListIcon className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'table'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10'
+              onClick={() => setViewMode('kanban')}
+              className={`p-2 rounded-lg transition-colors border ${
+                viewMode === 'kanban'
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
               }`}
             >
               <Calendar className="w-5 h-5" />
@@ -417,7 +549,7 @@ export default function ProjectsListDemo() {
 
       {/* Analytics Section */}
       {showAnalytics && (
-        <div className="glass-card p-6 rounded-xl mb-6">
+        <div className="glass-card p-6 rounded-xl mb-6 border border-gray-200/50 dark:border-gray-700/50">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Analytics</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Progression moyenne */}
@@ -471,30 +603,34 @@ export default function ProjectsListDemo() {
         </div>
       )}
 
-      {/* Projects Grid/Kanban/Table */}
+      {/* Projects Cards View */}
       {viewMode === 'cards' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
+          {filteredAndSortedProjects.map((project) => (
             <div
               key={project.id}
-              className="glass-card rounded-xl p-6 hover:scale-[1.02] hover:shadow-xl transition-all duration-200 group"
+              className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-200 group border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30"
             >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {/* Header with Logo */}
+              <div className="flex items-start gap-3 mb-4">
+                {/* Client Logo */}
+                <div className={`${project.clientColor} w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                  {project.clientLogo}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{project.client}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{project.client}</p>
                 </div>
-                <button className={`p-1.5 rounded-lg transition-all ${project.isFavorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}>
+                <button className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${project.isFavorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}>
                   <Star className={`w-5 h-5 ${project.isFavorite ? 'fill-current' : ''}`} />
                 </button>
               </div>
 
               {/* Status Badge */}
               <div className="mb-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConfig[project.status].bgColor} ${statusConfig[project.status].textColor}`}>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConfig[project.status].bgColor} ${statusConfig[project.status].textColor} border border-${statusConfig[project.status].color}-500/20`}>
                   {project.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
                   {project.status === 'delayed' && <AlertCircle className="w-3 h-3" />}
                   {project.status === 'at_risk' && <AlertCircle className="w-3 h-3" />}
@@ -521,24 +657,37 @@ export default function ProjectsListDemo() {
                 </div>
               </div>
 
+              {/* Tasks Status */}
+              <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Tâches</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    {project.tasksCompleted}/{project.tasksTotal}
+                  </span>
+                </div>
+              </div>
+
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="text-center">
-                  <div className="glass-badge p-2 rounded-lg bg-purple-500/10 mx-auto w-fit mb-1">
+                  <div className="p-2 rounded-lg bg-purple-500/10 mx-auto w-fit mb-1 border border-purple-500/20">
                     <DollarSign className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">Budget</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(project.budget)}</p>
                 </div>
                 <div className="text-center">
-                  <div className="glass-badge p-2 rounded-lg bg-blue-500/10 mx-auto w-fit mb-1">
+                  <div className="p-2 rounded-lg bg-blue-500/10 mx-auto w-fit mb-1 border border-blue-500/20">
                     <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">Équipe</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{project.team}</p>
                 </div>
                 <div className="text-center">
-                  <div className="glass-badge p-2 rounded-lg bg-orange-500/10 mx-auto w-fit mb-1">
+                  <div className="p-2 rounded-lg bg-orange-500/10 mx-auto w-fit mb-1 border border-orange-500/20">
                     <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">Échéance</p>
@@ -549,7 +698,7 @@ export default function ProjectsListDemo() {
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {project.tags.slice(0, 3).map((tag, index) => (
-                  <span key={index} className="glass-badge px-2 py-1 rounded text-xs text-gray-600 dark:text-gray-400">
+                  <span key={index} className="px-2 py-1 rounded text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50">
                     {tag}
                   </span>
                 ))}
@@ -559,16 +708,97 @@ export default function ProjectsListDemo() {
               <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Link
                   href={`/dashboard/projects/${project.id}`}
-                  className="flex-1 glass-button px-3 py-2 rounded-lg text-sm font-medium text-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors border border-gray-200 dark:border-gray-700"
                 >
                   Voir détails
                 </Link>
-                <button className="glass-button p-2 rounded-lg hover:bg-gray-500/10 transition-all">
+                <button className="p-2 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700">
                   <Share2 className="w-4 h-4" />
                 </button>
-                <button className="glass-button p-2 rounded-lg hover:bg-gray-500/10 transition-all">
+                <button className="p-2 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700">
                   <Archive className="w-4 h-4" />
                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Projects List View */}
+      {viewMode === 'list' && (
+        <div className="space-y-3">
+          {filteredAndSortedProjects.map((project) => (
+            <div
+              key={project.id}
+              className="glass-card rounded-xl p-4 hover:scale-[1.005] transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30"
+            >
+              <div className="flex items-center gap-4">
+                {/* Client Logo */}
+                <div className={`${project.clientColor} w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                  {project.clientLogo}
+                </div>
+
+                {/* Project Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                      {project.name}
+                    </h3>
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[project.status].bgColor} ${statusConfig[project.status].textColor} border border-${statusConfig[project.status].color}-500/20`}>
+                      {statusConfig[project.status].label}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{project.client}</p>
+                </div>
+
+                {/* Tasks */}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50">
+                  <CheckSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    {project.tasksCompleted}/{project.tasksTotal}
+                  </span>
+                </div>
+
+                {/* Progress */}
+                <div className="w-32">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{ width: `${project.progress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-gray-900 dark:text-white">{project.progress}%</span>
+                  </div>
+                </div>
+
+                {/* Budget */}
+                <div className="text-right w-24">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Budget</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(project.budget)}</p>
+                </div>
+
+                {/* Team */}
+                <div className="text-center w-16">
+                  <Users className="w-4 h-4 text-gray-600 dark:text-gray-400 mx-auto mb-1" />
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{project.team}</p>
+                </div>
+
+                {/* Deadline */}
+                <div className="text-right w-24">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Échéance</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{formatDate(project.deadline)}</p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <button className={`p-1.5 rounded-lg transition-colors ${project.isFavorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}>
+                    <Star className={`w-4 h-4 ${project.isFavorite ? 'fill-current' : ''}`} />
+                  </button>
+                  <Link href={`/dashboard/projects/${project.id}`} className="p-1.5 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700">
+                    <ExternalLink className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
@@ -579,29 +809,36 @@ export default function ProjectsListDemo() {
       {viewMode === 'kanban' && (
         <div className="flex gap-6 overflow-x-auto pb-4">
           {(['active', 'at_risk', 'delayed', 'completed', 'archived'] as ProjectStatus[]).map((status) => {
-            const statusProjects = filteredProjects.filter(p => p.status === status);
+            const statusProjects = filteredAndSortedProjects.filter(p => p.status === status);
             return (
               <div key={status} className="flex-shrink-0 w-80">
-                <div className="glass-card p-4 rounded-xl mb-4">
+                <div className="glass-card p-4 rounded-xl mb-4 border border-gray-200/50 dark:border-gray-700/50">
                   <div className="flex items-center justify-between">
                     <h3 className={`font-bold ${statusConfig[status].textColor}`}>
                       {statusConfig[status].label}
                     </h3>
-                    <span className="glass-badge px-2 py-1 rounded text-sm font-bold">
+                    <span className="px-2 py-1 rounded text-sm font-bold bg-gray-100 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50">
                       {statusProjects.length}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-4">
                   {statusProjects.map((project) => (
-                    <div key={project.id} className="glass-card p-4 rounded-xl hover:scale-[1.02] hover:shadow-lg transition-all">
-                      <div className="flex items-start justify-between mb-3">
-                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">{project.name}</h4>
-                        <Star className={`w-4 h-4 ${project.isFavorite ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
+                    <div key={project.id} className="glass-card p-4 rounded-xl hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`${project.clientColor} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
+                          {project.clientLogo}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate">{project.name}</h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{project.client}</p>
+                        </div>
+                        <Star className={`w-4 h-4 flex-shrink-0 ${project.isFavorite ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{project.client}</p>
                       <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
-                        <Users className="w-3 h-3" />
+                        <CheckSquare className="w-3 h-3" />
+                        <span>{project.tasksCompleted}/{project.tasksTotal}</span>
+                        <Users className="w-3 h-3 ml-2" />
                         <span>{project.team}</span>
                         <Clock className="w-3 h-3 ml-2" />
                         <span>{formatDate(project.deadline)}</span>
@@ -621,74 +858,10 @@ export default function ProjectsListDemo() {
         </div>
       )}
 
-      {/* Table View */}
-      {viewMode === 'table' && (
-        <div className="glass-card rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Projet</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Client</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Statut</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Progression</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Budget</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Équipe</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Échéance</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredProjects.map((project) => (
-                  <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Star className={`w-4 h-4 ${project.isFavorite ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
-                        <span className="font-bold text-gray-900 dark:text-white">{project.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{project.client}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConfig[project.status].bgColor} ${statusConfig[project.status].textColor}`}>
-                        {statusConfig[project.status].label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 w-24">
-                          <div 
-                            className="bg-blue-500 h-2 rounded-full"
-                            style={{ width: `${project.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-bold text-gray-900 dark:text-white">{project.progress}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(project.budget)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{project.team}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{formatDate(project.deadline)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/dashboard/projects/${project.id}`} className="p-1.5 rounded-lg hover:bg-gray-500/10 transition-all">
-                          <ExternalLink className="w-4 h-4" />
-                        </Link>
-                        <button className="p-1.5 rounded-lg hover:bg-gray-500/10 transition-all">
-                          <Share2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* Empty State */}
-      {filteredProjects.length === 0 && (
-        <div className="glass-card p-12 rounded-xl text-center">
-          <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+      {filteredAndSortedProjects.length === 0 && (
+        <div className="glass-card p-12 rounded-xl text-center border border-gray-200/50 dark:border-gray-700/50">
+          <div className="p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50">
             <Search className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -699,7 +872,7 @@ export default function ProjectsListDemo() {
           </p>
           <Link
             href="/dashboard/projects/new"
-            className="inline-flex items-center gap-2 glass-button px-6 py-3 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors border border-blue-500/20"
           >
             <Plus className="w-5 h-5" />
             <span className="font-medium">Nouveau projet</span>
