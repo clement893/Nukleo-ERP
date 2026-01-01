@@ -370,7 +370,7 @@ export default function AdminUsersContent() {
               variant="outline"
               onClick={() => handleSendInvitation(row)}
               disabled={sendingInvitation}
-              className="border-primary-500 text-primary-600 hover:bg-primary-50"
+              className="border-primary-500 text-foreground hover:bg-primary-50"
             >
               Envoyer invitation
             </Button>

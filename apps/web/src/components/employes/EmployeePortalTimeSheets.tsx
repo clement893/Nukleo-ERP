@@ -676,18 +676,6 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     );
   }
 
-  if (loading && entries.length === 0) {
-    return (
-      <div className="space-y-4 mt-4">
-        <Card>
-          <div className="py-12 text-center">
-            <Loading />
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 mt-4">
       {error && (
@@ -845,6 +833,16 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
           </div>
         )}
       </Card>
+
+      {/* Loading indicator for entries only */}
+      {loading && entries.length === 0 && (
+        <Card className="glass-card p-6">
+          <div className="py-8 text-center">
+            <Loading />
+            <p className="text-sm text-muted-foreground mt-4">Chargement des entrées de temps...</p>
+          </div>
+        </Card>
+      )}
 
       {/* Quick View Buttons */}
       <Card className="glass-card p-4">
