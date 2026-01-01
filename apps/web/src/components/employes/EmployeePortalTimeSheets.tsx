@@ -24,8 +24,7 @@ import {
   Plus,
   Edit,
   Trash2,
-  Save,
-  X
+  Save
 } from 'lucide-react';
 import {
   groupByWeek,
@@ -53,7 +52,6 @@ interface EmployeePortalTimeSheetsProps {
 }
 
 export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalTimeSheetsProps) {
-  const { user } = useAuthStore();
   const { showToast } = useToast();
   const [employee, setEmployee] = useState<{ user_id?: number | null; team_id?: number | null } | null>(null);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -86,7 +84,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
   const [formData, setFormData] = useState<TimeEntryCreate>({
     description: '',
     duration: 0,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0] || '',
     task_id: null,
     project_id: null,
     client_id: null,
@@ -144,6 +142,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         timerIntervalRef.current = null;
       }
       setTimerElapsed(0);
+      return undefined;
     }
   }, [timerStatus]);
 
@@ -155,7 +154,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     startOfWeek.setHours(0, 0, 0, 0);
     
     if (quickView === 'today') {
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStr = today.toISOString().split('T')[0] || '';
       setFilters(prev => ({
         ...prev,
         start_date: todayStr,
@@ -166,10 +165,13 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
       
+      const startStr = startOfWeek.toISOString().split('T')[0] || '';
+      const endStr = endOfWeek.toISOString().split('T')[0] || '';
+      
       setFilters(prev => ({
         ...prev,
-        start_date: startOfWeek.toISOString().split('T')[0],
-        end_date: endOfWeek.toISOString().split('T')[0],
+        start_date: startStr,
+        end_date: endStr,
       }));
     } else {
       setFilters(prev => ({
@@ -284,14 +286,15 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
 
   const handleStopTimer = async () => {
     try {
-      const entry = await timeEntriesAPI.stopTimer(formData.description || undefined);
+      await timeEntriesAPI.stopTimer(formData.description || undefined);
       await loadTimerStatus();
       await loadEntries();
       showToast({ message: 'Timer arrêté et entrée créée', type: 'success' });
+      const dateStr = new Date().toISOString().split('T')[0] || '';
       setFormData({
         description: '',
         duration: 0,
-        date: new Date().toISOString().split('T')[0],
+        date: dateStr,
         task_id: null,
         project_id: null,
         client_id: null,
@@ -378,10 +381,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       await timeEntriesAPI.create(formData);
       await loadEntries();
       setShowCreateModal(false);
+      const dateStr = new Date().toISOString().split('T')[0] || '';
       setFormData({
         description: '',
         duration: 0,
-        date: new Date().toISOString().split('T')[0],
+        date: dateStr,
         task_id: null,
         project_id: null,
         client_id: null,
@@ -401,10 +405,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       await loadEntries();
       setShowEditModal(false);
       setEditingEntry(null);
+      const dateStr = new Date().toISOString().split('T')[0] || '';
       setFormData({
         description: '',
         duration: 0,
-        date: new Date().toISOString().split('T')[0],
+        date: dateStr,
         task_id: null,
         project_id: null,
         client_id: null,
@@ -431,10 +436,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
 
   const handleEditEntry = (entry: TimeEntry) => {
     setEditingEntry(entry);
+    const dateStr = entry.date.split('T')[0] || new Date().toISOString().split('T')[0] || '';
     setFormData({
       description: entry.description || '',
       duration: entry.duration,
-      date: entry.date.split('T')[0],
+      date: dateStr,
       task_id: entry.task_id || null,
       project_id: entry.project_id || null,
       client_id: entry.client_id || null,
@@ -559,7 +565,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                   </span>
                 </div>
                 <Button
-                  variant="destructive"
+                  variant="danger"
                   onClick={handleStopTimer}
                   className="flex items-center gap-2"
                 >
@@ -930,10 +936,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         isOpen={showCreateModal}
         onClose={() => {
           setShowCreateModal(false);
+          const dateStr = new Date().toISOString().split('T')[0] || '';
           setFormData({
             description: '',
             duration: 0,
-            date: new Date().toISOString().split('T')[0],
+            date: dateStr,
             task_id: null,
             project_id: null,
             client_id: null,
@@ -1042,10 +1049,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         onClose={() => {
           setShowEditModal(false);
           setEditingEntry(null);
+          const dateStr = new Date().toISOString().split('T')[0] || '';
           setFormData({
             description: '',
             duration: 0,
-            date: new Date().toISOString().split('T')[0],
+            date: dateStr,
             task_id: null,
             project_id: null,
             client_id: null,
