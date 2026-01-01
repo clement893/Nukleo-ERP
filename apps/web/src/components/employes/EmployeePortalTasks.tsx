@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { projectCommentsAPI, type ProjectComment } from '@/lib/api/project-comments';
+import { projectAttachmentsAPI, type ProjectAttachment } from '@/lib/api/project-attachments';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Modal } from '@/components/ui';
@@ -11,7 +12,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
 import Avatar from '@/components/ui/Avatar';
 import { useAuthStore } from '@/lib/store';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2 } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, FileText, Image, File, Download } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
