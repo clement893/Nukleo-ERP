@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { ProjectHeader } from './components/ProjectHeader';
-import { ProjectTabs, TabId } from './components/ProjectTabs';
-import { OverviewTab } from './components/OverviewTab';
-import { TasksTab } from './components/TasksTab';
+import ProjectHeader from './components/ProjectHeader';
+import ProjectTabs from './components/ProjectTabs';
+import OverviewTab from './components/OverviewTab';
+import TasksTab from './components/TasksTab';
 import { motion, AnimatePresence } from 'framer-motion';
+
+type TabId = 'overview' | 'tasks' | 'timeline' | 'files' | 'team' | 'activity';
 
 // Mock Data
 const mockProject = {
