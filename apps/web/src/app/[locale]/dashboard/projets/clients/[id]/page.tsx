@@ -341,11 +341,11 @@ export default function ClientDetailPage() {
                             <h4 className="font-semibold text-foreground">
                               {String(contact.first_name || '')} {String(contact.last_name || '')}
                             </h4>
-                            {contact.position && (
-                              <p className="text-sm text-muted-foreground">{String(contact.position)}</p>
+                            {contact.position && typeof contact.position === 'string' && (
+                              <p className="text-sm text-muted-foreground">{contact.position}</p>
                             )}
-                            {contact.email && (
-                              <p className="text-sm text-muted-foreground">{String(contact.email)}</p>
+                            {contact.email && typeof contact.email === 'string' && (
+                              <p className="text-sm text-muted-foreground">{contact.email}</p>
                             )}
                           </div>
                         </div>

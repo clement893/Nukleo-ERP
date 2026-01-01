@@ -21,7 +21,7 @@ import {
   MapPin,
   Briefcase
 } from 'lucide-react';
-import { useReseauContact, useDeleteReseauContact, useUpdateReseauContact } from '@/lib/query/reseau-contacts';
+import { useReseauContact, useUpdateReseauContact } from '@/lib/query/reseau-contacts';
 import Modal from '@/components/ui/Modal';
 import ContactForm from '@/components/reseau/ContactForm';
 import type { ContactUpdate } from '@/lib/api/reseau-contacts';

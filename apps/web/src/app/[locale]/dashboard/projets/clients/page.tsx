@@ -28,8 +28,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteClients, 
   useCreateClient, 
-  useUpdateClient, 
-  useDeleteClient
+  useUpdateClient
 } from '@/lib/query/clients';
 
 function ClientsContent() {
