@@ -193,24 +193,14 @@ export default function EmployeePortalPermissionsEditor({
         console.log('[EmployeePortalPermissionsEditor] Aucune permission à créer');
       }
 
-      // Attendre un peu pour s'assurer que la base de données est à jour
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Recharger les données depuis le serveur pour s'assurer de la synchronisation
-      console.log('[EmployeePortalPermissionsEditor] Rechargement des permissions après sauvegarde...');
-      await loadData();
+      // Mettre à jour IMMÉDIATEMENT les états sauvegardés pour éviter le délai
+      setSavedModules(new Set(selectedModules));
+      setSavedClients(new Set(selectedClients));
       
-      // Vérifier que les permissions sont bien rechargées
-      const [verifySummary, verifyPermissions] = await Promise.all([
-        employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
-        employeePortalPermissionsAPI.list({ employee_id: employeeId }),
-      ]);
-      console.log('[EmployeePortalPermissionsEditor] Vérification après rechargement:', {
-        summary: verifySummary,
-        permissions: verifyPermissions.map(p => ({
-          type: p.permission_type,
-          resource_id: p.resource_id,
-        })),
+      // Recharger les données depuis le serveur en arrière-plan pour synchronisation
+      console.log('[EmployeePortalPermissionsEditor] Rechargement des permissions après sauvegarde...');
+      loadData().catch(err => {
+        console.error('[EmployeePortalPermissionsEditor] Erreur lors du rechargement:', err);
       });
       
       // Déclencher un événement pour notifier les autres composants (comme le portail employé)

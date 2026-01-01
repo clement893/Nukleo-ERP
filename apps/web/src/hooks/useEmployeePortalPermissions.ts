@@ -98,26 +98,35 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
 
   /**
    * Check if user has access to a module
+   * NOTE: When employeeId is provided, this checks the EMPLOYEE's permissions, not the logged-in user's permissions
    */
   const hasModuleAccess = (moduleName: string): boolean => {
     if (!permissions) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[useEmployeePortalPermissions] hasModuleAccess(${moduleName}): permissions is null`);
+        console.log(`[useEmployeePortalPermissions] hasModuleAccess(${moduleName}): permissions is null`, {
+          employeeId,
+          userId: user?.id,
+        });
       }
       return false;
     }
-    // If admin, allow all
-    if (user?.is_admin) return true;
+    
+    // IMPORTANT: Si employeeId est fourni, on vérifie les permissions de l'EMPLOYÉ, pas de l'utilisateur connecté
+    // Ne pas bypasser avec user?.is_admin car on veut voir le portail tel que l'employé le voit
     // Check if module is in allowed modules or if all modules are allowed
     const hasAccess = permissions.modules.includes('*') || permissions.modules.includes(moduleName);
+    
     if (process.env.NODE_ENV === 'development') {
       console.log(`[useEmployeePortalPermissions] hasModuleAccess(${moduleName}):`, {
         hasAccess,
+        employeeId,
+        userId: user?.id,
         modules: permissions.modules,
         includesModule: permissions.modules.includes(moduleName),
         includesWildcard: permissions.modules.includes('*'),
       });
     }
+    
     return hasAccess;
   };
 
