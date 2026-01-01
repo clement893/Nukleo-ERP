@@ -202,6 +202,18 @@ export default function SoumissionsDemoPage() {
     }
   };
 
+  const getTotalAmount = () => {
+    return activeTab === 'quotes' ? quotesStats.totalAmount : submissionsStats.totalAmount;
+  };
+
+  const getTotal = () => {
+    return activeTab === 'quotes' ? quotesStats.total : submissionsStats.total;
+  };
+
+  const getPending = () => {
+    return activeTab === 'quotes' ? quotesStats.pending : submissionsStats.pending;
+  };
+
   return (
     <PageContainer className="flex flex-col h-full">
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
@@ -274,7 +286,7 @@ export default function SoumissionsDemoPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(currentStats.totalAmount)}
+              {formatCurrency(getTotalAmount())}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
           </div>
@@ -286,7 +298,7 @@ export default function SoumissionsDemoPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {currentStats.total}
+              {getTotal()}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {activeTab === 'quotes' ? 'Devis' : 'Soumissions'}
@@ -314,7 +326,7 @@ export default function SoumissionsDemoPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {currentStats.pending}
+              {getPending()}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
           </div>
