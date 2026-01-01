@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import Drawer from '@/components/ui/Drawer';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
@@ -19,6 +20,8 @@ import TaskTimer from './TaskTimer';
 import ProjectAttachments from './ProjectAttachments';
 import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
+import Tabs from '@/components/ui/Tabs';
+import { Info, MessageSquare, Paperclip } from 'lucide-react';
 
 interface TaskKanbanProps {
   projectId?: number;
@@ -57,6 +60,9 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
   const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
+  const [showTaskDrawer, setShowTaskDrawer] = useState(false);
+  const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
   const [formData, setFormData] = useState<{
@@ -177,6 +183,20 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       estimated_hours: null,
     });
     setShowTaskModal(true);
+  };
+
+  const handleOpenTaskDetails = async (task: ProjectTask) => {
+    setLoadingDetails(true);
+    try {
+      const details = await projectTasksAPI.get(task.id);
+      setTaskDetails(details);
+      setShowTaskDrawer(true);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showErrorToast(appError.message || 'Erreur lors du chargement des détails');
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const handleEditTask = async (task: ProjectTask) => {
@@ -429,12 +449,20 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
               </div>
               <div className="space-y-3 flex-1 min-h-[400px]">
                 {columnTasks.map((task) => (
-                  <Card
+                  <div
                     key={task.id}
-                    className="glass-card p-4 rounded-xl cursor-move hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                    className="glass-card p-4 rounded-xl cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
                     draggable
                     onDragStart={() => handleDragStart(task)}
+                    onClick={(e: React.MouseEvent) => {
+                      // Ne pas ouvrir si on clique sur les boutons d'action
+                      if ((e.target as HTMLElement).closest('button')) {
+                        return;
+                      }
+                      handleOpenTaskDetails(task);
+                    }}
                   >
+                    <Card className="border-0 shadow-none p-0">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2 flex-1">
                         <GripVertical className="w-4 h-4 text-muted-foreground" />
@@ -442,7 +470,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                           {PRIORITY_LABELS[task.priority]}
                         </span>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleEditTask(task)}
                           className="p-1 hover:bg-accent rounded"
@@ -486,7 +514,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                       </div>
                       <TaskTimer taskId={task.id} onTimeTracked={loadTasks} />
                     </div>
-                  </Card>
+                    </Card>
+                  </div>
                 ))}
                 {columnTasks.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
@@ -634,6 +663,111 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           )}
         </div>
       </Modal>
+
+      {/* Drawer de détails de la tâche */}
+      <Drawer
+        isOpen={showTaskDrawer}
+        onClose={() => {
+          setShowTaskDrawer(false);
+          setTaskDetails(null);
+        }}
+        title={taskDetails?.title || ''}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : taskDetails ? (
+          <div className="h-full">
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6">
+                      {taskDetails.description && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Description
+                          </h4>
+                          <p className="text-sm text-foreground whitespace-pre-wrap">
+                            {taskDetails.description}
+                          </p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Statut
+                          </h4>
+                          <span className="text-sm">{STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.label || taskDetails.status}</span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Priorité
+                          </h4>
+                          <span className={`px-2 py-1 text-xs rounded-full text-white ${PRIORITY_COLORS[taskDetails.priority]}`}>
+                            {PRIORITY_LABELS[taskDetails.priority]}
+                          </span>
+                        </div>
+                        {taskDetails.due_date && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Échéance
+                            </h4>
+                            <span className="text-sm">
+                              {new Date(taskDetails.due_date).toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        )}
+                        {taskDetails.estimated_hours && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Heures estimées
+                            </h4>
+                            <span className="text-sm">{taskDetails.estimated_hours}h</span>
+                          </div>
+                        )}
+                        {taskDetails.assignee_name && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Assigné à
+                            </h4>
+                            <span className="text-sm">{taskDetails.assignee_name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'comments',
+                  label: 'Commentaires',
+                  icon: <MessageSquare className="w-4 h-4" />,
+                  content: <ProjectComments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
+                },
+                {
+                  id: 'documents',
+                  label: 'Documents',
+                  icon: <Paperclip className="w-4 h-4" />,
+                  content: <ProjectAttachments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
+                },
+              ]}
+              defaultTab="info"
+            />
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   );
 }

@@ -293,6 +293,7 @@ export default function EmployeePortalPermissionsEditor({
         });
       });
       
+      // Créer les nouvelles permissions (même si la liste est vide pour garantir la cohérence)
       if (newPermissions.length > 0) {
         await employeePortalPermissionsAPI.bulkCreate({
           employee_id: employeeId,
@@ -300,19 +301,23 @@ export default function EmployeePortalPermissionsEditor({
         });
       }
       
-      // Mettre à jour les états sauvegardés IMMÉDIATEMENT
+      // IMPORTANT: Mettre à jour les états sauvegardés APRÈS que toutes les opérations DB soient terminées
       // Créer de nouveaux Sets pour forcer React à détecter le changement
       setSavedModules(new Set(modules));
       setSavedClients(new Set(clients));
       
-      // Déclencher un événement pour notifier les autres composants et invalider leur cache
-      window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
-        detail: { employeeId }
-      }));
+      // Déclencher l'événement APRÈS la mise à jour des états pour notifier les autres composants
+      // Cela force les autres composants (comme EmployeePortalNavigation) à recharger les permissions
+      // On le fait dans un setTimeout pour s'assurer que React a eu le temps de traiter la mise à jour des états
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
+          detail: { employeeId }
+        }));
+      }, 0);
       
-      // Recharger les données depuis le serveur pour s'assurer qu'elles sont bien persistées
-      // et pour avoir les IDs des permissions créées
-      await loadData();
+      // Ne pas recharger loadData() ici car cela réinitialiserait les états et causerait un flash
+      // Les données sont déjà sauvegardées sur le serveur, et les états locaux sont déjà à jour
+      // Le rechargement se fera automatiquement via le cache invalidation dans les autres composants
     } catch (err) {
       const appError = handleApiError(err);
       showToast({
