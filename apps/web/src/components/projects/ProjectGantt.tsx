@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
-import Card from '@/components/ui/Card';
 import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
