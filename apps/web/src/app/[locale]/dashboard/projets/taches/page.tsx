@@ -105,7 +105,11 @@ export default function TachesPage() {
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }
-      groups[groupKey].push(task);
+      // TypeScript assertion: we just checked and created the array above
+      const group = groups[groupKey];
+      if (group) {
+        group.push(task);
+      }
     });
     
     return groups;
@@ -154,7 +158,7 @@ export default function TachesPage() {
 
   return (
     <PageContainer>
-      <MotionDiv variant="slideUp" duration="medium">
+      <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
