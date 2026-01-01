@@ -12,7 +12,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users, CheckCircle2, Clock, TrendingUp, ArrowLeft } from 'lucide-react';
 import { teamsAPI } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
-import { projectsAPI } from '@/lib/api';
+import { projectsAPI } from '@/lib/api/projects';
 import { employeesAPI, type Employee as EmployeeType } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
