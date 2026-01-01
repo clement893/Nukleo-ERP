@@ -695,50 +695,76 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'deliverables' && (
-          <Card className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-              <Award className="w-5 h-5" />
-              Livrables et statuts
-            </h3>
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-lg border border-border">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                    <Award className="w-5 h-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Témoignage</p>
-                    <p className="text-sm text-muted-foreground">Statut du témoignage client</p>
+              {/* Témoignage Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-yellow-500/10">
+                    <Award className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                   </div>
                 </div>
-                <p className="text-lg font-semibold text-foreground">
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Témoignage client
+                </h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
                   {project.temoignage_status || 'Non renseigné'}
                 </p>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  project.temoignage_status === 'Reçu' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
+                  project.temoignage_status === 'En attente' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300' :
+                  'bg-gray-500/20 text-gray-700 dark:text-gray-300'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    project.temoignage_status === 'Reçu' ? 'bg-green-500' :
+                    project.temoignage_status === 'En attente' ? 'bg-yellow-500' : 'bg-gray-500'
+                  }`} />
+                  {project.temoignage_status || 'Non défini'}
+                </div>
               </div>
 
-              <div className="p-6 rounded-lg border border-border">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-pink-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Portfolio</p>
-                    <p className="text-sm text-muted-foreground">Statut de l'ajout au portfolio</p>
+              {/* Portfolio Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-pink-500/10">
+                    <Briefcase className="w-6 h-6 text-pink-600 dark:text-pink-400" />
                   </div>
                 </div>
-                <p className="text-lg font-semibold text-foreground">
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Ajout au portfolio
+                </h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
                   {project.portfolio_status || 'Non renseigné'}
                 </p>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  project.portfolio_status === 'Ajouté' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
+                  project.portfolio_status === 'En cours' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                  'bg-gray-500/20 text-gray-700 dark:text-gray-300'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    project.portfolio_status === 'Ajouté' ? 'bg-green-500' :
+                    project.portfolio_status === 'En cours' ? 'bg-blue-500' : 'bg-gray-500'
+                  }`} />
+                  {project.portfolio_status || 'Non défini'}
+                </div>
               </div>
             </div>
 
+            {/* Empty State */}
             {!project.temoignage_status && !project.portfolio_status && (
-              <div className="text-center py-8 text-muted-foreground mt-6">
-                <Award className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Aucun livrable renseigné</p>
+              <div className="glass-card p-12 rounded-xl text-center">
+                <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Award className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Aucun livrable renseigné
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Les statuts des livrables n'ont pas encore été mis à jour.
+                </p>
               </div>
             )}
-          </Card>
+          </div>
         )}
 
         {activeTab === 'tasks' && (
