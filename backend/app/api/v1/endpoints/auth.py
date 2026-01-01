@@ -195,20 +195,58 @@ async def register(
     user_data: UserCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     response: Response,
+    invitation_token: Annotated[Optional[str], Query(description="Invitation token (if registering via invitation)")] = None,
 ) -> UserResponse:
     """
     Register a new user
+    
+    Can optionally accept an invitation token to register via invitation.
+    If a token is provided, the invitation will be validated and accepted upon registration.
     
     Args:
         user_data: User registration data
         db: Database session
         response: FastAPI response object (for rate limit headers)
+        invitation_token: Optional invitation token
         
     Returns:
         Created user
     """
     # Log registration attempt
-    logger.info(f"Registration attempt for email: {user_data.email}")
+    logger.info(f"Registration attempt for email: {user_data.email} (with invitation: {invitation_token is not None})")
+    
+    # If invitation token is provided, validate it
+    invitation = None
+    if invitation_token:
+        from app.services.invitation_service import InvitationService
+        invitation_service = InvitationService(db)
+        invitation = await invitation_service.get_invitation(invitation_token)
+        
+        if not invitation:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid invitation token"
+            )
+        
+        if not invitation.is_valid():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invitation is expired or already used"
+            )
+        
+        # Verify email matches invitation
+        if invitation.email.lower() != user_data.email.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email does not match the invitation"
+            )
+        
+        # Check if this is a team invitation (should not be used for user registration)
+        if invitation.team_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This invitation is for a team, not for account creation. Please use the team invitation acceptance endpoint."
+            )
     
     # Check if user already exists
     result = await db.execute(
@@ -234,6 +272,19 @@ async def register(
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
+    
+    # If invitation was provided, accept it
+    if invitation:
+        try:
+            await invitation_service.accept_invitation(
+                token=invitation_token,
+                user_id=new_user.id,
+            )
+            logger.info(f"Invitation accepted for user {new_user.id} via registration")
+        except Exception as e:
+            logger.error(f"Failed to accept invitation after registration: {e}", exc_info=True)
+            # Don't fail registration if invitation acceptance fails
+            # The user is created, they can accept the invitation later if needed
 
     # Convert to response model - convert datetime to ISO string format
     user_dict = {

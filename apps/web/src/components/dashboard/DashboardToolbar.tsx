@@ -4,9 +4,11 @@
  * Barre d'outils du dashboard personnalisable
  */
 
-import { Plus, Edit3, Save, LayoutGrid } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Edit3, Save, LayoutGrid, Check } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { DashboardFilters } from './DashboardFilters';
+import { useToast } from '@/lib/toast';
 
 interface DashboardToolbarProps {
   onAddWidget: () => void;
@@ -20,12 +22,39 @@ export function DashboardToolbar({ onAddWidget }: DashboardToolbarProps) {
     setActiveConfig,
     setEditMode,
     getActiveConfig,
+    saveToServer,
   } = useDashboardStore();
+  
+  const { showToast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const activeConfig = getActiveConfig();
 
   const handleToggleEditMode = () => {
     setEditMode(!isEditMode);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await saveToServer();
+      setLastSaved(new Date());
+      showToast({
+        message: 'Dashboard sauvegardé avec succès',
+        type: 'success',
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error saving dashboard:', error);
+      showToast({
+        message: 'Erreur lors de la sauvegarde du dashboard',
+        type: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -62,6 +91,38 @@ export function DashboardToolbar({ onAddWidget }: DashboardToolbarProps) {
         {/* Right: Filters and Actions */}
         <div className="flex items-center gap-2">
           {!isEditMode && <DashboardFilters />}
+          
+          {/* Save button - always visible */}
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              isSaving
+                ? 'bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed'
+                : lastSaved
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+            title={lastSaved ? `Dernière sauvegarde : ${lastSaved.toLocaleTimeString('fr-FR')}` : 'Sauvegarder les modifications'}
+          >
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Sauvegarde...
+              </>
+            ) : lastSaved ? (
+              <>
+                <Check className="w-4 h-4" />
+                Sauvegardé
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Sauvegarder
+              </>
+            )}
+          </button>
+          
           {isEditMode ? (
             <>
               <button

@@ -468,6 +468,77 @@ L'équipe {app_name}
         }
 
     @staticmethod
+    def user_invitation(
+        email: str,
+        invited_by_name: str,
+        invitation_token: str,
+        invitation_url: Optional[str] = None,
+        message: Optional[str] = None,
+        expires_at: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """User invitation email template for account creation"""
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        invitation_url = invitation_url or f"{frontend_url}/auth/register?token={invitation_token}"
+        app_name = os.getenv("SENDGRID_FROM_NAME", "MODELE")
+        
+        html_content = f"""
+            <h2 style="color: #111827; font-size: 24px; font-weight: 600; margin: 0 0 20px 0;">
+                Vous avez été invité ! 🎉
+            </h2>
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Bonjour,
+            </p>
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                <strong>{invited_by_name}</strong> vous a invité à rejoindre <strong>{app_name}</strong>.
+            </p>
+            {f'<p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">{message}</p>' if message else ''}
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Cliquez sur le bouton ci-dessous pour créer votre compte et commencer à utiliser la plateforme.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{invitation_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                    Créer mon compte
+                </a>
+            </div>
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                Ou copiez ce lien dans votre navigateur :
+            </p>
+            <p style="color: #667eea; font-size: 14px; word-break: break-all; margin: 10px 0 20px 0;">
+                {invitation_url}
+            </p>
+            {f'<p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">Cette invitation expire le <strong>{expires_at}</strong>.</p>' if expires_at else ''}
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.
+            </p>
+        """
+        
+        text_content = f"""
+Vous avez été invité !
+
+Bonjour,
+
+{invited_by_name} vous a invité à rejoindre {app_name}.
+
+{f'{message}' if message else ''}
+
+Cliquez sur ce lien pour créer votre compte :
+{invitation_url}
+
+{f'Cette invitation expire le {expires_at}.' if expires_at else ''}
+
+Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.
+
+Cordialement,
+L'équipe {app_name}
+        """
+        
+        return {
+            "subject": f"Invitation à rejoindre {app_name}",
+            "html": EmailTemplates.get_base_template(html_content),
+            "text": text_content.strip(),
+        }
+
+    @staticmethod
     def trial_ending(name: str, days_remaining: int, upgrade_url: Optional[str] = None) -> Dict[str, str]:
         """Trial ending soon email template"""
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
