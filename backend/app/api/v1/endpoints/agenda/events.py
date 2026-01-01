@@ -201,12 +201,28 @@ async def create_event(
             detail="End date must be after or equal to start date"
         )
     
+    # Convert time string to Time object if provided
+    time_obj = None
+    if event_data.event_time:
+        try:
+            # Parse time string (HH:MM or HH:MM:SS format)
+            time_parts = event_data.event_time.split(':')
+            if len(time_parts) >= 2:
+                hour = int(time_parts[0])
+                minute = int(time_parts[1])
+                second = int(time_parts[2]) if len(time_parts) > 2 else 0
+                time_obj = dt_time(hour, minute, second)
+        except (ValueError, IndexError) as e:
+            logger.warning(f"Invalid time format '{event_data.event_time}': {e}")
+            # If time format is invalid, set to None instead of failing
+            time_obj = None
+    
     event = CalendarEvent(
         title=event_data.title,
         description=event_data.description,
         date=event_data.event_date,
         end_date=event_data.end_date,
-        time=event_data.event_time,
+        time=time_obj,
         type=event_data.event_category,  # Use event_category from schema (mapped from 'type' via model_validator)
         location=event_data.location,
         attendees=event_data.attendees,
@@ -265,9 +281,25 @@ async def update_event(
     # Map event_category back to type for database model
     if 'event_category' in update_data:
         update_data['type'] = update_data.pop('event_category')
-    # Map event_time back to time for database model
+    # Map event_time back to time for database model and convert string to Time object
     if 'event_time' in update_data:
-        update_data['time'] = update_data.pop('event_time')
+        time_value = update_data.pop('event_time')
+        if time_value:
+            try:
+                # Parse time string (HH:MM or HH:MM:SS format)
+                time_parts = time_value.split(':')
+                if len(time_parts) >= 2:
+                    hour = int(time_parts[0])
+                    minute = int(time_parts[1])
+                    second = int(time_parts[2]) if len(time_parts) > 2 else 0
+                    update_data['time'] = dt_time(hour, minute, second)
+                else:
+                    update_data['time'] = None
+            except (ValueError, IndexError) as e:
+                logger.warning(f"Invalid time format '{time_value}': {e}")
+                update_data['time'] = None
+        else:
+            update_data['time'] = None
     # Map event_date back to date for database model
     if 'event_date' in update_data:
         update_data['date'] = update_data.pop('event_date')
