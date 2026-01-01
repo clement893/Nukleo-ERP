@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useRef } from 'react';
 import { clsx } from 'clsx';
 import { useComponentConfig } from '@/lib/theme/use-component-config';
 import Text from './Text';
@@ -50,6 +50,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       rightIcon,
       className,
       fullWidth = false,
+      onFocus,
       ...props
     },
     ref
@@ -57,11 +58,33 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const { getSize } = useComponentConfig('input');
     // Use 'md' as default size for input
     const sizeConfig = getSize('md');
+    const internalRef = useRef<HTMLInputElement>(null);
+    const inputRef = (ref || internalRef) as React.RefObject<HTMLInputElement>;
     
     const inputId = props.id || `input-${Math.random().toString(36).substring(7)}`;
     const errorId = error ? `${inputId}-error` : undefined;
     const helperId = helperText && !error ? `${inputId}-helper` : undefined;
     const describedBy = [errorId, helperId].filter(Boolean).join(' ') || undefined;
+    
+    // Handle focus for number inputs with value 0
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      // If it's a number input and the value is 0 or "0", select all text
+      if (props.type === 'number') {
+        const currentValue = e.target.value;
+        // Check if the value is 0, "0", or empty (which might be treated as 0)
+        // Also check the controlled value if it exists
+        const valueToCheck = props.value !== undefined ? String(props.value) : currentValue;
+        
+        if (valueToCheck === '0' || valueToCheck === '' || parseFloat(valueToCheck) === 0) {
+          // Small delay to ensure the input is focused before selecting
+          setTimeout(() => {
+            e.target.select();
+          }, 0);
+        }
+      }
+      // Call the original onFocus handler if provided
+      onFocus?.(e);
+    };
     
     // Build input style - use theme config if available
     const inputStyle: React.CSSProperties = {};
@@ -110,7 +133,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
           <input
-            ref={ref}
+            ref={inputRef}
             id={inputId}
             className={clsx(
               'w-full border rounded-lg transition-all duration-200',
@@ -130,6 +153,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={error ? 'true' : undefined}
             aria-describedby={describedBy}
             aria-required={props.required}
+            onFocus={handleFocus}
             {...props}
           />
           {rightIcon && (
