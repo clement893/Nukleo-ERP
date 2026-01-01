@@ -200,11 +200,11 @@ function FeuillesTempsContent() {
             { label: 'Feuilles de temps' },
           ]}
         />
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       </MotionDiv>
     );
   }
