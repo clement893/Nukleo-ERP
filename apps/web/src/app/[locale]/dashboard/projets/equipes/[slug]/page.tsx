@@ -188,22 +188,6 @@ function TeamProjectManagementContent() {
       return;
     }
 
-    if (!taskForm.project_id) {
-      showToast({
-        message: 'Un projet est requis pour créer une tâche',
-        type: 'error',
-      });
-      return;
-    }
-
-    if (!taskForm.assignee_id) {
-      showToast({
-        message: 'Un employé doit être assigné à la tâche',
-        type: 'error',
-      });
-      return;
-    }
-
     try {
       setCreatingTask(true);
       const newTask = await projectTasksAPI.create({
@@ -211,8 +195,8 @@ function TeamProjectManagementContent() {
         description: taskForm.description || null,
         priority: taskForm.priority,
         team_id: team.id,
-        project_id: taskForm.project_id,
-        assignee_id: taskForm.assignee_id,
+        project_id: taskForm.project_id || null,
+        assignee_id: taskForm.assignee_id || null,
         status: 'todo',
       });
       
@@ -422,6 +406,7 @@ function TeamProjectManagementContent() {
                   title: '',
                   description: '',
                   priority: 'medium',
+                  project_id: null,
                   assignee_id: null,
                 });
               }}
@@ -456,7 +441,7 @@ function TeamProjectManagementContent() {
           </div>
           <div>
             <Select
-              label="Projet *"
+              label="Projet"
               value={taskForm.project_id?.toString() || ''}
               onChange={(e) =>
                 setTaskForm({
@@ -465,10 +450,13 @@ function TeamProjectManagementContent() {
                 })
               }
               fullWidth
-              options={projects.map((proj) => ({
-                value: proj.id.toString(),
-                label: proj.name,
-              }))}
+              options={[
+                { value: '', label: 'Non assigné' },
+                ...projects.map((proj) => ({
+                  value: proj.id.toString(),
+                  label: proj.name,
+                }))
+              ]}
             />
           </div>
           <div>
@@ -493,7 +481,7 @@ function TeamProjectManagementContent() {
           {employees.length > 0 && (
             <div>
               <Select
-                label="Assigner à *"
+                label="Assigner à"
                 value={taskForm.assignee_id?.toString() || ''}
                 onChange={(e) =>
                   setTaskForm({
@@ -502,10 +490,13 @@ function TeamProjectManagementContent() {
                   })
                 }
                 fullWidth
-                options={employees.map((emp) => ({
-                  value: emp.id.toString(),
-                  label: emp.name,
-                }))}
+                options={[
+                  { value: '', label: 'Non assigné' },
+                  ...employees.map((emp) => ({
+                    value: emp.id.toString(),
+                    label: emp.name,
+                  }))
+                ]}
               />
             </div>
           )}

@@ -27,7 +27,7 @@ interface OverviewTabProps {
   };
 }
 
-export default function OverviewTab({ data }: OverviewTabProps) {
+export default function OverviewTab({ data: _data }: OverviewTabProps) {
   return (
     <div>
       <Activity className="w-5 h-5" />

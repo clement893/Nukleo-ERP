@@ -13,7 +13,7 @@ interface ProjectHeaderProps {
   };
 }
 
-export default function ProjectHeader({ project }: ProjectHeaderProps) {
+export default function ProjectHeader({ project: _project }: ProjectHeaderProps) {
   return (
     <div>
       <h1>Project Header</h1>

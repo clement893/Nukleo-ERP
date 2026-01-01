@@ -203,20 +203,6 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       return;
     }
 
-    // Validate required fields: project_id and assignee_id
-    if (!formData.project_id) {
-      const errorMsg = 'Un projet est requis pour créer une tâche';
-      setError(errorMsg);
-      showErrorToast(errorMsg);
-      return;
-    }
-
-    if (!formData.assignee_id) {
-      const errorMsg = 'Un employé doit être assigné à la tâche';
-      setError(errorMsg);
-      showErrorToast(errorMsg);
-      return;
-    }
     
     // Validate estimated hours
     if (formData.estimated_hours !== null && formData.estimated_hours !== undefined) {
@@ -240,8 +226,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           description: formData.description || null,
           status: formData.status,
           priority: formData.priority,
-          project_id: formData.project_id!,
-          assignee_id: formData.assignee_id!,
+          project_id: formData.project_id || null,
+          assignee_id: formData.assignee_id || null,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
         });
@@ -252,7 +238,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
         );
       } else {
-        // Create new task - team_id, project_id and assignee_id are required
+        // Create new task - team_id is required
         if (!teamId) {
           const errorMsg = 'Une équipe est requise pour créer une tâche';
           setError(errorMsg);
@@ -266,8 +252,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           status: formData.status,
           priority: formData.priority,
           team_id: teamId,
-          project_id: formData.project_id!,
-          assignee_id: formData.assignee_id!,
+          project_id: formData.project_id || null,
+          assignee_id: formData.assignee_id || null,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
           order: tasks.length,
@@ -531,26 +517,32 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Projet *
+                Projet
               </label>
               <Select
                 value={formData.project_id?.toString() || ''}
                 onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
-                options={projects.map(p => ({ value: p.id.toString(), label: p.name }))}
+                options={[
+                  { value: '', label: 'Non assigné' },
+                  ...projects.map(p => ({ value: p.id.toString(), label: p.name }))
+                ]}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Employé assigné *
+                Employé assigné
               </label>
               <Select
                 value={formData.assignee_id?.toString() || ''}
                 onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value ? parseInt(e.target.value) : null })}
-                options={employees.map(e => ({ 
-                  value: e.id.toString(), 
-                  label: `${e.first_name} ${e.last_name}${e.email ? ` (${e.email})` : ''}` 
-                }))}
+                options={[
+                  { value: '', label: 'Non assigné' },
+                  ...employees.map(e => ({ 
+                    value: e.id.toString(), 
+                    label: `${e.first_name} ${e.last_name}${e.email ? ` (${e.email})` : ''}` 
+                  }))
+                ]}
               />
             </div>
           </div>

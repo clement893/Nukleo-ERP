@@ -12,7 +12,7 @@ interface ProjectTabsProps {
   };
 }
 
-export default function ProjectTabs({ activeTab, onTabChange, counts }: ProjectTabsProps) {
+export default function ProjectTabs({ activeTab: _activeTab, onTabChange: _onTabChange, counts: _counts }: ProjectTabsProps) {
   return (
     <div>
       <p>Project Tabs</p>

@@ -138,8 +138,8 @@ class ProjectTaskResponse(ProjectTaskBase):
     """Schema for project task response"""
     id: int
     team_id: int
-    project_id: int  # Required: every task must be assigned to a project
-    assignee_id: int  # Required: every task must be assigned to an employee
+    project_id: Optional[int] = None  # Optional: task can exist without a project
+    assignee_id: Optional[int] = None  # Optional: task can exist without an assignee
     created_by_id: Optional[int] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None

@@ -22,7 +22,7 @@ interface TasksTabProps {
   columns: Column[];
 }
 
-export default function TasksTab({ columns }: TasksTabProps) {
+export default function TasksTab({ columns: _columns }: TasksTabProps) {
   return (
     <div>
       <p>Tasks Tab</p>
