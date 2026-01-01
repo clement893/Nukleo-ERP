@@ -6,7 +6,7 @@ import { opportunitiesAPI, Opportunity } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Loading, Alert, Card, Badge, Button } from '@/components/ui';
+import { Loading, Alert, Badge, Button } from '@/components/ui';
 import { ArrowLeft, Edit, FileText, Calendar, MessageSquare, Users, Link as LinkIcon, MapPin, Tag } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import OpportunityContacts from '@/components/commercial/OpportunityContacts';
@@ -131,8 +131,8 @@ export default function OpportunityDetailPage() {
         {/* Main content */}
         <div className="lg:col-span-2 space-y-4">
           {/* Status and Pipeline */}
-          <Card>
-            <div className="p-4 space-y-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Statut</h3>
                 <Badge variant="default" className="bg-blue-500 hover:bg-blue-600 text-white">
@@ -144,32 +144,32 @@ export default function OpportunityDetailPage() {
                 <p className="font-medium">{opportunity.pipeline_name || '-'}</p>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Description */}
           {opportunity.description && (
-            <Card>
-              <div className="p-4">
+            <div className="glass-card rounded-xl border border-border p-4">
+              <div>
                 <h3 className="text-lg font-semibold mb-2">Description</h3>
                 <p className="text-muted-foreground whitespace-pre-wrap">{opportunity.description}</p>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Tasks - Placeholder */}
-          <Card>
-            <div className="p-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 Liste des tâches
               </h3>
               <p className="text-muted-foreground text-sm">Les tâches seront affichées ici une fois l'intégration avec le module de tâches complétée.</p>
             </div>
-          </Card>
+          </div>
 
           {/* Comments & Notes */}
-          <Card>
-            <div className="p-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
                 Commentaires & Notes
@@ -182,22 +182,22 @@ export default function OpportunityDetailPage() {
                 <p className="text-muted-foreground text-sm">Aucune note pour le moment.</p>
               )}
             </div>
-          </Card>
+          </div>
 
           {/* Discussions - Placeholder */}
-          <Card>
-            <div className="p-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
                 Discussions
               </h3>
               <p className="text-muted-foreground text-sm">Les discussions seront affichées ici une fois l'intégration avec le module de commentaires complétée.</p>
             </div>
-          </Card>
+          </div>
 
           {/* Documents - Placeholder */}
-          <Card>
-            <div className="p-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5" />
                 Liens vers les documents (soumission)
@@ -216,14 +216,14 @@ export default function OpportunityDetailPage() {
                 <p className="text-muted-foreground text-sm">Aucun lien vers l'offre de service.</p>
               )}
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Key Information */}
-          <Card>
-            <div className="p-4 space-y-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div className="space-y-4">
               <h3 className="text-lg font-semibold">Informations clés</h3>
               
               <div>
@@ -245,11 +245,11 @@ export default function OpportunityDetailPage() {
                 </div>
               )}
             </div>
-          </Card>
+          </div>
 
           {/* Dates */}
-          <Card>
-            <div className="p-4 space-y-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 Dates
@@ -267,11 +267,11 @@ export default function OpportunityDetailPage() {
                 </div>
               )}
             </div>
-          </Card>
+          </div>
 
           {/* Company & Contacts */}
-          <Card>
-            <div className="p-4 space-y-4">
+          <div className="glass-card rounded-xl border border-border p-4">
+            <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Users className="w-5 h-5" />
                 Entreprise & Contacts
@@ -292,12 +292,12 @@ export default function OpportunityDetailPage() {
                 />
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Segment & Region */}
           {(opportunity.segment || opportunity.region) && (
-            <Card>
-              <div className="p-4 space-y-4">
+            <div className="glass-card rounded-xl border border-border p-4">
+              <div className="space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
                   Segment & Région
@@ -323,17 +323,17 @@ export default function OpportunityDetailPage() {
                   </div>
                 )}
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Assigned To */}
           {opportunity.assigned_to_name && (
-            <Card>
-              <div className="p-4">
+            <div className="glass-card rounded-xl border border-border p-4">
+              <div>
                 <h3 className="text-lg font-semibold mb-2">Assigné à</h3>
                 <p className="font-medium">{opportunity.assigned_to_name}</p>
               </div>
-            </Card>
+            </div>
           )}
         </div>
       </div>

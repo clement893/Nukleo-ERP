@@ -458,6 +458,7 @@ function OnboardingContent() {
                     )}
                   </div>
                 </div>
+                </div>
                 <div className="p-4 border-t border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -492,6 +493,7 @@ function OnboardingContent() {
             ))}
           </div>
         )}
+        </div>
         <div className="p-6 border-t border-border">
           <Button
             variant="primary"

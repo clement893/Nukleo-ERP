@@ -8,7 +8,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { NukleoPageHeader } from '@/components/nukleo';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
+import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
@@ -444,7 +444,7 @@ function OpportunitiesContent() {
       />
 
       {/* Toolbar */}
-      <Card>
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="space-y-3">
           {/* Opportunity count */}
           <div className="flex items-center justify-between">
@@ -641,7 +641,7 @@ function OpportunitiesContent() {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Error */}
       {error && (
@@ -652,13 +652,13 @@ function OpportunitiesContent() {
 
       {/* Content */}
       {loading && opportunities.length === 0 ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       ) : (
-        <Card>
+        <div className="glass-card rounded-xl border border-border">
           <DataTable
             data={filteredOpportunities as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
@@ -673,7 +673,7 @@ function OpportunitiesContent() {
             onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Opportunity)}
           />
-        </Card>
+        </div>
       )}
 
       {/* Create Modal */}

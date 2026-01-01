@@ -11,7 +11,7 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
+import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { quotesAPI, type Quote, type QuoteCreate, type QuoteUpdate } from '@/lib/api/quotes';
@@ -360,8 +360,8 @@ function SoumissionsContent() {
       />
 
       {/* Tabs */}
-      <Card>
-        <div className="flex items-center justify-between border-b border-border">
+      <div className="glass-card rounded-xl border border-border">
+        <div className="flex items-center justify-between border-b border-border p-6">
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('quotes')}
@@ -478,7 +478,7 @@ function SoumissionsContent() {
             />
           )}
         </div>
-      </Card>
+      </div>
 
       {/* Create Quote Modal */}
       <Modal

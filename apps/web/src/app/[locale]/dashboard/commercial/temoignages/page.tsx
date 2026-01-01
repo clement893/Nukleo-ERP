@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge, Input, Select, Textarea } from '@/components/ui';
+import { Button, Alert, Loading, Badge, Input, Select, Textarea } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Testimonial, type TestimonialCreate, testimonialsAPI } from '@/lib/api/testimonials';
@@ -384,7 +384,7 @@ function TemoignagesContent() {
       />
 
       {/* Toolbar */}
-      <Card>
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
@@ -564,7 +564,7 @@ function TemoignagesContent() {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Error */}
       {error && (

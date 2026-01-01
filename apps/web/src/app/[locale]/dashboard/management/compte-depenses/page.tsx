@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Button, Alert, Loading, Textarea } from '@/components/ui';
+import { Button, Alert, Loading, Textarea, Card } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type ExpenseAccount, type ExpenseAccountStatus, type ExpenseAccountAction } from '@/lib/api/finances/expenseAccounts';
@@ -571,7 +571,7 @@ function ManagementCompteDepensesContent() {
               ? 'Aucun compte de dépenses ne correspond aux filtres'
               : 'Aucun compte de dépenses à valider'}
           </div>
-        </Card>
+        </div>
       ) : (
         <>
           <Card>
