@@ -190,17 +190,23 @@ export default function EmployeeDetailPage() {
       <PageHeader
         title={`${employee.first_name} ${employee.last_name}`}
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleOpenPortal}
-            className="text-xs px-3 py-1.5 h-auto"
-            title="Accéder au portail employé"
-          >
-            <UserCircle className="w-3.5 h-3.5 mr-1.5" />
-            Portail
-            <ExternalLink className="w-3 h-3 ml-1.5" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenPortal}
+              className="text-xs px-3 py-1.5 h-auto"
+              title="Accéder au portail employé"
+            >
+              <UserCircle className="w-3.5 h-3.5 mr-1.5" />
+              Portail
+              <ExternalLink className="w-3 h-3 ml-1.5" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleBack}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour à la liste
+            </Button>
+          </div>
         }
         breadcrumbs={[
           { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
@@ -208,12 +214,6 @@ export default function EmployeeDetailPage() {
           { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
           { label: `${employee.first_name} ${employee.last_name}` },
         ]}
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
       />
 
       {error && (
