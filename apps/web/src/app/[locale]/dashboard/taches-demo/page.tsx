@@ -193,8 +193,9 @@ export default function TachesDemoPage() {
     if (groupBy === 'project') {
       const groups: Record<string, typeof filteredTasks> = {};
       filteredTasks.forEach(task => {
-        if (!groups[task.project]) groups[task.project] = [];
-        groups[task.project].push(task);
+        const project = task.project || 'Sans projet';
+        if (!groups[project]) groups[project] = [];
+        groups[project].push(task);
       });
       return groups;
     }
@@ -202,8 +203,9 @@ export default function TachesDemoPage() {
     if (groupBy === 'assignee') {
       const groups: Record<string, typeof filteredTasks> = {};
       filteredTasks.forEach(task => {
-        if (!groups[task.assignee]) groups[task.assignee] = [];
-        groups[task.assignee].push(task);
+        const assignee = task.assignee || 'Non assigné';
+        if (!groups[assignee]) groups[assignee] = [];
+        groups[assignee].push(task);
       });
       return groups;
     }
@@ -212,7 +214,8 @@ export default function TachesDemoPage() {
     if (groupBy === 'team') {
       const groups: Record<string, typeof filteredTasks> = {};
       filteredTasks.forEach(task => {
-        const team = task.assignee[0] < 'M' ? 'Équipe Alpha' : 'Équipe Beta';
+        const assignee = task.assignee || 'Non assigné';
+        const team = assignee[0] && assignee[0] < 'M' ? 'Équipe Alpha' : 'Équipe Beta';
         if (!groups[team]) groups[team] = [];
         groups[team].push(task);
       });
