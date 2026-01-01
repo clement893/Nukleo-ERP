@@ -8,8 +8,6 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   CheckSquare, 
-  Clock, 
-  AlertCircle,
   CheckCircle2,
   Plus,
   Search,
@@ -17,7 +15,6 @@ import {
   LayoutGrid,
   User,
   Calendar,
-  Flag,
   Circle,
   Play,
   Ban
@@ -280,7 +277,7 @@ export default function TachesDemoPage() {
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex gap-2 flex-wrap">
             <Button
-              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              variant={statusFilter === 'all' ? 'primary' : 'outline'}
               onClick={() => setStatusFilter('all')}
               className="hover-nukleo"
               size="sm"
@@ -290,7 +287,7 @@ export default function TachesDemoPage() {
             {Object.entries(statusConfig).map(([status, config]) => (
               <Button
                 key={status}
-                variant={statusFilter === status ? 'default' : 'outline'}
+                variant={statusFilter === status ? 'primary' : 'outline'}
                 onClick={() => setStatusFilter(status as TaskStatus)}
                 className="hover-nukleo"
                 size="sm"
@@ -312,14 +309,14 @@ export default function TachesDemoPage() {
               />
             </div>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              variant={viewMode === 'list' ? 'primary' : 'outline'}
               onClick={() => setViewMode('list')}
               className="hover-nukleo"
             >
               <ListIcon className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === 'kanban' ? 'default' : 'outline'}
+              variant={viewMode === 'kanban' ? 'primary' : 'outline'}
               onClick={() => setViewMode('kanban')}
               className="hover-nukleo"
             >

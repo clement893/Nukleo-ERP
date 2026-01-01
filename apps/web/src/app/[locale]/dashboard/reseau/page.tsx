@@ -19,13 +19,13 @@ import { Badge, Button, Card, Loading } from '@/components/ui';
 import Link from 'next/link';
 import { useInfiniteReseauContacts } from '@/lib/query/reseau-contacts';
 import { useInfiniteCompanies } from '@/lib/query/companies';
-import { useInfiniteTestimonials } from '@/lib/query/reseau-testimonials';
+import { useInfiniteReseauTestimonials } from '@/lib/query/reseau-testimonials';
 
 export default function ReseauPage() {
   // Fetch data
   const { data: contactsData, isLoading: loadingContacts } = useInfiniteReseauContacts(100);
   const { data: companiesData, isLoading: loadingCompanies } = useInfiniteCompanies(100);
-  const { data: testimonialsData, isLoading: loadingTestimonials } = useInfiniteTestimonials(100);
+  const { data: testimonialsData, isLoading: loadingTestimonials } = useInfiniteReseauTestimonials(100);
 
   // Flatten data
   const contacts = useMemo(() => contactsData?.pages.flat() || [], [contactsData]);

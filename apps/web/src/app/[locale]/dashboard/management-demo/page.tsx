@@ -11,7 +11,6 @@ import {
   Plane,
   Calendar,
   UserPlus,
-  TrendingUp,
   DollarSign,
   FileText,
   Plus,
