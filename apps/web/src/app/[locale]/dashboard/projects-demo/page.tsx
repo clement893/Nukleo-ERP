@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { 
   Plus,
   Search,
-  Filter,
   LayoutGrid,
   List,
   Calendar,
@@ -17,11 +16,8 @@ import {
   Users,
   Star,
   Archive,
-  Copy,
   Share2,
   ExternalLink,
-  X,
-  ChevronDown,
   BarChart3,
 } from 'lucide-react';
 
