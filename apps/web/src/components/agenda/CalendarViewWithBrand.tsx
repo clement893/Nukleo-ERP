@@ -274,7 +274,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
       // Charger les deadlines de projets depuis l'API
       try {
         const { projectsAPI } = await import('@/lib/api/projects');
-        const allProjects = await projectsAPI.list(0, 1000);
+        const allProjects = await projectsAPI.list();
         
         // Convertir les projets avec deadline en DeadlineEvent
         const projectDeadlines: DeadlineEvent[] = allProjects
