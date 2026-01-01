@@ -389,7 +389,7 @@ export default function Sidebar({
             <div className="flex items-center gap-2">
               <ThemeToggleWithIcon />
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
                 onClick={logout}
                 className="flex-1 text-xs"

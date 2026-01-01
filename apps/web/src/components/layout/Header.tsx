@@ -83,7 +83,7 @@ export default function Header() {
                     Dashboard
                   </Button>
                 </Link>
-                <Button size="sm" variant="outline" onClick={logout}>
+                <Button size="sm" variant="primary" onClick={logout}>
                   Déconnexion
                 </Button>
               </>
@@ -175,7 +175,7 @@ export default function Header() {
                         Dashboard
                       </Button>
                     </Link>
-                    <Button size="sm" variant="outline" onClick={logout} className="w-full">
+                    <Button size="sm" variant="primary" onClick={logout} className="w-full">
                       Déconnexion
                     </Button>
                   </div>
