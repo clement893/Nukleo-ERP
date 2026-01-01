@@ -17,7 +17,6 @@ import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import Loading from '@/components/ui/Loading';
-import { employeePortalPermissionsAPI } from '@/lib/api/employee-portal-permissions';
 
 export default function EmployeePortalLayout({
   children,
@@ -38,12 +37,8 @@ export default function EmployeePortalLayout({
 
       try {
         setLoading(true);
-        // Charger l'employé et précharger les permissions en parallèle
-        const [employeeData] = await Promise.all([
-          employeesAPI.get(employeeId),
-          // Précharger les permissions en arrière-plan pour qu'elles soient prêtes
-          employeePortalPermissionsAPI.getSummaryForEmployee(employeeId).catch(() => null),
-        ]);
+        // Charger l'employé (le hook useEmployeePortalPermissions gère le cache des permissions)
+        const employeeData = await employeesAPI.get(employeeId);
         setEmployee(employeeData);
       } catch (err) {
         handleApiError(err);
