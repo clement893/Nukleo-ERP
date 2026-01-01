@@ -304,96 +304,102 @@ function ProjectDetailContent() {
         </Card>
 
         {/* Tabs */}
-        <div className="mb-6">
-          <div className="flex gap-2 border-b border-border">
+        <div className="glass-card rounded-xl p-2 mb-6">
+          <div className="flex items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 font-medium transition-colors relative ${
-                activeTab === 'overview'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`
+                relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
+                transition-all duration-200 min-w-fit
+                ${
+                  activeTab === 'overview'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }
+              `}
             >
-              <FileText className="w-4 h-4 inline mr-2" />
-              Vue d'ensemble
-              {activeTab === 'overview' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
+              <FileText className="w-4 h-4" />
+              <span className="font-medium text-sm">Vue d'ensemble</span>
             </button>
 
             <button
               onClick={() => setActiveTab('financial')}
-              className={`px-6 py-3 font-medium transition-colors relative ${
-                activeTab === 'financial'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`
+                relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
+                transition-all duration-200 min-w-fit
+                ${
+                  activeTab === 'financial'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }
+              `}
             >
-              <DollarSign className="w-4 h-4 inline mr-2" />
-              Financier
-              {activeTab === 'financial' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
+              <DollarSign className="w-4 h-4" />
+              <span className="font-medium text-sm">Financier</span>
             </button>
 
             <button
               onClick={() => setActiveTab('links')}
-              className={`px-6 py-3 font-medium transition-colors relative ${
-                activeTab === 'links'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`
+                relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
+                transition-all duration-200 min-w-fit
+                ${
+                  activeTab === 'links'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }
+              `}
             >
-              <LinkIcon className="w-4 h-4 inline mr-2" />
-              Liens
-              {activeTab === 'links' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
+              <LinkIcon className="w-4 h-4" />
+              <span className="font-medium text-sm">Liens</span>
             </button>
 
             <button
               onClick={() => setActiveTab('deliverables')}
-              className={`px-6 py-3 font-medium transition-colors relative ${
-                activeTab === 'deliverables'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`
+                relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
+                transition-all duration-200 min-w-fit
+                ${
+                  activeTab === 'deliverables'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }
+              `}
             >
-              <Award className="w-4 h-4 inline mr-2" />
-              Livrables
-              {activeTab === 'deliverables' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
+              <Award className="w-4 h-4" />
+              <span className="font-medium text-sm">Livrables</span>
             </button>
 
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`px-6 py-3 font-medium transition-colors relative ${
-                activeTab === 'tasks'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`
+                relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
+                transition-all duration-200 min-w-fit
+                ${
+                  activeTab === 'tasks'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }
+              `}
             >
-              <Kanban className="w-4 h-4 inline mr-2" />
-              Tâches
-              {activeTab === 'tasks' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
+              <Kanban className="w-4 h-4" />
+              <span className="font-medium text-sm">Tâches</span>
             </button>
 
             <button
               onClick={() => setActiveTab('timeline')}
-              className={`px-6 py-3 font-medium transition-colors relative ${
-                activeTab === 'timeline'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`
+                relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
+                transition-all duration-200 min-w-fit
+                ${
+                  activeTab === 'timeline'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }
+              `}
             >
-              <GanttChart className="w-4 h-4 inline mr-2" />
-              Planification
-              {activeTab === 'timeline' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
+              <GanttChart className="w-4 h-4" />
+              <span className="font-medium text-sm">Planification</span>
             </button>
           </div>
         </div>
