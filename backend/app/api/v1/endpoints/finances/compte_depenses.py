@@ -39,23 +39,43 @@ except ImportError:
 router = APIRouter(prefix="/finances/compte-depenses", tags=["finances-compte-depenses"])
 
 
-async def safe_refresh_account(db: AsyncSession, account: ExpenseAccount) -> None:
+async def safe_refresh_account(db: AsyncSession, account: ExpenseAccount) -> tuple[Employee | None, User | None]:
     """
     Safely refresh account relationships without failing the entire request.
-    If refresh fails, tries to reload employee manually.
+    Returns (employee, reviewer) tuples to avoid lazy loading issues.
     """
+    employee = None
+    reviewer = None
+    
     try:
+        logger.debug(f"[safe_refresh_account] Starting refresh for account {account.id}")
         await db.refresh(account, ["employee", "reviewer"])
+        logger.debug(f"[safe_refresh_account] Refresh successful for account {account.id}")
+        # Access relationships while still in async context
+        employee = account.employee if hasattr(account, 'employee') else None
+        reviewer = account.reviewer if hasattr(account, 'reviewer') else None
     except Exception as e:
-        logger.warning(f"Could not refresh account relationships: {str(e)}")
-        # Try to reload employee manually if refresh failed
+        logger.warning(f"[safe_refresh_account] Could not refresh account relationships for account {account.id}: {str(e)}", exc_info=True)
+        # Try to reload employee and reviewer manually if refresh failed
         try:
-            employee_result = await db.execute(
-                select(Employee).where(Employee.id == account.employee_id)
-            )
-            account.employee = employee_result.scalar_one_or_none()
-        except Exception:
-            pass
+            logger.debug(f"[safe_refresh_account] Attempting manual reload for account {account.id}")
+            if account.employee_id:
+                employee_result = await db.execute(
+                    select(Employee).where(Employee.id == account.employee_id)
+                )
+                employee = employee_result.scalar_one_or_none()
+                logger.debug(f"[safe_refresh_account] Employee loaded: {employee is not None}")
+            
+            if account.reviewed_by_id:
+                reviewer_result = await db.execute(
+                    select(User).where(User.id == account.reviewed_by_id)
+                )
+                reviewer = reviewer_result.scalar_one_or_none()
+                logger.debug(f"[safe_refresh_account] Reviewer loaded: {reviewer is not None}")
+        except Exception as reload_error:
+            logger.error(f"[safe_refresh_account] Failed to manually reload relationships for account {account.id}: {str(reload_error)}", exc_info=True)
+    
+    return employee, reviewer
 
 
 async def generate_account_number(db: AsyncSession) -> str:
@@ -392,13 +412,17 @@ async def update_compte_depenses(
             setattr(account, field, value)
     
     await db.commit()
-    await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    employee, reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{account.employee.first_name} {account.employee.last_name}" if account.employee else None,
+        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -409,7 +433,7 @@ async def update_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{account.reviewer.first_name} {account.reviewer.last_name}" if account.reviewer else None,
+        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
@@ -525,13 +549,17 @@ async def approve_compte_depenses(
     account.review_notes = action.notes
     
     await db.commit()
-    await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    employee, reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{account.employee.first_name} {account.employee.last_name}" if account.employee else None,
+        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -542,7 +570,7 @@ async def approve_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{account.reviewer.first_name} {account.reviewer.last_name}" if account.reviewer else None,
+        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
@@ -611,13 +639,17 @@ async def reject_compte_depenses(
     account.rejection_reason = action.rejection_reason
     
     await db.commit()
-    await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    employee, reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{account.employee.first_name} {account.employee.last_name}" if account.employee else None,
+        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -628,7 +660,7 @@ async def reject_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{account.reviewer.first_name} {account.reviewer.last_name}" if account.reviewer else None,
+        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
@@ -691,13 +723,17 @@ async def request_clarification_compte_depenses(
     account.clarification_request = action.clarification_request
     
     await db.commit()
-    await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    employee, reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{account.employee.first_name} {account.employee.last_name}" if account.employee else None,
+        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -708,7 +744,7 @@ async def request_clarification_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{account.reviewer.first_name} {account.reviewer.last_name}" if account.reviewer else None,
+        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
@@ -750,13 +786,17 @@ async def set_under_review_compte_depenses(
     account.status = ExpenseAccountStatus.UNDER_REVIEW.value
     
     await db.commit()
-    await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    employee, reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{account.employee.first_name} {account.employee.last_name}" if account.employee else None,
+        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -767,7 +807,7 @@ async def set_under_review_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{account.reviewer.first_name} {account.reviewer.last_name}" if account.reviewer else None,
+        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
