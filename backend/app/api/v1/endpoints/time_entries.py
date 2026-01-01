@@ -25,7 +25,7 @@ from app.schemas.time_entry import (
 router = APIRouter(prefix="/time-entries", tags=["time-entries"])
 
 # Store active timers in memory (in production, use Redis or database)
-_active_timers: dict[int, dict] = {}  # {user_id: {task_id, start_time, description}}
+_active_timers: dict[int, dict] = {}  # {user_id: {task_id, start_time, description, paused, accumulated_seconds}}
 
 
 @router.get("", response_model=List[TimeEntryWithRelations])
@@ -363,6 +363,9 @@ async def start_timer(
         "task_id": timer_data.task_id,
         "start_time": datetime.now(timezone.utc),
         "description": timer_data.description,
+        "paused": False,
+        "paused_at": None,
+        "accumulated_seconds": 0,
     }
     
     return {
@@ -388,10 +391,15 @@ async def stop_timer(
     
     timer_info = _active_timers[current_user.id]
     
-    # Calculate duration
-    start_time = timer_info["start_time"]
-    end_time = datetime.now(timezone.utc)
-    duration = int((end_time - start_time).total_seconds())
+    # Calculate duration (include accumulated time if paused)
+    accumulated = timer_info.get("accumulated_seconds", 0)
+    
+    if timer_info.get("paused", False):
+        duration = accumulated
+    else:
+        start_time = timer_info["start_time"]
+        end_time = datetime.now(timezone.utc)
+        duration = accumulated + int((end_time - start_time).total_seconds())
     
     if duration <= 0:
         raise HTTPException(
@@ -438,6 +446,98 @@ async def stop_timer(
     return entry
 
 
+@router.post("/timer/pause", response_model=dict)
+async def pause_timer(
+    current_user: User = Depends(get_current_user),
+):
+    """Pause the active timer"""
+    if current_user.id not in _active_timers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active timer found"
+        )
+    
+    timer_info = _active_timers[current_user.id]
+    
+    if timer_info.get("paused", False):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Timer is already paused"
+        )
+    
+    # Calculate elapsed time and add to accumulated
+    start_time = timer_info["start_time"]
+    now = datetime.now(timezone.utc)
+    elapsed = int((now - start_time).total_seconds())
+    timer_info["accumulated_seconds"] = timer_info.get("accumulated_seconds", 0) + elapsed
+    timer_info["paused"] = True
+    timer_info["paused_at"] = now
+    
+    return {
+        "message": "Timer paused",
+        "accumulated_seconds": timer_info["accumulated_seconds"],
+    }
+
+
+@router.post("/timer/resume", response_model=dict)
+async def resume_timer(
+    current_user: User = Depends(get_current_user),
+):
+    """Resume a paused timer"""
+    if current_user.id not in _active_timers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active timer found"
+        )
+    
+    timer_info = _active_timers[current_user.id]
+    
+    if not timer_info.get("paused", False):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Timer is not paused"
+        )
+    
+    # Reset start time to now
+    timer_info["start_time"] = datetime.now(timezone.utc)
+    timer_info["paused"] = False
+    timer_info["paused_at"] = None
+    
+    return {
+        "message": "Timer resumed",
+        "start_time": timer_info["start_time"].isoformat(),
+    }
+
+
+@router.post("/timer/adjust", response_model=dict)
+async def adjust_timer(
+    adjustment: dict,
+    current_user: User = Depends(get_current_user),
+):
+    """Adjust the accumulated time of the active timer"""
+    if current_user.id not in _active_timers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active timer found"
+        )
+    
+    timer_info = _active_timers[current_user.id]
+    new_accumulated = adjustment.get("accumulated_seconds", timer_info.get("accumulated_seconds", 0))
+    
+    if new_accumulated < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Accumulated time cannot be negative"
+        )
+    
+    timer_info["accumulated_seconds"] = new_accumulated
+    
+    return {
+        "message": "Timer adjusted",
+        "accumulated_seconds": timer_info["accumulated_seconds"],
+    }
+
+
 @router.get("/timer/status", response_model=dict)
 async def get_timer_status(
     current_user: User = Depends(get_current_user),
@@ -449,13 +549,20 @@ async def get_timer_status(
         }
     
     timer_info = _active_timers[current_user.id]
-    start_time = timer_info["start_time"]
-    elapsed = int((datetime.now(timezone.utc) - start_time).total_seconds())
+    accumulated = timer_info.get("accumulated_seconds", 0)
+    
+    if timer_info.get("paused", False):
+        elapsed = accumulated
+    else:
+        start_time = timer_info["start_time"]
+        elapsed = accumulated + int((datetime.now(timezone.utc) - start_time).total_seconds())
     
     return {
         "active": True,
         "task_id": timer_info["task_id"],
-        "start_time": start_time.isoformat(),
+        "start_time": timer_info["start_time"].isoformat(),
         "elapsed_seconds": elapsed,
         "description": timer_info.get("description"),
+        "paused": timer_info.get("paused", False),
+        "accumulated_seconds": accumulated,
     }

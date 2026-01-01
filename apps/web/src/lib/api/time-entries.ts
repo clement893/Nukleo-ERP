@@ -41,6 +41,8 @@ export interface TimerStatus {
   start_time?: string;
   elapsed_seconds?: number;
   description?: string | null;
+  paused?: boolean;
+  accumulated_seconds?: number;
 }
 
 /**
@@ -142,5 +144,31 @@ export const timeEntriesAPI = {
   getTimerStatus: async (): Promise<TimerStatus> => {
     const response = await apiClient.get<TimerStatus>('/v1/time-entries/timer/status');
     return extractApiData(response) || { active: false };
+  },
+
+  /**
+   * Pause the active timer
+   */
+  pauseTimer: async (): Promise<{ message: string; accumulated_seconds: number }> => {
+    const response = await apiClient.post<{ message: string; accumulated_seconds: number }>('/v1/time-entries/timer/pause');
+    return extractApiData(response);
+  },
+
+  /**
+   * Resume a paused timer
+   */
+  resumeTimer: async (): Promise<{ message: string; start_time: string }> => {
+    const response = await apiClient.post<{ message: string; start_time: string }>('/v1/time-entries/timer/resume');
+    return extractApiData(response);
+  },
+
+  /**
+   * Adjust the accumulated time of the active timer
+   */
+  adjustTimer: async (accumulated_seconds: number): Promise<{ message: string; accumulated_seconds: number }> => {
+    const response = await apiClient.post<{ message: string; accumulated_seconds: number }>('/v1/time-entries/timer/adjust', {
+      accumulated_seconds,
+    });
+    return extractApiData(response);
   },
 };

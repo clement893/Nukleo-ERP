@@ -23,7 +23,9 @@ import {
   Plus,
   Edit,
   Trash2,
-  Save
+  Save,
+  Pause,
+  PlayCircle
 } from 'lucide-react';
 import {
   groupByWeek,
@@ -61,6 +63,8 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
   const [error, setError] = useState<string | null>(null);
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
   const [timerElapsed, setTimerElapsed] = useState(0);
+  const [showAdjustTimeModal, setShowAdjustTimeModal] = useState(false);
+  const [adjustTimeValue, setAdjustTimeValue] = useState({ hours: 0, minutes: 0 });
   const [quickView, setQuickView] = useState<QuickView>('week');
   const [filters, setFilters] = useState({
     start_date: '',
@@ -118,12 +122,21 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
 
   useEffect(() => {
     // Update timer display
-    if (timerStatus?.active && timerStatus.start_time) {
+    if (timerStatus?.active) {
       const updateTimer = () => {
-        const startTime = new Date(timerStatus.start_time!).getTime();
-        const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        setTimerElapsed(elapsed);
+        if (timerStatus.paused) {
+          // If paused, use accumulated time
+          setTimerElapsed(timerStatus.accumulated_seconds || 0);
+        } else if (timerStatus.start_time) {
+          // If running, calculate from start time + accumulated
+          const startTime = new Date(timerStatus.start_time).getTime();
+          const now = Date.now();
+          const currentElapsed = Math.floor((now - startTime) / 1000);
+          const accumulated = timerStatus.accumulated_seconds || 0;
+          setTimerElapsed(accumulated + currentElapsed);
+        } else {
+          setTimerElapsed(timerStatus.elapsed_seconds || 0);
+        }
       };
       
       updateTimer();
@@ -143,6 +156,18 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       return undefined;
     }
   }, [timerStatus]);
+
+  // Poll timer status every 5 seconds to keep it in sync
+  useEffect(() => {
+    if (employee?.user_id) {
+      const interval = setInterval(() => {
+        loadTimerStatus();
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+    return undefined;
+  }, [employee?.user_id]);
 
   // Apply quick view filters
   useEffect(() => {
@@ -336,6 +361,42 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     } catch (err) {
       const appError = handleApiError(err);
       showToast({ message: appError.message || 'Erreur lors du démarrage du timer', type: 'error' });
+    }
+  };
+
+  const handlePauseTimer = async () => {
+    try {
+      await timeEntriesAPI.pauseTimer();
+      await loadTimerStatus();
+      showToast({ message: 'Timer mis en pause', type: 'success' });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la mise en pause', type: 'error' });
+    }
+  };
+
+  const handleResumeTimer = async () => {
+    try {
+      await timeEntriesAPI.resumeTimer();
+      await loadTimerStatus();
+      showToast({ message: 'Timer repris', type: 'success' });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la reprise', type: 'error' });
+    }
+  };
+
+  const handleAdjustTime = async () => {
+    try {
+      const totalSeconds = adjustTimeValue.hours * 3600 + adjustTimeValue.minutes * 60;
+      await timeEntriesAPI.adjustTimer(totalSeconds);
+      await loadTimerStatus();
+      setShowAdjustTimeModal(false);
+      setAdjustTimeValue({ hours: 0, minutes: 0 });
+      showToast({ message: 'Temps ajusté', type: 'success' });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de l\'ajustement', type: 'error' });
     }
   };
 
@@ -574,19 +635,59 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             {timerStatus?.active ? (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                  {timerStatus.paused ? (
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  ) : (
+                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                  )}
                   <span className="text-lg font-mono font-semibold text-foreground">
                     {formatDuration(timerElapsed)}
                   </span>
+                  {timerStatus.paused && (
+                    <span className="text-sm text-muted-foreground">(En pause)</span>
+                  )}
                 </div>
-                <Button
-                  variant="danger"
-                  onClick={handleStopTimer}
-                  className="flex items-center gap-2"
-                >
-                  <Square className="w-4 h-4" />
-                  Arrêter
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAdjustTimeModal(true)}
+                    className="flex items-center gap-2"
+                    size="sm"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Modifier
+                  </Button>
+                  {timerStatus.paused ? (
+                    <Button
+                      variant="primary"
+                      onClick={handleResumeTimer}
+                      className="flex items-center gap-2"
+                      size="sm"
+                    >
+                      <PlayCircle className="w-4 h-4" />
+                      Reprendre
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={handlePauseTimer}
+                      className="flex items-center gap-2"
+                      size="sm"
+                    >
+                      <Pause className="w-4 h-4" />
+                      Pause
+                    </Button>
+                  )}
+                  <Button
+                    variant="danger"
+                    onClick={handleStopTimer}
+                    className="flex items-center gap-2"
+                    size="sm"
+                  >
+                    <Square className="w-4 h-4" />
+                    Arrêter
+                  </Button>
+                </div>
               </>
             ) : (
               <Button
@@ -1234,6 +1335,54 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         </div>
       </Modal>
 
+      {/* Adjust Time Modal */}
+      <Modal
+        isOpen={showAdjustTimeModal}
+        onClose={() => {
+          setShowAdjustTimeModal(false);
+          setAdjustTimeValue({ hours: 0, minutes: 0 });
+        }}
+        title="Modifier le temps du timer"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Temps actuel: {formatDuration(timerElapsed)}
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Input
+                type="number"
+                label="Heures"
+                value={adjustTimeValue.hours}
+                onChange={(e) => setAdjustTimeValue({ ...adjustTimeValue, hours: parseInt(e.target.value) || 0 })}
+                min={0}
+              />
+            </div>
+            <div>
+              <Input
+                type="number"
+                label="Minutes"
+                value={adjustTimeValue.minutes}
+                onChange={(e) => setAdjustTimeValue({ ...adjustTimeValue, minutes: Math.min(59, parseInt(e.target.value) || 0) })}
+                min={0}
+                max={59}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Nouveau temps: {formatDuration(adjustTimeValue.hours * 3600 + adjustTimeValue.minutes * 60)}
+          </p>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowAdjustTimeModal(false)}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleAdjustTime}>
+              <Save className="w-4 h-4 mr-2" />
+              Enregistrer
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
