@@ -86,309 +86,274 @@ export default function ContactDetailDemoPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header Aurora Borealis */}
-      <div className="relative bg-nukleo-gradient overflow-hidden">
-        {/* Texture grain */}
-        <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
-        }} />
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Bouton retour */}
+        <Link href="/fr/dashboard/reseau/contacts" className="inline-block mb-6">
+          <Button variant="ghost" size="sm" className="hover:glass-card">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour aux contacts
+          </Button>
+        </Link>
         
-        <div className="relative max-w-7xl mx-auto px-6 py-8">
-          {/* Bouton retour */}
-          <Link href="/fr/dashboard/reseau/contacts">
-            <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 mb-6">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour aux contacts
-            </Button>
-          </Link>
-
-          {/* Profil contact */}
-          <div className="flex items-start gap-6">
-            {/* Photo */}
-            <div className="relative">
-              <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl">
-                <img src={contact.photo} alt={contact.name} className="w-full h-full object-cover" />
+        {/* Header Card avec photo plus grande */}
+        <Card className="glass-card p-8 mb-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+            {/* Photo plus grande */}
+            <div className="relative flex-shrink-0">
+              <div className="absolute inset-0 bg-nukleo-gradient rounded-2xl opacity-20 blur-lg" />
+              <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-[#A7A2CF]/30 shadow-xl">
+                <img 
+                  src={contact.photo} 
+                  alt={contact.name} 
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
-
+            
             {/* Infos */}
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-white mb-2 font-nukleo">{contact.name}</h1>
-              <p className="text-xl text-white/90 mb-3">{contact.title}</p>
-              <div className="flex items-center gap-2 text-white/80 mb-4">
+              <h1 className="text-4xl md:text-5xl font-nukleo font-bold text-[#523DC9] mb-3">
+                {contact.name}
+              </h1>
+              <p className="text-xl text-foreground/80 mb-2">{contact.title}</p>
+              <div className="flex items-center gap-2 text-foreground/70 mb-4">
                 <Building2 className="w-5 h-5" />
                 <span className="text-lg">{contact.company}</span>
               </div>
               
               {/* Tags */}
-              <div className="flex gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {contact.tags.map((tag) => (
-                  <Badge key={tag} className="bg-white/20 text-white border-white/30 px-3 py-1">
+                  <Badge key={tag} className="badge-nukleo px-4 py-1.5 text-sm">
                     {tag}
                   </Badge>
                 ))}
               </div>
-
+              
               {/* Actions rapides */}
-              <div className="flex gap-3">
-                <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white border border-white/30">
+              <div className="flex flex-wrap gap-3">
+                <Button size="sm" variant="outline" className="hover-nukleo">
                   <Phone className="w-4 h-4 mr-2" />
                   Appeler
                 </Button>
-                <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white border border-white/30">
+                <Button size="sm" variant="outline" className="hover-nukleo">
                   <Mail className="w-4 h-4 mr-2" />
                   Email
                 </Button>
-                <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white border border-white/30">
+                <Button size="sm" variant="outline" className="hover-nukleo">
                   <MessageCircle className="w-4 h-4 mr-2" />
                   WhatsApp
                 </Button>
-                <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white border border-white/30">
+                <Button size="sm" variant="outline" className="hover-nukleo">
                   <Linkedin className="w-4 h-4 mr-2" />
                   LinkedIn
                 </Button>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </Card>
 
-      {/* Contenu */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <Card key={index} className="glass-card hover-nukleo">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="glass-card p-6 hover:shadow-lg transition-all">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
 
         {/* Tabs */}
         <div className="mb-6">
-          <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex gap-2 border-b border-border">
             {[
-              { id: 'overview', label: 'Vue d\'ensemble' },
-              { id: 'activities', label: 'Activités' },
-              { id: 'opportunities', label: 'Opportunités' },
-              { id: 'documents', label: 'Documents' },
+              { key: 'overview', label: 'Vue d\'ensemble' },
+              { key: 'activities', label: 'Activités' },
+              { key: 'opportunities', label: 'Opportunités' },
+              { key: 'documents', label: 'Documents' },
             ].map((tab) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-6 py-3 font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'text-[#523DC9] border-b-2 border-[#523DC9]'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-6 py-3 font-medium transition-all relative ${
+                  activeTab === tab.key
+                    ? 'text-[#523DC9]'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label}
+                {activeTab === tab.key && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-nukleo-gradient" />
+                )}
               </button>
             ))}
           </div>
         </div>
 
         {/* Tab Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Colonne principale */}
-          <div className="lg:col-span-2 space-y-6">
-            {activeTab === 'overview' && (
-              <>
-                {/* Informations générales */}
-                <Card className="glass-card">
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-nukleo">
-                      Informations de contact
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Email</p>
-                        <p className="text-gray-900 dark:text-white">{contact.email}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Téléphone</p>
-                        <p className="text-gray-900 dark:text-white">{contact.phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Mobile</p>
-                        <p className="text-gray-900 dark:text-white">{contact.mobile}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ville</p>
-                        <p className="text-gray-900 dark:text-white">{contact.city}, {contact.province}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Adresse</p>
-                      <p className="text-gray-900 dark:text-white">{contact.address}</p>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Notes */}
-                <Card className="glass-card">
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-nukleo">
-                      Notes
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-300">{contact.notes}</p>
-                  </div>
-                </Card>
-              </>
-            )}
-
-            {activeTab === 'activities' && (
-              <Card className="glass-card">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 font-nukleo">
-                    Timeline des activités
-                  </h3>
-                  <div className="space-y-6">
-                    {activities.map((activity) => {
-                      const Icon = getActivityIcon(activity.type);
-                      return (
-                        <div key={activity.id} className="flex gap-4">
-                          <div className={`p-2 rounded-lg ${getActivityColor(activity.type)} flex-shrink-0`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-1">
-                              <h4 className="font-medium text-gray-900 dark:text-white">{activity.title}</h4>
-                              <span className="text-sm text-gray-500">{activity.time}</span>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{activity.description}</p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500">{activity.date}</span>
-                              {activity.status === 'completed' ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <AlertCircle className="w-4 h-4 text-orange-600" />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {activeTab === 'opportunities' && (
-              <Card className="glass-card">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 font-nukleo">
-                    Opportunités en cours
-                  </h3>
-                  <div className="space-y-4">
-                    {opportunities.map((opp) => (
-                      <div key={opp.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#523DC9]/40 transition-all">
-                        <div className="flex items-start justify-between mb-3">
-                          <h4 className="font-medium text-gray-900 dark:text-white">{opp.title}</h4>
-                          <Badge className={getStageColor(opp.stage)}>{opp.stage}</Badge>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600 dark:text-gray-400 mb-1">Valeur</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{opp.value.toLocaleString('fr-CA')} $</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600 dark:text-gray-400 mb-1">Date de clôture</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{opp.closeDate}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {activeTab === 'documents' && (
-              <Card className="glass-card">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 font-nukleo">
-                    Documents partagés
-                  </h3>
-                  <div className="space-y-3">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#523DC9]/40 transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <FileText className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{doc.name}</p>
-                            <p className="text-sm text-gray-500">{doc.type} • {doc.size} • {doc.date}</p>
-                          </div>
-                        </div>
-                        <Button size="sm" variant="ghost">
-                          Télécharger
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            )}
-          </div>
-
-          {/* Colonne latérale */}
-          <div className="space-y-6">
-            {/* Informations rapides */}
-            <Card className="glass-card">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-nukleo">
-                  Informations rapides
-                </h3>
+        <div>
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Informations de contact */}
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4 font-nukleo text-[#523DC9]">Informations de contact</h3>
                 <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Créé le</p>
-                    <p className="text-gray-900 dark:text-white">{contact.createdAt}</p>
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="text-foreground">{contact.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Dernier contact</p>
-                    <p className="text-gray-900 dark:text-white">{contact.lastContact}</p>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Téléphone</p>
+                      <p className="text-foreground">{contact.phone}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Code postal</p>
-                    <p className="text-gray-900 dark:text-white">{contact.postalCode}</p>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Mobile</p>
+                      <p className="text-foreground">{contact.mobile}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Building2 className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Adresse</p>
+                      <p className="text-foreground">{contact.address}</p>
+                      <p className="text-foreground">{contact.city}, {contact.province} {contact.postalCode}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
 
-            {/* Actions */}
-            <Card className="glass-card">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-nukleo">
-                  Actions
-                </h3>
-                <div className="space-y-2">
-                  <Button fullWidth variant="outline">
-                    Modifier le contact
-                  </Button>
-                  <Button fullWidth variant="outline">
-                    Créer une opportunité
-                  </Button>
-                  <Button fullWidth variant="outline">
-                    Planifier une activité
-                  </Button>
-                  <Button fullWidth variant="danger">
-                    Supprimer le contact
-                  </Button>
+              {/* Notes */}
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4 font-nukleo text-[#523DC9]">Notes</h3>
+                <p className="text-foreground/80 leading-relaxed">{contact.notes}</p>
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Créé le: {new Date(contact.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span>Dernier contact: {new Date(contact.lastContact).toLocaleDateString('fr-FR')}</span>
+                  </div>
                 </div>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'activities' && (
+            <Card className="glass-card p-6">
+              <h3 className="text-lg font-semibold mb-4 font-nukleo text-[#523DC9]">Activités récentes</h3>
+              <div className="space-y-4">
+                {activities.map((activity) => {
+                  const Icon = getActivityIcon(activity.type);
+                  return (
+                    <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium text-foreground">{activity.title}</h4>
+                            <p className="text-sm text-muted-foreground">{activity.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {activity.status === 'completed' ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            ) : (
+                              <AlertCircle className="w-5 h-5 text-orange-600" />
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(activity.date).toLocaleDateString('fr-FR')} à {activity.time}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </Card>
-          </div>
+          )}
+
+          {activeTab === 'opportunities' && (
+            <Card className="glass-card p-6">
+              <h3 className="text-lg font-semibold mb-4 font-nukleo text-[#523DC9]">Opportunités en cours</h3>
+              <div className="space-y-4">
+                {opportunities.map((opp) => (
+                  <div key={opp.id} className="p-4 rounded-lg border border-border hover:shadow-md transition-all">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-medium text-foreground text-lg">{opp.title}</h4>
+                        <p className="text-2xl font-bold text-[#523DC9] mt-1">
+                          {opp.value.toLocaleString('fr-FR')} $
+                        </p>
+                      </div>
+                      <Badge className={`${getStageColor(opp.stage)} border`}>
+                        {opp.stage}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Probabilité: {opp.probability}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          Clôture: {new Date(opp.closeDate).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-nukleo-gradient h-2 rounded-full transition-all"
+                          style={{ width: `${opp.probability}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {activeTab === 'documents' && (
+            <Card className="glass-card p-6">
+              <h3 className="text-lg font-semibold mb-4 font-nukleo text-[#523DC9]">Documents</h3>
+              <div className="space-y-3">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:shadow-md transition-all">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-8 h-8 text-[#523DC9]" />
+                      <div>
+                        <p className="font-medium text-foreground">{doc.name}</p>
+                        <p className="text-sm text-muted-foreground">{doc.type} • {doc.size}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(doc.date).toLocaleDateString('fr-FR')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>
