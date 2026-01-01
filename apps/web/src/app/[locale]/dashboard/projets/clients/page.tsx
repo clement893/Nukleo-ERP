@@ -20,10 +20,7 @@ import {
   Building2,
   Users,
   TrendingUp,
-  MapPin,
-  Phone,
   ExternalLink,
-  Mail,
   Briefcase
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -52,7 +49,6 @@ function ClientsContent() {
   // Mutations
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
-  const deleteClientMutation = useDeleteClient();
   
   // Flatten pages into single array
   const clients = useMemo(() => {

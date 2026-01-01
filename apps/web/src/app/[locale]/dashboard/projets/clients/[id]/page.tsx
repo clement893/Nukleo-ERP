@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { clientsAPI } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
 import { PageContainer } from '@/components/layout';
 import { Loading, Alert, Button, Card, Badge } from '@/components/ui';
 import { 
@@ -13,13 +11,8 @@ import {
   Users, 
   DollarSign, 
   TrendingUp, 
-  Phone, 
-  Mail, 
-  Globe, 
-  MapPin, 
   FileText, 
-  Briefcase,
-  Building2
+  Briefcase
 } from 'lucide-react';
 import { useClient, useClientProjects, useClientContacts } from '@/lib/query/clients';
 import ClientAvatar from '@/components/projects/ClientAvatar';
@@ -28,7 +21,6 @@ import Link from 'next/link';
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'contacts' | 'documents'>('overview');
 
   const clientId = params?.id ? parseInt(String(params.id)) : null;
@@ -334,22 +326,26 @@ export default function ClientDetailPage() {
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-full overflow-hidden bg-[#523DC9]/10 flex items-center justify-center">
                             {contact.photo_url ? (
-                              <img src={contact.photo_url} alt={`${contact.first_name} ${contact.last_name}`} className="w-full h-full object-cover" />
+                              <img 
+                                src={String(contact.photo_url)} 
+                                alt={`${String(contact.first_name || '')} ${String(contact.last_name || '')}`} 
+                                className="w-full h-full object-cover" 
+                              />
                             ) : (
                               <span className="text-[#523DC9] font-semibold">
-                                {contact.first_name?.[0]}{contact.last_name?.[0]}
+                                {String(contact.first_name?.[0] || '')}{String(contact.last_name?.[0] || '')}
                               </span>
                             )}
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-foreground">
-                              {contact.first_name} {contact.last_name}
+                              {String(contact.first_name || '')} {String(contact.last_name || '')}
                             </h4>
                             {contact.position && (
-                              <p className="text-sm text-muted-foreground">{contact.position}</p>
+                              <p className="text-sm text-muted-foreground">{String(contact.position)}</p>
                             )}
                             {contact.email && (
-                              <p className="text-sm text-muted-foreground">{contact.email}</p>
+                              <p className="text-sm text-muted-foreground">{String(contact.email)}</p>
                             )}
                           </div>
                         </div>

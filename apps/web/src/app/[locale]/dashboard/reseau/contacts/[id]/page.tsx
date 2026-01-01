@@ -44,7 +44,6 @@ export default function ContactDetailPage() {
 
   // Mutations
   const updateContactMutation = useUpdateReseauContact();
-  const deleteContactMutation = useDeleteReseauContact();
 
   const loading = loadingContact;
   const error = contactError ? handleApiError(contactError).message : null;
