@@ -37,7 +37,8 @@ import {
   Receipt,
   FileBarChart,
   Wallet,
-  MessageSquare
+  MessageSquare,
+  CheckSquare
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -161,6 +162,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Équipes',
             href: '/dashboard/projets/equipes',
             icon: <Users className="w-5 h-5" />,
+          },
+          {
+            name: 'Tâches',
+            href: '/dashboard/projets/taches',
+            icon: <CheckSquare className="w-5 h-5" />,
           },
         ],
         collapsible: true,
