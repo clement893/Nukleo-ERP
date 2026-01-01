@@ -10,11 +10,12 @@ import { teamsAPI, type Team } from '@/lib/api/teams';
 import { extractApiData } from '@/lib/api/utils';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Card, Loading, Alert, Modal } from '@/components/ui';
+import { Card, Loading, Alert } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
 import Avatar from '@/components/ui/Avatar';
+import Drawer from '@/components/ui/Drawer';
 import { useAuthStore } from '@/lib/store';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, Plus, ExternalLink, Users, UserPlus } from 'lucide-react';
@@ -1393,30 +1394,28 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
         </Card>
       )}
 
-      {/* Modal de détails de la tâche */}
-      {selectedTask && (
-        <Modal
-          isOpen={!!selectedTask}
-          onClose={handleCloseModal}
-          title={taskDetails?.title || selectedTask.title}
-          size="lg"
-          footer={
-            <Button variant="outline" onClick={handleCloseModal}>
-              Fermer
-            </Button>
-          }
-        >
-          {loadingDetails ? (
-            <div className="py-8 text-center">
-              <Loading />
-            </div>
-          ) : (
-            taskDetails && (
+      {/* Drawer de détails de la tâche (style Asana) */}
+      <Drawer
+        isOpen={!!selectedTask}
+        onClose={handleCloseModal}
+        title={selectedTask ? (taskDetails?.title || selectedTask.title) : ''}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : (
+          taskDetails && (
+            <div className="h-full">
               <TaskDetailsContent taskDetails={taskDetails} />
-            )
-          )}
-        </Modal>
-      )}
+            </div>
+          )
+        )}
+      </Drawer>
     </div>
   );
 }
