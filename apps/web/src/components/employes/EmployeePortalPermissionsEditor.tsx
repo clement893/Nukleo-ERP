@@ -300,13 +300,9 @@ export default function EmployeePortalPermissionsEditor({
       }
       
       // Mettre à jour les états sauvegardés IMMÉDIATEMENT
-      setSavedModules(modules);
-      setSavedClients(clients);
-      
-      // Mettre à jour aussi selectedModules et selectedClients pour être cohérent
-      // (sauf si on est dans handleModuleToggle où c'est déjà fait)
-      setSelectedModules(modules);
-      setSelectedClients(clients);
+      // Créer de nouveaux Sets pour forcer React à détecter le changement
+      setSavedModules(new Set(modules));
+      setSavedClients(new Set(clients));
       
       // Déclencher un événement pour notifier les autres composants
       window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {

@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Modal } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import DataTable, { type Column } from '@/components/ui/DataTable';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, X } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
@@ -65,6 +65,30 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTaskClick = async (task: ProjectTask) => {
+    setSelectedTask(task);
+    try {
+      setLoadingDetails(true);
+      const details = await projectTasksAPI.get(task.id);
+      setTaskDetails(details);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des détails de la tâche',
+        type: 'error',
+      });
+      // Use the task from the list if API call fails
+      setTaskDetails(task);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTask(null);
+    setTaskDetails(null);
   };
 
   const columns: Column<ProjectTask>[] = [
@@ -172,8 +196,200 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
             pagination={false}
             searchable={false}
             emptyMessage="Aucune tâche trouvée"
+            onRowClick={(row) => handleTaskClick(row as ProjectTask)}
           />
         </Card>
+      )}
+
+      {/* Modal de détails de la tâche */}
+      {selectedTask && (
+        <Modal
+          isOpen={!!selectedTask}
+          onClose={handleCloseModal}
+          title={taskDetails?.title || selectedTask.title}
+          size="lg"
+          footer={
+            <Button variant="outline" onClick={handleCloseModal}>
+              Fermer
+            </Button>
+          }
+        >
+          {loadingDetails ? (
+            <div className="py-8 text-center">
+              <Loading />
+            </div>
+          ) : (
+            taskDetails && (
+              <div className="space-y-6">
+                {/* Description */}
+                {taskDetails.description && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                      Description
+                    </h4>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {taskDetails.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Informations principales */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                      Statut
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const Icon = statusIcons[taskDetails.status];
+                        return <Icon className="w-4 h-4" />;
+                      })()}
+                      <span>{statusLabels[taskDetails.status]}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                      Priorité
+                    </h4>
+                    {(() => {
+                      const priorityColors = {
+                        low: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
+                        medium: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30',
+                        high: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30',
+                        urgent: 'text-red-600 bg-red-100 dark:bg-red-900/30',
+                      };
+                      return (
+                        <span className={`px-2 py-1 text-xs rounded-full ${priorityColors[taskDetails.priority]}`}>
+                          {priorityLabels[taskDetails.priority]}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  {taskDetails.due_date && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                        Échéance
+                      </h4>
+                      {(() => {
+                        const date = new Date(taskDetails.due_date);
+                        const now = new Date();
+                        const isOverdue = date < now && taskDetails.status !== 'completed';
+                        return (
+                          <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                            {date.toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {taskDetails.estimated_hours && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                        Heures estimées
+                      </h4>
+                      <span>{taskDetails.estimated_hours}h</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                  {taskDetails.created_at && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                        Créée le
+                      </h4>
+                      <span className="text-sm">
+                        {new Date(taskDetails.created_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  {taskDetails.updated_at && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                        Modifiée le
+                      </h4>
+                      <span className="text-sm">
+                        {new Date(taskDetails.updated_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  {taskDetails.started_at && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                        Commencée le
+                      </h4>
+                      <span className="text-sm">
+                        {new Date(taskDetails.started_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  {taskDetails.completed_at && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                        Terminée le
+                      </h4>
+                      <span className="text-sm text-green-600 dark:text-green-400">
+                        {new Date(taskDetails.completed_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Assigné à */}
+                {taskDetails.assignee_name && (
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                      Assigné à
+                    </h4>
+                    <div>
+                      <span className="text-sm">{taskDetails.assignee_name}</span>
+                      {taskDetails.assignee_email && (
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ({taskDetails.assignee_email})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </Modal>
       )}
     </div>
   );
