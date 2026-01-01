@@ -467,9 +467,8 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return None - FastAPI will automatically convert to 204 No Content
-        # Works with @rate_limit_decorator like delete_project
-        return None
+        # Return explicit Response to avoid slowapi issues
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
