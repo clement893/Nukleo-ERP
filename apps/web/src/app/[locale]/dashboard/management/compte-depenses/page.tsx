@@ -22,12 +22,16 @@ import {
   Eye,
   Filter,
   Plus,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteExpenseAccounts, 
   useCreateExpenseAccount,
+  useUpdateExpenseAccount,
+  useDeleteExpenseAccount,
   useApproveExpenseAccount,
   useRejectExpenseAccount,
   useRequestClarification,
@@ -35,9 +39,13 @@ import {
 import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
 import { type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/finances/expenseAccounts';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
+import { useAuthStore } from '@/lib/store';
+import Select from '@/components/ui/Select';
 
 function ManagementCompteDepensesContent() {
   const { showToast } = useToast();
+  const { user } = useAuthStore();
+  const isAdmin = user?.is_admin || false;
   
   // React Query hooks for expense accounts - only show submitted/under_review for validation
   const {
@@ -51,6 +59,8 @@ function ManagementCompteDepensesContent() {
   
   // Mutations
   const createExpenseAccountMutation = useCreateExpenseAccount();
+  const updateExpenseAccountMutation = useUpdateExpenseAccount();
+  const deleteExpenseAccountMutation = useDeleteExpenseAccount();
   const approveExpenseAccountMutation = useApproveExpenseAccount();
   const rejectExpenseAccountMutation = useRejectExpenseAccount();
   const requestClarificationMutation = useRequestClarification();
@@ -61,6 +71,7 @@ function ManagementCompteDepensesContent() {
   }, [expenseAccountsData]);
   
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [selectedExpenseAccount, setSelectedExpenseAccount] = useState<ExpenseAccount | null>(null);
@@ -95,7 +106,16 @@ function ManagementCompteDepensesContent() {
   const hasMore = hasNextPage ?? false;
   const error = queryError ? handleApiError(queryError).message : null;
 
-  const statusOptions: ExpenseAccountStatus[] = ['submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'];
+  const statusOptions: ExpenseAccountStatus[] = ['draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'];
+  
+  const statusLabels: Record<ExpenseAccountStatus, string> = {
+    draft: 'Brouillon',
+    submitted: 'Soumis',
+    under_review: 'En révision',
+    approved: 'Approuvé',
+    rejected: 'Rejeté',
+    needs_clarification: 'Précisions requises',
+  };
 
   // Load more expense accounts for infinite scroll
   const loadMore = useCallback(() => {
@@ -147,6 +167,78 @@ function ManagementCompteDepensesContent() {
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la création du compte de dépenses',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle update
+  const handleUpdate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate) => {
+    if (!selectedExpenseAccount) return;
+
+    try {
+      await updateExpenseAccountMutation.mutateAsync({
+        id: selectedExpenseAccount.id,
+        data: data as ExpenseAccountUpdate,
+      });
+      setShowEditModal(false);
+      setSelectedExpenseAccount(null);
+      showToast({
+        message: 'Compte de dépenses modifié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification du compte de dépenses',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle delete
+  const handleDelete = async (expenseAccountId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce compte de dépenses ?')) {
+      return;
+    }
+
+    try {
+      await deleteExpenseAccountMutation.mutateAsync(expenseAccountId);
+      setShowViewModal(false);
+      setSelectedExpenseAccount(null);
+      showToast({
+        message: 'Compte de dépenses supprimé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression du compte de dépenses',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle status change (admin only)
+  const handleStatusChange = async (newStatus: ExpenseAccountStatus) => {
+    if (!selectedExpenseAccount || !isAdmin) return;
+
+    try {
+      await updateExpenseAccountMutation.mutateAsync({
+        id: selectedExpenseAccount.id,
+        data: { status: newStatus } as ExpenseAccountUpdate,
+      });
+      // Reload the account to get updated data
+      const updatedAccount = { ...selectedExpenseAccount, status: newStatus };
+      setSelectedExpenseAccount(updatedAccount);
+      showToast({
+        message: `Statut changé en "${statusLabels[newStatus]}" avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du changement de statut',
         type: 'error',
       });
     }
@@ -481,7 +573,22 @@ function ManagementCompteDepensesContent() {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Statut</label>
                 <div className="mt-1">
-                  <ExpenseAccountStatusBadge status={selectedExpenseAccount.status} />
+                  {isAdmin ? (
+                    <Select
+                      value={selectedExpenseAccount.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value as ExpenseAccountStatus;
+                        handleStatusChange(newStatus);
+                      }}
+                      options={statusOptions.map((status) => ({
+                        value: status,
+                        label: statusLabels[status],
+                      }))}
+                      className="min-w-[200px]"
+                    />
+                  ) : (
+                    <ExpenseAccountStatusBadge status={selectedExpenseAccount.status} />
+                  )}
                 </div>
               </div>
               <div>
@@ -536,38 +643,68 @@ function ManagementCompteDepensesContent() {
               </div>
             )}
 
-            {/* Actions - Only show for pending validation */}
-            {(selectedExpenseAccount.status === 'submitted' || selectedExpenseAccount.status === 'under_review') && (
-              <div className="flex gap-2 pt-4 border-t">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => openActionModal(selectedExpenseAccount, 'approve')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="w-4 h-4 mr-1.5" />
-                  Approuver
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => openActionModal(selectedExpenseAccount, 'reject')}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <XCircle className="w-4 h-4 mr-1.5" />
-                  Rejeter
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => openActionModal(selectedExpenseAccount, 'clarification')}
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                >
-                  <MessageSquare className="w-4 h-4 mr-1.5" />
-                  Demander précisions
-                </Button>
-              </div>
-            )}
+            {/* Actions */}
+            <div className="flex gap-2 pt-4 border-t flex-wrap">
+              {/* Admin actions: Edit and Delete */}
+              {isAdmin && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    <Edit className="w-4 h-4 mr-1.5" />
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(selectedExpenseAccount.id)}
+                    disabled={deleteExpenseAccountMutation.isPending}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    Supprimer
+                  </Button>
+                </>
+              )}
+              
+              {/* Validation actions - Only show for pending validation */}
+              {(selectedExpenseAccount.status === 'submitted' || selectedExpenseAccount.status === 'under_review') && (
+                <>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => openActionModal(selectedExpenseAccount, 'approve')}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1.5" />
+                    Approuver
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => openActionModal(selectedExpenseAccount, 'reject')}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <XCircle className="w-4 h-4 mr-1.5" />
+                    Rejeter
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => openActionModal(selectedExpenseAccount, 'clarification')}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-1.5" />
+                    Demander précisions
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         )}
       </Modal>
@@ -670,6 +807,30 @@ function ManagementCompteDepensesContent() {
           loading={createExpenseAccountMutation.isPending}
           employees={employees}
         />
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal && selectedExpenseAccount !== null}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedExpenseAccount(null);
+        }}
+        title="Modifier le compte de dépenses"
+        size="lg"
+      >
+        {selectedExpenseAccount && (
+          <ExpenseAccountForm
+            expenseAccount={selectedExpenseAccount}
+            onSubmit={handleUpdate}
+            onCancel={() => {
+              setShowEditModal(false);
+              setSelectedExpenseAccount(null);
+            }}
+            loading={updateExpenseAccountMutation.isPending}
+            employees={employees}
+          />
+        )}
       </Modal>
     </MotionDiv>
   );

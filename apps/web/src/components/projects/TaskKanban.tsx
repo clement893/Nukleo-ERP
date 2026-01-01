@@ -12,6 +12,8 @@ import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
 import { useToast } from '@/components/ui';
 import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority } from '@/lib/api/project-tasks';
+import { projectsAPI } from '@/lib/api';
+import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
 import TaskTimer from './TaskTimer';
@@ -56,11 +58,14 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
   const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
+  const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
+    project_id: number | null;
     assignee_id: number | null;
     due_date: string | undefined;
     estimated_hours: number | null;
@@ -69,6 +74,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     description: '',
     status: 'todo',
     priority: 'medium',
+    project_id: projectId || null,
     assignee_id: null,
     due_date: undefined,
     estimated_hours: null,
@@ -131,6 +137,30 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     fetchTasks();
   }, [projectId, teamId, assigneeId]);
 
+  // Load projects and employees for the form
+  useEffect(() => {
+    const loadProjectsAndEmployees = async () => {
+      try {
+        // Load projects
+        const projectsData = await projectsAPI.list();
+        const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+        setProjects(projectsList.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })));
+
+        // Load employees
+        const employeesData = await employeesAPI.list(0, 1000);
+        setEmployees(employeesData.map((e: { id: number; first_name: string; last_name: string; email?: string }) => ({
+          id: e.id,
+          first_name: e.first_name,
+          last_name: e.last_name,
+          email: e.email,
+        })));
+      } catch (err) {
+        console.error('Error loading projects/employees:', err);
+      }
+    };
+    loadProjectsAndEmployees();
+  }, []);
+
   const getTasksByStatus = (status: TaskStatus) => {
     return tasks.filter(task => task.status === status).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   };
@@ -142,6 +172,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       description: '',
       status: 'todo',
       priority: 'medium',
+      project_id: projectId || null,
       assignee_id: null,
       due_date: undefined,
       estimated_hours: null,
@@ -156,7 +187,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       description: task.description || '',
       status: task.status,
       priority: task.priority,
-      assignee_id: task.assignee_id || null,
+      project_id: task.project_id,
+      assignee_id: task.assignee_id,
       due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
       estimated_hours: task.estimated_hours || null,
     });
@@ -166,6 +198,21 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const handleSaveTask = async () => {
     if (!formData.title.trim()) {
       const errorMsg = 'Le titre de la tâche est requis';
+      setError(errorMsg);
+      showErrorToast(errorMsg);
+      return;
+    }
+
+    // Validate required fields: project_id and assignee_id
+    if (!formData.project_id) {
+      const errorMsg = 'Un projet est requis pour créer une tâche';
+      setError(errorMsg);
+      showErrorToast(errorMsg);
+      return;
+    }
+
+    if (!formData.assignee_id) {
+      const errorMsg = 'Un employé doit être assigné à la tâche';
       setError(errorMsg);
       showErrorToast(errorMsg);
       return;
@@ -193,7 +240,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           description: formData.description || null,
           status: formData.status,
           priority: formData.priority,
-          assignee_id: formData.assignee_id,
+          project_id: formData.project_id!,
+          assignee_id: formData.assignee_id!,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
         });
@@ -204,7 +252,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
         );
       } else {
-        // Create new task - team_id is required
+        // Create new task - team_id, project_id and assignee_id are required
         if (!teamId) {
           const errorMsg = 'Une équipe est requise pour créer une tâche';
           setError(errorMsg);
@@ -218,8 +266,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           status: formData.status,
           priority: formData.priority,
           team_id: teamId,
-          project_id: projectId ?? null,
-          assignee_id: formData.assignee_id,
+          project_id: formData.project_id!,
+          assignee_id: formData.assignee_id!,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
           order: tasks.length,
@@ -245,6 +293,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         description: '',
         status: 'todo',
         priority: 'medium',
+        project_id: projectId || null,
         assignee_id: null,
         due_date: undefined,
         estimated_hours: null,
@@ -477,6 +526,33 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
               placeholder="Description de la tâche"
               rows={4}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Projet *
+              </label>
+              <Select
+                value={formData.project_id?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
+                options={projects.map(p => ({ value: p.id.toString(), label: p.name }))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Employé assigné *
+              </label>
+              <Select
+                value={formData.assignee_id?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value ? parseInt(e.target.value) : null })}
+                options={employees.map(e => ({ 
+                  value: e.id.toString(), 
+                  label: `${e.first_name} ${e.last_name}${e.email ? ` (${e.email})` : ''}` 
+                }))}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

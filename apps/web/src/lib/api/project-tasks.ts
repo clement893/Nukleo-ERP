@@ -16,8 +16,8 @@ export interface ProjectTask {
   status: TaskStatus;
   priority: TaskPriority;
   team_id: number;
-  project_id?: number | null;
-  assignee_id?: number | null;
+  project_id: number;  // Required: every task must be assigned to a project
+  assignee_id: number;  // Required: every task must be assigned to an employee
   created_by_id?: number | null;
   due_date?: string | null;
   estimated_hours?: number | null;
@@ -36,8 +36,8 @@ export interface ProjectTaskCreate {
   status?: TaskStatus;
   priority?: TaskPriority;
   team_id: number;
-  project_id?: number | null;
-  assignee_id?: number | null;
+  project_id: number;  // Required: every task must be assigned to a project
+  assignee_id: number;  // Required: every task must be assigned to an employee
   due_date?: string | null;
   estimated_hours?: number | null;
   order?: number;

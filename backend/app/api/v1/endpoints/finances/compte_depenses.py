@@ -293,7 +293,8 @@ async def update_compte_depenses(
 ):
     """
     Update an expense account
-    Only allowed for DRAFT status
+    - Non-admins: Only allowed for DRAFT status accounts they own
+    - Admins: Can update any account and change status
     """
     result = await db.execute(
         select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
@@ -306,14 +307,6 @@ async def update_compte_depenses(
             detail="Expense account not found"
         )
     
-    # Only allow updates for DRAFT status
-    if account.status != ExpenseAccountStatus.DRAFT.value:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot update expense account that is not in DRAFT status"
-        )
-    
-    # Check permissions: user must be the owner of the expense account or an admin
     # Load employee to check user_id
     employee_result = await db.execute(
         select(Employee).where(Employee.id == account.employee_id)
@@ -330,16 +323,54 @@ async def update_compte_depenses(
     is_admin = await is_admin_or_superadmin(current_user, db)
     is_owner = employee.user_id == current_user.id if employee.user_id else False
     
-    if not is_admin and not is_owner:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to update this expense account"
-        )
+    # Non-admins can only update their own DRAFT accounts
+    if not is_admin:
+        if not is_owner:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update this expense account"
+            )
+        if account.status != ExpenseAccountStatus.DRAFT.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot update expense account that is not in DRAFT status"
+            )
+        # Non-admins cannot change status
+        if expense_account.status is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only admins can change the status of an expense account"
+            )
     
     # Update fields
     update_data = expense_account.model_dump(exclude_unset=True)
+    
+    # If admin is changing status, validate it
+    if is_admin and 'status' in update_data and update_data['status'] is not None:
+        new_status = update_data['status']
+        try:
+            # Validate status enum
+            ExpenseAccountStatus(new_status)
+            account.status = new_status
+            # If changing to approved/submitted/rejected/needs_clarification, update reviewed_at and reviewed_by_id
+            if new_status in [ExpenseAccountStatus.APPROVED.value, ExpenseAccountStatus.REJECTED.value, ExpenseAccountStatus.NEEDS_CLARIFICATION.value]:
+                account.reviewed_at = datetime.now()
+                account.reviewed_by_id = current_user.id
+            # If changing to submitted, update submitted_at
+            if new_status == ExpenseAccountStatus.SUBMITTED.value:
+                account.submitted_at = datetime.now()
+            # Remove status from update_data to avoid overwriting
+            del update_data['status']
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status: {new_status}"
+            )
+    
+    # Update other fields (excluding status which was handled above)
     for field, value in update_data.items():
-        setattr(account, field, value)
+        if field != 'status':  # Status already handled above
+            setattr(account, field, value)
     
     await db.commit()
     await db.refresh(account, ["employee", "reviewer"])

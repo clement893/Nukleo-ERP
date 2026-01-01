@@ -14,6 +14,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Users } from 'lucide-react';
 import { teamsAPI } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { projectsAPI } from '@/lib/api';
 import { employeesAPI, type Employee as EmployeeType } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
@@ -36,6 +37,7 @@ function TeamProjectManagementContent() {
   const [team, setTeam] = useState<Team | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesWithCapacity, setEmployeesWithCapacity] = useState<EmployeeType[]>([]);
+  const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +47,7 @@ function TeamProjectManagementContent() {
     title: '',
     description: '',
     priority: 'medium' as ProjectTask['priority'],
+    project_id: null as number | null,
     assignee_id: null as number | null,
   });
 
@@ -135,6 +138,16 @@ function TeamProjectManagementContent() {
         setEmployeesWithCapacity([]);
       }
       
+      // Charger les projets
+      try {
+        const projectsData = await projectsAPI.list();
+        const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+        setProjects(projectsList.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })));
+      } catch (projErr) {
+        console.error('Error loading projects:', projErr);
+        setProjects([]);
+      }
+
       // Grouper les membres
       const teamEmployees: Employee[] = (foundTeam.members || []).map((member: TeamMember) => ({
         id: member.user_id,
@@ -175,6 +188,22 @@ function TeamProjectManagementContent() {
       return;
     }
 
+    if (!taskForm.project_id) {
+      showToast({
+        message: 'Un projet est requis pour créer une tâche',
+        type: 'error',
+      });
+      return;
+    }
+
+    if (!taskForm.assignee_id) {
+      showToast({
+        message: 'Un employé doit être assigné à la tâche',
+        type: 'error',
+      });
+      return;
+    }
+
     try {
       setCreatingTask(true);
       const newTask = await projectTasksAPI.create({
@@ -182,7 +211,8 @@ function TeamProjectManagementContent() {
         description: taskForm.description || null,
         priority: taskForm.priority,
         team_id: team.id,
-        assignee_id: taskForm.assignee_id || null,
+        project_id: taskForm.project_id,
+        assignee_id: taskForm.assignee_id,
         status: 'todo',
       });
       
@@ -192,6 +222,7 @@ function TeamProjectManagementContent() {
         title: '',
         description: '',
         priority: 'medium',
+        project_id: null,
         assignee_id: null,
       });
       
@@ -424,6 +455,23 @@ function TeamProjectManagementContent() {
           </div>
           <div>
             <Select
+              label="Projet *"
+              value={taskForm.project_id?.toString() || ''}
+              onChange={(e) =>
+                setTaskForm({
+                  ...taskForm,
+                  project_id: e.target.value ? parseInt(e.target.value) : null,
+                })
+              }
+              fullWidth
+              options={projects.map((proj) => ({
+                value: proj.id.toString(),
+                label: proj.name,
+              }))}
+            />
+          </div>
+          <div>
+            <Select
               label="Priorité"
               value={taskForm.priority}
               onChange={(e) =>
@@ -444,7 +492,7 @@ function TeamProjectManagementContent() {
           {employees.length > 0 && (
             <div>
               <Select
-                label="Assigner à (optionnel)"
+                label="Assigner à *"
                 value={taskForm.assignee_id?.toString() || ''}
                 onChange={(e) =>
                   setTaskForm({
@@ -453,13 +501,10 @@ function TeamProjectManagementContent() {
                   })
                 }
                 fullWidth
-                options={[
-                  { value: '', label: 'Non assigné' },
-                  ...employees.map((emp) => ({
-                    value: emp.id.toString(),
-                    label: emp.name,
-                  })),
-                ]}
+                options={employees.map((emp) => ({
+                  value: emp.id.toString(),
+                  label: emp.name,
+                }))}
               />
             </div>
           )}
