@@ -8,7 +8,8 @@ import { useState, useMemo } from 'react';
 import { 
   useInfiniteReseauContacts, 
   useCreateReseauContact, 
-  useUpdateReseauContact
+  useUpdateReseauContact,
+  useReseauContactsCount
 } from '@/lib/query/reseau-contacts';
 import type { Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
@@ -31,7 +32,9 @@ import {
   Users,
   Briefcase,
   UserPlus,
-  TrendingUp
+  TrendingUp,
+  X,
+  Tag
 } from 'lucide-react';
 
 type ViewMode = 'gallery' | 'list';
@@ -55,6 +58,8 @@ export default function ContactsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [customQuickFilters, setCustomQuickFilters] = useState<string[]>([]);
+  const [showAddQuickFilterModal, setShowAddQuickFilterModal] = useState(false);
 
   // API Hooks
   const { 
@@ -69,6 +74,9 @@ export default function ContactsPage() {
 
   const createContactMutation = useCreateReseauContact();
   const updateContactMutation = useUpdateReseauContact();
+  
+  // Get total count
+  const { data: totalCount } = useReseauContactsCount();
 
   // Flatten contacts from pages
   const contacts = useMemo(() => {
@@ -79,7 +87,9 @@ export default function ContactsPage() {
   const uniqueCities = useMemo(() => {
     const cities = new Set<string>();
     contacts.forEach(contact => {
-      if (contact.city) cities.add(contact.city);
+      if (contact.city && contact.city.trim()) {
+        cities.add(contact.city.trim());
+      }
     });
     return Array.from(cities).sort();
   }, [contacts]);
@@ -87,7 +97,9 @@ export default function ContactsPage() {
   const uniqueRoles = useMemo(() => {
     const roles = new Set<string>();
     contacts.forEach(contact => {
-      if (contact.position) roles.add(contact.position);
+      if (contact.position && contact.position.trim()) {
+        roles.add(contact.position.trim());
+      }
     });
     return Array.from(roles).sort();
   }, [contacts]);
@@ -95,8 +107,11 @@ export default function ContactsPage() {
   const uniqueTags = useMemo(() => {
     const tags = new Set<string>();
     contacts.forEach(contact => {
-      if (contact.circle) {
-        contact.circle.split(',').forEach((tag: string) => tags.add(tag.trim()));
+      if (contact.circle && typeof contact.circle === 'string') {
+        contact.circle.split(',').forEach((tag: string) => {
+          const trimmed = tag.trim();
+          if (trimmed) tags.add(trimmed);
+        });
       }
     });
     return Array.from(tags).sort();
@@ -120,19 +135,28 @@ export default function ContactsPage() {
 
       // Type filter (favorites, vip, etc.)
       if (filterType === 'favorites' && !favorites.has(contact.id)) return false;
-      if (filterType === 'vip' && !contact.circle?.includes('VIP')) return false;
-      if (filterType === 'clients' && !contact.circle?.includes('Client')) return false;
-      if (filterType === 'prospects' && !contact.circle?.includes('Prospect')) return false;
-      if (filterType === 'partners' && !contact.circle?.includes('Partenaire')) return false;
+      
+      // Safely check circle tags - handle null/undefined and case-insensitive matching
+      const circleTags = contact.circle && typeof contact.circle === 'string' 
+        ? contact.circle.split(',').map((t: string) => t.trim().toLowerCase())
+        : [];
+      
+      // Only apply circle filters if filterType is not 'all' and not 'favorites'
+      if (filterType !== 'all' && filterType !== 'favorites') {
+        if (filterType === 'vip' && !circleTags.includes('vip')) return false;
+        if (filterType === 'clients' && !circleTags.includes('client')) return false;
+        if (filterType === 'prospects' && !circleTags.includes('prospect')) return false;
+        if (filterType === 'partners' && !circleTags.includes('partenaire')) return false;
+      }
 
-      // City filter
-      if (cityFilter !== 'all' && contact.city !== cityFilter) return false;
+      // City filter - handle null/undefined safely
+      if (cityFilter !== 'all' && (!contact.city || contact.city.trim() !== cityFilter)) return false;
 
-      // Role filter
-      if (roleFilter !== 'all' && contact.position !== roleFilter) return false;
+      // Role filter - handle null/undefined safely
+      if (roleFilter !== 'all' && (!contact.position || contact.position.trim() !== roleFilter)) return false;
 
-      // Tag filter
-      if (tagFilter !== 'all' && !contact.circle?.includes(tagFilter)) return false;
+      // Tag filter - handle null/undefined and case-insensitive matching
+      if (tagFilter !== 'all' && !circleTags.includes(tagFilter.toLowerCase())) return false;
 
       return true;
     });
@@ -174,15 +198,27 @@ export default function ContactsPage() {
     });
   }, [contacts, searchQuery, filterType, cityFilter, roleFilter, tagFilter, favorites, sortBy, sortDirection]);
 
-  // Count by type
+  // Count by type - safely handle null/undefined and case-insensitive
   const counts = useMemo(() => {
     return {
       all: contacts.length,
       favorites: contacts.filter(c => favorites.has(c.id)).length,
-      vip: contacts.filter(c => c.circle?.includes('VIP')).length,
-      clients: contacts.filter(c => c.circle?.includes('Client')).length,
-      prospects: contacts.filter(c => c.circle?.includes('Prospect')).length,
-      partners: contacts.filter(c => c.circle?.includes('Partenaire')).length,
+      vip: contacts.filter(c => {
+        if (!c.circle || typeof c.circle !== 'string') return false;
+        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('vip');
+      }).length,
+      clients: contacts.filter(c => {
+        if (!c.circle || typeof c.circle !== 'string') return false;
+        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('client');
+      }).length,
+      prospects: contacts.filter(c => {
+        if (!c.circle || typeof c.circle !== 'string') return false;
+        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('prospect');
+      }).length,
+      partners: contacts.filter(c => {
+        if (!c.circle || typeof c.circle !== 'string') return false;
+        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('partenaire');
+      }).length,
     };
   }, [contacts, favorites]);
 
@@ -330,7 +366,14 @@ export default function ContactsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white">Contacts</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white">Contacts</h1>
+              {totalCount !== undefined && (
+                <span className="glass-badge px-3 py-1 rounded-full text-sm font-medium text-muted-accessible">
+                  {totalCount} total
+                </span>
+              )}
+            </div>
             <p className="text-muted-accessible mt-1">Gérez vos contacts commerciaux efficacement</p>
           </div>
           <button
@@ -390,72 +433,141 @@ export default function ContactsPage() {
         </div>
 
         {/* Quick Filters */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <button
-            onClick={() => setFilterType('all')}
+            onClick={() => {
+              setFilterType('all');
+              setTagFilter('all');
+            }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-              filterType === 'all'
+              filterType === 'all' && tagFilter === 'all'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4" aria-hidden="true" />
             Tous {counts.all}
           </button>
           <button
-            onClick={() => setFilterType('favorites')}
+            onClick={() => {
+              setFilterType('favorites');
+              setTagFilter('all');
+            }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'favorites'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <Star className="w-4 h-4" />
+            <Star className="w-4 h-4" aria-hidden="true" />
             Favoris {counts.favorites}
           </button>
           <button
-            onClick={() => setFilterType('vip')}
+            onClick={() => {
+              setFilterType('vip');
+              setTagFilter('all');
+            }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'vip'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
+            <TrendingUp className="w-4 h-4" aria-hidden="true" />
             VIP {counts.vip}
           </button>
           <button
-            onClick={() => setFilterType('clients')}
+            onClick={() => {
+              setFilterType('clients');
+              setTagFilter('all');
+            }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'clients'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <Briefcase className="w-4 h-4" />
+            <Briefcase className="w-4 h-4" aria-hidden="true" />
             Clients {counts.clients}
           </button>
           <button
-            onClick={() => setFilterType('prospects')}
+            onClick={() => {
+              setFilterType('prospects');
+              setTagFilter('all');
+            }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'prospects'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <UserPlus className="w-4 h-4" />
+            <UserPlus className="w-4 h-4" aria-hidden="true" />
             Prospects {counts.prospects}
           </button>
           <button
-            onClick={() => setFilterType('partners')}
+            onClick={() => {
+              setFilterType('partners');
+              setTagFilter('all');
+            }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'partners'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4" aria-hidden="true" />
             Partenaires {counts.partners}
+          </button>
+          
+          {/* Custom Quick Filters */}
+          {customQuickFilters.map((tag) => {
+            const tagCount = contacts.filter(c => {
+              if (!c.circle || typeof c.circle !== 'string') return false;
+              return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes(tag.toLowerCase());
+            }).length;
+            
+            return (
+              <button
+                key={tag}
+                onClick={() => {
+                  setFilterType('all');
+                  setTagFilter(tag);
+                }}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  tagFilter === tag && filterType === 'all'
+                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                    : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Tag className="w-4 h-4" aria-hidden="true" />
+                {tag} {tagCount}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCustomQuickFilters(prev => prev.filter(t => t !== tag));
+                    if (tagFilter === tag) {
+                      setFilterType('all');
+                      setTagFilter('all');
+                    }
+                  }}
+                  className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-0.5"
+                  aria-label={`Supprimer le filtre ${tag}`}
+                >
+                  <X className="w-3 h-3" aria-hidden="true" />
+                </button>
+              </button>
+            );
+          })}
+          
+          {/* Add Quick Filter Button */}
+          <button
+            onClick={() => setShowAddQuickFilterModal(true)}
+            className="px-4 py-2 rounded-lg flex items-center gap-2 glass-badge hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-dashed border-gray-300 dark:border-gray-600"
+            aria-label="Ajouter un filtre rapide"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <Tag className="w-4 h-4" aria-hidden="true" />
+            Ajouter un filtre
           </button>
         </div>
 
@@ -468,9 +580,13 @@ export default function ContactsPage() {
             aria-label="Filtrer par ville"
           >
             <option value="all">Toutes les villes</option>
-            {uniqueCities.map(city => (
-              <option key={city} value={city}>{city}</option>
-            ))}
+            {uniqueCities.length > 0 ? (
+              uniqueCities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))
+            ) : (
+              <option value="all" disabled>Aucune ville disponible</option>
+            )}
           </select>
 
           <select
@@ -480,9 +596,13 @@ export default function ContactsPage() {
             aria-label="Filtrer par rôle"
           >
             <option value="all">Tous les rôles</option>
-            {uniqueRoles.map(role => (
-              <option key={role} value={role}>{role}</option>
-            ))}
+            {uniqueRoles.length > 0 ? (
+              uniqueRoles.map(role => (
+                <option key={role} value={role}>{role}</option>
+              ))
+            ) : (
+              <option value="all" disabled>Aucun rôle disponible</option>
+            )}
           </select>
 
           <select
@@ -492,9 +612,13 @@ export default function ContactsPage() {
             aria-label="Filtrer par tag"
           >
             <option value="all">Tous les tags</option>
-            {uniqueTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
+            {uniqueTags.length > 0 ? (
+              uniqueTags.map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))
+            ) : (
+              <option value="all" disabled>Aucun tag disponible</option>
+            )}
           </select>
 
           {/* Sort Selector */}
@@ -529,7 +653,7 @@ export default function ContactsPage() {
 
       {/* Gallery View */}
       {viewMode === 'gallery' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
           {filteredContacts.map((contact) => {
             const tags = contact.circle ? contact.circle.split(',').map((t: string) => t.trim()) : [];
             
@@ -815,11 +939,51 @@ export default function ContactsPage() {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           title="Nouveau contact"
+          size="xl"
         >
           <ContactForm
             onSubmit={handleCreate}
             onCancel={() => setShowAddModal(false)}
           />
+        </Modal>
+      )}
+      
+      {/* Add Quick Filter Modal */}
+      {showAddQuickFilterModal && (
+        <Modal
+          isOpen={showAddQuickFilterModal}
+          onClose={() => setShowAddQuickFilterModal(false)}
+          title="Ajouter un filtre rapide"
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-muted-accessible">
+              Sélectionnez un tag à ajouter comme filtre rapide :
+            </p>
+            <select
+              className="glass-input w-full px-4 py-2 rounded-lg"
+              onChange={(e) => {
+                const selectedTag = e.target.value;
+                if (selectedTag && !customQuickFilters.includes(selectedTag)) {
+                  setCustomQuickFilters(prev => [...prev, selectedTag]);
+                  setShowAddQuickFilterModal(false);
+                }
+              }}
+              defaultValue=""
+            >
+              <option value="">Sélectionner un tag...</option>
+              {uniqueTags
+                .filter(tag => !customQuickFilters.includes(tag))
+                .map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+            </select>
+            {uniqueTags.filter(tag => !customQuickFilters.includes(tag)).length === 0 && (
+              <p className="text-sm text-muted-accessible">
+                Tous les tags disponibles sont déjà dans les filtres rapides.
+              </p>
+            )}
+          </div>
         </Modal>
       )}
 
