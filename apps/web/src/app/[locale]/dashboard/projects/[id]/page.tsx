@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Container from '@/components/ui/Container';
+
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Alert from '@/components/ui/Alert';
@@ -123,22 +123,22 @@ function ProjectDetailContent() {
 
   if (loading) {
     return (
-      <div className="py-8">
-        <Container>
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto">
           <Card className="glass-card">
             <div className="py-12 text-center">
               <Loading />
             </div>
           </Card>
-        </Container>
+        </div>
       </div>
     );
   }
 
   if (error || !project) {
     return (
-      <div className="py-8">
-        <Container>
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto">
           <Alert variant="error" className="mb-6">
             {error || 'Projet introuvable'}
           </Alert>
@@ -146,14 +146,14 @@ function ProjectDetailContent() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour aux projets
           </Button>
-        </Container>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="py-8">
-      <Container>
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="mb-6">
           <Button
@@ -788,7 +788,7 @@ function ProjectDetailContent() {
             deadline={project.deadline}
           />
         )}
-      </Container>
+      </div>
     </div>
   );
 }
