@@ -225,7 +225,7 @@ export default function SubmissionDetailPage() {
 
   const statusColors: Record<string, string> = {
     draft: 'bg-gray-500',
-    submitted: 'bg-blue-500',
+    submitted: 'bg-primary-500',
     under_review: 'bg-yellow-500',
     accepted: 'bg-green-500',
     rejected: 'bg-red-500',

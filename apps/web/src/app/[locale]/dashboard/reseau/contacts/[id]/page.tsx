@@ -78,7 +78,7 @@ export default function ContactDetailPage() {
   // Stats calculation
   const stats = contact ? [
     { icon: TrendingUp, label: 'Opportunités', value: '0', color: 'text-green-600', bgColor: 'bg-green-100' },
-    { icon: FileText, label: 'Documents', value: '0', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { icon: FileText, label: 'Documents', value: '0', color: 'text-primary-600', bgColor: 'bg-primary-100' },
     { icon: Clock, label: 'Activités', value: '0', color: 'text-purple-600', bgColor: 'bg-purple-100' },
     { icon: Calendar, label: 'Dernier contact', value: contact.updated_at ? new Date(contact.updated_at).toLocaleDateString('fr-FR') : 'N/A', color: 'text-orange-600', bgColor: 'bg-orange-100' },
   ] : [];

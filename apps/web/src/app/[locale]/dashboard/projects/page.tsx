@@ -276,10 +276,10 @@ function ProjectsContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Terminés</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.completed}</p>
+                <p className="text-3xl font-bold text-primary-600">{stats.completed}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-primary-600" />
               </div>
             </div>
           </Card>

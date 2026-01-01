@@ -113,9 +113,9 @@ export default function CalendrierDemoPage() {
         icon: Star
       },
       vacation: {
-        bg: 'bg-blue-500/10',
-        text: 'text-blue-600 dark:text-blue-400',
-        border: 'border-blue-500/30',
+        bg: 'bg-primary-500/10',
+        text: 'text-primary-600 dark:text-primary-400',
+        border: 'border-primary-500/30',
         icon: Plane
       },
       personal: {
@@ -414,7 +414,7 @@ export default function CalendrierDemoPage() {
             onClick={() => setFilterType('vacation')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'vacation'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >

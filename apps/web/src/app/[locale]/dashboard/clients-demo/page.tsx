@@ -118,7 +118,7 @@ export default function ClientsDemoPage() {
   ];
 
   const stats = [
-    { icon: Building2, label: 'Clients actifs', value: '5', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { icon: Building2, label: 'Clients actifs', value: '5', color: 'text-primary-600', bgColor: 'bg-primary-100' },
     { icon: DollarSign, label: 'Revenu total', value: '2.9M $', color: 'text-green-600', bgColor: 'bg-green-100' },
     { icon: Users, label: 'Contacts', value: '89', color: 'text-purple-600', bgColor: 'bg-purple-100' },
     { icon: TrendingUp, label: 'Projets', value: '57', color: 'text-orange-600', bgColor: 'bg-orange-100' },
@@ -136,7 +136,7 @@ export default function ClientsDemoPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Actif': return 'bg-green-100 text-green-700 border-green-300';
-      case 'Prospect': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'Prospect': return 'bg-primary-100 text-primary-700 border-primary-300';
       case 'Inactif': return 'bg-gray-100 text-gray-700 border-gray-300';
       default: return 'bg-gray-100 text-gray-700 border-gray-300';
     }

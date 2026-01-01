@@ -118,7 +118,7 @@ export default function PipelineDetailPage() {
   const getOpportunityStageColor = (stage: string | null | undefined) => {
     if (!stage) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
     const lowerStage = stage.toLowerCase();
-    if (lowerStage.includes('découverte')) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+    if (lowerStage.includes('découverte')) return 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400';
     if (lowerStage.includes('qualif')) return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
     if (lowerStage.includes('propos')) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
     if (lowerStage.includes('négoc')) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';

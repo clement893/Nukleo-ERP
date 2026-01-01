@@ -171,7 +171,7 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
         {/* Recent opportunities avec glassmorphism */}
         <div className="mt-4 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
           <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-            <span className="w-1 h-4 bg-blue-600 rounded-full" />
+            <span className="w-1 h-4 bg-primary-600 rounded-full" />
             Récentes
           </p>
           <div className="space-y-2">

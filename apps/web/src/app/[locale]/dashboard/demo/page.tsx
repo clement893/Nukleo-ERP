@@ -102,7 +102,7 @@ export default function DemoProjectPage() {
     {
       id: 'in-progress',
       title: 'En cours',
-      color: 'bg-blue-500',
+      color: 'bg-primary-500',
       tasks: [
         {
           id: '4',
@@ -248,7 +248,7 @@ export default function DemoProjectPage() {
         <div className="flex items-center justify-between mb-6">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm font-medium">Retour au dashboard</span>
@@ -283,8 +283,8 @@ export default function DemoProjectPage() {
             </p>
           </div>
 
-          <div className="glass-badge px-4 py-2 rounded-full border bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <div className="glass-badge px-4 py-2 rounded-full border bg-primary-500/20 text-primary-700 dark:text-primary-300 border-primary-500/30 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
             <span className="font-semibold text-sm">En cours</span>
           </div>
         </div>
@@ -294,13 +294,13 @@ export default function DemoProjectPage() {
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Progression globale
             </span>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+            <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
               {project.progress}%
             </span>
           </div>
           <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000"
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-1000"
               style={{ width: `${project.progress}%` }}
             />
           </div>
@@ -345,7 +345,7 @@ export default function DemoProjectPage() {
                   relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                   transition-all duration-200 min-w-fit
                   ${isActive 
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30' 
+                    ? 'text-primary-600 dark:text-primary-400 bg-primary-500/10 border border-primary-500/30' 
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }
                 `}
@@ -356,7 +356,7 @@ export default function DemoProjectPage() {
                   <span className={`
                     px-2 py-0.5 rounded-full text-xs font-bold
                     ${isActive 
-                      ? 'bg-blue-600 text-white' 
+                      ? 'bg-primary-600 text-white' 
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                     }
                   `}>
@@ -392,8 +392,8 @@ export default function DemoProjectPage() {
 
             <div className="glass-card p-6 rounded-xl">
               <div className="flex items-center justify-between mb-4">
-                <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
-                  <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="glass-badge p-3 rounded-lg bg-primary-500/10">
+                  <Clock className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                 </div>
               </div>
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -485,7 +485,7 @@ export default function DemoProjectPage() {
                 onClick={() => setViewMode('kanban')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   viewMode === 'kanban'
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-primary-500 text-white'
                     : 'glass-button'
                 }`}
               >
@@ -495,7 +495,7 @@ export default function DemoProjectPage() {
                 onClick={() => setViewMode('list')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   viewMode === 'list'
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-primary-500 text-white'
                     : 'glass-button'
                 }`}
               >

@@ -41,7 +41,7 @@ export function UserProfileWidget({ }: WidgetProps) {
               className="w-20 h-20 rounded-full border-2 border-gray-200 dark:border-gray-700"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
               <UserCircle className="w-12 h-12 text-primary-600 dark:text-primary-400" />
             </div>
           )}

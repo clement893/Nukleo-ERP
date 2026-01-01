@@ -133,7 +133,7 @@ export default function SoumissionsDemoPage() {
         return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
       case 'envoyé':
       case 'soumis':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400';
       case 'accepté':
       case 'gagné':
         return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';

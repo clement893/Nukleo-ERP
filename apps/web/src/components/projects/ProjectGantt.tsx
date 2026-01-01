@@ -118,7 +118,7 @@ export default function ProjectGantt({
       case 'completed':
         return 'bg-green-500';
       case 'in_progress':
-        return 'bg-blue-500';
+        return 'bg-primary-500';
       case 'blocked':
         return 'bg-red-500';
       case 'to_transfer':
@@ -259,7 +259,7 @@ export default function ProjectGantt({
     <div className="space-y-6">
       <div className="glass-card rounded-xl p-4 flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <div className="glass-badge p-2 rounded-lg bg-blue-500/10">
+          <div className="glass-badge p-2 rounded-lg bg-primary-500/10">
             <Calendar className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           Vue temporelle (Gantt)
@@ -315,7 +315,7 @@ export default function ProjectGantt({
                     key={index}
                     className={`glass-card text-center p-3 rounded-xl transition-all ${
                       isSameDay(day, new Date())
-                        ? 'bg-blue-500/10 border-2 border-blue-500/30 scale-105'
+                        ? 'bg-primary-500/10 border-2 border-primary-500/30 scale-105'
                         : 'bg-gray-500/5'
                     }`}
                   >
@@ -377,7 +377,7 @@ export default function ProjectGantt({
                     <span>À faire</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <div className="w-4 h-4 bg-primary-500 rounded"></div>
                     <span>En cours</span>
                   </div>
                   <div className="flex items-center gap-2">

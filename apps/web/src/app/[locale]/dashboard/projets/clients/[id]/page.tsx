@@ -47,7 +47,7 @@ export default function ClientDetailPage() {
 
   // Stats calculation
   const stats = client ? [
-    { icon: Briefcase, label: 'Projets', value: projects.length.toString(), color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { icon: Briefcase, label: 'Projets', value: projects.length.toString(), color: 'text-primary-600', bgColor: 'bg-primary-100' },
     { icon: Users, label: 'Contacts', value: contacts.length.toString(), color: 'text-purple-600', bgColor: 'bg-purple-100' },
     { icon: DollarSign, label: 'Projets actifs', value: projects.filter(p => p.status === 'in_progress').length.toString(), color: 'text-green-600', bgColor: 'bg-green-100' },
     { icon: TrendingUp, label: 'Statut', value: client.status === 'ACTIVE' ? 'Actif' : 'Inactif', color: 'text-orange-600', bgColor: 'bg-orange-100' },
@@ -73,7 +73,7 @@ export default function ClientDetailPage() {
 
   const getProjectStatusColor = (status: string) => {
     switch (status) {
-      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'in_progress': return 'bg-primary-100 text-primary-700 border-primary-300';
       case 'completed': return 'bg-green-100 text-green-700 border-green-300';
       case 'planned': return 'bg-orange-100 text-orange-700 border-orange-300';
       case 'on_hold': return 'bg-yellow-100 text-yellow-700 border-yellow-300';

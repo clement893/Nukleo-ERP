@@ -127,7 +127,7 @@ export function GrowthChartWidget({ }: WidgetProps) {
             <div key={index} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full flex flex-col items-end justify-end gap-0.5" style={{ height: '100px' }}>
                 <div
-                  className="w-full bg-blue-600 dark:bg-blue-500 rounded-t transition-all hover:bg-blue-700 dark:hover:bg-blue-400"
+                  className="w-full bg-primary-600 dark:bg-primary-500 rounded-t transition-all hover:bg-primary-700 dark:hover:bg-primary-400"
                   style={{ height: `${height}%`, minHeight: '4px' }}
                   title={`Total: ${total} (Clients: ${item.clients}, Projets: ${item.projects}, Opportunités: ${item.opportunities})`}
                 />

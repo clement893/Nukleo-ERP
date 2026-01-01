@@ -31,7 +31,7 @@ export default function ContactDetailDemoPage() {
 
   const stats = [
     { icon: TrendingUp, label: 'Opportunités', value: '3', color: 'text-green-600', bgColor: 'bg-green-100' },
-    { icon: FileText, label: 'Documents', value: '12', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { icon: FileText, label: 'Documents', value: '12', color: 'text-primary-600', bgColor: 'bg-primary-100' },
     { icon: Clock, label: 'Activités', value: '24', color: 'text-purple-600', bgColor: 'bg-purple-100' },
     { icon: Calendar, label: 'Dernier contact', value: '3 jours', color: 'text-orange-600', bgColor: 'bg-orange-100' },
   ];
@@ -67,7 +67,7 @@ export default function ContactDetailDemoPage() {
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'call': return 'text-blue-600 bg-blue-100';
+      case 'call': return 'text-primary-600 bg-primary-100';
       case 'email': return 'text-green-600 bg-green-100';
       case 'meeting': return 'text-purple-600 bg-purple-100';
       case 'note': return 'text-orange-600 bg-orange-100';
@@ -78,7 +78,7 @@ export default function ContactDetailDemoPage() {
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'Négociation': return 'bg-orange-100 text-orange-700 border-orange-300';
-      case 'Proposition': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'Proposition': return 'bg-primary-100 text-primary-700 border-primary-300';
       case 'Qualifié': return 'bg-green-100 text-green-700 border-green-300';
       default: return 'bg-gray-100 text-gray-700 border-gray-300';
     }

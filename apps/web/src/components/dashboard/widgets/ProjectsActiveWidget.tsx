@@ -20,7 +20,7 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
       case 'ARCHIVED':
         return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
       case 'COMPLETED':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
+        return 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300';
       default:
         return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
     }
@@ -107,7 +107,7 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                   <div
-                    className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-primary-600 dark:bg-primary-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
                   />
                 </div>

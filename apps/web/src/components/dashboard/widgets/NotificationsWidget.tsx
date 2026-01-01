@@ -56,7 +56,7 @@ export function NotificationsWidget({ }: WidgetProps) {
       case 'error':
         return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
       default:
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
+        return 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300';
     }
   };
 
@@ -105,7 +105,7 @@ export function NotificationsWidget({ }: WidgetProps) {
               key={notif.id}
               className={`p-3 rounded-lg border ${
                 !notif.read
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                  ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                   : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-700'
               }`}
             >
@@ -116,7 +116,7 @@ export function NotificationsWidget({ }: WidgetProps) {
                       {notif.notification_type || 'info'}
                     </span>
                     {!notif.read && (
-                      <span className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                      <span className="w-2 h-2 bg-primary-600 dark:bg-primary-400 rounded-full" />
                     )}
                   </div>
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">

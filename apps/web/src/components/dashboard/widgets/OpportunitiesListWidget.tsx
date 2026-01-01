@@ -86,7 +86,7 @@ export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) 
               </div>
               
               <div className="flex items-center justify-between mt-2">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300">
                   {stage}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">

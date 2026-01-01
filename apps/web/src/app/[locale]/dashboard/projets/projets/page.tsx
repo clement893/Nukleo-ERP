@@ -56,7 +56,7 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
   
   // Generate consistent color based on first letter
   const colors = [
-    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500',
+    'bg-primary-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500',
     'bg-red-500', 'bg-pink-500', 'bg-indigo-500', 'bg-yellow-500',
     'bg-teal-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-violet-500'
   ];
@@ -176,7 +176,7 @@ function ProjectsContent() {
 
   // Status config
   const statusConfig: Record<string, { label: string; color: string; bgColor: string; textColor: string }> = {
-    ACTIVE: { label: 'Actif', color: 'blue', bgColor: 'bg-blue-500/10', textColor: 'text-blue-600 dark:text-blue-400' },
+    ACTIVE: { label: 'Actif', color: 'primary', bgColor: 'bg-primary-500/10', textColor: 'text-primary-600 dark:text-primary-400' },
     COMPLETED: { label: 'Terminé', color: 'green', bgColor: 'bg-green-500/10', textColor: 'text-green-600 dark:text-green-400' },
     ARCHIVED: { label: 'Archivé', color: 'gray', bgColor: 'bg-gray-500/10', textColor: 'text-gray-600 dark:text-gray-400' },
   };

@@ -61,7 +61,7 @@ export default function ProjectsListDemo() {
       name: 'Site Web E-commerce',
       client: 'TechCorp Inc.',
       clientLogo: 'TC',
-      clientColor: 'bg-blue-500',
+      clientColor: 'bg-primary-500',
       status: 'active',
       progress: 65,
       budget: 45000,
@@ -319,7 +319,7 @@ export default function ProjectsListDemo() {
 
   // Status config
   const statusConfig = {
-    active: { label: 'Actif', color: 'blue', bgColor: 'bg-blue-500/10', textColor: 'text-blue-600 dark:text-blue-400' },
+    active: { label: 'Actif', color: 'primary', bgColor: 'bg-primary-500/10', textColor: 'text-primary-600 dark:text-primary-400' },
     completed: { label: 'Terminé', color: 'green', bgColor: 'bg-green-500/10', textColor: 'text-green-600 dark:text-green-400' },
     archived: { label: 'Archivé', color: 'gray', bgColor: 'bg-gray-500/10', textColor: 'text-gray-600 dark:text-gray-400' },
     at_risk: { label: 'À risque', color: 'orange', bgColor: 'bg-orange-500/10', textColor: 'text-orange-600 dark:text-orange-400' },
@@ -352,7 +352,7 @@ export default function ProjectsListDemo() {
           </div>
           <Link
             href="/dashboard/projects/new"
-            className="px-6 py-3 rounded-lg flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors border border-blue-500/20"
+            className="px-6 py-3 rounded-lg flex items-center gap-2 bg-primary-500/10 hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors border border-primary-500/20"
           >
             <Plus className="w-5 h-5" />
             <span className="font-medium">Nouveau projet</span>
@@ -374,13 +374,13 @@ export default function ProjectsListDemo() {
         </div>
 
         {/* Actifs */}
-        <div className="glass-card p-4 rounded-xl border border-blue-500/20">
+        <div className="glass-card p-4 rounded-xl border border-primary-500/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 rounded-lg bg-primary-500/10">
+              <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
             </div>
           </div>
-          <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{activeProjects}</p>
+          <p className="text-2xl font-black text-primary-600 dark:text-primary-400">{activeProjects}</p>
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Actifs</p>
         </div>
 
@@ -442,7 +442,7 @@ export default function ProjectsListDemo() {
                 placeholder="Rechercher un projet, client, tag..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
               />
             </div>
 
@@ -450,7 +450,7 @@ export default function ProjectsListDemo() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'all')}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
             >
               <option value="all">Tous les statuts</option>
               <option value="active">Actifs</option>
@@ -464,7 +464,7 @@ export default function ProjectsListDemo() {
             <select
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
             >
               <option value="all">Tous les clients</option>
               {uniqueClients.map(client => (
@@ -476,7 +476,7 @@ export default function ProjectsListDemo() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
             >
               <option value="deadline">Trier par échéance</option>
               <option value="name">Trier par nom</option>
@@ -508,7 +508,7 @@ export default function ProjectsListDemo() {
               onClick={() => setViewMode('cards')}
               className={`p-2 rounded-lg transition-colors border ${
                 viewMode === 'cards'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/20'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
               }`}
             >
@@ -518,7 +518,7 @@ export default function ProjectsListDemo() {
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-lg transition-colors border ${
                 viewMode === 'list'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/20'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
               }`}
             >
@@ -528,7 +528,7 @@ export default function ProjectsListDemo() {
               onClick={() => setViewMode('kanban')}
               className={`p-2 rounded-lg transition-colors border ${
                 viewMode === 'kanban'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/20'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
               }`}
             >
@@ -600,7 +600,7 @@ export default function ProjectsListDemo() {
           {filteredAndSortedProjects.map((project) => (
             <div
               key={project.id}
-              className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-200 group border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30"
+              className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-200 group border border-gray-200/50 dark:border-gray-700/50 hover:border-primary-500/30"
             >
               {/* Header with Logo */}
               <div className="flex items-start gap-3 mb-4">
@@ -609,7 +609,7 @@ export default function ProjectsListDemo() {
                   {project.clientLogo}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
                     {project.name}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{project.client}</p>
@@ -671,8 +671,8 @@ export default function ProjectsListDemo() {
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(project.budget)}</p>
                 </div>
                 <div className="text-center">
-                  <div className="p-2 rounded-lg bg-blue-500/10 mx-auto w-fit mb-1 border border-blue-500/20">
-                    <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 rounded-lg bg-primary-500/10 mx-auto w-fit mb-1 border border-primary-500/20">
+                    <Users className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">Équipe</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{project.team}</p>
@@ -699,7 +699,7 @@ export default function ProjectsListDemo() {
               <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Link
                   href={`/dashboard/projects/${project.id}`}
-                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors border border-gray-200 dark:border-gray-700"
+                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-center hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border border-gray-200 dark:border-gray-700"
                 >
                   Voir détails
                 </Link>
@@ -721,7 +721,7 @@ export default function ProjectsListDemo() {
           {filteredAndSortedProjects.map((project) => (
             <div
               key={project.id}
-              className="glass-card rounded-xl p-4 hover:scale-[1.005] transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30"
+              className="glass-card rounded-xl p-4 hover:scale-[1.005] transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 hover:border-primary-500/30"
             >
               <div className="flex items-center gap-4">
                 {/* Client Logo */}
@@ -755,7 +755,7 @@ export default function ProjectsListDemo() {
                   <div className="flex items-center gap-2 mb-1">
                     <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-blue-500 h-2 rounded-full"
+                        className="bg-primary-500 h-2 rounded-full"
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
@@ -836,7 +836,7 @@ export default function ProjectsListDemo() {
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                         <div 
-                          className="bg-blue-500 h-1.5 rounded-full"
+                          className="bg-primary-500 h-1.5 rounded-full"
                           style={{ width: `${project.progress}%` }}
                         />
                       </div>
@@ -863,7 +863,7 @@ export default function ProjectsListDemo() {
           </p>
           <Link
             href="/dashboard/projects/new"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors border border-blue-500/20"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors border border-primary-500/20"
           >
             <Plus className="w-5 h-5" />
             <span className="font-medium">Nouveau projet</span>

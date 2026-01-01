@@ -233,7 +233,7 @@ function TeamProjectManagementContent() {
   const getPriorityColor = (priority?: 'low' | 'medium' | 'high' | 'urgent') => {
     const colors = {
       low: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
-      medium: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+      medium: 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300',
       high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
       urgent: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
     };

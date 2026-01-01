@@ -120,7 +120,7 @@ type Stage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'closed';
 
 const STAGES: { id: Stage; label: string; color: string; bgColor: string }[] = [
   { id: 'lead', label: 'Leads', color: 'text-gray-700 dark:text-gray-300', bgColor: 'bg-gray-100 dark:bg-gray-800' },
-  { id: 'qualified', label: 'Qualifiés', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-50 dark:bg-blue-900/20' },
+  { id: 'qualified', label: 'Qualifiés', color: 'text-primary-700 dark:text-primary-300', bgColor: 'bg-primary-50 dark:bg-primary-900/20' },
   { id: 'proposal', label: 'Proposition', color: 'text-yellow-700 dark:text-yellow-300', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20' },
   { id: 'negotiation', label: 'Négociation', color: 'text-orange-700 dark:text-orange-300', bgColor: 'bg-orange-50 dark:bg-orange-900/20' },
   { id: 'closed', label: 'Clients', color: 'text-green-700 dark:text-green-300', bgColor: 'bg-green-50 dark:bg-green-900/20' },

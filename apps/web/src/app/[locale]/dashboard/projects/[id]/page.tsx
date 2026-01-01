@@ -396,8 +396,8 @@ function ProjectDetailContent() {
 
             {project.etape && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center" aria-hidden="true">
-                  <Briefcase className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center" aria-hidden="true">
+                  <Briefcase className="w-5 h-5 text-primary-600" />
                 </div>
                 <div>
                   <Text variant="caption" className="text-muted-foreground">Étape</Text>
@@ -570,12 +570,12 @@ function ProjectDetailContent() {
                   {getStatusLabel(project.status)}
                 </p>
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  project.status === 'ACTIVE' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                  project.status === 'ACTIVE' ? 'bg-primary-500/20 text-primary-700 dark:text-primary-300' :
                   project.status === 'COMPLETED' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
                   'bg-gray-500/20 text-gray-700 dark:text-gray-300'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                    project.status === 'ACTIVE' ? 'bg-blue-500' :
+                    project.status === 'ACTIVE' ? 'bg-primary-500' :
                     project.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gray-500'
                   }`} />
                   {project.status === 'ACTIVE' ? 'En cours' : project.status === 'COMPLETED' ? 'Terminé' : 'Archivé'}

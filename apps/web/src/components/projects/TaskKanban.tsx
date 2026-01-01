@@ -39,7 +39,7 @@ const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string; bgColo
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
   low: 'bg-gray-500',
-  medium: 'bg-blue-500',
+  medium: 'bg-primary-500',
   high: 'bg-orange-500',
   urgent: 'bg-red-500',
 };

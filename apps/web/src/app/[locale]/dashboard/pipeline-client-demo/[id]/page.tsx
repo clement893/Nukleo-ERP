@@ -124,7 +124,7 @@ export default function PipelineClientDetailDemoPage() {
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'Lead': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
-      case 'Prospect qualifié': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'Prospect qualifié': return 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400';
       case 'Négociation': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
       case 'Client actif': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
       default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
@@ -133,7 +133,7 @@ export default function PipelineClientDetailDemoPage() {
 
   const getOpportunityStageColor = (stage: string) => {
     switch (stage) {
-      case 'Découverte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'Découverte': return 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400';
       case 'Qualification': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
       case 'Proposition': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'Négociation': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';

@@ -255,8 +255,8 @@ function ProjectDetailContent() {
 
             {project.etape && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-primary-600" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Étape</p>
@@ -561,9 +561,9 @@ function ProjectDetailContent() {
                 </p>
               </div>
 
-              <div className="p-6 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                <p className="text-sm text-blue-700 mb-2">Taux horaire</p>
-                <p className="text-3xl font-bold text-blue-900">
+              <div className="p-6 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200">
+                <p className="text-sm text-primary-700 mb-2">Taux horaire</p>
+                <p className="text-3xl font-bold text-primary-900">
                   {(project as Project & { taux_horaire?: number | null }).taux_horaire ? `${formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h` : '-'}
                 </p>
               </div>
@@ -610,8 +610,8 @@ function ProjectDetailContent() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-primary-600" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-foreground">Google Drive</p>

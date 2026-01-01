@@ -353,11 +353,11 @@ function EquipesContent() {
                     </div>
                     <Text variant="caption" className="text-muted-foreground">Total</Text>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="text-center p-3 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+                    <div className="text-2xl font-bold text-primary-600 dark:text-primary-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {team.inProgressTasks}
                     </div>
-                    <Text variant="caption" className="text-blue-600 dark:text-blue-400">En cours</Text>
+                    <Text variant="caption" className="text-primary-600 dark:text-primary-400">En cours</Text>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>

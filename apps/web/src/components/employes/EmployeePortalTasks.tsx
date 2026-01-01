@@ -1320,7 +1320,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
       render: (value) => {
         const priority = value as ProjectTask['priority'];
         const priorityColors = {
-          low: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
+          low: 'text-primary-600 bg-primary-100 dark:bg-primary-900/30',
           medium: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30',
           high: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30',
           urgent: 'text-red-600 bg-red-100 dark:bg-red-900/30',
