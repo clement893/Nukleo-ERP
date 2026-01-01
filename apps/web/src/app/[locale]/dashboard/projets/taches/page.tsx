@@ -1,789 +1,484 @@
 'use client';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { PageContainer } from '@/components/layout';
+import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  useInfiniteProjectTasks,
-} from '@/lib/query/project-tasks';
-import type { TaskStatus, TaskPriority, ProjectTask } from '@/lib/api/project-tasks';
-import { projectTasksAPI } from '@/lib/api/project-tasks';
-import { handleApiError } from '@/lib/errors/api';
-import Alert from '@/components/ui/Alert';
-import EmptyState from '@/components/ui/EmptyState';
-import Skeleton from '@/components/ui/Skeleton';
-import Drawer from '@/components/ui/Drawer';
-import Tabs from '@/components/ui/Tabs';
-import Loading from '@/components/ui/Loading';
-import { useToast } from '@/components/ui';
-import ProjectComments from '@/components/projects/ProjectComments';
-import ProjectAttachments from '@/components/projects/ProjectAttachments';
-import { 
+  CheckSquare, 
+  CheckCircle2,
+  Plus,
   Search,
   List as ListIcon,
-  CheckSquare,
-  Clock,
+  LayoutGrid,
   User,
   Calendar,
-  FolderKanban,
-  Users,
   Circle,
   Play,
   Ban,
-  ArrowRight,
-  CheckCircle2,
-  Info,
-  MessageSquare,
-  Paperclip
+  Trash2,
+  Eye,
+  Loader2
 } from 'lucide-react';
+import { Badge, Button, Card, Input, useToast, Loading } from '@/components/ui';
+import { useInfiniteProjectTasks, useDeleteProjectTask } from '@/lib/query/project-tasks';
+import type { ProjectTask, TaskStatus, TaskPriority } from '@/lib/api/project-tasks';
 
 type ViewMode = 'list' | 'kanban';
-type FilterStatus = 'all' | TaskStatus;
-type FilterPriority = 'all' | TaskPriority;
-type SortBy = 'created_at' | 'due_date' | 'priority' | 'title' | 'status';
-type SortDirection = 'asc' | 'desc';
+type GroupBy = 'none' | 'project' | 'assignee' | 'team';
+
+const statusConfig: Record<TaskStatus, { label: string; icon: any; color: string }> = {
+  todo: { label: 'À faire', icon: Circle, color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30' },
+  in_progress: { label: 'En cours', icon: Play, color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30' },
+  blocked: { label: 'Bloqué', icon: Ban, color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30' },
+  to_transfer: { label: 'À transférer', icon: CheckCircle2, color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' },
+  completed: { label: 'Terminé', icon: CheckCircle2, color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30' }
+};
+
+const priorityConfig: Record<TaskPriority, { label: string; color: string }> = {
+  low: { label: 'Basse', color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30' },
+  medium: { label: 'Moyenne', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30' },
+  high: { label: 'Haute', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' },
+  urgent: { label: 'Urgente', color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30' }
+};
 
 export default function TachesPage() {
+  const router = useRouter();
   const { showToast } = useToast();
-  
-  // State
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
+  const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
-  const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all');
-  const [teamFilter, setTeamFilter] = useState<string>('all');
-  const [projectFilter, setProjectFilter] = useState<string>('all');
-  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<SortBy>('created_at');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  
-  // Drawer state
-  const [showTaskDrawer, setShowTaskDrawer] = useState(false);
-  const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // API Hooks
-  const { 
-    data, 
-    isLoading, 
-    isError, 
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage
-  } = useInfiniteProjectTasks(50, {
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-  });
+  // Fetch tasks
+  const { data, isLoading, error } = useInfiniteProjectTasks(100);
+  const tasks = useMemo(() => data?.pages.flat() || [], [data]);
 
-  // Flatten tasks from pages
-  const tasks = useMemo(() => {
-    return data?.pages.flatMap(page => page) || [];
-  }, [data]);
+  // Delete mutation
+  const deleteTaskMutation = useDeleteProjectTask();
 
-  // Get unique values for filters
-  const uniqueTeams = useMemo(() => {
-    const teams = new Set<number>();
-    tasks.forEach(task => {
-      if (task.team_id) teams.add(task.team_id);
-    });
-    return Array.from(teams);
-  }, [tasks]);
-
-  const uniqueProjects = useMemo(() => {
-    const projects = new Set<number>();
-    tasks.forEach(task => {
-      if (task.project_id) projects.add(task.project_id);
-    });
-    return Array.from(projects);
-  }, [tasks]);
-
-  const uniqueAssignees = useMemo(() => {
-    const assignees = new Set<number>();
-    tasks.forEach(task => {
-      if (task.assignee_id) assignees.add(task.assignee_id);
-    });
-    return Array.from(assignees);
-  }, [tasks]);
-
-  // Filter and search tasks
+  // Filter tasks
   const filteredTasks = useMemo(() => {
-    let filtered = tasks;
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(task =>
-        task.title?.toLowerCase().includes(query) ||
-        task.description?.toLowerCase().includes(query) ||
-        task.assignee_name?.toLowerCase().includes(query)
-      );
-    }
-
-    // Priority filter
-    if (priorityFilter !== 'all') {
-      filtered = filtered.filter(task => task.priority === priorityFilter);
-    }
-
-    // Team filter
-    if (teamFilter !== 'all') {
-      filtered = filtered.filter(task => task.team_id.toString() === teamFilter);
-    }
-
-    // Project filter
-    if (projectFilter !== 'all') {
-      filtered = filtered.filter(task => task.project_id?.toString() === projectFilter);
-    }
-
-    // Assignee filter
-    if (assigneeFilter !== 'all') {
-      filtered = filtered.filter(task => task.assignee_id?.toString() === assigneeFilter);
-    }
-
-    // Apply sorting
-    return filtered.sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case 'title':
-          comparison = (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
-          break;
-        case 'priority':
-          const priorityOrder: Record<TaskPriority, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
-          comparison = (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
-          break;
-        case 'status':
-          const statusOrder: Record<TaskStatus, number> = { 
-            todo: 1, in_progress: 2, blocked: 3, to_transfer: 4, completed: 5 
-          };
-          comparison = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
-          break;
-        case 'due_date':
-          const aDate = a.due_date ? new Date(a.due_date).getTime() : 0;
-          const bDate = b.due_date ? new Date(b.due_date).getTime() : 0;
-          comparison = aDate - bDate;
-          break;
-        case 'created_at':
-        default:
-          const aCreated = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const bCreated = b.created_at ? new Date(b.created_at).getTime() : 0;
-          comparison = aCreated - bCreated;
-          break;
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison;
+    return tasks.filter(task => {
+      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+      const matchesSearch = !searchQuery || 
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (task.assignee_name && task.assignee_name.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesStatus && matchesSearch;
     });
-  }, [tasks, searchQuery, statusFilter, priorityFilter, teamFilter, projectFilter, assigneeFilter, sortBy, sortDirection]);
+  }, [tasks, statusFilter, searchQuery]);
 
-  // Count by status
-  const statusCounts = useMemo(() => {
+  // Calculate stats
+  const stats = useMemo(() => {
     return {
-      all: tasks.length,
+      total: tasks.length,
       todo: tasks.filter(t => t.status === 'todo').length,
-      in_progress: tasks.filter(t => t.status === 'in_progress').length,
+      inProgress: tasks.filter(t => t.status === 'in_progress').length,
       blocked: tasks.filter(t => t.status === 'blocked').length,
-      to_transfer: tasks.filter(t => t.status === 'to_transfer').length,
       completed: tasks.filter(t => t.status === 'completed').length,
     };
   }, [tasks]);
 
-  // Get status colors
-  const getStatusColors = (status: TaskStatus) => {
-    const colors: Record<TaskStatus, { bg: string; text: string; border: string; icon: React.ReactNode }> = {
-      todo: { 
-        bg: 'bg-gray-500/10', 
-        text: 'text-gray-600 dark:text-gray-400', 
-        border: 'border-gray-500/30',
-        icon: <Circle className="w-3 h-3" />
-      },
-      in_progress: { 
-        bg: 'bg-primary-500/10', 
-        text: 'text-primary-600 dark:text-primary-400', 
-        border: 'border-primary-500/30',
-        icon: <Play className="w-3 h-3" />
-      },
-      blocked: { 
-        bg: 'bg-red-500/10', 
-        text: 'text-red-600 dark:text-red-400', 
-        border: 'border-red-500/30',
-        icon: <Ban className="w-3 h-3" />
-      },
-      to_transfer: { 
-        bg: 'bg-yellow-500/10', 
-        text: 'text-yellow-600 dark:text-yellow-400', 
-        border: 'border-yellow-500/30',
-        icon: <ArrowRight className="w-3 h-3" />
-      },
-      completed: { 
-        bg: 'bg-green-500/10', 
-        text: 'text-green-600 dark:text-green-400', 
-        border: 'border-green-500/30',
-        icon: <CheckCircle2 className="w-3 h-3" />
-      },
-    };
-    return colors[status];
-  };
+  // Group tasks
+  const groupedTasks = useMemo(() => {
+    if (groupBy === 'none') {
+      return { 'Toutes les tâches': filteredTasks };
+    }
 
-  // Get priority colors
-  const getPriorityColors = (priority: TaskPriority) => {
-    const colors: Record<TaskPriority, { bg: string; text: string; border: string }> = {
-      low: { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' },
-      medium: { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/30' },
-      high: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30' },
-      urgent: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/30' },
-    };
-    return colors[priority];
-  };
+    const groups: Record<string, ProjectTask[]> = {};
+    
+    filteredTasks.forEach(task => {
+      let groupKey = '';
+      
+      if (groupBy === 'project') {
+        groupKey = task.project_id ? `Projet ${task.project_id}` : 'Sans projet';
+      } else if (groupBy === 'assignee') {
+        groupKey = task.assignee_name || 'Non assigné';
+      } else if (groupBy === 'team') {
+        groupKey = `Équipe ${task.team_id}`;
+      }
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(task);
+    });
+    
+    return groups;
+  }, [filteredTasks, groupBy]);
 
-  // Format date
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
-
-  // Handle opening task details drawer
-  const handleOpenTaskDetails = async (task: ProjectTask) => {
-    setLoadingDetails(true);
+  const handleDelete = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return;
+    
     try {
-      const details = await projectTasksAPI.get(task.id);
-      setTaskDetails(details);
-      setShowTaskDrawer(true);
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({ message: appError.message || 'Erreur lors du chargement des détails', type: 'error' });
-    } finally {
-      setLoadingDetails(false);
+      await deleteTaskMutation.mutateAsync(id);
+      showToast({ message: 'Tâche supprimée avec succès', type: 'success' });
+    } catch (error) {
+      showToast({ message: 'Erreur lors de la suppression', type: 'error' });
     }
   };
 
-  // Status and priority labels
-  const STATUS_LABELS: Record<TaskStatus, string> = {
-    todo: 'À faire',
-    in_progress: 'En cours',
-    blocked: 'Bloquée',
-    to_transfer: 'À transférer',
-    completed: 'Terminée',
+  const handleView = (id: number) => {
+    router.push(`/dashboard/projets/taches/${id}`);
   };
 
-  const PRIORITY_LABELS: Record<TaskPriority, string> = {
-    low: 'Basse',
-    medium: 'Moyenne',
-    high: 'Haute',
-    urgent: 'Urgente',
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Pas de date';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   };
-
-  const PRIORITY_COLORS: Record<TaskPriority, string> = {
-    low: 'bg-gray-500',
-    medium: 'bg-primary-500',
-    high: 'bg-orange-500',
-    urgent: 'bg-red-500',
-  };
-
-  // Loading skeleton
-  const TaskCardSkeleton = () => (
-    <div className="glass-card p-4 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 space-y-2">
-          <Skeleton variant="text" width="70%" height={20} />
-          <Skeleton variant="text" width="50%" height={16} />
-        </div>
-        <Skeleton variant="circular" width={24} height={24} />
-      </div>
-      <div className="flex items-center gap-2">
-        <Skeleton variant="rectangular" width={80} height={24} />
-        <Skeleton variant="rectangular" width={60} height={24} />
-      </div>
-    </div>
-  );
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        {/* Header skeleton */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="space-y-2">
-              <Skeleton variant="text" width={200} height={36} />
-              <Skeleton variant="text" width={300} height={20} />
-            </div>
-            <Skeleton variant="rectangular" width={160} height={44} />
-          </div>
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <Loading />
         </div>
-
-        {/* Filters skeleton */}
-        <div className="glass-card p-4 rounded-xl mb-6 space-y-4">
-          <Skeleton variant="rectangular" width="100%" height={44} />
-          <div className="flex gap-2">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} variant="rectangular" width={100} height={36} />
-            ))}
-          </div>
-        </div>
-
-        {/* Tasks skeleton */}
-        <div className="space-y-3">
-          {[...Array(8)].map((_, i) => (
-            <TaskCardSkeleton key={i} />
-          ))}
-        </div>
-      </div>
+      </PageContainer>
     );
   }
 
-  if (isError) {
+  if (error) {
     return (
-      <div className="space-y-6">
-        <Alert variant="error">
-          {error?.message || 'Erreur lors du chargement des tâches'}
-        </Alert>
-      </div>
+      <PageContainer>
+        <div className="text-center py-12">
+          <p className="text-red-600">Erreur lors du chargement des tâches</p>
+        </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white">Tâches</h1>
-            <p className="text-muted-accessible mt-1">Consultez et gérez toutes les tâches de l'ERP</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setViewMode(viewMode === 'list' ? 'kanban' : 'list')}
-              className="glass-button px-4 py-2 rounded-xl flex items-center gap-2 text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-              aria-label={viewMode === 'list' ? 'Passer en vue Kanban' : 'Passer en vue Liste'}
-            >
-              {viewMode === 'list' ? (
-                <>
-                  <FolderKanban className="w-4 h-4" aria-hidden="true" />
-                  Kanban
-                </>
-              ) : (
-                <>
-                  <ListIcon className="w-4 h-4" aria-hidden="true" />
-                  Liste
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="glass-card p-4 rounded-xl mb-6 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
-          <input
-            type="text"
-            placeholder="Rechercher par titre, description, assigné..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="glass-input w-full pl-12 pr-4 py-3 rounded-lg"
-            aria-label="Rechercher des tâches"
-          />
-        </div>
-
-        {/* Status Quick Filters */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-              statusFilter === 'all'
-                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
-                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <CheckSquare className="w-4 h-4" aria-hidden="true" />
-            Toutes {statusCounts.all}
-          </button>
-          <button
-            onClick={() => setStatusFilter('todo')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-              statusFilter === 'todo'
-                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
-                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Circle className="w-4 h-4" aria-hidden="true" />
-            À faire {statusCounts.todo}
-          </button>
-          <button
-            onClick={() => setStatusFilter('in_progress')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-              statusFilter === 'in_progress'
-                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
-                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Play className="w-4 h-4" aria-hidden="true" />
-            En cours {statusCounts.in_progress}
-          </button>
-          <button
-            onClick={() => setStatusFilter('blocked')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-              statusFilter === 'blocked'
-                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
-                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Ban className="w-4 h-4" aria-hidden="true" />
-            Bloquées {statusCounts.blocked}
-          </button>
-          <button
-            onClick={() => setStatusFilter('completed')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-              statusFilter === 'completed'
-                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
-                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-            Terminées {statusCounts.completed}
-          </button>
-        </div>
-
-        {/* Advanced Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value as FilterPriority)}
-            className="glass-input px-4 py-2 rounded-lg"
-            aria-label="Filtrer par priorité"
-          >
-            <option value="all">Toutes les priorités</option>
-            <option value="low">Basse</option>
-            <option value="medium">Moyenne</option>
-            <option value="high">Haute</option>
-            <option value="urgent">Urgente</option>
-          </select>
-
-          <select
-            value={teamFilter}
-            onChange={(e) => setTeamFilter(e.target.value)}
-            className="glass-input px-4 py-2 rounded-lg"
-            aria-label="Filtrer par équipe"
-          >
-            <option value="all">Toutes les équipes</option>
-            {uniqueTeams.map(teamId => (
-              <option key={teamId} value={teamId.toString()}>Équipe {teamId}</option>
-            ))}
-          </select>
-
-          <select
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
-            className="glass-input px-4 py-2 rounded-lg"
-            aria-label="Filtrer par projet"
-          >
-            <option value="all">Tous les projets</option>
-            {uniqueProjects.map(projectId => (
-              <option key={projectId} value={projectId.toString()}>Projet {projectId}</option>
-            ))}
-          </select>
-
-          <select
-            value={assigneeFilter}
-            onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="glass-input px-4 py-2 rounded-lg"
-            aria-label="Filtrer par assigné"
-          >
-            <option value="all">Tous les assignés</option>
-            {uniqueAssignees.map(assigneeId => {
-              const task = tasks.find(t => t.assignee_id === assigneeId);
-              return (
-                <option key={assigneeId} value={assigneeId.toString()}>
-                  {task?.assignee_name || `Assigné ${assigneeId}`}
-                </option>
-              );
-            })}
-          </select>
-
-          {/* Sort */}
-          <div className="flex gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="glass-input flex-1 px-4 py-2 rounded-lg"
-              aria-label="Trier les tâches"
-            >
-              <option value="created_at">Date de création</option>
-              <option value="due_date">Date d'échéance</option>
-              <option value="priority">Priorité</option>
-              <option value="status">Statut</option>
-              <option value="title">Titre</option>
-            </select>
-            <button
-              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-              className="glass-input px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label={sortDirection === 'asc' ? 'Trier en ordre croissant' : 'Trier en ordre décroissant'}
-              title={sortDirection === 'asc' ? 'Croissant' : 'Décroissant'}
-            >
-              {sortDirection === 'asc' ? '↑' : '↓'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Results Count */}
-      <div className="mb-4 text-muted-accessible">
-        {filteredTasks.length} tâche{filteredTasks.length > 1 ? 's' : ''} trouvée{filteredTasks.length > 1 ? 's' : ''}
-      </div>
-
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="space-y-3">
-          {filteredTasks.map((task) => {
-            const statusColors = getStatusColors(task.status);
-            const priorityColors = getPriorityColors(task.priority);
-
-            return (
-              <div
-                key={task.id}
-                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
-                onClick={(e) => {
-                  // Ne pas ouvrir si on clique sur les boutons d'action
-                  if ((e.target as HTMLElement).closest('button')) {
-                    return;
-                  }
-                  handleOpenTaskDetails(task);
-                }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  {/* Main Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate">
-                        {task.title}
-                      </h3>
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium border flex items-center gap-1 ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
-                        {statusColors.icon}
-                        {task.status === 'todo' ? 'À faire' : 
-                         task.status === 'in_progress' ? 'En cours' :
-                         task.status === 'blocked' ? 'Bloquée' :
-                         task.status === 'to_transfer' ? 'À transférer' :
-                         'Terminée'}
-                      </span>
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium border ${priorityColors.bg} ${priorityColors.text} ${priorityColors.border}`}>
-                        {task.priority === 'low' ? 'Basse' :
-                         task.priority === 'medium' ? 'Moyenne' :
-                         task.priority === 'high' ? 'Haute' :
-                         'Urgente'}
-                      </span>
-                    </div>
-                    
-                    {task.description && (
-                      <p className="text-sm text-muted-accessible mb-3 line-clamp-2">
-                        {task.description}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-accessible">
-                      {task.assignee_name && (
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" aria-hidden="true" />
-                          <span>{task.assignee_name}</span>
-                        </div>
-                      )}
-                      {task.due_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" aria-hidden="true" />
-                          <span>{formatDate(task.due_date)}</span>
-                        </div>
-                      )}
-                      {task.estimated_hours && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" aria-hidden="true" />
-                          <span>{task.estimated_hours}h</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <FolderKanban className="w-4 h-4" aria-hidden="true" />
-                        <span>Équipe {task.team_id}</span>
-                      </div>
-                      {task.project_id && (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" aria-hidden="true" />
-                          <span>Projet {task.project_id}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+    <PageContainer>
+      <MotionDiv variant="slideUp" duration="medium">
+        {/* Hero Header with Aurora Borealis Gradient */}
+        <div className="relative mb-6 overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
+          
+          <div className="relative px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                  <CheckSquare className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    Tâches
+                  </h1>
+                  <p className="text-white/80 text-sm">Gérez vos tâches et suivez leur progression</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {filteredTasks.length === 0 && (
-        <EmptyState
-          icon={CheckSquare}
-          title="Aucune tâche trouvée"
-          description="Essayez de modifier vos filtres pour voir plus de tâches"
-          variant="default"
-        />
-      )}
-
-      {/* Load More */}
-      {hasNextPage && (
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="glass-button px-6 py-3 rounded-xl text-primary-600 hover:bg-primary-500/10 transition-all"
-            aria-label="Charger plus de tâches"
-          >
-            {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}
-          </button>
-        </div>
-      )}
-
-      {/* Task Details Drawer */}
-      <Drawer
-        isOpen={showTaskDrawer}
-        onClose={() => {
-          setShowTaskDrawer(false);
-          setTaskDetails(null);
-        }}
-        title={taskDetails?.title || ''}
-        position="right"
-        size="xl"
-        closeOnOverlayClick={true}
-        closeOnEscape={true}
-      >
-        {loadingDetails ? (
-          <div className="py-8 text-center">
-            <Loading />
+              <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle tâche
+              </Button>
+            </div>
           </div>
-        ) : taskDetails ? (
-          <div className="h-full">
-            <Tabs
-              tabs={[
-                {
-                  id: 'info',
-                  label: 'Informations',
-                  icon: <Info className="w-4 h-4" />,
-                  content: (
-                    <div className="space-y-6">
-                      {taskDetails.description && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Description
-                          </h4>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {taskDetails.description}
-                          </p>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Statut
-                          </h4>
-                          <span className="text-sm">{STATUS_LABELS[taskDetails.status]}</span>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Priorité
-                          </h4>
-                          <span className={`px-2 py-1 text-xs rounded-full text-white ${PRIORITY_COLORS[taskDetails.priority]}`}>
-                            {PRIORITY_LABELS[taskDetails.priority]}
-                          </span>
-                        </div>
-                        {taskDetails.due_date && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Échéance
-                            </h4>
-                            <span className="text-sm">
-                              {new Date(taskDetails.due_date).toLocaleDateString('fr-FR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                        )}
-                        {taskDetails.estimated_hours && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Heures estimées
-                            </h4>
-                            <span className="text-sm">{taskDetails.estimated_hours}h</span>
-                          </div>
-                        )}
-                        {taskDetails.assignee_name && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Assigné à
-                            </h4>
-                            <span className="text-sm">{taskDetails.assignee_name}</span>
-                          </div>
-                        )}
-                        {taskDetails.team_id && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Équipe
-                            </h4>
-                            <span className="text-sm">Équipe {taskDetails.team_id}</span>
-                          </div>
-                        )}
-                        {taskDetails.project_id && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Projet
-                            </h4>
-                            <span className="text-sm">Projet {taskDetails.project_id}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="pt-4 border-t border-border">
-                        <div className="text-xs text-muted-foreground">
-                          <p>Créée le {new Date(taskDetails.created_at).toLocaleDateString('fr-FR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}</p>
-                          {taskDetails.updated_at !== taskDetails.created_at && (
-                            <p className="mt-1">Modifiée le {new Date(taskDetails.updated_at).toLocaleDateString('fr-FR', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  id: 'comments',
-                  label: 'Commentaires',
-                  icon: <MessageSquare className="w-4 h-4" />,
-                  content: <ProjectComments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
-                },
-                {
-                  id: 'documents',
-                  label: 'Documents',
-                  icon: <Paperclip className="w-4 h-4" />,
-                  content: <ProjectAttachments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
-                },
-              ]}
-              defaultTab="info"
-            />
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gray-500/10 border border-gray-500/30">
+                <CheckSquare className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.total}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Total</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gray-500/10 border border-gray-500/30">
+                <Circle className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.todo}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">À faire</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <Play className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.inProgress}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">En cours</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
+                <Ban className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.blocked}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Bloqué</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.completed}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Terminé</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Search */}
+            <div className="relative flex-1 w-full md:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Rechercher une tâche..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 items-center">
+              {/* Status Filter */}
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'all' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('all')}
+                >
+                  Tous
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'todo' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('todo')}
+                >
+                  À faire
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'in_progress' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('in_progress')}
+                >
+                  En cours
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'blocked' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('blocked')}
+                >
+                  Bloqué
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'completed' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('completed')}
+                >
+                  Terminé
+                </Button>
+              </div>
+
+              {/* Group By */}
+              <select
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="none">Sans groupement</option>
+                <option value="project">Par projet</option>
+                <option value="assignee">Par employé</option>
+                <option value="team">Par équipe</option>
+              </select>
+
+              {/* View Mode */}
+              <div className="flex gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
+                <Button
+                  size="sm"
+                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                  onClick={() => setViewMode('list')}
+                >
+                  <ListIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === 'kanban' ? 'primary' : 'ghost'}
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        ) : null}
-      </Drawer>
-    </div>
+        </Card>
+
+        {/* Tasks */}
+        {filteredTasks.length === 0 ? (
+          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+            <CheckSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Aucune tâche trouvée
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              {searchQuery ? 'Essayez de modifier vos critères de recherche' : 'Créez votre première tâche pour commencer'}
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
+              <div key={groupName}>
+                {groupBy !== 'none' && (
+                  <div className="flex items-center gap-3 mb-3">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {groupName}
+                    </h2>
+                    <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+                      {groupTasks.length}
+                    </Badge>
+                  </div>
+                )}
+
+                {viewMode === 'list' ? (
+                  <div className="space-y-2">
+                    {groupTasks.map((task) => {
+                      const StatusIcon = statusConfig[task.status].icon;
+                      return (
+                        <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-1.5 rounded-md ${statusConfig[task.status].color}`}>
+                              <StatusIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {task.title}
+                              </h3>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3.5 h-3.5" />
+                                  {task.assignee_name || 'Non assigné'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  {formatDate(task.due_date)}
+                                </span>
+                                <Badge className={`${priorityConfig[task.priority].color} text-xs px-1.5 py-0.5`}>
+                                  {priorityConfig[task.priority].label}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button size="sm" variant="ghost" onClick={() => handleView(task.id)}>
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleDelete(task.id)}
+                                disabled={deleteTaskMutation.isPending}
+                              >
+                                {deleteTaskMutation.isPending ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {groupTasks.map((task) => {
+                      const StatusIcon = statusConfig[task.status].icon;
+                      return (
+                        <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <Badge className={`${statusConfig[task.status].color} text-xs px-1.5 py-0.5`}>
+                              <StatusIcon className="w-3 h-3 mr-1" />
+                              {statusConfig[task.status].label}
+                            </Badge>
+                            <Badge className={`${priorityConfig[task.priority].color} text-xs px-1.5 py-0.5`}>
+                              {priorityConfig[task.priority].label}
+                            </Badge>
+                          </div>
+                          <h3 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 mb-2">
+                            {task.title}
+                          </h3>
+                          <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400 mb-2">
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              <span className="truncate">{task.assignee_name || 'Non assigné'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>{formatDate(task.due_date)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <Button size="sm" variant="ghost" onClick={() => handleView(task.id)} className="flex-1 text-xs px-2 py-1">
+                              <Eye className="w-3 h-3 mr-1" />
+                              Voir
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => handleDelete(task.id)}
+                              disabled={deleteTaskMutation.isPending}
+                              className="text-xs px-2 py-1"
+                            >
+                              {deleteTaskMutation.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3 text-red-600" />
+                              )}
+                            </Button>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </MotionDiv>
+    </PageContainer>
   );
 }
