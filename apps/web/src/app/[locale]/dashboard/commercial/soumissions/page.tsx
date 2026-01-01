@@ -1,35 +1,46 @@
 'use client';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// Variables marked as unused are actually used in DataTable callbacks
-// TypeScript doesn't detect them due to type assertions
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { NukleoPageHeader } from '@/components/nukleo';
-import { Button, Alert, Loading, Badge, Card } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
+import { PageContainer } from '@/components/layout';
+import MotionDiv from '@/components/motion/MotionDiv';
+import { 
+  Plus, 
+  FileText, 
+  FileCheck, 
+  Eye, 
+  Trash2, 
+  DollarSign, 
+  TrendingUp, 
+  Clock, 
+  Target,
+  Calendar,
+  Building2,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Grid,
+  List
+} from 'lucide-react';
+import { Badge, Button, Card, Alert, Loading } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import { quotesAPI, type Quote, type QuoteCreate, type QuoteUpdate } from '@/lib/api/quotes';
 import { submissionsAPI, type Submission, type SubmissionCreate } from '@/lib/api/submissions';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Plus, FileText, FileCheck, Eye, Trash2, DollarSign, TrendingUp, Clock } from 'lucide-react';
-import type { DropdownItem } from '@/components/ui/Dropdown';
-import MotionDiv from '@/components/motion/MotionDiv';
 import QuoteForm from '@/components/commercial/QuoteForm';
 import SubmissionWizard from '@/components/commercial/SubmissionWizard';
 
 type TabType = 'quotes' | 'submissions';
 
-function SoumissionsContent() {
-  const router = useRouter(); // Used in onRowClick and actions callbacks
+export default function SoumissionsPage() {
+  const router = useRouter();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('quotes');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
@@ -138,7 +149,6 @@ function SoumissionsContent() {
     try {
       setLoading(true);
       setError(null);
-      // Ensure status is draft
       const draftData = { ...submissionData, status: 'draft' };
       const createdSubmission = await submissionsAPI.create(draftData);
       await loadSubmissions();
@@ -160,7 +170,7 @@ function SoumissionsContent() {
     }
   };
 
-  // Handle delete quote - used in DataTable actions callback (line 399)
+  // Handle delete quote
   const handleDeleteQuote = async (quoteId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce devis ?')) {
       return;
@@ -187,7 +197,7 @@ function SoumissionsContent() {
     }
   };
 
-  // Handle delete submission - used in DataTable actions callback (line 430)
+  // Handle delete submission
   const handleDeleteSubmission = async (submissionId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette soumission ?')) {
       return;
@@ -214,360 +224,445 @@ function SoumissionsContent() {
     }
   };
 
-  // Quote columns - used in DataTable
-  // @ts-ignore - Used in DataTable component
-  const quoteColumns: Column<Quote>[] = [
-    {
-      key: 'quote_number',
-      label: 'Numéro',
-      sortable: true,
-      render: (value) => <span className="font-medium">{String(value)}</span>,
-    },
-    {
-      key: 'title',
-      label: 'Titre',
-      sortable: true,
-      render: (value) => (
-        <span className="truncate block" title={value ? String(value) : undefined}>{value ? String(value) : '-'}</span>
-      ),
-    },
-    {
-      key: 'company_name',
-      label: 'Client',
-      sortable: true,
-      render: (value) => <span className="text-muted-foreground">{value ? String(value) : '-'}</span>,
-    },
-    {
-      key: 'amount',
-      label: 'Montant',
-      sortable: true,
-      render: (_value, quote) => (
-        <span>
-          {quote.amount ? `${quote.amount.toLocaleString('fr-FR')} ${quote.currency}` : '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'Statut',
-      sortable: true,
-      render: (value) => {
-        const statusColors: Record<string, string> = {
-          draft: 'bg-gray-500',
-          sent: 'bg-blue-500',
-          accepted: 'bg-green-500',
-          rejected: 'bg-red-500',
-          expired: 'bg-orange-500',
-        };
-        return (
-          <Badge variant="default" className={statusColors[String(value)] || 'bg-gray-500'}>
-            {String(value)}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: 'created_at',
-      label: 'Créé le',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">
-          {new Date(String(value)).toLocaleDateString('fr-FR')}
-        </span>
-      ),
-    },
-  ];
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'draft':
+      case 'brouillon':
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+      case 'sent':
+      case 'envoyé':
+      case 'submitted':
+      case 'soumis':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'accepted':
+      case 'accepté':
+      case 'won':
+      case 'gagné':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+      case 'rejected':
+      case 'refusé':
+      case 'lost':
+      case 'perdu':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+    }
+  };
 
-  // Submission columns - used in DataTable (line 409)
-  const submissionColumns: Column<Submission>[] = [
-    {
-      key: 'submission_number',
-      label: 'Numéro',
-      sortable: true,
-      render: (value) => <span className="font-medium">{String(value)}</span>,
-    },
-    {
-      key: 'title',
-      label: 'Titre',
-      sortable: true,
-      render: (value) => (
-        <span className="truncate block" title={value ? String(value) : undefined}>{value ? String(value) : '-'}</span>
-      ),
-    },
-    {
-      key: 'company_name',
-      label: 'Client',
-      sortable: true,
-      render: (value) => <span className="text-muted-foreground">{value ? String(value) : '-'}</span>,
-    },
-    {
-      key: 'type',
-      label: 'Type',
-      sortable: true,
-      render: (value) => <span className="text-muted-foreground">{value ? String(value) : '-'}</span>,
-    },
-    {
-      key: 'status',
-      label: 'Statut',
-      sortable: true,
-      render: (value) => {
-        const statusColors: Record<string, string> = {
-          draft: 'bg-gray-500',
-          submitted: 'bg-blue-500',
-          under_review: 'bg-yellow-500',
-          accepted: 'bg-green-500',
-          rejected: 'bg-red-500',
-        };
-        return (
-          <Badge variant="default" className={statusColors[String(value)] || 'bg-gray-500'}>
-            {String(value)}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: 'deadline',
-      label: 'Échéance',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">
-          {value ? new Date(String(value)).toLocaleDateString('fr-FR') : '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'created_at',
-      label: 'Créé le',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">
-          {new Date(String(value)).toLocaleDateString('fr-FR')}
-        </span>
-      ),
-    },
-  ];
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+      case 'accepté':
+      case 'won':
+      case 'gagné':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'rejected':
+      case 'refusé':
+      case 'lost':
+      case 'perdu':
+        return <XCircle className="w-4 h-4" />;
+      case 'sent':
+      case 'envoyé':
+      case 'submitted':
+      case 'soumis':
+        return <FileCheck className="w-4 h-4" />;
+      default:
+        return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('fr-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatDate = (date: string | null) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   // Calculate stats
-  const totalQuotes = quotes.length;
-  const totalSubmissions = submissions.length;
-  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
-  const wonSubmissions = submissions.filter(s => s.status === 'accepted').length;
-  const pendingQuotes = quotes.filter(q => q.status === 'sent').length;
-  const pendingSubmissions = submissions.filter(s => s.status === 'submitted' || s.status === 'under_review').length;
-  const totalQuotesValue = quotes.reduce((sum, q) => sum + (q.amount || 0), 0);
-  const totalSubmissionsValue = submissions.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const quotesStats = {
+    total: quotes.length,
+    totalAmount: quotes.reduce((sum, q) => sum + (q.amount || 0), 0),
+    accepted: quotes.filter(q => q.status === 'accepted').length,
+    pending: quotes.filter(q => q.status === 'sent').length,
+  };
+
+  const submissionsStats = {
+    total: submissions.length,
+    totalAmount: submissions.reduce((sum, s) => sum + (s.amount || 0), 0),
+    won: submissions.filter(s => s.status === 'accepted').length,
+    pending: submissions.filter(s => s.status === 'submitted' || s.status === 'under_review').length,
+  };
+
+  const getAcceptedOrWon = () => {
+    return activeTab === 'quotes' ? quotesStats.accepted : submissionsStats.won;
+  };
+
+  const getTotalAmount = () => {
+    return activeTab === 'quotes' ? quotesStats.totalAmount : submissionsStats.totalAmount;
+  };
+
+  const getTotal = () => {
+    return activeTab === 'quotes' ? quotesStats.total : submissionsStats.total;
+  };
+
+  const getPending = () => {
+    return activeTab === 'quotes' ? quotesStats.pending : submissionsStats.pending;
+  };
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-6">
-      <NukleoPageHeader
-        title={activeTab === 'quotes' ? 'Devis' : 'Soumissions'}
-        description={activeTab === 'quotes' ? 'Gérez vos devis et propositions commerciales' : 'Suivez vos soumissions aux appels d\'offres'}
-      />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-              <DollarSign className="w-6 h-6 text-[#10B981]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? totalQuotesValue.toLocaleString('fr-FR') : totalSubmissionsValue.toLocaleString('fr-FR')} $
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-              <FileText className="w-6 h-6 text-[#523DC9]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? totalQuotes : totalSubmissions}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-              <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? acceptedQuotes : wonSubmissions}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">{activeTab === 'quotes' ? 'Acceptés' : 'Gagnés'}</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-              <Clock className="w-6 h-6 text-[#3B82F6]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? pendingQuotes : pendingSubmissions}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <div className="glass-card rounded-xl border border-border">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border p-6 gap-4">
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setActiveTab('quotes')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'quotes'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <FileText className="w-4 h-4 inline mr-2" />
-              Devis ({quotes.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('submissions')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'submissions'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <FileCheck className="w-4 h-4 inline mr-2" />
-              Soumissions ({submissions.length})
-            </button>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            {activeTab === 'quotes' ? (
-              <Button onClick={() => setShowCreateQuoteModal(true)} className="w-full sm:w-auto">
+    <PageContainer className="flex flex-col h-full">
+      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
+        {/* Hero Header with Aurora Borealis Gradient */}
+        <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
+          
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {activeTab === 'quotes' ? 'Devis' : 'Soumissions'}
+                </h1>
+                <p className="text-white/80 text-lg">
+                  {activeTab === 'quotes' 
+                    ? 'Gérez vos devis et propositions commerciales' 
+                    : 'Suivez vos soumissions aux appels d\'offres'}
+                </p>
+              </div>
+              <Button 
+                className="bg-white text-[#523DC9] hover:bg-white/90"
+                onClick={() => activeTab === 'quotes' ? setShowCreateQuoteModal(true) : setShowCreateSubmissionModal(true)}
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Créer un devis
+                {activeTab === 'quotes' ? 'Nouveau devis' : 'Nouvelle soumission'}
               </Button>
-            ) : (
-              <Button onClick={() => setShowCreateSubmissionModal(true)} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4 mr-2" />
-                Créer une soumission
-              </Button>
-            )}
+            </div>
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('quotes')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'quotes'
+                ? 'bg-[#523DC9] text-white shadow-lg'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              <span>Devis</span>
+              <Badge className="bg-white/20 text-white">{quotes.length}</Badge>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('submissions')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'submissions'
+                ? 'bg-[#523DC9] text-white shadow-lg'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4" />
+              <span>Soumissions</span>
+              <Badge className="bg-white/20 text-white">{submissions.length}</Badge>
+            </div>
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <DollarSign className="w-6 h-6 text-[#10B981]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {formatCurrency(getTotalAmount())}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                <Target className="w-6 h-6 text-[#523DC9]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {getTotal()}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {getAcceptedOrWon()}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {activeTab === 'quotes' ? 'Acceptés' : 'Gagnés'}
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+                <Clock className="w-6 h-6 text-[#3B82F6]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {getPending()}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
+          </Card>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            onClick={() => setViewMode('grid')}
+          >
+            <Grid className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            onClick={() => setViewMode('list')}
+          >
+            <List className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mt-4">
-            <Alert variant="error">{error}</Alert>
-          </div>
+          <Alert variant="error">{error}</Alert>
         )}
 
         {/* Content */}
-        <div className="mt-4">
-          {loading ? (
-            <div className="py-12 text-center">
-              <Loading />
-            </div>
-          ) : activeTab === 'quotes' ? (
-            <DataTable
-              data={quotes as unknown as Record<string, unknown>[]}
-              columns={quoteColumns as unknown as Column<Record<string, unknown>>[]}
-              onRowClick={(quote) => {
-                const locale = window.location.pathname.split('/')[1] || 'fr';
-                const quoteObj = quote as unknown as Quote;
-                router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quoteObj.id}`);
-              }}
-              actions={(quote): DropdownItem[] => {
-                const locale = window.location.pathname.split('/')[1] || 'fr';
-                const quoteObj = quote as unknown as Quote;
-                return [
-                  {
-                    label: 'Voir',
-                    icon: <Eye className="w-4 h-4" />,
-                    onClick: () => {
-                      router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quoteObj.id}`);
-                    },
-                  },
-                  {
-                    label: 'Supprimer',
-                    icon: <Trash2 className="w-4 h-4" />,
-                    onClick: () => {
-                      handleDeleteQuote(quoteObj.id);
-                    },
-                    variant: 'danger',
-                  },
-                ];
-              }}
-            />
-          ) : (
-            <DataTable
-              data={submissions as unknown as Record<string, unknown>[]}
-              columns={submissionColumns as unknown as Column<Record<string, unknown>>[]}
-              onRowClick={(submission) => {
-                const locale = window.location.pathname.split('/')[1] || 'fr';
-                const submissionObj = submission as unknown as Submission;
-                router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submissionObj.id}`);
-              }}
-              actions={(submission): DropdownItem[] => {
-                const locale = window.location.pathname.split('/')[1] || 'fr';
-                const submissionObj = submission as unknown as Submission;
-                return [
-                  {
-                    label: 'Voir',
-                    icon: <Eye className="w-4 h-4" />,
-                    onClick: () => {
-                      router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submissionObj.id}`);
-                    },
-                  },
-                  {
-                    label: 'Supprimer',
-                    icon: <Trash2 className="w-4 h-4" />,
-                    onClick: () => {
-                      handleDeleteSubmission(submissionObj.id);
-                    },
-                    variant: 'danger',
-                  },
-                ];
-              }}
-            />
-          )}
-        </div>
-      </div>
+        {loading ? (
+          <div className="py-12 text-center">
+            <Loading />
+          </div>
+        ) : (
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+            {activeTab === 'quotes' ? (
+              quotes.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-gray-500">
+                  Aucun devis pour le moment
+                </div>
+              ) : (
+                quotes.map((quote) => (
+                  <Card 
+                    key={quote.id} 
+                    className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer"
+                    onClick={() => {
+                      const locale = window.location.pathname.split('/')[1] || 'fr';
+                      router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quote.id}`);
+                    }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-5 h-5 text-[#523DC9]" />
+                          <span className="font-bold text-lg text-gray-900 dark:text-white">
+                            {quote.quote_number}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                          {quote.title || '-'}
+                        </h3>
+                      </div>
+                      <Badge className={getStatusColor(quote.status)}>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(quote.status)}
+                          <span>{quote.status}</span>
+                        </div>
+                      </Badge>
+                    </div>
 
-      {/* Create Quote Modal */}
-      <Modal
-        isOpen={showCreateQuoteModal}
-        onClose={() => setShowCreateQuoteModal(false)}
-        title="Créer un devis"
-        size="xl"
-      >
-        <QuoteForm
-          onSubmit={handleCreateQuote}
-          onCancel={() => setShowCreateQuoteModal(false)}
-          loading={loading}
-        />
-      </Modal>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Building2 className="w-4 h-4" />
+                        <span>{quote.company_name || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        <span>Validité: {formatDate(quote.valid_until)}</span>
+                      </div>
+                    </div>
 
-      {/* Create Submission Modal */}
-      <Modal
-        isOpen={showCreateSubmissionModal}
-        onClose={() => setShowCreateSubmissionModal(false)}
-        title="Créer une soumission"
-        size="full"
-      >
-        <SubmissionWizard
-          onSubmit={handleCreateSubmission}
-          onCancel={() => setShowCreateSubmissionModal(false)}
-          onSaveDraft={handleSaveDraftSubmission}
-          loading={loading}
-        />
-      </Modal>
-    </MotionDiv>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                        {formatCurrency(quote.amount || 0)}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const locale = window.location.pathname.split('/')[1] || 'fr';
+                            router.push(`/${locale}/dashboard/commercial/soumissions/quotes/${quote.id}`);
+                          }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteQuote(quote.id);
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )
+            ) : (
+              submissions.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-gray-500">
+                  Aucune soumission pour le moment
+                </div>
+              ) : (
+                submissions.map((submission) => (
+                  <Card 
+                    key={submission.id} 
+                    className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer"
+                    onClick={() => {
+                      const locale = window.location.pathname.split('/')[1] || 'fr';
+                      router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
+                    }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileCheck className="w-5 h-5 text-[#523DC9]" />
+                          <span className="font-bold text-lg text-gray-900 dark:text-white">
+                            {submission.submission_number}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                          {submission.title || '-'}
+                        </h3>
+                      </div>
+                      <Badge className={getStatusColor(submission.status)}>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(submission.status)}
+                          <span>{submission.status}</span>
+                        </div>
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Building2 className="w-4 h-4" />
+                        <span>{submission.company_name || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        <span>Échéance: {formatDate(submission.deadline)}</span>
+                      </div>
+                      {submission.probability !== undefined && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                          <Target className="w-4 h-4" />
+                          <span>Probabilité: {submission.probability}%</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                        {formatCurrency(submission.amount || 0)}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const locale = window.location.pathname.split('/')[1] || 'fr';
+                            router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
+                          }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSubmission(submission.id);
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )
+            )}
+          </div>
+        )}
+
+        {/* Create Quote Modal */}
+        <Modal
+          isOpen={showCreateQuoteModal}
+          onClose={() => setShowCreateQuoteModal(false)}
+          title="Créer un devis"
+          size="xl"
+        >
+          <QuoteForm
+            onSubmit={handleCreateQuote}
+            onCancel={() => setShowCreateQuoteModal(false)}
+            loading={loading}
+          />
+        </Modal>
+
+        {/* Create Submission Modal */}
+        <Modal
+          isOpen={showCreateSubmissionModal}
+          onClose={() => setShowCreateSubmissionModal(false)}
+          title="Créer une soumission"
+          size="full"
+        >
+          <SubmissionWizard
+            onSubmit={handleCreateSubmission}
+            onCancel={() => setShowCreateSubmissionModal(false)}
+            onSaveDraft={handleSaveDraftSubmission}
+            loading={loading}
+          />
+        </Modal>
+      </MotionDiv>
+    </PageContainer>
   );
-}
-
-export default function SoumissionsPage() {
-  return <SoumissionsContent />;
 }
