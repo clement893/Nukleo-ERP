@@ -804,14 +804,149 @@ function TaskCommentReply({
 }
 
 /**
- * Tab content for task documents (placeholder for Batch 4)
+ * Tab content for task documents
  */
 function TaskDocumentsTab({ taskId }: { taskId: number }) {
+  const { showToast } = useToast();
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadAttachments();
+  }, [taskId]);
+
+  const loadAttachments = async () => {
+    try {
+      setLoading(true);
+      const data = await projectAttachmentsAPI.list({ task_id: taskId });
+      setAttachments(data);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des documents',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffDays === 0) return "Aujourd'hui";
+    if (diffDays === 1) return 'Hier';
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
+  const getFileIcon = (contentType: string, filename: string) => {
+    // Check by content type first
+    if (contentType.startsWith('image/')) {
+      return <Image className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+    }
+    if (contentType === 'application/pdf') {
+      return <FileText className="w-5 h-5 text-red-600 dark:text-red-400" />;
+    }
+    
+    // Check by extension as fallback
+    const extension = filename.split('.').pop()?.toLowerCase();
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    if (extension && imageExtensions.includes(extension)) {
+      return <Image className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+    }
+    
+    return <File className="w-5 h-5 text-gray-600 dark:text-gray-400" />;
+  };
+
+  const handleDownload = (attachment: ProjectAttachment) => {
+    window.open(attachment.file_url, '_blank');
+  };
+
+  if (loading) {
+    return (
+      <div className="py-8 text-center">
+        <Loading />
+      </div>
+    );
+  }
+
   return (
-    <div className="py-8 text-center text-muted-foreground">
-      <Paperclip className="w-12 h-12 mx-auto mb-4 opacity-50" />
-      <p>Les documents seront disponibles dans un prochain batch.</p>
-      <p className="text-xs mt-2">Task ID: {taskId}</p>
+    <div className="space-y-4">
+      {attachments.length === 0 ? (
+        <div className="py-8 text-center text-muted-foreground">
+          <Paperclip className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>Aucun document pour le moment.</p>
+          <p className="text-xs mt-2">Les documents uploadés apparaîtront ici.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {attachments.map((attachment) => (
+            <div
+              key={attachment.id}
+              className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+            >
+              <div className="flex-shrink-0">
+                {getFileIcon(attachment.content_type, attachment.filename)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {attachment.original_filename || attachment.filename}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {formatFileSize(attachment.file_size)}
+                  </span>
+                  {attachment.uploaded_by_name && (
+                    <>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground">
+                        Uploadé par {attachment.uploaded_by_name}
+                      </span>
+                    </>
+                  )}
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(attachment.created_at)}
+                  </span>
+                </div>
+                {attachment.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {attachment.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex-shrink-0">
+                <Button
+                  onClick={() => handleDownload(attachment)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
