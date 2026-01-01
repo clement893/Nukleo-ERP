@@ -81,6 +81,54 @@ function TaskDetailsContent({ taskDetails }: { taskDetails: ProjectTask }) {
  * Tab content for task information
  */
 function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
+  const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale as string || 'fr';
+  const [project, setProject] = useState<Project | null>(null);
+  const [team, setTeam] = useState<Team | null>(null);
+
+  useEffect(() => {
+    loadAdditionalInfo();
+  }, [taskDetails]);
+
+  const loadAdditionalInfo = async () => {
+    try {
+      // Load project if project_id exists
+      if (taskDetails.project_id) {
+        try {
+          const projectResponse = await projectsAPI.get(taskDetails.project_id);
+          const projectData = extractApiData<Project>(projectResponse);
+          if (projectData) {
+            setProject(projectData);
+          }
+        } catch (err) {
+          // Project might not exist, ignore error
+          console.debug('Project not found:', err);
+        }
+      }
+
+      // Load team
+      if (taskDetails.team_id) {
+        try {
+          const teamResponse = await teamsAPI.getTeam(taskDetails.team_id);
+          const teamData = extractApiData<Team>(teamResponse);
+          if (teamData) {
+            setTeam(teamData);
+          }
+        } catch (err) {
+          // Team might not exist, ignore error
+          console.debug('Team not found:', err);
+        }
+      }
+
+      // For created_by_id, we would need a users API, but for now we'll skip it
+      // as it's not critical and would require additional API calls
+        } catch (err) {
+          // Ignore errors for additional info
+          console.debug('Error loading additional info:', err);
+        }
+  };
+
   return (
     <div className="space-y-6">
       {/* Description */}
@@ -96,9 +144,9 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
       )}
 
       {/* Informations principales */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-3 bg-muted/50 rounded-lg">
+          <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
             Statut
           </h4>
           <div className="flex items-center gap-2">
@@ -106,12 +154,12 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
               const Icon = statusIcons[taskDetails.status];
               return <Icon className="w-4 h-4" />;
             })()}
-            <span>{statusLabels[taskDetails.status]}</span>
+            <span className="text-sm font-medium">{statusLabels[taskDetails.status]}</span>
           </div>
         </div>
 
-        <div>
-          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+        <div className="p-3 bg-muted/50 rounded-lg">
+          <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
             Priorité
           </h4>
           {(() => {
@@ -122,7 +170,7 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
               urgent: 'text-red-600 bg-red-100 dark:bg-red-900/30',
             };
             return (
-              <span className={`px-2 py-1 text-xs rounded-full ${priorityColors[taskDetails.priority]}`}>
+              <span className={`px-2 py-1 text-xs rounded-full font-medium ${priorityColors[taskDetails.priority]}`}>
                 {priorityLabels[taskDetails.priority]}
               </span>
             );
@@ -130,8 +178,8 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
         </div>
 
         {taskDetails.due_date && (
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
               Échéance
             </h4>
             {(() => {
@@ -139,12 +187,15 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
               const now = new Date();
               const isOverdue = date < now && taskDetails.status !== 'completed';
               return (
-                <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                <span className={`text-sm font-medium ${isOverdue ? 'text-red-600' : ''}`}>
                   {date.toLocaleDateString('fr-FR', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                   })}
+                  {isOverdue && (
+                    <span className="ml-2 text-xs text-red-600">(En retard)</span>
+                  )}
                 </span>
               );
             })()}
@@ -152,99 +203,179 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
         )}
 
         {taskDetails.estimated_hours && (
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
               Heures estimées
             </h4>
-            <span>{taskDetails.estimated_hours}h</span>
+            <span className="text-sm font-medium">{taskDetails.estimated_hours}h</span>
           </div>
         )}
       </div>
 
       {/* Dates */}
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-        {taskDetails.created_at && (
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-              Créée le
-            </h4>
-            <span className="text-sm">
-              {new Date(taskDetails.created_at).toLocaleDateString('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
-        )}
+      <div className="pt-4 border-t border-border">
+        <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+          Historique
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {taskDetails.created_at && (
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground">Créée le</p>
+                <p className="text-sm font-medium">
+                  {new Date(taskDetails.created_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
 
-        {taskDetails.updated_at && (
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-              Modifiée le
-            </h4>
-            <span className="text-sm">
-              {new Date(taskDetails.updated_at).toLocaleDateString('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
-        )}
+          {taskDetails.updated_at && (
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground">Modifiée le</p>
+                <p className="text-sm font-medium">
+                  {new Date(taskDetails.updated_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
 
-        {taskDetails.started_at && (
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-              Commencée le
-            </h4>
-            <span className="text-sm">
-              {new Date(taskDetails.started_at).toLocaleDateString('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
-        )}
+          {taskDetails.started_at && (
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground">Commencée le</p>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  {new Date(taskDetails.started_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
 
-        {taskDetails.completed_at && (
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-              Terminée le
-            </h4>
-            <span className="text-sm text-green-600 dark:text-green-400">
-              {new Date(taskDetails.completed_at).toLocaleDateString('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
-        )}
+          {taskDetails.completed_at && (
+            <div className="flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground">Terminée le</p>
+                <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                  {new Date(taskDetails.completed_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Projet associé */}
+      {project && (
+        <div className="pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+            Projet associé
+          </h4>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{project.name}</span>
+            <Button
+              onClick={() => router.push(`/${locale}/dashboard/projets/${project.id}`)}
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </Button>
+          </div>
+          {project.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {project.description}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Équipe */}
+      {team && (
+        <div className="pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Équipe
+          </h4>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{team.name}</span>
+            {team.slug && (
+              <Button
+                onClick={() => router.push(`/${locale}/dashboard/projets/equipes/${team.slug}`)}
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2"
+              >
+                <ExternalLink className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+          {team.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {team.description}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Assigné à */}
       {taskDetails.assignee_name && (
         <div className="pt-4 border-t border-border">
-          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+          <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+            <UserPlus className="w-4 h-4" />
             Assigné à
           </h4>
           <div>
-            <span className="text-sm">{taskDetails.assignee_name}</span>
+            <span className="text-sm font-medium">{taskDetails.assignee_name}</span>
             {taskDetails.assignee_email && (
               <span className="text-sm text-muted-foreground ml-2">
                 ({taskDetails.assignee_email})
               </span>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Créé par */}
+      {taskDetails.created_by_id && (
+        <div className="pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+            Créé par
+          </h4>
+          <div>
+            <span className="text-sm text-muted-foreground">
+              Utilisateur ID: {taskDetails.created_by_id}
+            </span>
+            <p className="text-xs text-muted-foreground mt-1">
+              (Les détails du créateur seront disponibles dans une prochaine version)
+            </p>
           </div>
         </div>
       )}

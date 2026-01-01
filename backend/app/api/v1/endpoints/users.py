@@ -413,11 +413,20 @@ async def delete_user(
     # Perform soft delete (set is_active=False) instead of hard delete
     # This preserves data integrity and allows for recovery if needed
     try:
+        # Store email before modification for logging
+        user_email = user_to_delete.email
+        
         user_to_delete.is_active = False
         await db.commit()
-        await db.refresh(user_to_delete)
         
-        logger.info(f"User {user_id} ({user_to_delete.email}) soft-deleted by {current_user.email}")
+        # Try to refresh, but don't fail if it doesn't work
+        try:
+            await db.refresh(user_to_delete)
+        except Exception as refresh_error:
+            logger.warning(f"Could not refresh user after deletion: {refresh_error}")
+            # This is not critical, continue with deletion
+        
+        logger.info(f"User {user_id} ({user_email}) soft-deleted by {current_user.email}")
     except Exception as db_error:
         await db.rollback()
         error_msg = str(db_error)
