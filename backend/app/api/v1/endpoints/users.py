@@ -458,7 +458,7 @@ async def delete_user(
         await SecurityAuditLogger.log_event(
             db=db,
             event_type=SecurityEventType.DATA_DELETED,
-            description=f"User '{user_to_delete.email}' deleted",
+            description=f"User '{user_email}' deleted",
             user_id=current_user.id,
             user_email=current_user.email,
             ip_address=request.client.host if request.client else None,
@@ -470,7 +470,7 @@ async def delete_user(
             metadata={
                 "resource_type": "user",
                 "deleted_user_id": user_id,
-                "deleted_user_email": user_to_delete.email,
+                "deleted_user_email": user_email,
                 "action": "deleted"
             }
         )
