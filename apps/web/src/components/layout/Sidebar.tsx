@@ -101,15 +101,23 @@ export default function Sidebar({
     }
 
     const query = searchQuery.toLowerCase();
-    return navigationConfig.items.map((item) => {
+    const filtered = navigationConfig.items.map((item) => {
       if ('items' in item) {
+        // Check if group name matches
+        const groupNameMatches = item.name.toLowerCase().includes(query);
+        
+        // Filter items in the group
         const filteredItems = item.items.filter(
           (subItem) =>
             subItem.name.toLowerCase().includes(query) ||
             subItem.href.toLowerCase().includes(query)
         );
-        if (filteredItems.length > 0) {
-          return { ...item, items: filteredItems };
+        
+        // Include group if group name matches OR if it has matching items
+        if (groupNameMatches || filteredItems.length > 0) {
+          // If group name matches, show all items; otherwise show only filtered items
+          const itemsToShow = groupNameMatches ? item.items : filteredItems;
+          return { ...item, items: itemsToShow };
         }
         return null;
       } else {
@@ -122,6 +130,17 @@ export default function Sidebar({
         return null;
       }
     }).filter((item): item is NavigationItem | NavigationGroup => item !== null);
+    
+    // Auto-open groups that have filtered results
+    if (searchQuery.trim()) {
+      filtered.forEach((item) => {
+        if ('items' in item && item.items.length > 0) {
+          setOpenGroups((prev) => new Set(prev).add(item.name));
+        }
+      });
+    }
+    
+    return filtered;
   }, [navigationConfig.items, searchQuery]);
 
   // Render navigation item
