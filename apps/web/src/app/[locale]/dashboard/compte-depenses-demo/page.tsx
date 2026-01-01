@@ -315,75 +315,75 @@ export default function ExpensesDemoPage() {
         </div>
 
         {/* Expenses List */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           {filteredExpenses.map((expense) => {
             const CategoryIcon = categoryConfig[expense.category as keyof typeof categoryConfig]?.icon || Receipt;
             const categoryColor = categoryConfig[expense.category as keyof typeof categoryConfig]?.color || 'text-gray-500';
             
             return (
-              <Card key={expense.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group">
-                <div className="flex flex-col lg:flex-row gap-6">
+              <Card key={expense.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group">
+                <div className="flex flex-col lg:flex-row gap-3">
                   {/* Left Section - Employee Info */}
-                  <div className="flex items-start gap-4 lg:w-1/4">
-                    <div className={`w-14 h-14 rounded-full ${expense.color} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
+                  <div className="flex items-start gap-3 lg:w-1/4">
+                    <div className={`w-10 h-10 rounded-full ${expense.color} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
                       {expense.avatar}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-[#523DC9] transition-colors mb-1">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-[#523DC9] transition-colors mb-0.5 truncate">
                         {expense.employee}
                       </h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        <CategoryIcon className={`w-4 h-4 ${categoryColor}`} />
-                        <span>{expense.category}</span>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                        <CategoryIcon className={`w-3 h-3 ${categoryColor}`} />
+                        <span className="truncate">{expense.category}</span>
                       </div>
-                      <Badge className={`${statusConfig[expense.status as keyof typeof statusConfig].color} border`}>
+                      <Badge className={`${statusConfig[expense.status as keyof typeof statusConfig].color} border text-xs px-1.5 py-0.5`}>
                         {statusConfig[expense.status as keyof typeof statusConfig].label}
                       </Badge>
                     </div>
                   </div>
 
                   {/* Middle Section - Description & Details */}
-                  <div className="flex-1">
-                    <p className="text-base font-medium text-gray-900 dark:text-white mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-2 line-clamp-1">
                       {expense.description}
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Calendar className="w-4 h-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <Calendar className="w-3 h-3" />
                         <span>Date: {new Date(expense.date).toLocaleDateString('fr-CA')}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <FileText className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <Eye className="w-3 h-3" />
                         <span>Reçu: {expense.receipt ? '✓ Oui' : '✗ Non'}</span>
                       </div>
                     </div>
                     {expense.status === 'approved' && expense.approvedBy && (
-                      <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-2">
                         Approuvé par {expense.approvedBy}
                       </div>
                     )}
                   </div>
 
                   {/* Right Section - Amount & Actions */}
-                  <div className="flex flex-col items-end justify-between lg:w-1/6">
-                    <div className="text-right mb-4">
-                      <div className="text-3xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="lg:w-1/5 flex flex-col items-end justify-between">
+                    <div className="text-right mb-2">
+                      <div className="text-lg font-bold text-gray-900 dark:text-white mb-0.5" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(expense.amount)}
                       </div>
                     </div>
                     {expense.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button size="sm" className="hover-nukleo bg-green-500 hover:bg-green-600 text-white">
-                          <CheckCircle2 className="w-4 h-4" />
+                      <div className="flex gap-1.5">
+                        <Button size="sm" className="hover-nukleo bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1">
+                          <CheckCircle2 className="w-3 h-3" />
                         </Button>
-                        <Button size="sm" variant="outline" className="hover-nukleo border-red-500 text-red-500">
-                          <XCircle className="w-4 h-4" />
+                        <Button size="sm" variant="outline" className="hover-nukleo text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1">
+                          <XCircle className="w-3 h-3" />
                         </Button>
                       </div>
                     )}
                     {expense.receipt && (
-                      <Button size="sm" variant="outline" className="hover-nukleo mt-2">
-                        <FileText className="w-4 h-4 mr-1" />
+                      <Button size="sm" variant="outline" className="hover-nukleo mt-2 text-xs px-2 py-1">
+                        <FileText className="w-3 h-3 mr-1" />
                         Voir
                       </Button>
                     )}
