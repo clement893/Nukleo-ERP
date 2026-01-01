@@ -333,10 +333,15 @@ function ManagementCompteDepensesContent() {
     } catch (err) {
       const appError = handleApiError(err);
       const errorMessage = appError.message || 'Erreur lors de l\'action';
-      showToast({
-        message: errorMessage,
-        type: 'error',
-      });
+      // Ne pas afficher les erreurs de base de données qui peuvent apparaître après succès
+      // (peut arriver si React Query invalide les queries et qu'une requête échoue)
+      const lowerErrorMessage = errorMessage.toLowerCase();
+      if (!lowerErrorMessage.includes('database error') && !lowerErrorMessage.includes('erreur de base de données')) {
+        showToast({
+          message: errorMessage,
+          type: 'error',
+        });
+      }
     }
   };
   

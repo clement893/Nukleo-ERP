@@ -149,7 +149,15 @@ export function useApproveExpenseAccount() {
       // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
       queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
       // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
+      // Ignorer les erreurs silencieuses lors de l'invalidation
+      queryClient.invalidateQueries({ 
+        queryKey: expenseAccountKeys.lists(),
+        refetchType: 'active', // Ne recharger que les queries actives
+      }).catch((err) => {
+        // Ignorer les erreurs d'invalidation silencieusement
+        // Ces erreurs peuvent survenir si les queries ne sont plus actives
+        console.warn('Error invalidating queries after approval:', err);
+      });
     },
   });
 }
