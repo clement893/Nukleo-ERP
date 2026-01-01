@@ -389,12 +389,13 @@ export default function TachesDemoPage() {
                 )}
                 <div className="space-y-2">
                   {tasks.map((task) => {
-              const StatusIcon = statusConfig[task.status].icon;
-              return (
-                <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-md ${statusConfig[task.status].color.split(' ')[0]}/20`}>
-                      <StatusIcon className={`w-4 h-4 ${statusConfig[task.status].iconColor}`} />
+                    const statusInfo = statusConfig[task.status] || statusConfig.TODO;
+                    const StatusIcon = statusInfo.icon;
+                    return (
+                      <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-1.5 rounded-md ${statusInfo.color.split(' ')[0]}/20`}>
+                            <StatusIcon className={`w-4 h-4 ${statusInfo.iconColor}`} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -403,12 +404,17 @@ export default function TachesDemoPage() {
                           {task.title}
                         </h3>
                         <div className="flex gap-1.5 flex-shrink-0">
-                          <Badge className={`${statusConfig[task.status].color} border text-xs px-2 py-0.5`}>
-                            {statusConfig[task.status].label}
+                          <Badge className={`${statusInfo.color} border text-xs px-2 py-0.5`}>
+                            {statusInfo.label}
                           </Badge>
-                          <Badge className={`${priorityConfig[task.priority].color} text-xs px-2 py-0.5`}>
-                            {priorityConfig[task.priority].label}
-                          </Badge>
+                          {(() => {
+                            const priorityInfo = priorityConfig[task.priority] || priorityConfig.LOW;
+                            return (
+                              <Badge className={`${priorityInfo.color} text-xs px-2 py-0.5`}>
+                                {priorityInfo.label}
+                              </Badge>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -445,13 +451,14 @@ export default function TachesDemoPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {Object.entries(tasksByStatus).map(([status, tasks]) => {
-              const StatusIcon = statusConfig[status as TaskStatus].icon;
+              const statusInfo = statusConfig[status as TaskStatus] || statusConfig.TODO;
+              const StatusIcon = statusInfo.icon;
               return (
                 <div key={status} className="space-y-3">
                   <div className="flex items-center gap-2 mb-3">
-                    <StatusIcon className={`w-5 h-5 ${statusConfig[status as TaskStatus].iconColor}`} />
+                    <StatusIcon className={`w-5 h-5 ${statusInfo.iconColor}`} />
                     <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {statusConfig[status as TaskStatus].label}
+                      {statusInfo.label}
                     </h3>
                     <Badge className="ml-auto">{tasks.length}</Badge>
                   </div>
@@ -463,9 +470,14 @@ export default function TachesDemoPage() {
                           <h4 className="font-semibold text-gray-900 dark:text-white text-xs group-hover:text-[#523DC9] transition-colors line-clamp-2 flex-1">
                             {task.title}
                           </h4>
-                          <Badge className={`${priorityConfig[task.priority].color} text-xs px-1.5 py-0.5 ml-2 flex-shrink-0`}>
-                            {priorityConfig[task.priority].label}
-                          </Badge>
+                          {(() => {
+                            const priorityInfo = priorityConfig[task.priority] || priorityConfig.LOW;
+                            return (
+                              <Badge className={`${priorityInfo.color} text-xs px-1.5 py-0.5 ml-2 flex-shrink-0`}>
+                                {priorityInfo.label}
+                              </Badge>
+                            );
+                          })()}
                         </div>
 
                         <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
