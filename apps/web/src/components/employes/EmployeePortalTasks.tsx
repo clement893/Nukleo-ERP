@@ -49,7 +49,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
     try {
       setLoading(true);
       setError(null);
-      const data = await projectTasksAPI.list({ assignee_id: employeeId });
+      const data = await projectTasksAPI.list({ employee_assignee_id: employeeId });
       setTasks(data);
     } catch (err) {
       const appError = handleApiError(err);

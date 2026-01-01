@@ -106,7 +106,8 @@ async def get_or_create_user_for_employee(employee_id: int, db: AsyncSession) ->
 async def list_tasks(
     team_id: Optional[int] = Query(None, description="Filter by team ID"),
     project_id: Optional[int] = Query(None, description="Filter by project ID"),
-    assignee_id: Optional[int] = Query(None, description="Filter by assignee ID"),
+    assignee_id: Optional[int] = Query(None, description="Filter by assignee ID (user_id)"),
+    employee_assignee_id: Optional[int] = Query(None, description="Filter by employee ID (will get user_id from employee)"),
     task_status: Optional[TaskStatus] = Query(None, description="Filter by status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -117,14 +118,32 @@ async def list_tasks(
     try:
         query = select(ProjectTask)
         
+        # Handle assignee filter: can be either assignee_id (user_id) or employee_assignee_id (employee_id)
+        final_assignee_id = None
+        if employee_assignee_id:
+            # Get user_id from employee
+            result = await db.execute(select(Employee).where(Employee.id == employee_assignee_id))
+            employee = result.scalar_one_or_none()
+            if employee and employee.user_id:
+                final_assignee_id = employee.user_id
+            elif employee:
+                # Employee exists but has no user_id - no tasks assigned yet (they would have user_id if task was assigned)
+                # Return empty result
+                return []
+            else:
+                # Employee not found - return empty result
+                return []
+        elif assignee_id:
+            final_assignee_id = assignee_id
+        
         if team_id:
             query = query.where(ProjectTask.team_id == team_id)
         # Note: project_id filter may fail if column doesn't exist in database
         # This will be caught by the exception handler below
         if project_id:
             query = query.where(ProjectTask.project_id == project_id)
-        if assignee_id:
-            query = query.where(ProjectTask.assignee_id == assignee_id)
+        if final_assignee_id:
+            query = query.where(ProjectTask.assignee_id == final_assignee_id)
         if task_status:
             query = query.where(ProjectTask.status == task_status)
         

@@ -61,6 +61,7 @@ export const projectTasksAPI = {
     team_id?: number;
     project_id?: number;
     assignee_id?: number;
+    employee_assignee_id?: number;  // Employee ID (will get user_id from employee)
     status?: TaskStatus;
     skip?: number;
     limit?: number;
