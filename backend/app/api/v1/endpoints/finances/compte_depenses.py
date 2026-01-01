@@ -826,7 +826,7 @@ async def respond_clarification_compte_depenses(
 ):
     """
     Employee response to clarification request
-    Employee only - Must be the owner of the expense account
+    Employee or Admin - Employee must be the owner, Admins can respond for any account
     Changes status from NEEDS_CLARIFICATION to SUBMITTED
     """
     result = await db.execute(
@@ -859,11 +859,15 @@ async def respond_clarification_compte_depenses(
             detail="Employee associated with this expense account not found"
         )
     
-    # Verify that current user is the owner of the expense account
-    if employee.user_id != current_user.id:
+    # Check if user is admin/superadmin
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    is_owner = employee.user_id == current_user.id if employee.user_id else False
+    
+    # Verify that current user is either the owner or an admin/superadmin
+    if not is_admin and not is_owner:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only respond to clarification requests for your own expense accounts"
+            detail="You can only respond to clarification requests for your own expense accounts, or you must be an admin"
         )
     
     # Store the response in metadata to keep history
