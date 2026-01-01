@@ -16,9 +16,7 @@ import {
   Trash2,
   Grid,
   List,
-  Globe,
-  Mail,
-  Phone
+  Globe
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 
@@ -220,21 +218,21 @@ export default function EntreprisesDemoPage() {
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant={filterStatus === 'all' ? 'default' : 'outline'}
+              variant={filterStatus === 'all' ? 'primary' : 'outline'}
               onClick={() => setFilterStatus('all')}
             >
               Tous ({stats.total})
             </Button>
             <Button
               size="sm"
-              variant={filterStatus === 'clients' ? 'default' : 'outline'}
+              variant={filterStatus === 'clients' ? 'primary' : 'outline'}
               onClick={() => setFilterStatus('clients')}
             >
               Clients ({stats.clients})
             </Button>
             <Button
               size="sm"
-              variant={filterStatus === 'prospects' ? 'default' : 'outline'}
+              variant={filterStatus === 'prospects' ? 'primary' : 'outline'}
               onClick={() => setFilterStatus('prospects')}
             >
               Prospects ({stats.prospects})
@@ -243,14 +241,14 @@ export default function EntreprisesDemoPage() {
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              variant={viewMode === 'grid' ? 'primary' : 'outline'}
               onClick={() => setViewMode('grid')}
             >
               <Grid className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              variant={viewMode === 'list' ? 'primary' : 'outline'}
               onClick={() => setViewMode('list')}
             >
               <List className="w-4 h-4" />

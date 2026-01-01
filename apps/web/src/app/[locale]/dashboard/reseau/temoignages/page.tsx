@@ -6,8 +6,8 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Search, Star, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
-import { Badge, Button, Loading, Alert, Input, Heading, Text } from '@/components/ui';
+import { Plus, Search, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import { Badge, Button, Loading, Alert, Input, Text } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import { handleApiError } from '@/lib/errors/api';
 import { reseauTestimonialsAPI, type Testimonial } from '@/lib/api/reseau-testimonials';
@@ -113,23 +113,6 @@ function TemoignagesContent() {
     }
   };
 
-  const renderStars = (rating?: number | null) => {
-    const ratingValue = rating || 0;
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map(star => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${
-              star <= ratingValue
-                ? 'fill-[#F59E0B] text-[#F59E0B]'
-                : 'text-gray-300 dark:text-gray-600'
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
 
   if (loading) {
     return (

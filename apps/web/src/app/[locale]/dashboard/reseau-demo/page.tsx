@@ -11,9 +11,6 @@ import {
   MessageSquare, 
   TrendingUp, 
   Users, 
-  Calendar,
-  Mail,
-  Phone,
   ArrowRight
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
