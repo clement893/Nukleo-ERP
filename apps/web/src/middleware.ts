@@ -69,6 +69,7 @@ export async function middleware(request: NextRequest) {
     '/sitemap',
     '/sitemap.xml',
     '/api/auth',
+    '/demo', // Public demo page - no authentication required
     // Test routes - should be public for testing purposes
     '/email/testing',
     '/ai/testing',
