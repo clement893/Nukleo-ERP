@@ -548,11 +548,15 @@ async def approve_compte_depenses(
     account.review_notes = action.notes
     
     await db.commit()
-    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    logger.debug(f"[approve_compte_depenses] Committed changes for account {account.id}, status={account.status}")
+    
+    # Reload account from DB to ensure we have the latest values after commit
+    await db.refresh(account)
+    logger.debug(f"[approve_compte_depenses] Reloaded account {account.id} from DB, status={account.status}")
     
     # Safely load relationships to avoid lazy loading issues
     employee, reviewer = await safe_refresh_account(db, account)
-    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
+    logger.debug(f"[approve_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
@@ -573,11 +577,12 @@ async def approve_compte_depenses(
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-            "metadata": account.account_metadata,
+        "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
     
+    logger.debug(f"[approve_compte_depenses] Returning account dict with status={account_dict['status']}")
     return ExpenseAccountResponse(**account_dict)
 
 
