@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        '3xl': '1920px',  // Large desktop screens (Full HD+)
+        '4xl': '2560px',  // Very large desktop screens (2K/QHD+)
+      },
       colors: {
         // Primary color palette - Uses CSS variables with fallbacks for theme support
         primary: {

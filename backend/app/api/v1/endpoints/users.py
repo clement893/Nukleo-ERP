@@ -453,10 +453,13 @@ async def delete_user(
         )
     
     # Log deletion attempt (after successful deletion)
+    # Use a separate try/except to ensure audit logging failures don't break the deletion
     try:
         from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+        # Use None for db to create a separate session for audit logging
+        # This ensures the audit log is saved even if there are issues with the main transaction
         await SecurityAuditLogger.log_event(
-            db=db,
+            db=None,  # Create separate session for audit logging
             event_type=SecurityEventType.DATA_DELETED,
             description=f"User '{user_email}' deleted",
             user_id=current_user.id,
@@ -475,7 +478,12 @@ async def delete_user(
             }
         )
     except Exception as e:
-        logger.warning(f"Failed to log user deletion event: {e}")
+        # Log the error but don't fail the request - audit logging is non-critical
+        logger.warning(
+            f"Failed to log user deletion event for user {user_id}: {e}",
+            exc_info=True
+        )
+        # Continue - the deletion was successful, audit logging failure is not critical
     
     return None
 

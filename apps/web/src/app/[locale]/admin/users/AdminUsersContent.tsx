@@ -113,9 +113,20 @@ export default function AdminUsersContent() {
       
       // Clear any previous errors
       setError(null);
+      
+      // Show success message
+      showToast({
+        message: 'Utilisateur supprimé avec succès',
+        type: 'success',
+      });
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Erreur lors de la suppression de l\'utilisateur');
       setError(errorMessage);
+      showToast({
+        message: errorMessage,
+        type: 'error',
+      });
+      // Don't close modal on error so user can see the error message
     }
   };
 

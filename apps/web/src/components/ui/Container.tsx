@@ -42,7 +42,9 @@ export default function Container({
       className={clsx(
         'mx-auto',
         maxWidthClass,
-        padding && 'px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12',
+        // Progressive expansion on very large screens while maintaining reasonable margins
+        maxWidth !== 'full' && '3xl:max-w-[1800px] 4xl:max-w-[2000px]',
+        padding && 'px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20',
         className
       )}
       style={containerStyle}
