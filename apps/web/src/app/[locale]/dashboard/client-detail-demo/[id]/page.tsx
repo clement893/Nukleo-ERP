@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Building2, Users, DollarSign, TrendingUp, Phone, Mail, Globe, MapPin, Calendar, FileText, Briefcase, User } from 'lucide-react';
+import { ArrowLeft, Users, DollarSign, TrendingUp, Phone, Mail, Globe, MapPin, FileText, Briefcase } from 'lucide-react';
 import { Card, Button, Badge } from '@/components/ui';
 import Link from 'next/link';
 
