@@ -16,7 +16,6 @@ import {
   Calendar,
   User,
   FileText,
-  Award,
   BookOpen,
   Laptop,
   TrendingUp
@@ -124,7 +123,10 @@ export default function OnboardingPage() {
         // Pick a random mentor from other employees
         const otherEmployees = employees.filter((e: Employee) => e.id !== emp.id && e.first_name && e.last_name);
         const mentor = otherEmployees.length > 0 
-          ? `${otherEmployees[Math.floor(Math.random() * otherEmployees.length)].first_name} ${otherEmployees[Math.floor(Math.random() * otherEmployees.length)].last_name}`
+          ? (() => {
+              const mentorEmp = otherEmployees[Math.floor(Math.random() * otherEmployees.length)];
+              return mentorEmp ? `${mentorEmp.first_name} ${mentorEmp.last_name}` : 'Non assigné';
+            })()
           : 'Non assigné';
         
         return {
@@ -144,8 +146,7 @@ export default function OnboardingPage() {
     return onboardingProcesses.filter(process => {
       const fullName = `${process.employee.first_name} ${process.employee.last_name}`.toLowerCase();
       const matchesSearch = !searchQuery || 
-        fullName.includes(searchQuery.toLowerCase()) ||
-        (process.employee.position && process.employee.position.toLowerCase().includes(searchQuery.toLowerCase()));
+        fullName.includes(searchQuery.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || process.status === statusFilter;
       
@@ -333,7 +334,6 @@ export default function OnboardingPage() {
               const initials = `${process.employee.first_name?.[0] || ''}${process.employee.last_name?.[0] || ''}`.toUpperCase();
               const avatarColor = getAvatarColor(fullName);
               const statusInfo = statusConfig[process.status];
-              const StatusIcon = statusInfo.icon;
               const completedTasks = process.tasks.filter(t => t.completed).length;
               
               return (
@@ -355,13 +355,8 @@ export default function OnboardingPage() {
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        {process.employee.position || 'Employé'}
+                        Employé
                       </p>
-                      {process.employee.department && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {process.employee.department}
-                        </p>
-                      )}
                     </div>
                   </div>
 
