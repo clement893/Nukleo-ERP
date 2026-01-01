@@ -14,11 +14,8 @@ import {
   FileText,
   User,
   Building2,
-  MapPin,
   Clock,
   X,
-  ChevronDown,
-  Filter,
 } from 'lucide-react';
 
 type Contact = {
@@ -42,7 +39,7 @@ export default function ContactsDemoPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  // const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
 
   // Mock data - 12 contacts
   const mockContacts: Contact[] = [
@@ -408,7 +405,7 @@ export default function ContactsDemoPage() {
                     return (
                       <span
                         key={tag}
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.bg} ${colors.text} border ${colors.border}`}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors?.bg} ${colors?.text} border ${colors?.border}`}
                       >
                         {tag}
                       </span>
