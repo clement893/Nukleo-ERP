@@ -393,8 +393,18 @@ async def create_task(
         await db.refresh(task)
         
         return task
-    except (ProgrammingError, PendingRollbackError, Exception) as e:
+    except (ProgrammingError, PendingRollbackError) as e:
         error_str = str(e).lower()
+        logger.error(
+            f"Database error in create_task: {type(e).__name__}: {str(e)}",
+            exc_info=True,
+            context={
+                "user_id": current_user.id,
+                "team_id": task_data.team_id,
+                "project_id": task_data.project_id,
+                "assignee_id": final_assignee_id,
+            }
+        )
         # If error is due to project_id column not existing, create task without project_id
         if 'project_id' in error_str and ('does not exist' in error_str or 'undefinedcolumn' in error_str):
             logger.warning("project_id column doesn't exist, creating task without project_id")
@@ -418,44 +428,80 @@ async def create_task(
                 ) RETURNING id, created_at, updated_at
             """)
             
-            result = await db.execute(insert_stmt, {
-                "title": task_data.title,
-                "description": task_data.description,
-                "status": task_data.status.value,
-                "priority": task_data.priority.value,
-                "team_id": task_data.team_id,
-                "assignee_id": task_data.assignee_id,
-                "created_by_id": current_user.id,
-                "due_date": task_data.due_date,
-                "order": task_data.order or 0,
-            })
-            row = result.fetchone()
-            task_id, created_at, updated_at = row
-            await db.commit()
-            
-            # Create response manually since we can't use ORM (project_id column missing)
-            from app.schemas.project_task import ProjectTaskResponse
-            return ProjectTaskResponse(
-                id=task_id,
-                title=task_data.title,
-                description=task_data.description,
-                status=task_data.status,
-                priority=task_data.priority,
-                team_id=task_data.team_id,
-                project_id=None,  # Column doesn't exist
-                assignee_id=task_data.assignee_id,
-                created_by_id=current_user.id,
-                due_date=task_data.due_date,
-                started_at=None,
-                completed_at=None,
-                estimated_hours=task_data.estimated_hours,
-                order=task_data.order or 0,
-                created_at=created_at,
-                updated_at=updated_at,
-            )
+            try:
+                result = await db.execute(insert_stmt, {
+                    "title": task_data.title,
+                    "description": task_data.description,
+                    "status": task_data.status.value,
+                    "priority": task_data.priority.value,
+                    "team_id": task_data.team_id,
+                    "assignee_id": final_assignee_id,
+                    "created_by_id": current_user.id,
+                    "due_date": task_data.due_date,
+                    "order": task_data.order or 0,
+                })
+                row = result.fetchone()
+                task_id, created_at, updated_at = row
+                await db.commit()
+                
+                # Create response manually since we can't use ORM (project_id column missing)
+                from app.schemas.project_task import ProjectTaskResponse
+                return ProjectTaskResponse(
+                    id=task_id,
+                    title=task_data.title,
+                    description=task_data.description,
+                    status=task_data.status,
+                    priority=task_data.priority,
+                    team_id=task_data.team_id,
+                    project_id=None,  # Column doesn't exist
+                    assignee_id=final_assignee_id,
+                    created_by_id=current_user.id,
+                    due_date=task_data.due_date,
+                    started_at=None,
+                    completed_at=None,
+                    estimated_hours=task_data.estimated_hours,
+                    order=task_data.order or 0,
+                    created_at=created_at,
+                    updated_at=updated_at,
+                )
+            except Exception as insert_error:
+                logger.error(
+                    f"Failed to create task with raw SQL: {type(insert_error).__name__}: {str(insert_error)}",
+                    exc_info=True
+                )
+                await db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"A database error occurred: {str(insert_error)}"
+                )
         else:
-            # Re-raise if it's a different error
-            raise
+            # Rollback and re-raise if it's a different error
+            try:
+                await db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"A database error occurred: {str(e)}"
+            )
+    except Exception as e:
+        logger.error(
+            f"Unexpected error in create_task: {type(e).__name__}: {str(e)}",
+            exc_info=True,
+            context={
+                "user_id": current_user.id,
+                "team_id": task_data.team_id,
+                "project_id": task_data.project_id,
+            }
+        )
+        try:
+            await db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
 
 
 @router.patch("/{task_id}", response_model=ProjectTaskResponse)
