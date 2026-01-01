@@ -100,7 +100,7 @@ export default function ProjetsPage() {
   };
 
   const handleView = (id: number) => {
-    router.push(`/dashboard/projets/projets/${id}`);
+    router.push(`/dashboard/projets/${id}`);
   };
 
   if (isLoading) {
