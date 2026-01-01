@@ -16,7 +16,7 @@ from app.core.database import get_db
 from app.core.pagination import PaginationParams, paginate_query, PaginatedResponse, get_pagination_params
 from app.core.query_optimization import QueryOptimizer
 from app.core.cache_enhanced import cache_query
-from app.core.rate_limit import rate_limit_decorator
+from app.core.rate_limit import rate_limit_decorator, limiter
 from app.core.logging import logger
 from app.models.user import User
 from app.schemas.user import UserResponse, UserUpdate
@@ -323,6 +323,7 @@ async def get_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.exempt
 async def delete_user(
     request: Request,
     user_id: int,
