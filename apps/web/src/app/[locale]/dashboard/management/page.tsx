@@ -12,14 +12,8 @@ import {
   Clock, 
   Plane,
   Calendar,
-  UserPlus,
   DollarSign,
-  FileText,
-  Plus,
   Eye,
-  CheckCircle2,
-  AlertCircle,
-  TrendingUp,
   ArrowRight
 } from 'lucide-react';
 import { Badge, Button, Card, Loading } from '@/components/ui';
@@ -38,7 +32,7 @@ export default function ManagementPage() {
   // Fetch vacation requests
   const { data: vacationsData, isLoading: vacationsLoading } = useInfiniteQuery({
     queryKey: ['vacation-requests', 'infinite'],
-    queryFn: ({ pageParam = 0 }) => vacationRequestsAPI.list(pageParam, 1000),
+    queryFn: ({ pageParam = 0 }) => vacationRequestsAPI.list({ skip: pageParam, limit: 1000 }),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < 1000) return undefined;
       return allPages.length * 1000;
@@ -50,7 +44,7 @@ export default function ManagementPage() {
   // Fetch time entries (for timesheets)
   const { data: timeEntriesData, isLoading: timeEntriesLoading } = useInfiniteQuery({
     queryKey: ['time-entries', 'infinite'],
-    queryFn: ({ pageParam = 0 }) => timeEntriesAPI.list(pageParam, 1000),
+    queryFn: ({ pageParam = 0 }) => timeEntriesAPI.list({ skip: pageParam, limit: 1000 }),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < 1000) return undefined;
       return allPages.length * 1000;
