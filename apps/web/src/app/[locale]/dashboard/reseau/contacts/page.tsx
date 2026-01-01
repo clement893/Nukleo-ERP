@@ -4,193 +4,177 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
-import { type Contact, type ContactCreate, type ContactUpdate } from '@/lib/api/reseau-contacts';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import ContactsGallery from '@/components/reseau/ContactsGallery';
-import ContactForm from '@/components/reseau/ContactForm';
-import ContactAvatar from '@/components/reseau/ContactAvatar';
-import FilterBadges from '@/components/reseau/FilterBadges';
-import ContactCounter from '@/components/reseau/ContactCounter';
-import ViewModeToggle from '@/components/reseau/ViewModeToggle';
-import ContactActionLink from '@/components/reseau/ContactActionLink';
-import ContactRowActions from '@/components/reseau/ContactRowActions';
-import SearchBar from '@/components/ui/SearchBar';
-import MultiSelectFilter from '@/components/reseau/MultiSelectFilter';
-import { 
-  Plus, 
-  Download, 
-  Upload, 
-  FileSpreadsheet, 
-  MoreVertical, 
-  Trash2,
-  HelpCircle
-} from 'lucide-react';
-import ImportContactsInstructions from '@/components/commercial/ImportContactsInstructions';
-import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
-import MotionDiv from '@/components/motion/MotionDiv';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useState, useMemo } from 'react';
 import { 
   useInfiniteReseauContacts, 
   useCreateReseauContact, 
-  useUpdateReseauContact, 
-  useDeleteReseauContact, 
-  useDeleteAllReseauContacts,
-  useReseauContactsCount,
-  reseauContactsAPI 
+  useUpdateReseauContact
 } from '@/lib/query/reseau-contacts';
+import type { Contact } from '@/lib/api/contacts';
+import { handleApiError } from '@/lib/errors/api';
+import { useToast } from '@/components/ui';
+import Loading from '@/components/ui/Loading';
+import Alert from '@/components/ui/Alert';
+import ContactForm from '@/components/reseau/ContactForm';
+import Modal from '@/components/ui/Modal';
+import { 
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+  Phone,
+  Mail,
+  MessageCircle,
+  Linkedin,
+  Star,
+  Users,
+  Briefcase,
+  UserPlus,
+  TrendingUp
+} from 'lucide-react';
 
-import type { ViewMode } from '@/components/reseau/ViewModeToggle';
+type ViewMode = 'gallery' | 'list';
+type FilterType = 'all' | 'favorites' | 'vip' | 'clients' | 'prospects' | 'partners';
 
-function ContactsContent() {
-  const router = useRouter();
+export default function ContactsPage() {
   const { showToast } = useToast();
   
-  // React Query hooks for contacts
-  const {
-    data: contactsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error: queryError,
-  } = useInfiniteReseauContacts(20);
-  
-  // Get total count from database
-  const { data: totalCount = 0 } = useReseauContactsCount();
-  
-  // Mutations
-  const createContactMutation = useCreateReseauContact();
-  const updateContactMutation = useUpdateReseauContact();
-  const deleteContactMutation = useDeleteReseauContact();
-  const deleteAllContactsMutation = useDeleteAllReseauContacts();
-  
-  // Flatten pages into single array
-  const contacts = useMemo(() => {
-    return contactsData?.pages.flat() || [];
-  }, [contactsData]);
-  
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // State
+  const [viewMode, setViewMode] = useState<ViewMode>('gallery');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [cityFilter, setCityFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [filterCity, setFilterCity] = useState<string[]>([]);
-  const [filterPhone, setFilterPhone] = useState<string[]>([]);
-  const [filterCircle, setFilterCircle] = useState<string[]>([]);
-  const [filterCompany, setFilterCompany] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [showImportInstructions, setShowImportInstructions] = useState(false);
-  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
-  const [showImportLogs, setShowImportLogs] = useState(false);
-  
-  // Debounce search query to avoid excessive re-renders (300ms delay)
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
-  // Derived state from React Query
-  const loading = isLoading;
-  const loadingMore = isFetchingNextPage;
-  const hasMore = hasNextPage ?? false;
-  const error = queryError ? handleApiError(queryError).message : null;
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
 
-  // Mock data pour les entreprises et employés (à remplacer par des appels API réels)
-  const [companies] = useState<Array<{ id: number; name: string }>>([]);
-  const [employees] = useState<Array<{ id: number; name: string }>>([]);
-  const circles = ['client', 'prospect', 'partenaire', 'fournisseur', 'autre'];
+  // API Hooks
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteReseauContacts(50);
 
-  // Load more contacts for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
-    }
-  }, [loadingMore, hasMore, fetchNextPage]);
+  const createContactMutation = useCreateReseauContact();
+  const updateContactMutation = useUpdateReseauContact();
 
-  // Extract unique values for dropdowns
-  const uniqueValues = useMemo(() => {
+  // Flatten contacts from pages
+  const contacts = useMemo(() => {
+    return data?.pages.flatMap(page => page) || [];
+  }, [data]);
+
+  // Get unique cities, roles, tags
+  const uniqueCities = useMemo(() => {
     const cities = new Set<string>();
-    const phones = new Set<string>();
-    const companyNames = new Set<string>();
-
-    contacts.forEach((contact) => {
+    contacts.forEach(contact => {
       if (contact.city) cities.add(contact.city);
-      if (contact.phone) phones.add(contact.phone);
-      if (contact.company_name) companyNames.add(contact.company_name);
     });
-
-    return {
-      cities: Array.from(cities).sort(),
-      phones: Array.from(phones).sort(),
-      companyNames: Array.from(companyNames).sort(),
-    };
+    return Array.from(cities).sort();
   }, [contacts]);
 
-  // Filtered contacts with debounced search and alphabetical sorting
-  const filteredContacts = useMemo(() => {
-    const filtered = contacts.filter((contact) => {
-      // City filter: match if no filter or contact city is in filter array
-      const matchesCity = filterCity.length === 0 || (contact.city && filterCity.includes(contact.city));
-      
-      // Phone filter: match if no filter or contact phone is in filter array
-      const matchesPhone = filterPhone.length === 0 || (contact.phone && filterPhone.includes(contact.phone));
-      
-      // Circle filter: match if no filter or contact circle is in filter array
-      const matchesCircle = filterCircle.length === 0 || (contact.circle && filterCircle.includes(contact.circle));
-      
-      // Company filter: match if no filter or contact company_id is in filter array
-      const matchesCompany = filterCompany.length === 0 || 
-        (contact.company_id && filterCompany.includes(contact.company_id.toString()));
-      
-      // Search filter: search in name, email, phone, company (using debounced query)
-      const matchesSearch = !debouncedSearchQuery || 
-        `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        contact.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        contact.phone?.includes(debouncedSearchQuery) ||
-        contact.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-
-      return matchesCity && matchesPhone && matchesCircle && matchesCompany && matchesSearch;
+  const uniqueRoles = useMemo(() => {
+    const roles = new Set<string>();
+    contacts.forEach(contact => {
+      if (contact.position) roles.add(contact.position);
     });
-    
-    // Sort alphabetically by first name, then last name
-    return filtered.sort((a, b) => {
-      const aFirstName = (a.first_name || '').toLowerCase();
-      const bFirstName = (b.first_name || '').toLowerCase();
-      const aLastName = (a.last_name || '').toLowerCase();
-      const bLastName = (b.last_name || '').toLowerCase();
-      
-      // Compare first names first
-      if (aFirstName !== bFirstName) {
-        return aFirstName.localeCompare(bFirstName, 'fr', { sensitivity: 'base' });
+    return Array.from(roles).sort();
+  }, [contacts]);
+
+  const uniqueTags = useMemo(() => {
+    const tags = new Set<string>();
+    contacts.forEach(contact => {
+      if (contact.circle) {
+        contact.circle.split(',').forEach((tag: string) => tags.add(tag.trim()));
       }
-      // If first names are equal, compare last names
-      return aLastName.localeCompare(bLastName, 'fr', { sensitivity: 'base' });
     });
-  }, [contacts, filterCity, filterPhone, filterCircle, filterCompany, debouncedSearchQuery]);
-  
-  // Check if any filters are active (use debounced search for display)
-  const hasActiveFilters = !!(filterCity.length > 0 || filterPhone.length > 0 || filterCircle.length > 0 || filterCompany.length > 0 || debouncedSearchQuery);
-  
-  // Clear all filters function
-  const clearAllFilters = useCallback(() => {
-    setFilterCity([]);
-    setFilterPhone([]);
-    setFilterCircle([]);
-    setFilterCompany([]);
-    setSearchQuery('');
-  }, []);
+    return Array.from(tags).sort();
+  }, [contacts]);
 
+  // Filter and search contacts
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          contact.first_name?.toLowerCase().includes(query) ||
+          contact.last_name?.toLowerCase().includes(query) ||
+          contact.company_name?.toLowerCase().includes(query) ||
+          contact.email?.toLowerCase().includes(query) ||
+          contact.position?.toLowerCase().includes(query) ||
+          contact.city?.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
 
-  // Handle create with React Query mutation
-  const handleCreate = async (data: ContactCreate | ContactUpdate) => {
+      // Type filter (favorites, vip, etc.)
+      if (filterType === 'favorites' && !favorites.has(contact.id)) return false;
+      if (filterType === 'vip' && !contact.circle?.includes('VIP')) return false;
+      if (filterType === 'clients' && !contact.circle?.includes('Client')) return false;
+      if (filterType === 'prospects' && !contact.circle?.includes('Prospect')) return false;
+      if (filterType === 'partners' && !contact.circle?.includes('Partenaire')) return false;
+
+      // City filter
+      if (cityFilter !== 'all' && contact.city !== cityFilter) return false;
+
+      // Role filter
+      if (roleFilter !== 'all' && contact.position !== roleFilter) return false;
+
+      // Tag filter
+      if (tagFilter !== 'all' && !contact.circle?.includes(tagFilter)) return false;
+
+      return true;
+    });
+  }, [contacts, searchQuery, filterType, cityFilter, roleFilter, tagFilter, favorites]);
+
+  // Count by type
+  const counts = useMemo(() => {
+    return {
+      all: contacts.length,
+      favorites: contacts.filter(c => favorites.has(c.id)).length,
+      vip: contacts.filter(c => c.circle?.includes('VIP')).length,
+      clients: contacts.filter(c => c.circle?.includes('Client')).length,
+      prospects: contacts.filter(c => c.circle?.includes('Prospect')).length,
+      partners: contacts.filter(c => c.circle?.includes('Partenaire')).length,
+    };
+  }, [contacts, favorites]);
+
+  // Toggle favorite
+  const toggleFavorite = (contactId: number) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(contactId)) {
+        newFavorites.delete(contactId);
+      } else {
+        newFavorites.add(contactId);
+      }
+      return newFavorites;
+    });
+  };
+
+  // Get tag colors
+  const getTagColors = (tag: string) => {
+    const colors: Record<string, { bg: string; text: string; border: string }> = {
+      'VIP': { bg: 'bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-500/30' },
+      'Client': { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/30' },
+      'Prospect': { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
+      'Partenaire': { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' },
+      'Fournisseur': { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30' },
+    };
+    return colors[tag] || { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' };
+  };
+
+  // Handle create
+  const handleCreate = async (data: any) => {
     try {
-      await createContactMutation.mutateAsync(data as ContactCreate);
-      setShowCreateModal(false);
+      await createContactMutation.mutateAsync(data);
+      setShowAddModal(false);
       showToast({
         message: 'Contact créé avec succès',
         type: 'success',
@@ -204,14 +188,14 @@ function ContactsContent() {
     }
   };
 
-  // Handle update with React Query mutation
-  const handleUpdate = async (data: ContactCreate | ContactUpdate) => {
+  // Handle update
+  const handleUpdate = async (data: any) => {
     if (!selectedContact) return;
 
     try {
       await updateContactMutation.mutateAsync({
         id: selectedContact.id,
-        data: data as ContactUpdate,
+        data,
       });
       setShowEditModal(false);
       setSelectedContact(null);
@@ -228,595 +212,484 @@ function ContactsContent() {
     }
   };
 
-  // Handle delete with React Query mutation
-  const handleDelete = async (contactId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce contact ?')) {
-      return;
-    }
+  if (isLoading) {
+    return <Loading />;
+  }
 
-    try {
-      await deleteContactMutation.mutateAsync(contactId);
-      if (selectedContact?.id === contactId) {
-        setSelectedContact(null);
-      }
-      showToast({
-        message: 'Contact supprimé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression du contact',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle delete all contacts with React Query mutation
-  const handleDeleteAll = async () => {
-    const count = contacts.length;
-    if (count === 0) {
-      showToast({
-        message: 'Aucun contact à supprimer',
-        type: 'info',
-      });
-      return;
-    }
-
-    const confirmed = confirm(
-      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUS les ${count} contact(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
+  if (isError) {
+    return (
+      <div className="min-h-screen p-6">
+        <Alert variant="error">
+          {error?.message || 'Erreur lors du chargement des contacts'}
+        </Alert>
+      </div>
     );
-
-    if (!confirmed) {
-      return;
-    }
-
-    // Double confirmation
-    const doubleConfirmed = confirm(
-      '⚠️ DERNIÈRE CONFIRMATION: Tous les contacts seront définitivement supprimés. Tapez OK pour confirmer.'
-    );
-
-    if (!doubleConfirmed) {
-      return;
-    }
-
-    try {
-      const result = await deleteAllContactsMutation.mutateAsync();
-      setSelectedContact(null);
-      showToast({
-        message: result.message || `${result.deleted_count} contact(s) supprimé(s) avec succès`,
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression des contacts',
-        type: 'error',
-      });
-    }
-  };
-
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
-  
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      // Generate import_id before starting import
-      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
-      setShowImportLogs(true);
-      
-      const result = await reseauContactsAPI.import(file, importId);
-      
-      // Update import_id if backend returns a different one (should be the same)
-      if (result.import_id && result.import_id !== importId) {
-        setCurrentImportId(result.import_id);
-      }
-      
-      if (result.valid_rows > 0) {
-        // Invalidate contacts query to refetch after import
-        queryClient.invalidateQueries({ queryKey: ['contacts'] });
-        
-        const photosMsg = result.photos_uploaded && result.photos_uploaded > 0 ? ` (${result.photos_uploaded} photo(s) uploadée(s))` : '';
-        showToast({
-          message: `${result.valid_rows} contact(s) importé(s) avec succès${photosMsg}`,
-          type: 'success',
-        });
-      }
-      
-      // Display warnings, especially for companies not found
-      if (result.warnings && result.warnings.length > 0) {
-        const companyWarnings = result.warnings.filter(w => 
-          w.type === 'company_not_found' || w.type === 'company_partial_match'
-        );
-        
-        if (companyWarnings.length > 0) {
-          const uniqueCompanies = new Set(
-            companyWarnings
-              .map(w => w.data?.company_name as string)
-              .filter(Boolean)
-          );
-          
-          const warningMsg = companyWarnings.length === 1 && companyWarnings[0]
-            ? `⚠️ ${companyWarnings[0].message}`
-            : `⚠️ ${companyWarnings.length} entreprise(s) nécessitent une révision (${Array.from(uniqueCompanies).join(', ')})`;
-          
-          showToast({
-            message: warningMsg,
-            type: 'warning',
-            duration: 8000, // Longer duration for important warnings
-          });
-        }
-      }
-      
-      if (result.invalid_rows > 0) {
-        showToast({
-          message: `${result.invalid_rows} ligne(s) avec erreur(s)`,
-          type: 'warning',
-        });
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    try {
-      const blob = await reseauContactsAPI.export();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `contacts-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast({
-        message: 'Export réussi',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'export',
-        type: 'error',
-      });
-    }
-  };
-
-  // Navigate to detail page
-  const openDetailPage = (contact: Contact) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/reseau/contacts/${contact.id}`);
-  };
-
-  // Open edit modal
-  const openEditModal = (contact: Contact) => {
-    setSelectedContact(contact);
-    setShowEditModal(true);
-  };
-
-  // Table columns
-  const columns: Column<Contact>[] = [
-    {
-      key: 'photo_url',
-      label: '',
-      sortable: false,
-      render: (_value, contact) => (
-        <div className="flex items-center">
-          <ContactAvatar contact={contact} size="md" />
-        </div>
-      ),
-    },
-    {
-      key: 'first_name',
-      label: 'Prénom',
-      sortable: true,
-      render: (_value, contact) => (
-        <div className="flex items-center justify-between group">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={`${contact.first_name} ${contact.last_name}`}>{contact.first_name} {contact.last_name}</div>
-            {contact.position && (
-              <div className="text-sm text-muted-foreground truncate">{contact.position}</div>
-            )}
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <ContactRowActions
-              contact={contact}
-              onView={() => openDetailPage(contact)}
-              onEdit={() => openEditModal(contact)}
-              onDelete={() => handleDelete(contact.id)}
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'company_name',
-      label: 'Entreprise',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
-      ),
-    },
-    {
-      key: 'circle',
-      label: 'Cercle',
-      sortable: true,
-      render: (value) => {
-        if (!value) return <span className="text-muted-foreground">-</span>;
-        
-        const circleColors: Record<string, string> = {
-          client: 'bg-green-500 hover:bg-green-600',
-          prospect: 'bg-blue-500 hover:bg-blue-600',
-          partenaire: 'bg-purple-500 hover:bg-purple-600',
-          fournisseur: 'bg-orange-500 hover:bg-orange-600',
-          autre: 'bg-gray-500 hover:bg-gray-600',
-        };
-        
-        return (
-          <Badge 
-            variant="default" 
-            className={`capitalize text-white ${circleColors[String(value)] || 'bg-gray-500'}`}
-          >
-            {String(value)}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: 'email',
-      label: 'Courriel',
-      sortable: true,
-      render: (value, contact) => (
-        <ContactActionLink type="email" value={String(value)} contact={contact} />
-      ),
-    },
-    {
-      key: 'phone',
-      label: 'Téléphone',
-      sortable: true,
-      render: (value, contact) => (
-        <ContactActionLink type="phone" value={String(value)} contact={contact} />
-      ),
-    },
-    {
-      key: 'city',
-      label: 'Ville',
-      sortable: true,
-      render: (_value, contact) => (
-        <span className="text-muted-foreground">
-          {[contact.city, contact.country].filter(Boolean).join(', ') || '-'}
-        </span>
-      ),
-    },
-  ];
+  }
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <PageHeader
-        title="Contacts"
-        description={`Gérez vos contacts commerciaux${contacts.length > 0 ? ` - ${contacts.length} contact${contacts.length > 1 ? 's' : ''} au total` : ''}`}
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Réseau', href: '/dashboard/reseau' },
-          { label: 'Contacts' },
-        ]}
-      />
-
-      {/* Toolbar */}
-      <Card>
-        <div className="space-y-3">
-          {/* Contact count with improved visual */}
-          <div className="flex items-center justify-between">
-            <ContactCounter
-              filtered={filteredContacts.length}
-              total={totalCount}
-              showFilteredBadge={hasActiveFilters}
-            />
+    <div className="min-h-screen p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white">Contacts</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Gérez vos contacts commerciaux efficacement</p>
           </div>
-          
-          {/* Search bar */}
-          <SearchBar
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Nouveau contact
+          </button>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="glass-card p-4 rounded-xl mb-6 space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher par nom, entreprise, email, rôle..."
             value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Rechercher par nom, email, téléphone, entreprise..."
-            className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           />
-          
-          {/* Active filters badges */}
-          <FilterBadges
-            filters={{
-              city: filterCity,
-              phone: filterPhone,
-              circle: filterCircle,
-              company: filterCompany,
-              search: searchQuery,
-            }}
-            onRemoveFilter={(key: string, value?: string) => {
-              if (key === 'city' && value) {
-                setFilterCity(filterCity.filter(v => v !== value));
-              } else if (key === 'phone' && value) {
-                setFilterPhone(filterPhone.filter(v => v !== value));
-              } else if (key === 'circle' && value) {
-                setFilterCircle(filterCircle.filter(v => v !== value));
-              } else if (key === 'company' && value) {
-                setFilterCompany(filterCompany.filter(v => v !== value));
-              } else if (key === 'search') {
-                setSearchQuery('');
-              }
-            }}
-            onClearAll={clearAllFilters}
-            companies={companies}
-          />
-          
-          {/* Top row: Filters, View toggle, Actions */}
-          <div className="flex flex-col gap-3">
-            {/* Filters row */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Entreprise */}
-              {companies.length > 0 && (
-                <MultiSelectFilter
-                  label="Entreprise"
-                  options={companies.map((company) => ({
-                    value: company.id.toString(),
-                    label: company.name,
-                  }))}
-                  selectedValues={filterCompany}
-                  onSelectionChange={setFilterCompany}
-                  className="min-w-[150px]"
-                />
-              )}
+        </div>
 
-              {/* Ville */}
-              <MultiSelectFilter
-                label="Ville"
-                options={uniqueValues.cities.map((city) => ({
-                  value: city,
-                  label: city,
-                }))}
-                selectedValues={filterCity}
-                onSelectionChange={setFilterCity}
-                className="min-w-[120px]"
-              />
+        {/* View Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('gallery')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              viewMode === 'gallery'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Galerie
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              viewMode === 'list'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <ListIcon className="w-4 h-4" />
+            Liste
+          </button>
+        </div>
 
-              {/* Téléphone */}
-              <MultiSelectFilter
-                label="Téléphone"
-                options={uniqueValues.phones.map((phone) => ({
-                  value: phone,
-                  label: phone,
-                }))}
-                selectedValues={filterPhone}
-                onSelectionChange={setFilterPhone}
-                className="min-w-[140px]"
-              />
+        {/* Quick Filters */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'all'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Tous {counts.all}
+          </button>
+          <button
+            onClick={() => setFilterType('favorites')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'favorites'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Star className="w-4 h-4" />
+            Favoris {counts.favorites}
+          </button>
+          <button
+            onClick={() => setFilterType('vip')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'vip'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            VIP {counts.vip}
+          </button>
+          <button
+            onClick={() => setFilterType('clients')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'clients'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Briefcase className="w-4 h-4" />
+            Clients {counts.clients}
+          </button>
+          <button
+            onClick={() => setFilterType('prospects')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'prospects'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <UserPlus className="w-4 h-4" />
+            Prospects {counts.prospects}
+          </button>
+          <button
+            onClick={() => setFilterType('partners')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'partners'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Partenaires {counts.partners}
+          </button>
+        </div>
 
-              {/* Cercle */}
-              <MultiSelectFilter
-                label="Cercle"
-                options={circles.map((circle) => ({
-                  value: circle,
-                  label: circle.charAt(0).toUpperCase() + circle.slice(1),
-                }))}
-                selectedValues={filterCircle}
-                onSelectionChange={setFilterCircle}
-                className="min-w-[120px]"
-              />
-            </div>
+        {/* Dropdown Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <select
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          >
+            <option value="all">Toutes les villes</option>
+            {uniqueCities.map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
 
-            {/* Bottom row: View toggle, Actions */}
-            <div className="flex items-center justify-between">
-              {/* View mode toggle */}
-              <ViewModeToggle value={viewMode} onChange={setViewMode} />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          >
+            <option value="all">Tous les rôles</option>
+            {uniqueRoles.map(role => (
+              <option key={role} value={role}>{role}</option>
+            ))}
+          </select>
 
-              {/* Actions menu */}
-              <div className="relative ml-auto">
-                <div className="flex items-center gap-2">
-                  {/* Primary action */}
-                  <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto">
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Nouveau contact
-                  </Button>
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          >
+            <option value="all">Tous les tags</option>
+            {uniqueTags.map(tag => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-                  {/* Secondary actions dropdown */}
-                  <div className="relative">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowActionsMenu(!showActionsMenu)}
-                      className="text-xs px-2 py-1.5 h-auto"
-                      aria-label="Actions"
-                    >
-                      <MoreVertical className="w-3.5 h-3.5" />
-                    </Button>
-                    {showActionsMenu && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setShowActionsMenu(false)}
-                        />
-                        <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
-                          <div className="py-1">
-                            <button
-                              onClick={() => {
-                                setShowImportInstructions(true);
-                                setShowActionsMenu(false);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                            >
-                              <HelpCircle className="w-3.5 h-3.5" />
-                              Instructions d'import
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await reseauContactsAPI.downloadTemplate();
-                                  setShowActionsMenu(false);
-                                } catch (err) {
-                                  const appError = handleApiError(err);
-                                  showToast({
-                                    message: appError.message || 'Erreur lors du téléchargement du modèle',
-                                    type: 'error',
-                                  });
-                                }
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5" />
-                              Modèle Excel
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await reseauContactsAPI.downloadZipTemplate();
-                                  setShowActionsMenu(false);
-                                  showToast({
-                                    message: 'Modèle ZIP téléchargé avec succès',
-                                    type: 'success',
-                                  });
-                                } catch (err) {
-                                  const appError = handleApiError(err);
-                                  showToast({
-                                    message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-                                    type: 'error',
-                                  });
-                                }
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5" />
-                              Modèle ZIP (avec photos)
-                            </button>
-                            <input
-                              type="file"
-                              accept=".xlsx,.xls,.zip"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleImport(file);
-                                  setShowActionsMenu(false);
-                                }
-                              }}
-                              className="hidden"
-                              id="import-contacts"
-                            />
-                            <label
-                              htmlFor="import-contacts"
-                              className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer"
-                            >
-                              <Upload className="w-3.5 h-3.5" />
-                              Importer
-                            </label>
-                            <button
-                              onClick={() => {
-                                handleExport();
-                                setShowActionsMenu(false);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              Exporter
-                            </button>
-                            <button
-                              onClick={() => {
-                                handleDeleteAll();
-                                setShowActionsMenu(false);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 border-t border-border"
-                              disabled={loading || contacts.length === 0}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Supprimer tous les contacts
-                            </button>
-                          </div>
-                        </div>
-                      </>
+      {/* Results Count */}
+      <div className="mb-4 text-gray-600 dark:text-gray-400">
+        {filteredContacts.length} contact{filteredContacts.length > 1 ? 's' : ''} trouvé{filteredContacts.length > 1 ? 's' : ''}
+      </div>
+
+      {/* Gallery View */}
+      {viewMode === 'gallery' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredContacts.map((contact) => {
+            const tags = contact.circle ? contact.circle.split(',').map((t: string) => t.trim()) : [];
+            
+            return (
+              <div
+                key={contact.id}
+                className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50"
+              >
+                {/* Photo */}
+                <div className="relative">
+                  <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                    {contact.photo_url ? (
+                      <img
+                        src={contact.photo_url}
+                        alt={`${contact.first_name} ${contact.last_name}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-6xl font-bold text-gray-400">
+                        {contact.first_name?.charAt(0)}{contact.last_name?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => toggleFavorite(contact.id)}
+                    className="absolute top-3 right-3 glass-badge p-2 rounded-full hover:scale-110 transition-all"
+                  >
+                    <Star
+                      className={`w-5 h-5 ${
+                        favorites.has(contact.id)
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-400'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Info */}
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                      {contact.first_name} {contact.last_name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{contact.position}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-1">
+                      <Briefcase className="w-3 h-3" />
+                      {contact.company_name}
+                    </p>
+                  </div>
+
+                  {/* Tags */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {tags.slice(0, 3).map((tag: string, idx: number) => {
+                        const colors = getTagColors(tag);
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2 py-1 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {contact.phone && (
+                      <a
+                        href={`tel:${contact.phone}`}
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center"
+                        title="Appeler"
+                      >
+                        <Phone className="w-4 h-4" />
+                      </a>
+                    )}
+                    {contact.email && (
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center"
+                        title="Email"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </a>
+                    )}
+                    {contact.phone && (
+                      <a
+                        href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-badge p-2 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-all flex items-center justify-center"
+                        title="WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    )}
+                    {contact.linkedin && (
+                      <a
+                        href={contact.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center"
+                        title="LinkedIn"
+                      >
+                        <Linkedin className="w-4 h-4" />
+                      </a>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
+            );
+          })}
         </div>
-      </Card>
-
-      {/* Error */}
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
       )}
 
-      {/* Content */}
-      {loading && contacts.length === 0 ? (
-        <Card>
-          <div className="py-12 text-center">
-            <Loading />
-          </div>
-        </Card>
-      ) : viewMode === 'list' ? (
-        <Card>
-          <DataTable
-            data={filteredContacts as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            filterable={false}
-            emptyMessage="Aucun contact trouvé"
-            loading={loading}
-            infiniteScroll={filterCity.length === 0 && filterPhone.length === 0 && filterCircle.length === 0 && filterCompany.length === 0}
-            hasMore={hasMore && filterCity.length === 0 && filterPhone.length === 0 && filterCircle.length === 0 && filterCompany.length === 0}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-            onRowClick={(row) => openDetailPage(row as unknown as Contact)}
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="space-y-2">
+          {filteredContacts.map((contact) => {
+            const tags = contact.circle ? contact.circle.split(',').map((t: string) => t.trim()) : [];
+            
+            return (
+              <div
+                key={contact.id}
+                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50"
+              >
+                <div className="flex items-center gap-4">
+                  {/* Photo */}
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {contact.photo_url ? (
+                      <img
+                        src={contact.photo_url}
+                        alt={`${contact.first_name} ${contact.last_name}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-xl font-bold text-gray-400">
+                        {contact.first_name?.charAt(0)}{contact.last_name?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-gray-900 dark:text-white truncate">
+                        {contact.first_name} {contact.last_name}
+                      </h3>
+                      {tags.slice(0, 2).map((tag: string, idx: number) => {
+                        const colors = getTagColors(tag);
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2 py-0.5 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {contact.position} • {contact.company_name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      {contact.city && `${contact.city} • `}
+                      {contact.email}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleFavorite(contact.id)}
+                      className="glass-badge p-2 rounded-lg hover:scale-110 transition-all"
+                    >
+                      <Star
+                        className={`w-4 h-4 ${
+                          favorites.has(contact.id)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-400'
+                        }`}
+                      />
+                    </button>
+                    {contact.phone && (
+                      <a
+                        href={`tel:${contact.phone}`}
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                        title="Appeler"
+                      >
+                        <Phone className="w-4 h-4" />
+                      </a>
+                    )}
+                    {contact.email && (
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                        title="Email"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </a>
+                    )}
+                    {contact.phone && (
+                      <a
+                        href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-badge p-2 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-all"
+                        title="WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    )}
+                    {contact.linkedin && (
+                      <a
+                        href={contact.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                        title="LinkedIn"
+                      >
+                        <Linkedin className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filteredContacts.length === 0 && (
+        <div className="glass-card p-12 rounded-xl text-center">
+          <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Aucun contact trouvé
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Essayez de modifier vos filtres ou créez un nouveau contact
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 transition-all mx-auto"
+          >
+            <Plus className="w-5 h-5" />
+            Nouveau contact
+          </button>
+        </div>
+      )}
+
+      {/* Load More */}
+      {hasNextPage && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="glass-button px-6 py-3 rounded-xl text-blue-600 hover:bg-blue-500/10 transition-all"
+          >
+            {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}
+          </button>
+        </div>
+      )}
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <Modal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          title="Nouveau contact"
+        >
+          <ContactForm
+            onSubmit={handleCreate}
+            onCancel={() => setShowAddModal(false)}
           />
-        </Card>
-      ) : (
-        <ContactsGallery
-          contacts={filteredContacts}
-          onContactClick={openDetailPage}
-          hasMore={hasMore && filterCity.length === 0 && filterPhone.length === 0 && filterCircle.length === 0 && filterCompany.length === 0}
-          loadingMore={loadingMore}
-          onLoadMore={loadMore}
-        />
+        </Modal>
       )}
-
-      {/* Create Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Créer un nouveau contact"
-        size="lg"
-      >
-        <ContactForm
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreateModal(false)}
-          loading={loading}
-          companies={companies}
-          employees={employees}
-          circles={circles}
-        />
-      </Modal>
 
       {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal && selectedContact !== null}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedContact(null);
-        }}
-        title="Modifier le contact"
-        size="lg"
-      >
-        {selectedContact && (
+      {showEditModal && selectedContact && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedContact(null);
+          }}
+          title="Modifier le contact"
+        >
           <ContactForm
             contact={selectedContact}
             onSubmit={handleUpdate}
@@ -824,66 +697,9 @@ function ContactsContent() {
               setShowEditModal(false);
               setSelectedContact(null);
             }}
-            loading={loading}
-            companies={companies}
-            employees={employees}
-            circles={circles}
           />
-        )}
-      </Modal>
-
-      {/* Import Instructions Modal */}
-      <ImportContactsInstructions
-        isOpen={showImportInstructions}
-        onClose={() => setShowImportInstructions(false)}
-        onDownloadTemplate={async () => {
-          try {
-            await reseauContactsAPI.downloadZipTemplate();
-            showToast({
-              message: 'Modèle ZIP téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-              type: 'error',
-            });
-          }
-        }}
-      />
-
-      {/* Import Logs Modal */}
-      {showImportLogs && (
-        <Modal
-          isOpen={showImportLogs}
-          onClose={() => {
-            setShowImportLogs(false);
-            setCurrentImportId(null);
-          }}
-          title="Logs d'import en temps réel"
-          size="xl"
-        >
-          {currentImportId ? (
-            <ImportLogsViewer
-              endpointUrl={`/v1/reseau/contacts/import/${currentImportId}/logs`}
-              importId={currentImportId}
-              onComplete={() => {
-                // Don't auto-close - let user close manually to review logs
-              }}
-            />
-          ) : (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
-            </div>
-          )}
         </Modal>
       )}
-    </MotionDiv>
+    </div>
   );
-}
-
-export default function ContactsPage() {
-  return <ContactsContent />;
 }
