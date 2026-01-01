@@ -125,27 +125,12 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions } = useEmployeePortalPermissions({ employeeId });
   
   // Écouter les événements de mise à jour des permissions depuis d'autres composants
-  useEffect(() => {
-    const handlePermissionsUpdate = (event: CustomEvent) => {
-      const eventEmployeeId = event.detail?.employeeId;
-      console.log('[EmployeePortalNavigation] Événement de mise à jour reçu:', {
-        eventEmployeeId,
-        currentEmployeeId: employeeId,
-        shouldReload: eventEmployeeId === employeeId,
-      });
-      if (eventEmployeeId === employeeId) {
-        console.log('[EmployeePortalNavigation] Rechargement des permissions...');
-        reloadPermissions();
-      }
-    };
-    
-    // Écouter les événements personnalisés pour recharger les permissions
-    window.addEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
-    };
-  }, [reloadPermissions, employeeId]);
+  // NOTE: Le hook useEmployeePortalPermissions gère déjà la mise à jour via handlePermissionsUpdate()
+  // qui utilise directement le cache mis à jour. On n'a pas besoin d'appeler reloadPermissions() ici
+  // car cela invaliderait le cache inutilement.
+  // Le hook mettra automatiquement à jour les permissions via setPermissions() dans handlePermissionsUpdate(),
+  // ce qui déclenchera un re-render de ce composant.
+  // useEffect supprimé car le hook gère déjà la mise à jour automatiquement
 
   // Extract current section from pathname
   const getCurrentSection = () => {

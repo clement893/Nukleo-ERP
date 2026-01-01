@@ -136,7 +136,6 @@ class SecurityAuditLogger:
         # Creating a separate session ensures the log is saved even if the main transaction fails
         use_separate_session = db is None
         if use_separate_session:
-            from app.core.database import AsyncSessionLocal
             db = AsyncSessionLocal()
         
         try:

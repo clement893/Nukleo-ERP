@@ -98,6 +98,15 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     description: '',
     project_id: null as number | null,
   });
+
+  // Entry task creation form (for create entry modal)
+  const [entryTaskForm, setEntryTaskForm] = useState({
+    title: '',
+    description: '',
+    project_id: null as number | null,
+  });
+  
+  const [adjustTimeValue, setAdjustTimeValue] = useState({ hours: 0, minutes: 0 });
   
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -236,13 +245,18 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
   };
 
   const loadTimerStatus = async () => {
-    if (!employee?.user_id) return;
+    if (!employee?.user_id) {
+      setTimerStatus({ active: false });
+      return;
+    }
     
     try {
       const status = await timeEntriesAPI.getTimerStatus();
       setTimerStatus(status);
     } catch (err) {
       console.error('Error loading timer status:', err);
+      // Set inactive status on error so timer section still shows
+      setTimerStatus({ active: false });
     }
   };
 
@@ -627,12 +641,12 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         </Alert>
       )}
 
-      {/* Timer Section */}
+      {/* Timer Section - Always visible */}
       <Card className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-foreground">Timer</h2>
           <div className="flex items-center gap-4">
-            {timerStatus?.active ? (
+            {timerStatus && timerStatus.active ? (
               <>
                 <div className="flex items-center gap-2">
                   {timerStatus.paused ? (
@@ -651,7 +665,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                   <Button
                     variant="outline"
                     onClick={() => setShowAdjustTimeModal(true)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-white border-white hover:bg-white/10"
                     size="sm"
                   >
                     <Edit className="w-4 h-4" />
@@ -671,7 +685,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                     <Button
                       variant="outline"
                       onClick={handlePauseTimer}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-white border-white hover:bg-white/10"
                       size="sm"
                     >
                       <Pause className="w-4 h-4" />
@@ -785,6 +799,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             variant={quickView === 'today' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setQuickView('today')}
+            className={quickView !== 'today' ? 'text-white border-white hover:bg-white/10' : ''}
           >
             Aujourd'hui
           </Button>
@@ -792,6 +807,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             variant={quickView === 'week' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setQuickView('week')}
+            className={quickView !== 'week' ? 'text-white border-white hover:bg-white/10' : ''}
           >
             Cette semaine
           </Button>
@@ -799,6 +815,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             variant={quickView === 'all' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setQuickView('all')}
+            className={quickView !== 'all' ? 'text-white border-white hover:bg-white/10' : ''}
           >
             Tout
           </Button>
@@ -1124,6 +1141,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             project_id: null,
             client_id: null,
           });
+          setEntryTaskForm({ title: '', description: '', project_id: null });
         }}
         title="Créer une entrée de temps"
       >
@@ -1174,18 +1192,58 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
-          <Select
-            label="Tâche"
-            value={formData.task_id?.toString() || ''}
-            onChange={(e) => setFormData({ ...formData, task_id: e.target.value ? parseInt(e.target.value) : null })}
-            options={[
-              { value: '', label: 'Aucune tâche' },
-              ...tasks.map((task) => ({
-                value: task.id.toString(),
-                label: task.title,
-              })),
-            ]}
-          />
+          <div>
+            <Select
+              label="Tâche"
+              value={formData.task_id?.toString() || ''}
+              onChange={(e) => {
+                const taskId = e.target.value ? parseInt(e.target.value) : null;
+                setFormData({ ...formData, task_id: taskId });
+                if (taskId) {
+                  // Clear new task form if selecting existing task
+                  setEntryTaskForm({ title: '', description: '', project_id: null });
+                }
+              }}
+              options={[
+                { value: '', label: 'Créer une nouvelle tâche' },
+                ...tasks.map((task) => ({
+                  value: task.id.toString(),
+                  label: task.title,
+                })),
+              ]}
+            />
+            {!formData.task_id && (
+              <div className="mt-4 p-4 bg-accent rounded-lg space-y-4">
+                <p className="text-sm font-medium text-foreground">Créer une nouvelle tâche</p>
+                <Input
+                  type="text"
+                  label="Nom de la tâche"
+                  placeholder="Ex: Développement fonctionnalité X"
+                  value={entryTaskForm.title}
+                  onChange={(e) => setEntryTaskForm({ ...entryTaskForm, title: e.target.value })}
+                />
+                <Input
+                  type="text"
+                  label="Description (optionnel)"
+                  placeholder="Description de la tâche"
+                  value={entryTaskForm.description}
+                  onChange={(e) => setEntryTaskForm({ ...entryTaskForm, description: e.target.value })}
+                />
+                <Select
+                  label="Projet (optionnel)"
+                  value={entryTaskForm.project_id?.toString() || ''}
+                  onChange={(e) => setEntryTaskForm({ ...entryTaskForm, project_id: e.target.value ? parseInt(e.target.value) : null })}
+                  options={[
+                    { value: '', label: 'Aucun projet' },
+                    ...projects.map((proj) => ({
+                      value: proj.id.toString(),
+                      label: proj.name,
+                    })),
+                  ]}
+                />
+              </div>
+            )}
+          </div>
           <Select
             label="Projet"
             value={formData.project_id?.toString() || ''}
@@ -1211,12 +1269,32 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             ]}
           />
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCreateModal(false);
+                setEntryTaskForm({ title: '', description: '', project_id: null });
+              }}
+              className="text-white border-white hover:bg-white/10"
+            >
               Annuler
             </Button>
-            <Button variant="primary" onClick={handleCreateEntry}>
-              <Save className="w-4 h-4 mr-2" />
-              Créer
+            <Button 
+              variant="primary" 
+              onClick={handleCreateEntry}
+              disabled={creatingTask || (!formData.task_id && !entryTaskForm.title.trim())}
+            >
+              {creatingTask ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Créer
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -1324,7 +1402,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             ]}
           />
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEditModal(false)}
+              className="text-white border-white hover:bg-white/10"
+            >
               Annuler
             </Button>
             <Button variant="primary" onClick={handleUpdateEntry}>
@@ -1373,7 +1455,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             Nouveau temps: {formatDuration(adjustTimeValue.hours * 3600 + adjustTimeValue.minutes * 60)}
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowAdjustTimeModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAdjustTimeModal(false)}
+              className="text-white border-white hover:bg-white/10"
+            >
               Annuler
             </Button>
             <Button variant="primary" onClick={handleAdjustTime}>
