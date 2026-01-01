@@ -191,13 +191,15 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
         </Card>
       ) : (
         <Card>
-          <DataTable
+          <DataTable<Record<string, unknown>>
             data={tasks as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
             pagination={false}
             searchable={false}
             emptyMessage="Aucune tâche trouvée"
-            onRowClick={(row) => handleTaskClick(row as unknown as ProjectTask)}
+            onRowClick={(row) => {
+              handleTaskClick(row as unknown as ProjectTask);
+            }}
           />
         </Card>
       )}
