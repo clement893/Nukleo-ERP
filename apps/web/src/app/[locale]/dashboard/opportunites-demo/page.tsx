@@ -277,8 +277,8 @@ export default function OpportunitiesDemoPage() {
               Créer une opportunité
             </Button>
           </div>
-        ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredOpportunities.map((opp) => (
               <div
                 key={opp.id}
@@ -343,6 +343,72 @@ export default function OpportunitiesDemoPage() {
                   <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                     <Trash2 className="w-4 h-4" />
                   </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredOpportunities.map((opp) => (
+              <div
+                key={opp.id}
+                className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="flex items-center gap-4">
+                  {/* Title & Stage */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-[#523DC9] transition-colors truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {opp.title}
+                    </h3>
+                    <Badge className={getStageColor(opp.stage)}>
+                      {opp.stage}
+                    </Badge>
+                  </div>
+
+                  {/* Company & Contact */}
+                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      <span>{opp.company}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      <span>{opp.contact}</span>
+                    </div>
+                  </div>
+
+                  {/* Value */}
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {formatCurrency(opp.value)}
+                    </div>
+                  </div>
+
+                  {/* Probability */}
+                  <div className="text-right">
+                    <div className={`text-lg font-bold ${getProbabilityColor(opp.probability)}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {opp.probability}%
+                    </div>
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(opp.expected_close).toLocaleDateString('fr-FR')}</span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

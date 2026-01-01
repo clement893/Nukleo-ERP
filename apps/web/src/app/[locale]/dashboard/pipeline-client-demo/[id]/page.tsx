@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { ArrowLeft, Building2, User, Mail, Phone, Calendar, Star, TrendingUp, DollarSign, Target, MessageSquare, FileText, Clock, Edit, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Building2, User, Mail, Phone, Calendar, TrendingUp, DollarSign, Target, MessageSquare, FileText, Clock, Edit, Trash2, Plus } from 'lucide-react';
 import { Badge, Button } from '@/components/ui';
 
 // Mock client data
@@ -186,10 +186,6 @@ export default function PipelineClientDetailDemoPage() {
                   <h1 className="text-5xl font-black text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {mockClient.name}
                   </h1>
-                  <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <Star className="w-5 h-5 fill-[#F59E0B] text-[#F59E0B]" />
-                    <span className="text-white font-bold">{mockClient.score}</span>
-                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge className={getStageColor(mockClient.stage)}>
@@ -248,9 +244,9 @@ export default function PipelineClientDetailDemoPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {mockClient.score}%
+              {mockClient.opportunities}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Score</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Opportunités actives</div>
           </div>
 
           <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
