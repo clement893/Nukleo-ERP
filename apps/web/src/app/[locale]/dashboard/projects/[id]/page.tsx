@@ -29,7 +29,7 @@ import {
   GanttChart,
   Star,
   Share2,
-  MoreHorizontal,
+
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
 import ProjectGantt from '@/components/projects/ProjectGantt';
