@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
 import EmployeeDetail from '@/components/employes/EmployeeDetail';
 import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft, Shield } from 'lucide-react';
+import { ArrowLeft, Shield, UserCircle, ExternalLink } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useAuthStore } from '@/lib/store';
 import { checkMySuperAdminStatus } from '@/lib/api/admin';
@@ -178,10 +178,32 @@ export default function EmployeeDetailPage() {
     router.push(`/${locale}/dashboard/management/employes`);
   };
 
+  const handleOpenPortal = () => {
+    if (employee) {
+      const locale = params?.locale as string || 'fr';
+      router.push(`/${locale}/dashboard/management/employes/${employee.id}/portail`);
+    }
+  };
+
   return (
     <PageContainer>
       <PageHeader
-        title={`${employee.first_name} ${employee.last_name}`}
+        title={
+          <div className="flex items-center gap-3">
+            <span>{`${employee.first_name} ${employee.last_name}`}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenPortal}
+              className="text-xs px-3 py-1.5 h-auto"
+              title="Accéder au portail employé"
+            >
+              <UserCircle className="w-3.5 h-3.5 mr-1.5" />
+              Portail
+              <ExternalLink className="w-3 h-3 ml-1.5" />
+            </Button>
+          </div>
+        }
         breadcrumbs={[
           { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
           { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },

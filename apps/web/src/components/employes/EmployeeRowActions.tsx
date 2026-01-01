@@ -57,7 +57,7 @@ export default function EmployeeRowActions({
               onClick={(e) => {
                 e.stopPropagation();
                 const locale = window.location.pathname.split('/')[1] || 'fr';
-                router.push(`/${locale}/portail-employe/${employee.id}`);
+                router.push(`/${locale}/dashboard/management/employes/${employee.id}/portail`);
                 setIsOpen(false);
               }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"

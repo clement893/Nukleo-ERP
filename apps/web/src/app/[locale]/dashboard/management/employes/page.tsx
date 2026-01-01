@@ -31,7 +31,8 @@ import {
   Mail,
   Phone,
   Linkedin,
-  Calendar
+  Calendar,
+  UserCircle
 } from 'lucide-react';
 import ImportEmployeesInstructions from '@/components/employes/ImportEmployeesInstructions';
 import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
@@ -289,6 +290,12 @@ function EmployeesContent() {
     router.push(`/${locale}/dashboard/management/employes/${employee.id}`);
   };
 
+  // Navigate to portal page
+  const openPortalPage = (employee: Employee) => {
+    const locale = window.location.pathname.split('/')[1] || 'fr';
+    router.push(`/${locale}/dashboard/management/employes/${employee.id}/portail`);
+  };
+
   // Open edit modal
   const openEditModal = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -316,7 +323,18 @@ function EmployeesContent() {
           <div className="min-w-0 flex-1">
             <div className="font-medium truncate" title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2 flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openPortalPage(employee);
+              }}
+              className="p-1 rounded hover:bg-muted transition-colors"
+              title="Accéder au portail employé"
+              aria-label="Accéder au portail employé"
+            >
+              <UserCircle className="w-4 h-4 text-primary" />
+            </button>
             <EmployeeRowActions
               employee={employee}
               onView={() => openDetailPage(employee)}

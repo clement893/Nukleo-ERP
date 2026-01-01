@@ -8,10 +8,18 @@ import { useState, useMemo } from 'react';
 import { 
   useInfiniteProjectTasks,
 } from '@/lib/query/project-tasks';
-import type { TaskStatus, TaskPriority } from '@/lib/api/project-tasks';
+import type { TaskStatus, TaskPriority, ProjectTask } from '@/lib/api/project-tasks';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { handleApiError } from '@/lib/errors/api';
 import Alert from '@/components/ui/Alert';
 import EmptyState from '@/components/ui/EmptyState';
 import Skeleton from '@/components/ui/Skeleton';
+import Drawer from '@/components/ui/Drawer';
+import Tabs from '@/components/ui/Tabs';
+import Loading from '@/components/ui/Loading';
+import { useToast } from '@/components/ui';
+import ProjectComments from '@/components/projects/ProjectComments';
+import ProjectAttachments from '@/components/projects/ProjectAttachments';
 import { 
   Search,
   List as ListIcon,
@@ -25,7 +33,10 @@ import {
   Play,
   Ban,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  Info,
+  MessageSquare,
+  Paperclip
 } from 'lucide-react';
 
 type ViewMode = 'list' | 'kanban';
@@ -35,6 +46,8 @@ type SortBy = 'created_at' | 'due_date' | 'priority' | 'title' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 export default function TachesPage() {
+  const { showToast } = useToast();
+  
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,6 +58,11 @@ export default function TachesPage() {
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortBy>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  
+  // Drawer state
+  const [showTaskDrawer, setShowTaskDrawer] = useState(false);
+  const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // API Hooks
   const { 
@@ -223,6 +241,44 @@ export default function TachesPage() {
     if (!dateString) return null;
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  // Handle opening task details drawer
+  const handleOpenTaskDetails = async (task: ProjectTask) => {
+    setLoadingDetails(true);
+    try {
+      const details = await projectTasksAPI.get(task.id);
+      setTaskDetails(details);
+      setShowTaskDrawer(true);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors du chargement des détails', type: 'error' });
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Status and priority labels
+  const STATUS_LABELS: Record<TaskStatus, string> = {
+    todo: 'À faire',
+    in_progress: 'En cours',
+    blocked: 'Bloquée',
+    to_transfer: 'À transférer',
+    completed: 'Terminée',
+  };
+
+  const PRIORITY_LABELS: Record<TaskPriority, string> = {
+    low: 'Basse',
+    medium: 'Moyenne',
+    high: 'Haute',
+    urgent: 'Urgente',
+  };
+
+  const PRIORITY_COLORS: Record<TaskPriority, string> = {
+    low: 'bg-gray-500',
+    medium: 'bg-blue-500',
+    high: 'bg-orange-500',
+    urgent: 'bg-red-500',
   };
 
   // Loading skeleton
@@ -488,7 +544,14 @@ export default function TachesPage() {
             return (
               <div
                 key={task.id}
-                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50"
+                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
+                onClick={(e) => {
+                  // Ne pas ouvrir si on clique sur les boutons d'action
+                  if ((e.target as HTMLElement).closest('button')) {
+                    return;
+                  }
+                  handleOpenTaskDetails(task);
+                }}
               >
                 <div className="flex items-start justify-between gap-4">
                   {/* Main Content */}
@@ -580,6 +643,147 @@ export default function TachesPage() {
           </button>
         </div>
       )}
+
+      {/* Task Details Drawer */}
+      <Drawer
+        isOpen={showTaskDrawer}
+        onClose={() => {
+          setShowTaskDrawer(false);
+          setTaskDetails(null);
+        }}
+        title={taskDetails?.title || ''}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : taskDetails ? (
+          <div className="h-full">
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6">
+                      {taskDetails.description && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Description
+                          </h4>
+                          <p className="text-sm text-foreground whitespace-pre-wrap">
+                            {taskDetails.description}
+                          </p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Statut
+                          </h4>
+                          <span className="text-sm">{STATUS_LABELS[taskDetails.status]}</span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Priorité
+                          </h4>
+                          <span className={`px-2 py-1 text-xs rounded-full text-white ${PRIORITY_COLORS[taskDetails.priority]}`}>
+                            {PRIORITY_LABELS[taskDetails.priority]}
+                          </span>
+                        </div>
+                        {taskDetails.due_date && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Échéance
+                            </h4>
+                            <span className="text-sm">
+                              {new Date(taskDetails.due_date).toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        )}
+                        {taskDetails.estimated_hours && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Heures estimées
+                            </h4>
+                            <span className="text-sm">{taskDetails.estimated_hours}h</span>
+                          </div>
+                        )}
+                        {taskDetails.assignee_name && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Assigné à
+                            </h4>
+                            <span className="text-sm">{taskDetails.assignee_name}</span>
+                          </div>
+                        )}
+                        {taskDetails.team_id && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Équipe
+                            </h4>
+                            <span className="text-sm">Équipe {taskDetails.team_id}</span>
+                          </div>
+                        )}
+                        {taskDetails.project_id && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                              Projet
+                            </h4>
+                            <span className="text-sm">Projet {taskDetails.project_id}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="pt-4 border-t border-border">
+                        <div className="text-xs text-muted-foreground">
+                          <p>Créée le {new Date(taskDetails.created_at).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}</p>
+                          {taskDetails.updated_at !== taskDetails.created_at && (
+                            <p className="mt-1">Modifiée le {new Date(taskDetails.updated_at).toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'comments',
+                  label: 'Commentaires',
+                  icon: <MessageSquare className="w-4 h-4" />,
+                  content: <ProjectComments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
+                },
+                {
+                  id: 'documents',
+                  label: 'Documents',
+                  icon: <Paperclip className="w-4 h-4" />,
+                  content: <ProjectAttachments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
+                },
+              ]}
+              defaultTab="info"
+            />
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   );
 }
