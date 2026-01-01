@@ -406,54 +406,150 @@ function ProjectDetailContent() {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Informations générales
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Nom du projet</p>
-                  <p className="text-foreground font-medium">{project.name}</p>
-                </div>
-                {project.description && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Description</p>
-                    <p className="text-foreground">{project.description}</p>
+          <div className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Statut Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
+                    <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                )}
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Statut</p>
-                  <Badge variant={getStatusBadge(project.status)}>
-                    {getStatusLabel(project.status)}
-                  </Badge>
+                </div>
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Statut du projet
+                </h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                  {getStatusLabel(project.status)}
+                </p>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  project.status === 'ACTIVE' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                  project.status === 'COMPLETED' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
+                  'bg-gray-500/20 text-gray-700 dark:text-gray-300'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    project.status === 'ACTIVE' ? 'bg-blue-500' :
+                    project.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gray-500'
+                  }`} />
+                  {project.status === 'ACTIVE' ? 'En cours' : project.status === 'COMPLETED' ? 'Terminé' : 'Archivé'}
                 </div>
               </div>
-            </Card>
 
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Dates
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Créé le</p>
-                  <p className="text-foreground">{formatDate(project.created_at)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Modifié le</p>
-                  <p className="text-foreground">{formatDate(project.updated_at)}</p>
-                </div>
-                {project.annee_realisation && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Année de réalisation</p>
-                    <p className="text-foreground font-medium">{project.annee_realisation}</p>
+              {/* Équipe Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-purple-500/10">
+                    <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
+                </div>
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Équipe
+                </h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                  {project.equipe || 'Non assignée'}
+                </p>
+                {project.contact && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Contact: {project.contact}
+                  </p>
                 )}
               </div>
-            </Card>
+
+              {/* Budget Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-green-500/10">
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Budget
+                </h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                  {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
+                </p>
+                {(project as Project & { taux_horaire?: number | null }).taux_horaire && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Taux: {formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h
+                  </p>
+                )}
+              </div>
+
+              {/* Dates Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-amber-500/10">
+                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                </div>
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Année
+                </h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                  {project.annee_realisation || new Date(project.created_at).getFullYear()}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Créé le {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                </p>
+              </div>
+            </div>
+
+            {/* Informations détaillées */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="glass-card p-6 rounded-xl">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Informations générales
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Nom du projet</p>
+                    <p className="text-gray-900 dark:text-white font-semibold">{project.name}</p>
+                  </div>
+                  {project.client_name && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{project.client_name}</p>
+                    </div>
+                  )}
+                  {project.description && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</p>
+                      <p className="text-gray-700 dark:text-gray-300">{project.description}</p>
+                    </div>
+                  )}
+                  {project.etape && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Étape</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{project.etape}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="glass-card p-6 rounded-xl">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Chronologie
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Créé le</p>
+                    <p className="text-gray-900 dark:text-white font-semibold">{formatDate(project.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Dernière modification</p>
+                    <p className="text-gray-900 dark:text-white font-semibold">{formatDate(project.updated_at)}</p>
+                  </div>
+                  {project.annee_realisation && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Année de réalisation</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{project.annee_realisation}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
         )}
 
