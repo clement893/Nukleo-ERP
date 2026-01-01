@@ -119,7 +119,7 @@ const mockDocuments = [
 ];
 
 export default function PipelineClientDetailDemoPage() {
-  const params = useParams();
+  const _params = useParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'opportunities' | 'activities' | 'documents'>('overview');
 

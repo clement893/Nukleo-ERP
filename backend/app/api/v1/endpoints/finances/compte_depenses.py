@@ -670,17 +670,31 @@ async def reject_compte_depenses(
     account.rejection_reason = action.rejection_reason
     
     await db.commit()
-    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    logger.debug(f"[reject_compte_depenses] Committed changes for account {account.id}")
+    
+    # Reload account from DB to ensure we have the latest values after commit
+    result = await db.execute(
+        select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
+    )
+    account = result.scalar_one_or_none()
+    
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense account not found after rejection"
+        )
+    
+    logger.debug(f"[reject_compte_depenses] Reloaded account {account.id} from DB, status={account.status}")
     
     # Safely load relationships to avoid lazy loading issues
-    employee, reviewer = await safe_refresh_account(db, account)
-    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
+    account_employee, account_reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[reject_compte_depenses] Loaded relationships for account {account.id}: employee={account_employee is not None}, reviewer={account_reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
+        "employee_name": f"{account_employee.first_name} {account_employee.last_name}" if account_employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -691,15 +705,16 @@ async def reject_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
+        "reviewer_name": f"{account_reviewer.first_name} {account_reviewer.last_name}" if account_reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
-            "metadata": account.account_metadata,
+        "metadata": account.account_metadata,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
     }
     
+    logger.debug(f"[reject_compte_depenses] Returning account dict with status={account_dict['status']}")
     return ExpenseAccountResponse(**account_dict)
 
 

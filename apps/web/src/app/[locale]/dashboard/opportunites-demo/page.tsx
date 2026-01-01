@@ -6,7 +6,7 @@ export const dynamicParams = true;
 import { useState, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Search, Filter, TrendingUp, DollarSign, Target, Clock, Building2, User, Calendar, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, TrendingUp, DollarSign, Target, Clock, Building2, User, Calendar, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
 import { Badge, Button, Input } from '@/components/ui';
 
 // Mock data
