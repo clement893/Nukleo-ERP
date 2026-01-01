@@ -101,7 +101,7 @@ export default function Sidebar({
     }
 
     const query = searchQuery.toLowerCase();
-    const filtered = navigationConfig.items.map((item) => {
+    return navigationConfig.items.map((item) => {
       if ('items' in item) {
         // Check if group name matches
         const groupNameMatches = item.name.toLowerCase().includes(query);
@@ -130,18 +130,26 @@ export default function Sidebar({
         return null;
       }
     }).filter((item): item is NavigationItem | NavigationGroup => item !== null);
-    
-    // Auto-open groups that have filtered results
+  }, [navigationConfig.items, searchQuery]);
+
+  // Auto-open groups that have filtered results when searching
+  useEffect(() => {
     if (searchQuery.trim()) {
-      filtered.forEach((item) => {
+      const groupsToOpen = new Set<string>();
+      filteredNavigation.forEach((item) => {
         if ('items' in item && item.items.length > 0) {
-          setOpenGroups((prev) => new Set(prev).add(item.name));
+          groupsToOpen.add(item.name);
         }
       });
+      if (groupsToOpen.size > 0) {
+        setOpenGroups((prev) => {
+          const newSet = new Set(prev);
+          groupsToOpen.forEach((groupName) => newSet.add(groupName));
+          return newSet;
+        });
+      }
     }
-    
-    return filtered;
-  }, [navigationConfig.items, searchQuery]);
+  }, [searchQuery, filteredNavigation]);
 
   // Render navigation item
   const renderNavItem = (item: NavigationItem) => {
