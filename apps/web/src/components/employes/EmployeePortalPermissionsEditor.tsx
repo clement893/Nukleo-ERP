@@ -21,7 +21,7 @@ import { employeePortalPermissionsAPI, type EmployeePortalPermission, type Emplo
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
-import { Search, Plus, X, Save } from 'lucide-react';
+import { Search, Plus, X, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface EmployeePortalPermissionsEditorProps {
   employeeId: number;
@@ -45,6 +45,10 @@ export default function EmployeePortalPermissionsEditor({
   // État local pour les cases à cocher
   const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
   const [selectedClients, setSelectedClients] = useState<Set<number>>(new Set());
+  
+  // État pour suivre les permissions initialement chargées (sauvegardées)
+  const [savedModules, setSavedModules] = useState<Set<string>>(new Set());
+  const [savedClients, setSavedClients] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadData();
@@ -88,6 +92,10 @@ export default function EmployeePortalPermissionsEditor({
 
       setSelectedModules(modulesSet);
       setSelectedClients(clientsSet);
+      
+      // Sauvegarder l'état initial pour comparer les changements
+      setSavedModules(new Set(modulesSet));
+      setSavedClients(new Set(clientsSet));
 
       // Charger les clients sélectionnés
       if (clientsSet.size > 0) {
@@ -168,6 +176,9 @@ export default function EmployeePortalPermissionsEditor({
       });
 
       await loadData();
+      // Mettre à jour les permissions sauvegardées après la sauvegarde
+      setSavedModules(new Set(selectedModules));
+      setSavedClients(new Set(selectedClients));
       onUpdate?.();
     } catch (err) {
       const appError = handleApiError(err);
@@ -211,6 +222,15 @@ export default function EmployeePortalPermissionsEditor({
     setClients(prev => prev.filter(c => c.id !== clientId));
   };
 
+  // Vérifier s'il y a des changements non sauvegardés
+  const hasUnsavedChanges = 
+    selectedModules.size !== savedModules.size ||
+    selectedClients.size !== savedClients.size ||
+    Array.from(selectedModules).some(m => !savedModules.has(m)) ||
+    Array.from(savedModules).some(m => !selectedModules.has(m)) ||
+    Array.from(selectedClients).some(c => !savedClients.has(c)) ||
+    Array.from(savedClients).some(c => !selectedClients.has(c));
+
   if (loading) {
     return <Loading />;
   }
@@ -222,6 +242,46 @@ export default function EmployeePortalPermissionsEditor({
           {error}
         </Alert>
       )}
+
+      {/* Résumé des permissions actives */}
+      <Card className="p-4 bg-muted/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Modules actifs
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                {savedModules.size}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                sur {EMPLOYEE_PORTAL_MODULES.length} disponibles
+              </div>
+            </div>
+            <div className="h-12 w-px bg-border" />
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Clients actifs
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                {savedClients.size}
+              </div>
+            </div>
+          </div>
+          {hasUnsavedChanges && (
+            <Badge variant="warning" className="flex items-center gap-2">
+              <AlertCircle className="w-3 h-3" />
+              Modifications non sauvegardées
+            </Badge>
+          )}
+          {!hasUnsavedChanges && savedModules.size > 0 && (
+            <Badge variant="success" className="flex items-center gap-2">
+              <CheckCircle2 className="w-3 h-3" />
+              Toutes les modifications sont sauvegardées
+            </Badge>
+          )}
+        </div>
+      </Card>
 
       {/* Modules ERP */}
       <Card className="p-6">
@@ -248,12 +308,30 @@ export default function EmployeePortalPermissionsEditor({
                 onClick={(e) => e.stopPropagation()}
               />
               <div className="flex-1">
-                <label
-                  htmlFor={`module-${module.id}`}
-                  className="text-sm font-medium cursor-pointer block"
-                >
-                  {module.label}
-                </label>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor={`module-${module.id}`}
+                    className="text-sm font-medium cursor-pointer block"
+                  >
+                    {module.label}
+                  </label>
+                  {savedModules.has(module.id) && (
+                    <Badge variant="success" className="text-xs">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Actif
+                    </Badge>
+                  )}
+                  {selectedModules.has(module.id) && !savedModules.has(module.id) && (
+                    <Badge variant="warning" className="text-xs">
+                      Nouveau
+                    </Badge>
+                  )}
+                  {!selectedModules.has(module.id) && savedModules.has(module.id) && (
+                    <Badge variant="error" className="text-xs">
+                      À supprimer
+                    </Badge>
+                  )}
+                </div>
                 {module.description && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {module.description}
@@ -303,17 +381,36 @@ export default function EmployeePortalPermissionsEditor({
             {clients.map(client => (
               <div
                 key={client.id}
-                className="flex items-center justify-between p-3 border border-border rounded-lg"
+                className={`flex items-center justify-between p-3 border rounded-lg ${
+                  savedClients.has(client.id)
+                    ? 'border-success-200 dark:border-success-800 bg-success-50/50 dark:bg-success-900/20'
+                    : 'border-border'
+                }`}
               >
-                <div>
-                  <div className="font-medium">
-                    {client.first_name} {client.last_name}
-                  </div>
-                  {client.company_name && (
-                    <div className="text-sm text-muted-foreground">
-                      {client.company_name}
+                <div className="flex items-center gap-3 flex-1">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">
+                        {client.first_name} {client.last_name}
+                      </div>
+                      {savedClients.has(client.id) && (
+                        <Badge variant="success" className="text-xs">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Actif
+                        </Badge>
+                      )}
+                      {selectedClients.has(client.id) && !savedClients.has(client.id) && (
+                        <Badge variant="warning" className="text-xs">
+                          Nouveau
+                        </Badge>
+                      )}
                     </div>
-                  )}
+                    {client.company_name && (
+                      <div className="text-sm text-muted-foreground">
+                        {client.company_name}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -329,14 +426,23 @@ export default function EmployeePortalPermissionsEditor({
       </Card>
 
       {/* Bouton de sauvegarde */}
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        {hasUnsavedChanges && (
+          <Alert variant="warning" className="flex-1">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>Vous avez des modifications non sauvegardées</span>
+            </div>
+          </Alert>
+        )}
         <Button
           onClick={handleSave}
           loading={saving}
           size="lg"
+          disabled={!hasUnsavedChanges && !saving}
         >
           <Save className="w-4 h-4 mr-2" />
-          Sauvegarder les permissions
+          {hasUnsavedChanges ? 'Sauvegarder les modifications' : 'Tout est sauvegardé'}
         </Button>
       </div>
 
