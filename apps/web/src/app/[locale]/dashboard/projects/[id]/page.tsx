@@ -544,34 +544,61 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'financial' && (
-          <Card className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Informations financières
-            </h3>
+          <div className="space-y-6">
+            {/* Financial KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                <p className="text-sm text-green-700 mb-2">Budget total</p>
-                <p className="text-3xl font-bold text-green-900">
+              {/* Budget Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-green-500/10">
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Budget total
+                </h3>
+                <p className="text-3xl font-black text-gray-900 dark:text-white mb-2">
                   {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
                 </p>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-4">
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style={{ width: '100%' }} />
+                </div>
               </div>
 
-              <div className="p-6 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                <p className="text-sm text-blue-700 mb-2">Taux horaire</p>
-                <p className="text-3xl font-bold text-blue-900">
+              {/* Taux Horaire Card */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
+                    <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Taux horaire
+                </h3>
+                <p className="text-3xl font-black text-gray-900 dark:text-white mb-2">
                   {(project as Project & { taux_horaire?: number | null }).taux_horaire ? `${formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h` : '-'}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-4">
+                  Facturation horaire
                 </p>
               </div>
             </div>
 
+            {/* Empty State */}
             {!((project as Project & { budget?: number | null }).budget) && !((project as Project & { taux_horaire?: number | null }).taux_horaire) && (
-              <div className="text-center py-8 text-muted-foreground">
-                <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Aucune information financière disponible</p>
+              <div className="glass-card p-12 rounded-xl text-center">
+                <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <DollarSign className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Aucune information financière
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Les données financières n'ont pas encore été renseignées pour ce projet.
+                </p>
               </div>
             )}
-          </Card>
+          </div>
         )}
 
         {activeTab === 'links' && (
