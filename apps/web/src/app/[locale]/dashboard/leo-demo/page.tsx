@@ -122,7 +122,7 @@ export default function LeoDemoPage() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col h-screen w-screen overflow-hidden bg-background">
+    <PageContainer className="flex flex-col h-full">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
@@ -316,6 +316,6 @@ export default function LeoDemoPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
