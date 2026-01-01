@@ -17,8 +17,6 @@ import OpportunityForm from '@/components/commercial/OpportunityForm';
 import MultiSelect from '@/components/ui/MultiSelect';
 import { 
   Plus, 
-  Download, 
-  Upload, 
   MoreVertical,
   Search,
   TrendingUp,
@@ -35,8 +33,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteOpportunities, 
   useCreateOpportunity, 
-  useUpdateOpportunity, 
-  opportunitiesAPI 
+  useUpdateOpportunity
 } from '@/lib/query/opportunities';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI } from '@/lib/api/companies';
@@ -192,9 +189,9 @@ function OpportunitiesContent() {
   };
 
   // Handle create
-  const handleCreate = async (data: OpportunityCreate) => {
+  const handleCreate = async (data: OpportunityCreate | OpportunityUpdate) => {
     try {
-      await createOpportunityMutation.mutateAsync(data);
+      await createOpportunityMutation.mutateAsync(data as OpportunityCreate);
       setShowCreateModal(false);
       showToast({
         message: 'Opportunité créée avec succès',
