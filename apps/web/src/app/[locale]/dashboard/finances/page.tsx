@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 
 function FinancesContent() {
@@ -20,16 +19,14 @@ function FinancesContent() {
         ]}
       />
 
-      <Card>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            Module Finances
-          </h2>
-          <p className="text-muted-foreground">
-            Bienvenue dans le Module Finances. Utilisez le menu latéral pour accéder aux différentes sections.
-          </p>
-        </div>
-      </Card>
+      <div className="glass-card p-6 rounded-xl border border-border">
+        <h2 className="text-2xl font-bold text-foreground mb-4">
+          Module Finances
+        </h2>
+        <p className="text-muted-foreground">
+          Bienvenue dans le Module Finances. Utilisez le menu latéral pour accéder aux différentes sections.
+        </p>
+      </div>
     </MotionDiv>
   );
 }
