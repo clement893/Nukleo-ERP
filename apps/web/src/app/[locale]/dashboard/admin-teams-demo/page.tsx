@@ -8,12 +8,12 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { Users as UsersIcon, Plus, Search, MoreVertical, Edit, Trash2, UserPlus, Mail } from 'lucide-react';
 import { Badge, Button, Card, Input } from '@/components/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { teamsAPI, type Team } from '@/lib/api/teams';
-import { useToast } from '@/components/ui/use-toast';
+import { teamsAPI } from '@/lib/api/teams';
+import { useToast } from '@/lib/toast';
 
 export default function AdminTeamsDemo() {
   const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch teams
@@ -22,7 +22,7 @@ export default function AdminTeamsDemo() {
     queryFn: async () => {
       const response = await teamsAPI.list(0, 100);
       if (!response.success || !response.data) {
-        throw new Error(response.error?.message || 'Failed to fetch teams');
+        throw new Error(response.error || response.message || 'Failed to fetch teams');
       }
       return response.data;
     },
@@ -33,16 +33,17 @@ export default function AdminTeamsDemo() {
     mutationFn: (teamId: number) => teamsAPI.deleteTeam(teamId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
-      toast({
+      showToast({
         title: 'Équipe supprimée',
-        description: 'L\'équipe a été supprimée avec succès',
+        message: 'L\'équipe a été supprimée avec succès',
+        type: 'success',
       });
     },
     onError: (error: Error) => {
-      toast({
+      showToast({
         title: 'Erreur',
-        description: error.message || 'Impossible de supprimer l\'équipe',
-        variant: 'destructive',
+        message: error.message || 'Impossible de supprimer l\'équipe',
+        type: 'error',
       });
     },
   });
@@ -74,9 +75,11 @@ export default function AdminTeamsDemo() {
 
   const getInitials = (name: string) => {
     if (!name) return '?';
-    const parts = name.trim().split(' ');
+    const parts = name.trim().split(' ').filter(p => p.length > 0);
     if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      const first = parts[0]?.[0] || '';
+      const last = parts[parts.length - 1]?.[0] || '';
+      return (first + last).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   };
