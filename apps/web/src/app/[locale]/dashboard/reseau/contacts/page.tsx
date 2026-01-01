@@ -35,6 +35,8 @@ import {
 
 type ViewMode = 'gallery' | 'list';
 type FilterType = 'all' | 'favorites' | 'vip' | 'clients' | 'prospects' | 'partners';
+type SortBy = 'name' | 'date' | 'company' | 'city';
+type SortDirection = 'asc' | 'desc';
 
 export default function ContactsPage() {
   const { showToast } = useToast();
@@ -46,6 +48,8 @@ export default function ContactsPage() {
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -99,7 +103,7 @@ export default function ContactsPage() {
 
   // Filter and search contacts
   const filteredContacts = useMemo(() => {
-    return contacts.filter(contact => {
+    const filtered = contacts.filter(contact => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -131,7 +135,43 @@ export default function ContactsPage() {
 
       return true;
     });
-  }, [contacts, searchQuery, filterType, cityFilter, roleFilter, tagFilter, favorites]);
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'name':
+          const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+          const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+          comparison = aName.localeCompare(bName, 'fr', { sensitivity: 'base' });
+          break;
+        
+        case 'date':
+          const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+          comparison = aDate - bDate;
+          break;
+        
+        case 'company':
+          const aCompany = (a.company_name || '').toLowerCase();
+          const bCompany = (b.company_name || '').toLowerCase();
+          comparison = aCompany.localeCompare(bCompany, 'fr', { sensitivity: 'base' });
+          break;
+        
+        case 'city':
+          const aCity = (a.city || '').toLowerCase();
+          const bCity = (b.city || '').toLowerCase();
+          comparison = aCity.localeCompare(bCity, 'fr', { sensitivity: 'base' });
+          break;
+        
+        default:
+          comparison = 0;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [contacts, searchQuery, filterType, cityFilter, roleFilter, tagFilter, favorites, sortBy, sortDirection]);
 
   // Count by type
   const counts = useMemo(() => {
@@ -356,7 +396,7 @@ export default function ContactsPage() {
         </div>
 
         {/* Dropdown Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <select
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
@@ -389,6 +429,27 @@ export default function ContactsPage() {
               <option key={tag} value={tag}>{tag}</option>
             ))}
           </select>
+
+          {/* Sort Selector */}
+          <div className="flex gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <option value="name">Trier par nom</option>
+              <option value="date">Trier par date d'ajout</option>
+              <option value="company">Trier par entreprise</option>
+              <option value="city">Trier par ville</option>
+            </select>
+            <button
+              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+              className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title={sortDirection === 'asc' ? 'Croissant' : 'Décroissant'}
+            >
+              {sortDirection === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
         </div>
       </div>
 
