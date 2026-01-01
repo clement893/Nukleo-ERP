@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Plus, Building2, Users, DollarSign, TrendingUp, MapPin, Phone, Mail, ExternalLink } from 'lucide-react';
+import { Search, Plus, Building2, Users, DollarSign, TrendingUp, MapPin, Phone, ExternalLink } from 'lucide-react';
 import { Card, Button, Badge, Input } from '@/components/ui';
 import { NukleoPageHeader } from '@/components/nukleo';
 import Link from 'next/link';
