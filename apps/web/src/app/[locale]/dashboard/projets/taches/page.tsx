@@ -127,7 +127,8 @@ export default function TachesPage() {
   };
 
   const handleView = (id: number) => {
-    router.push(`/dashboard/projets/taches/${id}`);
+    const locale = window.location.pathname.split('/')[1] || 'fr';
+    router.push(`/${locale}/dashboard/projets/taches/${id}`);
   };
 
   const formatDate = (dateStr: string | null | undefined) => {
@@ -381,7 +382,11 @@ export default function TachesPage() {
                     {groupTasks.map((task) => {
                       const StatusIcon = statusConfig[task.status].icon;
                       return (
-                        <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all">
+                        <Card 
+                          key={task.id} 
+                          className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer"
+                          onClick={() => handleView(task.id)}
+                        >
                           <div className="flex items-center gap-3">
                             <div className={`p-1.5 rounded-md ${statusConfig[task.status].color}`}>
                               <StatusIcon className="w-4 h-4" />
@@ -404,7 +409,7 @@ export default function TachesPage() {
                                 </Badge>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                               <Button size="sm" variant="ghost" onClick={() => handleView(task.id)}>
                                 <Eye className="w-3.5 h-3.5" />
                               </Button>
@@ -431,7 +436,11 @@ export default function TachesPage() {
                     {groupTasks.map((task) => {
                       const StatusIcon = statusConfig[task.status].icon;
                       return (
-                        <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all">
+                        <Card 
+                          key={task.id} 
+                          className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer"
+                          onClick={() => handleView(task.id)}
+                        >
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <Badge className={`${statusConfig[task.status].color} text-xs px-1.5 py-0.5`}>
                               <StatusIcon className="w-3 h-3 mr-1" />
@@ -454,7 +463,7 @@ export default function TachesPage() {
                               <span>{formatDate(task.due_date)}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center gap-1 pt-2 border-t border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                             <Button size="sm" variant="ghost" onClick={() => handleView(task.id)} className="flex-1 text-xs px-2 py-1">
                               <Eye className="w-3 h-3 mr-1" />
                               Voir
