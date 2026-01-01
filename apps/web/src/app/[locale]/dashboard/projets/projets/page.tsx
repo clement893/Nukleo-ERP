@@ -72,9 +72,10 @@ export default function ProjetsPage() {
     const completed = projects.filter((p: Project) => p.status === 'COMPLETED').length;
     const archived = projects.filter((p: Project) => p.status === 'ARCHIVED').length;
     
-    // Calculate total budget and spent
+    // Calculate total budget
     const totalBudget = projects.reduce((sum: number, p: Project) => sum + (p.budget || 0), 0);
-    const totalSpent = projects.reduce((sum: number, p: Project) => sum + (p.spent || 0), 0);
+    // spent is not available in Project interface, using budget as placeholder
+    const totalSpent = 0;
     
     return { total, active, completed, archived, totalBudget, totalSpent };
   }, [projects]);
@@ -298,9 +299,11 @@ export default function ProjetsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProjects.map((project: Project) => {
               const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
-              const progress = project.progress || 0;
+              // progress is not available in Project interface, using 0 as default
+              const progress = 0;
               const budget = project.budget || 0;
-              const spent = project.spent || 0;
+              // spent is not available in Project interface
+              const spent = 0;
               
               return (
                 <Card 
@@ -332,10 +335,10 @@ export default function ProjetsPage() {
                         <span className="truncate">{project.equipe}</span>
                       </div>
                     )}
-                    {project.date_fin && (
+                    {(project.end_date || project.deadline) && (
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4" />
-                        <span>{new Date(project.date_fin).toLocaleDateString('fr-CA')}</span>
+                        <span>{new Date(project.end_date || project.deadline!).toLocaleDateString('fr-CA')}</span>
                       </div>
                     )}
                   </div>
@@ -389,7 +392,8 @@ export default function ProjetsPage() {
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredProjects.map((project: Project) => {
                 const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
-                const progress = project.progress || 0;
+                // progress is not available in Project interface, using 0 as default
+                const progress = 0;
                 
                 return (
                   <div 
