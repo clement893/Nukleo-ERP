@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
@@ -35,10 +35,11 @@ type SortBy = 'name' | 'client' | 'status' | 'annee';
 function getClientLogo(clientName: string | null | undefined): { initials: string; color: string } {
   if (!clientName) return { initials: '??', color: 'bg-gray-500' };
   
-  const words = clientName.trim().split(/\s+/);
+  const trimmed = clientName.trim();
+  const words = trimmed.split(/\s+/);
   const initials = words.length >= 2 
     ? (words[0][0] + words[1][0]).toUpperCase()
-    : clientName.substring(0, 2).toUpperCase();
+    : trimmed.substring(0, 2).toUpperCase();
   
   // Generate consistent color based on first letter
   const colors = [
@@ -46,7 +47,7 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
     'bg-red-500', 'bg-pink-500', 'bg-indigo-500', 'bg-yellow-500',
     'bg-teal-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-violet-500'
   ];
-  const colorIndex = clientName.charCodeAt(0) % colors.length;
+  const colorIndex = clientName.trim().charCodeAt(0) % colors.length;
   
   return { initials, color: colors[colorIndex] };
 }
