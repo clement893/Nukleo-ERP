@@ -323,12 +323,13 @@ async def get_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@rate_limit_decorator("10/hour")
 async def delete_user(
     request: Request,
     user_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> Response:
+) -> None:
     """
     Delete a user (admin/superadmin only)
     
@@ -467,9 +468,9 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return explicit Response for slowapi compatibility
-        # slowapi requires Response instance even without decorator
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        # Return None - FastAPI will automatically convert to 204 No Content
+        # Works with @rate_limit_decorator like delete_project
+        return None
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
