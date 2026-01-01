@@ -45,7 +45,6 @@ export default function TaskDetailPage() {
   const locale = params?.locale as string || 'fr';
 
   const { data: task, isLoading, error } = useProjectTask(taskId || 0, !!taskId);
-  const updateMutation = useUpdateProjectTask();
   const deleteMutation = useDeleteProjectTask();
 
   const formatDate = (dateStr: string | null | undefined) => {

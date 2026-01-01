@@ -18,7 +18,7 @@ export default function RapportDemo() {
   const currentMonth = monthlyData[0];
   const previousMonth = monthlyData[1];
   const revenueGrowth = currentMonth && previousMonth 
-    ? (((currentMonth.revenue - previousMonth.revenue) / previousMonth.revenue) * 100).toFixed(1)
+    ? ((((currentMonth?.revenue ?? 0) - (previousMonth?.revenue ?? 0)) / (previousMonth?.revenue ?? 1)) * 100).toFixed(1)
     : '0.0';
 
   return (
