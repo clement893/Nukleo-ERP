@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { PageContainer } from '@/components/layout';
-import { NukleoPageHeader } from '@/components/nukleo';
+import { PageHeader, PageContainer } from '@/components/layout';
 import ContactDetail from '@/components/commercial/ContactDetail';
 import { Loading, Alert, Button } from '@/components/ui';
 import { ArrowLeft, Edit } from 'lucide-react';
@@ -97,10 +96,14 @@ export default function ContactDetailPage() {
   if (error && !contact) {
     return (
       <PageContainer>
-        <NukleoPageHeader
+        <PageHeader
           title="Erreur"
-          description="Une erreur est survenue"
-          compact
+          breadcrumbs={[
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Module Réseau', href: `/${params?.locale || 'fr'}/dashboard/reseau` },
+            { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/reseau/contacts` },
+            { label: 'Détail' },
+          ]}
         />
         <Alert variant="error">{error}</Alert>
         <div className="mt-4">
@@ -119,10 +122,14 @@ export default function ContactDetailPage() {
   if (!contact) {
     return (
       <PageContainer>
-        <NukleoPageHeader
+        <PageHeader
           title="Contact introuvable"
-          description="Le contact demandé n'existe pas"
-          compact
+          breadcrumbs={[
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Module Réseau', href: `/${params?.locale || 'fr'}/dashboard/reseau` },
+            { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/reseau/contacts` },
+            { label: 'Détail' },
+          ]}
         />
         <Alert variant="error">Le contact demandé n'existe pas ou a été supprimé.</Alert>
         <div className="mt-4">
@@ -140,10 +147,14 @@ export default function ContactDetailPage() {
 
   return (
     <PageContainer>
-      <NukleoPageHeader
+      <PageHeader
         title={`${contact.first_name} ${contact.last_name}`}
-        description={contact.company_name || 'Contact'}
-        compact
+        breadcrumbs={[
+          { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+          { label: 'Module Réseau', href: `/${params?.locale || 'fr'}/dashboard/reseau` },
+          { label: 'Contacts', href: `/${params?.locale || 'fr'}/dashboard/reseau/contacts` },
+          { label: `${contact.first_name} ${contact.last_name}` },
+        ]}
       />
 
       {error && (
@@ -162,7 +173,7 @@ export default function ContactDetailPage() {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={handleEdit}
-          className="w-14 h-14 bg-gradient-to-br from-[#523DC9] to-[#5F2B75] rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
+          className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
           aria-label="Modifier le contact"
           title="Modifier le contact"
         >

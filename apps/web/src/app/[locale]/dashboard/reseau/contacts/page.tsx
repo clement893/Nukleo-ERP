@@ -6,6 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { NukleoPageHeader } from '@/components/nukleo';
 import { 
   useInfiniteReseauContacts, 
   useCreateReseauContact, 
@@ -364,30 +365,29 @@ export default function ContactsPage() {
 
   return (
     <div className="min-h-screen p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black text-gray-900 dark:text-white">Contacts</h1>
-              {totalCount !== undefined && (
-                <span className="glass-badge px-3 py-1 rounded-full text-sm font-medium text-muted-accessible">
-                  {totalCount} total
-                </span>
-              )}
-            </div>
-            <p className="text-muted-accessible mt-1">Gérez vos contacts commerciaux efficacement</p>
+      {/* Header Nukleo */}
+      <NukleoPageHeader
+        title="Contacts"
+        description="Gérez vos contacts commerciaux efficacement"
+        compact
+        actions={
+          <div className="flex items-center gap-3">
+            {totalCount !== undefined && (
+              <span className="badge-nukleo px-3 py-1.5">
+                {totalCount} total
+              </span>
+            )}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#523DC9] hover:bg-[#5F2B75] transition-all hover-nukleo"
+              aria-label="Créer un nouveau contact"
+            >
+              <Plus className="w-5 h-5" aria-hidden="true" />
+              Nouveau contact
+            </button>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 transition-all"
-            aria-label="Créer un nouveau contact"
-          >
-            <Plus className="w-5 h-5" aria-hidden="true" />
-            Nouveau contact
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Search and Filters */}
       <div className="glass-card p-4 rounded-xl mb-6 space-y-4">

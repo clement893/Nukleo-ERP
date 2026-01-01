@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { NukleoPageHeader } from '@/components/nukleo';
+import { PageHeader } from '@/components/layout';
 import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
@@ -232,10 +232,14 @@ function ClientsContent() {
 
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <NukleoPageHeader
+      <PageHeader
         title="Clients"
-        description="Gérez vos clients"
-        compact
+        description={`Gérez vos clients${clients.length > 0 ? ` - ${clients.length} client${clients.length > 1 ? 's' : ''} au total` : ''}`}
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Modules Opérations', href: '/dashboard/projets' },
+          { label: 'Clients' },
+        ]}
       />
 
       {/* Toolbar */}
@@ -290,7 +294,7 @@ function ClientsContent() {
             <div className="relative ml-auto">
               <div className="flex items-center gap-2">
                 {/* Primary action */}
-                <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto hover-nukleo">
+                <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto">
                   <Plus className="w-3.5 h-3.5 mr-1.5" />
                   Nouveau client
                 </Button>

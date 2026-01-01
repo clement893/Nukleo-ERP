@@ -6,8 +6,7 @@ import { clientsAPI } from '@/lib/api/clients';
 import { Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { PageContainer } from '@/components/layout';
-import { NukleoPageHeader } from '@/components/nukleo';
+import { PageHeader, PageContainer } from '@/components/layout';
 import ClientDetail from '@/components/projects/ClientDetail';
 import { Loading, Alert } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
@@ -79,10 +78,14 @@ export default function ClientDetailPage() {
   if (error && !client) {
     return (
       <PageContainer>
-        <NukleoPageHeader
+        <PageHeader
           title="Erreur"
-          description="Une erreur est survenue"
-          compact
+          breadcrumbs={[
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Modules Opérations', href: `/${params?.locale || 'fr'}/dashboard/projets` },
+            { label: 'Clients', href: `/${params?.locale || 'fr'}/dashboard/projets/clients` },
+            { label: 'Détail' },
+          ]}
         />
         <Alert variant="error">{error}</Alert>
         <div className="mt-4">
@@ -101,10 +104,14 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <PageContainer>
-        <NukleoPageHeader
+        <PageHeader
           title="Client non trouvé"
-          description="Le client demandé n'existe pas"
-          compact
+          breadcrumbs={[
+            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+            { label: 'Modules Opérations', href: `/${params?.locale || 'fr'}/dashboard/projets` },
+            { label: 'Clients', href: `/${params?.locale || 'fr'}/dashboard/projets/clients` },
+            { label: 'Détail' },
+          ]}
         />
         <Alert variant="error">Le client demandé n'existe pas.</Alert>
         <div className="mt-4">
@@ -127,10 +134,14 @@ export default function ClientDetailPage() {
 
   return (
     <PageContainer>
-      <NukleoPageHeader
+      <PageHeader
         title={client.company_name}
-        description={client.type || 'Client'}
-        compact
+        breadcrumbs={[
+          { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
+          { label: 'Modules Opérations', href: `/${params?.locale || 'fr'}/dashboard/projets` },
+          { label: 'Clients', href: `/${params?.locale || 'fr'}/dashboard/projets/clients` },
+          { label: client.company_name },
+        ]}
         actions={
           <Button variant="outline" size="sm" onClick={handleBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
