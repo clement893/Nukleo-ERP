@@ -32,100 +32,14 @@ export async function fetchClientsStats(params?: {
   const period = params?.period || 'month';
   
   try {
-    const response = await apiClient.get(`/v1/commercial/companies/stats?period=${period}`);
-    const data = response.data as ClientsStatsResponse;
+    // Use the same endpoint as the clients page: /v1/projects/clients
+    // This endpoint returns clients from the clients table with type='company'
+    const clientsResponse = await apiClient.get('/v1/projects/clients?limit=10000');
+    const clientsData = clientsResponse.data as any[] | undefined;
+    const clients = Array.isArray(clientsData) ? clientsData : [];
     
-    // Validate response structure
-    if (data && typeof data === 'object' && 'count' in data) {
-      return data;
-    }
-    
-    // If response structure is invalid, fall through to fallback
-    throw new Error('Invalid response structure from stats endpoint');
-  } catch (error) {
-    console.warn('Error fetching clients stats from endpoint, calculating from list:', error);
-    
-    // Fallback: calculate from companies list if stats endpoint doesn't exist or fails
-    try {
-      const companiesResponse = await apiClient.get('/v1/commercial/companies?limit=10000');
-      const companiesData = companiesResponse.data as { items?: any[] } | any[] | undefined;
-      const companies = (Array.isArray(companiesData) ? companiesData : companiesData?.items || []) as any[];
-      
-      if (!companies || companies.length === 0) {
-        console.warn('No companies found in fallback calculation');
-        return {
-          count: 0,
-          growth: 0,
-          previous_count: 0,
-          new_this_month: 0,
-          active_count: 0,
-        };
-      }
-      
-      // Calculate stats from raw data
-      const now = new Date();
-      const periodStart = getPeriodStart(now, period);
-      
-      const currentCount = companies.length;
-      const newThisPeriod = companies.filter((c: any) => {
-        if (!c.created_at) return false;
-        try {
-          return new Date(c.created_at) >= periodStart;
-        } catch {
-          return false;
-        }
-      }).length;
-      
-      const previousCount = companies.filter((c: any) => {
-        if (!c.created_at) return false;
-        try {
-          return new Date(c.created_at) < periodStart;
-        } catch {
-          return false;
-        }
-      }).length;
-      
-      const growth = previousCount > 0 
-        ? ((currentCount - previousCount) / previousCount) * 100 
-        : (currentCount > 0 ? 100 : 0); // 100% growth if we went from 0 to currentCount
-      
-      // Calculate active clients stats
-      const activeCount = companies.filter((c: any) => c.is_client === true).length;
-      const previousActiveCount = companies.filter((c: any) => {
-        if (!c.created_at || c.is_client !== true) return false;
-        try {
-          return new Date(c.created_at) < periodStart;
-        } catch {
-          return false;
-        }
-      }).length;
-      
-      const activeGrowth = previousActiveCount > 0
-        ? ((activeCount - previousActiveCount) / previousActiveCount) * 100
-        : (activeCount > 0 ? 100 : 0); // 100% growth if we went from 0 to activeCount
-      
-      console.log('Clients stats calculated from fallback:', {
-        currentCount,
-        previousCount,
-        newThisPeriod,
-        growth,
-        activeCount,
-        previousActiveCount,
-        activeGrowth,
-      });
-      
-      return {
-        count: currentCount,
-        growth: Math.round(growth * 10) / 10,
-        previous_count: previousCount,
-        new_this_month: newThisPeriod,
-        active_count: activeCount || currentCount,
-        active_growth: Math.round(activeGrowth * 10) / 10,
-        previous_active_count: previousActiveCount,
-      };
-    } catch (fallbackError) {
-      console.error('Error in fallback calculation for clients stats:', fallbackError);
-      // Return zero values only as last resort
+    if (!clients || clients.length === 0) {
+      console.warn('No clients found from /v1/projects/clients');
       return {
         count: 0,
         growth: 0,
@@ -136,6 +50,82 @@ export async function fetchClientsStats(params?: {
         previous_active_count: 0,
       };
     }
+    
+    // Calculate stats from clients data
+    const now = new Date();
+    const periodStart = getPeriodStart(now, period);
+    
+    const currentCount = clients.length;
+    const newThisPeriod = clients.filter((c: any) => {
+      if (!c.created_at) return false;
+      try {
+        return new Date(c.created_at) >= periodStart;
+      } catch {
+        return false;
+      }
+    }).length;
+    
+    const previousCount = clients.filter((c: any) => {
+      if (!c.created_at) return false;
+      try {
+        return new Date(c.created_at) < periodStart;
+      } catch {
+        return false;
+      }
+    }).length;
+    
+    const growth = previousCount > 0 
+      ? ((currentCount - previousCount) / previousCount) * 100 
+      : (currentCount > 0 ? 100 : 0); // 100% growth if we went from 0 to currentCount
+    
+    // Calculate active clients stats (clients with status='ACTIVE')
+    const activeCount = clients.filter((c: any) => c.status === 'ACTIVE' || c.status === 'active').length;
+    const previousActiveCount = clients.filter((c: any) => {
+      if (!c.created_at) return false;
+      const isActive = c.status === 'ACTIVE' || c.status === 'active';
+      if (!isActive) return false;
+      try {
+        return new Date(c.created_at) < periodStart;
+      } catch {
+        return false;
+      }
+    }).length;
+    
+    const activeGrowth = previousActiveCount > 0
+      ? ((activeCount - previousActiveCount) / previousActiveCount) * 100
+      : (activeCount > 0 ? 100 : 0); // 100% growth if we went from 0 to activeCount
+    
+    console.log('Clients stats calculated from /v1/projects/clients:', {
+      currentCount,
+      previousCount,
+      newThisPeriod,
+      growth,
+      activeCount,
+      previousActiveCount,
+      activeGrowth,
+    });
+    
+    return {
+      count: currentCount,
+      growth: Math.round(growth * 10) / 10,
+      previous_count: previousCount,
+      new_this_month: newThisPeriod,
+      active_count: activeCount || currentCount,
+      active_growth: Math.round(activeGrowth * 10) / 10,
+      previous_active_count: previousActiveCount,
+    };
+  } catch (error) {
+    console.error('Error fetching clients stats from /v1/projects/clients:', error);
+    // Return zero values on error
+    return {
+      count: 0,
+      growth: 0,
+      previous_count: 0,
+      new_this_month: 0,
+      active_count: 0,
+      active_growth: 0,
+      previous_active_count: 0,
+    };
   }
 }
 

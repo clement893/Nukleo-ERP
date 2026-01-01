@@ -41,11 +41,47 @@ import { type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { useAuthStore } from '@/lib/store';
 import Select from '@/components/ui/Select';
+import { checkMySuperAdminStatus } from '@/lib/api/admin';
 
 function ManagementCompteDepensesContent() {
   const { showToast } = useToast();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isCheckingSuperAdmin, setIsCheckingSuperAdmin] = useState(true);
+  
+  // Check if user is admin or superadmin
   const isAdmin = user?.is_admin || false;
+  
+  // Check superadmin status
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      if (!user || !token) {
+        setIsCheckingSuperAdmin(false);
+        return;
+      }
+      
+      // If user is already admin, skip superadmin check
+      if (isAdmin) {
+        setIsCheckingSuperAdmin(false);
+        return;
+      }
+      
+      try {
+        const status = await checkMySuperAdminStatus(token);
+        setIsSuperAdmin(status.is_superadmin === true);
+      } catch (err) {
+        console.warn('Could not check superadmin status:', err);
+        setIsSuperAdmin(false);
+      } finally {
+        setIsCheckingSuperAdmin(false);
+      }
+    };
+    
+    checkSuperAdmin();
+  }, [user, token, isAdmin]);
+  
+  // Final admin check: user is admin OR superadmin
+  const canAdminAction = isAdmin || isSuperAdmin;
   
   // React Query hooks for expense accounts - only show submitted/under_review for validation
   const {
@@ -221,7 +257,7 @@ function ManagementCompteDepensesContent() {
 
   // Handle status change (admin only)
   const handleStatusChange = async (newStatus: ExpenseAccountStatus) => {
-    if (!selectedExpenseAccount || !isAdmin) return;
+    if (!selectedExpenseAccount || !canAdminAction) return;
 
     try {
       await updateExpenseAccountMutation.mutateAsync({
@@ -573,7 +609,7 @@ function ManagementCompteDepensesContent() {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Statut</label>
                 <div className="mt-1">
-                  {isAdmin ? (
+                  {canAdminAction ? (
                     <Select
                       value={selectedExpenseAccount.status}
                       onChange={(e) => {
@@ -646,7 +682,7 @@ function ManagementCompteDepensesContent() {
             {/* Actions */}
             <div className="flex gap-2 pt-4 border-t flex-wrap">
               {/* Admin actions: Edit and Delete */}
-              {isAdmin && (
+              {canAdminAction && (
                 <>
                   <Button
                     variant="outline"
