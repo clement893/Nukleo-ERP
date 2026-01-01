@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Card, Loading, Alert } from '@/components/ui';
+import { Card, Loading, Alert, Modal } from '@/components/ui';
+import Button from '@/components/ui/Button';
 import DataTable, { type Column } from '@/components/ui/DataTable';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, X } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
@@ -40,6 +41,9 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
+  const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     loadTasks();
