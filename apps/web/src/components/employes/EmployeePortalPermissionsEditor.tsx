@@ -57,40 +57,111 @@ export default function EmployeePortalPermissionsEditor({
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       // ✅ Utiliser le cache d'abord pour un chargement instantané
       const cacheKey = getCacheKey(employeeId);
       const cachedSummary = cacheKey && cacheKey !== 'none' ? getCachedPermissions(cacheKey) : null;
       
       // Si on a un cache valide, l'utiliser immédiatement pour l'affichage
-      // et ne pas bloquer sur les appels API
-      let summaryData: EmployeePortalPermissionSummary;
       if (cachedSummary) {
-        // Utiliser le cache pour un affichage instantané
-        summaryData = cachedSummary;
-        // Ne pas mettre loading à false tout de suite, on charge quand même les détails
-      } else {
-        // Pas de cache, charger depuis le serveur
-        summaryData = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
-        // Mettre en cache pour la prochaine fois
-        if (cacheKey && cacheKey !== 'none') {
-          setCachedPermissions(cacheKey, summaryData);
+        // Afficher immédiatement avec les données du cache
+        setError(null);
+        setSummary(cachedSummary);
+        
+        // Construire les Sets directement depuis le cache
+        const modulesSet = new Set<string>();
+        const clientsSet = new Set<number>();
+        
+        if (cachedSummary.modules.includes('*')) {
+          EMPLOYEE_PORTAL_MODULES.forEach(m => modulesSet.add(m.id));
+        } else {
+          cachedSummary.modules.forEach(moduleId => {
+            if (moduleId !== '*') {
+              modulesSet.add(moduleId);
+            }
+          });
         }
+        
+        if (!cachedSummary.all_clients) {
+          cachedSummary.clients.forEach(clientId => {
+            clientsSet.add(clientId);
+          });
+        }
+        
+        setSelectedModules(modulesSet);
+        setSelectedClients(clientsSet);
+        setSavedModules(new Set(modulesSet));
+        setSavedClients(new Set(clientsSet));
+        setLoading(false);
+        
+        // Charger les détails et rafraîchir en arrière-plan sans bloquer l'UI
+        Promise.all([
+          employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
+          employeePortalPermissionsAPI.list({ employee_id: employeeId }),
+        ]).then(([freshSummary, permissionsData]) => {
+          // Mettre en cache les données fraîches
+          if (cacheKey && cacheKey !== 'none') {
+            setCachedPermissions(cacheKey, freshSummary);
+          }
+          
+          // Mettre à jour l'UI avec les données fraîches si elles sont différentes
+          setSummary(freshSummary);
+          setPermissions(permissionsData);
+          
+          // Recalculer les Sets avec les données fraîches
+          const newModulesSet = new Set<string>();
+          const newClientsSet = new Set<number>();
+          
+          if (freshSummary.modules.includes('*')) {
+            EMPLOYEE_PORTAL_MODULES.forEach(m => newModulesSet.add(m.id));
+          } else {
+            freshSummary.modules.forEach(moduleId => {
+              if (moduleId !== '*') {
+                newModulesSet.add(moduleId);
+              }
+            });
+          }
+          
+          if (!freshSummary.all_clients) {
+            freshSummary.clients.forEach(clientId => {
+              newClientsSet.add(clientId);
+            });
+          }
+          
+          setSelectedModules(newModulesSet);
+          setSelectedClients(newClientsSet);
+          setSavedModules(new Set(newModulesSet));
+          setSavedClients(new Set(newClientsSet));
+          
+          // Charger les clients si nécessaire
+          if (newClientsSet.size > 0) {
+            Promise.all(
+              Array.from(newClientsSet).map(id => 
+                contactsAPI.get(id).catch(() => null)
+              )
+            ).then(clientsData => {
+              setClients(clientsData.filter(c => c !== null) as Contact[]);
+            });
+          }
+        }).catch(() => {
+          // En cas d'erreur, garder les données du cache
+        });
+        
+        return; // Sortir tôt car on a affiché les données du cache
       }
+      
+      // Pas de cache, charger normalement depuis le serveur
+      setLoading(true);
+      setError(null);
 
-      // Charger les permissions détaillées en parallèle (ne bloque pas si on a le cache)
-      const permissionsDataPromise = employeePortalPermissionsAPI.list({ employee_id: employeeId });
+      const [summaryData, permissionsData] = await Promise.all([
+        employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
+        employeePortalPermissionsAPI.list({ employee_id: employeeId }),
+      ]);
       
-      // Si on a le cache, on peut mettre à jour l'UI immédiatement
-      // puis recharger les détails en arrière-plan
-      if (cachedSummary) {
-        // Mettre à jour l'UI immédiatement avec les données du cache
-        // On chargera les détails après
+      // Mettre en cache pour la prochaine fois
+      if (cacheKey && cacheKey !== 'none') {
+        setCachedPermissions(cacheKey, summaryData);
       }
-      
-      const permissionsData = await permissionsDataPromise;
 
       setSummary(summaryData);
       setPermissions(permissionsData);
