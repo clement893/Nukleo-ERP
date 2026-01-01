@@ -89,7 +89,7 @@ export default function OpportunityDetailPage() {
   const getStageColor = (stage: string | null | undefined) => {
     if (!stage) return 'bg-gray-100 text-gray-700 border-gray-300';
     const lowerStage = stage.toLowerCase();
-    if (lowerStage.includes('qualif')) return 'bg-blue-100 text-blue-700 border-blue-300';
+    if (lowerStage.includes('qualif')) return 'bg-primary-100 text-primary-700 border-primary-300';
     if (lowerStage.includes('propos') || lowerStage.includes('demo')) return 'bg-purple-100 text-purple-700 border-purple-300';
     if (lowerStage.includes('négoc')) return 'bg-orange-100 text-orange-700 border-orange-300';
     if (lowerStage.includes('clos') || lowerStage.includes('gagn')) return 'bg-green-100 text-green-700 border-green-300';
@@ -101,7 +101,7 @@ export default function OpportunityDetailPage() {
   const stats = opportunity ? [
     { icon: DollarSign, label: 'Montant', value: formatCurrency(opportunity.amount), color: 'text-green-600', bgColor: 'bg-green-100' },
     { icon: TrendingUp, label: 'Probabilité', value: opportunity.probability ? `${opportunity.probability}%` : '-', color: 'text-purple-600', bgColor: 'bg-purple-100' },
-    { icon: Target, label: 'Valeur pondérée', value: opportunity.amount && opportunity.probability ? formatCurrency(opportunity.amount * opportunity.probability / 100) : '-', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { icon: Target, label: 'Valeur pondérée', value: opportunity.amount && opportunity.probability ? formatCurrency(opportunity.amount * opportunity.probability / 100) : '-', color: 'text-primary-600', bgColor: 'bg-primary-100' },
     { icon: Calendar, label: 'Clôture prévue', value: formatDate(opportunity.expected_close_date), color: 'text-orange-600', bgColor: 'bg-orange-100' },
   ] : [];
 

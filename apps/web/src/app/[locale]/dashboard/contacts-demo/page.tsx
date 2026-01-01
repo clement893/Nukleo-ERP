@@ -218,7 +218,7 @@ export default function ContactsDemoPage() {
   const tagColors: Record<string, { bg: string; text: string; border: string }> = {
     VIP: { bg: 'bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-500/20' },
     Client: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/20' },
-    Prospect: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/20' },
+    Prospect: { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/20' },
     Partenaire: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/20' },
     Fournisseur: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/20' },
   };
@@ -297,7 +297,7 @@ export default function ContactsDemoPage() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-          <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-blue-400">
+          <Link href="/dashboard" className="hover:text-primary-600 dark:hover:text-primary-400">
             Dashboard
           </Link>
           <span>/</span>
@@ -353,7 +353,7 @@ export default function ContactsDemoPage() {
           {/* Add Contact Button */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
           >
             <Plus className="w-5 h-5" />
             Nouveau contact
@@ -467,7 +467,7 @@ export default function ContactsDemoPage() {
           </p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium inline-flex items-center gap-2 transition-colors"
+            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium inline-flex items-center gap-2 transition-colors"
           >
             <Plus className="w-5 h-5" />
             Ajouter un contact
@@ -697,9 +697,9 @@ export default function ContactsDemoPage() {
             {/* 3 Options */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Option 1: Scan Business Card */}
-              <button className="glass-card p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                  <Camera className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <button className="glass-card p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/10 flex items-center justify-center group-hover:bg-primary-500/20 transition-colors">
+                  <Camera className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 text-center">
                   Scanner carte
@@ -710,9 +710,9 @@ export default function ContactsDemoPage() {
               </button>
 
               {/* Option 2: Import LinkedIn */}
-              <button className="glass-card p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                  <Linkedin className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <button className="glass-card p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/10 flex items-center justify-center group-hover:bg-primary-500/20 transition-colors">
+                  <Linkedin className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 text-center">
                   Import LinkedIn
@@ -723,9 +723,9 @@ export default function ContactsDemoPage() {
               </button>
 
               {/* Option 3: Manual Form */}
-              <button className="glass-card p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                  <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <button className="glass-card p-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/10 flex items-center justify-center group-hover:bg-primary-500/20 transition-colors">
+                  <FileText className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 text-center">
                   Formulaire manuel
@@ -737,8 +737,8 @@ export default function ContactsDemoPage() {
             </div>
 
             {/* Note */}
-            <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <p className="text-sm text-blue-600 dark:text-blue-400">
+            <div className="mt-6 p-4 rounded-lg bg-primary-500/10 border border-primary-500/20">
+              <p className="text-sm text-primary-600 dark:text-primary-400">
                 💡 <strong>Astuce :</strong> Le scan de carte et l'import LinkedIn utilisent l'IA pour extraire automatiquement les informations.
               </p>
             </div>
