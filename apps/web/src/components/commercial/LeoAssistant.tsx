@@ -133,7 +133,7 @@ export function LeoAssistant({ context, onTextGenerated, className = '' }: LeoAs
       <Button
         onClick={() => setIsOpen(true)}
         variant="outline"
-        className={clsx('fixed bottom-6 right-6 z-50 shadow-lg', className)}
+        className={clsx('fixed bottom-6 right-6 z-40 shadow-lg', className)}
         size="lg"
       >
         <Sparkles className="w-5 h-5 mr-2" />
@@ -145,7 +145,7 @@ export function LeoAssistant({ context, onTextGenerated, className = '' }: LeoAs
   return (
     <Card
       className={clsx(
-        'fixed bottom-6 right-6 z-50 shadow-2xl flex flex-col transition-all duration-300',
+        'fixed bottom-6 right-6 z-40 shadow-2xl flex flex-col transition-all duration-300',
         isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]',
         className
       )}

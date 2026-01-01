@@ -64,12 +64,18 @@ export default function SubmissionCoverPage({
             });
           }}
           options={[
-            { value: '', label: 'Sélectionner un client' },
+            { value: '', label: loadingCompanies ? 'Chargement...' : 'Sélectionner un client' },
             ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
           ]}
           fullWidth
-          disabled={loadingCompanies}
+          disabled={loadingCompanies || companies.length === 0}
         />
+        {loadingCompanies && (
+          <p className="text-xs text-muted-foreground mt-1">Chargement des clients...</p>
+        )}
+        {!loadingCompanies && companies.length === 0 && (
+          <p className="text-xs text-muted-foreground mt-1">Aucun client disponible</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

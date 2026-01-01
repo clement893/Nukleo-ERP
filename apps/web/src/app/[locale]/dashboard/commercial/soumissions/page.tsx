@@ -361,8 +361,8 @@ function SoumissionsContent() {
 
       {/* Tabs */}
       <div className="glass-card rounded-xl border border-border">
-        <div className="flex items-center justify-between border-b border-border p-6">
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border p-6 gap-4">
+          <div className="flex gap-2 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('quotes')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
@@ -386,14 +386,14 @@ function SoumissionsContent() {
               Soumissions ({submissions.length})
             </button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             {activeTab === 'quotes' ? (
-              <Button onClick={() => setShowCreateQuoteModal(true)}>
+              <Button onClick={() => setShowCreateQuoteModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Créer un devis
               </Button>
             ) : (
-              <Button onClick={() => setShowCreateSubmissionModal(true)}>
+              <Button onClick={() => setShowCreateSubmissionModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Créer une soumission
               </Button>

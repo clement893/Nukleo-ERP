@@ -122,7 +122,7 @@ export default function SubmissionWizard({
     }
   }, [initialData]);
 
-  // Load companies
+  // Load companies immediately when component mounts
   useEffect(() => {
     const loadCompanies = async () => {
       try {
@@ -392,9 +392,9 @@ export default function SubmissionWizard({
   };
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full flex flex-col h-full">
       {/* Progress Steps */}
-      <div className="flex items-center justify-between border-b border-border pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4 flex-shrink-0">
         {STEPS.map((step, index) => {
           const StepIcon = step.icon;
           const isActive = index === currentStep;
@@ -442,18 +442,20 @@ export default function SubmissionWizard({
       </div>
 
       {/* Step Content */}
-      <div className="min-h-[400px]">
+      <div className="min-h-[400px] flex-1 overflow-y-auto">
         {renderStep()}
       </div>
 
       {/* Leo Assistant */}
-      <LeoAssistant
-        context={getStepContext()}
-        onTextGenerated={handleTextGenerated}
-      />
+      <div className="flex-shrink-0">
+        <LeoAssistant
+          context={getStepContext()}
+          onTextGenerated={handleTextGenerated}
+        />
+      </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-border">
+      <div className="flex justify-between pt-4 border-t border-border relative z-10 bg-background flex-shrink-0">
         <Button
           type="button"
           variant="outline"
