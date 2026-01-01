@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -16,55 +17,11 @@ import {
   Zap,
   TrendingUp,
   FileText,
-  Users
+  Users,
+  Loader2
 } from 'lucide-react';
-import { Button, Badge } from '@/components/ui';
-
-// Mock data
-const mockConversations = [
-  {
-    id: 1,
-    title: 'Analyse des opportunités Q1',
-    lastMessage: 'Voici un résumé des opportunités...',
-    timestamp: '2024-01-15T10:30:00',
-    messageCount: 8,
-  },
-  {
-    id: 2,
-    title: 'Rapport mensuel commercial',
-    lastMessage: 'Le rapport a été généré avec succès',
-    timestamp: '2024-01-14T15:20:00',
-    messageCount: 5,
-  },
-  {
-    id: 3,
-    title: 'Stratégie pipeline 2024',
-    lastMessage: 'Voici mes recommandations...',
-    timestamp: '2024-01-13T09:15:00',
-    messageCount: 12,
-  },
-];
-
-const mockMessages = [
-  {
-    id: 1,
-    role: 'assistant' as const,
-    content: 'Bonjour ! Je suis Leo, votre assistant IA pour Nukleo ERP. Comment puis-je vous aider aujourd\'hui ?',
-    timestamp: '2024-01-15T10:00:00',
-  },
-  {
-    id: 2,
-    role: 'user' as const,
-    content: 'Peux-tu me donner un résumé de mes opportunités en cours ?',
-    timestamp: '2024-01-15T10:01:00',
-  },
-  {
-    id: 3,
-    role: 'assistant' as const,
-    content: 'Bien sûr ! Voici un résumé de vos opportunités en cours :\n\n**24 opportunités actives**\n- Valeur totale : 1 250 000 $\n- Valeur pondérée : 875 000 $\n- Probabilité moyenne : 70%\n\n**Top 3 opportunités :**\n1. Migration infrastructure cloud - CloudNet (85 000 $, 75%)\n2. Application mobile - InnoSoft (60 000 $, 80%)\n3. Refonte site web - TechCorp (45 000 $, 70%)\n\nSouhaitez-vous plus de détails sur une opportunité spécifique ?',
-    timestamp: '2024-01-15T10:01:30',
-  },
-];
+import { Button, Badge, useToast } from '@/components/ui';
+import { leoAgentAPI, type LeoMessage, type LeoConversation } from '@/lib/api/leo-agent';
 
 const mockSuggestions = [
   {
@@ -89,10 +46,107 @@ const mockSuggestions = [
   },
 ];
 
-export default function LeoDemoPage() {
-  const [activeConversation, setActiveConversation] = useState<number | null>(1);
+export default function LeoPage() {
+  const [activeConversation, setActiveConversation] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [showSidebar, setShowSidebar] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch conversations
+  const { data: conversationsData, isLoading: conversationsLoading } = useQuery({
+    queryKey: ['leo', 'conversations'],
+    queryFn: () => leoAgentAPI.listConversations({ limit: 50 }),
+  });
+
+  const conversations = conversationsData?.items || [];
+
+  // Fetch messages for active conversation
+  const { data: messagesData, isLoading: messagesLoading } = useQuery({
+    queryKey: ['leo', 'messages', activeConversation],
+    queryFn: () => activeConversation ? leoAgentAPI.getConversationMessages(activeConversation) : null,
+    enabled: !!activeConversation,
+  });
+
+  const messages = messagesData?.items || [];
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: (text: string) => leoAgentAPI.query({
+      message: text,
+      conversation_id: activeConversation,
+    }),
+    onSuccess: (data) => {
+      setActiveConversation(data.conversation_id);
+      queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['leo', 'messages', data.conversation_id] });
+      setMessage('');
+      scrollToBottom();
+    },
+    onError: (error: any) => {
+      showToast({ 
+        message: error?.message || 'Erreur lors de l\'envoi du message', 
+        type: 'error' 
+      });
+    },
+  });
+
+  // Delete conversation mutation
+  const deleteConversationMutation = useMutation({
+    mutationFn: (conversationId: number) => leoAgentAPI.deleteConversation(conversationId),
+    onSuccess: (_, conversationId) => {
+      if (activeConversation === conversationId) {
+        setActiveConversation(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
+      showToast({ message: 'Conversation supprimée', type: 'success' });
+    },
+    onError: (error: any) => {
+      showToast({ 
+        message: error?.message || 'Erreur lors de la suppression', 
+        type: 'error' 
+      });
+    },
+  });
+
+  // Delete all conversations
+  const deleteAllConversations = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer toutes les conversations ?')) return;
+    
+    try {
+      await Promise.all(conversations.map(conv => leoAgentAPI.deleteConversation(conv.id)));
+      setActiveConversation(null);
+      queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
+      showToast({ message: 'Toutes les conversations ont été supprimées', type: 'success' });
+    } catch (error: any) {
+      showToast({ 
+        message: error?.message || 'Erreur lors de la suppression', 
+        type: 'error' 
+      });
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!message.trim() || sendMessageMutation.isPending) return;
+    sendMessageMutation.mutate(message.trim());
+  };
+
+  const handleNewConversation = () => {
+    setActiveConversation(null);
+  };
+
+  const handleSuggestionClick = (text: string) => {
+    setMessage(text);
+  };
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -120,6 +174,11 @@ export default function LeoDemoPage() {
       default:
         return 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200';
     }
+  };
+
+  const getLastMessage = (conv: LeoConversation) => {
+    // We don't have last message in conversation object, so we'll use a placeholder
+    return 'Conversation avec Leo';
   };
 
   return (
@@ -171,48 +230,76 @@ export default function LeoDemoPage() {
         {showSidebar && (
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-col">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <Button className="w-full bg-[#523DC9] hover:bg-[#523DC9]/90 text-white">
+              <Button 
+                className="w-full bg-[#523DC9] hover:bg-[#523DC9]/90 text-white"
+                onClick={handleNewConversation}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvelle conversation
               </Button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {mockConversations.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => setActiveConversation(conv.id)}
-                  className={`w-full p-3 rounded-lg text-left transition-all ${
-                    activeConversation === conv.id
-                      ? 'bg-[#523DC9]/10 border border-[#523DC9]/30'
-                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-1">
-                      {conv.title}
-                    </h3>
-                    <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                      {conv.messageCount}
-                    </Badge>
+              {conversationsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#523DC9]" />
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+                  Aucune conversation
+                </div>
+              ) : (
+                conversations.map((conv) => (
+                  <div key={conv.id} className="relative group">
+                    <button
+                      onClick={() => setActiveConversation(conv.id)}
+                      className={`w-full p-3 rounded-lg text-left transition-all ${
+                        activeConversation === conv.id
+                          ? 'bg-[#523DC9]/10 border border-[#523DC9]/30'
+                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-1 pr-8">
+                          {conv.title}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+                        {getLastMessage(conv)}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+                        <Clock className="w-3 h-3" />
+                        <span>{formatTime(conv.updated_at)}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Supprimer cette conversation ?')) {
+                          deleteConversationMutation.mutate(conv.id);
+                        }
+                      }}
+                      className="absolute top-3 right-3 p-1.5 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:border-red-300"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    </button>
                   </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
-                    {conv.lastMessage}
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
-                    <Clock className="w-3 h-3" />
-                    <span>{formatTime(conv.timestamp)}</span>
-                  </div>
-                </button>
-              ))}
+                ))
+              )}
             </div>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="outline" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Effacer l'historique
-              </Button>
-            </div>
+            {conversations.length > 0 && (
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <Button 
+                  variant="outline" 
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={deleteAllConversations}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Effacer l'historique
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -220,64 +307,104 @@ export default function LeoDemoPage() {
         <div className="flex-1 flex flex-col">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {mockMessages.map((msg) => (
-              <MotionDiv key={msg.id} variant="slideUp" duration="fast">
-                <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-2xl ${msg.role === 'user' ? 'ml-12' : 'mr-12'}`}>
-                    {msg.role === 'assistant' && (
+            {messagesLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="p-4 rounded-2xl bg-[#523DC9]/10 border border-[#523DC9]/30 mb-4">
+                  <Sparkles className="w-12 h-12 text-[#523DC9]" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Bonjour ! Je suis Leo
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-8">
+                  Votre assistant IA pour Nukleo ERP. Posez-moi des questions sur vos opportunités, contacts, projets et plus encore.
+                </p>
+
+                {/* Suggestions */}
+                <div className="max-w-2xl w-full">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 text-center">
+                    Suggestions pour commencer
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {mockSuggestions.map((suggestion, index) => {
+                      const Icon = suggestion.icon;
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion.text)}
+                          className={`p-4 rounded-xl border transition-all text-left ${getSuggestionColor(suggestion.color)}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className="w-5 h-5 flex-shrink-0" />
+                            <span className="text-sm font-medium">{suggestion.text}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages.map((msg) => (
+                  <MotionDiv key={msg.id} variant="slideUp" duration="fast">
+                    <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-2xl ${msg.role === 'user' ? 'ml-12' : 'mr-12'}`}>
+                        {msg.role === 'assistant' && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="p-1.5 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                              <Sparkles className="w-4 h-4 text-[#523DC9]" />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">Leo</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-500">{formatTime(msg.created_at)}</span>
+                          </div>
+                        )}
+                        {msg.role === 'user' && (
+                          <div className="flex items-center gap-2 mb-2 justify-end">
+                            <span className="text-xs text-gray-500 dark:text-gray-500">{formatTime(msg.created_at)}</span>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">Vous</span>
+                          </div>
+                        )}
+                        <div className={`p-4 rounded-2xl ${
+                          msg.role === 'user'
+                            ? 'bg-[#523DC9] text-white'
+                            : 'glass-card border border-[#A7A2CF]/20'
+                        }`}>
+                          <p className={`text-sm leading-relaxed whitespace-pre-line ${
+                            msg.role === 'user' ? 'text-white' : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {msg.content}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </MotionDiv>
+                ))}
+                
+                {sendMessageMutation.isPending && (
+                  <div className="flex justify-start">
+                    <div className="max-w-2xl mr-12">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="p-1.5 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
                           <Sparkles className="w-4 h-4 text-[#523DC9]" />
                         </div>
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">Leo</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-500">{formatTime(msg.timestamp)}</span>
                       </div>
-                    )}
-                    {msg.role === 'user' && (
-                      <div className="flex items-center gap-2 mb-2 justify-end">
-                        <span className="text-xs text-gray-500 dark:text-gray-500">{formatTime(msg.timestamp)}</span>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">Vous</span>
+                      <div className="glass-card border border-[#A7A2CF]/20 p-4 rounded-2xl">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-[#523DC9]" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Leo réfléchit...</span>
+                        </div>
                       </div>
-                    )}
-                    <div className={`p-4 rounded-2xl ${
-                      msg.role === 'user'
-                        ? 'bg-[#523DC9] text-white'
-                        : 'glass-card border border-[#A7A2CF]/20'
-                    }`}>
-                      <p className={`text-sm leading-relaxed whitespace-pre-line ${
-                        msg.role === 'user' ? 'text-white' : 'text-gray-900 dark:text-white'
-                      }`}>
-                        {msg.content}
-                      </p>
                     </div>
                   </div>
-                </div>
-              </MotionDiv>
-            ))}
-
-            {/* Suggestions */}
-            {mockMessages.length <= 1 && (
-              <div className="max-w-2xl mx-auto">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 text-center">
-                  Suggestions pour commencer
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {mockSuggestions.map((suggestion, index) => {
-                    const Icon = suggestion.icon;
-                    return (
-                      <button
-                        key={index}
-                        className={`p-4 rounded-xl border transition-all text-left ${getSuggestionColor(suggestion.color)}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5 flex-shrink-0" />
-                          <span className="text-sm font-medium">{suggestion.text}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                )}
+                
+                <div ref={messagesEndRef} />
+              </>
             )}
           </div>
 
@@ -293,19 +420,24 @@ export default function LeoDemoPage() {
                     placeholder="Posez une question à Leo..."
                     className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#523DC9]/50 focus:border-[#523DC9]"
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter' && message.trim()) {
-                        // Handle send
-                        setMessage('');
+                      if (e.key === 'Enter' && !sendMessageMutation.isPending) {
+                        handleSend();
                       }
                     }}
+                    disabled={sendMessageMutation.isPending}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <Button
                       size="sm"
                       className="bg-[#523DC9] hover:bg-[#523DC9]/90 text-white rounded-lg"
-                      disabled={!message.trim()}
+                      disabled={!message.trim() || sendMessageMutation.isPending}
+                      onClick={handleSend}
                     >
-                      <Send className="w-4 h-4" />
+                      {sendMessageMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
