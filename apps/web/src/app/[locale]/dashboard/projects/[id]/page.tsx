@@ -9,8 +9,13 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Select from '@/components/ui/Select';
 import { projectsAPI, type Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
+import { useToast } from '@/components/ui';
 import {
   ArrowLeft,
   Edit,
@@ -42,6 +47,7 @@ function ProjectDetailContent() {
   const router = useRouter();
   const params = useParams();
   const projectId = parseInt(params.id as string);
+  const { showToast } = useToast();
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +55,13 @@ function ProjectDetailContent() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [teamId, setTeamId] = useState<number | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    status: 'ACTIVE' as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadProject();
@@ -89,10 +102,55 @@ function ProjectDetailContent() {
 
     try {
       await projectsAPI.delete(projectId);
-      router.push('/dashboard/projects');
+      const locale = params.locale as string || 'fr';
+      router.push(`/${locale}/dashboard/projects`);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression du projet');
+    }
+  };
+
+  const handleOpenEditModal = () => {
+    if (project) {
+      setEditFormData({
+        name: project.name,
+        description: project.description || '',
+        status: project.status as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editFormData.name.trim()) {
+      showToast({
+        message: 'Le nom du projet est requis',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const updatedProject = await projectsAPI.update(projectId, {
+        name: editFormData.name,
+        description: editFormData.description || undefined,
+        status: editFormData.status,
+      });
+      setProject(updatedProject);
+      setShowEditModal(false);
+      showToast({
+        message: 'Projet modifié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification du projet',
+        type: 'error',
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -139,7 +197,10 @@ function ProjectDetailContent() {
         <Alert variant="error" className="mb-6">
           {error || 'Projet introuvable'}
         </Alert>
-        <Button onClick={() => router.push('/dashboard/projects')}>
+        <Button onClick={() => {
+          const locale = params.locale as string || 'fr';
+          router.push(`/${locale}/dashboard/projects`);
+        }}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour aux projets
         </Button>
@@ -151,14 +212,17 @@ function ProjectDetailContent() {
     <div className="min-h-screen p-6">
         {/* Breadcrumb */}
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard/projects')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux projets
-          </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const locale = params.locale as string || 'fr';
+                router.push(`/${locale}/dashboard/projects`);
+              }}
+              className="mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour aux projets
+            </Button>
         </div>
 
         {/* Header */}
@@ -167,7 +231,10 @@ function ProjectDetailContent() {
           <div className="flex items-center justify-between mb-6">
             <Button
               variant="ghost"
-              onClick={() => router.push('/dashboard/projects')}
+              onClick={() => {
+                const locale = params.locale as string || 'fr';
+                router.push(`/${locale}/dashboard/projects`);
+              }}
               className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -190,7 +257,7 @@ function ProjectDetailContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push(`/dashboard/projects/${projectId}/edit`)}
+                onClick={handleOpenEditModal}
                 className="glass-button text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -783,6 +850,66 @@ function ProjectDetailContent() {
             deadline={project.deadline}
           />
         )}
+
+        {/* Edit Modal */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Modifier le projet"
+          size="lg"
+          footer={
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEditModal(false)}
+                disabled={isSaving}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <Input
+              label="Nom du projet *"
+              value={editFormData.name}
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              placeholder="Ex: Projet Alpha"
+              fullWidth
+            />
+            <Textarea
+              label="Description"
+              value={editFormData.description}
+              onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+              placeholder="Description du projet..."
+              rows={4}
+              fullWidth
+            />
+            <Select
+              label="Statut"
+              value={editFormData.status}
+              onChange={(e) =>
+                setEditFormData({
+                  ...editFormData,
+                  status: e.target.value as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+                })
+              }
+              fullWidth
+              options={[
+                { value: 'ACTIVE', label: 'Actif' },
+                { value: 'COMPLETED', label: 'Terminé' },
+                { value: 'ARCHIVED', label: 'Archivé' },
+              ]}
+            />
+          </div>
+        </Modal>
     </div>
   );
 }
