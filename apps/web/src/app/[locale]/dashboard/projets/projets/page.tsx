@@ -39,17 +39,19 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
   if (!trimmed) return { initials: '??', color: 'bg-gray-500' };
   
   const words = trimmed.split(/\s+/);
-  let initials: string;
+  let initials: string = '??';
   if (words.length >= 2 && words[0] && words[1]) {
     const firstChar = words[0][0];
     const secondChar = words[1][0];
     if (firstChar && secondChar) {
       initials = (firstChar + secondChar).toUpperCase();
     } else {
-      initials = trimmed.substring(0, 2).toUpperCase() || '??';
+      const fallback = trimmed.substring(0, 2).toUpperCase();
+      initials = fallback || '??';
     }
   } else {
-    initials = trimmed.substring(0, 2).toUpperCase() || '??';
+    const fallback = trimmed.substring(0, 2).toUpperCase();
+    initials = fallback || '??';
   }
   
   // Generate consistent color based on first letter
@@ -60,7 +62,7 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
   ];
   const firstChar = trimmed[0];
   const colorIndex = firstChar ? firstChar.charCodeAt(0) % colors.length : 0;
-  const color = colors[colorIndex] || colors[0];
+  const color: string = colors[colorIndex] ?? colors[0] ?? 'bg-gray-500';
   
   return { initials, color };
 }
