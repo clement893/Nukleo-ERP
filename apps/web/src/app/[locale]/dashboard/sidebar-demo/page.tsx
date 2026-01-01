@@ -181,7 +181,7 @@ export default function SidebarDemoPage() {
                       <span className="font-medium text-sm">{item.label}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {item.badge && (
+                      {item.badge && item.badge.count != null && (
                         <Badge className={`${item.badge.color} text-white text-xs px-2 py-0.5`}>
                           {item.badge.count}
                         </Badge>
@@ -213,7 +213,7 @@ export default function SidebarDemoPage() {
                               <ChildIcon className={`w-4 h-4 ${isChildActive ? 'text-[#523DC9]' : 'text-gray-400 group-hover:text-[#523DC9]'} transition-colors`} />
                               <span className="text-sm">{child.label}</span>
                             </div>
-                            {child.badge && (
+                            {child.badge && child.badge.count != null && (
                               <Badge className={`${child.badge.color} text-white text-xs px-1.5 py-0.5`}>
                                 {child.badge.count}
                               </Badge>
