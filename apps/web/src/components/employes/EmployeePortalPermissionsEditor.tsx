@@ -287,6 +287,25 @@ export default function EmployeePortalPermissionsEditor({
         </Alert>
       )}
 
+      {/* Diagnostic Panel - à retirer en production */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <h4 className="text-sm font-semibold mb-2">🔍 Diagnostic des Permissions</h4>
+          <div className="text-xs space-y-1 font-mono">
+            <div>Employee ID: {employeeId}</div>
+            <div>Modules sélectionnés: [{Array.from(selectedModules).join(', ')}]</div>
+            <div>Modules sauvegardés: [{Array.from(savedModules).join(', ')}]</div>
+            <div>Clients sélectionnés: [{Array.from(selectedClients).join(', ')}]</div>
+            <div>Clients sauvegardés: [{Array.from(savedClients).join(', ')}]</div>
+            <div>Changements non sauvegardés: {hasUnsavedChanges ? 'OUI' : 'NON'}</div>
+            <div>Nombre de permissions chargées: {_permissions.length}</div>
+            {_summary && (
+              <div>Summary modules: [{_summary.modules.join(', ')}]</div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Résumé des permissions actives */}
       <Card className="p-4 bg-muted/30">
         <div className="flex items-center justify-between">
