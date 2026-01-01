@@ -39,6 +39,25 @@ except ImportError:
 router = APIRouter(prefix="/finances/compte-depenses", tags=["finances-compte-depenses"])
 
 
+async def safe_refresh_account(db: AsyncSession, account: ExpenseAccount) -> None:
+    """
+    Safely refresh account relationships without failing the entire request.
+    If refresh fails, tries to reload employee manually.
+    """
+    try:
+        await db.refresh(account, ["employee", "reviewer"])
+    except Exception as e:
+        logger.warning(f"Could not refresh account relationships: {str(e)}")
+        # Try to reload employee manually if refresh failed
+        try:
+            employee_result = await db.execute(
+                select(Employee).where(Employee.id == account.employee_id)
+            )
+            account.employee = employee_result.scalar_one_or_none()
+        except Exception:
+            pass
+
+
 async def generate_account_number(db: AsyncSession) -> str:
     """Generate a unique account number"""
     year = datetime.now().year
@@ -373,7 +392,7 @@ async def update_compte_depenses(
             setattr(account, field, value)
     
     await db.commit()
-    await db.refresh(account, ["employee", "reviewer"])
+    await safe_refresh_account(db, account)
     
     account_dict = {
         "id": account.id,
@@ -433,7 +452,7 @@ async def submit_compte_depenses(
     account.submitted_at = datetime.now()
     
     await db.commit()
-    await db.refresh(account, ["employee", "reviewer"])
+    await safe_refresh_account(db, account)
     
     account_dict = {
         "id": account.id,
@@ -506,20 +525,7 @@ async def approve_compte_depenses(
     account.review_notes = action.notes
     
     await db.commit()
-    
-    # Try to refresh, but don't fail if it doesn't work
-    try:
-        await db.refresh(account, ["employee", "reviewer"])
-    except Exception as e:
-        logger.warning(f"Could not refresh account relationships after approval: {str(e)}")
-        # Try to reload employee manually if refresh failed
-        try:
-            employee_result = await db.execute(
-                select(Employee).where(Employee.id == account.employee_id)
-            )
-            account.employee = employee_result.scalar_one_or_none()
-        except Exception:
-            pass
+    await safe_refresh_account(db, account)
     
     account_dict = {
         "id": account.id,
@@ -605,7 +611,7 @@ async def reject_compte_depenses(
     account.rejection_reason = action.rejection_reason
     
     await db.commit()
-    await db.refresh(account, ["employee", "reviewer"])
+    await safe_refresh_account(db, account)
     
     account_dict = {
         "id": account.id,
@@ -685,7 +691,7 @@ async def request_clarification_compte_depenses(
     account.clarification_request = action.clarification_request
     
     await db.commit()
-    await db.refresh(account, ["employee", "reviewer"])
+    await safe_refresh_account(db, account)
     
     account_dict = {
         "id": account.id,
@@ -744,7 +750,7 @@ async def set_under_review_compte_depenses(
     account.status = ExpenseAccountStatus.UNDER_REVIEW.value
     
     await db.commit()
-    await db.refresh(account, ["employee", "reviewer"])
+    await safe_refresh_account(db, account)
     
     account_dict = {
         "id": account.id,
