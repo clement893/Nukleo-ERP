@@ -282,7 +282,7 @@ export default function ReseauPage() {
                       {testimonial.title || 'Sans titre'}
                     </h4>
                     <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                      {testimonial.content_fr || testimonial.content_en || 'Pas de contenu'}
+                      {testimonial.testimonial_fr || testimonial.testimonial_en || 'Pas de contenu'}
                     </p>
                   </div>
                 ))
