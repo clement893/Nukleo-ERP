@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
+import { projectCommentsAPI, type ProjectComment } from '@/lib/api/project-comments';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Modal } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip } from 'lucide-react';
+import Avatar from '@/components/ui/Avatar';
+import { useAuthStore } from '@/lib/store';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
@@ -243,14 +246,295 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
 }
 
 /**
- * Tab content for task comments (placeholder for Batch 2)
+ * Tab content for task comments
  */
 function TaskCommentsTab({ taskId }: { taskId: number }) {
+  const { user } = useAuthStore();
+  const { showToast } = useToast();
+  const [comments, setComments] = useState<ProjectComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const currentUserId = user?.id ? parseInt(user.id) : undefined;
+
+  useEffect(() => {
+    loadComments();
+  }, [taskId]);
+
+  const loadComments = async () => {
+    try {
+      setLoading(true);
+      const data = await projectCommentsAPI.list({ task_id: taskId });
+      // Organize comments: separate top-level comments and replies
+      const topLevelComments = data.filter(c => !c.parent_id);
+      const commentsWithReplies = topLevelComments.map(comment => ({
+        ...comment,
+        replies: data.filter(c => c.parent_id === comment.id),
+      }));
+      setComments(commentsWithReplies);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des commentaires',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim() || submitting) return;
+
+    try {
+      setSubmitting(true);
+      await projectCommentsAPI.create({
+        task_id: taskId,
+        content: newComment.trim(),
+      });
+      setNewComment('');
+      await loadComments();
+      showToast({
+        message: 'Commentaire ajouté avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'ajout du commentaire',
+        type: 'error',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="py-8 text-center">
+        <Loading />
+      </div>
+    );
+  }
+
   return (
-    <div className="py-8 text-center text-muted-foreground">
-      <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-      <p>Les commentaires seront disponibles dans le prochain batch.</p>
-      <p className="text-xs mt-2">Task ID: {taskId}</p>
+    <div className="space-y-6">
+      {/* Liste des commentaires */}
+      <div className="space-y-4 max-h-[400px] overflow-y-auto">
+        {comments.length === 0 ? (
+          <div className="py-8 text-center text-muted-foreground">
+            <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Aucun commentaire pour le moment.</p>
+            <p className="text-xs mt-2">Soyez le premier à commenter !</p>
+          </div>
+        ) : (
+          comments.map((comment) => (
+            <TaskCommentItem
+              key={comment.id}
+              comment={comment}
+              taskId={taskId}
+              currentUserId={currentUserId}
+              onUpdate={loadComments}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Formulaire d'ajout de commentaire */}
+      <div className="pt-4 border-t border-border">
+        <div className="flex gap-3">
+          <Avatar
+            name={user?.name || user?.email || 'U'}
+            size="sm"
+          />
+          <div className="flex-1 space-y-2">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Ajouter un commentaire..."
+              className="w-full p-3 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+              rows={3}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleSubmitComment();
+                }
+              }}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                Appuyez sur Cmd/Ctrl + Entrée pour publier
+              </span>
+              <Button
+                onClick={handleSubmitComment}
+                disabled={!newComment.trim() || submitting}
+                size="sm"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Publier
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Component to display a single comment
+ */
+function TaskCommentItem({
+  comment,
+  taskId,
+  currentUserId: _currentUserId, // Will be used in Batch 3 for edit/delete
+  onUpdate,
+}: {
+  comment: ProjectComment;
+  taskId: number;
+  currentUserId?: number;
+  onUpdate: () => void;
+}) {
+  const { showToast } = useToast();
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+
+  const userName = comment.user_name || comment.user_email || 'Utilisateur inconnu';
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
+  const handleSubmitReply = async () => {
+    if (!replyContent.trim() || submittingReply) return;
+
+    try {
+      setSubmittingReply(true);
+      await projectCommentsAPI.create({
+        task_id: taskId,
+        content: replyContent.trim(),
+        parent_id: comment.id,
+      });
+      setReplyContent('');
+      setIsReplying(false);
+      onUpdate();
+      showToast({
+        message: 'Réponse ajoutée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'ajout de la réponse',
+        type: 'error',
+      });
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Commentaire principal */}
+      <div className="flex gap-3">
+        <Avatar name={userName} size="sm" />
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{userName}</span>
+            <span className="text-xs text-muted-foreground">
+              {formatDate(comment.created_at)}
+            </span>
+            {comment.is_edited && (
+              <span className="text-xs text-muted-foreground italic">(modifié)</span>
+            )}
+          </div>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
+          {!isReplying && (
+            <button
+              onClick={() => setIsReplying(true)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Répondre
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Formulaire de réponse */}
+      {isReplying && (
+        <div className="ml-11 space-y-2">
+          <textarea
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            placeholder="Écrire une réponse..."
+            className="w-full p-2 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+            rows={2}
+          />
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSubmitReply}
+              disabled={!replyContent.trim() || submittingReply}
+              size="sm"
+              variant="primary"
+            >
+              Publier
+            </Button>
+            <Button
+              onClick={() => {
+                setIsReplying(false);
+                setReplyContent('');
+              }}
+              size="sm"
+              variant="outline"
+            >
+              Annuler
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Réponses */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="ml-11 space-y-3 border-l-2 border-border pl-4">
+          {comment.replies.map((reply) => {
+            const replyUserName = reply.user_name || reply.user_email || 'Utilisateur inconnu';
+            return (
+              <div key={reply.id} className="flex gap-3">
+                <Avatar name={replyUserName} size="sm" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{replyUserName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(reply.created_at)}
+                    </span>
+                    {reply.is_edited && (
+                      <span className="text-xs text-muted-foreground italic">(modifié)</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{reply.content}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
