@@ -41,39 +41,34 @@ router = APIRouter(prefix="/finances/compte-depenses", tags=["finances-compte-de
 
 async def safe_refresh_account(db: AsyncSession, account: ExpenseAccount) -> tuple[Employee | None, User | None]:
     """
-    Safely refresh account relationships without failing the entire request.
+    Safely load account relationships without triggering lazy loading.
+    After db.commit(), objects can be detached, so we load relationships directly.
     Returns (employee, reviewer) tuples to avoid lazy loading issues.
     """
     employee = None
     reviewer = None
     
     try:
-        logger.debug(f"[safe_refresh_account] Starting refresh for account {account.id}")
-        await db.refresh(account, ["employee", "reviewer"])
-        logger.debug(f"[safe_refresh_account] Refresh successful for account {account.id}")
-        # Access relationships while still in async context
-        employee = account.employee if hasattr(account, 'employee') else None
-        reviewer = account.reviewer if hasattr(account, 'reviewer') else None
+        logger.debug(f"[safe_refresh_account] Loading relationships for account {account.id}")
+        
+        # Always load directly from DB to avoid lazy loading issues after commit
+        if account.employee_id:
+            logger.debug(f"[safe_refresh_account] Loading employee {account.employee_id} for account {account.id}")
+            employee_result = await db.execute(
+                select(Employee).where(Employee.id == account.employee_id)
+            )
+            employee = employee_result.scalar_one_or_none()
+            logger.debug(f"[safe_refresh_account] Employee loaded: {employee is not None}")
+        
+        if account.reviewed_by_id:
+            logger.debug(f"[safe_refresh_account] Loading reviewer {account.reviewed_by_id} for account {account.id}")
+            reviewer_result = await db.execute(
+                select(User).where(User.id == account.reviewed_by_id)
+            )
+            reviewer = reviewer_result.scalar_one_or_none()
+            logger.debug(f"[safe_refresh_account] Reviewer loaded: {reviewer is not None}")
     except Exception as e:
-        logger.warning(f"[safe_refresh_account] Could not refresh account relationships for account {account.id}: {str(e)}", exc_info=True)
-        # Try to reload employee and reviewer manually if refresh failed
-        try:
-            logger.debug(f"[safe_refresh_account] Attempting manual reload for account {account.id}")
-            if account.employee_id:
-                employee_result = await db.execute(
-                    select(Employee).where(Employee.id == account.employee_id)
-                )
-                employee = employee_result.scalar_one_or_none()
-                logger.debug(f"[safe_refresh_account] Employee loaded: {employee is not None}")
-            
-            if account.reviewed_by_id:
-                reviewer_result = await db.execute(
-                    select(User).where(User.id == account.reviewed_by_id)
-                )
-                reviewer = reviewer_result.scalar_one_or_none()
-                logger.debug(f"[safe_refresh_account] Reviewer loaded: {reviewer is not None}")
-        except Exception as reload_error:
-            logger.error(f"[safe_refresh_account] Failed to manually reload relationships for account {account.id}: {str(reload_error)}", exc_info=True)
+        logger.error(f"[safe_refresh_account] Failed to load relationships for account {account.id}: {str(e)}", exc_info=True)
     
     return employee, reviewer
 
