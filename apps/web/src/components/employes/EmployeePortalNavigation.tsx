@@ -27,7 +27,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
 import * as Icons from 'lucide-react';
 
@@ -122,7 +122,11 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   const params = useParams();
   const locale = (params?.locale as string) || 'fr';
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions } = useEmployeePortalPermissions({ employeeId });
+  // Le hook useEmployeePortalPermissions gère automatiquement la mise à jour des permissions
+  // via handlePermissionsUpdate() qui utilise directement le cache mis à jour par savePermissions().
+  // Pas besoin d'écouter l'événement ici car le hook le fait déjà et met à jour les permissions
+  // automatiquement, ce qui déclenchera un re-render de ce composant.
+  const { hasModuleAccess, loading: permissionsLoading } = useEmployeePortalPermissions({ employeeId });
   
   // Écouter les événements de mise à jour des permissions depuis d'autres composants
   // NOTE: Le hook useEmployeePortalPermissions gère déjà la mise à jour via handlePermissionsUpdate()
