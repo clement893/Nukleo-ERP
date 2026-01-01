@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
-import { Button, Alert, Loading, Badge, Input, Select, Textarea } from '@/components/ui';
+import { Button, Alert, Loading, Badge, Input, Select, Textarea, Card } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Testimonial, type TestimonialCreate, testimonialsAPI } from '@/lib/api/testimonials';
