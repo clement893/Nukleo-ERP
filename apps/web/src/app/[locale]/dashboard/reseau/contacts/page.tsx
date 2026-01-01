@@ -17,6 +17,8 @@ import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import ContactForm from '@/components/reseau/ContactForm';
 import Modal from '@/components/ui/Modal';
+import EmptyState from '@/components/ui/EmptyState';
+import Skeleton from '@/components/ui/Skeleton';
 import { 
   Plus,
   Search,
@@ -252,8 +254,65 @@ export default function ContactsPage() {
     }
   };
 
+  // Loading skeleton for gallery view
+  const ContactCardSkeleton = () => (
+    <div className="glass-card rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+      <Skeleton variant="rectangular" height={256} className="w-full" />
+      <div className="p-4 space-y-3">
+        <div className="space-y-2">
+          <Skeleton variant="text" width="70%" height={24} />
+          <Skeleton variant="text" width="50%" height={16} />
+          <Skeleton variant="text" width="60%" height={16} />
+        </div>
+        <div className="flex gap-1">
+          <Skeleton variant="rectangular" width={60} height={24} />
+          <Skeleton variant="rectangular" width={60} height={24} />
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} variant="circular" width={40} height={40} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   if (isLoading) {
-    return <Loading />;
+    return (
+      <div className="min-h-screen p-6">
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="space-y-2">
+              <Skeleton variant="text" width={200} height={36} />
+              <Skeleton variant="text" width={300} height={20} />
+            </div>
+            <Skeleton variant="rectangular" width={160} height={44} />
+          </div>
+        </div>
+
+        {/* Filters skeleton */}
+        <div className="glass-card p-4 rounded-xl mb-6 space-y-4">
+          <Skeleton variant="rectangular" width="100%" height={44} />
+          <div className="flex gap-2">
+            <Skeleton variant="rectangular" width={100} height={36} />
+            <Skeleton variant="rectangular" width={100} height={36} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} variant="rectangular" width={100} height={36} />
+            ))}
+          </div>
+        </div>
+
+        {/* Gallery skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <ContactCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (isError) {
@@ -273,13 +332,14 @@ export default function ContactsPage() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-3xl font-black text-gray-900 dark:text-white">Contacts</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Gérez vos contacts commerciaux efficacement</p>
+            <p className="text-muted-accessible mt-1">Gérez vos contacts commerciaux efficacement</p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
             className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 transition-all"
+            aria-label="Créer un nouveau contact"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5" aria-hidden="true" />
             Nouveau contact
           </button>
         </div>
@@ -289,13 +349,14 @@ export default function ContactsPage() {
       <div className="glass-card p-4 rounded-xl mb-6 space-y-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
           <input
             type="text"
             placeholder="Rechercher par nom, entreprise, email, rôle..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="glass-input w-full pl-12 pr-4 py-3 rounded-lg"
+            aria-label="Rechercher des contacts"
           />
         </div>
 
@@ -306,10 +367,12 @@ export default function ContactsPage() {
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               viewMode === 'gallery'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
+            aria-label="Afficher en mode galerie"
+            aria-pressed={viewMode === 'gallery'}
           >
-            <LayoutGrid className="w-4 h-4" />
+            <LayoutGrid className="w-4 h-4" aria-hidden="true" />
             Galerie
           </button>
           <button
@@ -317,10 +380,12 @@ export default function ContactsPage() {
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               viewMode === 'list'
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
+            aria-label="Afficher en mode liste"
+            aria-pressed={viewMode === 'list'}
           >
-            <ListIcon className="w-4 h-4" />
+            <ListIcon className="w-4 h-4" aria-hidden="true" />
             Liste
           </button>
         </div>
@@ -400,7 +465,8 @@ export default function ContactsPage() {
           <select
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="glass-input px-4 py-2 rounded-lg"
+            aria-label="Filtrer par ville"
           >
             <option value="all">Toutes les villes</option>
             {uniqueCities.map(city => (
@@ -411,7 +477,8 @@ export default function ContactsPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="glass-input px-4 py-2 rounded-lg"
+            aria-label="Filtrer par rôle"
           >
             <option value="all">Tous les rôles</option>
             {uniqueRoles.map(role => (
@@ -422,7 +489,8 @@ export default function ContactsPage() {
           <select
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="glass-input px-4 py-2 rounded-lg"
+            aria-label="Filtrer par tag"
           >
             <option value="all">Tous les tags</option>
             {uniqueTags.map(tag => (
@@ -435,7 +503,8 @@ export default function ContactsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="glass-input flex-1 px-4 py-2 rounded-lg"
+              aria-label="Trier les contacts"
             >
               <option value="name">Trier par nom</option>
               <option value="date">Trier par date d'ajout</option>
@@ -444,7 +513,8 @@ export default function ContactsPage() {
             </select>
             <button
               onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-              className="px-4 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="glass-input px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label={sortDirection === 'asc' ? 'Trier en ordre croissant' : 'Trier en ordre décroissant'}
               title={sortDirection === 'asc' ? 'Croissant' : 'Décroissant'}
             >
               {sortDirection === 'asc' ? '↑' : '↓'}
@@ -454,7 +524,7 @@ export default function ContactsPage() {
       </div>
 
       {/* Results Count */}
-      <div className="mb-4 text-gray-600 dark:text-gray-400">
+      <div className="mb-4 text-muted-accessible">
         {filteredContacts.length} contact{filteredContacts.length > 1 ? 's' : ''} trouvé{filteredContacts.length > 1 ? 's' : ''}
       </div>
 
@@ -477,6 +547,8 @@ export default function ContactsPage() {
                         src={contact.photo_url}
                         alt={`${contact.first_name} ${contact.last_name}`}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="text-6xl font-bold text-gray-400">
@@ -486,7 +558,9 @@ export default function ContactsPage() {
                   </div>
                   <button
                     onClick={() => toggleFavorite(contact.id)}
-                    className="absolute top-3 right-3 glass-badge p-2 rounded-full hover:scale-110 transition-all"
+                    className="absolute top-3 right-3 glass-badge p-2 rounded-full hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label={favorites.has(contact.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    title={favorites.has(contact.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
                   >
                     <Star
                       className={`w-5 h-5 ${
@@ -494,6 +568,7 @@ export default function ContactsPage() {
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-400'
                       }`}
+                      aria-hidden="true"
                     />
                   </button>
                 </div>
@@ -504,9 +579,9 @@ export default function ContactsPage() {
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">
                       {contact.first_name} {contact.last_name}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{contact.position}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-1">
-                      <Briefcase className="w-3 h-3" />
+                    <p className="text-sm text-muted-accessible">{contact.position}</p>
+                    <p className="text-sm text-muted-accessible flex items-center gap-1 mt-1">
+                      <Briefcase className="w-3 h-3" aria-hidden="true" />
                       {contact.company_name}
                     </p>
                   </div>
@@ -533,19 +608,21 @@ export default function ContactsPage() {
                     {contact.phone && (
                       <a
                         href={`tel:${contact.phone}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
                         title="Appeler"
                       >
-                        <Phone className="w-4 h-4" />
+                        <Phone className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {contact.email && (
                       <a
                         href={`mailto:${contact.email}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
                         title="Email"
                       >
-                        <Mail className="w-4 h-4" />
+                        <Mail className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {contact.phone && (
@@ -553,10 +630,11 @@ export default function ContactsPage() {
                         href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="glass-badge p-2 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-all flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Envoyer un message WhatsApp à ${contact.first_name} ${contact.last_name}`}
                         title="WhatsApp"
                       >
-                        <MessageCircle className="w-4 h-4" />
+                        <MessageCircle className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {contact.linkedin && (
@@ -564,10 +642,11 @@ export default function ContactsPage() {
                         href={contact.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Voir le profil LinkedIn de ${contact.first_name} ${contact.last_name}`}
                         title="LinkedIn"
                       >
-                        <Linkedin className="w-4 h-4" />
+                        <Linkedin className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                   </div>
@@ -597,6 +676,8 @@ export default function ContactsPage() {
                         src={contact.photo_url}
                         alt={`${contact.first_name} ${contact.last_name}`}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="text-xl font-bold text-gray-400">
@@ -623,10 +704,10 @@ export default function ContactsPage() {
                         );
                       })}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-accessible">
                       {contact.position} • {contact.company_name}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-muted-accessible mt-1">
                       {contact.city && `${contact.city} • `}
                       {contact.email}
                     </p>
@@ -636,7 +717,9 @@ export default function ContactsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toggleFavorite(contact.id)}
-                      className="glass-badge p-2 rounded-lg hover:scale-110 transition-all"
+                      className="glass-badge p-2 rounded-lg hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label={favorites.has(contact.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      title={favorites.has(contact.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
                     >
                       <Star
                         className={`w-4 h-4 ${
@@ -644,24 +727,27 @@ export default function ContactsPage() {
                             ? 'fill-yellow-400 text-yellow-400'
                             : 'text-gray-400'
                         }`}
+                        aria-hidden="true"
                       />
                     </button>
                     {contact.phone && (
                       <a
                         href={`tel:${contact.phone}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
                         title="Appeler"
                       >
-                        <Phone className="w-4 h-4" />
+                        <Phone className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {contact.email && (
                       <a
                         href={`mailto:${contact.email}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
                         title="Email"
                       >
-                        <Mail className="w-4 h-4" />
+                        <Mail className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {contact.phone && (
@@ -669,10 +755,11 @@ export default function ContactsPage() {
                         href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="glass-badge p-2 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-all"
+                        className="glass-badge p-2 rounded-lg hover:bg-green-500/10 hover:text-green-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        aria-label={`Envoyer un message WhatsApp à ${contact.first_name} ${contact.last_name}`}
                         title="WhatsApp"
                       >
-                        <MessageCircle className="w-4 h-4" />
+                        <MessageCircle className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {contact.linkedin && (
@@ -680,10 +767,11 @@ export default function ContactsPage() {
                         href={contact.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        aria-label={`Voir le profil LinkedIn de ${contact.first_name} ${contact.last_name}`}
                         title="LinkedIn"
                       >
-                        <Linkedin className="w-4 h-4" />
+                        <Linkedin className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                   </div>
@@ -696,34 +784,29 @@ export default function ContactsPage() {
 
       {/* Empty State */}
       {filteredContacts.length === 0 && (
-        <div className="glass-card p-12 rounded-xl text-center">
-          <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            Aucun contact trouvé
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Essayez de modifier vos filtres ou créez un nouveau contact
-          </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 transition-all mx-auto"
-          >
-            <Plus className="w-5 h-5" />
-            Nouveau contact
-          </button>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Aucun contact trouvé"
+          description="Essayez de modifier vos filtres ou créez un nouveau contact"
+          variant="large"
+          action={{
+            label: "Nouveau contact",
+            onClick: () => setShowAddModal(true)
+          }}
+        />
       )}
 
       {/* Load More */}
       {hasNextPage && (
         <div className="mt-6 text-center">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="glass-button px-6 py-3 rounded-xl text-blue-600 hover:bg-blue-500/10 transition-all"
-          >
-            {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}
-          </button>
+            <button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="glass-button px-6 py-3 rounded-xl text-blue-600 hover:bg-blue-500/10 transition-all"
+              aria-label="Charger plus de contacts"
+            >
+              {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}
+            </button>
         </div>
       )}
 
