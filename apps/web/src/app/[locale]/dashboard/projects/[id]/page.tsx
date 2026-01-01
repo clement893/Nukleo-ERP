@@ -7,7 +7,6 @@ import { useRouter, useParams } from 'next/navigation';
 import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
 import { projectsAPI, type Project } from '@/lib/api/projects';
@@ -95,15 +94,6 @@ function ProjectDetailContent() {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression du projet');
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'default'> = {
-      ACTIVE: 'success',
-      COMPLETED: 'default',
-      ARCHIVED: 'warning',
-    };
-    return variants[status] || 'default';
   };
 
   const getStatusLabel = (status: string) => {
