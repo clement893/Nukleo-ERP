@@ -40,8 +40,7 @@ import {
 } from '@/lib/query/opportunities';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI } from '@/lib/api/companies';
-import ImportOpportunitiesInstructions from '@/components/commercial/ImportOpportunitiesInstructions';
-import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
+
 
 
 function OpportunitiesContent() {
@@ -75,9 +74,7 @@ function OpportunitiesContent() {
   const [filterCompany, setFilterCompany] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [showImportInstructions, setShowImportInstructions] = useState(false);
-  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
-  const [showImportLogs, setShowImportLogs] = useState(false);
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Load pipelines and companies for filters
@@ -236,50 +233,7 @@ function OpportunitiesContent() {
     router.push(`/dashboard/commercial/opportunites/${opportunity.id}`);
   };
 
-  // Handle export
-  const handleExport = async () => {
-    try {
-      const blob = await opportunitiesAPI.export();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `opportunites_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast({
-        message: 'Export réussi',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'export',
-        type: 'error',
-      });
-    }
-  };
 
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      const result = await opportunitiesAPI.import(file);
-      setCurrentImportId(result.import_id || null);
-      setShowImportInstructions(false);
-      setShowImportLogs(true);
-      showToast({
-        message: 'Import démarré avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -317,31 +271,13 @@ function OpportunitiesContent() {
               </h1>
               <p className="text-white/80 text-lg">Gérez votre pipeline de ventes</p>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline"
-                onClick={() => setShowImportInstructions(true)}
-                className="bg-white/10 text-white border-white/30 hover:bg-white/20"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Importer
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleExport}
-                className="bg-white/10 text-white border-white/30 hover:bg-white/20"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Exporter
-              </Button>
-              <Button 
-                className="bg-white text-[#523DC9] hover:bg-white/90"
-                onClick={() => setShowCreateModal(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle opportunité
-              </Button>
-            </div>
+            <Button 
+              className="bg-white text-[#523DC9] hover:bg-white/90"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle opportunité
+            </Button>
           </div>
         </div>
 
@@ -643,9 +579,9 @@ function OpportunitiesContent() {
         size="lg"
       >
         <OpportunityForm
-          onSubmit={handleCreate as any}
+          onSubmit={handleCreate}
           onCancel={() => setShowCreateModal(false)}
-          isSubmitting={createOpportunityMutation.isPending}
+          loading={createOpportunityMutation.isPending}
         />
       </Modal>
 
@@ -662,49 +598,17 @@ function OpportunitiesContent() {
         {selectedOpportunity && (
           <OpportunityForm
             opportunity={selectedOpportunity}
-            onSubmit={(data: any) => handleUpdate(selectedOpportunity.id, data)}
+            onSubmit={(data) => handleUpdate(selectedOpportunity.id, data)}
             onCancel={() => {
               setShowEditModal(false);
               setSelectedOpportunity(null);
             }}
-            isSubmitting={updateOpportunityMutation.isPending}
+            loading={updateOpportunityMutation.isPending}
           />
         )}
       </Modal>
 
-      {/* Import Instructions Modal */}
-      <Modal
-        isOpen={showImportInstructions}
-        onClose={() => setShowImportInstructions(false)}
-        title="Importer des opportunités"
-        size="lg"
-      >
-        <ImportOpportunitiesInstructions
-          onImport={handleImport as any}
-          onCancel={() => setShowImportInstructions(false)}
-        />
-      </Modal>
 
-      {/* Import Logs Modal */}
-      <Modal
-        isOpen={showImportLogs}
-        onClose={() => {
-          setShowImportLogs(false);
-          setCurrentImportId(null);
-        }}
-        title="Logs d'import"
-        size="lg"
-      >
-        {currentImportId && (
-          <ImportLogsViewer
-            importId={currentImportId as any}
-            onClose={() => {
-              setShowImportLogs(false);
-              setCurrentImportId(null);
-            }}
-          />
-        )}
-      </Modal>
     </PageContainer>
   );
 }
