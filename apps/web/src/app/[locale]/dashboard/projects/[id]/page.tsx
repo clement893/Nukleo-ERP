@@ -206,7 +206,7 @@ function ProjectDetailContent() {
                 variant="outline"
                 size="sm"
                 onClick={() => router.push(`/dashboard/projects/${projectId}/edit`)}
-                className="glass-button"
+                className="glass-button text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
@@ -215,7 +215,7 @@ function ProjectDetailContent() {
                 variant="outline"
                 size="sm"
                 onClick={handleDelete}
-                className="glass-button text-red-600 hover:text-red-700"
+                className="glass-button text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
