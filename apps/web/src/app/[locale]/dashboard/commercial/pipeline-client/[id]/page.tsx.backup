@@ -528,11 +528,11 @@ function PipelineDetailContent() {
           compact
           actions={
             <>
-              <Button variant="outline" size="sm" onClick={handleManageStages} className="bg-white/10 text-white border-white/30 hover:bg-white/30">
+              <Button variant="outline" size="sm" onClick={handleManageStages} className="bg-white/10 text-white border-white/30 hover:bg-white/20">
                 <Settings className="w-4 h-4 mr-2" />
                 Gérer les étapes
               </Button>
-              <Button variant="outline" size="sm" onClick={handleBack} className="bg-white/10 text-white border-white/30 hover:bg-white/30">
+              <Button variant="outline" size="sm" onClick={handleBack} className="bg-white/10 text-white border-white/30 hover:bg-white/20">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Retour
               </Button>
@@ -548,7 +548,7 @@ function PipelineDetailContent() {
       <div className="flex-1 overflow-hidden px-6 py-4 flex flex-col">
         <div className="flex-shrink-0 mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">{pipeline.name}</h3>
-          <Button size="sm" onClick={() => handleCardAdd('')} className="hover-nukleo">
+          <Button size="sm" onClick={() => handleCardAdd('')}>
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle opportunité
           </Button>

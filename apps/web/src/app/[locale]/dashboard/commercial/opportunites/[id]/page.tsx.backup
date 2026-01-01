@@ -5,8 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { opportunitiesAPI, Opportunity } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { PageContainer } from '@/components/layout';
-import { NukleoPageHeader } from '@/components/nukleo';
+import { PageHeader, PageContainer } from '@/components/layout';
 import { Loading, Alert, Badge, Button } from '@/components/ui';
 import { ArrowLeft, Edit, FileText, Calendar, MessageSquare, Users, Link as LinkIcon, MapPin, Tag } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -101,22 +100,28 @@ export default function OpportunityDetailPage() {
 
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <NukleoPageHeader
+      <PageHeader
         title={opportunity.name}
         description={`Opportunité commerciale - ${opportunity.stage_name || 'Non défini'}`}
-        compact
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Module Commercial', href: '/dashboard/commercial' },
+          { label: 'Opportunités', href: '/dashboard/commercial/opportunites' },
+          { label: opportunity.name },
+        ]}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour
+            </Button>
+            <Button onClick={handleEdit}>
+              <Edit className="w-4 h-4 mr-2" />
+              Modifier
+            </Button>
+          </div>
+        }
       />
-      
-      <div className="flex gap-2 mb-6">
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour
-        </Button>
-        <Button onClick={handleEdit} className="hover-nukleo">
-          <Edit className="w-4 h-4 mr-2" />
-          Modifier
-        </Button>
-      </div>
 
       {error && (
         <Alert variant="error">{error}</Alert>
@@ -130,7 +135,7 @@ export default function OpportunityDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Statut</h3>
-                <Badge className="badge-nukleo">
+                <Badge variant="default" className="bg-blue-500 hover:bg-blue-600 text-white">
                   {opportunity.stage_name || 'Non défini'}
                 </Badge>
               </div>

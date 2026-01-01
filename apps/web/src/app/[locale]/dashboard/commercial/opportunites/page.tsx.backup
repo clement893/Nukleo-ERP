@@ -394,7 +394,10 @@ function OpportunitiesContent() {
         if (!stageName) return <span className="text-muted-foreground">-</span>;
         
         return (
-          <Badge className="badge-nukleo">
+          <Badge 
+            variant="default" 
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+          >
             {String(stageName)}
           </Badge>
         );
@@ -518,7 +521,7 @@ function OpportunitiesContent() {
           {/* Actions */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setShowCreateModal(true)} className="hover-nukleo">
+              <Button size="sm" onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4 mr-1.5" />
                 Nouvelle opportunité
               </Button>
