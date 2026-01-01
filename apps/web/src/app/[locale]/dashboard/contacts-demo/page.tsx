@@ -293,7 +293,7 @@ export default function ContactsDemoPage() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">

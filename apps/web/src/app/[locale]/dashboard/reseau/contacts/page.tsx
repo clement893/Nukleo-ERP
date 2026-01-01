@@ -317,7 +317,7 @@ export default function ContactsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="space-y-6">
         {/* Header skeleton */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -355,7 +355,7 @@ export default function ContactsPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="space-y-6">
         <Alert variant="error">
           {error?.message || 'Erreur lors du chargement des contacts'}
         </Alert>

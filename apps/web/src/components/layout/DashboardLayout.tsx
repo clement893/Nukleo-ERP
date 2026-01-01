@@ -112,7 +112,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
         <main 
           key={pathname} 
           className={clsx(
-            "flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 md:py-8 2xl:py-8 bg-background transition-all duration-300",
+            "flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16 py-4 sm:py-6 md:py-8 2xl:py-10 bg-background transition-all duration-300",
             sidebarCollapsed ? "md:mt-16" : "mt-14 md:mt-0"
           )}
           style={{

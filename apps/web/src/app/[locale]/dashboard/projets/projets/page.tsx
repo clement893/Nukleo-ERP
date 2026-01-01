@@ -206,7 +206,7 @@ function ProjectsContent() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="mb-2xl">
         <div className="flex items-center justify-between mb-2">

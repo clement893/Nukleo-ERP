@@ -212,7 +212,7 @@ export default function CalendrierDemoPage() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="space-y-6">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative mb-8 rounded-2xl overflow-hidden">
         {/* Aurora Borealis Gradient Background */}

@@ -249,7 +249,7 @@ function ProjectDetailContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="space-y-6">
         <Card className="glass-card">
           <div className="py-12 text-center">
             <Loading />
@@ -261,7 +261,7 @@ function ProjectDetailContent() {
 
   if (error || !project) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="space-y-6">
         <Alert variant="error" className="mb-6">
           {error || 'Projet introuvable'}
         </Alert>
@@ -277,7 +277,7 @@ function ProjectDetailContent() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="mb-2xl">
             <Button
