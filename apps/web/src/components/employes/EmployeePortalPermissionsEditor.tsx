@@ -90,10 +90,12 @@ export default function EmployeePortalPermissionsEditor({
         }
       });
 
+      // Mettre à jour les états sélectionnés
       setSelectedModules(modulesSet);
       setSelectedClients(clientsSet);
       
       // Sauvegarder l'état initial pour comparer les changements
+      // Utiliser les données chargées pour éviter les problèmes de synchronisation
       setSavedModules(new Set(modulesSet));
       setSavedClients(new Set(clientsSet));
 
@@ -175,10 +177,14 @@ export default function EmployeePortalPermissionsEditor({
         type: 'success',
       });
 
+      // Recharger les données depuis le serveur pour s'assurer de la synchronisation
       await loadData();
-      // Mettre à jour les permissions sauvegardées après la sauvegarde
-      setSavedModules(new Set(selectedModules));
-      setSavedClients(new Set(selectedClients));
+      
+      // Déclencher un événement pour notifier les autres composants (comme le portail employé)
+      window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
+        detail: { employeeId }
+      }));
+      
       onUpdate?.();
     } catch (err) {
       const appError = handleApiError(err);

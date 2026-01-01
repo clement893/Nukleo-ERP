@@ -124,7 +124,21 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   const { user } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  const { hasModuleAccess, loading: permissionsLoading } = useEmployeePortalPermissions({ employeeId });
+  const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions } = useEmployeePortalPermissions({ employeeId });
+  
+  // Écouter les événements de mise à jour des permissions depuis d'autres composants
+  useEffect(() => {
+    const handlePermissionsUpdate = () => {
+      reloadPermissions();
+    };
+    
+    // Écouter les événements personnalisés pour recharger les permissions
+    window.addEventListener('employee-portal-permissions-updated', handlePermissionsUpdate);
+    
+    return () => {
+      window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate);
+    };
+  }, [reloadPermissions]);
 
   // Check if current user is admin
   useEffect(() => {

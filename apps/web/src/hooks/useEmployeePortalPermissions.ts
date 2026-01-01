@@ -17,69 +17,71 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
   const [permissions, setPermissions] = useState<EmployeePortalPermissionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
-  useEffect(() => {
+  const loadPermissions = async () => {
     // If employeeId is provided, use it; otherwise use user.id
     if (employeeId) {
-      const loadPermissions = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const summary = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
-          setPermissions(summary);
-        } catch (err) {
-          const appError = handleApiError(err);
-          setError(appError.message || 'Erreur lors du chargement des permissions');
-          // Don't fail silently - set empty permissions
-          setPermissions({
-            user_id: null,
-            employee_id: employeeId,
-            pages: [],
-            modules: [],
-            projects: [],
-            clients: [],
-            all_projects: false,
-            all_clients: false,
-          });
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadPermissions();
+      try {
+        setLoading(true);
+        setError(null);
+        const summary = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
+        setPermissions(summary);
+      } catch (err) {
+        const appError = handleApiError(err);
+        setError(appError.message || 'Erreur lors du chargement des permissions');
+        // Don't fail silently - set empty permissions
+        setPermissions({
+          user_id: null,
+          employee_id: employeeId,
+          pages: [],
+          modules: [],
+          projects: [],
+          clients: [],
+          all_projects: false,
+          all_clients: false,
+        });
+      } finally {
+        setLoading(false);
+      }
     } else if (user?.id) {
       const userId = typeof user.id === 'string' ? parseInt(user.id) : user.id;
       
-      const loadPermissions = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const summary = await employeePortalPermissionsAPI.getSummary(userId);
-          setPermissions(summary);
-        } catch (err) {
-          const appError = handleApiError(err);
-          setError(appError.message || 'Erreur lors du chargement des permissions');
-          // Don't fail silently - set empty permissions
-          setPermissions({
-            user_id: userId,
-            employee_id: null,
-            pages: [],
-            modules: [],
-            projects: [],
-            clients: [],
-            all_projects: false,
-            all_clients: false,
-          });
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadPermissions();
+      try {
+        setLoading(true);
+        setError(null);
+        const summary = await employeePortalPermissionsAPI.getSummary(userId);
+        setPermissions(summary);
+      } catch (err) {
+        const appError = handleApiError(err);
+        setError(appError.message || 'Erreur lors du chargement des permissions');
+        // Don't fail silently - set empty permissions
+        setPermissions({
+          user_id: userId,
+          employee_id: null,
+          pages: [],
+          modules: [],
+          projects: [],
+          clients: [],
+          all_projects: false,
+          all_clients: false,
+        });
+      } finally {
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
-  }, [user?.id, employeeId]);
+  };
+
+  useEffect(() => {
+    loadPermissions();
+  }, [user?.id, employeeId, reloadTrigger]);
+
+  // Function to manually reload permissions
+  const reload = () => {
+    setReloadTrigger(prev => prev + 1);
+  };
 
   /**
    * Check if user has access to a page
@@ -147,5 +149,6 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
     hasModuleAccess,
     hasProjectAccess,
     hasClientAccess,
+    reload, // Export reload function
   };
 }
