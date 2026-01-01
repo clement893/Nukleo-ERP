@@ -78,13 +78,13 @@ export default function DeadlinesPage() {
         const { status, daysRemaining } = calculateDeadlineStatus(task.due_date!, task.status);
         
         return {
-          id: task.id,
+          id: String(task.id),
           title: task.title,
           projectName: project?.name || 'Projet inconnu',
-          projectId: task.project_id,
+          projectId: task.project_id ? String(task.project_id) : '',
           dueDate: task.due_date!,
           priority: (task.priority as 'high' | 'medium' | 'low') || 'medium',
-          assignedTo: task.assigned_to_name,
+          assignedTo: task.assignee_name || undefined,
           status,
           daysRemaining
         };
