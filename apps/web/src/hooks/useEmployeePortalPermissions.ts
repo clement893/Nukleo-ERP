@@ -179,21 +179,30 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
     setReloadTrigger(prev => prev + 1);
   };
   
-  // Écouter les événements de mise à jour pour invalider le cache
+  // Écouter les événements de mise à jour des permissions
   useEffect(() => {
     if (!employeeId) return; // Ne s'applique que si on a un employeeId
     
     const handlePermissionsUpdate = (event: CustomEvent) => {
       const eventEmployeeId = event.detail?.employeeId;
       if (eventEmployeeId === employeeId) {
-        // Invalider le cache pour cet employé
+        // ✅ FIX CRITIQUE: Ne PAS invalider le cache car savePermissions() vient de le mettre à jour
+        // Utiliser directement le cache mis à jour au lieu de recharger depuis le serveur
         const currentCacheKey = getCacheKey(employeeId);
-        if (currentCacheKey && currentCacheKey !== 'none') {
-          permissionsCache.delete(currentCacheKey);
+        const cachedData = currentCacheKey && currentCacheKey !== 'none' 
+          ? getCachedPermissions(currentCacheKey) 
+          : null;
+        
+        if (cachedData) {
+          // Le cache a été mis à jour par savePermissions(), l'utiliser directement
+          setPermissions(cachedData);
+          setLoading(false);
+          initialLoadRef.current = true;
+        } else {
+          // Pas de cache (peut arriver si le cache a expiré), recharger depuis le serveur
+          initialLoadRef.current = false;
+          setReloadTrigger(prev => prev + 1);
         }
-        // Recharger les permissions depuis le serveur
-        initialLoadRef.current = false;
-        setReloadTrigger(prev => prev + 1);
       }
     };
     
