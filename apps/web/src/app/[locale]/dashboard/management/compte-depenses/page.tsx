@@ -47,7 +47,6 @@ function ManagementCompteDepensesContent() {
   const { showToast } = useToast();
   const { user, token } = useAuthStore();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isCheckingSuperAdmin, setIsCheckingSuperAdmin] = useState(true);
   
   // Check if user is admin or superadmin
   const isAdmin = user?.is_admin || false;
@@ -56,13 +55,11 @@ function ManagementCompteDepensesContent() {
   useEffect(() => {
     const checkSuperAdmin = async () => {
       if (!user || !token) {
-        setIsCheckingSuperAdmin(false);
         return;
       }
       
       // If user is already admin, skip superadmin check
       if (isAdmin) {
-        setIsCheckingSuperAdmin(false);
         return;
       }
       
@@ -72,8 +69,6 @@ function ManagementCompteDepensesContent() {
       } catch (err) {
         console.warn('Could not check superadmin status:', err);
         setIsSuperAdmin(false);
-      } finally {
-        setIsCheckingSuperAdmin(false);
       }
     };
     
