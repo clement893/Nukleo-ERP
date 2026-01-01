@@ -105,7 +105,7 @@ export default function AdminTeamsDemo() {
 
   return (
     <PageContainer>
-      <MotionDiv variant="slideUp" duration="medium">
+      <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />

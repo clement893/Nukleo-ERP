@@ -19,7 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Badge, Button, Card, useToast, Loading, Alert } from '@/components/ui';
-import { useProjectTask, useUpdateProjectTask, useDeleteProjectTask } from '@/lib/query/project-tasks';
+import { useProjectTask, useDeleteProjectTask } from '@/lib/query/project-tasks';
 import type { TaskStatus, TaskPriority } from '@/lib/api/project-tasks';
 
 const statusConfig: Record<TaskStatus, { label: string; icon: any; color: string }> = {
