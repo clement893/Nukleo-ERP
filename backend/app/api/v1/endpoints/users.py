@@ -468,8 +468,8 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return None - FastAPI will handle 204 No Content response automatically
-        return None
+        # Return explicit Response for slowapi compatibility with 204 responses
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
