@@ -1,3 +1,5 @@
+'use client';
+
 import { InputHTMLAttributes, forwardRef, useRef } from 'react';
 import { clsx } from 'clsx';
 import { useComponentConfig } from '@/lib/theme/use-component-config';

@@ -435,7 +435,7 @@ function EmployeesContent() {
       />
 
       {/* Toolbar */}
-      <Card>
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="space-y-3">
           {/* Employee count */}
           <div className="flex items-center justify-between">

@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
+import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type VacationRequest } from '@/lib/api/vacationRequests';
@@ -267,7 +267,7 @@ function VacancesContent() {
         <Alert variant="error">{error}</Alert>
       )}
 
-      <Card>
+      <div className="glass-card rounded-xl border border-border">
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -308,7 +308,7 @@ function VacancesContent() {
             onLoadMore={loadMore}
           />
         )}
-      </Card>
+      </div>
 
       {/* Reject Modal */}
       <Modal

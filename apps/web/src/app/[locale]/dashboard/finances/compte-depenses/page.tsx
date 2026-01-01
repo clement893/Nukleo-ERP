@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Textarea } from '@/components/ui';
+import { Button, Alert, Loading, Textarea } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate, type ExpenseAccountStatus, type ExpenseAccountAction } from '@/lib/api/finances/expenseAccounts';
@@ -502,7 +502,7 @@ function CompteDepensesContent() {
       />
 
       {/* Toolbar */}
-      <Card>
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="space-y-3">
           {/* Expense account count */}
           <div className="flex items-center justify-between">
@@ -591,7 +591,7 @@ function CompteDepensesContent() {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Error */}
       {error && (
@@ -602,21 +602,21 @@ function CompteDepensesContent() {
 
       {/* Content */}
       {loading && expenseAccounts.length === 0 ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       ) : groupedExpenseAccounts.length === 0 ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center text-muted-foreground">
             Aucun compte de dépenses trouvé
           </div>
-        </Card>
+        </div>
       ) : (
         <div className="space-y-6">
           {groupedExpenseAccounts.map((group) => (
-            <Card key={`${group.monthKey}-${group.employeeId}`} className="overflow-hidden">
+            <div key={`${group.monthKey}-${group.employeeId}`} className="glass-card rounded-xl border border-border overflow-hidden">
               {/* Group Header */}
               <div className="bg-gradient-to-r from-muted/80 to-muted/50 px-6 py-4 border-b border-border">
                 <div className="flex items-center justify-between">
@@ -662,7 +662,7 @@ function CompteDepensesContent() {
                   }}
                 />
               </div>
-            </Card>
+            </div>
           ))}
           
           {/* Load More Button */}
