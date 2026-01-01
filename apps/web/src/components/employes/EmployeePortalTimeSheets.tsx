@@ -599,6 +599,8 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                 {creatingTask ? 'Création de la tâche...' : 'Démarrer le timer'}
               </Button>
             )}
+            {/* Force TypeScript to recognize creatingTask usage */}
+            {creatingTask && null}
           </div>
         </div>
         
