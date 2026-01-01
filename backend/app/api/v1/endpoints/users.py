@@ -7,6 +7,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
+from starlette.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 import json
@@ -468,7 +469,6 @@ async def delete_user(
                 # Continue - the deletion was successful, audit logging failure is not critical
         
         # Return 204 No Content - explicitly return Response for rate limiter compatibility
-        from starlette.responses import Response
         return Response(status_code=status.HTTP_204_NO_CONTENT)
         
     except HTTPException:
