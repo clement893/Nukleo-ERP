@@ -65,7 +65,7 @@ function getQuebecHolidays(year: number): CalendarEvent[] {
   holidays.push({ 
     id: `h-${year}-easter`, 
     title: 'Vendredi saint', 
-    date: goodFriday.toISOString().split('T')[0], 
+    date: goodFriday.toISOString().split('T')[0] || `${year}-03-30`, 
     type: 'holiday', 
     color: '#EF4444' 
   });
@@ -87,13 +87,16 @@ function getSummerVacation(year: number): CalendarEvent[] {
   const endDate = new Date(year, 7, 31); // 31 août
   
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    events.push({
-      id: `summer-${d.toISOString().split('T')[0]}`,
-      title: 'Vacances d\'été',
-      date: d.toISOString().split('T')[0],
-      type: 'summer',
-      color: '#F59E0B'
-    });
+    const dateStr = d.toISOString().split('T')[0] || '';
+    if (dateStr) {
+      events.push({
+        id: `summer-${dateStr}`,
+        title: 'Vacances d\'été',
+        date: dateStr,
+        type: 'summer',
+        color: '#F59E0B'
+      });
+    }
   }
   
   return events;
@@ -106,7 +109,6 @@ function CalendrierContent() {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
     loadCalendarData();
@@ -133,13 +135,16 @@ function CalendrierContent() {
           const start = new Date(vac.start_date);
           const end = new Date(vac.end_date);
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            allEvents.push({
-              id: `vac-${vac.id}-${d.toISOString().split('T')[0]}`,
-              title: `Vacances - ${vac.employee_first_name} ${vac.employee_last_name}`,
-              date: d.toISOString().split('T')[0],
-              type: 'vacation',
-              color: '#10B981'
-            });
+            const dateStr = d.toISOString().split('T')[0] || '';
+            if (dateStr) {
+              allEvents.push({
+                id: `vac-${vac.id}-${dateStr}`,
+                title: `Vacances - ${vac.employee_first_name} ${vac.employee_last_name}`,
+                date: dateStr,
+                type: 'vacation',
+                color: '#10B981'
+              });
+            }
           }
         });
       } catch (err) {
@@ -165,14 +170,13 @@ function CalendrierContent() {
       // Employés pour anniversaires et dates d'embauche
       try {
         const emps = await employeesAPI.list(0, 1000);
-        setEmployees(emps);
         
         emps.forEach((emp: Employee) => {
-          if (emp.date_of_birth) {
+          if (emp.birthday) {
             allEvents.push({
               id: `birthday-${emp.id}`,
               title: `Anniversaire - ${emp.first_name} ${emp.last_name}`,
-              date: emp.date_of_birth.substring(0, 10),
+              date: emp.birthday.substring(0, 10),
               type: 'birthday',
               color: '#EC4899'
             });
@@ -369,22 +373,22 @@ function CalendrierContent() {
             <div className="flex items-center gap-3">
               <Button onClick={goToToday} variant="outline">Aujourd'hui</Button>
               <div className="flex gap-2">
-                <Button variant={viewMode === 'month' ? 'default' : 'outline'} onClick={() => setViewMode('month')}>Mois</Button>
-                <Button variant={viewMode === 'week' ? 'default' : 'outline'} onClick={() => setViewMode('week')}>Semaine</Button>
-                <Button variant={viewMode === 'day' ? 'default' : 'outline'} onClick={() => setViewMode('day')}>Jour</Button>
+                <Button variant={viewMode === 'month' ? 'primary' : 'outline'} onClick={() => setViewMode('month')}>Mois</Button>
+                <Button variant={viewMode === 'week' ? 'primary' : 'outline'} onClick={() => setViewMode('week')}>Semaine</Button>
+                <Button variant={viewMode === 'day' ? 'primary' : 'outline'} onClick={() => setViewMode('day')}>Jour</Button>
               </div>
             </div>
           </div>
 
           {/* Filtres */}
           <div className="flex flex-wrap gap-2 mb-6">
-            <Button variant={filterType === 'all' ? 'default' : 'outline'} onClick={() => setFilterType('all')}>Tous</Button>
-            <Button variant={filterType === 'holidays' ? 'default' : 'outline'} onClick={() => setFilterType('holidays')}>Jours fériés</Button>
-            <Button variant={filterType === 'summer' ? 'default' : 'outline'} onClick={() => setFilterType('summer')}>Vacances d'été</Button>
-            <Button variant={filterType === 'vacations' ? 'default' : 'outline'} onClick={() => setFilterType('vacations')}>Vacances approuvées</Button>
-            <Button variant={filterType === 'events' ? 'default' : 'outline'} onClick={() => setFilterType('events')}>Événements</Button>
-            <Button variant={filterType === 'birthdays' ? 'default' : 'outline'} onClick={() => setFilterType('birthdays')}>Anniversaires</Button>
-            <Button variant={filterType === 'hiredates' ? 'default' : 'outline'} onClick={() => setFilterType('hiredates')}>Dates d'embauche</Button>
+            <Button variant={filterType === 'all' ? 'primary' : 'outline'} onClick={() => setFilterType('all')}>Tous</Button>
+            <Button variant={filterType === 'holidays' ? 'primary' : 'outline'} onClick={() => setFilterType('holidays')}>Jours fériés</Button>
+            <Button variant={filterType === 'summer' ? 'primary' : 'outline'} onClick={() => setFilterType('summer')}>Vacances d'été</Button>
+            <Button variant={filterType === 'vacations' ? 'primary' : 'outline'} onClick={() => setFilterType('vacations')}>Vacances approuvées</Button>
+            <Button variant={filterType === 'events' ? 'primary' : 'outline'} onClick={() => setFilterType('events')}>Événements</Button>
+            <Button variant={filterType === 'birthdays' ? 'primary' : 'outline'} onClick={() => setFilterType('birthdays')}>Anniversaires</Button>
+            <Button variant={filterType === 'hiredates' ? 'primary' : 'outline'} onClick={() => setFilterType('hiredates')}>Dates d'embauche</Button>
           </div>
 
           {/* Grid calendrier */}
