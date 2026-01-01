@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { NukleoPageHeader } from '@/components/nukleo';
+import { PageHeader } from '@/components/layout';
 import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
@@ -437,10 +437,14 @@ function OpportunitiesContent() {
 
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <NukleoPageHeader
+      <PageHeader
         title="Opportunités"
-        description="Gérez vos opportunités commerciales"
-        compact
+        description={`Gérez vos opportunités commerciales${opportunities.length > 0 ? ` - ${opportunities.length} opportunité${opportunities.length > 1 ? 's' : ''} au total` : ''}`}
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Module Commercial', href: '/dashboard/commercial' },
+          { label: 'Opportunités' },
+        ]}
       />
 
       {/* Toolbar */}
