@@ -355,7 +355,10 @@ function SoumissionsContent() {
   const pendingQuotes = quotes.filter(q => q.status === 'sent').length;
   const pendingSubmissions = submissions.filter(s => s.status === 'submitted' || s.status === 'under_review').length;
   const totalQuotesValue = quotes.reduce((sum, q) => sum + (q.amount || 0), 0);
-  const totalSubmissionsValue = submissions.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const totalSubmissionsValue = submissions.reduce((sum, s) => {
+    const amount = s.content?.amount || s.content?.value || 0;
+    return sum + (typeof amount === 'number' ? amount : 0);
+  }, 0);
 
   return (
     <MotionDiv variant="slideUp" duration="normal" className="space-y-6">

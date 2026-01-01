@@ -298,7 +298,10 @@ export default function SoumissionsPage() {
 
   const submissionsStats = {
     total: submissions.length,
-    totalAmount: submissions.reduce((sum, s) => sum + (s.amount || 0), 0),
+    totalAmount: submissions.reduce((sum, s) => {
+      const amount = s.content?.amount || s.content?.value || 0;
+      return sum + (typeof amount === 'number' ? amount : 0);
+    }, 0),
     won: submissions.filter(s => s.status === 'accepted').length,
     pending: submissions.filter(s => s.status === 'submitted' || s.status === 'under_review').length,
   };
@@ -442,14 +445,14 @@ export default function SoumissionsPage() {
         <div className="flex justify-end gap-2">
           <Button
             size="sm"
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            variant={viewMode === 'grid' ? 'primary' : 'outline'}
             onClick={() => setViewMode('grid')}
           >
             <Grid className="w-4 h-4" />
           </Button>
           <Button
             size="sm"
-            variant={viewMode === 'list' ? 'default' : 'outline'}
+            variant={viewMode === 'list' ? 'primary' : 'outline'}
             onClick={() => setViewMode('list')}
           >
             <List className="w-4 h-4" />
@@ -590,17 +593,17 @@ export default function SoumissionsPage() {
                         <Calendar className="w-4 h-4" />
                         <span>Échéance: {formatDate(submission.deadline)}</span>
                       </div>
-                      {submission.probability !== undefined && (
+                      {submission.content?.probability !== undefined && (
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <Target className="w-4 h-4" />
-                          <span>Probabilité: {submission.probability}%</span>
+                          <span>Probabilité: {submission.content.probability}%</span>
                         </div>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                        {formatCurrency(submission.amount || 0)}
+                        {formatCurrency((submission.content?.amount || submission.content?.value || 0) as number)}
                       </div>
                       <div className="flex gap-2">
                         <Button

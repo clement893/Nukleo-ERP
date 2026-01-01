@@ -192,7 +192,7 @@ export default function LeoDemoPage() {
                     <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-1">
                       {conv.title}
                     </h3>
-                    <Badge size="sm" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                    <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                       {conv.messageCount}
                     </Badge>
                   </div>
