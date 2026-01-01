@@ -7,10 +7,10 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   DollarSign, TrendingUp, TrendingDown, FileText, 
-  ArrowUpRight, ArrowDownRight, Calendar,
+  ArrowUpRight, ArrowDownRight,
   CreditCard, Wallet, Building, Package, Users, Zap, Loader2
 } from 'lucide-react';
-import { Badge, Button, Card } from '@/components/ui';
+import { Badge, Card } from '@/components/ui';
 import Link from 'next/link';
 import { projectsAPI } from '@/lib/api/projects';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
@@ -77,7 +77,7 @@ export default function FinancesPage() {
       setLoading(true);
       
       // Charger les données des APIs
-      const [projects, timeEntries, employees] = await Promise.all([
+      const [projects, , employees] = await Promise.all([
         projectsAPI.list(0, 1000),
         timeEntriesAPI.list({ limit: 1000 }),
         employeesAPI.list(0, 1000)
@@ -139,7 +139,7 @@ export default function FinancesPage() {
       const transactions: Transaction[] = projectsThisMonth
         .filter(p => p.budget && p.budget > 0)
         .slice(0, 4)
-        .map((p, idx) => ({
+        .map((p) => ({
           id: `${p.id}`,
           type: 'in' as const,
           description: `Paiement projet: ${p.name}`,
@@ -453,7 +453,7 @@ export default function FinancesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{transaction.description}</div>
                     <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                      <Badge variant="outline" className="text-xs px-1.5 py-0">
+                      <Badge variant="default" className="text-xs px-1.5 py-0">
                         {transaction.category}
                       </Badge>
                       <span>•</span>

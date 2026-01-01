@@ -6,12 +6,12 @@ import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  FileText, Plus, Search, Download, Send, Eye, Edit, 
+  FileText, Plus, Search, Send, Edit, 
   DollarSign, Calendar, User, Building, Clock, AlertCircle,
-  CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, MoreVertical, Loader2
+  CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, Loader2
 } from 'lucide-react';
 import { Badge, Button, Card, Input } from '@/components/ui';
-import { projectsAPI, type Project } from '@/lib/api/projects';
+import { projectsAPI } from '@/lib/api/projects';
 
 interface InvoiceLineItem {
   id: string;
@@ -585,28 +585,28 @@ export default function FacturationsPage() {
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button
-                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                variant={statusFilter === 'all' ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('all')}
               >
                 Toutes ({stats.count.total})
               </Button>
               <Button
-                variant={statusFilter === 'sent' ? 'default' : 'outline'}
+                variant={statusFilter === 'sent' ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('sent')}
               >
                 Envoyées ({stats.count.sent})
               </Button>
               <Button
-                variant={statusFilter === 'paid' ? 'default' : 'outline'}
+                variant={statusFilter === 'paid' ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('paid')}
               >
                 Payées ({stats.count.paid})
               </Button>
               <Button
-                variant={statusFilter === 'overdue' ? 'default' : 'outline'}
+                variant={statusFilter === 'overdue' ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('overdue')}
               >

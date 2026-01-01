@@ -224,7 +224,7 @@ export default function RapportPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium min-w-[100px]">{data.month}</span>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="default" className="text-xs">
                         {data.projectCount} projet{data.projectCount > 1 ? 's' : ''}
                       </Badge>
                     </div>
