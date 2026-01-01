@@ -506,7 +506,20 @@ async def approve_compte_depenses(
     account.review_notes = action.notes
     
     await db.commit()
-    await db.refresh(account, ["employee", "reviewer"])
+    
+    # Try to refresh, but don't fail if it doesn't work
+    try:
+        await db.refresh(account, ["employee", "reviewer"])
+    except Exception as e:
+        logger.warning(f"Could not refresh account relationships after approval: {str(e)}")
+        # Try to reload employee manually if refresh failed
+        try:
+            employee_result = await db.execute(
+                select(Employee).where(Employee.id == account.employee_id)
+            )
+            account.employee = employee_result.scalar_one_or_none()
+        except Exception:
+            pass
     
     account_dict = {
         "id": account.id,
