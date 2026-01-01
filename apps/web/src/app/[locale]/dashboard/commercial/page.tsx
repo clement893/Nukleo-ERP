@@ -3,56 +3,47 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   TrendingUp, 
-  DollarSign, 
   Target, 
   FileText,
-  Users,
   Building2,
-  Calendar,
-  Clock,
-  ArrowUp,
-  ArrowDown,
-  Phone,
-  Mail,
   UserPlus,
   Briefcase
 } from 'lucide-react';
 import { Badge, Button, Card, Loading } from '@/components/ui';
 import Link from 'next/link';
 import { useInfiniteOpportunities } from '@/lib/query/opportunities';
-import { useInfinitePipelines } from '@/lib/query/pipelines';
-import { useInfiniteQuotes, useInfiniteSubmissions } from '@/lib/query/quotes-submissions';
+import { useInfiniteQuotes, useInfiniteSubmissions } from '@/lib/query/commercial';
 
 export default function CommercialPage() {
   // Fetch real data
   const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(100);
-  const { data: pipelinesData, isLoading: loadingPipelines } = useInfinitePipelines(100);
   const { data: quotesData, isLoading: loadingQuotes } = useInfiniteQuotes(100);
   const { data: submissionsData, isLoading: loadingSubmissions } = useInfiniteSubmissions(100);
 
   // Flatten data
   const opportunities = useMemo(() => opportunitiesData?.pages.flat() || [], [opportunitiesData]);
-  const pipelines = useMemo(() => pipelinesData?.pages.flat() || [], [pipelinesData]);
   const quotes = useMemo(() => quotesData?.pages.flat() || [], [quotesData]);
   const submissions = useMemo(() => submissionsData?.pages.flat() || [], [submissionsData]);
 
-  const loading = loadingOpps || loadingPipelines || loadingQuotes || loadingSubmissions;
+  const loading = loadingOpps || loadingQuotes || loadingSubmissions;
 
   // Calculate stats
   const stats = useMemo(() => {
     const totalOpportunities = opportunities.length;
-    const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
-    const totalPipelines = pipelines.length;
-    const activePipelines = pipelines.filter(p => !p.is_archived).length;
+    const totalValue = opportunities.reduce((sum: number, opp: any) => sum + (opp.amount || 0), 0);
+    // Pipelines are managed through opportunities, so we count unique pipeline_ids
+    const uniquePipelines = new Set(opportunities.map((opp: any) => opp.pipeline_id).filter(Boolean));
+    const totalPipelines = uniquePipelines.size;
+    const activePipelines = totalPipelines; // Assume all are active for now
     const totalQuotes = quotes.length;
-    const pendingQuotes = quotes.filter(q => q.status === 'sent' || q.status === 'pending').length;
+    const pendingQuotes = quotes.filter((q: any) => q.status === 'sent' || q.status === 'pending').length;
     const totalSubmissions = submissions.length;
-    const wonSubmissions = submissions.filter(s => s.status === 'won' || s.status === 'accepted').length;
+    const wonSubmissions = submissions.filter((s: any) => s.status === 'won' || s.status === 'accepted').length;
 
     return {
       opportunities: {
@@ -72,12 +63,12 @@ export default function CommercialPage() {
         won: wonSubmissions,
       },
     };
-  }, [opportunities, pipelines, quotes, submissions]);
+  }, [opportunities, quotes, submissions]);
 
   // Top opportunities (by amount)
   const topOpportunities = useMemo(() => {
     return [...opportunities]
-      .sort((a, b) => (b.amount || 0) - (a.amount || 0))
+      .sort((a: any, b: any) => (b.amount || 0) - (a.amount || 0))
       .slice(0, 3);
   }, [opportunities]);
 
