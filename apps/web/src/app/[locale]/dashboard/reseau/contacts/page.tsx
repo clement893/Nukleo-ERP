@@ -13,7 +13,6 @@ import {
 import type { Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import Loading from '@/components/ui/Loading';
 import Alert from '@/components/ui/Alert';
 import ContactForm from '@/components/reseau/ContactForm';
 import Modal from '@/components/ui/Modal';
@@ -788,7 +787,7 @@ export default function ContactsPage() {
           icon={Users}
           title="Aucun contact trouvé"
           description="Essayez de modifier vos filtres ou créez un nouveau contact"
-          variant="large"
+          variant="default"
           action={{
             label: "Nouveau contact",
             onClick: () => setShowAddModal(true)
