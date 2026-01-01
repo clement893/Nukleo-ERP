@@ -36,8 +36,10 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
   if (!clientName) return { initials: '??', color: 'bg-gray-500' };
   
   const trimmed = clientName.trim();
+  if (!trimmed) return { initials: '??', color: 'bg-gray-500' };
+  
   const words = trimmed.split(/\s+/);
-  const initials = words.length >= 2 
+  const initials = words.length >= 2 && words[0] && words[1] && words[0][0] && words[1][0]
     ? (words[0][0] + words[1][0]).toUpperCase()
     : trimmed.substring(0, 2).toUpperCase();
   
@@ -47,7 +49,8 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
     'bg-red-500', 'bg-pink-500', 'bg-indigo-500', 'bg-yellow-500',
     'bg-teal-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-violet-500'
   ];
-  const colorIndex = clientName.trim().charCodeAt(0) % colors.length;
+  const firstChar = trimmed[0];
+  const colorIndex = firstChar ? firstChar.charCodeAt(0) % colors.length : 0;
   
   return { initials, color: colors[colorIndex] };
 }
