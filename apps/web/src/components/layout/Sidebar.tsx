@@ -1,4 +1,5 @@
 'use client';
+// Sidebar simplifié - Design Nukleo sobre et compact
 
 import { useState, useMemo, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
