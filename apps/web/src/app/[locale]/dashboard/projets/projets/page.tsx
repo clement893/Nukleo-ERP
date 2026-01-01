@@ -78,6 +78,8 @@ function ProjectsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const [stageFilter, setStageFilter] = useState<string>('all');
   const [showAnalytics, setShowAnalytics] = useState(true);
   const [sortBy, setSortBy] = useState<SortBy>('name');
   const [sortAsc, setSortAsc] = useState(true);
@@ -110,6 +112,22 @@ function ProjectsContent() {
     return Array.from(new Set(clients)).sort();
   }, [projects]);
 
+  // Get unique teams for filter
+  const uniqueTeams = useMemo(() => {
+    const teams = projects
+      .map(p => p.equipe)
+      .filter((t): t is string => !!t);
+    return Array.from(new Set(teams)).sort();
+  }, [projects]);
+
+  // Get unique stages for filter
+  const uniqueStages = useMemo(() => {
+    const stages = projects
+      .map(p => p.etape)
+      .filter((s): s is string => !!s);
+    return Array.from(new Set(stages)).sort();
+  }, [projects]);
+
   // Filter and sort projects
   const filteredAndSortedProjects = useMemo(() => {
     let filtered = projects.filter(project => {
@@ -121,8 +139,10 @@ function ProjectsContent() {
       
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
       const matchesClient = clientFilter === 'all' || project.client_name === clientFilter;
+      const matchesTeam = teamFilter === 'all' || project.equipe === teamFilter;
+      const matchesStage = stageFilter === 'all' || project.etape === stageFilter;
       
-      return matchesSearch && matchesStatus && matchesClient;
+      return matchesSearch && matchesStatus && matchesClient && matchesTeam && matchesStage;
     });
 
     // Sort
@@ -146,7 +166,7 @@ function ProjectsContent() {
     });
 
     return filtered;
-  }, [projects, searchQuery, statusFilter, clientFilter, sortBy, sortAsc]);
+  }, [projects, searchQuery, statusFilter, clientFilter, teamFilter, stageFilter, sortBy, sortAsc]);
 
   // Calculate KPIs
   const totalProjects = projects.length;
@@ -300,6 +320,30 @@ function ProjectsContent() {
               ))}
             </select>
 
+            {/* Team Filter */}
+            <select
+              value={teamFilter}
+              onChange={(e) => setTeamFilter(e.target.value)}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+            >
+              <option value="all">Toutes les équipes</option>
+              {uniqueTeams.map(team => (
+                <option key={team} value={team}>{team}</option>
+              ))}
+            </select>
+
+            {/* Stage Filter */}
+            <select
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+            >
+              <option value="all">Toutes les étapes</option>
+              {uniqueStages.map(stage => (
+                <option key={stage} value={stage}>{stage}</option>
+              ))}
+            </select>
+
             {/* Sort */}
             <select
               value={sortBy}
@@ -430,9 +474,10 @@ function ProjectsContent() {
             const config = statusConfig[project.status || 'ACTIVE'] || statusConfig['ACTIVE'];
             
             return (
-              <div
+              <Link
                 key={project.id}
-                className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-200 group border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30"
+                href={`/dashboard/projects/${project.id}`}
+                className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-200 group border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30 block cursor-pointer"
               >
                 {/* Header with Logo */}
                 <div className="flex items-start gap-3 mb-4">
@@ -480,17 +525,17 @@ function ProjectsContent() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <Link
-                    href={`/dashboard/projects/${project.id}`}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors border border-gray-200 dark:border-gray-700"
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Share project:', project.id);
+                    }}
+                    className="p-2 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700"
                   >
-                    Voir détails
-                  </Link>
-                  <button className="p-2 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -504,9 +549,10 @@ function ProjectsContent() {
             const config = statusConfig[project.status || 'ACTIVE'] || statusConfig['ACTIVE'];
             
             return (
-              <div
+              <Link
                 key={project.id}
-                className="glass-card rounded-xl p-4 hover:scale-[1.005] transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30"
+                href={`/dashboard/projects/${project.id}`}
+                className="glass-card rounded-xl p-4 hover:scale-[1.005] transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30 block cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   {/* Client Logo */}
@@ -551,14 +597,8 @@ function ProjectsContent() {
                     </div>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Link href={`/dashboard/projects/${project.id}`} className="p-1.5 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700">
-                      <ExternalLink className="w-4 h-4" />
-                    </Link>
-                  </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -588,7 +628,7 @@ function ProjectsContent() {
                     const logo = getClientLogo(project.client_name);
                     
                     return (
-                      <div key={project.id} className="glass-card p-4 rounded-xl hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50">
+                      <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="glass-card p-4 rounded-xl hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 block cursor-pointer">
                         <div className="flex items-start gap-3 mb-3">
                           <div className={`${logo.color} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
                             {logo.initials}
@@ -612,7 +652,7 @@ function ProjectsContent() {
                             </>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
