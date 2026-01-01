@@ -106,8 +106,6 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     project_id: null as number | null,
   });
   
-  const [adjustTimeValue, setAdjustTimeValue] = useState({ hours: 0, minutes: 0 });
-  
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
