@@ -181,7 +181,7 @@ export default function EmployeeDetailPage() {
   const handleOpenPortal = () => {
     if (employee) {
       const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/management/employes/${employee.id}/portail`);
+      router.push(`/${locale}/portail-employe/${employee.id}`);
     }
   };
 

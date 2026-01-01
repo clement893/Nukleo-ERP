@@ -62,8 +62,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
   }, [employeeId]);
 
   useEffect(() => {
-    if (employee?.user_id) {
+    if (employee && employee.user_id) {
       loadData();
+    } else if (employee && !employee.user_id) {
+      // Employee loaded but no user_id - stop loading
+      setLoading(false);
     }
   }, [employee]);
 
@@ -75,11 +78,14 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
 
   const loadEmployee = async () => {
     try {
+      setLoading(true);
       const data = await employeesAPI.get(employeeId);
       setEmployee(data);
+      setLoading(false);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors du chargement de l\'employé');
+      setLoading(false);
     }
   };
 
@@ -191,13 +197,29 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     };
   }, [entries, totalHours]);
 
-  if (!employee?.user_id) {
+  if (!employee) {
     return (
       <div className="space-y-4 mt-4">
         <Card>
           <div className="py-8 text-center text-muted-foreground">
             <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>Chargement des informations de l'employé...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!employee.user_id) {
+    return (
+      <div className="space-y-4 mt-4">
+        <Card>
+          <div className="py-8 text-center text-muted-foreground">
+            <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium mb-2">Aucun compte utilisateur associé</p>
+            <p className="text-sm">
+              Cet employé n'a pas de compte utilisateur associé. Les feuilles de temps nécessitent un compte utilisateur.
+            </p>
           </div>
         </Card>
       </div>

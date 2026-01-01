@@ -293,7 +293,7 @@ function EmployeesContent() {
   // Navigate to portal page
   const openPortalPage = (employee: Employee) => {
     const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/management/employes/${employee.id}/portail`);
+    router.push(`/${locale}/portail-employe/${employee.id}`);
   };
 
   // Open edit modal

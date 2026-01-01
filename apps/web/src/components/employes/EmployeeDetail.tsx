@@ -1,5 +1,6 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import { Employee } from '@/lib/api/employees';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -19,6 +20,9 @@ export default function EmployeeDetail({
   onDelete,
   className,
 }: EmployeeDetailProps) {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'fr';
+  
   return (
     <div className={clsx('space-y-4', className)}>
       {/* Header avec photo */}
@@ -185,7 +189,7 @@ export default function EmployeeDetail({
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Accès au portail employé</p>
               <a
-                href={`/portail-employe/${employee.id}`}
+                href={`/${locale}/portail-employe/${employee.id}`}
                 className="text-primary hover:underline flex items-center gap-1 mt-1"
               >
                 Ouvrir le portail employé
