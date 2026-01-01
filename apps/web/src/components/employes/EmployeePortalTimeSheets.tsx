@@ -447,6 +447,61 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       return;
     }
 
+    let taskId = formData.task_id;
+
+    // If no task selected but task name provided, create new task
+    if (!taskId && entryTaskForm.title.trim()) {
+      try {
+        setCreatingTask(true);
+        
+        // Get user's team
+        let teamId: number | null = null;
+        if (employee.team_id) {
+          teamId = employee.team_id;
+        } else {
+          // Try to get user's first team
+          try {
+            const teamsResponse = await teamsAPI.getMyTeams();
+            const teamsData = (teamsResponse as any)?.data?.teams || (teamsResponse as any)?.teams || [];
+            if (teamsData.length > 0) {
+              teamId = teamsData[0].id;
+            }
+          } catch (err) {
+            console.error('Error loading teams:', err);
+          }
+        }
+
+        if (!teamId) {
+          showToast({ message: 'Aucune équipe trouvée. Veuillez créer une équipe d\'abord.', type: 'error' });
+          setCreatingTask(false);
+          return;
+        }
+
+        // Create task
+        const newTask: ProjectTaskCreate = {
+          title: entryTaskForm.title,
+          description: entryTaskForm.description || null,
+          team_id: teamId,
+          project_id: entryTaskForm.project_id || formData.project_id,
+          employee_assignee_id: employeeId,
+          status: 'in_progress',
+        };
+
+        const createdTask = await projectTasksAPI.create(newTask);
+        taskId = createdTask.id;
+        
+        await loadData(); // Reload tasks
+        setFormData(prev => ({ ...prev, task_id: taskId }));
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({ message: appError.message || 'Erreur lors de la création de la tâche', type: 'error' });
+        setCreatingTask(false);
+        return;
+      } finally {
+        setCreatingTask(false);
+      }
+    }
+
     try {
       // Convert date string to ISO datetime string
       const dateStr = formData.date;
@@ -455,6 +510,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       
       const entryData: TimeEntryCreate = {
         ...formData,
+        task_id: taskId,
         date: isoDate,
       };
       
@@ -470,6 +526,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         project_id: null,
         client_id: null,
       });
+      setEntryTaskForm({ title: '', description: '', project_id: null });
       showToast({ message: 'Entrée créée avec succès', type: 'success' });
     } catch (err) {
       const appError = handleApiError(err);
@@ -719,7 +776,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
           </div>
         </div>
         
-        {!timerStatus?.active && (
+        {(!timerStatus || !timerStatus.active) && (
           <div className="mt-4 space-y-4 p-4 bg-accent rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">

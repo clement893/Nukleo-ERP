@@ -489,7 +489,9 @@ async def delete_user(
         )
         # Continue - the deletion was successful, audit logging failure is not critical
     
-    return None
+    # Return 204 No Content - explicitly return Response for rate limiter compatibility
+    from starlette.responses import Response
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/me", response_model=UserResponse)
@@ -739,9 +741,9 @@ class UserInviteRequestOptional(BaseModel):
 async def send_invitation_to_inactive_user(
     request: Request,
     user_id: int,
-    invite_data: Optional[UserInviteRequestOptional] = None,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    invite_data: Optional[UserInviteRequestOptional] = None,
 ):
     """
     Send an invitation to an inactive user to activate their account

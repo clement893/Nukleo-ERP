@@ -52,6 +52,7 @@ export default function AdminUsersContent() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [linking, setLinking] = useState(false);
+  const [sendingInvitation, setSendingInvitation] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -188,6 +189,36 @@ export default function AdminUsersContent() {
       });
     } finally {
       setLinking(false);
+    }
+  };
+
+  const handleSendInvitation = async (user: User) => {
+    if (!confirm(`Envoyer une invitation à ${user.email} pour activer son compte ?`)) {
+      return;
+    }
+
+    try {
+      setSendingInvitation(true);
+      setError(null);
+      const { usersAPI } = await import('@/lib/api');
+      await usersAPI.sendInvitation(user.id);
+      
+      showToast({
+        message: `Invitation envoyée à ${user.email} avec succès`,
+        type: 'success',
+      });
+      
+      // Refresh users list to get updated status
+      await fetchUsers();
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, 'Erreur lors de l\'envoi de l\'invitation');
+      setError(errorMessage);
+      showToast({
+        message: errorMessage,
+        type: 'error',
+      });
+    } finally {
+      setSendingInvitation(false);
     }
   };
 
@@ -333,6 +364,17 @@ export default function AdminUsersContent() {
           >
             {row.employee ? 'Modifier employé' : 'Lier employé'}
           </Button>
+          {!row.is_active && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleSendInvitation(row)}
+              disabled={sendingInvitation}
+              className="border-primary-500 text-primary-600 hover:bg-primary-50"
+            >
+              Envoyer invitation
+            </Button>
+          )}
           <Button
             size="sm"
             variant="danger"

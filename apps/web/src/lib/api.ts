@@ -374,6 +374,9 @@ export const usersAPI = {
   getUsers: () => {
     return apiClient.get('/v1/users');
   },
+  sendInvitation: (userId: string | number, data?: { role_id?: number; message?: string }) => {
+    return apiClient.post(`/v1/users/${userId}/send-invitation`, data || {});
+  },
   createUser: (data: {
     email: string;
     first_name?: string;
