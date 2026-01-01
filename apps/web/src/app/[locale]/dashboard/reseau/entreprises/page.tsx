@@ -1,776 +1,388 @@
 'use client';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '@/components/layout';
-import { Button, Alert, Loading, Badge } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
-import { type Company, type CompanyCreate, type CompanyUpdate } from '@/lib/api/companies';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import CompaniesGallery from '@/components/commercial/CompaniesGallery';
-import CompanyForm from '@/components/commercial/CompanyForm';
-import CompanyAvatar from '@/components/reseau/CompanyAvatar';
-import CompanyFilterBadges from '@/components/reseau/CompanyFilterBadges';
-import CompanyCounter from '@/components/reseau/CompanyCounter';
-import ViewModeToggle from '@/components/reseau/ViewModeToggle';
-import CompanyActionLink from '@/components/reseau/CompanyActionLink';
-import CompanyRowActions from '@/components/reseau/CompanyRowActions';
-import SearchBar from '@/components/ui/SearchBar';
-import MultiSelectFilter from '@/components/reseau/MultiSelectFilter';
+import { PageContainer } from '@/components/layout';
+import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Plus, 
-  Download, 
-  Upload, 
-  FileSpreadsheet, 
-  MoreVertical, 
+  Building2, 
+  MapPin, 
+  Users, 
+  TrendingUp, 
+  Eye, 
   Trash2,
-  HelpCircle
+  Grid,
+  List,
+  Globe,
+  Search,
+  DollarSign
 } from 'lucide-react';
-import ImportCompaniesInstructions from '@/components/commercial/ImportCompaniesInstructions';
-import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
-import MotionDiv from '@/components/motion/MotionDiv';
-import { useDebounce } from '@/hooks/useDebounce';
-import { 
-  useInfiniteCompanies, 
-  useCreateCompany, 
-  useUpdateCompany, 
-  useDeleteCompany, 
-  useDeleteAllCompanies,
-  companiesAPI 
-} from '@/lib/query/companies';
+import { Badge, Button, Card, Loading, Input } from '@/components/ui';
+import { useInfiniteCompanies, useDeleteCompany } from '@/lib/query/companies';
+import { useToast } from '@/components/ui';
+import Modal from '@/components/ui/Modal';
+import CompanyForm from '@/components/commercial/CompanyForm';
+import type { Company } from '@/lib/api/companies';
 
-import type { ViewMode } from '@/components/reseau/ViewModeToggle';
-
-function CompaniesContent() {
+export default function EntreprisesPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  
-  // React Query hooks for companies
-  const {
-    data: companiesData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error: queryError,
-  } = useInfiniteCompanies(20);
-  
-  // Mutations
-  const createCompanyMutation = useCreateCompany();
-  const updateCompanyMutation = useUpdateCompany();
-  const deleteCompanyMutation = useDeleteCompany();
-  const deleteAllCompaniesMutation = useDeleteAllCompanies();
-  
-  // Flatten pages into single array
-  const companies = useMemo(() => {
-    return companiesData?.pages.flat() || [];
-  }, [companiesData]);
-  
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'client' | 'prospect'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [filterCountry, setFilterCountry] = useState<string[]>([]);
-  const [filterIsClient, setFilterIsClient] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [showImportInstructions, setShowImportInstructions] = useState(false);
-  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
-  const [showImportLogs, setShowImportLogs] = useState(false);
-  
-  // Debounce search query to avoid excessive re-renders (300ms delay)
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
-  // Derived state from React Query
-  const loading = isLoading;
-  const loadingMore = isFetchingNextPage;
-  const hasMore = hasNextPage ?? false;
-  const error = queryError ? handleApiError(queryError).message : null;
 
-  // Load more companies for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
-    }
-  }, [loadingMore, hasMore, fetchNextPage]);
+  // Fetch data
+  const { data, isLoading } = useInfiniteCompanies(1000);
+  const deleteCompanyMutation = useDeleteCompany();
 
-  // Extract unique values for dropdowns
-  const uniqueValues = useMemo(() => {
-    const countries = new Set<string>();
+  // Flatten data
+  const companies = useMemo(() => data?.pages.flat() || [], [data]);
 
-    companies.forEach((company) => {
-      if (company.country) countries.add(company.country);
-    });
-
-    return {
-      countries: Array.from(countries).sort(),
-    };
-  }, [companies]);
-
-  // Filtered companies with debounced search
+  // Filter and search
   const filteredCompanies = useMemo(() => {
     return companies.filter((company) => {
-      // Country filter: match if no filter or company country is in filter array
-      const matchesCountry = filterCountry.length === 0 || (company.country && filterCountry.includes(company.country));
+      const matchesSearch = !searchQuery || 
+        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (company.sector && company.sector.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Client filter: match if no filter or company is_client matches filter
-      const matchesClient = filterIsClient.length === 0 || 
-        filterIsClient.some(filter => {
-          if (filter === 'yes') return company.is_client === true;
-          if (filter === 'no') return company.is_client === false;
-          return false;
-        });
+      const matchesType = filterType === 'all' || 
+        (filterType === 'client' && company.is_client) ||
+        (filterType === 'prospect' && !company.is_client);
       
-      // Search filter: search in name, website, email (using debounced query)
-      const matchesSearch = !debouncedSearchQuery || 
-        company.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        company.website?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        company.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-
-      return matchesCountry && matchesClient && matchesSearch;
+      return matchesSearch && matchesType;
     });
-  }, [companies, filterCountry, filterIsClient, debouncedSearchQuery]);
-  
-  // Check if any filters are active (use debounced search for display)
-  const hasActiveFilters = !!(filterCountry.length > 0 || filterIsClient.length > 0 || debouncedSearchQuery);
-  
-  // Clear all filters function
-  const clearAllFilters = useCallback(() => {
-    setFilterCountry([]);
-    setFilterIsClient([]);
-    setSearchQuery('');
-  }, []);
+  }, [companies, searchQuery, filterType]);
 
-  // Handle create with React Query mutation
-  const handleCreate = async (data: CompanyCreate | CompanyUpdate) => {
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = companies.length;
+    const clients = companies.filter(c => c.is_client).length;
+    const prospects = companies.filter(c => !c.is_client).length;
+    const totalRevenue = companies.reduce((sum, c) => sum + (c.revenue || 0), 0);
+    
+    return { total, clients, prospects, totalRevenue };
+  }, [companies]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('fr-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) return;
+    
     try {
-      await createCompanyMutation.mutateAsync(data as CompanyCreate);
-      setShowCreateModal(false);
-      showToast({
-        message: 'Entreprise créée avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la création de l\'entreprise',
-        type: 'error',
-      });
+      await deleteCompanyMutation.mutateAsync(id);
+      showToast({ message: 'Entreprise supprimée avec succès', type: 'success' });
+    } catch (error) {
+      showToast({ message: 'Erreur lors de la suppression', type: 'error' });
     }
   };
 
-  // Handle update with React Query mutation
-  const handleUpdate = async (data: CompanyCreate | CompanyUpdate) => {
-    if (!selectedCompany) return;
-
-    try {
-      await updateCompanyMutation.mutateAsync({
-        id: selectedCompany.id,
-        data: data as CompanyUpdate,
-      });
-      setShowEditModal(false);
-      setSelectedCompany(null);
-      showToast({
-        message: 'Entreprise modifiée avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la modification de l\'entreprise',
-        type: 'error',
-      });
-    }
+  const handleView = (id: number) => {
+    router.push(`/dashboard/reseau/entreprises/${id}`);
   };
 
-  // Handle delete with React Query mutation
-  const handleDelete = async (companyId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) {
-      return;
-    }
-
-    try {
-      await deleteCompanyMutation.mutateAsync(companyId);
-      if (selectedCompany?.id === companyId) {
-        setSelectedCompany(null);
-      }
-      showToast({
-        message: 'Entreprise supprimée avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression de l\'entreprise',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle delete all companies with React Query mutation
-  const handleDeleteAll = async () => {
-    const count = companies.length;
-    if (count === 0) {
-      showToast({
-        message: 'Aucune entreprise à supprimer',
-        type: 'info',
-      });
-      return;
-    }
-
-    const confirmed = confirm(
-      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUTES les ${count} entreprise(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    // Double confirmation
-    const doubleConfirmed = confirm(
-      '⚠️ DERNIÈRE CONFIRMATION: Toutes les entreprises seront définitivement supprimées. Tapez OK pour confirmer.'
-    );
-
-    if (!doubleConfirmed) {
-      return;
-    }
-
-    try {
-      const result = await deleteAllCompaniesMutation.mutateAsync();
-      setSelectedCompany(null);
-      showToast({
-        message: result.message || `${result.deleted_count} entreprise(s) supprimée(s) avec succès`,
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression des entreprises',
-        type: 'error',
-      });
-    }
-  };
-
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
-  
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      // Generate import_id before starting import
-      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
-      setShowImportLogs(true);
-      
-      const result = await companiesAPI.import(file, importId);
-      
-      // Update import_id if backend returns a different one (should be the same)
-      if (result.import_id && result.import_id !== importId) {
-        setCurrentImportId(result.import_id);
-      }
-      
-      if (result.valid_rows > 0) {
-        // Invalidate companies query to refetch after import
-        queryClient.invalidateQueries({ queryKey: ['companies'] });
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-      setShowImportLogs(false);
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    try {
-      const blob = await companiesAPI.export();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `entreprises-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast({
-        message: 'Export réussi',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'export',
-        type: 'error',
-      });
-    }
-  };
-
-  // Navigate to detail page
-  const openDetailPage = (company: Company) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/reseau/entreprises/${company.id}`);
-  };
-
-  // Open edit modal
-  const openEditModal = (company: Company) => {
-    setSelectedCompany(company);
-    setShowEditModal(true);
-  };
-
-  // Get parent companies for form (exclude self)
-  const parentCompanies = useMemo(() => {
-    return companies
-      .filter(c => !selectedCompany || c.id !== selectedCompany.id)
-      .map(c => ({ id: c.id, name: c.name }));
-  }, [companies, selectedCompany]);
-
-  // Table columns
-  const columns: Column<Company>[] = [
-    {
-      key: 'logo_url',
-      label: '',
-      sortable: false,
-      render: (_value, company) => (
-        <div className="flex items-center w-10 h-10">
-          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-            <CompanyAvatar company={company} size="md" className="w-full h-full object-cover" />
-          </div>
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <Loading />
         </div>
-      ),
-    },
-    {
-      key: 'name',
-      label: 'Nom de l\'entreprise',
-      sortable: true,
-      render: (_value, company) => (
-        <div className="flex items-center justify-between group">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={company.name}>{company.name}</div>
-            {company.parent_company_name && (
-              <div className="text-sm text-muted-foreground truncate">
-                Filiale de {company.parent_company_name}
-              </div>
-            )}
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <CompanyRowActions
-              company={company}
-              onView={() => openDetailPage(company)}
-              onEdit={() => openEditModal(company)}
-              onDelete={() => handleDelete(company.id)}
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'website',
-      label: 'Site web',
-      sortable: true,
-      render: (value, company) => (
-        <CompanyActionLink type="website" value={value ? String(value) : ''} company={company} />
-      ),
-    },
-    {
-      key: 'country',
-      label: 'Pays',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
-      ),
-    },
-    {
-      key: 'is_client',
-      label: 'Client',
-      sortable: true,
-      render: (value) => {
-        if (value === undefined || value === null) {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        return value ? (
-          <Badge variant="default" className="bg-green-500 text-white">Oui</Badge>
-        ) : (
-          <Badge variant="default" className="border border-border">Non</Badge>
-        );
-      },
-    },
-    {
-      key: 'email',
-      label: 'Courriel',
-      sortable: true,
-      render: (value, company) => (
-        <CompanyActionLink type="email" value={value ? String(value) : ''} company={company} />
-      ),
-    },
-    {
-      key: 'phone',
-      label: 'Téléphone',
-      sortable: true,
-      render: (value, company) => (
-        <CompanyActionLink type="phone" value={value ? String(value) : ''} company={company} />
-      ),
-    },
-  ];
+      </PageContainer>
+    );
+  }
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <PageHeader
-        title="Entreprises"
-        description={`Gérez vos entreprises et organisations${companies.length > 0 ? ` - ${companies.length} entreprise${companies.length > 1 ? 's' : ''} au total` : ''}`}
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Réseau', href: '/dashboard/reseau' },
-          { label: 'Entreprises' },
-        ]}
-      />
-
-      {/* Toolbar */}
-      <div className="glass-card rounded-xl border border-border p-6">
-        <div className="space-y-3">
-          {/* Company count with improved visual */}
-          <div className="flex items-center justify-between">
-            <CompanyCounter
-              filtered={filteredCompanies.length}
-              total={companies.length}
-              showFilteredBadge={hasActiveFilters}
-            />
-          </div>
+    <PageContainer className="flex flex-col h-full">
+      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
+        {/* Hero Header */}
+        <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
           
-          {/* Search bar */}
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Rechercher par nom, site web, email..."
-            className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-          
-          {/* Active filters badges */}
-          <CompanyFilterBadges
-            filters={{
-              country: filterCountry,
-              is_client: filterIsClient,
-              search: searchQuery,
-            }}
-            onRemoveFilter={(key: string, value?: string) => {
-              if (key === 'country' && value) {
-                setFilterCountry(filterCountry.filter(v => v !== value));
-              } else if (key === 'is_client' && value) {
-                setFilterIsClient(filterIsClient.filter(v => v !== value));
-              } else if (key === 'search') {
-                setSearchQuery('');
-              }
-            }}
-            onClearAll={clearAllFilters}
-          />
-          
-          {/* Top row: Filters, View toggle, Actions */}
-          <div className="flex flex-col gap-3">
-            {/* Filters row */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Pays */}
-              <MultiSelectFilter
-                label="Pays"
-                options={uniqueValues.countries.map((country) => ({
-                  value: country,
-                  label: country,
-                }))}
-                selectedValues={filterCountry}
-                onSelectionChange={setFilterCountry}
-                className="min-w-[120px]"
-              />
-
-              {/* Client */}
-              <MultiSelectFilter
-                label="Client"
-                options={[
-                  { value: 'yes', label: 'Oui' },
-                  { value: 'no', label: 'Non' },
-                ]}
-                selectedValues={filterIsClient}
-                onSelectionChange={setFilterIsClient}
-                className="min-w-[100px]"
-              />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Entreprises
+              </h1>
+              <p className="text-white/80 text-lg">Gérez votre réseau d'entreprises</p>
             </div>
+            <Button 
+              className="bg-white text-[#523DC9] hover:bg-white/90"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle entreprise
+            </Button>
+          </div>
+        </div>
 
-            {/* Bottom row: View toggle, Actions */}
-            <div className="flex items-center justify-between">
-              {/* View mode toggle */}
-              <ViewModeToggle value={viewMode} onChange={setViewMode} />
-
-              {/* Actions menu */}
-              <div className="relative ml-auto">
-                <div className="flex items-center gap-2">
-                  {/* Primary action */}
-                  <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto">
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Nouvelle entreprise
-                  </Button>
-
-                  {/* Secondary actions dropdown */}
-                  <div className="relative">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowActionsMenu(!showActionsMenu)}
-                      className="text-xs px-2 py-1.5 h-auto"
-                      aria-label="Actions"
-                    >
-                      <MoreVertical className="w-3.5 h-3.5" />
-                    </Button>
-                    {showActionsMenu && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setShowActionsMenu(false)}
-                        />
-                        <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
-                          <div className="py-1">
-                            <button
-                              onClick={() => {
-                                setShowImportInstructions(true);
-                                setShowActionsMenu(false);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                            >
-                              <HelpCircle className="w-3.5 h-3.5" />
-                              Instructions d'import
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await companiesAPI.downloadTemplate();
-                                  setShowActionsMenu(false);
-                                } catch (err) {
-                                  const appError = handleApiError(err);
-                                  showToast({
-                                    message: appError.message || 'Erreur lors du téléchargement du modèle',
-                                    type: 'error',
-                                  });
-                                }
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5" />
-                              Modèle Excel
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await companiesAPI.downloadZipTemplate();
-                                  setShowActionsMenu(false);
-                                  showToast({
-                                    message: 'Modèle ZIP téléchargé avec succès',
-                                    type: 'success',
-                                  });
-                                } catch (err) {
-                                  const appError = handleApiError(err);
-                                  showToast({
-                                    message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-                                    type: 'error',
-                                  });
-                                }
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5" />
-                              Modèle ZIP (avec logos)
-                            </button>
-                            <input
-                              type="file"
-                              accept=".xlsx,.xls,.zip"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleImport(file);
-                                  setShowActionsMenu(false);
-                                }
-                              }}
-                              className="hidden"
-                              id="import-companies"
-                            />
-                            <label
-                              htmlFor="import-companies"
-                              className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer"
-                            >
-                              <Upload className="w-3.5 h-3.5" />
-                              Importer
-                            </label>
-                            <button
-                              onClick={() => {
-                                handleExport();
-                                setShowActionsMenu(false);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              Exporter
-                            </button>
-                            <button
-                              onClick={() => {
-                                handleDeleteAll();
-                                setShowActionsMenu(false);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 border-t border-border"
-                              disabled={loading || companies.length === 0}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Supprimer toutes les entreprises
-                            </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                <Building2 className="w-6 h-6 text-[#523DC9]" />
               </div>
             </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <TrendingUp className="w-6 h-6 text-[#10B981]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.clients}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Clients actifs</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <Users className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.prospects}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Prospects</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+                <DollarSign className="w-6 h-6 text-[#3B82F6]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {formatCurrency(stats.totalRevenue)}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Revenu total</div>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 w-full relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Rechercher une entreprise..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant={filterType === 'all' ? 'primary' : 'outline'}
+                onClick={() => setFilterType('all')}
+              >
+                Tous
+              </Button>
+              <Button 
+                variant={filterType === 'client' ? 'primary' : 'outline'}
+                onClick={() => setFilterType('client')}
+              >
+                Clients
+              </Button>
+              <Button 
+                variant={filterType === 'prospect' ? 'primary' : 'outline'}
+                onClick={() => setFilterType('prospect')}
+              >
+                Prospects
+              </Button>
+            </div>
+
+            <div className="flex gap-2 border-l pl-4">
+              <Button
+                variant={viewMode === 'grid' ? 'primary' : 'outline'}
+                onClick={() => setViewMode('grid')}
+                size="sm"
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'primary' : 'outline'}
+                onClick={() => setViewMode('list')}
+                size="sm"
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+        </Card>
 
-        </div>
-      </div>
+        {/* Companies Grid/List */}
+        {filteredCompanies.length === 0 ? (
+          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+            <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Aucune entreprise trouvée
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {searchQuery || filterType !== 'all' 
+                ? 'Essayez de modifier vos filtres' 
+                : 'Créez votre première entreprise'}
+            </p>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle entreprise
+            </Button>
+          </Card>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCompanies.map((company) => (
+              <Card 
+                key={company.id}
+                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer"
+                onClick={() => handleView(company.id)}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-[#523DC9]" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
+                      {company.sector && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{company.sector}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Badge className={company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}>
+                    {company.is_client ? 'Client' : 'Prospect'}
+                  </Badge>
+                </div>
 
-      {/* Error */}
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
-      )}
+                <div className="space-y-2 mb-4">
+                  {(company.city || company.country) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <MapPin className="w-4 h-4" />
+                      <span>{[company.city, company.country].filter(Boolean).join(', ')}</span>
+                    </div>
+                  )}
+                  {company.website && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Globe className="w-4 h-4" />
+                      <span>{company.website}</span>
+                    </div>
+                  )}
+                </div>
 
-      {/* Content */}
-      {loading && companies.length === 0 ? (
-        <div className="glass-card rounded-xl border border-border p-6">
-          <div className="py-12 text-center">
-            <Loading />
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex gap-4 text-sm">
+                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                      <Users className="w-4 h-4" />
+                      <span>{company.contact_count || 0}</span>
+                    </div>
+                    {company.revenue && (
+                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                        <DollarSign className="w-4 h-4" />
+                        <span>{formatCurrency(company.revenue)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button size="sm" variant="ghost" onClick={() => handleView(company.id)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(company.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-        </div>
-      ) : viewMode === 'list' ? (
-        <div className="glass-card rounded-xl border border-border">
-          <DataTable
-            data={filteredCompanies as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            filterable={false}
-            emptyMessage="Aucune entreprise trouvée"
-            loading={loading}
-            infiniteScroll={filterCountry.length === 0 && filterIsClient.length === 0}
-            hasMore={hasMore && filterCountry.length === 0 && filterIsClient.length === 0}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-            onRowClick={(row) => openDetailPage(row as unknown as Company)}
-          />
-        </div>
-      ) : (
-        <CompaniesGallery
-          companies={filteredCompanies}
-          onCompanyClick={openDetailPage}
-          hasMore={hasMore && filterCountry.length === 0 && filterIsClient.length === 0}
-          loadingMore={loadingMore}
-          onLoadMore={loadMore}
-        />
-      )}
+        ) : (
+          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredCompanies.map((company) => (
+                <div 
+                  key={company.id}
+                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                  onClick={() => handleView(company.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-[#523DC9]" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {[company.sector, company.city, company.country].filter(Boolean).join(' • ')}
+                        </p>
+                      </div>
+                      <Badge className={company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}>
+                        {company.is_client ? 'Client' : 'Prospect'}
+                      </Badge>
+                      <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span>{company.contact_count || 0}</span>
+                        </div>
+                        {company.revenue && (
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4" />
+                            <span>{formatCurrency(company.revenue)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Button size="sm" variant="ghost" onClick={() => handleView(company.id)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(company.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+      </MotionDiv>
 
       {/* Create Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Créer une nouvelle entreprise"
-        size="lg"
-      >
-        <CompanyForm
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreateModal(false)}
-          loading={loading}
-          parentCompanies={parentCompanies}
-        />
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal && selectedCompany !== null}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedCompany(null);
-        }}
-        title="Modifier l'entreprise"
-        size="lg"
-      >
-        {selectedCompany && (
-          <CompanyForm
-            company={selectedCompany}
-            onSubmit={handleUpdate}
-            onCancel={() => {
-              setShowEditModal(false);
-              setSelectedCompany(null);
-            }}
-            loading={loading}
-            parentCompanies={parentCompanies}
-          />
-        )}
-      </Modal>
-
-      {/* Import Instructions Modal */}
-      <ImportCompaniesInstructions
-        isOpen={showImportInstructions}
-        onClose={() => setShowImportInstructions(false)}
-        onDownloadTemplate={async () => {
-          try {
-            await companiesAPI.downloadZipTemplate();
-            showToast({
-              message: 'Modèle ZIP téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-              type: 'error',
-            });
-          }
-        }}
-      />
-      
-      {/* Import Logs Modal */}
-      {showImportLogs && (
+      {showCreateModal && (
         <Modal
-          isOpen={showImportLogs}
-          onClose={() => {
-            setShowImportLogs(false);
-            setCurrentImportId(null);
-          }}
-          title="Logs d'import en temps réel"
-          size="xl"
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Nouvelle entreprise"
         >
-          {currentImportId ? (
-            <ImportLogsViewer
-              endpointUrl={`/v1/commercial/companies/import/${currentImportId}/logs`}
-              importId={currentImportId}
-              onComplete={() => {
-                // Don't auto-close - let user close manually to review logs
-              }}
-            />
-          ) : (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
-            </div>
-          )}
+          <CompanyForm
+            onSubmit={async (data) => {
+              setShowCreateModal(false);
+              showToast({ message: 'Entreprise créée avec succès', type: 'success' });
+            }}
+            onCancel={() => setShowCreateModal(false)}
+          />
         </Modal>
       )}
-    </MotionDiv>
+    </PageContainer>
   );
-}
-
-export default function CompaniesPage() {
-  return <CompaniesContent />;
 }
