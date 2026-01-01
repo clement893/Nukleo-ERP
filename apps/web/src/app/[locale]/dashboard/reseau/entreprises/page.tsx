@@ -251,7 +251,7 @@ export default function EntreprisesPage() {
             </Button>
           </Card>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {filteredCompanies.map((company) => (
               <Card 
                 key={company.id}
@@ -260,7 +260,19 @@ export default function EntreprisesPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center">
+                    {company.logo_url ? (
+                      <img 
+                        src={company.logo_url} 
+                        alt={`${company.name} logo`}
+                        className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
                       <Building2 className="w-6 h-6 text-[#523DC9]" />
                     </div>
                     <div>
@@ -320,7 +332,19 @@ export default function EntreprisesPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center">
+                      {company.logo_url ? (
+                        <img 
+                          src={company.logo_url} 
+                          alt={`${company.name} logo`}
+                          className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-10 h-10 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
                         <Building2 className="w-5 h-5 text-[#523DC9]" />
                       </div>
                       <div className="flex-1">
