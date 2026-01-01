@@ -10,7 +10,7 @@
 
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import {
@@ -119,6 +119,8 @@ function getIcon(iconName: string): React.ComponentType<{ className?: string }> 
 
 export function EmployeePortalNavigation({ employeeId, className }: EmployeePortalNavigationProps) {
   const pathname = usePathname();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'fr';
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions } = useEmployeePortalPermissions({ employeeId });
   
@@ -205,7 +207,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
             {BASE_PAGES.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
-              const href = `/portail-employe/${employeeId}${item.path === 'dashboard' ? '/dashboard' : `/${item.path}`}`;
+              const href = `/${locale}/portail-employe/${employeeId}${item.path === 'dashboard' ? '/dashboard' : `/${item.path}`}`;
 
               return (
                 <Link
