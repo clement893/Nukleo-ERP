@@ -338,15 +338,6 @@ export default function ProjectsListDemo() {
     return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
   };
 
-  // Toggle sort
-  const handleSort = (newSortBy: SortBy) => {
-    if (sortBy === newSortBy) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortBy(newSortBy);
-      setSortAsc(true);
-    }
-  };
 
   return (
     <div className="min-h-screen p-6">

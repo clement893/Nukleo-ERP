@@ -17,6 +17,7 @@ import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import Loading from '@/components/ui/Loading';
+import { employeePortalPermissionsAPI } from '@/lib/api/employee-portal-permissions';
 
 export default function EmployeePortalLayout({
   children,

@@ -27,8 +27,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
 import { useState, useEffect } from 'react';
 import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
 import * as Icons from 'lucide-react';
@@ -121,10 +119,8 @@ function getIcon(iconName: string): React.ComponentType<{ className?: string }> 
 
 export function EmployeePortalNavigation({ employeeId, className }: EmployeePortalNavigationProps) {
   const pathname = usePathname();
-  const { user } = useAuthStore();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions, permissions } = useEmployeePortalPermissions({ employeeId });
+  const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions } = useEmployeePortalPermissions({ employeeId });
   
   // Écouter les événements de mise à jour des permissions depuis d'autres composants
   useEffect(() => {
@@ -148,19 +144,6 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
       window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
     };
   }, [reloadPermissions, employeeId]);
-
-  // Check if current user is admin
-  useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const status = await checkMySuperAdminStatus();
-        setIsAdmin(status.is_superadmin === true);
-      } catch {
-        setIsAdmin(false);
-      }
-    };
-    checkAdmin();
-  }, []);
 
   // Extract current section from pathname
   const getCurrentSection = () => {
