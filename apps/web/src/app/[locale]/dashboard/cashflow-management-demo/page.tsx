@@ -7,7 +7,7 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   TrendingUp, TrendingDown, DollarSign, Calendar, Filter, Download, 
-  ArrowUp, ArrowDown, AlertTriangle, CheckCircle, Info,
+  ArrowUp, ArrowDown, AlertTriangle,
   Wallet, CreditCard, Building, Users, Package, Zap, RefreshCw
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
