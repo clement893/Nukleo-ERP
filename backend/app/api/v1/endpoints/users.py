@@ -338,6 +338,7 @@ async def delete_user(
     - Prevents deletion of last superadmin
     - Soft delete (sets is_active=False) or hard delete based on configuration
     """
+    user_email = None
     try:
         from app.dependencies import is_admin_or_superadmin
         
@@ -368,58 +369,58 @@ async def delete_user(
         )
     
     # Get user to delete
-    result = await db.execute(select(User).where(User.id == user_id))
-    user_to_delete = result.scalar_one_or_none()
-    
-    if not user_to_delete:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Check if user is the last superadmin
     try:
-        from app.models import Role, UserRole
-        superadmin_role_result = await db.execute(
-            select(Role).where(Role.slug == "superadmin")
-        )
-        superadmin_role = superadmin_role_result.scalar_one_or_none()
+        result = await db.execute(select(User).where(User.id == user_id))
+        user_to_delete = result.scalar_one_or_none()
         
-        if superadmin_role:
-            superadmin_users_result = await db.execute(
-                select(UserRole)
-                .join(Role)
-                .where(Role.slug == "superadmin")
-                .where(Role.is_active == True)
+        if not user_to_delete:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
             )
-            superadmin_users = list(superadmin_users_result.scalars().all())
-            
-            # Check if user to delete is a superadmin
-            user_is_superadmin = any(
-                ur.user_id == user_id for ur in superadmin_users
-            )
-            
-            if user_is_superadmin and len(superadmin_users) <= 1:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Cannot delete the last superadmin user"
-                )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.warning(
-            f"Error checking superadmin status for user {user_id}: {e}",
-            exc_info=True
-        )
-        # Continue with deletion if we can't verify superadmin status
-        # This is a safety measure - we'll log the warning but allow the deletion
-    
-    # Perform soft delete (set is_active=False) instead of hard delete
-    # This preserves data integrity and allows for recovery if needed
-    try:
+        
         # Store email before modification for logging
-        user_email = user_to_delete.email
+        user_email = user_to_delete.email if user_to_delete else f"user_id_{user_id}"
         
+        # Check if user is the last superadmin
+        try:
+            from app.models import Role, UserRole
+            superadmin_role_result = await db.execute(
+                select(Role).where(Role.slug == "superadmin")
+            )
+            superadmin_role = superadmin_role_result.scalar_one_or_none()
+            
+            if superadmin_role:
+                superadmin_users_result = await db.execute(
+                    select(UserRole)
+                    .join(Role)
+                    .where(Role.slug == "superadmin")
+                    .where(Role.is_active == True)
+                )
+                superadmin_users = list(superadmin_users_result.scalars().all())
+                
+                # Check if user to delete is a superadmin
+                user_is_superadmin = any(
+                    ur.user_id == user_id for ur in superadmin_users
+                )
+                
+                if user_is_superadmin and len(superadmin_users) <= 1:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Cannot delete the last superadmin user"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(
+                f"Error checking superadmin status for user {user_id}: {e}",
+                exc_info=True
+            )
+            # Continue with deletion if we can't verify superadmin status
+            # This is a safety measure - we'll log the warning but allow the deletion
+        
+        # Perform soft delete (set is_active=False) instead of hard delete
+        # This preserves data integrity and allows for recovery if needed
         user_to_delete.is_active = False
         await db.commit()
         
@@ -431,67 +432,87 @@ async def delete_user(
             # This is not critical, continue with deletion
         
         logger.info(f"User {user_id} ({user_email}) soft-deleted by {current_user.email}")
+        
+        # Log deletion attempt (after successful deletion)
+        # Use a separate try/except to ensure audit logging failures don't break the deletion
+        if user_email:
+            try:
+                from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+                # Use None for db to create a separate session for audit logging
+                # This ensures the audit log is saved even if there are issues with the main transaction
+                await SecurityAuditLogger.log_event(
+                    db=None,  # Create separate session for audit logging
+                    event_type=SecurityEventType.DATA_DELETED,
+                    description=f"User '{user_email}' deleted",
+                    user_id=current_user.id,
+                    user_email=current_user.email,
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    request_method=request.method,
+                    request_path=str(request.url.path),
+                    severity="warning",
+                    success="success",
+                    metadata={
+                        "resource_type": "user",
+                        "deleted_user_id": user_id,
+                        "deleted_user_email": user_email,
+                        "action": "deleted"
+                    }
+                )
+            except Exception as e:
+                # Log the error but don't fail the request - audit logging is non-critical
+                logger.warning(
+                    f"Failed to log user deletion event for user {user_id}: {e}",
+                    exc_info=True
+                )
+                # Continue - the deletion was successful, audit logging failure is not critical
+        
+        # Return 204 No Content - explicitly return Response for rate limiter compatibility
+        from starlette.responses import Response
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as db_error:
-        await db.rollback()
+        try:
+            await db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors if session is already closed
+        
         error_msg = str(db_error)
+        error_type = type(db_error).__name__
+        
         logger.error(
             f"Failed to delete user {user_id}: {error_msg}",
             exc_info=True,
             context={
                 "user_id": user_id,
-                "deleted_by": current_user.id,
-                "error_type": type(db_error).__name__
+                "deleted_by": current_user.id if current_user else None,
+                "error_type": error_type,
+                "error_message": error_msg,
+                "user_email": user_email
             }
         )
         
         # Check if it's a foreign key constraint error
-        if "foreign key" in error_msg.lower() or "constraint" in error_msg.lower():
+        if "foreign key" in error_msg.lower() or "constraint" in error_msg.lower() or "violates foreign key" in error_msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot delete user: User has associated records that prevent deletion. Please remove or reassign related data first."
+                detail="Cannot delete user: User has associated records that prevent deletion. Please remove or reassign related data first."
+            )
+        
+        # Check for other database errors
+        if "database" in error_msg.lower() or "connection" in error_msg.lower() or "timeout" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Database error occurred. Please try again later."
             )
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete user: {error_msg}"
+            detail="An internal error occurred. Please contact support."
         )
-    
-    # Log deletion attempt (after successful deletion)
-    # Use a separate try/except to ensure audit logging failures don't break the deletion
-    try:
-        from app.core.security_audit import SecurityAuditLogger, SecurityEventType
-        # Use None for db to create a separate session for audit logging
-        # This ensures the audit log is saved even if there are issues with the main transaction
-        await SecurityAuditLogger.log_event(
-            db=None,  # Create separate session for audit logging
-            event_type=SecurityEventType.DATA_DELETED,
-            description=f"User '{user_email}' deleted",
-            user_id=current_user.id,
-            user_email=current_user.email,
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
-            request_method=request.method,
-            request_path=str(request.url.path),
-            severity="warning",
-            success="success",
-            metadata={
-                "resource_type": "user",
-                "deleted_user_id": user_id,
-                "deleted_user_email": user_email,
-                "action": "deleted"
-            }
-        )
-    except Exception as e:
-        # Log the error but don't fail the request - audit logging is non-critical
-        logger.warning(
-            f"Failed to log user deletion event for user {user_id}: {e}",
-            exc_info=True
-        )
-        # Continue - the deletion was successful, audit logging failure is not critical
-    
-    # Return 204 No Content - explicitly return Response for rate limiter compatibility
-    from starlette.responses import Response
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/me", response_model=UserResponse)
