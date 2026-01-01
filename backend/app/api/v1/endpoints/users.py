@@ -25,6 +25,10 @@ from typing import Annotated
 
 router = APIRouter()
 
+from app.services.invitation_service import InvitationService
+from app.schemas.invitation import InvitationResponse
+from pydantic import EmailStr, Field, BaseModel
+
 
 # Helper function to convert UUID user_id to integer
 def uuid_to_user_id(uuid_value: Optional[str]) -> Optional[int]:
@@ -630,4 +634,95 @@ async def update_current_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_detail
+        )
+
+
+class UserInviteRequest(BaseModel):
+    """Schema for inviting a user"""
+    email: EmailStr = Field(..., description="Email address to invite")
+    role_id: Optional[int] = Field(None, description="Role ID to assign to the user")
+    message: Optional[str] = Field(None, description="Custom invitation message")
+    expires_in_days: int = Field(7, ge=1, le=30, description="Days until invitation expires")
+
+
+@router.post("/invite", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+@rate_limit_decorator("10/minute")
+async def invite_user(
+    request: Request,
+    invite_data: UserInviteRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> InvitationResponse:
+    """
+    Invite a user to create an account
+    
+    Sends an invitation email to the specified email address with a link to create an account.
+    The invitation includes a token that can be used during registration.
+    
+    Args:
+        invite_data: Invitation data (email, role_id, message, expires_in_days)
+        current_user: Current authenticated user (inviter)
+        db: Database session
+        
+    Returns:
+        Created invitation
+        
+    Raises:
+        HTTPException: If user already exists or invitation fails
+    """
+    try:
+        logger.info(f"User invitation request from {current_user.email} to {invite_data.email}")
+        
+        # Check if user already exists
+        result = await db.execute(
+            select(User).where(User.email == invite_data.email)
+        )
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A user with this email already exists"
+            )
+        
+        # Check if there's already a pending invitation for this email
+        from app.models import Invitation
+        result = await db.execute(
+            select(Invitation)
+            .where(Invitation.email == invite_data.email)
+            .where(Invitation.status == "pending")
+            .where(Invitation.team_id.is_(None))  # User invitation (no team)
+        )
+        existing_invitation = result.scalar_one_or_none()
+        
+        if existing_invitation:
+            # Check if invitation is still valid
+            if existing_invitation.is_valid():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A pending invitation already exists for this email"
+                )
+        
+        # Create invitation (without team_id for user invitation)
+        invitation_service = InvitationService(db)
+        invitation = await invitation_service.create_invitation(
+            email=invite_data.email,
+            invited_by_id=current_user.id,
+            team_id=None,  # User invitation, not team invitation
+            role_id=invite_data.role_id,
+            message=invite_data.message,
+            expires_in_days=invite_data.expires_in_days,
+        )
+        
+        logger.info(f"User invitation created successfully: {invitation.id} for {invite_data.email}")
+        
+        return InvitationResponse.model_validate(invitation)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating user invitation: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create invitation: {str(e)}"
         )

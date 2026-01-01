@@ -78,41 +78,61 @@ class InvitationService:
         )
         invited_by = result.scalar_one_or_none()
 
+        invited_by_name = f"{invited_by.first_name} {invited_by.last_name}".strip() if invited_by else "Quelqu'un"
+        if not invited_by_name or invited_by_name == " ":
+            invited_by_name = invited_by.email if invited_by else "Quelqu'un"
+
         # Generate invitation URL
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        
+        # If it's a user invitation (no team), use register endpoint with token
+        if not invitation.team_id:
+            invitation_url = f"{frontend_url}/auth/register?token={invitation.token}"
+            expires_at_str = invitation.expires_at.strftime('%d/%m/%Y') if invitation.expires_at else None
+            
+            # Use the new user invitation template
+            template = EmailTemplates.user_invitation(
+                email=invitation.email,
+                invited_by_name=invited_by_name,
+                invitation_token=invitation.token,
+                invitation_url=invitation_url,
+                message=invitation.message,
+                expires_at=expires_at_str,
+            )
+            
+            try:
+                self.email_service.send_email(
+                    to_email=invitation.email,
+                    subject=template["subject"],
+                    html_content=template["html"],
+                    text_content=template["text"],
+                )
+            except Exception as e:
+                # Log error but don't fail invitation creation
+                print(f"Failed to send invitation email: {e}")
+            return
+
+        # Team invitation (existing logic)
         invitation_url = f"{frontend_url}/invitations/accept?token={invitation.token}"
 
-        # Prepare email content
-        if team:
-            subject = f"Invitation to join {team.name}"
-            html_content = f"""
-            <h2>You've been invited!</h2>
-            <p>Hello,</p>
-            <p>{invited_by.first_name if invited_by else 'Someone'} has invited you to join <strong>{team.name}</strong>.</p>
-            {f'<p>Role: <strong>{role.name if role else "Member"}</strong></p>' if role else ''}
-            {f'<p>{invitation.message}</p>' if invitation.message else ''}
-            <p><a href="{invitation_url}" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
-            <p>Or copy this link: {invitation_url}</p>
-            <p>This invitation expires on {invitation.expires_at.strftime('%Y-%m-%d')}.</p>
-            """
-        else:
-            subject = "You've been invited!"
-            html_content = f"""
-            <h2>You've been invited!</h2>
-            <p>Hello,</p>
-            <p>{invited_by.first_name if invited_by else 'Someone'} has invited you to join our platform.</p>
-            {f'<p>{invitation.message}</p>' if invitation.message else ''}
-            <p><a href="{invitation_url}" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
-            <p>Or copy this link: {invitation_url}</p>
-            <p>This invitation expires on {invitation.expires_at.strftime('%Y-%m-%d')}.</p>
-            """
+        subject = f"Invitation to join {team.name}" if team else "You've been invited!"
+        html_content = f"""
+        <h2>You've been invited!</h2>
+        <p>Hello,</p>
+        <p>{invited_by_name} has invited you to join <strong>{team.name if team else 'our platform'}</strong>.</p>
+        {f'<p>Role: <strong>{role.name if role else "Member"}</strong></p>' if role else ''}
+        {f'<p>{invitation.message}</p>' if invitation.message else ''}
+        <p><a href="{invitation_url}" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
+        <p>Or copy this link: {invitation_url}</p>
+        <p>This invitation expires on {invitation.expires_at.strftime('%Y-%m-%d')}.</p>
+        """
 
         text_content = f"""
         You've been invited!
         
         Hello,
         
-        {invited_by.first_name if invited_by else 'Someone'} has invited you to join {team.name if team else 'our platform'}.
+        {invited_by_name} has invited you to join {team.name if team else 'our platform'}.
         
         {f'Role: {role.name if role else "Member"}' if role else ''}
         
