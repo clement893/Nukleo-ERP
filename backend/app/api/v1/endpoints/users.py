@@ -328,7 +328,7 @@ async def delete_user(
     user_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> Response:
+) -> None:
     """
     Delete a user (admin/superadmin only)
     
@@ -467,8 +467,8 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return explicit Response for slowapi compatibility with 204 responses
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        # Return None - FastAPI will automatically convert to 204 No Content
+        return None
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
