@@ -74,9 +74,9 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     estimated_hours: null,
   });
 
-  const loadTasks = useCallback(async (showToastOnError = false) => {
+  const loadTasks = useCallback(async (showToastOnError = false, bypassCache = false) => {
     try {
-      const params: { project_id?: number; team_id?: number; assignee_id?: number } = {};
+      const params: { project_id?: number; team_id?: number; assignee_id?: number; _t?: number } = {};
       if (projectId && projectId > 0) {
         params.project_id = projectId;
       }
@@ -86,7 +86,11 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       if (assigneeId) {
         params.assignee_id = assigneeId;
       }
-      // Force cache refresh by making a fresh API call
+      // Add timestamp to bypass cache
+      if (bypassCache) {
+        params._t = Date.now();
+      }
+      // Force cache refresh by making a fresh API call with timestamp
       const data = await projectTasksAPI.list(params);
       setTasks(data || []);
       setError(null);
@@ -184,7 +188,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
 
       if (selectedTask) {
         // Update existing task
-        await projectTasksAPI.update(selectedTask.id, {
+        const updatedTask = await projectTasksAPI.update(selectedTask.id, {
           title: formData.title,
           description: formData.description || null,
           status: formData.status,
@@ -194,6 +198,11 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           estimated_hours: formData.estimated_hours || null,
         });
         success('Tâche modifiée avec succès');
+        
+        // Optimistic update: update task in local state immediately
+        setTasks(prevTasks => 
+          prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
+        );
       } else {
         // Create new task - team_id is required
         if (!teamId) {
@@ -203,7 +212,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           setSaving(false);
           return;
         }
-        await projectTasksAPI.create({
+        const newTask = await projectTasksAPI.create({
           title: formData.title,
           description: formData.description || null,
           status: formData.status,
@@ -216,10 +225,16 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           order: tasks.length,
         });
         success('Tâche créée avec succès');
+        
+        // Optimistic update: add new task to local state immediately
+        setTasks(prevTasks => [...prevTasks, newTask]);
       }
 
-      // Refresh tasks BEFORE closing modal to ensure UI is updated
-      await loadTasks();
+      // Refresh tasks with cache bypass to ensure we have the latest data
+      // This runs in background and will update if there are any differences
+      loadTasks(false, true).catch(() => {
+        // Silently fail - we already updated optimistically
+      });
       
       // Close modal only after successful refresh
       setShowTaskModal(false);
@@ -254,7 +269,14 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       setLoading(true);
       await projectTasksAPI.delete(taskId);
       success('Tâche supprimée avec succès');
-      await loadTasks();
+      
+      // Optimistic update: remove task from local state immediately
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      
+      // Refresh with cache bypass in background
+      loadTasks(false, true).catch(() => {
+        // Silently fail - we already updated optimistically
+      });
     } catch (err) {
       const appError = handleApiError(err);
       const errorMessage = appError.message || 'Erreur lors de la suppression de la tâche';
@@ -283,10 +305,21 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     }
 
     try {
-      await projectTasksAPI.update(draggedTask.id, {
+      const updatedTask = await projectTasksAPI.update(draggedTask.id, {
         status: newStatus,
       });
-      await loadTasks();
+      
+      // Optimistic update: update task status in local state immediately
+      setTasks(prevTasks => 
+        prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
+      );
+      
+      setDraggedTask(null);
+      
+      // Refresh with cache bypass in background
+      loadTasks(false, true).catch(() => {
+        // Silently fail - we already updated optimistically
+      });
     } catch (err) {
       const appError = handleApiError(err);
       const errorMessage = appError.message || 'Erreur lors du déplacement de la tâche';

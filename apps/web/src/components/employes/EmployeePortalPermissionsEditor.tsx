@@ -20,8 +20,16 @@ import Modal from '@/components/ui/Modal';
 import { employeePortalPermissionsAPI, type EmployeePortalPermission, type EmployeePortalPermissionSummary } from '@/lib/api/employee-portal-permissions';
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
-// Pages du portail employé (basées sur EmployeePortalNavigation)
-const EMPLOYEE_PORTAL_PAGES = [
+import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
+import { Search, Plus, X, Save } from 'lucide-react';
+
+interface EmployeePortalPermissionsEditorProps {
+  employeeId: number;
+  onUpdate?: () => void;
+}
+
+// Pages de base du portail employé (toujours visibles)
+const EMPLOYEE_PORTAL_BASE_PAGES = [
   { path: 'dashboard', label: 'Tableau de bord' },
   { path: 'taches', label: 'Mes tâches' },
   { path: 'projets', label: 'Mes projets' },
@@ -31,21 +39,6 @@ const EMPLOYEE_PORTAL_PAGES = [
   { path: 'depenses', label: 'Mes comptes de dépenses' },
   { path: 'vacances', label: 'Mes vacances' },
   { path: 'profil', label: 'Mon profil' },
-];
-import { Search, Plus, X, Save } from 'lucide-react';
-
-interface EmployeePortalPermissionsEditorProps {
-  employeeId: number;
-  onUpdate?: () => void;
-}
-
-// Modules disponibles dans le portail employé (doivent correspondre à EmployeePortalNavigation)
-const AVAILABLE_MODULES = [
-  { id: 'crm', label: 'CRM', description: 'Tableau de bord, Projets, Leo, Vacances' },
-  { id: 'tasks', label: 'Tâches', description: 'Mes tâches, Mes deadlines' },
-  { id: 'timesheet', label: 'Feuilles de temps', description: 'Mes feuilles de temps' },
-  { id: 'accounting', label: 'Comptabilité', description: 'Mes comptes de dépenses' },
-  { id: 'settings', label: 'Paramètres', description: 'Mon profil' },
 ];
 
 export default function EmployeePortalPermissionsEditor({
@@ -64,7 +57,6 @@ export default function EmployeePortalPermissionsEditor({
 
   // État local pour les cases à cocher
   const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
-  const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set());
   const [selectedClients, setSelectedClients] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -98,7 +90,7 @@ export default function EmployeePortalPermissionsEditor({
           }
         } else if (perm.permission_type === 'page') {
           if (perm.resource_id === '*') {
-            EMPLOYEE_PORTAL_PAGES.forEach(p => pagesSet.add(p.path));
+            EMPLOYEE_PORTAL_BASE_PAGES.forEach(p => pagesSet.add(p.path));
           } else {
             pagesSet.add(perm.resource_id);
           }
@@ -171,19 +163,6 @@ export default function EmployeePortalPermissionsEditor({
         });
       });
 
-      // Ajouter les permissions de pages
-      selectedPages.forEach(pagePath => {
-        newPermissions.push({
-          employee_id: employeeId,
-          permission_type: 'page',
-          resource_id: pagePath,
-          metadata: null,
-          can_view: true,
-          can_edit: false,
-          can_delete: false,
-        });
-      });
-
       // Ajouter les permissions de clients
       selectedClients.forEach(clientId => {
         newPermissions.push({
@@ -235,18 +214,6 @@ export default function EmployeePortalPermissionsEditor({
     });
   };
 
-  const handlePageToggle = (pagePath: string) => {
-    setSelectedPages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(pagePath)) {
-        newSet.delete(pagePath);
-      } else {
-        newSet.add(pagePath);
-      }
-      return newSet;
-    });
-  };
-
   const handleAddClient = async (client: Contact) => {
     if (!selectedClients.has(client.id)) {
       setSelectedClients(prev => new Set(prev).add(client.id));
@@ -277,14 +244,15 @@ export default function EmployeePortalPermissionsEditor({
         </Alert>
       )}
 
-      {/* Modules */}
+      {/* Modules ERP */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-2">Modules accessibles</h3>
+        <h3 className="text-lg font-semibold mb-2">Modules ERP accessibles</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Sélectionnez les modules que l'employé peut utiliser dans son portail
+          Sélectionnez les modules ERP complets que l'employé peut utiliser dans son portail. 
+          Chaque module inclut toutes ses sous-pages.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {AVAILABLE_MODULES.map(module => (
+          {EMPLOYEE_PORTAL_MODULES.map(module => (
             <div 
               key={module.id} 
               className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -312,32 +280,25 @@ export default function EmployeePortalPermissionsEditor({
                     {module.description}
                   </p>
                 )}
+                {module.subPages && module.subPages.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1 italic">
+                    {module.subPages.length} sous-page{module.subPages.length > 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
             </div>
           ))}
         </div>
       </Card>
 
-      {/* Pages */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Pages accessibles</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {EMPLOYEE_PORTAL_PAGES.map(page => (
-            <div key={page.path} className="flex items-center space-x-2">
-              <Checkbox
-                checked={selectedPages.has(page.path)}
-                onChange={() => handlePageToggle(page.path)}
-                id={`page-${page.path}`}
-              />
-              <label
-                htmlFor={`page-${page.path}`}
-                className="text-sm font-medium cursor-pointer"
-              >
-                {page.label}
-              </label>
-            </div>
-          ))}
-        </div>
+      {/* Note sur les pages de base */}
+      <Card className="p-6 bg-muted/50">
+        <h3 className="text-sm font-semibold mb-2">Pages de base du portail</h3>
+        <p className="text-xs text-muted-foreground">
+          Les pages suivantes sont toujours accessibles dans le portail employé : 
+          Tableau de bord, Mes tâches, Mes projets, Mes feuilles de temps, Mon Leo, 
+          Mes deadlines, Mes comptes de dépenses, Mes vacances, Mon profil.
+        </p>
       </Card>
 
       {/* Clients */}
