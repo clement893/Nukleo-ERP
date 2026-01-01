@@ -34,6 +34,11 @@ export type { DropdownItem } from './Dropdown';
 
 // Layout Components
 export { default as Card } from './Card';
+// New unified Card with variants (V2) - Use Card.migration helpers for gradual migration
+export { default as CardV2 } from './Card.v2';
+export type { CardVariant, StatusType, CardProps as CardV2Props } from './Card.v2';
+// Migration helpers for backward compatibility
+export { StatsCard, StatusCard, PricingCard } from './Card.migration';
 export { default as Container } from './Container';
 export { default as Stack } from './Stack';
 export type { StackProps } from './Stack';
