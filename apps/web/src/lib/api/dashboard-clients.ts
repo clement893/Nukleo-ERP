@@ -15,6 +15,8 @@ export interface ClientsStatsResponse {
   previous_count: number;
   new_this_month: number;
   active_count: number;
+  active_growth?: number;
+  previous_active_count?: number;
 }
 
 /**
@@ -87,7 +89,20 @@ export async function fetchClientsStats(params?: {
         ? ((currentCount - previousCount) / previousCount) * 100 
         : (currentCount > 0 ? 100 : 0); // 100% growth if we went from 0 to currentCount
       
+      // Calculate active clients stats
       const activeCount = companies.filter((c: any) => c.is_client === true).length;
+      const previousActiveCount = companies.filter((c: any) => {
+        if (!c.created_at || c.is_client !== true) return false;
+        try {
+          return new Date(c.created_at) < periodStart;
+        } catch {
+          return false;
+        }
+      }).length;
+      
+      const activeGrowth = previousActiveCount > 0
+        ? ((activeCount - previousActiveCount) / previousActiveCount) * 100
+        : (activeCount > 0 ? 100 : 0); // 100% growth if we went from 0 to activeCount
       
       console.log('Clients stats calculated from fallback:', {
         currentCount,
@@ -95,6 +110,8 @@ export async function fetchClientsStats(params?: {
         newThisPeriod,
         growth,
         activeCount,
+        previousActiveCount,
+        activeGrowth,
       });
       
       return {
@@ -103,6 +120,8 @@ export async function fetchClientsStats(params?: {
         previous_count: previousCount,
         new_this_month: newThisPeriod,
         active_count: activeCount || currentCount,
+        active_growth: Math.round(activeGrowth * 10) / 10,
+        previous_active_count: previousActiveCount,
       };
     } catch (fallbackError) {
       console.error('Error in fallback calculation for clients stats:', fallbackError);
@@ -113,6 +132,8 @@ export async function fetchClientsStats(params?: {
         previous_count: 0,
         new_this_month: 0,
         active_count: 0,
+        active_growth: 0,
+        previous_active_count: 0,
       };
     }
   }

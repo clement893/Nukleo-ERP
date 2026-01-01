@@ -248,17 +248,35 @@ async def get_companies_stats(
     )
     new_this_period = new_count_result.scalar_one() or 0
     
-    # Get active clients count
+    # Get active clients count (companies with is_client=True)
     active_count_result = await db.execute(
         select(func.count(Company.id))
         .where(Company.is_client == True)
     )
     active_count = active_count_result.scalar_one() or 0
     
-    # Calculate growth percentage
+    # Get previous active clients count (before period start)
+    previous_active_count_result = await db.execute(
+        select(func.count(Company.id))
+        .where(
+            Company.is_client == True,
+            Company.created_at < period_start
+        )
+    )
+    previous_active_count = previous_active_count_result.scalar_one() or 0
+    
+    # Calculate growth percentage for all companies
     growth = 0.0
     if previous_count > 0:
         growth = ((current_count - previous_count) / previous_count) * 100
+    
+    # Calculate growth percentage for active clients
+    active_growth = 0.0
+    if previous_active_count > 0:
+        active_growth = ((active_count - previous_active_count) / previous_active_count) * 100
+    elif active_count > 0:
+        # If we went from 0 to active_count, that's 100% growth
+        active_growth = 100.0
     
     return {
         "count": current_count,
@@ -266,6 +284,8 @@ async def get_companies_stats(
         "previous_count": previous_count,
         "new_this_month": new_this_period,
         "active_count": active_count,
+        "active_growth": round(active_growth, 1),
+        "previous_active_count": previous_active_count,
     }
 
 

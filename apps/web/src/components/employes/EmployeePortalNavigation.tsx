@@ -162,7 +162,12 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   const enabledModules = EMPLOYEE_PORTAL_MODULES.filter((module) => {
     if (isAdmin || user?.is_admin) return true;
     if (permissionsLoading) return false;
-    return hasModuleAccess(module.id);
+    const hasAccess = hasModuleAccess(module.id);
+    // Debug: log permissions check
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[EmployeePortalNavigation] Module ${module.id}: hasAccess=${hasAccess}`);
+    }
+    return hasAccess;
   });
 
   const toggleModule = (moduleId: string) => {

@@ -82,6 +82,7 @@ class ExpenseAccountUpdate(BaseModel):
     total_amount: Optional[Decimal] = Field(None, ge=0, le=Decimal('999999999999999999.99'))
     currency: Optional[str] = Field(None, max_length=3)
     metadata: Optional[Dict[str, Any]] = Field(None, alias="account_metadata")
+    status: Optional[str] = Field(None, description="Statut du compte de dépenses (admin only)")
     
     @field_validator('total_amount', mode='before')
     @classmethod

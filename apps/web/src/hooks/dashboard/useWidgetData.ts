@@ -79,6 +79,8 @@ function getFallbackData(widgetType: WidgetType): any {
         previous_count: 0,
         new_this_month: 0,
         active_count: 0,
+        active_growth: 0,
+        previous_active_count: 0,
       };
     
     case 'projects-active':
@@ -169,6 +171,8 @@ async function fetchWidgetData(
           previous_count: 0,
           new_this_month: 0,
           active_count: 0,
+          active_growth: 0,
+          previous_active_count: 0,
         };
       }
     
