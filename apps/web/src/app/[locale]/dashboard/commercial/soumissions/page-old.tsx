@@ -10,15 +10,15 @@ export const dynamicParams = true;
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { NukleoPageHeader } from '@/components/nukleo';
-import { Button, Alert, Loading, Badge, Card } from '@/components/ui';
+import { PageHeader } from '@/components/layout';
+import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { quotesAPI, type Quote, type QuoteCreate, type QuoteUpdate } from '@/lib/api/quotes';
 import { submissionsAPI, type Submission, type SubmissionCreate } from '@/lib/api/submissions';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Plus, FileText, FileCheck, Eye, Trash2, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { Plus, FileText, FileCheck, Eye, Trash2 } from 'lucide-react';
 import type { DropdownItem } from '@/components/ui/Dropdown';
 import MotionDiv from '@/components/motion/MotionDiv';
 import QuoteForm from '@/components/commercial/QuoteForm';
@@ -347,73 +347,17 @@ function SoumissionsContent() {
     },
   ];
 
-  // Calculate stats
-  const totalQuotes = quotes.length;
-  const totalSubmissions = submissions.length;
-  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
-  const wonSubmissions = submissions.filter(s => s.status === 'accepted').length;
-  const pendingQuotes = quotes.filter(q => q.status === 'sent').length;
-  const pendingSubmissions = submissions.filter(s => s.status === 'submitted' || s.status === 'under_review').length;
-  const totalQuotesValue = quotes.reduce((sum, q) => sum + (q.amount || 0), 0);
-  const totalSubmissionsValue = submissions.reduce((sum, s) => sum + (s.amount || 0), 0);
-
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-6">
-      <NukleoPageHeader
-        title={activeTab === 'quotes' ? 'Devis' : 'Soumissions'}
-        description={activeTab === 'quotes' ? 'Gérez vos devis et propositions commerciales' : 'Suivez vos soumissions aux appels d\'offres'}
+    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
+      <PageHeader
+        title="Soumissions"
+        description="Gérez vos devis et soumissions"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Module Commercial', href: '/dashboard/commercial' },
+          { label: 'Soumissions' },
+        ]}
       />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-              <DollarSign className="w-6 h-6 text-[#10B981]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? totalQuotesValue.toLocaleString('fr-FR') : totalSubmissionsValue.toLocaleString('fr-FR')} $
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-              <FileText className="w-6 h-6 text-[#523DC9]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? totalQuotes : totalSubmissions}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-              <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? acceptedQuotes : wonSubmissions}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">{activeTab === 'quotes' ? 'Acceptés' : 'Gagnés'}</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-              <Clock className="w-6 h-6 text-[#3B82F6]" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {activeTab === 'quotes' ? pendingQuotes : pendingSubmissions}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
-        </Card>
-      </div>
 
       {/* Tabs */}
       <div className="glass-card rounded-xl border border-border">
