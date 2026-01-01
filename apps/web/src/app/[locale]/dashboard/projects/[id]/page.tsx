@@ -602,27 +602,23 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'links' && (
-          <Card className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-              <LinkIcon className="w-5 h-5" />
-              Liens et documents
-            </h3>
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {project.proposal_url && (
                 <a
                   href={project.proposal_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
+                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary" />
+                  <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
+                    <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Proposal</p>
-                    <p className="text-sm text-muted-foreground">Document de proposition</p>
+                    <p className="font-bold text-gray-900 dark:text-white">Proposal</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Document de proposition</p>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                 </a>
               )}
 
@@ -631,16 +627,16 @@ function ProjectDetailContent() {
                   href={project.drive_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
+                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-blue-600" />
+                  <div className="glass-badge p-3 rounded-lg bg-green-500/10">
+                    <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Google Drive</p>
-                    <p className="text-sm text-muted-foreground">Dossier partagé</p>
+                    <p className="font-bold text-gray-900 dark:text-white">Google Drive</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Dossier partagé</p>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
                 </a>
               )}
 
@@ -649,16 +645,16 @@ function ProjectDetailContent() {
                   href={project.slack_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
+                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                    <LinkIcon className="w-5 h-5 text-purple-600" />
+                  <div className="glass-badge p-3 rounded-lg bg-purple-500/10">
+                    <LinkIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Slack</p>
-                    <p className="text-sm text-muted-foreground">Canal de communication</p>
+                    <p className="font-bold text-gray-900 dark:text-white">Slack</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Canal de communication</p>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" />
                 </a>
               )}
 
@@ -667,27 +663,35 @@ function ProjectDetailContent() {
                   href={project.echeancier_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
+                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-green-600" />
+                  <div className="glass-badge p-3 rounded-lg bg-amber-500/10">
+                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Échéancier</p>
-                    <p className="text-sm text-muted-foreground">Planning du projet</p>
+                    <p className="font-bold text-gray-900 dark:text-white">Échéancier</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Planning du projet</p>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" />
                 </a>
               )}
             </div>
 
+            {/* Empty State */}
             {!project.proposal_url && !project.drive_url && !project.slack_url && !project.echeancier_url && (
-              <div className="text-center py-8 text-muted-foreground">
-                <LinkIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Aucun lien disponible</p>
+              <div className="glass-card p-12 rounded-xl text-center">
+                <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <LinkIcon className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Aucun lien disponible
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Les liens et documents du projet n'ont pas encore été ajoutés.
+                </p>
               </div>
             )}
-          </Card>
+          </div>
         )}
 
         {activeTab === 'deliverables' && (
