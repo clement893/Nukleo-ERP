@@ -148,11 +148,11 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
 
         // Load employees
         const employeesData = await employeesAPI.list(0, 1000);
-        setEmployees(employeesData.map((e: { id: number; first_name: string; last_name: string; email?: string }) => ({
+        setEmployees(employeesData.map((e) => ({
           id: e.id,
           first_name: e.first_name,
           last_name: e.last_name,
-          email: e.email,
+          email: e.email ?? undefined,
         })));
       } catch (err) {
         console.error('Error loading projects/employees:', err);

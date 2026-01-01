@@ -406,6 +406,7 @@ function TeamProjectManagementContent() {
             title: '',
             description: '',
             priority: 'medium',
+            project_id: null,
             assignee_id: null,
           });
         }}
