@@ -121,36 +121,10 @@ async def list_tasks(
         # Handle assignee filter: can be either assignee_id (user_id) or employee_assignee_id (employee_id)
         final_assignee_id = None
         if employee_assignee_id:
-            # Get user_id from employee, create one if needed (but don't create if no tasks exist for this employee)
-            result = await db.execute(select(Employee).where(Employee.id == employee_assignee_id))
-            employee = result.scalar_one_or_none()
-            if not employee:
-                # Employee not found - return empty result
-                return []
-            
-            if employee.user_id:
-                final_assignee_id = employee.user_id
-            elif employee.email:
-                # Employee exists but has no user_id - try to find user by email
-                user_result = await db.execute(select(User).where(User.email == employee.email.lower()))
-                existing_user = user_result.scalar_one_or_none()
-                if existing_user:
-                    # Link employee to existing user
-                    employee.user_id = existing_user.id
-                    await db.commit()
-                    await db.refresh(employee)
-                    final_assignee_id = existing_user.id
-                else:
-                    # No user found by email - check if there are any tasks for this employee
-                    # by checking if any user has the same name as the employee
-                    # If no tasks exist, return empty list
-                    # Otherwise, we'd need to create a user, but we don't want to do that just for listing
-                    # So for now, return empty if no user_id and no user by email
-                    # The tasks would have been created with employee_assignee_id which creates the user_id
-                    return []
-            else:
-                # Employee exists but has no user_id and no email - return empty result
-                return []
+            # Get user_id from employee, create one if needed using the same function as task creation
+            # This ensures consistency: if tasks were created with employee_assignee_id, the user_id should exist
+            # But if it doesn't exist, we'll create it (same as when creating a task)
+            final_assignee_id = await get_or_create_user_for_employee(employee_assignee_id, db)
         elif assignee_id:
             final_assignee_id = assignee_id
         
