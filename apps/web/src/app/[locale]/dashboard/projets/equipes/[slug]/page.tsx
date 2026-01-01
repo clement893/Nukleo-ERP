@@ -48,7 +48,7 @@ function TeamProjectManagementContent() {
     description: '',
     priority: 'medium' as ProjectTask['priority'],
     project_id: null as number | null,
-    assignee_id: null as number | null,
+    employee_assignee_id: null as number | null,
   });
 
   useEffect(() => {
@@ -196,7 +196,7 @@ function TeamProjectManagementContent() {
         priority: taskForm.priority,
         team_id: team.id,
         project_id: taskForm.project_id || null,
-        assignee_id: taskForm.assignee_id || null,
+        employee_assignee_id: taskForm.employee_assignee_id || null,
         status: 'todo',
       });
       
@@ -207,7 +207,7 @@ function TeamProjectManagementContent() {
         description: '',
         priority: 'medium' as ProjectTask['priority'],
         project_id: null,
-        assignee_id: null,
+        employee_assignee_id: null,
       });
       
       showToast({
@@ -391,7 +391,7 @@ function TeamProjectManagementContent() {
             description: '',
             priority: 'medium' as ProjectTask['priority'],
             project_id: null,
-            assignee_id: null,
+            employee_assignee_id: null,
           });
         }}
         title="Créer une nouvelle tâche"
@@ -407,7 +407,7 @@ function TeamProjectManagementContent() {
                   description: '',
                   priority: 'medium' as ProjectTask['priority'],
                   project_id: null,
-                  assignee_id: null,
+                  employee_assignee_id: null,
                 });
               }}
             >
@@ -482,11 +482,11 @@ function TeamProjectManagementContent() {
             <div>
               <Select
                 label="Assigner à"
-                value={taskForm.assignee_id?.toString() || ''}
+                value={taskForm.employee_assignee_id?.toString() || ''}
                 onChange={(e) =>
                   setTaskForm({
                     ...taskForm,
-                    assignee_id: e.target.value ? parseInt(e.target.value) : null,
+                    employee_assignee_id: e.target.value ? parseInt(e.target.value) : null,
                   })
                 }
                 fullWidth

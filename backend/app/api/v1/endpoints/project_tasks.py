@@ -12,7 +12,7 @@ from sqlalchemy.exc import ProgrammingError, PendingRollbackError
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
-from app.models import User, Team, Project, ProjectTask, TaskStatus, TaskPriority
+from app.models import User, Team, Project, ProjectTask, TaskStatus, TaskPriority, Employee
 from app.schemas.project_task import (
     ProjectTaskCreate,
     ProjectTaskUpdate,
@@ -22,6 +22,84 @@ from app.schemas.project_task import (
 from app.core.logging import logger
 
 router = APIRouter(prefix="/project-tasks", tags=["project-tasks"])
+
+
+async def get_or_create_user_for_employee(employee_id: int, db: AsyncSession) -> int:
+    """
+    Get or create a User for an Employee.
+    Returns the user_id for the employee.
+    """
+    # Check if employee exists
+    result = await db.execute(select(Employee).where(Employee.id == employee_id))
+    employee = result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found"
+        )
+    
+    # If employee already has a user_id, return it
+    if employee.user_id:
+        return employee.user_id
+    
+    # Create a User for this employee
+    from app.api.v1.endpoints.auth import get_password_hash
+    import secrets
+    
+    # Generate email if not provided
+    if employee.email:
+        email = employee.email.lower()
+        # Check if a user with this email already exists
+        user_result = await db.execute(select(User).where(User.email == email))
+        existing_user = user_result.scalar_one_or_none()
+        if existing_user:
+            # Link employee to existing user
+            employee.user_id = existing_user.id
+            await db.commit()
+            await db.refresh(employee)
+            return existing_user.id
+    else:
+        # Generate email from name
+        first_name_clean = (employee.first_name or "employee").lower().replace(" ", "")
+        last_name_clean = (employee.last_name or "").lower().replace(" ", "")
+        email = f"{first_name_clean}.{last_name_clean}@employee.local".replace("..", ".").lower()
+        # Make sure it's unique
+        counter = 1
+        base_email = email
+        while True:
+            user_result = await db.execute(select(User).where(User.email == email))
+            existing_user = user_result.scalar_one_or_none()
+            if not existing_user:
+                break
+            email = f"{base_email.split('@')[0]}{counter}@employee.local"
+            counter += 1
+    
+    # Generate a random password (employee users created automatically can't login by default)
+    random_password = secrets.token_hex(32)
+    hashed_password = get_password_hash(random_password)
+    
+    # Create new user
+    new_user = User(
+        email=email,
+        hashed_password=hashed_password,
+        first_name=employee.first_name,
+        last_name=employee.last_name,
+        is_active=False,  # Employee users created automatically are inactive by default
+    )
+    
+    db.add(new_user)
+    await db.flush()  # Get the user ID
+    
+    # Link employee to user
+    employee.user_id = new_user.id
+    await db.commit()
+    await db.refresh(new_user)
+    await db.refresh(employee)
+    
+    logger.info(f"Created User {new_user.id} for Employee {employee.id} ({employee.first_name} {employee.last_name})")
+    
+    return new_user.id
 
 
 @router.get("", response_model=List[ProjectTaskWithAssignee])
@@ -264,8 +342,13 @@ async def create_task(
                 detail="Project not found"
             )
     
-    # Verify assignee exists if provided
-    if task_data.assignee_id:
+    # Handle assignee: can be either assignee_id (user_id) or employee_assignee_id (employee_id)
+    final_assignee_id = None
+    if task_data.employee_assignee_id:
+        # If employee_assignee_id is provided, get or create user for employee
+        final_assignee_id = await get_or_create_user_for_employee(task_data.employee_assignee_id, db)
+    elif task_data.assignee_id:
+        # If assignee_id is provided, verify user exists
         result = await db.execute(select(User).where(User.id == task_data.assignee_id))
         assignee = result.scalar_one_or_none()
         if not assignee:
@@ -273,6 +356,7 @@ async def create_task(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Assignee not found"
             )
+        final_assignee_id = task_data.assignee_id
     
     # Create task
     try:
@@ -287,7 +371,7 @@ async def create_task(
             priority=priority_value,  # Use .value to ensure lowercase
             team_id=task_data.team_id,
             project_id=task_data.project_id,
-            assignee_id=task_data.assignee_id,
+            assignee_id=final_assignee_id,
             created_by_id=current_user.id,
             due_date=task_data.due_date,
             order=task_data.order,
@@ -412,8 +496,14 @@ async def update_task(
                 detail="Project not found"
             )
     
-    # Verify assignee exists if provided
-    if 'assignee_id' in update_data and update_data['assignee_id']:
+    # Handle assignee update: can be either assignee_id (user_id) or employee_assignee_id (employee_id)
+    if 'employee_assignee_id' in update_data and update_data['employee_assignee_id']:
+        # If employee_assignee_id is provided, get or create user for employee
+        final_assignee_id = await get_or_create_user_for_employee(update_data['employee_assignee_id'], db)
+        update_data['assignee_id'] = final_assignee_id
+        del update_data['employee_assignee_id']  # Remove employee_assignee_id as it's not a field in ProjectTask
+    elif 'assignee_id' in update_data and update_data['assignee_id']:
+        # If assignee_id is provided, verify user exists
         result = await db.execute(select(User).where(User.id == update_data['assignee_id']))
         assignee = result.scalar_one_or_none()
         if not assignee:

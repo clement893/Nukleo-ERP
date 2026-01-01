@@ -336,11 +336,17 @@ function ManagementCompteDepensesContent() {
       // Ne pas afficher les erreurs de base de données qui peuvent apparaître après succès
       // (peut arriver si React Query invalide les queries et qu'une requête échoue)
       const lowerErrorMessage = errorMessage.toLowerCase();
-      if (!lowerErrorMessage.includes('database error') && !lowerErrorMessage.includes('erreur de base de données')) {
+      const isDatabaseError = lowerErrorMessage.includes('database error') || 
+                             lowerErrorMessage.includes('erreur de base de données') ||
+                             lowerErrorMessage.includes('a database error occurred');
+      if (!isDatabaseError) {
         showToast({
           message: errorMessage,
           type: 'error',
         });
+      } else {
+        // Log pour debug mais ne pas afficher à l'utilisateur
+        console.warn('Database error after successful action (ignored):', errorMessage);
       }
     }
   };

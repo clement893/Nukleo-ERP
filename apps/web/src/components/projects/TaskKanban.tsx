@@ -59,14 +59,14 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
   const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
-  const [employees, setEmployees] = useState<Array<{ user_id: number; first_name: string; last_name: string; email?: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
     project_id: number | null;
-    assignee_id: number | null;
+    employee_assignee_id: number | null;  // Use employee_id instead of user_id
     due_date: string | undefined;
     estimated_hours: number | null;
   }>({
@@ -75,7 +75,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     status: 'todo',
     priority: 'medium',
     project_id: projectId || null,
-    assignee_id: null,
+    employee_assignee_id: null,
     due_date: undefined,
     estimated_hours: null,
   });
@@ -146,16 +146,14 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
         setProjects(projectsList.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })));
 
-        // Load employees (only those with user_id since assignee_id points to users.id)
+        // Load all employees (they can all be assigned - User will be created automatically if needed)
         const employeesData = await employeesAPI.list(0, 1000);
-        setEmployees(employeesData
-          .filter((e) => e.user_id != null) // Only include employees with a linked user
-          .map((e) => ({
-            user_id: e.user_id!,
-            first_name: e.first_name,
-            last_name: e.last_name,
-            email: e.email ?? undefined,
-          })));
+        setEmployees(employeesData.map((e) => ({
+          id: e.id,
+          first_name: e.first_name,
+          last_name: e.last_name,
+          email: e.email ?? undefined,
+        })));
       } catch (err) {
         console.error('Error loading projects/employees:', err);
       }
@@ -175,22 +173,38 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       status: 'todo',
       priority: 'medium',
       project_id: projectId || null,
-      assignee_id: null,
+      employee_assignee_id: null,
       due_date: undefined,
       estimated_hours: null,
     });
     setShowTaskModal(true);
   };
 
-  const handleEditTask = (task: ProjectTask) => {
+  const handleEditTask = async (task: ProjectTask) => {
     setSelectedTask(task);
+    
+    // If task has assignee_id, try to find the corresponding employee
+    let employee_assignee_id: number | null = null;
+    if (task.assignee_id) {
+      try {
+        // Try to find employee by user_id
+        const allEmployees = await employeesAPI.list(0, 1000);
+        const matchingEmployee = allEmployees.find(e => e.user_id === task.assignee_id);
+        if (matchingEmployee) {
+          employee_assignee_id = matchingEmployee.id;
+        }
+      } catch (err) {
+        console.error('Error loading employees for edit:', err);
+      }
+    }
+    
     setFormData({
       title: task.title,
       description: task.description || '',
       status: task.status,
       priority: task.priority,
       project_id: task.project_id ?? null,
-      assignee_id: task.assignee_id ?? null,
+      employee_assignee_id: employee_assignee_id,
       due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
       estimated_hours: task.estimated_hours || null,
     });
@@ -229,7 +243,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           status: formData.status,
           priority: formData.priority,
           project_id: formData.project_id || null,
-          assignee_id: formData.assignee_id || null,
+          employee_assignee_id: formData.employee_assignee_id || null,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
         });
@@ -255,7 +269,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
           priority: formData.priority,
           team_id: teamId,
           project_id: formData.project_id || null,
-          assignee_id: formData.assignee_id || null,
+          employee_assignee_id: formData.employee_assignee_id || null,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
           estimated_hours: formData.estimated_hours || null,
           order: tasks.length,
@@ -282,7 +296,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         status: 'todo',
         priority: 'medium',
         project_id: projectId || null,
-        assignee_id: null,
+        employee_assignee_id: null,
         due_date: undefined,
         estimated_hours: null,
       });
@@ -536,12 +550,12 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                 Employé assigné
               </label>
               <Select
-                value={formData.assignee_id?.toString() || ''}
-                onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value ? parseInt(e.target.value) : null })}
+                value={formData.employee_assignee_id?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, employee_assignee_id: e.target.value ? parseInt(e.target.value) : null })}
                 options={[
                   { value: '', label: 'Non assigné' },
                   ...employees.map(e => ({ 
-                    value: e.user_id.toString(), 
+                    value: e.id.toString(), 
                     label: `${e.first_name} ${e.last_name}${e.email ? ` (${e.email})` : ''}` 
                   }))
                 ]}

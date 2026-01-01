@@ -37,7 +37,8 @@ export interface ProjectTaskCreate {
   priority?: TaskPriority;
   team_id: number;
   project_id?: number | null;  // Optional: task can be created without a project
-  assignee_id?: number | null;  // Optional: task can be created without an assignee
+  assignee_id?: number | null;  // Optional: User ID (if employee already has a user)
+  employee_assignee_id?: number | null;  // Optional: Employee ID (will create User automatically if needed)
   due_date?: string | null;
   estimated_hours?: number | null;
   order?: number;
@@ -46,6 +47,7 @@ export interface ProjectTaskCreate {
 export interface ProjectTaskUpdate extends Partial<ProjectTaskCreate> {
   status?: TaskStatus;
   priority?: TaskPriority;
+  employee_assignee_id?: number | null;  // Employee ID (will create User automatically if needed)
 }
 
 /**

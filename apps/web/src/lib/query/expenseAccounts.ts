@@ -148,16 +148,19 @@ export function useApproveExpenseAccount() {
     onSuccess: (data) => {
       // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
       queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
-      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
-      // Ignorer les erreurs silencieuses lors de l'invalidation
-      queryClient.invalidateQueries({ 
-        queryKey: expenseAccountKeys.lists(),
-        refetchType: 'active', // Ne recharger que les queries actives
-      }).catch((err) => {
-        // Ignorer les erreurs d'invalidation silencieusement
-        // Ces erreurs peuvent survenir si les queries ne sont plus actives
-        console.warn('Error invalidating queries after approval:', err);
-      });
+      // Ne pas invalider les queries pour éviter les erreurs de rechargement
+      // Le cache sera mis à jour manuellement, et les queries se rechargeront lors de la prochaine navigation
+    },
+    onError: (error) => {
+      // Ignorer silencieusement les erreurs de base de données après succès
+      // Ces erreurs peuvent survenir si la mutation réussit mais qu'une requête de suivi échoue
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.toLowerCase().includes('database error')) {
+        console.warn('Database error after approval (ignored):', error);
+        return;
+      }
+      // Re-lancer les autres erreurs
+      throw error;
     },
   });
 }

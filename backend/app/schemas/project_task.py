@@ -68,7 +68,8 @@ class ProjectTaskCreate(ProjectTaskBase):
     """Schema for creating a project task"""
     team_id: int
     project_id: Optional[int] = None
-    assignee_id: Optional[int] = None
+    assignee_id: Optional[int] = None  # User ID (if employee already has a user)
+    employee_assignee_id: Optional[int] = None  # Employee ID (will create User automatically if needed)
     estimated_hours: Optional[float] = Field(None, ge=0, description="Estimated hours to complete the task")
     order: int = 0
 
@@ -81,7 +82,8 @@ class ProjectTaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     team_id: Optional[int] = None
     project_id: Optional[int] = None
-    assignee_id: Optional[int] = None
+    assignee_id: Optional[int] = None  # User ID (if employee already has a user)
+    employee_assignee_id: Optional[int] = None  # Employee ID (will create User automatically if needed)
     due_date: Optional[datetime] = None
     estimated_hours: Optional[float] = Field(None, ge=0, description="Estimated hours to complete the task")
     order: Optional[int] = None
