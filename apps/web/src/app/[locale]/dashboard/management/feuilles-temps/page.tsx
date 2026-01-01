@@ -8,30 +8,19 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Clock, 
-  CheckCircle2,
-  AlertCircle,
-  XCircle,
   Plus,
   Search,
   Calendar,
-  Briefcase,
   TrendingUp,
-  Download,
   User,
   Building
 } from 'lucide-react';
-import { Badge, Button, Card, Input, Loading } from '@/components/ui';
+import { Button, Card, Input, Loading } from '@/components/ui';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
 import { useInfiniteEmployees } from '@/lib/query/employees';
 
 type ViewMode = 'employee' | 'client' | 'week';
-
-const statusConfig = {
-  approved: { label: 'Approuvé', color: 'bg-green-500/10 text-green-600 border-green-500/30', icon: CheckCircle2 },
-  pending: { label: 'En attente', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', icon: AlertCircle },
-  rejected: { label: 'Rejeté', color: 'bg-red-500/10 text-red-600 border-red-500/30', icon: XCircle },
-};
 
 // Helper to get week number and year
 const getWeekInfo = (date: Date) => {
@@ -54,12 +43,11 @@ const getWeekStart = (date: Date) => {
 export default function FeuillesTempsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('employee');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Fetch time entries
   const { data: timeEntriesData, isLoading: timeEntriesLoading } = useInfiniteQuery({
     queryKey: ['time-entries', 'infinite'],
-    queryFn: ({ pageParam = 0 }) => timeEntriesAPI.list(pageParam, 1000),
+    queryFn: ({ pageParam = 0 }) => timeEntriesAPI.list({ skip: pageParam, limit: 1000 }),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < 1000) return undefined;
       return allPages.length * 1000;
@@ -68,9 +56,8 @@ export default function FeuillesTempsPage() {
   });
   const timeEntries = useMemo(() => timeEntriesData?.pages.flat() || [], [timeEntriesData]);
 
-  // Fetch employees
-  const { data: employeesData, isLoading: employeesLoading } = useInfiniteEmployees(1000);
-  const employees = useMemo(() => employeesData?.pages.flat() || [], [employeesData]);
+  // Fetch employees (only for loading state)
+  const { isLoading: employeesLoading } = useInfiniteEmployees(1000);
 
   // Group time entries by employee
   const entriesByEmployee = useMemo(() => {
@@ -158,13 +145,6 @@ export default function FeuillesTempsPage() {
     }
   }, [viewMode, entriesByEmployee, entriesByClient, entriesByWeek, searchQuery]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
 
   const isLoading = timeEntriesLoading || employeesLoading;
 

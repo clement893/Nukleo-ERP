@@ -16,7 +16,6 @@ import {
   List as ListIcon,
   Mail,
   Phone,
-  Briefcase,
   Calendar,
   DollarSign,
   Eye,
