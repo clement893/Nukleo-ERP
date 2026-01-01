@@ -205,7 +205,7 @@ function TeamProjectManagementContent() {
       setTaskForm({
         title: '',
         description: '',
-        priority: 'medium',
+        priority: 'medium' as ProjectTask['priority'],
         project_id: null,
         assignee_id: null,
       });
@@ -389,7 +389,7 @@ function TeamProjectManagementContent() {
           setTaskForm({
             title: '',
             description: '',
-            priority: 'medium',
+            priority: 'medium' as ProjectTask['priority'],
             project_id: null,
             assignee_id: null,
           });
@@ -405,7 +405,7 @@ function TeamProjectManagementContent() {
                 setTaskForm({
                   title: '',
                   description: '',
-                  priority: 'medium',
+                  priority: 'medium' as ProjectTask['priority'],
                   project_id: null,
                   assignee_id: null,
                 });
