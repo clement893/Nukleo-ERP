@@ -14,20 +14,14 @@ import {
   Calendar, 
   MessageSquare, 
   Users, 
-  Link as LinkIcon, 
-  MapPin, 
   Tag,
   DollarSign,
   TrendingUp,
   Target,
   Clock,
   Building2,
-  User,
-  Mail,
-  Phone
+  User
 } from 'lucide-react';
-import MotionDiv from '@/components/motion/MotionDiv';
-import OpportunityContacts from '@/components/commercial/OpportunityContacts';
 import Link from 'next/link';
 
 export default function OpportunityDetailPage() {

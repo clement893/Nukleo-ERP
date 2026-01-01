@@ -19,7 +19,6 @@ import {
   Search,
   Building2,
   Users,
-  DollarSign,
   TrendingUp,
   MapPin,
   Phone,
@@ -35,7 +34,6 @@ import {
   useUpdateClient, 
   useDeleteClient
 } from '@/lib/query/clients';
-import Link from 'next/link';
 
 function ClientsContent() {
   const router = useRouter();
@@ -89,13 +87,12 @@ function ClientsContent() {
     return clients.filter((client) => {
       const matchesSearch = !debouncedSearchQuery || 
         client.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        client.type?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        client.city?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+        client.type?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       if (selectedType === 'all') return matchesSearch;
-      if (selectedType === 'active') return matchesSearch && client.status === 'active';
-      if (selectedType === 'inactive') return matchesSearch && client.status === 'inactive';
-      if (selectedType === 'maintenance') return matchesSearch && client.status === 'maintenance';
+      if (selectedType === 'active') return matchesSearch && client.status === 'ACTIVE';
+      if (selectedType === 'inactive') return matchesSearch && client.status === 'INACTIVE';
+      if (selectedType === 'maintenance') return matchesSearch && client.status === 'MAINTENANCE';
       
       return matchesSearch;
     });
@@ -103,23 +100,22 @@ function ClientsContent() {
   
   // Calculate stats
   const stats = useMemo(() => {
-    const activeClients = clients.filter(c => c.status === 'active').length;
+    const activeClients = clients.filter(c => c.status === 'ACTIVE').length;
     const totalProjects = clients.reduce((sum, c) => sum + (c.project_count || 0), 0);
-    const totalContacts = clients.reduce((sum, c) => sum + (c.contact_count || 0), 0);
     
     return {
       totalClients: clients.length,
       activeClients,
       totalProjects,
-      totalContacts,
+      totalContacts: 0, // Contact count not available in Client type
     };
   }, [clients]);
 
   // Quick filters
   const quickFilters = useMemo(() => {
-    const activeCount = clients.filter(c => c.status === 'active').length;
-    const inactiveCount = clients.filter(c => c.status === 'inactive').length;
-    const maintenanceCount = clients.filter(c => c.status === 'maintenance').length;
+    const activeCount = clients.filter(c => c.status === 'ACTIVE').length;
+    const inactiveCount = clients.filter(c => c.status === 'INACTIVE').length;
+    const maintenanceCount = clients.filter(c => c.status === 'MAINTENANCE').length;
     
     return [
       { id: 'all', label: 'Tous', count: clients.length },
@@ -171,29 +167,6 @@ function ClientsContent() {
     }
   };
 
-  // Handle delete
-  const handleDelete = async (clientId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
-      return;
-    }
-
-    try {
-      await deleteClientMutation.mutateAsync(clientId);
-      if (selectedClient?.id === clientId) {
-        setSelectedClient(null);
-      }
-      showToast({
-        message: 'Client supprimé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression du client',
-        type: 'error',
-      });
-    }
-  };
 
   // Navigate to detail page
   const openDetailPage = (client: Client) => {
@@ -201,11 +174,6 @@ function ClientsContent() {
     router.push(`/${locale}/dashboard/projets/clients/${client.id}`);
   };
 
-  // Open edit modal
-  const openEditModal = (client: Client) => {
-    setSelectedClient(client);
-    setShowEditModal(true);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -436,31 +404,14 @@ function ClientsContent() {
                   <div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contacts</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {client.contact_count || 0}
+                      0
                     </p>
                   </div>
                 </div>
 
-                {/* Contact Info */}
+                {/* Contact Info - Not available in Client type */}
                 <div className="space-y-2">
-                  {client.city && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{client.city}{client.province ? `, ${client.province}` : ''}</span>
-                    </div>
-                  )}
-                  {client.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Phone className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{client.phone}</span>
-                    </div>
-                  )}
-                  {client.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Mail className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{client.email}</span>
-                    </div>
-                  )}
+                  {/* Contact information would need to be fetched separately */}
                 </div>
               </div>
             ))}
@@ -489,7 +440,7 @@ function ClientsContent() {
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {client.type || 'Client'} {client.city ? `• ${client.city}` : ''}
+                        {client.type || 'Client'}
                       </p>
                     </div>
 
@@ -500,7 +451,7 @@ function ClientsContent() {
                         <p className="text-xs text-gray-600 dark:text-gray-400">Projets</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-gray-900 dark:text-white">{client.contact_count || 0}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">0</p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Contacts</p>
                       </div>
                     </div>

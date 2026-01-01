@@ -19,8 +19,7 @@ import {
   MapPin, 
   FileText, 
   Briefcase,
-  Building2,
-  Calendar
+  Building2
 } from 'lucide-react';
 import { useClient, useClientProjects, useClientContacts } from '@/lib/query/clients';
 import ClientAvatar from '@/components/projects/ClientAvatar';
@@ -30,7 +29,6 @@ export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
-  const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'contacts' | 'documents'>('overview');
 
   const clientId = params?.id ? parseInt(String(params.id)) : null;
@@ -54,37 +52,13 @@ export default function ClientDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!client || !confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
-      return;
-    }
-
-    try {
-      setDeleting(true);
-      await clientsAPI.delete(client.id);
-      showToast({
-        message: 'Client supprimé avec succès',
-        type: 'success',
-      });
-      const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/projets/clients`);
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression',
-        type: 'error',
-      });
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   // Stats calculation
   const stats = client ? [
     { icon: Briefcase, label: 'Projets', value: projects.length.toString(), color: 'text-blue-600', bgColor: 'bg-blue-100' },
     { icon: Users, label: 'Contacts', value: contacts.length.toString(), color: 'text-purple-600', bgColor: 'bg-purple-100' },
     { icon: DollarSign, label: 'Projets actifs', value: projects.filter(p => p.status === 'in_progress').length.toString(), color: 'text-green-600', bgColor: 'bg-green-100' },
-    { icon: TrendingUp, label: 'Statut', value: client.status === 'active' ? 'Actif' : 'Inactif', color: 'text-orange-600', bgColor: 'bg-orange-100' },
+    { icon: TrendingUp, label: 'Statut', value: client.status === 'ACTIVE' ? 'Actif' : 'Inactif', color: 'text-orange-600', bgColor: 'bg-orange-100' },
   ] : [];
 
   const getStatusColor = (status: string) => {
@@ -191,8 +165,8 @@ export default function ClientDetailPage() {
               {/* Logo plus grand (56x56 = 224px) */}
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-2xl opacity-20 blur-lg" />
-                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-[#A7A2CF]/30 shadow-xl bg-white">
-                  <ClientAvatar client={client} size="custom" className="w-full h-full" />
+                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-[#A7A2CF]/30 shadow-xl bg-white flex items-center justify-center">
+                  <ClientAvatar client={client} size="xl" className="w-full h-full" />
                 </div>
               </div>
               
@@ -214,30 +188,7 @@ export default function ClientDetailPage() {
                 
                 {/* Actions rapides */}
                 <div className="flex flex-wrap gap-3">
-                  {client.phone && (
-                    <Button size="sm" variant="outline" className="hover-nukleo" asChild>
-                      <a href={`tel:${client.phone}`}>
-                        <Phone className="w-4 h-4 mr-2" />
-                        Appeler
-                      </a>
-                    </Button>
-                  )}
-                  {client.email && (
-                    <Button size="sm" variant="outline" className="hover-nukleo" asChild>
-                      <a href={`mailto:${client.email}`}>
-                        <Mail className="w-4 h-4 mr-2" />
-                        Email
-                      </a>
-                    </Button>
-                  )}
-                  {client.website && (
-                    <Button size="sm" variant="outline" className="hover-nukleo" asChild>
-                      <a href={`https://${client.website}`} target="_blank" rel="noopener noreferrer">
-                        <Globe className="w-4 h-4 mr-2" />
-                        Site web
-                      </a>
-                    </Button>
-                  )}
+                  {/* Contact information would need to be fetched separately or from related entities */}
                 </div>
               </div>
             </div>
@@ -300,53 +251,8 @@ export default function ClientDetailPage() {
                     Informations
                   </h3>
                   <div className="space-y-4">
-                    {client.email && (
-                      <div className="flex items-start gap-3">
-                        <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Email</p>
-                          <a href={`mailto:${client.email}`} className="text-foreground hover:text-[#523DC9] transition-colors">
-                            {client.email}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {client.phone && (
-                      <div className="flex items-start gap-3">
-                        <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Téléphone</p>
-                          <a href={`tel:${client.phone}`} className="text-foreground hover:text-[#523DC9] transition-colors">
-                            {client.phone}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {client.website && (
-                      <div className="flex items-start gap-3">
-                        <Globe className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Site web</p>
-                          <a href={`https://${client.website}`} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-[#523DC9] transition-colors">
-                            {client.website}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {(client.address || client.city) && (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Adresse</p>
-                          <p className="text-foreground">
-                            {client.address && <span>{client.address}<br /></span>}
-                            {client.city && <span>{client.city}</span>}
-                            {client.province && <span>, {client.province}</span>}
-                            {client.postal_code && <span> {client.postal_code}</span>}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    {/* Client contact information is not directly available in the Client type */}
+                    {/* This would need to be fetched from related contacts or companies */}
                   </div>
                 </Card>
 
@@ -356,7 +262,7 @@ export default function ClientDetailPage() {
                     Description
                   </h3>
                   <p className="text-foreground/80 leading-relaxed">
-                    {client.notes || 'Aucune description pour ce client.'}
+                    Aucune description pour ce client.
                   </p>
                   <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex flex-col gap-2 text-sm text-muted-foreground">
@@ -395,14 +301,11 @@ export default function ClientDetailPage() {
                         {project.description && (
                           <p className="text-sm text-muted-foreground mb-2">{project.description}</p>
                         )}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {project.start_date && (
-                            <span>Début: {new Date(project.start_date).toLocaleDateString('fr-FR')}</span>
-                          )}
-                          {project.end_date && (
-                            <span>Fin: {new Date(project.end_date).toLocaleDateString('fr-FR')}</span>
-                          )}
-                        </div>
+                        {project.annee_realisation && (
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>Année: {project.annee_realisation}</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -442,8 +345,8 @@ export default function ClientDetailPage() {
                             <h4 className="font-semibold text-foreground">
                               {contact.first_name} {contact.last_name}
                             </h4>
-                            {contact.job_title && (
-                              <p className="text-sm text-muted-foreground">{contact.job_title}</p>
+                            {contact.position && (
+                              <p className="text-sm text-muted-foreground">{contact.position}</p>
                             )}
                             {contact.email && (
                               <p className="text-sm text-muted-foreground">{contact.email}</p>

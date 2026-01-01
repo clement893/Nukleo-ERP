@@ -19,9 +19,7 @@ import {
   TrendingUp, 
   Clock,
   MapPin,
-  User,
-  Briefcase,
-  Tag
+  Briefcase
 } from 'lucide-react';
 import { useReseauContact, useDeleteReseauContact, useUpdateReseauContact } from '@/lib/query/reseau-contacts';
 import Modal from '@/components/ui/Modal';
@@ -77,27 +75,6 @@ export default function ContactDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!contact || !confirm('Êtes-vous sûr de vouloir supprimer ce contact ?')) {
-      return;
-    }
-
-    try {
-      await deleteContactMutation.mutateAsync(contact.id);
-      showToast({
-        message: 'Contact supprimé avec succès',
-        type: 'success',
-      });
-      const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/reseau/contacts`);
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression',
-        type: 'error',
-      });
-    }
-  };
 
   // Stats calculation
   const stats = contact ? [
@@ -187,8 +164,8 @@ export default function ContactDetailPage() {
                 <h1 className="text-4xl md:text-5xl font-bold text-[#523DC9] mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   {contactName}
                 </h1>
-                {contact.job_title && (
-                  <p className="text-xl text-foreground/80 mb-2">{contact.job_title}</p>
+                {contact.position && (
+                  <p className="text-xl text-foreground/80 mb-2">{contact.position}</p>
                 )}
                 {contact.company_name && (
                   <div className="flex items-center gap-2 text-foreground/70 mb-4">
@@ -197,14 +174,12 @@ export default function ContactDetailPage() {
                   </div>
                 )}
                 
-                {/* Tags */}
-                {contact.tags && contact.tags.length > 0 && (
+                {/* Tags - Not available in Contact type */}
+                {contact.circle && (
                   <div className="flex flex-wrap gap-2 mb-6">
-                    {contact.tags.map((tag) => (
-                      <Badge key={tag} className="badge-nukleo px-4 py-1.5 text-sm">
-                        {tag}
-                      </Badge>
-                    ))}
+                    <Badge className="badge-nukleo px-4 py-1.5 text-sm">
+                      {contact.circle}
+                    </Badge>
                   </div>
                 )}
                 
@@ -234,9 +209,9 @@ export default function ContactDetailPage() {
                       </a>
                     </Button>
                   )}
-                  {contact.linkedin_url && (
+                  {contact.linkedin && (
                     <Button size="sm" variant="outline" className="hover-nukleo" asChild>
-                      <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer">
+                      <a href={contact.linkedin} target="_blank" rel="noopener noreferrer">
                         <Linkedin className="w-4 h-4 mr-2" />
                         LinkedIn
                       </a>
@@ -326,37 +301,24 @@ export default function ContactDetailPage() {
                         </div>
                       </div>
                     )}
-                    {contact.mobile && (
-                      <div className="flex items-start gap-3">
-                        <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Mobile</p>
-                          <a href={`tel:${contact.mobile}`} className="text-foreground hover:text-[#523DC9] transition-colors">
-                            {contact.mobile}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {(contact.address || contact.city) && (
+                    {contact.city && (
                       <div className="flex items-start gap-3">
                         <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Adresse</p>
+                          <p className="text-sm text-muted-foreground">Ville</p>
                           <p className="text-foreground">
-                            {contact.address && <span>{contact.address}<br /></span>}
-                            {contact.city && <span>{contact.city}</span>}
-                            {contact.province && <span>, {contact.province}</span>}
-                            {contact.postal_code && <span> {contact.postal_code}</span>}
+                            {contact.city}
+                            {contact.country && <span>, {contact.country}</span>}
                           </p>
                         </div>
                       </div>
                     )}
-                    {contact.job_title && (
+                    {contact.position && (
                       <div className="flex items-start gap-3">
                         <Briefcase className="w-5 h-5 text-muted-foreground mt-0.5" />
                         <div>
                           <p className="text-sm text-muted-foreground">Poste</p>
-                          <p className="text-foreground">{contact.job_title}</p>
+                          <p className="text-foreground">{contact.position}</p>
                         </div>
                       </div>
                     )}
@@ -369,7 +331,7 @@ export default function ContactDetailPage() {
                     Notes
                   </h3>
                   <p className="text-foreground/80 leading-relaxed">
-                    {contact.notes || 'Aucune note pour ce contact.'}
+                    Aucune note pour ce contact.
                   </p>
                   <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex flex-col gap-2 text-sm text-muted-foreground">
