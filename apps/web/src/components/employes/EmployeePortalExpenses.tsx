@@ -5,14 +5,15 @@ import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountCreate, typ
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Button } from '@/components/ui';
+import Textarea from '@/components/ui/Textarea';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
-import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit, Trash2 } from 'lucide-react';
+import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit, Trash2, Reply } from 'lucide-react';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
-import { useSubmitExpenseAccount, useUpdateExpenseAccount, useDeleteExpenseAccount } from '@/lib/query/expenseAccounts';
+import { useSubmitExpenseAccount, useUpdateExpenseAccount, useDeleteExpenseAccount, useRespondClarification } from '@/lib/query/expenseAccounts';
 
 interface EmployeePortalExpensesProps {
   employee: Employee;
@@ -26,12 +27,15 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showRespondModal, setShowRespondModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseAccount | null>(null);
   const [creating, setCreating] = useState(false);
+  const [clarificationResponse, setClarificationResponse] = useState('');
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
   const submitMutation = useSubmitExpenseAccount();
   const updateMutation = useUpdateExpenseAccount();
   const deleteMutation = useDeleteExpenseAccount();
+  const respondClarificationMutation = useRespondClarification();
 
   useEffect(() => {
     loadExpenses();
@@ -183,6 +187,38 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la suppression du compte de dépenses',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleRespondClarification = async () => {
+    if (!selectedExpense || !clarificationResponse.trim()) {
+      showToast({
+        message: 'Veuillez saisir une réponse',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      await respondClarificationMutation.mutateAsync({
+        id: selectedExpense.id,
+        response: clarificationResponse.trim(),
+      });
+      setShowRespondModal(false);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      setClarificationResponse('');
+      showToast({
+        message: 'Réponse envoyée avec succès. Le compte de dépenses a été resoumis pour validation.',
+        type: 'success',
+      });
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'envoi de la réponse',
         type: 'error',
       });
     }
@@ -443,6 +479,19 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
                   <span className="font-semibold">Précisions demandées</span>
                 </div>
                 <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-300">{selectedExpense.clarification_request}</p>
+                <div className="mt-4 pt-4 border-t border-yellow-200 dark:border-yellow-800">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setShowRespondModal(true);
+                    }}
+                  >
+                    <Reply className="w-4 h-4 mr-1.5" />
+                    Répondre et renvoyer
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -538,6 +587,64 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
             employees={employees}
             defaultEmployeeId={employee.id}
           />
+        )}
+      </Modal>
+
+      {/* Respond to Clarification Modal */}
+      <Modal
+        isOpen={showRespondModal && selectedExpense !== null}
+        onClose={() => {
+          setShowRespondModal(false);
+          setClarificationResponse('');
+        }}
+        title="Répondre à la demande de précisions"
+        size="lg"
+      >
+        {selectedExpense && (
+          <div className="space-y-4">
+            {selectedExpense.clarification_request && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 mb-2">
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="font-semibold">Demande de précisions</span>
+                </div>
+                <p className="text-sm text-yellow-600 dark:text-yellow-300">{selectedExpense.clarification_request}</p>
+              </div>
+            )}
+            
+            <Textarea
+              label="Votre réponse"
+              placeholder="Saisissez votre réponse aux précisions demandées..."
+              value={clarificationResponse}
+              onChange={(e) => setClarificationResponse(e.target.value)}
+              rows={6}
+              required
+              fullWidth
+            />
+
+            <div className="flex gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowRespondModal(false);
+                  setClarificationResponse('');
+                }}
+                disabled={respondClarificationMutation.isPending}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleRespondClarification}
+                disabled={respondClarificationMutation.isPending || !clarificationResponse.trim()}
+              >
+                <Send className="w-4 h-4 mr-1.5" />
+                Envoyer la réponse et resoumettre
+              </Button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

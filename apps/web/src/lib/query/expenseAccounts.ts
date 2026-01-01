@@ -238,6 +238,40 @@ export function useRequestClarification() {
 }
 
 /**
+ * Respond to clarification request (employee only)
+ */
+export function useRespondClarification() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, response }: { id: number; response: string }) =>
+      expenseAccountsAPI.respondClarification(id, response),
+    retry: false, // Désactiver le retry pour éviter les erreurs après succès
+    onSuccess: (data) => {
+      // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
+      queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
+      
+      // Mettre à jour l'item dans toutes les pages infinies où il apparaît
+      queryClient.setQueriesData(
+        { queryKey: expenseAccountKeys.lists() },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData;
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any[]) =>
+              page.map((item: any) => 
+                item.id === data.id ? data : item
+              )
+            ),
+          };
+        }
+      );
+    },
+  });
+}
+
+/**
  * Set expense account under review
  */
 export function useSetUnderReview() {

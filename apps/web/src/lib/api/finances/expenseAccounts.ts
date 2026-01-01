@@ -235,6 +235,24 @@ export const expenseAccountsAPI = {
   },
 
   /**
+   * Respond to clarification request (employee only)
+   */
+  respondClarification: async (
+    expenseAccountId: number,
+    response: string
+  ): Promise<ExpenseAccount> => {
+    const response_data = await apiClient.post<ExpenseAccount>(
+      `/v1/finances/compte-depenses/${expenseAccountId}/respond-clarification`,
+      { response }
+    );
+    const data = extractApiData<ExpenseAccount>(response_data);
+    if (!data) {
+      throw new Error('Failed to respond to clarification: no data returned');
+    }
+    return data;
+  },
+
+  /**
    * Set expense account status to under review
    */
   setUnderReview: async (expenseAccountId: number): Promise<ExpenseAccount> => {
