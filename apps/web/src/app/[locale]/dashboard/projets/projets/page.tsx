@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
+import { Heading, Text } from '@/components/ui';
 import { projectsAPI, type Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
 import { 
@@ -207,91 +208,93 @@ function ProjectsContent() {
   return (
     <div className="min-h-screen p-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-2xl">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white">Projets</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <Heading level={1}>Projets</Heading>
+            <Text variant="body" className="text-muted-foreground mt-1">
               Gérez vos projets avec intelligence et efficacité
-            </p>
+            </Text>
           </div>
           <Link
             href="/dashboard/projects/new"
-            className="px-6 py-3 rounded-lg flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors border border-blue-500/20"
+            className="glass-button px-6 py-3 rounded-lg flex items-center gap-2"
+            aria-label="Créer un nouveau projet"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5" aria-hidden="true" />
             <span className="font-medium">Nouveau projet</span>
           </Link>
         </div>
       </div>
 
       {error && (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error" className="mb-2xl">
           {error}
         </Alert>
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-2xl">
         {/* Total */}
-        <div className="glass-card p-4 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+        <div className="glass-card p-lg rounded-xl border border-border">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-gray-500/10">
-              <Briefcase className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <div className="p-2 rounded-lg bg-muted">
+              <Briefcase className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-black text-gray-900 dark:text-white">{totalProjects}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Total</p>
+          <p className="text-2xl font-black text-foreground">{totalProjects}</p>
+          <Text variant="caption" className="text-muted-foreground mt-1">Total</Text>
         </div>
 
         {/* Actifs */}
-        <div className="glass-card p-4 rounded-xl border border-blue-500/20">
+        <div className="glass-card p-lg rounded-xl border border-primary/20">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <TrendingUp className="w-4 h-4 text-primary" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{activeProjects}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Actifs</p>
+          <p className="text-2xl font-black text-primary">{activeProjects}</p>
+          <Text variant="caption" className="text-muted-foreground mt-1">Actifs</Text>
         </div>
 
         {/* Terminés */}
-        <div className="glass-card p-4 rounded-xl border border-green-500/20">
+        <div className="glass-card p-lg rounded-xl border border-green-500/20">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 rounded-lg bg-green-500/10">
-              <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true" />
             </div>
           </div>
           <p className="text-2xl font-black text-green-600 dark:text-green-400">{completedProjects}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Terminés</p>
+          <Text variant="caption" className="text-muted-foreground mt-1">Terminés</Text>
         </div>
 
         {/* Archivés */}
-        <div className="glass-card p-4 rounded-xl border border-gray-500/20">
+        <div className="glass-card p-lg rounded-xl border border-border">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-gray-500/10">
-              <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <div className="p-2 rounded-lg bg-muted">
+              <Archive className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-black text-gray-600 dark:text-gray-400">{archivedProjects}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Archivés</p>
+          <p className="text-2xl font-black text-muted-foreground">{archivedProjects}</p>
+          <Text variant="caption" className="text-muted-foreground mt-1">Archivés</Text>
         </div>
       </div>
 
       {/* Filters & Views */}
-      <div className="glass-card p-4 rounded-xl mb-6 border border-gray-200/50 dark:border-gray-700/50">
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+      <div className="glass-card p-lg rounded-xl mb-2xl border border-border">
+        <div className="flex flex-col lg:flex-row gap-md items-start lg:items-center justify-between">
           {/* Search & Filters */}
           <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <input
                 type="text"
                 placeholder="Rechercher un projet, client..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                className="glass-input w-full pl-10 pr-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                aria-label="Rechercher un projet ou un client"
               />
             </div>
 
@@ -299,7 +302,8 @@ function ProjectsContent() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="glass-input px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              aria-label="Filtrer par statut"
             >
               <option value="all">Tous les statuts</option>
               <option value="ACTIVE">Actifs</option>
@@ -311,7 +315,8 @@ function ProjectsContent() {
             <select
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="glass-input px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              aria-label="Filtrer par client"
             >
               <option value="all">Tous les clients</option>
               {uniqueClients.map(client => (
@@ -323,7 +328,8 @@ function ProjectsContent() {
             <select
               value={teamFilter}
               onChange={(e) => setTeamFilter(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="glass-input px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              aria-label="Filtrer par équipe"
             >
               <option value="all">Toutes les équipes</option>
               {uniqueTeams.map(team => (
@@ -335,7 +341,8 @@ function ProjectsContent() {
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="glass-input px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              aria-label="Filtrer par étape"
             >
               <option value="all">Toutes les étapes</option>
               {uniqueStages.map(stage => (
@@ -347,7 +354,8 @@ function ProjectsContent() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+              className="glass-input px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              aria-label="Trier par"
             >
               <option value="name">Trier par nom</option>
               <option value="client">Trier par client</option>
@@ -358,17 +366,21 @@ function ProjectsContent() {
             {/* Sort Direction */}
             <button
               onClick={() => setSortAsc(!sortAsc)}
-              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-500/10 transition-colors"
+              className="glass-button px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+              aria-label={sortAsc ? "Trier par ordre décroissant" : "Trier par ordre croissant"}
+              aria-pressed={!sortAsc}
             >
-              <ArrowUpDown className={`w-4 h-4 ${sortAsc ? '' : 'rotate-180'} transition-transform`} />
+              <ArrowUpDown className={`w-4 h-4 ${sortAsc ? '' : 'rotate-180'} transition-transform`} aria-hidden="true" />
             </button>
 
             {/* Analytics Toggle */}
             <button
               onClick={() => setShowAnalytics(!showAnalytics)}
-              className="px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700"
+              className="glass-button px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-muted transition-colors border border-border"
+              aria-label="Afficher/masquer les analytics"
+              aria-pressed={showAnalytics}
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 className="w-4 h-4" aria-hidden="true" />
               <span className="text-sm font-medium">Analytics</span>
             </button>
           </div>
@@ -377,33 +389,39 @@ function ProjectsContent() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('cards')}
-              className={`p-2 rounded-lg transition-colors border ${
+              className={`glass-button p-2 rounded-lg transition-colors border ${
                 viewMode === 'cards'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
+                  ? 'bg-primary/10 text-primary border-primary/20'
+                  : 'text-muted-foreground hover:bg-muted border-border'
               }`}
+              aria-label="Vue en cartes"
+              aria-pressed={viewMode === 'cards'}
             >
-              <LayoutGrid className="w-5 h-5" />
+              <LayoutGrid className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors border ${
+              className={`glass-button p-2 rounded-lg transition-colors border ${
                 viewMode === 'list'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
+                  ? 'bg-primary/10 text-primary border-primary/20'
+                  : 'text-muted-foreground hover:bg-muted border-border'
               }`}
+              aria-label="Vue en liste"
+              aria-pressed={viewMode === 'list'}
             >
-              <ListIcon className="w-5 h-5" />
+              <ListIcon className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
               onClick={() => setViewMode('kanban')}
-              className={`p-2 rounded-lg transition-colors border ${
+              className={`glass-button p-2 rounded-lg transition-colors border ${
                 viewMode === 'kanban'
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-gray-200 dark:border-gray-700'
+                  ? 'bg-primary/10 text-primary border-primary/20'
+                  : 'text-muted-foreground hover:bg-muted border-border'
               }`}
+              aria-label="Vue kanban"
+              aria-pressed={viewMode === 'kanban'}
             >
-              <Calendar className="w-5 h-5" />
+              <Calendar className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -411,20 +429,24 @@ function ProjectsContent() {
 
       {/* Analytics Section */}
       {showAnalytics && (
-        <div className="glass-card p-6 rounded-xl mb-6 border border-gray-200/50 dark:border-gray-700/50">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Analytics</h3>
+        <div className="glass-card p-xl rounded-xl mb-2xl border border-border">
+          <Heading level={3} className="mb-4">Analytics</Heading>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Taux de complétion */}
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Taux de complétion</p>
+              <Text variant="small" className="text-muted-foreground mb-2">Taux de complétion</Text>
               <div className="flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div className="flex-1 bg-muted rounded-full h-3">
                   <div 
                     className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0}%` }}
+                    role="progressbar"
+                    aria-valuenow={totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
                   />
                 </div>
-                <span className="text-2xl font-black text-gray-900 dark:text-white">
+                <span className="text-2xl font-black text-foreground">
                   {totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0}%
                 </span>
               </div>
@@ -432,15 +454,19 @@ function ProjectsContent() {
 
             {/* Projets actifs */}
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Projets actifs</p>
+              <Text variant="small" className="text-muted-foreground mb-2">Projets actifs</Text>
               <div className="flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div className="flex-1 bg-muted rounded-full h-3">
                   <div 
                     className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${totalProjects > 0 ? (activeProjects / totalProjects) * 100 : 0}%` }}
+                    role="progressbar"
+                    aria-valuenow={totalProjects > 0 ? Math.round((activeProjects / totalProjects) * 100) : 0}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
                   />
                 </div>
-                <span className="text-2xl font-black text-gray-900 dark:text-white">
+                <span className="text-2xl font-black text-foreground">
                   {totalProjects > 0 ? Math.round((activeProjects / totalProjects) * 100) : 0}%
                 </span>
               </div>
@@ -448,15 +474,19 @@ function ProjectsContent() {
 
             {/* Projets archivés */}
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Projets archivés</p>
+              <Text variant="small" className="text-muted-foreground mb-2">Projets archivés</Text>
               <div className="flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div className="flex-1 bg-muted rounded-full h-3">
                   <div 
                     className="bg-gradient-to-r from-gray-500 to-gray-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${totalProjects > 0 ? (archivedProjects / totalProjects) * 100 : 0}%` }}
+                    role="progressbar"
+                    aria-valuenow={totalProjects > 0 ? Math.round((archivedProjects / totalProjects) * 100) : 0}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
                   />
                 </div>
-                <span className="text-2xl font-black text-gray-900 dark:text-white">
+                <span className="text-2xl font-black text-foreground">
                   {totalProjects > 0 ? Math.round((archivedProjects / totalProjects) * 100) : 0}%
                 </span>
               </div>
@@ -476,19 +506,20 @@ function ProjectsContent() {
               <Link
                 key={project.id}
                 href={`/dashboard/projects/${project.id}`}
-                className="glass-card rounded-xl p-6 hover:scale-[1.01] transition-all duration-200 group border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30 block cursor-pointer"
+                className="glass-card rounded-xl p-lg hover:scale-[1.01] transition-all duration-200 group border border-border hover:border-primary/30 block cursor-pointer"
+                aria-label={`Voir les détails du projet ${project.name}`}
               >
                 {/* Header with Logo */}
                 <div className="flex items-start gap-3 mb-4">
                   {/* Client Logo */}
-                  <div className={`${logo.color} w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                  <div className={`${logo.color} w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`} aria-hidden="true">
                     {logo.initials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                    <Heading level={3} className="mb-1 group-hover:text-primary transition-colors truncate">
                       {project.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{project.client_name || '-'}</p>
+                    </Heading>
+                    <Text variant="small" className="text-muted-foreground truncate">{project.client_name || '-'}</Text>
                   </div>
                 </div>
 
@@ -504,34 +535,35 @@ function ProjectsContent() {
                 <div className="space-y-2 mb-4">
                   {project.etape && (
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Étape:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{project.etape}</span>
+                      <Text variant="small" className="text-muted-foreground">Étape:</Text>
+                      <Text variant="small" className="font-medium text-foreground">{project.etape}</Text>
                     </div>
                   )}
                   {project.equipe && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="text-gray-900 dark:text-white">{project.equipe}</span>
+                      <Users className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                      <Text variant="small" className="text-foreground">{project.equipe}</Text>
                     </div>
                   )}
                   {project.annee_realisation && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="text-gray-900 dark:text-white">{project.annee_realisation}</span>
+                      <Calendar className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                      <Text variant="small" className="text-foreground">{project.annee_realisation}</Text>
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 pt-4 border-t border-border">
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       console.log('Share project:', project.id);
                     }}
-                    className="p-2 rounded-lg hover:bg-gray-500/10 transition-colors border border-gray-200 dark:border-gray-700"
+                    className="glass-button p-2 rounded-lg hover:bg-muted transition-colors border border-border"
+                    aria-label={`Partager le projet ${project.name}`}
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Share2 className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
               </Link>
@@ -551,48 +583,49 @@ function ProjectsContent() {
               <Link
                 key={project.id}
                 href={`/dashboard/projects/${project.id}`}
-                className="glass-card rounded-xl p-4 hover:scale-[1.005] transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30 block cursor-pointer"
+                className="glass-card rounded-xl p-lg hover:scale-[1.005] transition-all duration-200 border border-border hover:border-primary/30 block cursor-pointer"
+                aria-label={`Voir les détails du projet ${project.name}`}
               >
                 <div className="flex items-center gap-4">
                   {/* Client Logo */}
-                  <div className={`${logo.color} w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                  <div className={`${logo.color} w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`} aria-hidden="true">
                     {logo.initials}
                   </div>
 
                   {/* Project Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                      <Heading level={3} className="truncate">
                         {project.name}
-                      </h3>
+                      </Heading>
                       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config?.bgColor} ${config?.textColor}`}>
                          {config?.label}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{project.client_name || '-'}</p>
+                    <Text variant="small" className="text-muted-foreground">{project.client_name || '-'}</Text>
                   </div>
 
                   {/* Etape */}
                   {project.etape && (
                     <div className="text-center w-32">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Étape</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{project.etape}</p>
+                      <Text variant="caption" className="text-muted-foreground">Étape</Text>
+                      <Text variant="small" className="font-bold text-foreground">{project.etape}</Text>
                     </div>
                   )}
 
                   {/* Team */}
                   {project.equipe && (
                     <div className="text-center w-32">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Équipe</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{project.equipe}</p>
+                      <Text variant="caption" className="text-muted-foreground">Équipe</Text>
+                      <Text variant="small" className="font-bold text-foreground">{project.equipe}</Text>
                     </div>
                   )}
 
                   {/* Year */}
                   {project.annee_realisation && (
                     <div className="text-center w-24">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Année</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{project.annee_realisation}</p>
+                      <Text variant="caption" className="text-muted-foreground">Année</Text>
+                      <Text variant="small" className="font-bold text-foreground">{project.annee_realisation}</Text>
                     </div>
                   )}
 
@@ -612,12 +645,12 @@ function ProjectsContent() {
             
             return (
               <div key={status} className="flex-shrink-0 w-80">
-                <div className="glass-card p-4 rounded-xl mb-4 border border-gray-200/50 dark:border-gray-700/50">
+                <div className="glass-card p-lg rounded-xl mb-4 border border-border">
                   <div className="flex items-center justify-between">
-                    <h3 className={`font-bold ${config?.textColor}`}>
+                    <Heading level={3} className={config?.textColor}>
                       {config?.label}
-                    </h3>
-                    <span className="px-2 py-1 rounded text-sm font-bold bg-gray-100 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50">
+                    </Heading>
+                    <span className="px-2 py-1 rounded text-sm font-bold bg-muted border border-border">
                       {statusProjects.length}
                     </span>
                   </div>
@@ -627,26 +660,31 @@ function ProjectsContent() {
                     const logo = getClientLogo(project.client_name);
                     
                     return (
-                      <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="glass-card p-4 rounded-xl hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 block cursor-pointer">
+                      <Link 
+                        key={project.id} 
+                        href={`/dashboard/projects/${project.id}`} 
+                        className="glass-card p-lg rounded-xl hover:scale-[1.01] transition-all border border-border block cursor-pointer"
+                        aria-label={`Voir les détails du projet ${project.name}`}
+                      >
                         <div className="flex items-start gap-3 mb-3">
-                          <div className={`${logo.color} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
+                          <div className={`${logo.color} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0`} aria-hidden="true">
                             {logo.initials}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate">{project.name}</h4>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{project.client_name || '-'}</p>
+                            <Heading level={4} className="text-sm truncate">{project.name}</Heading>
+                            <Text variant="caption" className="text-muted-foreground truncate">{project.client_name || '-'}</Text>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           {project.equipe && (
                             <>
-                              <Users className="w-3 h-3" />
+                              <Users className="w-3 h-3" aria-hidden="true" />
                               <span>{project.equipe}</span>
                             </>
                           )}
                           {project.annee_realisation && (
                             <>
-                              <Calendar className="w-3 h-3 ml-2" />
+                              <Calendar className="w-3 h-3 ml-2" aria-hidden="true" />
                               <span>{project.annee_realisation}</span>
                             </>
                           )}
@@ -663,21 +701,22 @@ function ProjectsContent() {
 
       {/* Empty State */}
       {filteredAndSortedProjects.length === 0 && (
-        <div className="glass-card p-12 rounded-xl text-center border border-gray-200/50 dark:border-gray-700/50">
-          <div className="p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50">
-            <Search className="w-8 h-8 text-gray-400" />
+        <div className="glass-card p-3xl rounded-xl text-center border border-border">
+          <div className="p-4 rounded-full bg-muted w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-border">
+            <Search className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+          <Heading level={3} className="mb-2">
             Aucun projet trouvé
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          </Heading>
+          <Text variant="body" className="text-muted-foreground mb-6">
             Essayez de modifier vos filtres ou créez un nouveau projet.
-          </p>
+          </Text>
           <Link
             href="/dashboard/projects/new"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors border border-blue-500/20"
+            className="glass-button inline-flex items-center gap-2 px-6 py-3 rounded-lg"
+            aria-label="Créer un nouveau projet"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5" aria-hidden="true" />
             <span className="font-medium">Nouveau projet</span>
           </Link>
         </div>

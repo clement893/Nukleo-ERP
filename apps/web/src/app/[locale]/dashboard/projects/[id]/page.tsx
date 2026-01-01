@@ -13,6 +13,7 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
+import { Heading, Text } from '@/components/ui';
 import { projectsAPI, type Project } from '@/lib/api/projects';
 import { companiesAPI } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
@@ -278,7 +279,7 @@ function ProjectDetailContent() {
   return (
     <div className="min-h-screen p-6">
         {/* Breadcrumb */}
-        <div className="mb-6">
+        <div className="mb-2xl">
             <Button
               variant="ghost"
               onClick={() => {
@@ -286,25 +287,27 @@ function ProjectDetailContent() {
                 router.push(`/${locale}/dashboard/projects`);
               }}
               className="mb-4"
+              aria-label="Retour à la liste des projets"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
               Retour aux projets
             </Button>
         </div>
 
         {/* Header */}
-        <Card className="glass-card rounded-xl p-6 mb-6">
+        <Card className="glass-card rounded-xl p-xl mb-2xl">
           {/* Navigation & Actions */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-2xl">
             <Button
               variant="ghost"
               onClick={() => {
                 const locale = (params.locale as string) || 'fr';
                 router.push(`/${locale}/dashboard/projects`);
               }}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+              aria-label="Retour à la liste des projets"
             >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" aria-hidden="true" />
               <span className="text-sm font-medium">Retour aux projets</span>
             </Button>
 
@@ -312,22 +315,28 @@ function ProjectDetailContent() {
               <button
                 onClick={() => setIsFavorite(!isFavorite)}
                 className={`glass-button p-2 rounded-lg transition-all ${
-                  isFavorite ? 'text-yellow-500' : 'text-gray-400'
+                  isFavorite ? 'text-yellow-500' : 'text-muted-foreground'
                 }`}
+                aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                aria-pressed={isFavorite}
               >
-                <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} aria-hidden="true" />
               </button>
-              <button className="glass-button px-4 py-2 rounded-lg flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
+              <button 
+                className="glass-button px-4 py-2 rounded-lg flex items-center gap-2"
+                aria-label="Partager le projet"
+              >
+                <Share2 className="w-4 h-4" aria-hidden="true" />
                 <span className="text-sm font-medium hidden sm:inline">Partager</span>
               </button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleOpenEditModal}
-                className="glass-button text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                className="glass-button text-foreground hover:text-primary"
+                aria-label="Modifier le projet"
               >
-                <Edit className="w-4 h-4 mr-2" />
+                <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
                 Modifier
               </Button>
               <Button
@@ -335,38 +344,39 @@ function ProjectDetailContent() {
                 size="sm"
                 onClick={handleDelete}
                 className="glass-button text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                aria-label="Supprimer le projet"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
           </div>
 
           {/* Project Name & Status */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2xl">
             <div className="flex-1">
-              <h1 className="text-3xl font-black text-gray-900 dark:text-white">
+              <Heading level={1}>
                 {project.name}
-              </h1>
+              </Heading>
               {project.client_name && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <Text variant="small" className="text-muted-foreground mt-1">
                   Client: <span className="font-semibold">{project.client_name}</span>
-                </p>
+                </Text>
               )}
               {project.description && (
-                <p className="text-gray-700 dark:text-gray-300 mt-3">{project.description}</p>
+                <Text variant="body" className="mt-3">{project.description}</Text>
               )}
             </div>
 
             <div className={`glass-badge px-4 py-2 rounded-full border flex items-center gap-2 ${
-              project.status === 'ACTIVE' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30' :
+              project.status === 'ACTIVE' ? 'bg-primary/20 text-primary border-primary/30' :
               project.status === 'COMPLETED' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' :
-              'bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/30'
+              'bg-muted text-muted-foreground border-border'
             }`}>
               <span className={`w-2 h-2 rounded-full animate-pulse ${
-                project.status === 'ACTIVE' ? 'bg-blue-500' :
-                project.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gray-500'
-              }`} />
-              <span className="font-semibold text-sm">{getStatusLabel(project.status)}</span>
+                project.status === 'ACTIVE' ? 'bg-primary' :
+                project.status === 'COMPLETED' ? 'bg-green-500' : 'bg-muted-foreground'
+              }`} aria-hidden="true" />
+              <Text variant="small" className="font-semibold">{getStatusLabel(project.status)}</Text>
             </div>
           </div>
 
@@ -374,48 +384,48 @@ function ProjectDetailContent() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {project.equipe && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center" aria-hidden="true">
                   <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Équipe</p>
-                  <p className="text-sm font-medium text-foreground">{project.equipe}</p>
+                  <Text variant="caption" className="text-muted-foreground">Équipe</Text>
+                  <Text variant="small" className="font-medium text-foreground">{project.equipe}</Text>
                 </div>
               </div>
             )}
 
             {project.etape && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center" aria-hidden="true">
                   <Briefcase className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Étape</p>
-                  <p className="text-sm font-medium text-foreground">{project.etape}</p>
+                  <Text variant="caption" className="text-muted-foreground">Étape</Text>
+                  <Text variant="small" className="font-medium text-foreground">{project.etape}</Text>
                 </div>
               </div>
             )}
 
             {project.annee_realisation && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center" aria-hidden="true">
                   <Calendar className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Année</p>
-                  <p className="text-sm font-medium text-foreground">{project.annee_realisation}</p>
+                  <Text variant="caption" className="text-muted-foreground">Année</Text>
+                  <Text variant="small" className="font-medium text-foreground">{project.annee_realisation}</Text>
                 </div>
               </div>
             )}
 
             {project.contact && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center" aria-hidden="true">
                   <Users className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Contact</p>
-                  <p className="text-sm font-medium text-foreground">{project.contact}</p>
+                  <Text variant="caption" className="text-muted-foreground">Contact</Text>
+                  <Text variant="small" className="font-medium text-foreground">{project.contact}</Text>
                 </div>
               </div>
             )}
@@ -423,101 +433,119 @@ function ProjectDetailContent() {
         </Card>
 
         {/* Tabs */}
-        <div className="glass-card rounded-xl p-2 mb-6">
-          <div className="flex items-center gap-1 overflow-x-auto">
+        <div className="glass-card rounded-xl p-2 mb-2xl">
+          <div className="flex items-center gap-1 overflow-x-auto" role="tablist">
             <button
               onClick={() => setActiveTab('overview')}
+              role="tab"
+              aria-selected={activeTab === 'overview'}
+              aria-controls="overview-panel"
               className={`
                 relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                 transition-all duration-200 min-w-fit
                 ${
                   activeTab === 'overview'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-primary bg-primary/10 border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }
               `}
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4" aria-hidden="true" />
               <span className="font-medium text-sm">Vue d'ensemble</span>
             </button>
 
             <button
               onClick={() => setActiveTab('financial')}
+              role="tab"
+              aria-selected={activeTab === 'financial'}
+              aria-controls="financial-panel"
               className={`
                 relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                 transition-all duration-200 min-w-fit
                 ${
                   activeTab === 'financial'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-primary bg-primary/10 border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }
               `}
             >
-              <DollarSign className="w-4 h-4" />
+              <DollarSign className="w-4 h-4" aria-hidden="true" />
               <span className="font-medium text-sm">Financier</span>
             </button>
 
             <button
               onClick={() => setActiveTab('links')}
+              role="tab"
+              aria-selected={activeTab === 'links'}
+              aria-controls="links-panel"
               className={`
                 relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                 transition-all duration-200 min-w-fit
                 ${
                   activeTab === 'links'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-primary bg-primary/10 border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }
               `}
             >
-              <LinkIcon className="w-4 h-4" />
+              <LinkIcon className="w-4 h-4" aria-hidden="true" />
               <span className="font-medium text-sm">Liens</span>
             </button>
 
             <button
               onClick={() => setActiveTab('deliverables')}
+              role="tab"
+              aria-selected={activeTab === 'deliverables'}
+              aria-controls="deliverables-panel"
               className={`
                 relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                 transition-all duration-200 min-w-fit
                 ${
                   activeTab === 'deliverables'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-primary bg-primary/10 border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }
               `}
             >
-              <Award className="w-4 h-4" />
+              <Award className="w-4 h-4" aria-hidden="true" />
               <span className="font-medium text-sm">Livrables</span>
             </button>
 
             <button
               onClick={() => setActiveTab('tasks')}
+              role="tab"
+              aria-selected={activeTab === 'tasks'}
+              aria-controls="tasks-panel"
               className={`
                 relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                 transition-all duration-200 min-w-fit
                 ${
                   activeTab === 'tasks'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-primary bg-primary/10 border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }
               `}
             >
-              <Kanban className="w-4 h-4" />
+              <Kanban className="w-4 h-4" aria-hidden="true" />
               <span className="font-medium text-sm">Tâches</span>
             </button>
 
             <button
               onClick={() => setActiveTab('timeline')}
+              role="tab"
+              aria-selected={activeTab === 'timeline'}
+              aria-controls="timeline-panel"
               className={`
                 relative px-4 py-3 rounded-lg flex items-center gap-2 whitespace-nowrap
                 transition-all duration-200 min-w-fit
                 ${
                   activeTab === 'timeline'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-primary bg-primary/10 border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
                 }
               `}
             >
-              <GanttChart className="w-4 h-4" />
+              <GanttChart className="w-4 h-4" aria-hidden="true" />
               <span className="font-medium text-sm">Planification</span>
             </button>
           </div>
@@ -525,20 +553,20 @@ function ProjectDetailContent() {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div className="space-y-6" role="tabpanel" id="overview-panel">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Statut Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
-                    <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="glass-badge p-3 rounded-lg bg-primary/10">
+                    <Briefcase className="w-6 h-6 text-primary" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Statut du projet
-                </h3>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-2xl font-black text-foreground mb-2">
                   {getStatusLabel(project.status)}
                 </p>
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
@@ -555,115 +583,115 @@ function ProjectDetailContent() {
               </div>
 
               {/* Équipe Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div className="glass-badge p-3 rounded-lg bg-purple-500/10">
-                    <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Équipe
-                </h3>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-2xl font-black text-foreground mb-2">
                   {project.equipe || 'Non assignée'}
                 </p>
                 {project.contact && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <Text variant="caption" className="text-muted-foreground">
                     Contact: {project.contact}
-                  </p>
+                  </Text>
                 )}
               </div>
 
               {/* Budget Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div className="glass-badge p-3 rounded-lg bg-green-500/10">
-                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Budget
-                </h3>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-2xl font-black text-foreground mb-2">
                   {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
                 </p>
                 {(project as Project & { taux_horaire?: number | null }).taux_horaire && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <Text variant="caption" className="text-muted-foreground">
                     Taux: {formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h
-                  </p>
+                  </Text>
                 )}
               </div>
 
               {/* Dates Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div className="glass-badge p-3 rounded-lg bg-amber-500/10">
-                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Année
-                </h3>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-2xl font-black text-foreground mb-2">
                   {project.annee_realisation || new Date(project.created_at).getFullYear()}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <Text variant="caption" className="text-muted-foreground">
                   Créé le {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                </p>
+                </Text>
               </div>
             </div>
 
             {/* Informations détaillées */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="glass-card p-6 rounded-xl">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
+              <Card className="glass-card p-xl rounded-xl">
+                <Heading level={3} className="mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5" aria-hidden="true" />
                   Informations générales
-                </h3>
+                </Heading>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Nom du projet</p>
-                    <p className="text-gray-900 dark:text-white font-semibold">{project.name}</p>
+                    <Text variant="small" className="font-medium text-muted-foreground mb-1">Nom du projet</Text>
+                    <Text variant="body" className="font-semibold text-foreground">{project.name}</Text>
                   </div>
                   {project.client_name && (
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">{project.client_name}</p>
+                      <Text variant="small" className="font-medium text-muted-foreground mb-1">Client</Text>
+                      <Text variant="body" className="font-semibold text-foreground">{project.client_name}</Text>
                     </div>
                   )}
                   {project.description && (
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</p>
-                      <p className="text-gray-700 dark:text-gray-300">{project.description}</p>
+                      <Text variant="small" className="font-medium text-muted-foreground mb-1">Description</Text>
+                      <Text variant="body" className="text-foreground">{project.description}</Text>
                     </div>
                   )}
                   {project.etape && (
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Étape</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">{project.etape}</p>
+                      <Text variant="small" className="font-medium text-muted-foreground mb-1">Étape</Text>
+                      <Text variant="body" className="font-semibold text-foreground">{project.etape}</Text>
                     </div>
                   )}
                 </div>
               </Card>
 
-              <Card className="glass-card p-6 rounded-xl">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
+              <Card className="glass-card p-xl rounded-xl">
+                <Heading level={3} className="mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5" aria-hidden="true" />
                   Chronologie
-                </h3>
+                </Heading>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Créé le</p>
-                    <p className="text-gray-900 dark:text-white font-semibold">{formatDate(project.created_at)}</p>
+                    <Text variant="small" className="font-medium text-muted-foreground mb-1">Créé le</Text>
+                    <Text variant="body" className="font-semibold text-foreground">{formatDate(project.created_at)}</Text>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Dernière modification</p>
-                    <p className="text-gray-900 dark:text-white font-semibold">{formatDate(project.updated_at)}</p>
+                    <Text variant="small" className="font-medium text-muted-foreground mb-1">Dernière modification</Text>
+                    <Text variant="body" className="font-semibold text-foreground">{formatDate(project.updated_at)}</Text>
                   </div>
                   {project.annee_realisation && (
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Année de réalisation</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">{project.annee_realisation}</p>
+                      <Text variant="small" className="font-medium text-muted-foreground mb-1">Année de réalisation</Text>
+                      <Text variant="body" className="font-semibold text-foreground">{project.annee_realisation}</Text>
                     </div>
                   )}
                 </div>
@@ -673,81 +701,89 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'financial' && (
-          <div className="space-y-6">
+          <div className="space-y-6" role="tabpanel" id="financial-panel">
             {/* Financial KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Budget Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div className="glass-badge p-3 rounded-lg bg-green-500/10">
-                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Budget total
-                </h3>
-                <p className="text-3xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-3xl font-black text-foreground mb-2">
                   {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
                 </p>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-4">
-                  <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style={{ width: '100%' }} />
+                <div className="w-full bg-muted rounded-full h-2 mt-4">
+                  <div 
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" 
+                    style={{ width: '100%' }}
+                    role="progressbar"
+                    aria-valuenow={100}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  />
                 </div>
               </div>
 
               {/* Taux Horaire Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
-                    <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="glass-badge p-3 rounded-lg bg-primary/10">
+                    <Clock className="w-6 h-6 text-primary" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Taux horaire
-                </h3>
-                <p className="text-3xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-3xl font-black text-foreground mb-2">
                   {(project as Project & { taux_horaire?: number | null }).taux_horaire ? `${formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h` : '-'}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-4">
+                <Text variant="caption" className="text-muted-foreground mt-4">
                   Facturation horaire
-                </p>
+                </Text>
               </div>
             </div>
 
             {/* Empty State */}
             {!((project as Project & { budget?: number | null }).budget) && !((project as Project & { taux_horaire?: number | null }).taux_horaire) && (
-              <div className="glass-card p-12 rounded-xl text-center">
-                <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <DollarSign className="w-8 h-8 text-gray-400" />
+              <div className="glass-card p-3xl rounded-xl text-center">
+                <div className="glass-badge p-4 rounded-full bg-muted w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <DollarSign className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                <Heading level={3} className="mb-2">
                   Aucune information financière
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                </Heading>
+                <Text variant="body" className="text-muted-foreground">
                   Les données financières n'ont pas encore été renseignées pour ce projet.
-                </p>
+                </Text>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'links' && (
-          <div className="space-y-6">
+          <div className="space-y-6" role="tabpanel" id="links-panel">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {project.proposal_url && (
                 <a
                   href={project.proposal_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  className="glass-card p-lg rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  aria-label="Ouvrir le document de proposition dans un nouvel onglet"
                 >
-                  <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
-                    <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="glass-badge p-3 rounded-lg bg-primary/10">
+                    <FileText className="w-6 h-6 text-primary" aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 dark:text-white">Proposal</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Document de proposition</p>
+                    <Text variant="body" className="font-bold text-foreground">Proposal</Text>
+                    <Text variant="small" className="text-muted-foreground">Document de proposition</Text>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                  <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
                 </a>
               )}
 
@@ -756,16 +792,17 @@ function ProjectDetailContent() {
                   href={project.drive_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  className="glass-card p-lg rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  aria-label="Ouvrir le dossier Google Drive dans un nouvel onglet"
                 >
                   <div className="glass-badge p-3 rounded-lg bg-green-500/10">
-                    <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <FileText className="w-6 h-6 text-green-600 dark:text-green-400" aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 dark:text-white">Google Drive</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Dossier partagé</p>
+                    <Text variant="body" className="font-bold text-foreground">Google Drive</Text>
+                    <Text variant="small" className="text-muted-foreground">Dossier partagé</Text>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
+                  <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" aria-hidden="true" />
                 </a>
               )}
 
@@ -774,16 +811,17 @@ function ProjectDetailContent() {
                   href={project.slack_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  className="glass-card p-lg rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  aria-label="Ouvrir le canal Slack dans un nouvel onglet"
                 >
                   <div className="glass-badge p-3 rounded-lg bg-purple-500/10">
-                    <LinkIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    <LinkIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 dark:text-white">Slack</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Canal de communication</p>
+                    <Text variant="body" className="font-bold text-foreground">Slack</Text>
+                    <Text variant="small" className="text-muted-foreground">Canal de communication</Text>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" />
+                  <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" aria-hidden="true" />
                 </a>
               )}
 
@@ -792,130 +830,133 @@ function ProjectDetailContent() {
                   href={project.echeancier_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-card p-4 rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  className="glass-card p-lg rounded-xl flex items-center gap-3 hover:shadow-lg transition-all group"
+                  aria-label="Ouvrir l'échéancier dans un nouvel onglet"
                 >
                   <div className="glass-badge p-3 rounded-lg bg-amber-500/10">
-                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 dark:text-white">Échéancier</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Planning du projet</p>
+                    <Text variant="body" className="font-bold text-foreground">Échéancier</Text>
+                    <Text variant="small" className="text-muted-foreground">Planning du projet</Text>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" />
+                  <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" aria-hidden="true" />
                 </a>
               )}
             </div>
 
             {/* Empty State */}
             {!project.proposal_url && !project.drive_url && !project.slack_url && !project.echeancier_url && (
-              <div className="glass-card p-12 rounded-xl text-center">
-                <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <LinkIcon className="w-8 h-8 text-gray-400" />
+              <div className="glass-card p-3xl rounded-xl text-center">
+                <div className="glass-badge p-4 rounded-full bg-muted w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <LinkIcon className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                <Heading level={3} className="mb-2">
                   Aucun lien disponible
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                </Heading>
+                <Text variant="body" className="text-muted-foreground">
                   Les liens et documents du projet n'ont pas encore été ajoutés.
-                </p>
+                </Text>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'deliverables' && (
-          <div className="space-y-6">
+          <div className="space-y-6" role="tabpanel" id="deliverables-panel">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Témoignage Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div className="glass-badge p-3 rounded-lg bg-yellow-500/10">
-                    <Award className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                    <Award className="w-6 h-6 text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Témoignage client
-                </h3>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-2xl font-black text-foreground mb-2">
                   {project.temoignage_status || 'Non renseigné'}
                 </p>
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                   project.temoignage_status === 'Reçu' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
                   project.temoignage_status === 'En attente' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300' :
-                  'bg-gray-500/20 text-gray-700 dark:text-gray-300'
+                  'bg-muted text-muted-foreground'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     project.temoignage_status === 'Reçu' ? 'bg-green-500' :
-                    project.temoignage_status === 'En attente' ? 'bg-yellow-500' : 'bg-gray-500'
-                  }`} />
-                  {project.temoignage_status || 'Non défini'}
+                    project.temoignage_status === 'En attente' ? 'bg-yellow-500' : 'bg-muted-foreground'
+                  }`} aria-hidden="true" />
+                  <Text variant="caption">{project.temoignage_status || 'Non défini'}</Text>
                 </div>
               </div>
 
               {/* Portfolio Card */}
-              <div className="glass-card p-6 rounded-xl">
+              <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div className="glass-badge p-3 rounded-lg bg-pink-500/10">
-                    <Briefcase className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                    <Briefcase className="w-6 h-6 text-pink-600 dark:text-pink-400" aria-hidden="true" />
                   </div>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <Text variant="small" className="text-muted-foreground mb-1">
                   Ajout au portfolio
-                </h3>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                </Text>
+                <p className="text-2xl font-black text-foreground mb-2">
                   {project.portfolio_status || 'Non renseigné'}
                 </p>
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                   project.portfolio_status === 'Ajouté' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
-                  project.portfolio_status === 'En cours' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' :
-                  'bg-gray-500/20 text-gray-700 dark:text-gray-300'
+                  project.portfolio_status === 'En cours' ? 'bg-primary/20 text-primary' :
+                  'bg-muted text-muted-foreground'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     project.portfolio_status === 'Ajouté' ? 'bg-green-500' :
-                    project.portfolio_status === 'En cours' ? 'bg-blue-500' : 'bg-gray-500'
-                  }`} />
-                  {project.portfolio_status || 'Non défini'}
+                    project.portfolio_status === 'En cours' ? 'bg-primary' : 'bg-muted-foreground'
+                  }`} aria-hidden="true" />
+                  <Text variant="caption">{project.portfolio_status || 'Non défini'}</Text>
                 </div>
               </div>
             </div>
 
             {/* Empty State */}
             {!project.temoignage_status && !project.portfolio_status && (
-              <div className="glass-card p-12 rounded-xl text-center">
-                <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Award className="w-8 h-8 text-gray-400" />
+              <div className="glass-card p-3xl rounded-xl text-center">
+                <div className="glass-badge p-4 rounded-full bg-muted w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Award className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                <Heading level={3} className="mb-2">
                   Aucun livrable renseigné
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                </Heading>
+                <Text variant="body" className="text-muted-foreground">
                   Les statuts des livrables n'ont pas encore été mis à jour.
-                </p>
+                </Text>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'tasks' && (
-          <Card className="glass-card p-6">
+          <Card className="glass-card p-xl" role="tabpanel" id="tasks-panel">
             {teamId ? (
               <TaskKanban projectId={projectId} teamId={teamId} />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p>Chargement de l'équipe...</p>
+                <Text variant="body">Chargement de l'équipe...</Text>
               </div>
             )}
           </Card>
         )}
 
         {activeTab === 'timeline' && (
-          <ProjectGantt
-            projectId={projectId}
-            projectName={project.name}
-            startDate={project.start_date}
-            endDate={project.end_date}
-            deadline={project.deadline}
-          />
+          <div role="tabpanel" id="timeline-panel">
+            <ProjectGantt
+              projectId={projectId}
+              projectName={project.name}
+              startDate={project.start_date}
+              endDate={project.end_date}
+              deadline={project.deadline}
+            />
+          </div>
         )}
 
         {/* Edit Modal */}

@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
-import { Card, Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
+import { Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
 import TaskKanban from '@/components/projects/TaskKanban';
 import CapacityVisualization from '@/components/projects/CapacityVisualization';
 import MotionDiv from '@/components/motion/MotionDiv';
