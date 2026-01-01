@@ -77,8 +77,7 @@ function OpportunityCard({ opportunity, isDragging }: { opportunity: Opportunity
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('fr-CA', { 
       day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+      month: 'short'
     }).format(date);
   };
 
@@ -88,48 +87,48 @@ function OpportunityCard({ opportunity, isDragging }: { opportunity: Opportunity
       style={style}
       {...attributes}
       {...listeners}
-      className="cursor-grab active:cursor-grabbing"
+      className="cursor-grab active:cursor-grabbing touch-none"
     >
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-lg transition-all duration-200 group">
+      <Card className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-md transition-all duration-200 group">
         {/* Header */}
-        <div className="mb-3">
-          <h4 className="font-semibold text-base mb-1 group-hover:text-[#523DC9] transition-colors">
+        <div className="mb-2">
+          <h4 className="font-semibold text-sm mb-0.5 group-hover:text-[#523DC9] transition-colors line-clamp-1">
             {opportunity.title}
           </h4>
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
             {opportunity.description}
           </p>
         </div>
 
         {/* Company & Contact */}
-        <div className="space-y-2 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 text-sm">
-            <Building2 className="w-4 h-4 text-gray-500" />
-            <span className="font-medium">{opportunity.company}</span>
+        <div className="space-y-1 mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-1.5 text-xs">
+            <Building2 className="w-3 h-3 text-gray-500 flex-shrink-0" />
+            <span className="font-medium truncate">{opportunity.company}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <User className="w-4 h-4" />
-            <span>{opportunity.contact}</span>
+          <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+            <User className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">{opportunity.contact}</span>
           </div>
         </div>
 
         {/* Value & Date */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
-              <DollarSign className="w-3 h-3" />
+            <div className="text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 flex items-center gap-0.5">
+              <DollarSign className="w-2.5 h-2.5" />
               Valeur
             </div>
-            <div className="text-lg font-bold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-sm font-bold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {formatCurrency(opportunity.value)}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
+            <div className="text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 flex items-center gap-0.5">
+              <Calendar className="w-2.5 h-2.5" />
               Clôture
             </div>
-            <div className="text-sm font-medium">
+            <div className="text-xs font-medium">
               {formatDate(opportunity.closeDate)}
             </div>
           </div>
@@ -137,18 +136,23 @@ function OpportunityCard({ opportunity, isDragging }: { opportunity: Opportunity
 
         {/* Tags */}
         {opportunity.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {opportunity.tags.map((tag, index) => (
-              <Badge key={index} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">
+          <div className="flex flex-wrap gap-1 mb-2">
+            {opportunity.tags.slice(0, 2).map((tag, index) => (
+              <Badge key={index} className="text-[10px] px-1.5 py-0 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">
                 {tag}
               </Badge>
             ))}
+            {opportunity.tags.length > 2 && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">
+                +{opportunity.tags.length - 2}
+              </Badge>
+            )}
           </div>
         )}
 
         {/* Last Activity */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500">
-          <Clock className="w-3 h-3" />
+        <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-500">
+          <Clock className="w-2.5 h-2.5" />
           <span>{opportunity.lastActivity}</span>
         </div>
       </Card>
@@ -176,15 +180,15 @@ function DroppableColumn({
   };
 
   return (
-    <div className="flex flex-col h-full min-w-[320px]">
+    <div className="flex flex-col h-full min-w-[260px] flex-1">
       {/* Column Header */}
-      <div className={`${config.bgColor} ${config.borderColor} border-2 rounded-xl p-4 mb-3`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Badge className={`${config.color} ${config.bgColor} ${config.borderColor} border-2 font-semibold px-3 py-1`}>
+      <div className={`${config.bgColor} ${config.borderColor} border-2 rounded-lg p-3 mb-2`}>
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <Badge className={`${config.color} ${config.bgColor} ${config.borderColor} border-2 font-semibold px-2 py-0.5 text-xs`}>
               {config.label}
             </Badge>
-            <Badge className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 font-bold">
+            <Badge className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 font-bold text-xs px-1.5 py-0.5">
               {opportunities.length}
             </Badge>
           </div>
@@ -196,10 +200,10 @@ function DroppableColumn({
 
       {/* Cards Container */}
       <SortableContext items={opportunities.map(o => o.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex-1 space-y-3 overflow-y-auto min-h-[400px] max-h-[calc(100vh-300px)] pr-2">
+        <div className="flex-1 space-y-2 overflow-y-auto min-h-[400px] max-h-[calc(100vh-300px)] pr-1">
           {opportunities.length === 0 ? (
-            <div className="flex items-center justify-center h-32 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
-              <p className="text-sm text-gray-500 dark:text-gray-500">Aucune opportunité</p>
+            <div className="flex items-center justify-center h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-500">Aucune opportunité</p>
             </div>
           ) : (
             opportunities.map((opportunity) => (
@@ -229,7 +233,7 @@ export default function PipelineDemo() {
       closeDate: '2026-03-15',
       description: 'Refonte complète du site web avec nouveau design et CMS',
       tags: ['Web', 'Design'],
-      lastActivity: 'Il y a 2 heures'
+      lastActivity: 'Il y a 2h'
     },
     {
       id: '2',
@@ -242,8 +246,8 @@ export default function PipelineDemo() {
       stage: 'qualified',
       closeDate: '2026-02-28',
       description: 'Développement application iOS et Android pour boutique en ligne',
-      tags: ['Mobile', 'E-commerce'],
-      lastActivity: 'Il y a 5 heures'
+      tags: ['Mobile', 'E-commerce', 'iOS'],
+      lastActivity: 'Il y a 5h'
     },
     {
       id: '3',
@@ -257,7 +261,7 @@ export default function PipelineDemo() {
       closeDate: '2026-04-10',
       description: 'CRM sur mesure avec intégrations multiples',
       tags: ['CRM', 'Enterprise'],
-      lastActivity: 'Il y a 1 jour'
+      lastActivity: 'Il y a 1j'
     },
     {
       id: '4',
@@ -271,7 +275,7 @@ export default function PipelineDemo() {
       closeDate: '2026-03-30',
       description: 'Plateforme SaaS complète pour gestion de projets',
       tags: ['SaaS', 'B2B', 'Cloud'],
-      lastActivity: 'Il y a 3 heures'
+      lastActivity: 'Il y a 3h'
     },
     {
       id: '5',
@@ -285,7 +289,7 @@ export default function PipelineDemo() {
       closeDate: '2026-01-15',
       description: 'Migration infrastructure vers AWS avec formation',
       tags: ['Cloud', 'AWS', 'Migration'],
-      lastActivity: 'Il y a 2 jours'
+      lastActivity: 'Il y a 2j'
     },
     {
       id: '6',
@@ -299,7 +303,7 @@ export default function PipelineDemo() {
       closeDate: '2026-05-20',
       description: 'Application de gestion d\'inventaire en temps réel',
       tags: ['Retail', 'Inventaire'],
-      lastActivity: 'Il y a 4 heures'
+      lastActivity: 'Il y a 4h'
     },
     {
       id: '7',
@@ -313,7 +317,7 @@ export default function PipelineDemo() {
       closeDate: '2026-03-25',
       description: 'Portail client avec espace membre et paiements',
       tags: ['Portail', 'B2C'],
-      lastActivity: 'Il y a 6 heures'
+      lastActivity: 'Il y a 6h'
     },
     {
       id: '8',
@@ -327,14 +331,42 @@ export default function PipelineDemo() {
       closeDate: '2026-04-30',
       description: 'Intégration ERP avec systèmes existants',
       tags: ['ERP', 'Intégration'],
-      lastActivity: 'Il y a 1 jour'
+      lastActivity: 'Il y a 1j'
+    },
+    {
+      id: '9',
+      title: 'Dashboard Analytics',
+      company: 'Data Insights',
+      contact: 'François Roy',
+      email: 'froy@datainsights.com',
+      phone: '514-555-0109',
+      value: 72000,
+      stage: 'negotiation',
+      closeDate: '2026-03-18',
+      description: 'Dashboard d\'analytics en temps réel avec BI',
+      tags: ['Analytics', 'BI', 'Dashboard'],
+      lastActivity: 'Il y a 8h'
+    },
+    {
+      id: '10',
+      title: 'API Gateway',
+      company: 'Connect Systems',
+      contact: 'Isabelle Gagnon',
+      email: 'igagnon@connect.com',
+      phone: '514-555-0110',
+      value: 55000,
+      stage: 'qualified',
+      closeDate: '2026-04-05',
+      description: 'API Gateway pour microservices',
+      tags: ['API', 'Microservices'],
+      lastActivity: 'Il y a 12h'
     }
   ]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3, // Réduit de 8 à 3 pour un drag plus direct
       },
     })
   );
@@ -489,7 +521,7 @@ export default function PipelineDemo() {
           onDragEnd={handleDragEnd}
         >
           <div className="overflow-x-auto pb-4">
-            <div className="flex gap-4 min-w-max">
+            <div className="flex gap-3 min-w-max">
               {stages.map((stage) => (
                 <DroppableColumn
                   key={stage}
