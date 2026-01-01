@@ -252,7 +252,8 @@ export default function EmployeePortalPermissionsEditor({
   // Fonction helper pour sauvegarder les permissions
   const savePermissions = async (modules: Set<string>, clients: Set<number>) => {
     try {
-      // Supprimer toutes les permissions existantes
+      // IMPORTANT: Supprimer toutes les permissions existantes AVANT de créer les nouvelles
+      // Cela garantit que les anciennes permissions sont bien supprimées de la base de données
       await employeePortalPermissionsAPI.deleteAllForEmployee(employeeId);
       
       // Créer les nouvelles permissions
@@ -304,13 +305,14 @@ export default function EmployeePortalPermissionsEditor({
       setSavedModules(new Set(modules));
       setSavedClients(new Set(clients));
       
-      // Déclencher un événement pour notifier les autres composants
+      // Déclencher un événement pour notifier les autres composants et invalider leur cache
       window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
         detail: { employeeId }
       }));
       
-      // Ne pas recharger loadData() ici car il réinitialiserait les états et causerait un délai
-      // Les états sont déjà à jour et cohérents avec le serveur
+      // Recharger les données depuis le serveur pour s'assurer qu'elles sont bien persistées
+      // et pour avoir les IDs des permissions créées
+      await loadData();
     } catch (err) {
       const appError = handleApiError(err);
       showToast({

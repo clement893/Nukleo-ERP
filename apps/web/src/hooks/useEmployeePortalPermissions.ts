@@ -146,13 +146,38 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
 
   // Function to manually reload permissions
   const reload = () => {
-    // Invalider le cache avant de recharger
+    // Invalider le cache avant de recharger pour forcer un rechargement depuis le serveur
     if (cacheKey && cacheKey !== 'none') {
       permissionsCache.delete(cacheKey);
     }
     initialLoadRef.current = false;
     setReloadTrigger(prev => prev + 1);
   };
+  
+  // Écouter les événements de mise à jour pour invalider le cache
+  useEffect(() => {
+    if (!employeeId) return; // Ne s'applique que si on a un employeeId
+    
+    const handlePermissionsUpdate = (event: CustomEvent) => {
+      const eventEmployeeId = event.detail?.employeeId;
+      if (eventEmployeeId === employeeId) {
+        // Invalider le cache pour cet employé
+        const currentCacheKey = getCacheKey(employeeId);
+        if (currentCacheKey && currentCacheKey !== 'none') {
+          permissionsCache.delete(currentCacheKey);
+        }
+        // Recharger les permissions depuis le serveur
+        initialLoadRef.current = false;
+        setReloadTrigger(prev => prev + 1);
+      }
+    };
+    
+    window.addEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
+    };
+  }, [employeeId]);
 
   /**
    * Check if user has access to a page

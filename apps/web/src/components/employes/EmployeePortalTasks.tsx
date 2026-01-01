@@ -5,6 +5,9 @@ import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { projectCommentsAPI, type ProjectComment } from '@/lib/api/project-comments';
 import type { ProjectAttachment } from '@/lib/api/project-attachments';
 import { projectAttachmentsAPI } from '@/lib/api/project-attachments';
+import { projectsAPI, type Project } from '@/lib/api/projects';
+import { teamsAPI, type Team } from '@/lib/api/teams';
+import { extractApiData } from '@/lib/api/utils';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Modal } from '@/components/ui';
@@ -13,7 +16,8 @@ import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
 import Avatar from '@/components/ui/Avatar';
 import { useAuthStore } from '@/lib/store';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, Plus } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, Plus, ExternalLink, Users, UserPlus } from 'lucide-react';
 import { FileText, Image, File, Download } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
