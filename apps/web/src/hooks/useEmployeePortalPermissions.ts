@@ -57,9 +57,20 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
   const loadPermissions = async () => {
     // If employeeId is provided, use it; otherwise use user.id
     if (employeeId) {
+      // Vérifier à nouveau le cache (au cas où il aurait été mis à jour)
+      const currentCache = getCachedPermissions(cacheKey);
+      
+      // Si on a un cache valide et que c'est le premier chargement, utiliser le cache et ne pas recharger
+      if (currentCache && !initialLoadRef.current) {
+        setPermissions(currentCache);
+        initialLoadRef.current = true;
+        setLoading(false);
+        return; // Ne pas recharger si on a un cache valide au premier chargement
+      }
+      
       try {
-        // Ne mettre loading à true que si on n'a pas de cache au premier chargement
-        if (!cachedPermissions && !initialLoadRef.current) {
+        // Ne mettre loading à true que si on n'a pas de cache
+        if (!currentCache) {
           setLoading(true);
         }
         setError(null);
@@ -89,9 +100,17 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
       const userCacheKey = getCacheKey(undefined, userId);
       const userCachedPermissions = getCachedPermissions(userCacheKey);
       
+      // Si on a un cache valide et que c'est le premier chargement, utiliser le cache et ne pas recharger
+      if (userCachedPermissions && !initialLoadRef.current) {
+        setPermissions(userCachedPermissions);
+        initialLoadRef.current = true;
+        setLoading(false);
+        return; // Ne pas recharger si on a un cache valide au premier chargement
+      }
+      
       try {
-        // Ne mettre loading à true que si on n'a pas de cache au premier chargement
-        if (!userCachedPermissions && !initialLoadRef.current) {
+        // Ne mettre loading à true que si on n'a pas de cache
+        if (!userCachedPermissions) {
           setLoading(true);
         }
         setError(null);
