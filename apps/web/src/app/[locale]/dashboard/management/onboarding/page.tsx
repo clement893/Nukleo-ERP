@@ -301,7 +301,7 @@ function OnboardingContent() {
           <h3 className="text-lg font-semibold text-foreground">Étapes ({template.steps.length})</h3>
         </div>
         <div className="p-6">
-        {template.steps.length === 0 ? (
+          {template.steps.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <p>Aucune étape créée. Cliquez sur "Ajouter une étape" pour commencer.</p>
           </div>
@@ -339,8 +339,8 @@ function OnboardingContent() {
                   </div>
                 </div>
                 <div className="p-6">
-                <div className="space-y-4">
-                  {/* Step Description */}
+                  <div className="space-y-4">
+                    {/* Step Description */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Description de l'étape
@@ -457,7 +457,7 @@ function OnboardingContent() {
                       </div>
                     )}
                   </div>
-                </div>
+                  </div>
                 </div>
                 <div className="p-4 border-t border-border">
                   <div className="flex items-center justify-between">
@@ -492,7 +492,7 @@ function OnboardingContent() {
               </div>
             ))}
           </div>
-        )}
+          )}
         </div>
         <div className="p-6 border-t border-border">
           <Button
