@@ -141,12 +141,16 @@ export default function Card({
   const cardPadding = getCardPadding();
   const useThemePadding = typeof cardPadding === 'string' && cardPadding !== 'p-lg';
   
+  // Check if glass-card class is present (for glassmorphism)
+  const hasGlassClass = className?.includes('glass-card') || className?.includes('glass-');
+  
   return (
     <div
       className={clsx(
         'rounded-lg border shadow-sm',
-        // Normal background (will be overridden by glassmorphism if enabled)
-        'bg-[var(--color-background)]',
+        // Only apply opaque background if glassmorphism is NOT active
+        // Glassmorphism classes will override this with transparent backgrounds
+        !hasGlassClass && 'bg-[var(--color-background)]',
         'border-[var(--color-border)]',
         hover && 'transition-all hover:shadow-md',
         onClick && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2',
@@ -154,12 +158,22 @@ export default function Card({
       )}
       style={{
         // Glassmorphism support: use CSS variables with fallbacks
-        backgroundColor: 'var(--glassmorphism-card-background, var(--color-background))',
-        backdropFilter: 'var(--glassmorphism-card-backdrop-blur, var(--glassmorphism-backdrop, none))',
-        WebkitBackdropFilter: 'var(--glassmorphism-card-backdrop-blur, var(--glassmorphism-backdrop, none))',
-        borderColor: 'var(--glassmorphism-card-border, var(--color-border))',
-        // Enhanced shadow for glassmorphism (will use normal shadow if glassmorphism not enabled)
-        boxShadow: 'var(--glassmorphism-shadow, var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05)))',
+        // If glass-card class is present, use glassmorphism styles
+        // Otherwise, use normal background (already set via className)
+        ...(hasGlassClass ? {
+          backgroundColor: 'var(--glassmorphism-card-background, color-mix(in srgb, var(--color-background) 75%, transparent))',
+          backdropFilter: 'var(--glassmorphism-card-backdrop-blur, var(--glassmorphism-backdrop, blur(12px)))',
+          WebkitBackdropFilter: 'var(--glassmorphism-card-backdrop-blur, var(--glassmorphism-backdrop, blur(12px)))',
+          borderColor: 'var(--glassmorphism-card-border, color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent))',
+          boxShadow: 'var(--glassmorphism-shadow, 0 8px 32px 0 color-mix(in srgb, var(--color-foreground) 7%, transparent), inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent))',
+        } : {
+          // Normal card: use theme variables with fallbacks for glassmorphism if enabled
+          backgroundColor: 'var(--glassmorphism-card-background, var(--color-background))',
+          backdropFilter: 'var(--glassmorphism-card-backdrop-blur, var(--glassmorphism-backdrop, none))',
+          WebkitBackdropFilter: 'var(--glassmorphism-card-backdrop-blur, var(--glassmorphism-backdrop, none))',
+          borderColor: 'var(--glassmorphism-card-border, var(--color-border))',
+          boxShadow: 'var(--glassmorphism-shadow, var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05)))',
+        }),
       } as React.CSSProperties}
       onClick={onClick ? (e: React.MouseEvent<HTMLDivElement>) => {
         // Only trigger card onClick if the click target is the card itself or a non-interactive element

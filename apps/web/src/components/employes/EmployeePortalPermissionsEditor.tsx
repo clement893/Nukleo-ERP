@@ -99,6 +99,18 @@ export default function EmployeePortalPermissionsEditor({
       setSavedModules(new Set(modulesSet));
       setSavedClients(new Set(clientsSet));
 
+      // Debug: log les permissions chargées
+      console.log('[EmployeePortalPermissionsEditor] Permissions chargées:', {
+        employeeId,
+        summaryData,
+        permissionsData: permissionsData.map(p => ({
+          type: p.permission_type,
+          resource_id: p.resource_id,
+        })),
+        modulesSet: Array.from(modulesSet),
+        clientsSet: Array.from(clientsSet),
+      });
+
       // Charger les clients sélectionnés
       if (clientsSet.size > 0) {
         const clientsData = await Promise.all(
@@ -140,6 +152,12 @@ export default function EmployeePortalPermissionsEditor({
       }> = [];
 
       // Ajouter les permissions de modules
+      console.log('[EmployeePortalPermissionsEditor] Sauvegarde des permissions:', {
+        employeeId,
+        selectedModules: Array.from(selectedModules),
+        selectedClients: Array.from(selectedClients),
+      });
+
       selectedModules.forEach(moduleId => {
         newPermissions.push({
           employee_id: employeeId,
@@ -166,24 +184,44 @@ export default function EmployeePortalPermissionsEditor({
       });
 
       if (newPermissions.length > 0) {
-        await employeePortalPermissionsAPI.bulkCreate({
+        const created = await employeePortalPermissionsAPI.bulkCreate({
           employee_id: employeeId,
           permissions: newPermissions,
         });
+        console.log('[EmployeePortalPermissionsEditor] Permissions créées:', created);
+      } else {
+        console.log('[EmployeePortalPermissionsEditor] Aucune permission à créer');
       }
 
-      showToast({
-        message: 'Permissions sauvegardées avec succès',
-        type: 'success',
-      });
+      // Attendre un peu pour s'assurer que la base de données est à jour
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Recharger les données depuis le serveur pour s'assurer de la synchronisation
+      console.log('[EmployeePortalPermissionsEditor] Rechargement des permissions après sauvegarde...');
       await loadData();
+      
+      // Vérifier que les permissions sont bien rechargées
+      const [verifySummary, verifyPermissions] = await Promise.all([
+        employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
+        employeePortalPermissionsAPI.list({ employee_id: employeeId }),
+      ]);
+      console.log('[EmployeePortalPermissionsEditor] Vérification après rechargement:', {
+        summary: verifySummary,
+        permissions: verifyPermissions.map(p => ({
+          type: p.permission_type,
+          resource_id: p.resource_id,
+        })),
+      });
       
       // Déclencher un événement pour notifier les autres composants (comme le portail employé)
       window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
         detail: { employeeId }
       }));
+      
+      showToast({
+        message: 'Permissions sauvegardées avec succès',
+        type: 'success',
+      });
       
       onUpdate?.();
     } catch (err) {

@@ -25,7 +25,9 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
       try {
         setLoading(true);
         setError(null);
+        console.log(`[useEmployeePortalPermissions] Chargement des permissions pour employeeId=${employeeId}`);
         const summary = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
+        console.log(`[useEmployeePortalPermissions] Permissions chargées:`, summary);
         setPermissions(summary);
       } catch (err) {
         const appError = handleApiError(err);

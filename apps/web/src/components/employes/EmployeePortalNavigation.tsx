@@ -128,17 +128,26 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   
   // Écouter les événements de mise à jour des permissions depuis d'autres composants
   useEffect(() => {
-    const handlePermissionsUpdate = () => {
-      reloadPermissions();
+    const handlePermissionsUpdate = (event: CustomEvent) => {
+      const eventEmployeeId = event.detail?.employeeId;
+      console.log('[EmployeePortalNavigation] Événement de mise à jour reçu:', {
+        eventEmployeeId,
+        currentEmployeeId: employeeId,
+        shouldReload: eventEmployeeId === employeeId,
+      });
+      if (eventEmployeeId === employeeId) {
+        console.log('[EmployeePortalNavigation] Rechargement des permissions...');
+        reloadPermissions();
+      }
     };
     
     // Écouter les événements personnalisés pour recharger les permissions
-    window.addEventListener('employee-portal-permissions-updated', handlePermissionsUpdate);
+    window.addEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
     
     return () => {
-      window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate);
+      window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
     };
-  }, [reloadPermissions]);
+  }, [reloadPermissions, employeeId]);
 
   // Check if current user is admin
   useEffect(() => {

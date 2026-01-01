@@ -157,7 +157,7 @@
 
 /* Ensure body uses theme variables (will be set by theme system) */
 body {
-  font-family: 'Aktiv Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-family, var(--font-aktiv-grotesk), 'Aktiv Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif);
   background-color: var(--color-background);
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
@@ -325,23 +325,25 @@ body {
 }
 
 /* Glass Card - For dashboard widgets and content cards */
-.glass-card {
-  background: color-mix(in srgb, var(--color-background) 75%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent);
+/* High specificity to override Tailwind classes like bg-[var(--color-background)] */
+.glass-card,
+.glass-card.bg-\[var\(--color-background\)\] {
+  background: color-mix(in srgb, var(--color-background) 75%, transparent) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 20%, transparent) !important;
   box-shadow: 
     0 8px 32px 0 color-mix(in srgb, var(--color-foreground) 7%, transparent),
-    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent);
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 50%, transparent) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  background: color-mix(in srgb, var(--color-background) 85%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 30%, transparent);
+  background: color-mix(in srgb, var(--color-background) 85%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-border, var(--color-foreground)) 30%, transparent) !important;
   box-shadow: 
     0 12px 40px 0 color-mix(in srgb, var(--color-foreground) 12%, transparent),
-    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 60%, transparent);
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 60%, transparent) !important;
   transform: translateY(-2px);
 }
 

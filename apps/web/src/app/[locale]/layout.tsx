@@ -120,6 +120,15 @@ export default async function LocaleLayout({
                 --font-family-subheading: var(--font-aktiv-grotesk), system-ui, -apple-system, sans-serif;
                 --border-radius: 8px;
                 
+                /* Glassmorphism variables - defaults for CSS classes to work even if theme doesn't enable it */
+                /* Note: These will be overridden by theme if glassmorphism is enabled */
+                /* Empty by default - CSS classes in globals.css will use color-mix() directly */
+                --glassmorphism-card-background: '';
+                --glassmorphism-card-backdrop-blur: '';
+                --glassmorphism-card-border: '';
+                --glassmorphism-shadow: '';
+                --glassmorphism-backdrop: '';
+                
                 /* Default color variables - prevent flash before theme loads */
                 /* These will be overridden by themeCacheInlineScript or GlobalThemeProvider */
                 --color-background: #ffffff;

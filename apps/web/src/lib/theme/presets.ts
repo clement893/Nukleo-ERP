@@ -95,7 +95,7 @@ export const boldPreset: ThemePreset = {
     warning_color: '#f59e0b',
     info_color: '#3b82f6',
     success_color: '#10b981',
-    font_family: 'Inter, sans-serif',
+    font_family: "var(--font-aktiv-grotesk), 'Aktiv Grotesk', sans-serif",
     border_radius: '0.5rem',
     mode: 'system',
     layout: {
@@ -223,7 +223,7 @@ export const modernPreset: ThemePreset = {
     warning_color: '#f59e0b',
     info_color: '#06b6d4',
     success_color: '#10b981',
-    font_family: 'Inter, sans-serif',
+    font_family: "var(--font-aktiv-grotesk), 'Aktiv Grotesk', sans-serif",
     border_radius: '0.5rem',
     mode: 'system',
     animations: {

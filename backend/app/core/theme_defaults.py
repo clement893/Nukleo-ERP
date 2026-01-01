@@ -16,14 +16,14 @@ DEFAULT_THEME_CONFIG = {
     "warning_color": "#d97706",  # Warm amber
     "info_color": "#0891b2",  # Professional cyan
     "success_color": "#059669",  # Professional green
-    "font_family": "Inter",
+    "font_family": "var(--font-aktiv-grotesk), 'Aktiv Grotesk'",
     "border_radius": "8px",
     
     # Typography configuration - Professional and readable
     "typography": {
-        "fontFamily": "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        "fontFamilyHeading": "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        "fontFamilySubheading": "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontFamily": "var(--font-aktiv-grotesk), 'Aktiv Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontFamilyHeading": "var(--font-aktiv-grotesk), 'Aktiv Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontFamilySubheading": "var(--font-aktiv-grotesk), 'Aktiv Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         "fontFamilyMono": "'Fira Code', 'Courier New', monospace",
         "fontSize": {
             "xs": "12px",
@@ -143,6 +143,6 @@ DEFAULT_THEME_CONFIG = {
     },
     
     # Font URL for loading Google Fonts or custom fonts
-    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    # font_url removed - using local Aktiv Grotesk font instead of Google Fonts Inter
 }
 
