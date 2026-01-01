@@ -6,8 +6,7 @@ import { useState } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  Target, Plus, Search, DollarSign, Calendar, User, Building2, 
-  TrendingUp, Mail, Phone, Clock, Tag
+  Target, Plus, Search, DollarSign, Calendar, User, Building2, Clock
 } from 'lucide-react';
 import { Badge, Button, Card, Input } from '@/components/ui';
 import {
