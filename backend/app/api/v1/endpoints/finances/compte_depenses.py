@@ -23,6 +23,7 @@ from app.schemas.expense_account import (
     ExpenseAccountUpdate,
     ExpenseAccountResponse,
     ExpenseAccountAction,
+    ExpenseAccountClarificationResponse,
 )
 from app.core.logging import logger
 from app.services.openai_service import OpenAIService
@@ -769,17 +770,31 @@ async def request_clarification_compte_depenses(
     account.clarification_request = action.clarification_request
     
     await db.commit()
-    logger.debug(f"[update_compte_depenses] Committed changes for account {account.id}")
+    logger.debug(f"[request_clarification_compte_depenses] Committed changes for account {account.id}")
+    
+    # Reload account from DB to ensure we have the latest values after commit
+    result = await db.execute(
+        select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
+    )
+    account = result.scalar_one_or_none()
+    
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense account not found after clarification request"
+        )
+    
+    logger.debug(f"[request_clarification_compte_depenses] Reloaded account {account.id} from DB, status={account.status}")
     
     # Safely load relationships to avoid lazy loading issues
-    employee, reviewer = await safe_refresh_account(db, account)
-    logger.debug(f"[update_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
+    account_employee, account_reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[request_clarification_compte_depenses] Loaded relationships for account {account.id}: employee={account_employee is not None}, reviewer={account_reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
+        "employee_name": f"{account_employee.first_name} {account_employee.last_name}" if account_employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -790,7 +805,7 @@ async def request_clarification_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
+        "reviewer_name": f"{account_reviewer.first_name} {account_reviewer.last_name}" if account_reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
@@ -799,6 +814,119 @@ async def request_clarification_compte_depenses(
         "updated_at": account.updated_at,
     }
     
+    return ExpenseAccountResponse(**account_dict)
+
+
+@router.post("/{expense_account_id}/respond-clarification", response_model=ExpenseAccountResponse)
+async def respond_clarification_compte_depenses(
+    expense_account_id: int,
+    response_data: ExpenseAccountClarificationResponse,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Employee response to clarification request
+    Employee only - Must be the owner of the expense account
+    Changes status from NEEDS_CLARIFICATION to SUBMITTED
+    """
+    result = await db.execute(
+        select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
+    )
+    account = result.scalar_one_or_none()
+    
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense account not found"
+        )
+    
+    # Check if status is NEEDS_CLARIFICATION
+    if account.status != ExpenseAccountStatus.NEEDS_CLARIFICATION.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot respond to clarification for expense account in status: {account.status}. Only accounts with status NEEDS_CLARIFICATION can be responded to."
+        )
+    
+    # Load employee to verify ownership
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == account.employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee associated with this expense account not found"
+        )
+    
+    # Verify that current user is the owner of the expense account
+    if employee.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only respond to clarification requests for your own expense accounts"
+        )
+    
+    # Store the response in metadata to keep history
+    metadata = account.account_metadata or {}
+    clarification_responses = metadata.get("clarification_responses", [])
+    clarification_responses.append({
+        "response": response_data.response,
+        "responded_at": datetime.now().isoformat(),
+        "responded_by_id": current_user.id,
+    })
+    metadata["clarification_responses"] = clarification_responses
+    account.account_metadata = metadata
+    
+    # Update status to SUBMITTED and update submitted_at
+    account.status = ExpenseAccountStatus.SUBMITTED.value
+    account.submitted_at = datetime.now()
+    
+    await db.commit()
+    logger.debug(f"[respond_clarification_compte_depenses] Committed changes for account {account.id}")
+    
+    # Reload account from DB to ensure we have the latest values after commit
+    result = await db.execute(
+        select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
+    )
+    account = result.scalar_one_or_none()
+    
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense account not found after clarification response"
+        )
+    
+    logger.debug(f"[respond_clarification_compte_depenses] Reloaded account {account.id} from DB, status={account.status}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    account_employee, account_reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[respond_clarification_compte_depenses] Loaded relationships for account {account.id}: employee={account_employee is not None}, reviewer={account_reviewer is not None}")
+    
+    account_dict = {
+        "id": account.id,
+        "account_number": account.account_number,
+        "employee_id": account.employee_id,
+        "employee_name": f"{account_employee.first_name} {account_employee.last_name}" if account_employee else None,
+        "title": account.title,
+        "description": account.description,
+        "status": account.status,
+        "expense_period_start": account.expense_period_start,
+        "expense_period_end": account.expense_period_end,
+        "total_amount": account.total_amount,
+        "currency": account.currency,
+        "submitted_at": account.submitted_at,
+        "reviewed_at": account.reviewed_at,
+        "reviewed_by_id": account.reviewed_by_id,
+        "reviewer_name": f"{account_reviewer.first_name} {account_reviewer.last_name}" if account_reviewer else None,
+        "review_notes": account.review_notes,
+        "clarification_request": account.clarification_request,
+        "rejection_reason": account.rejection_reason,
+        "metadata": account.account_metadata,
+        "created_at": account.created_at,
+        "updated_at": account.updated_at,
+    }
+    
+    logger.debug(f"[respond_clarification_compte_depenses] Returning account dict with status={account_dict['status']}")
     return ExpenseAccountResponse(**account_dict)
 
 

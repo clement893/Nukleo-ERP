@@ -140,6 +140,11 @@ class ExpenseAccountAction(BaseModel):
     rejection_reason: Optional[str] = Field(None, description="Raison du rejet")
 
 
+class ExpenseAccountClarificationResponse(BaseModel):
+    """Schema for employee response to clarification request"""
+    response: str = Field(..., min_length=1, description="Réponse de l'employé à la demande de précisions")
+
+
 class ExpenseAccountResponse(ExpenseAccountBase):
     """Schema for expense account response"""
     id: int

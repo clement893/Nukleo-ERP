@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -119,7 +118,6 @@ const mockDocuments = [
 ];
 
 export default function PipelineClientDetailDemoPage() {
-  const _params = useParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'opportunities' | 'activities' | 'documents'>('overview');
 
