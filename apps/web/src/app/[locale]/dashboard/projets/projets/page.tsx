@@ -18,18 +18,13 @@ import {
   List as ListIcon,
   Calendar,
   TrendingUp,
-  AlertCircle,
   CheckCircle2,
-  Clock,
-  DollarSign,
   Users,
-  Star,
   Archive,
   Share2,
   ExternalLink,
   BarChart3,
   ArrowUpDown,
-  CheckSquare,
   Briefcase,
 } from 'lucide-react';
 
@@ -51,13 +46,13 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
     'bg-red-500', 'bg-pink-500', 'bg-indigo-500', 'bg-yellow-500',
     'bg-teal-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-violet-500'
   ];
-  const colorIndex = (clientName.charCodeAt(0) || 0) % colors.length;
+  const colorIndex = clientName.charCodeAt(0) % colors.length;
   
   return { initials, color: colors[colorIndex] };
 }
 
 function ProjectsContent() {
-  const router = useRouter();
+  // const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,20 +146,20 @@ function ProjectsContent() {
   };
 
   // Format currency
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return '-';
-    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(amount);
-  };
+  // const formatCurrency = (amount: number | null | undefined) => {
+  //   if (!amount) return '-';
+  //   return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(amount);
+  // };
 
   // Toggle sort
-  const handleSort = (newSortBy: SortBy) => {
-    if (sortBy === newSortBy) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortBy(newSortBy);
-      setSortAsc(true);
-    }
-  };
+  // const handleSort = (newSortBy: SortBy) => {
+  //   if (sortBy === newSortBy) {
+  //     setSortAsc(!sortAsc);
+  //   } else {
+  //     setSortBy(newSortBy);
+  //     setSortAsc(true);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -416,7 +411,7 @@ function ProjectsContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedProjects.map((project) => {
             const logo = getClientLogo(project.client_name);
-            const config = statusConfig[project.status || 'ACTIVE'] || statusConfig.ACTIVE;
+            const config = statusConfig[project.status || 'ACTIVE'] || statusConfig['ACTIVE'];
             
             return (
               <div
@@ -439,9 +434,9 @@ function ProjectsContent() {
 
                 {/* Status Badge */}
                 <div className="mb-4">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.textColor} border border-${config.color}-500/20`}>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${config?.bgColor} ${config?.textColor}`}>
                     {project.status === 'COMPLETED' && <CheckCircle2 className="w-3 h-3" />}
-                    {config.label}
+                    {config?.label}
                   </span>
                 </div>
 
@@ -490,7 +485,7 @@ function ProjectsContent() {
         <div className="space-y-3">
           {filteredAndSortedProjects.map((project) => {
             const logo = getClientLogo(project.client_name);
-            const config = statusConfig[project.status || 'ACTIVE'] || statusConfig.ACTIVE;
+            const config = statusConfig[project.status || 'ACTIVE'] || statusConfig['ACTIVE'];
             
             return (
               <div
@@ -509,8 +504,8 @@ function ProjectsContent() {
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
                         {project.name}
                       </h3>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config.bgColor} ${config.textColor} border border-${config.color}-500/20`}>
-                        {config.label}
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config?.bgColor} ${config?.textColor}`}>
+                         {config?.label}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{project.client_name || '-'}</p>
@@ -558,14 +553,14 @@ function ProjectsContent() {
         <div className="flex gap-6 overflow-x-auto pb-4">
           {(['ACTIVE', 'COMPLETED', 'ARCHIVED'] as const).map((status) => {
             const statusProjects = filteredAndSortedProjects.filter(p => p.status === status);
-            const config = statusConfig[status];
+            const config = statusConfig[status] || statusConfig['ACTIVE'];
             
             return (
               <div key={status} className="flex-shrink-0 w-80">
                 <div className="glass-card p-4 rounded-xl mb-4 border border-gray-200/50 dark:border-gray-700/50">
                   <div className="flex items-center justify-between">
-                    <h3 className={`font-bold ${config.textColor}`}>
-                      {config.label}
+                    <h3 className={`font-bold ${config?.textColor}`}>
+                      {config?.label}
                     </h3>
                     <span className="px-2 py-1 rounded text-sm font-bold bg-gray-100 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50">
                       {statusProjects.length}
