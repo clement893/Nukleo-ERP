@@ -3,8 +3,6 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState } from 'react';
-import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -18,8 +16,6 @@ import {
   Clock,
   ArrowUp,
   ArrowDown,
-  CheckCircle,
-  AlertCircle,
   Phone,
   Mail
 } from 'lucide-react';
@@ -152,7 +148,6 @@ const mockTopOpportunities = [
 ];
 
 export default function CommercialDemoPage() {
-  const router = useRouter();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-CA', {
@@ -286,9 +281,7 @@ export default function CommercialDemoPage() {
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <FileText className="w-6 h-6 text-[#F59E0B]" />
               </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${
-                mockStats.quotes.trend === 'up' ? 'text-green-600' : 'text-red-600'
-              }`}>
+              <div className="flex items-center gap-1 text-sm font-medium text-red-600">
                 <ArrowDown className="w-4 h-4" />
                 <span>{Math.abs(mockStats.quotes.change)}%</span>
               </div>
@@ -423,7 +416,7 @@ export default function CommercialDemoPage() {
                       <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
                         {deadline.title}
                       </h3>
-                      <Badge className={getPriorityColor(deadline.priority)} size="sm">
+                      <Badge className={getPriorityColor(deadline.priority)}>
                         {deadline.priority === 'urgent' && 'Urgent'}
                         {deadline.priority === 'high' && 'Haute'}
                         {deadline.priority === 'medium' && 'Moyenne'}

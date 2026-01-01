@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState } from 'react';
-import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -124,7 +123,6 @@ const mockSubmissions = [
 type TabType = 'quotes' | 'submissions';
 
 export default function SoumissionsDemoPage() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('quotes');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -196,7 +194,6 @@ export default function SoumissionsDemoPage() {
   };
 
   const currentStats = activeTab === 'quotes' ? quotesStats : submissionsStats;
-  const currentData = activeTab === 'quotes' ? mockQuotes : mockSubmissions;
 
   return (
     <PageContainer className="flex flex-col h-full">
@@ -296,7 +293,7 @@ export default function SoumissionsDemoPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {activeTab === 'quotes' ? currentStats.accepted : currentStats.won}
+              {activeTab === 'quotes' ? quotesStats.accepted : submissionsStats.won}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {activeTab === 'quotes' ? 'Acceptés' : 'Gagnés'}
