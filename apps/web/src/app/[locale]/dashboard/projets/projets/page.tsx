@@ -60,8 +60,9 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
   ];
   const firstChar = trimmed[0];
   const colorIndex = firstChar ? firstChar.charCodeAt(0) % colors.length : 0;
+  const color = colors[colorIndex] || colors[0];
   
-  return { initials, color: colors[colorIndex] };
+  return { initials, color };
 }
 
 function ProjectsContent() {
