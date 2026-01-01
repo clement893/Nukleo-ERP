@@ -6,7 +6,6 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Loading from '@/components/ui/Loading';
@@ -201,11 +200,11 @@ function FeuillesTempsContent() {
             { label: 'Feuilles de temps' },
           ]}
         />
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       </MotionDiv>
     );
   }
@@ -230,7 +229,7 @@ function FeuillesTempsContent() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="glass-card p-4">
+        <div className="glass-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <Clock className="w-5 h-5 text-primary" />
@@ -240,9 +239,9 @@ function FeuillesTempsContent() {
               <p className="text-2xl font-bold text-foreground">{totalHours}h</p>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="glass-card p-4">
+        <div className="glass-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
               <FileText className="w-5 h-5 text-blue-600" />
@@ -252,9 +251,9 @@ function FeuillesTempsContent() {
               <p className="text-2xl font-bold text-foreground">{stats.totalEntries}</p>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="glass-card p-4">
+        <div className="glass-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
               <User className="w-5 h-5 text-green-600" />
@@ -264,9 +263,9 @@ function FeuillesTempsContent() {
               <p className="text-2xl font-bold text-foreground">{stats.uniqueEmployees}</p>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="glass-card p-4">
+        <div className="glass-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-orange-600" />
@@ -276,9 +275,9 @@ function FeuillesTempsContent() {
               <p className="text-2xl font-bold text-foreground">{stats.uniqueProjects}</p>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="glass-card p-4">
+        <div className="glass-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
               <Building className="w-5 h-5 text-purple-600" />
@@ -288,11 +287,11 @@ function FeuillesTempsContent() {
               <p className="text-2xl font-bold text-foreground">{stats.uniqueClients}</p>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card className="glass-card p-6">
+      <div className="glass-card rounded-xl border border-border p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Filtres et regroupement</h2>
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
           <div>
@@ -372,10 +371,10 @@ function FeuillesTempsContent() {
             />
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Entries List - Grouped */}
-      <Card className="glass-card p-6">
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-foreground">Entrées de temps</h2>
           <div className="flex gap-2">
@@ -518,7 +517,7 @@ function FeuillesTempsContent() {
             })
           )}
         </div>
-      </Card>
+      </div>
     </MotionDiv>
   );
 }

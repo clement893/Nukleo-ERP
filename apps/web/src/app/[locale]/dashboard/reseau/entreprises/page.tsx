@@ -8,7 +8,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
+import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Company, type CompanyCreate, type CompanyUpdate } from '@/lib/api/companies';
@@ -435,7 +435,7 @@ function CompaniesContent() {
       />
 
       {/* Toolbar */}
-      <Card>
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="space-y-3">
           {/* Company count with improved visual */}
           <div className="flex items-center justify-between">
@@ -637,7 +637,7 @@ function CompaniesContent() {
           </div>
 
         </div>
-      </Card>
+      </div>
 
       {/* Error */}
       {error && (
@@ -648,13 +648,13 @@ function CompaniesContent() {
 
       {/* Content */}
       {loading && companies.length === 0 ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       ) : viewMode === 'list' ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border">
           <DataTable
             data={filteredCompanies as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
@@ -669,7 +669,7 @@ function CompaniesContent() {
             onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Company)}
           />
-        </Card>
+        </div>
       ) : (
         <CompaniesGallery
           companies={filteredCompanies}

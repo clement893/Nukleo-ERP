@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
-import { Card, Button, Loading, Badge, Modal } from '@/components/ui';
+import { Button, Loading, Badge, Modal } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui';
@@ -89,11 +89,11 @@ function PipelinesListContent() {
           description="Chargement..."
           compact
         />
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       </MotionDiv>
     );
   }
@@ -113,21 +113,19 @@ function PipelinesListContent() {
       />
 
       {pipelines.length === 0 ? (
-        <Card>
-          <div className="p-12 text-center">
-            <p className="text-muted-foreground mb-4">Aucun pipeline trouvé</p>
-            <Button onClick={handleCreatePipeline}>
-              <Plus className="w-4 h-4 mr-2" />
-              Créer votre premier pipeline
-            </Button>
-          </div>
-        </Card>
+        <div className="glass-card rounded-xl border border-border p-12 text-center">
+          <p className="text-muted-foreground mb-4">Aucun pipeline trouvé</p>
+          <Button onClick={handleCreatePipeline}>
+            <Plus className="w-4 h-4 mr-2" />
+            Créer votre premier pipeline
+          </Button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pipelines.map((pipeline) => (
-            <Card
+            <div
               key={pipeline.id}
-              className="cursor-pointer hover:shadow-lg transition-all duration-200 group"
+              className="glass-card rounded-xl border border-border cursor-pointer hover:shadow-lg transition-all duration-200 group"
               onClick={() => handleOpenPipeline(pipeline.id)}
             >
               <div className="p-6">
@@ -192,7 +190,7 @@ function PipelinesListContent() {
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}

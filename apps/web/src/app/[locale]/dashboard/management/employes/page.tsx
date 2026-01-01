@@ -8,7 +8,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading } from '@/components/ui';
+import { Button, Alert, Loading } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Employee, type EmployeeCreate, type EmployeeUpdate } from '@/lib/api/employees';
@@ -507,7 +507,7 @@ function EmployeesContent() {
                       <div
                         className="fixed inset-0 z-10"
                         onClick={() => setShowActionsMenu(false)}
-                      />
+                      ></div>
                       <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                         <div className="py-1">
                           <button
@@ -592,7 +592,7 @@ function EmployeesContent() {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Error */}
       {error && (
@@ -603,13 +603,13 @@ function EmployeesContent() {
 
       {/* Content */}
       {loading && employees.length === 0 ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       ) : viewMode === 'list' ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border">
           <DataTable
             data={filteredEmployees as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
@@ -624,7 +624,7 @@ function EmployeesContent() {
             onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Employee)}
           />
-        </Card>
+        </div>
       ) : (
         <EmployeesGallery
           employees={filteredEmployees}

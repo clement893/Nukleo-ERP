@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useEffect, useMemo } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge, Modal } from '@/components/ui';
+import { Button, Alert, Loading, Badge, Modal } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import SearchBar from '@/components/ui/SearchBar';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -337,7 +337,7 @@ function EvenementsContent() {
         />
 
         {/* Toolbar */}
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="space-y-3">
             {/* Search and filters */}
             <div className="flex flex-col md:flex-row gap-3">
@@ -388,7 +388,7 @@ function EvenementsContent() {
               </Button>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Error */}
         {error && (
@@ -399,13 +399,13 @@ function EvenementsContent() {
 
         {/* Content */}
         {loading ? (
-          <Card>
+          <div className="glass-card rounded-xl border border-border p-6">
             <div className="py-12 text-center">
               <Loading />
             </div>
-          </Card>
+          </div>
         ) : (
-          <Card>
+          <div className="glass-card rounded-xl border border-border">
             <DataTable
               data={sortedEvents as unknown as Record<string, unknown>[]}
               columns={columns as unknown as Column<Record<string, unknown>>[]}
@@ -415,7 +415,7 @@ function EvenementsContent() {
               filterable={false}
               emptyMessage="Aucun événement trouvé"
             />
-          </Card>
+          </div>
         )}
 
         {/* Create Modal */}

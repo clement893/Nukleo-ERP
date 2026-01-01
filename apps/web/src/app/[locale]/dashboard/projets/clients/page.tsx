@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
+import { Button, Alert, Loading, Badge } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import { type Client, type ClientCreate, type ClientUpdate } from '@/lib/api/clients';
@@ -243,7 +243,7 @@ function ClientsContent() {
       />
 
       {/* Toolbar */}
-      <Card>
+      <div className="glass-card rounded-xl border border-border p-6">
         <div className="space-y-3">
           {/* Clients count */}
           <div className="flex items-center justify-between">
@@ -315,7 +315,7 @@ function ClientsContent() {
                       <div
                         className="fixed inset-0 z-10"
                         onClick={() => setShowActionsMenu(false)}
-                      />
+                      ></div>
                       <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
                         <div className="py-1">
                         </div>
@@ -327,7 +327,7 @@ function ClientsContent() {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Error */}
       {error && (
@@ -338,13 +338,13 @@ function ClientsContent() {
 
       {/* Content */}
       {loading && clients.length === 0 ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       ) : viewMode === 'list' ? (
-        <Card>
+        <div className="glass-card rounded-xl border border-border">
           <DataTable
             data={filteredClients as unknown as Record<string, unknown>[]}
             columns={columns as unknown as Column<Record<string, unknown>>[]}
@@ -359,7 +359,7 @@ function ClientsContent() {
             onLoadMore={loadMore}
             onRowClick={(row) => openDetailPage(row as unknown as Client)}
           />
-        </Card>
+        </div>
       ) : (
         <ClientGallery
           clients={filteredClients}

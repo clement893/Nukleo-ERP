@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
-import { Card, Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
+import { Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
 import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown, X, UserCircle, Search } from 'lucide-react';
@@ -492,11 +492,11 @@ function PipelineDetailContent() {
           description="Chargement..."
           compact
         />
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="py-12 text-center">
             <Loading />
           </div>
-        </Card>
+        </div>
       </MotionDiv>
     );
   }
@@ -509,11 +509,11 @@ function PipelineDetailContent() {
           description="Pipeline non trouvé"
           compact
         />
-        <Card>
+        <div className="glass-card rounded-xl border border-border p-6">
           <div className="p-6 text-center text-muted-foreground">
             Pipeline non trouvé
           </div>
-        </Card>
+        </div>
       </MotionDiv>
     );
   }
