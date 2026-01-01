@@ -12,16 +12,13 @@ import {
   Target, 
   DollarSign, 
   TrendingUp, 
-  Clock, 
-  Edit, 
   Trash2, 
   Plus,
   Settings,
   Calendar,
-  User,
   Building2
 } from 'lucide-react';
-import { Badge, Button, Card, Loading, Alert } from '@/components/ui';
+import { Badge, Button, Loading, Alert } from '@/components/ui';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
@@ -64,7 +61,7 @@ export default function PipelineDetailPage() {
 
       // Load opportunities for this pipeline
       try {
-        const oppsData = await opportunitiesAPI.list({ pipeline_id: pipelineId });
+        const oppsData = await opportunitiesAPI.list(0, 100, { pipeline_id: pipelineId });
         setOpportunities(Array.isArray(oppsData) ? oppsData : []);
       } catch (err) {
         console.error('Error loading opportunities:', err);
@@ -132,9 +129,6 @@ export default function PipelineDetailPage() {
   // Calculate stats
   const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
   const weightedValue = opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0);
-  const avgProbability = opportunities.length > 0 
-    ? opportunities.reduce((sum, opp) => sum + (opp.probability || 0), 0) / opportunities.length 
-    : 0;
 
   if (loading) {
     return (
@@ -453,9 +447,9 @@ export default function PipelineDetailPage() {
                             </div>
                             <div className="flex-1">
                               <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
-                              {stage.probability !== undefined && (
+                              {stage.description && (
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  Probabilité: {stage.probability}%
+                                  {stage.description}
                                 </p>
                               )}
                             </div>

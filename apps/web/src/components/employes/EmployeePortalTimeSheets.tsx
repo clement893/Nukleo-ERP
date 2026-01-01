@@ -143,18 +143,26 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
           const now = Date.now();
           const currentElapsed = Math.floor((now - startTime) / 1000);
           const accumulated = timerStatus.accumulated_seconds || 0;
-          setTimerElapsed(accumulated + currentElapsed);
+          setTimerElapsed(Math.max(0, accumulated + currentElapsed));
+        } else if (timerStatus.elapsed_seconds !== undefined) {
+          // Use elapsed_seconds if available
+          setTimerElapsed(timerStatus.elapsed_seconds);
         } else {
-          setTimerElapsed(timerStatus.elapsed_seconds || 0);
+          // Fallback: if timer just started, start at 0
+          setTimerElapsed(0);
         }
       };
       
+      // Update immediately
       updateTimer();
+      
+      // Then update every second
       timerIntervalRef.current = setInterval(updateTimer, 1000);
       
       return () => {
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
         }
       };
     } else {
@@ -368,7 +376,9 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
 
     try {
       await timeEntriesAPI.startTimer(taskId, formData.description || undefined);
-      await loadTimerStatus();
+      // Immediately update timer status to show timer is active
+      const status = await timeEntriesAPI.getTimerStatus();
+      setTimerStatus(status);
       showToast({ message: 'Timer démarré', type: 'success' });
       // Clear form
       setTimerTaskForm({ title: '', description: '', project_id: null });
@@ -700,7 +710,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                   ) : (
                     <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
                   )}
-                  <span className="text-lg font-mono font-semibold text-foreground">
+                  <span className="text-lg font-mono font-semibold text-foreground" aria-live="polite">
                     {formatDuration(timerElapsed)}
                   </span>
                   {timerStatus.paused && (
