@@ -14,6 +14,7 @@ import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import { projectsAPI, type Project } from '@/lib/api/projects';
+import { companiesAPI } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import {
@@ -60,12 +61,31 @@ function ProjectDetailContent() {
     name: '',
     description: '',
     status: 'ACTIVE' as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+    client_id: null as number | null,
+    client_name: '',
+    equipe: '',
+    etape: '',
+    annee_realisation: '',
+    contact: '',
+    budget: '',
+    proposal_url: '',
+    drive_url: '',
+    slack_url: '',
+    echeancier_url: '',
+    temoignage_status: '',
+    portfolio_status: '',
+    start_date: '',
+    end_date: '',
+    deadline: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
 
   useEffect(() => {
     loadProject();
     loadTeamId();
+    loadClients();
   }, [projectId]);
 
   const loadTeamId = async () => {
@@ -95,6 +115,19 @@ function ProjectDetailContent() {
     }
   };
 
+  const loadClients = async () => {
+    try {
+      setLoadingClients(true);
+      const data = await companiesAPI.list(0, 1000);
+      const clientsList = Array.isArray(data) ? data : (data as any)?.items || [];
+      setClients(clientsList.map((c: any) => ({ id: c.id, name: c.name || c.company_name || '' })));
+    } catch (err) {
+      console.warn('Could not load clients:', err);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
       return;
@@ -102,7 +135,7 @@ function ProjectDetailContent() {
 
     try {
       await projectsAPI.delete(projectId);
-      const locale = params.locale as string || 'fr';
+      const locale = (params.locale as string) || 'fr';
       router.push(`/${locale}/dashboard/projects`);
     } catch (err) {
       const appError = handleApiError(err);
@@ -116,6 +149,22 @@ function ProjectDetailContent() {
         name: project.name,
         description: project.description || '',
         status: project.status as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+        client_id: project.client_id,
+        client_name: project.client_name || '',
+        equipe: project.equipe || '',
+        etape: project.etape || '',
+        annee_realisation: project.annee_realisation || '',
+        contact: project.contact || '',
+        budget: project.budget?.toString() || '',
+        proposal_url: project.proposal_url || '',
+        drive_url: project.drive_url || '',
+        slack_url: project.slack_url || '',
+        echeancier_url: project.echeancier_url || '',
+        temoignage_status: project.temoignage_status || '',
+        portfolio_status: project.portfolio_status || '',
+        start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] || '' : '',
+        end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] || '' : '',
+        deadline: project.deadline ? new Date(project.deadline).toISOString().split('T')[0] || '' : '',
       });
       setShowEditModal(true);
     }
@@ -132,11 +181,29 @@ function ProjectDetailContent() {
 
     try {
       setIsSaving(true);
-      const updatedProject = await projectsAPI.update(projectId, {
+      const updateData: any = {
         name: editFormData.name,
         description: editFormData.description || undefined,
         status: editFormData.status,
-      });
+        client_id: editFormData.client_id || undefined,
+        client_name: editFormData.client_name || undefined,
+        equipe: editFormData.equipe || undefined,
+        etape: editFormData.etape || undefined,
+        annee_realisation: editFormData.annee_realisation || undefined,
+        contact: editFormData.contact || undefined,
+        budget: editFormData.budget ? parseFloat(editFormData.budget) : undefined,
+        proposal_url: editFormData.proposal_url || undefined,
+        drive_url: editFormData.drive_url || undefined,
+        slack_url: editFormData.slack_url || undefined,
+        echeancier_url: editFormData.echeancier_url || undefined,
+        temoignage_status: editFormData.temoignage_status || undefined,
+        portfolio_status: editFormData.portfolio_status || undefined,
+        start_date: editFormData.start_date || undefined,
+        end_date: editFormData.end_date || undefined,
+        deadline: editFormData.deadline || undefined,
+      };
+      
+      const updatedProject = await projectsAPI.update(projectId, updateData);
       setProject(updatedProject);
       setShowEditModal(false);
       showToast({
@@ -198,7 +265,7 @@ function ProjectDetailContent() {
           {error || 'Projet introuvable'}
         </Alert>
         <Button onClick={() => {
-          const locale = params.locale as string || 'fr';
+          const locale = (params.locale as string) || 'fr';
           router.push(`/${locale}/dashboard/projects`);
         }}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -215,7 +282,7 @@ function ProjectDetailContent() {
             <Button
               variant="ghost"
               onClick={() => {
-                const locale = params.locale as string || 'fr';
+                const locale = (params.locale as string) || 'fr';
                 router.push(`/${locale}/dashboard/projects`);
               }}
               className="mb-4"
@@ -232,7 +299,7 @@ function ProjectDetailContent() {
             <Button
               variant="ghost"
               onClick={() => {
-                const locale = params.locale as string || 'fr';
+                const locale = (params.locale as string) || 'fr';
                 router.push(`/${locale}/dashboard/projects`);
               }}
               className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
@@ -856,7 +923,7 @@ function ProjectDetailContent() {
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
           title="Modifier le projet"
-          size="lg"
+          size="xl"
           footer={
             <div className="flex items-center justify-end gap-2">
               <Button
@@ -876,38 +943,207 @@ function ProjectDetailContent() {
             </div>
           }
         >
-          <div className="space-y-4">
-            <Input
-              label="Nom du projet *"
-              value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-              placeholder="Ex: Projet Alpha"
-              fullWidth
-            />
-            <Textarea
-              label="Description"
-              value={editFormData.description}
-              onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-              placeholder="Description du projet..."
-              rows={4}
-              fullWidth
-            />
-            <Select
-              label="Statut"
-              value={editFormData.status}
-              onChange={(e) =>
-                setEditFormData({
-                  ...editFormData,
-                  status: e.target.value as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
-                })
-              }
-              fullWidth
-              options={[
-                { value: 'ACTIVE', label: 'Actif' },
-                { value: 'COMPLETED', label: 'Terminé' },
-                { value: 'ARCHIVED', label: 'Archivé' },
-              ]}
-            />
+          <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Informations générales */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">Informations générales</h3>
+              <Input
+                label="Nom du projet *"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                placeholder="Ex: Projet Alpha"
+                fullWidth
+              />
+              <Textarea
+                label="Description"
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                placeholder="Description du projet..."
+                rows={4}
+                fullWidth
+              />
+              <Select
+                label="Statut"
+                value={editFormData.status}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    status: e.target.value as 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+                  })
+                }
+                fullWidth
+                options={[
+                  { value: 'ACTIVE', label: 'Actif' },
+                  { value: 'COMPLETED', label: 'Terminé' },
+                  { value: 'ARCHIVED', label: 'Archivé' },
+                ]}
+              />
+            </div>
+
+            {/* Client et équipe */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">Client et équipe</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Client"
+                  value={editFormData.client_id?.toString() || ''}
+                  onChange={(e) => {
+                    const clientId = e.target.value ? parseInt(e.target.value) : null;
+                    const selectedClient = clients.find(c => c.id === clientId);
+                    setEditFormData({
+                      ...editFormData,
+                      client_id: clientId,
+                      client_name: selectedClient?.name || '',
+                    });
+                  }}
+                  fullWidth
+                  disabled={loadingClients}
+                  options={[
+                    { value: '', label: 'Aucun client' },
+                    ...clients.map(c => ({ value: c.id.toString(), label: c.name })),
+                  ]}
+                />
+                <Input
+                  label="Équipe"
+                  value={editFormData.equipe}
+                  onChange={(e) => setEditFormData({ ...editFormData, equipe: e.target.value })}
+                  placeholder="Nom de l'équipe"
+                  fullWidth
+                />
+                <Input
+                  label="Contact"
+                  value={editFormData.contact}
+                  onChange={(e) => setEditFormData({ ...editFormData, contact: e.target.value })}
+                  placeholder="Nom du contact"
+                  fullWidth
+                />
+                <Input
+                  label="Étape"
+                  value={editFormData.etape}
+                  onChange={(e) => setEditFormData({ ...editFormData, etape: e.target.value })}
+                  placeholder="Étape du projet"
+                  fullWidth
+                />
+              </div>
+            </div>
+
+            {/* Informations financières */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">Informations financières</h3>
+              <Input
+                label="Budget (CAD)"
+                type="number"
+                value={editFormData.budget}
+                onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
+                placeholder="0.00"
+                fullWidth
+              />
+            </div>
+
+            {/* Dates */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">Dates</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  label="Date de début"
+                  type="date"
+                  value={editFormData.start_date}
+                  onChange={(e) => setEditFormData({ ...editFormData, start_date: e.target.value })}
+                  fullWidth
+                />
+                <Input
+                  label="Date de fin"
+                  type="date"
+                  value={editFormData.end_date}
+                  onChange={(e) => setEditFormData({ ...editFormData, end_date: e.target.value })}
+                  fullWidth
+                />
+                <Input
+                  label="Échéance"
+                  type="date"
+                  value={editFormData.deadline}
+                  onChange={(e) => setEditFormData({ ...editFormData, deadline: e.target.value })}
+                  fullWidth
+                />
+              </div>
+              <Input
+                label="Année de réalisation"
+                value={editFormData.annee_realisation}
+                onChange={(e) => setEditFormData({ ...editFormData, annee_realisation: e.target.value })}
+                placeholder="2024"
+                fullWidth
+              />
+            </div>
+
+            {/* Liens et documents */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">Liens et documents</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="URL Proposal"
+                  type="url"
+                  value={editFormData.proposal_url}
+                  onChange={(e) => setEditFormData({ ...editFormData, proposal_url: e.target.value })}
+                  placeholder="https://..."
+                  fullWidth
+                />
+                <Input
+                  label="URL Google Drive"
+                  type="url"
+                  value={editFormData.drive_url}
+                  onChange={(e) => setEditFormData({ ...editFormData, drive_url: e.target.value })}
+                  placeholder="https://..."
+                  fullWidth
+                />
+                <Input
+                  label="URL Slack"
+                  type="url"
+                  value={editFormData.slack_url}
+                  onChange={(e) => setEditFormData({ ...editFormData, slack_url: e.target.value })}
+                  placeholder="https://..."
+                  fullWidth
+                />
+                <Input
+                  label="URL Échéancier"
+                  type="url"
+                  value={editFormData.echeancier_url}
+                  onChange={(e) => setEditFormData({ ...editFormData, echeancier_url: e.target.value })}
+                  placeholder="https://..."
+                  fullWidth
+                />
+              </div>
+            </div>
+
+            {/* Statuts des livrables */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">Statuts des livrables</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Statut témoignage"
+                  value={editFormData.temoignage_status}
+                  onChange={(e) => setEditFormData({ ...editFormData, temoignage_status: e.target.value })}
+                  fullWidth
+                  options={[
+                    { value: '', label: 'Non renseigné' },
+                    { value: 'Reçu', label: 'Reçu' },
+                    { value: 'En attente', label: 'En attente' },
+                    { value: 'Non demandé', label: 'Non demandé' },
+                  ]}
+                />
+                <Select
+                  label="Statut portfolio"
+                  value={editFormData.portfolio_status}
+                  onChange={(e) => setEditFormData({ ...editFormData, portfolio_status: e.target.value })}
+                  fullWidth
+                  options={[
+                    { value: '', label: 'Non renseigné' },
+                    { value: 'Ajouté', label: 'Ajouté' },
+                    { value: 'En cours', label: 'En cours' },
+                    { value: 'Non prévu', label: 'Non prévu' },
+                  ]}
+                />
+              </div>
+            </div>
           </div>
         </Modal>
     </div>
