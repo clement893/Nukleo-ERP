@@ -16,7 +16,7 @@ from app.core.database import get_db
 from app.core.pagination import PaginationParams, paginate_query, PaginatedResponse, get_pagination_params
 from app.core.query_optimization import QueryOptimizer
 from app.core.cache_enhanced import cache_query
-from app.core.rate_limit import rate_limit_decorator, limiter
+from app.core.rate_limit import rate_limit_decorator
 from app.core.logging import logger
 from app.models.user import User
 from app.schemas.user import UserResponse, UserUpdate
@@ -323,7 +323,6 @@ async def get_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-@limiter.exempt
 async def delete_user(
     request: Request,
     user_id: int,
@@ -461,9 +460,9 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return explicit Response for 204 No Content
-        # This is required to work correctly with slowapi rate limiting
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        # Return None - FastAPI will automatically convert to 204 No Content
+        # Same pattern as delete_post which works correctly
+        return None
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
