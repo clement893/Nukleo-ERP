@@ -31,7 +31,7 @@ export default function FacturationsDemo() {
 
   return (
     <PageContainer>
-      <MotionDiv variant="slideUp" duration="medium">
+      <MotionDiv variant="slideUp" duration="normal">
         <div className="relative mb-6 overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
@@ -100,8 +100,8 @@ export default function FacturationsDemo() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="font-semibold text-gray-900 dark:text-white">{invoice.number}</h3>
-                    <Badge className={`${statusConfig[invoice.status].color} border`}>
-                      {statusConfig[invoice.status].label}
+                    <Badge className={`${statusConfig[invoice.status as keyof typeof statusConfig].color} border`}>
+                      {statusConfig[invoice.status as keyof typeof statusConfig].label}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">

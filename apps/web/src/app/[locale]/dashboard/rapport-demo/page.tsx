@@ -17,11 +17,13 @@ const monthlyData = [
 export default function RapportDemo() {
   const currentMonth = monthlyData[0];
   const previousMonth = monthlyData[1];
-  const revenueGrowth = (((currentMonth.revenue - previousMonth.revenue) / previousMonth.revenue) * 100).toFixed(1);
+  const revenueGrowth = currentMonth && previousMonth 
+    ? (((currentMonth.revenue - previousMonth.revenue) / previousMonth.revenue) * 100).toFixed(1)
+    : '0.0';
 
   return (
     <PageContainer>
-      <MotionDiv variant="slideUp" duration="medium">
+      <MotionDiv variant="slideUp" duration="normal">
         <div className="relative mb-6 overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
@@ -58,7 +60,7 @@ export default function RapportDemo() {
               </Badge>
             </div>
             <div className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(currentMonth.revenue)}
+              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(currentMonth?.revenue ?? 0)}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Ce mois</p>
           </Card>
@@ -68,7 +70,7 @@ export default function RapportDemo() {
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Dépenses</h3>
             </div>
             <div className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(currentMonth.expenses)}
+              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(currentMonth?.expenses ?? 0)}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Ce mois</p>
           </Card>
@@ -79,7 +81,7 @@ export default function RapportDemo() {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(currentMonth.profit)}
+              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(currentMonth?.profit ?? 0)}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Ce mois</p>
           </Card>

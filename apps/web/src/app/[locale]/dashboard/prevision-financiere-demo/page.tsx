@@ -30,8 +30,8 @@ const upcomingRevenue = [
 ];
 
 export default function PrevisionFinanciereDemo() {
-  const currentBalance = cashflowData[0].cumulative;
-  const projectedBalance = cashflowData[cashflowData.length - 1].cumulative;
+  const currentBalance = cashflowData[0]?.cumulative ?? 0;
+  const projectedBalance = cashflowData[cashflowData.length - 1]?.cumulative ?? 0;
   const totalUpcomingPayments = upcomingPayments.reduce((sum, p) => sum + Math.abs(p.amount), 0);
   const totalUpcomingRevenue = upcomingRevenue.reduce((sum, r) => sum + r.amount, 0);
   const netCashflow = totalUpcomingRevenue - totalUpcomingPayments;
@@ -44,7 +44,7 @@ export default function PrevisionFinanciereDemo() {
 
   return (
     <PageContainer>
-      <MotionDiv variant="slideUp" duration="medium">
+      <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
