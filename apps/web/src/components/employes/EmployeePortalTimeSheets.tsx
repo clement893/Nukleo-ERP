@@ -360,66 +360,6 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     }
   };
 
-  const handleCreateTaskAndStartTimer = async () => {
-    if (!employee?.user_id || !timerTaskForm.title.trim()) {
-      showToast({ message: 'Le titre de la tâche est requis', type: 'error' });
-      return;
-    }
-
-    try {
-      setCreatingTask(true);
-      
-      // Get user's team
-      let teamId: number | null = null;
-      if (employee.team_id) {
-        teamId = employee.team_id;
-      } else {
-        // Try to get user's first team
-        try {
-          const teamsResponse = await teamsAPI.getMyTeams();
-          const teamsData = (teamsResponse as any)?.data?.teams || (teamsResponse as any)?.teams || [];
-          if (teamsData.length > 0) {
-            teamId = teamsData[0].id;
-          }
-        } catch (err) {
-          console.error('Error loading teams:', err);
-        }
-      }
-
-      if (!teamId) {
-        showToast({ message: 'Aucune équipe trouvée. Veuillez créer une équipe d\'abord.', type: 'error' });
-        setCreatingTask(false);
-        return;
-      }
-
-      // Create task
-      const newTask: ProjectTaskCreate = {
-        title: timerTaskForm.title,
-        description: timerTaskForm.description || null,
-        team_id: teamId,
-        project_id: timerTaskForm.project_id,
-        employee_assignee_id: employeeId,
-        status: 'in_progress',
-      };
-
-      const createdTask = await projectTasksAPI.create(newTask);
-      
-      // Start timer with new task
-      await timeEntriesAPI.startTimer(createdTask.id, formData.description || undefined);
-      await loadTimerStatus();
-      await loadData(); // Reload tasks
-      
-      setFormData(prev => ({ ...prev, task_id: createdTask.id }));
-      setShowTimerModal(false);
-      setTimerTaskForm({ title: '', description: '', project_id: null });
-      showToast({ message: 'Tâche créée et timer démarré', type: 'success' });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({ message: appError.message || 'Erreur lors de la création de la tâche', type: 'error' });
-    } finally {
-      setCreatingTask(false);
-    }
-  };
 
   const handleCreateEntry = async () => {
     if (!employee?.user_id) {

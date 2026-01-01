@@ -4,18 +4,34 @@ Pydantic schemas for time entries
 """
 
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Optional, Union
+from pydantic import BaseModel, Field, field_validator
 
 
 class TimeEntryBase(BaseModel):
     """Base time entry schema"""
     description: Optional[str] = None
     duration: int = Field(..., ge=0, description="Duration in seconds")
-    date: datetime
+    date: Union[datetime, str] = Field(..., description="Date of the time entry")
     task_id: Optional[int] = None
     project_id: Optional[int] = None
     client_id: Optional[int] = None
+    
+    @field_validator('date', mode='before')
+    @classmethod
+    def parse_date(cls, v):
+        """Parse date from string or datetime"""
+        if isinstance(v, str):
+            try:
+                # Try ISO format first
+                return datetime.fromisoformat(v.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                try:
+                    # Try date format
+                    return datetime.strptime(v, '%Y-%m-%d')
+                except ValueError:
+                    return datetime.now()
+        return v
 
 
 class TimeEntryCreate(TimeEntryBase):
