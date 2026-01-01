@@ -279,21 +279,40 @@ export default function EmployeePortalPermissionsEditor({
 
       {/* Modules */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Modules accessibles</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h3 className="text-lg font-semibold mb-2">Modules accessibles</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Sélectionnez les modules que l'employé peut utiliser dans son portail
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {AVAILABLE_MODULES.map(module => (
-            <div key={module.id} className="flex items-center space-x-2">
+            <div 
+              key={module.id} 
+              className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                selectedModules.has(module.id) 
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-border hover:bg-muted/50'
+              }`}
+              onClick={() => handleModuleToggle(module.id)}
+            >
               <Checkbox
                 checked={selectedModules.has(module.id)}
                 onChange={() => handleModuleToggle(module.id)}
                 id={`module-${module.id}`}
+                onClick={(e) => e.stopPropagation()}
               />
-              <label
-                htmlFor={`module-${module.id}`}
-                className="text-sm font-medium cursor-pointer"
-              >
-                {module.label}
-              </label>
+              <div className="flex-1">
+                <label
+                  htmlFor={`module-${module.id}`}
+                  className="text-sm font-medium cursor-pointer block"
+                >
+                  {module.label}
+                </label>
+                {module.description && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {module.description}
+                  </p>
+                )}
+              </div>
             </div>
           ))}
         </div>
