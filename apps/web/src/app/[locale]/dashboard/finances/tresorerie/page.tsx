@@ -66,7 +66,7 @@ export default function TresoreriePage() {
           return Array.from({ length: nbSemaines }, (_, i) => {
             const date = new Date(dateDebut);
             date.setDate(date.getDate() + (i * 7));
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = date.toISOString().split('T')[0] || date.toISOString().substring(0, 10);
             
             return {
               id: `entree-${p.id}-${i}`,
@@ -94,8 +94,8 @@ export default function TresoreriePage() {
         const datePaie = new Date(today);
         datePaie.setDate(datePaie.getDate() + (semaine * 7));
         
+        const dateStr = datePaie.toISOString().split('T')[0] || datePaie.toISOString().substring(0, 10);
         employees.forEach(emp => {
-          const dateStr = datePaie.toISOString().split('T')[0];
           sortiesTransactions.push({
             id: `sortie-salaire-${emp.id}-${semaine}`,
             type: 'sortie',
@@ -123,7 +123,7 @@ export default function TresoreriePage() {
           const dateCharge = new Date(today);
           dateCharge.setMonth(dateCharge.getMonth() + mois);
           dateCharge.setDate(charge.jour);
-          const dateStr = dateCharge.toISOString().split('T')[0];
+          const dateStr = dateCharge.toISOString().split('T')[0] || dateCharge.toISOString().substring(0, 10);
           
           sortiesTransactions.push({
             id: `sortie-charge-${index}-${mois}`,
@@ -189,8 +189,9 @@ export default function TresoreriePage() {
 
       soldeAccumule += (entrees - sorties);
 
+      const semaineStr = dateDebut.toISOString().split('T')[0] || dateDebut.toISOString().substring(0, 10);
       soldes.push({
-        semaine: dateDebut.toISOString().split('T')[0],
+        semaine: semaineStr,
         entrees,
         sorties,
         solde: soldeAccumule,
