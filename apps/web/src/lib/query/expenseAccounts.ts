@@ -148,8 +148,23 @@ export function useApproveExpenseAccount() {
     onSuccess: (data) => {
       // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
       queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
-      // Ne pas invalider les queries pour éviter les erreurs de rechargement
-      // Le cache sera mis à jour manuellement, et les queries se rechargeront lors de la prochaine navigation
+      
+      // Mettre à jour l'item dans toutes les pages infinies où il apparaît
+      queryClient.setQueriesData(
+        { queryKey: expenseAccountKeys.lists() },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData;
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any[]) =>
+              page.map((item: any) => 
+                item.id === data.id ? data : item
+              )
+            ),
+          };
+        }
+      );
     },
   });
 }
@@ -167,8 +182,23 @@ export function useRejectExpenseAccount() {
     onSuccess: (data) => {
       // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
       queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
-      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
+      
+      // Mettre à jour l'item dans toutes les pages infinies où il apparaît
+      queryClient.setQueriesData(
+        { queryKey: expenseAccountKeys.lists() },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData;
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any[]) =>
+              page.map((item: any) => 
+                item.id === data.id ? data : item
+              )
+            ),
+          };
+        }
+      );
     },
   });
 }
@@ -186,8 +216,23 @@ export function useRequestClarification() {
     onSuccess: (data) => {
       // Mettre à jour le cache directement pour éviter les rechargements avec l'ancien statut
       queryClient.setQueryData(expenseAccountKeys.detail(data.id), data);
-      // Invalider les listes pour qu'elles se rechargent avec le nouveau statut
-      queryClient.invalidateQueries({ queryKey: expenseAccountKeys.lists() });
+      
+      // Mettre à jour l'item dans toutes les pages infinies où il apparaît
+      queryClient.setQueriesData(
+        { queryKey: expenseAccountKeys.lists() },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData;
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any[]) =>
+              page.map((item: any) => 
+                item.id === data.id ? data : item
+              )
+            ),
+          };
+        }
+      );
     },
   });
 }
