@@ -23,12 +23,15 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
     // If employeeId is provided, use it; otherwise use user.id
     if (employeeId) {
       try {
-        setLoading(true);
+        // Ne mettre loading à true que si on n'a pas de cache
+        if (!cachedPermissions || initialLoadRef.current) {
+          setLoading(true);
+        }
         setError(null);
-        console.log(`[useEmployeePortalPermissions] Chargement des permissions pour employeeId=${employeeId}`);
         const summary = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
-        console.log(`[useEmployeePortalPermissions] Permissions chargées:`, summary);
         setPermissions(summary);
+        setCachedPermissions(cacheKey, summary); // Mettre en cache
+        initialLoadRef.current = true;
       } catch (err) {
         const appError = handleApiError(err);
         setError(appError.message || 'Erreur lors du chargement des permissions');
@@ -48,12 +51,19 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
       }
     } else if (user?.id) {
       const userId = typeof user.id === 'string' ? parseInt(user.id) : user.id;
+      const userCacheKey = getCacheKey(undefined, userId);
+      const userCachedPermissions = getCachedPermissions(userCacheKey);
       
       try {
-        setLoading(true);
+        // Ne mettre loading à true que si on n'a pas de cache
+        if (!userCachedPermissions || initialLoadRef.current) {
+          setLoading(true);
+        }
         setError(null);
         const summary = await employeePortalPermissionsAPI.getSummary(userId);
         setPermissions(summary);
+        setCachedPermissions(userCacheKey, summary); // Mettre en cache
+        initialLoadRef.current = true;
       } catch (err) {
         const appError = handleApiError(err);
         setError(appError.message || 'Erreur lors du chargement des permissions');
