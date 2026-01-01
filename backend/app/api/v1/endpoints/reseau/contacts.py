@@ -32,6 +32,7 @@ async def list_contacts(
     limit: int = Query(100, ge=1, le=1000),
     circle: Optional[str] = Query(None),
     company_id: Optional[int] = Query(None),
+    skip_photo_urls: bool = Query(False, description="Skip presigned URL regeneration for performance (use for large lists)"),
 ):
     """Get list of contacts for network module"""
     return await commercial_contacts.list_contacts(
@@ -42,6 +43,7 @@ async def list_contacts(
         limit=limit,
         circle=circle,
         company_id=company_id,
+        skip_photo_urls=skip_photo_urls,
     )
 
 @router.get("/count")

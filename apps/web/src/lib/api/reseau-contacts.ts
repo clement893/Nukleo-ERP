@@ -19,12 +19,17 @@ export const reseauContactsAPI = {
   /**
    * Get list of contacts with pagination
    * Uses cache-busting to ensure fresh data
+   * Automatically skips photo URL regeneration for large lists (>100) to prevent timeout
    */
-  list: async (skip = 0, limit = 100): Promise<Contact[]> => {
+  list: async (skip = 0, limit = 100, skipPhotoUrls = false): Promise<Contact[]> => {
+    // Auto-enable skip_photo_urls for large lists to prevent timeout
+    const shouldSkipPhotoUrls = skipPhotoUrls || limit > 100;
+    
     const response = await apiClient.get<Contact[]>('/v1/reseau/contacts', {
       params: { 
         skip, 
         limit,
+        skip_photo_urls: shouldSkipPhotoUrls,
         _t: Date.now(), // Cache-busting timestamp
       },
     });

@@ -6,7 +6,6 @@ import { useToast, Modal, Button, Input, Loading } from '@/components/ui';
 import { reseauTestimonialsAPI, type Testimonial } from '@/lib/api/reseau-testimonials';
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
-import Image from 'next/image';
 
 interface TestimonialContactProps {
   testimonial: Testimonial;
@@ -22,6 +21,7 @@ export default function TestimonialContact({ testimonial, onUpdate, compact = fa
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [addingContact, setAddingContact] = useState(false);
   const [currentContact, setCurrentContact] = useState<Contact | null>(null);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 
   // Load all contacts once
   useEffect(() => {
@@ -34,7 +34,20 @@ export default function TestimonialContact({ testimonial, onUpdate, compact = fa
         // Find current contact if contact_id exists
         if (testimonial.contact_id) {
           const found = contactsList.find(c => c.id === testimonial.contact_id);
-          setCurrentContact(found || null);
+          if (found) {
+            // Regenerate photo URL for current contact by fetching it individually
+            // This ensures we get a fresh presigned URL
+            try {
+              const contactWithPhoto = await contactsAPI.get(found.id);
+              setCurrentContact(contactWithPhoto);
+            } catch (photoErr) {
+              // If individual fetch fails, use the contact from list
+              console.warn('Could not refresh photo URL for contact:', photoErr);
+              setCurrentContact(found);
+            }
+          } else {
+            setCurrentContact(null);
+          }
         }
       } catch (err) {
         console.error('Error loading all contacts:', err);
@@ -119,13 +132,15 @@ export default function TestimonialContact({ testimonial, onUpdate, compact = fa
     if (currentContact) {
       return (
         <div className="flex items-center gap-2">
-          {currentContact.photo_url ? (
-            <Image
+          {currentContact.photo_url && !imageErrors.has(currentContact.id) ? (
+            <img
               src={currentContact.photo_url}
-              alt={currentContact.first_name}
-              width={24}
-              height={24}
-              className="rounded-full object-cover"
+              alt={`${currentContact.first_name} ${currentContact.last_name}`}
+              className="w-6 h-6 rounded-full object-cover"
+              loading="lazy"
+              onError={() => {
+                setImageErrors(prev => new Set(prev).add(currentContact.id));
+              }}
             />
           ) : (
             <UserCircle className="w-6 h-6 text-muted-foreground" />
@@ -182,13 +197,15 @@ export default function TestimonialContact({ testimonial, onUpdate, compact = fa
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  {currentContact.photo_url ? (
-                    <Image
+                  {currentContact.photo_url && !imageErrors.has(currentContact.id) ? (
+                    <img
                       src={currentContact.photo_url}
-                      alt={currentContact.first_name}
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover"
+                      alt={`${currentContact.first_name} ${currentContact.last_name}`}
+                      className="w-10 h-10 rounded-full object-cover"
+                      loading="lazy"
+                      onError={() => {
+                        setImageErrors(prev => new Set(prev).add(currentContact.id));
+                      }}
                     />
                   ) : (
                     <UserCircle className="w-10 h-10 text-muted-foreground" />
@@ -265,13 +282,15 @@ export default function TestimonialContact({ testimonial, onUpdate, compact = fa
                     onClick={() => handleAddContact(contact.id)}
                   >
                     <div className="flex items-center gap-3">
-                      {contact.photo_url ? (
-                        <Image
+                      {contact.photo_url && !imageErrors.has(contact.id) ? (
+                        <img
                           src={contact.photo_url}
-                          alt={contact.first_name}
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover"
+                          alt={`${contact.first_name} ${contact.last_name}`}
+                          className="w-8 h-8 rounded-full object-cover"
+                          loading="lazy"
+                          onError={() => {
+                            setImageErrors(prev => new Set(prev).add(contact.id));
+                          }}
                         />
                       ) : (
                         <UserCircle className="w-8 h-8 text-muted-foreground" />
