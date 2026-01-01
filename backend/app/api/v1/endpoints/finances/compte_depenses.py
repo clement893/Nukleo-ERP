@@ -476,13 +476,17 @@ async def submit_compte_depenses(
     account.submitted_at = datetime.now()
     
     await db.commit()
-    await safe_refresh_account(db, account)
+    logger.debug(f"[submit_compte_depenses] Committed changes for account {account.id}")
+    
+    # Safely load relationships to avoid lazy loading issues
+    employee, reviewer = await safe_refresh_account(db, account)
+    logger.debug(f"[submit_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
         "id": account.id,
         "account_number": account.account_number,
         "employee_id": account.employee_id,
-        "employee_name": f"{account.employee.first_name} {account.employee.last_name}" if account.employee else None,
+        "employee_name": f"{employee.first_name} {employee.last_name}" if employee else None,
         "title": account.title,
         "description": account.description,
         "status": account.status,
@@ -493,7 +497,7 @@ async def submit_compte_depenses(
         "submitted_at": account.submitted_at,
         "reviewed_at": account.reviewed_at,
         "reviewed_by_id": account.reviewed_by_id,
-        "reviewer_name": None,
+        "reviewer_name": f"{reviewer.first_name} {reviewer.last_name}" if reviewer else None,
         "review_notes": account.review_notes,
         "clarification_request": account.clarification_request,
         "rejection_reason": account.rejection_reason,
