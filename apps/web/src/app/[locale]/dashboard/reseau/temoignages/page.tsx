@@ -255,16 +255,16 @@ function TemoignagesContent() {
             </div>
 
             <div className="flex gap-2 flex-wrap">
-              <Button variant={filterStatus === 'all' ? 'default' : 'outline'} onClick={() => setFilterStatus('all')}>Tous</Button>
-              <Button variant={filterStatus === 'published' ? 'default' : 'outline'} onClick={() => setFilterStatus('published')}>Publiés</Button>
-              <Button variant={filterStatus === 'pending' ? 'default' : 'outline'} onClick={() => setFilterStatus('pending')}>En attente</Button>
-              <Button variant={filterStatus === 'draft' ? 'default' : 'outline'} onClick={() => setFilterStatus('draft')}>Brouillons</Button>
+              <Button variant={filterStatus === 'all' ? 'primary' : 'outline'} onClick={() => setFilterStatus('all')}>Tous</Button>
+              <Button variant={filterStatus === 'published' ? 'primary' : 'outline'} onClick={() => setFilterStatus('published')}>Publiés</Button>
+              <Button variant={filterStatus === 'pending' ? 'primary' : 'outline'} onClick={() => setFilterStatus('pending')}>En attente</Button>
+              <Button variant={filterStatus === 'draft' ? 'primary' : 'outline'} onClick={() => setFilterStatus('draft')}>Brouillons</Button>
             </div>
 
             <div className="flex gap-2">
-              <Button variant={filterLanguage === 'all' ? 'default' : 'outline'} onClick={() => setFilterLanguage('all')}>Toutes</Button>
-              <Button variant={filterLanguage === 'fr' ? 'default' : 'outline'} onClick={() => setFilterLanguage('fr')}>FR</Button>
-              <Button variant={filterLanguage === 'en' ? 'default' : 'outline'} onClick={() => setFilterLanguage('en')}>EN</Button>
+              <Button variant={filterLanguage === 'all' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('all')}>Toutes</Button>
+              <Button variant={filterLanguage === 'fr' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('fr')}>FR</Button>
+              <Button variant={filterLanguage === 'en' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('en')}>EN</Button>
             </div>
           </div>
         </div>
@@ -303,7 +303,7 @@ function TemoignagesContent() {
                     <Badge className={getStatusColor(testimonial.status)}>
                       {getStatusLabel(testimonial.status)}
                     </Badge>
-                    <Badge variant="outline">{testimonial.language.toUpperCase()}</Badge>
+                    <Badge variant="default">{testimonial.language.toUpperCase()}</Badge>
                   </div>
                 </div>
 
