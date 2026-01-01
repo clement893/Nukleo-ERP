@@ -124,13 +124,11 @@ function ProjectDetailContent() {
   if (loading) {
     return (
       <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto">
-          <Card className="glass-card">
-            <div className="py-12 text-center">
-              <Loading />
-            </div>
-          </Card>
-        </div>
+        <Card className="glass-card">
+          <div className="py-12 text-center">
+            <Loading />
+          </div>
+        </Card>
       </div>
     );
   }
@@ -138,22 +136,19 @@ function ProjectDetailContent() {
   if (error || !project) {
     return (
       <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto">
-          <Alert variant="error" className="mb-6">
-            {error || 'Projet introuvable'}
-          </Alert>
-          <Button onClick={() => router.push('/dashboard/projects')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux projets
-          </Button>
-        </div>
+        <Alert variant="error" className="mb-6">
+          {error || 'Projet introuvable'}
+        </Alert>
+        <Button onClick={() => router.push('/dashboard/projects')}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Retour aux projets
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="mb-6">
           <Button
@@ -788,7 +783,6 @@ function ProjectDetailContent() {
             deadline={project.deadline}
           />
         )}
-      </div>
     </div>
   );
 }
