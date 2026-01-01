@@ -593,10 +593,10 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                 variant="primary"
                 onClick={handleStartTimer}
                 className="flex items-center gap-2"
-                disabled={!timerTaskForm.title.trim() && !formData.task_id}
+                disabled={(!timerTaskForm.title.trim() && !formData.task_id) || creatingTask}
               >
                 <Play className="w-4 h-4" />
-                Démarrer le timer
+                {creatingTask ? 'Création de la tâche...' : 'Démarrer le timer'}
               </Button>
             )}
           </div>
