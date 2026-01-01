@@ -8,9 +8,9 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   TrendingUp, DollarSign, Calendar, Filter, Download, 
   ArrowUp, ArrowDown, Target, CheckCircle, AlertCircle,
-  Building, Users, Package, Briefcase
+  Users, Package, Briefcase
 } from 'lucide-react';
-import { Badge, Button, Card, Select } from '@/components/ui';
+import { Badge, Button, Card } from '@/components/ui';
 
 interface RevenueItem {
   id: string;
@@ -129,7 +129,6 @@ const sourceConfig = {
 };
 
 export default function RapportRevenusDemo() {
-  const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'quarter' | 'year'>('month');
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all');
 
   const formatCurrency = (amount: number) => {
