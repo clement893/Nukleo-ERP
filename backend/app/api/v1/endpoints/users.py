@@ -339,13 +339,18 @@ async def delete_user(
     - Prevents deletion of last superadmin
     - Hard delete (removes user from database)
     """
+    logger.info(f"[DELETE USER] Starting deletion process for user_id={user_id}, current_user_id={current_user.id}, current_user_email={current_user.email}")
+    logger.info(f"[DELETE USER] Request method: {request.method}, path: {request.url.path}")
     user_email = None
     try:
         from app.dependencies import is_admin_or_superadmin
         
         # Check if user is admin or superadmin
+        logger.info(f"[DELETE USER] Checking admin permissions for user {current_user.id}")
         is_admin = await is_admin_or_superadmin(current_user, db)
+        logger.info(f"[DELETE USER] Admin check result: {is_admin}")
         if not is_admin:
+            logger.warning(f"[DELETE USER] User {current_user.id} is not admin, denying deletion")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only administrators can delete users"
@@ -363,6 +368,7 @@ async def delete_user(
         )
     
     # Prevent self-deletion
+    logger.info(f"[DELETE USER] Checking self-deletion prevention: user_id={user_id}, current_user_id={current_user.id}")
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -371,8 +377,10 @@ async def delete_user(
     
     # Get user to delete
     try:
+        logger.info(f"[DELETE USER] Querying database for user {user_id}")
         result = await db.execute(select(User).where(User.id == user_id))
         user_to_delete = result.scalar_one_or_none()
+        logger.info(f"[DELETE USER] User found: {user_to_delete is not None}")
         
         if not user_to_delete:
             raise HTTPException(
@@ -422,10 +430,11 @@ async def delete_user(
         
         # Perform hard delete (remove from database)
         # Using hard delete like other endpoints (delete_post, delete_page, etc.)
+        logger.info(f"[DELETE USER] Performing hard delete for user {user_id} ({user_email})")
         await db.delete(user_to_delete)
+        logger.info(f"[DELETE USER] User deleted from session, committing transaction")
         await db.commit()
-        
-        logger.info(f"User {user_id} ({user_email}) deleted by {current_user.email}")
+        logger.info(f"[DELETE USER] Transaction committed successfully. User {user_id} ({user_email}) deleted by {current_user.email}")
         
         # Log deletion attempt (after successful deletion)
         # Use a separate try/except to ensure audit logging failures don't break the deletion
@@ -462,12 +471,28 @@ async def delete_user(
                 # Continue - the deletion was successful, audit logging failure is not critical
         
         # Return explicit Response to work with slowapi rate limiting
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        logger.info(f"[DELETE USER] Creating Response object for user {user_id}")
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
+        logger.info(f"[DELETE USER] Response type: {type(response)}, is Response instance: {isinstance(response, Response)}")
+        logger.info(f"[DELETE USER] Response status_code: {response.status_code}")
+        logger.info(f"[DELETE USER] Response headers: {dict(response.headers)}")
+        logger.info(f"[DELETE USER] About to return response for user {user_id}")
+        try:
+            return response
+        except Exception as return_error:
+            logger.error(f"[DELETE USER] Error while returning response for user {user_id}: {return_error}", exc_info=True)
+            logger.error(f"[DELETE USER] Return error type: {type(return_error).__name__}")
+            logger.error(f"[DELETE USER] Return error args: {return_error.args}")
+            raise
         
-    except HTTPException:
+    except HTTPException as http_exc:
         # Re-raise HTTP exceptions as-is
+        logger.warning(f"[DELETE USER] HTTPException raised for user {user_id}: {http_exc.status_code} - {http_exc.detail}")
         raise
     except Exception as db_error:
+        logger.error(f"[DELETE USER] Exception occurred while deleting user {user_id}: {db_error}", exc_info=True)
+        logger.error(f"[DELETE USER] Exception type: {type(db_error).__name__}")
+        logger.error(f"[DELETE USER] Exception args: {db_error.args}")
         try:
             await db.rollback()
         except Exception:
