@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "generated": "2026-01-01T00:30:46.745Z",
+  "generated": "2026-01-01T03:21:59.644Z",
   "summary": {
-    "total": 234,
+    "total": 237,
     "connected": 99,
     "partial": 65,
-    "needsIntegration": 135,
-    "static": 135
+    "needsIntegration": 138,
+    "static": 138
   },
   "pages": [
     {
@@ -1385,6 +1385,13 @@
       ]
     },
     {
+      "path": "app\\[locale]\\dashboard\\contacts-demo\\page.tsx",
+      "url": "/dashboard/contacts-demo",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
+    },
+    {
       "path": "app\\[locale]\\dashboard\\demo\\page.tsx",
       "url": "/dashboard/demo",
       "apiCalls": [],
@@ -1479,7 +1486,8 @@
       ],
       "hasApiCalls": true,
       "imports": [
-        "employees"
+        "employees",
+        "admin"
       ]
     },
     {
@@ -1663,16 +1671,32 @@
         },
         {
           "method": "MODULE",
+          "endpoint": "companiesAPI.list"
+        },
+        {
+          "method": "MODULE",
           "endpoint": "projectsAPI.delete"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "projectsAPI.update"
         }
       ],
       "hasApiCalls": true,
       "imports": [
         "projects",
+        "companies",
         "teams",
         "utils",
         "teams"
       ]
+    },
+    {
+      "path": "app\\[locale]\\dashboard\\projects-demo\\page.tsx",
+      "url": "/dashboard/projects-demo",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
     },
     {
       "path": "app\\[locale]\\dashboard\\projets\\clients\\page.tsx",
@@ -1764,6 +1788,10 @@
         {
           "method": "MODULE",
           "endpoint": "employeesAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "projectsAPI.list"
         },
         {
           "method": "MODULE",
@@ -1999,6 +2027,13 @@
       "imports": [
         "companies"
       ]
+    },
+    {
+      "path": "app\\[locale]\\dashboard\\test\\card-demo\\page.tsx",
+      "url": "/dashboard/test/card-demo",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
     },
     {
       "path": "app\\[locale]\\db\\test\\page.tsx",
