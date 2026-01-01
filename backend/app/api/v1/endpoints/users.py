@@ -420,17 +420,10 @@ async def delete_user(
             # Continue with deletion if we can't verify superadmin status
             # This is a safety measure - we'll log the warning but allow the deletion
         
-        # Perform soft delete (set is_active=False) instead of hard delete
-        # This preserves data integrity and allows for recovery if needed
-        user_to_delete.is_active = False
+        # Perform hard delete (remove from database)
+        # Using hard delete like other endpoints (delete_post, delete_page, etc.)
+        await db.delete(user_to_delete)
         await db.commit()
-        
-        # Try to refresh, but don't fail if it doesn't work
-        try:
-            await db.refresh(user_to_delete)
-        except Exception as refresh_error:
-            logger.warning(f"Could not refresh user after deletion: {refresh_error}")
-            # This is not critical, continue with deletion
         
         logger.info(f"User {user_id} ({user_email}) soft-deleted by {current_user.email}")
         
