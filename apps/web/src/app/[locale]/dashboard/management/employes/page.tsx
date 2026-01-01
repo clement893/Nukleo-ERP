@@ -309,11 +309,23 @@ export default function EmployeesPage() {
               return (
                 <Card 
                   key={employee.id}
-                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer"
-                  onClick={() => handleView(employee.id)}
+                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200"
                 >
                   <div className="flex flex-col items-center text-center mb-4">
-                    <div className={`w-16 h-16 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-xl mb-3`}>
+                    {employee.photo_url ? (
+                      <img
+                        src={employee.photo_url}
+                        alt={fullName}
+                        className="w-16 h-16 rounded-full object-cover mb-3"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-16 h-16 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-xl mb-3 ${employee.photo_url ? 'hidden' : ''}`}>
                       {initials}
                     </div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
@@ -348,15 +360,18 @@ export default function EmployeesPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button size="sm" variant="ghost" onClick={() => handleView(employee.id)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <Button size="sm" variant="outline" onClick={() => handleView(employee.id)} className="flex-1">
+                      <Eye className="w-4 h-4 mr-1" />
+                      Voir
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/management/employes/${employee.id}/portal`)} className="flex-1">
+                      <UserCheck className="w-4 h-4 mr-1" />
+                      Portail
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </Button>
                   </div>
                 </Card>
               );
@@ -381,7 +396,20 @@ export default function EmployeesPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 flex-1">
-                        <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-semibold`}>
+                        {employee.photo_url ? (
+                          <img
+                            src={employee.photo_url}
+                            alt={fullName}
+                            className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-semibold ${employee.photo_url ? 'hidden' : ''}`}>
                           {initials}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -402,11 +430,16 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button size="sm" variant="ghost" onClick={() => handleView(employee.id)}>
-                          <Eye className="w-4 h-4" />
+                        <Button size="sm" variant="outline" onClick={() => handleView(employee.id)}>
+                          <Eye className="w-4 h-4 mr-1" />
+                          Voir
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/management/employes/${employee.id}/portal`)}>
+                          <UserCheck className="w-4 h-4 mr-1" />
+                          Portail
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
                     </div>
