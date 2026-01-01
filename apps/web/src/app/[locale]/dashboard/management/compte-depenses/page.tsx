@@ -279,6 +279,8 @@ function ManagementCompteDepensesContent() {
   const handleAction = async () => {
     if (!selectedExpenseAccount || !actionType) return;
 
+    let mutationCompleted = false;
+
     try {
       let successMessage = '';
       
@@ -287,6 +289,7 @@ function ManagementCompteDepensesContent() {
           id: selectedExpenseAccount.id,
           action: actionData,
         });
+        mutationCompleted = true;
         successMessage = 'Compte de dépenses approuvé avec succès';
       } else if (actionType === 'reject') {
         if (!actionData.rejection_reason) {
@@ -300,6 +303,7 @@ function ManagementCompteDepensesContent() {
           id: selectedExpenseAccount.id,
           action: actionData,
         });
+        mutationCompleted = true;
         successMessage = 'Compte de dépenses rejeté';
       } else if (actionType === 'clarification') {
         if (!actionData.clarification_request) {
@@ -313,6 +317,7 @@ function ManagementCompteDepensesContent() {
           id: selectedExpenseAccount.id,
           action: actionData,
         });
+        mutationCompleted = true;
         successMessage = 'Demande de précisions envoyée';
       }
       
@@ -331,10 +336,15 @@ function ManagementCompteDepensesContent() {
       setActionType(null);
       setActionData({ notes: null, rejection_reason: null, clarification_request: null });
     } catch (err) {
+      // Si la mutation a réussi, ignorer toutes les erreurs suivantes
+      if (mutationCompleted) {
+        console.warn('Error after successful mutation (ignored):', err);
+        return;
+      }
+      
+      // Sinon, afficher l'erreur normalement
       const appError = handleApiError(err);
       const errorMessage = appError.message || 'Erreur lors de l\'action';
-      // Ne pas afficher les erreurs de base de données qui peuvent apparaître après succès
-      // (peut arriver si React Query invalide les queries et qu'une requête échoue)
       const lowerErrorMessage = errorMessage.toLowerCase();
       const isDatabaseError = lowerErrorMessage.includes('database error') || 
                              lowerErrorMessage.includes('erreur de base de données') ||
@@ -346,7 +356,7 @@ function ManagementCompteDepensesContent() {
         });
       } else {
         // Log pour debug mais ne pas afficher à l'utilisateur
-        console.warn('Database error after successful action (ignored):', errorMessage);
+        console.warn('Database error (ignored):', errorMessage);
       }
     }
   };
