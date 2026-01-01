@@ -276,8 +276,8 @@ function TeamProjectManagementContent() {
   }
 
   return (
-    <PageContainer>
-      <MotionDiv variant="slideUp" duration="normal" className="space-y-6">
+    <div className="flex flex-col h-screen min-h-screen -mx-3 sm:-mx-4 md:-mx-6 xl:-mx-8 2xl:-mx-10 px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 md:py-8 2xl:py-8">
+      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 min-h-0 space-y-6">
         {/* Header avec gradient Aurora Borealis */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 px-4 pt-6 pb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
@@ -392,9 +392,11 @@ function TeamProjectManagementContent() {
         )}
 
         {/* Kanban Board avec le composant TaskKanban */}
-        <div className="glass-card p-lg rounded-xl border border-border">
+        <div className="glass-card p-lg rounded-xl border border-border flex-1 flex flex-col min-h-0">
           {team && (
-            <TaskKanban teamId={team.id} />
+            <div className="flex-1 flex flex-col min-h-0">
+              <TaskKanban teamId={team.id} />
+            </div>
           )}
         </div>
 
@@ -520,7 +522,7 @@ function TeamProjectManagementContent() {
           </div>
         </Modal>
       </MotionDiv>
-    </PageContainer>
+    </div>
   );
 }
 

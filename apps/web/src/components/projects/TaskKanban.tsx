@@ -416,14 +416,14 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full min-h-0 space-y-6">
       {error && (
-        <Alert variant="error" className="mb-4">
+        <Alert variant="error" className="mb-4 flex-shrink-0">
           {error}
         </Alert>
       )}
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <h2 className="text-2xl font-bold text-foreground">Tâches du projet</h2>
         <Button onClick={handleCreateTask}>
           <Plus className="w-4 h-4 mr-2" />
@@ -431,23 +431,23 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
         {STATUS_COLUMNS.map(({ status, label, color, bgColor }) => {
           const columnTasks = getTasksByStatus(status);
           return (
             <div
               key={status}
-              className="flex flex-col min-w-[250px]"
+              className="flex flex-col min-w-[280px] flex-1"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, status)}
             >
-              <div className={`glass-card rounded-xl p-4 mb-3 ${bgColor}`}>
+              <div className={`glass-card rounded-xl p-4 mb-3 ${bgColor} flex-shrink-0`}>
                 <h3 className={`font-bold ${color} flex items-center justify-between`}>
                   <span>{label}</span>
                   <span className="glass-badge px-2 py-1 rounded-full text-sm">{columnTasks.length}</span>
                 </h3>
               </div>
-              <div className="space-y-3 flex-1 min-h-[400px]">
+              <div className="space-y-3 flex-1 min-h-[500px] max-h-full overflow-y-auto">
                 {columnTasks.map((task) => (
                   <div
                     key={task.id}

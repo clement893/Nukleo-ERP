@@ -44,45 +44,39 @@ export default function EmployeePortalTimeSheetsPage() {
     }
 
     try {
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-    }
-  };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
+      const [status, data] = await Promise.all([
+        checkMySuperAdminStatus(),
+        employeesAPI.get(employeeId),
+      ]);
+      
+      const isAdmin = status.is_superadmin === true;
+      setIsSuperAdmin(isAdmin);
+      
+      if (!isAdmin && data.user_id !== currentUserId) {
         setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
         setLoading(false);
         return;
       }
+      
+      setEmployee(data);
     } catch (err) {
       const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
+      setError(appError.message || 'Erreur lors de la vérification des permissions');
       showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
+        message: appError.message || 'Erreur lors de la vérification des permissions',
         type: 'error',
       });
-    } finally {
       setLoading(false);
     }
   };
 
   const handleBack = () => {
     const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
+    if (employee) {
+      router.push(`/${locale}/portail-employe/${employee.id}`);
+    } else {
+      router.push(`/${locale}/dashboard/management/employes`);
+    }
   };
 
   if (loading) {
