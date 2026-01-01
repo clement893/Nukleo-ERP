@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
