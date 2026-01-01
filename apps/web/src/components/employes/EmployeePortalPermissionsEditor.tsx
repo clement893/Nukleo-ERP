@@ -224,34 +224,185 @@ export default function EmployeePortalPermissionsEditor({
     }
   };
 
-  const handleModuleToggle = (moduleId: string) => {
-    setSelectedModules(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(moduleId)) {
-        newSet.delete(moduleId);
-      } else {
-        newSet.add(moduleId);
+  const handleModuleToggle = async (moduleId: string) => {
+    const newSet = new Set(selectedModules);
+    const isCurrentlySelected = newSet.has(moduleId);
+    
+    // Mettre à jour l'état immédiatement pour l'UI
+    if (isCurrentlySelected) {
+      newSet.delete(moduleId);
+    } else {
+      newSet.add(moduleId);
+    }
+    setSelectedModules(newSet);
+    
+    // Sauvegarder immédiatement
+    try {
+      // Supprimer toutes les permissions existantes
+      await employeePortalPermissionsAPI.deleteAllForEmployee(employeeId);
+      
+      // Créer les nouvelles permissions avec le module modifié
+      const newPermissions: Array<{
+        employee_id: number;
+        permission_type: 'page' | 'module' | 'client';
+        resource_id: string;
+        metadata?: null;
+        can_view: boolean;
+        can_edit: boolean;
+        can_delete: boolean;
+      }> = [];
+      
+      // Ajouter les permissions de modules
+      newSet.forEach(mId => {
+        newPermissions.push({
+          employee_id: employeeId,
+          permission_type: 'module',
+          resource_id: mId,
+          metadata: null,
+          can_view: true,
+          can_edit: false,
+          can_delete: false,
+        });
+      });
+      
+      // Ajouter les permissions de clients
+      selectedClients.forEach(clientId => {
+        newPermissions.push({
+          employee_id: employeeId,
+          permission_type: 'client',
+          resource_id: clientId.toString(),
+          metadata: null,
+          can_view: true,
+          can_edit: false,
+          can_delete: false,
+        });
+      });
+      
+      if (newPermissions.length > 0) {
+        await employeePortalPermissionsAPI.bulkCreate({
+          employee_id: employeeId,
+          permissions: newPermissions,
+        });
       }
-      return newSet;
-    });
+      
+      // Mettre à jour les états sauvegardés
+      setSavedModules(new Set(newSet));
+      
+      // Déclencher un événement pour notifier les autres composants
+      window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
+        detail: { employeeId }
+      }));
+      
+      // Recharger les données en arrière-plan
+      loadData().catch(err => {
+        console.error('[EmployeePortalPermissionsEditor] Erreur lors du rechargement:', err);
+      });
+    } catch (err) {
+      // En cas d'erreur, restaurer l'état précédent
+      setSelectedModules(selectedModules);
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la sauvegarde',
+        type: 'error',
+      });
+    }
   };
 
   const handleAddClient = async (client: Contact) => {
     if (!selectedClients.has(client.id)) {
-      setSelectedClients(prev => new Set(prev).add(client.id));
+      const newClientsSet = new Set(selectedClients);
+      newClientsSet.add(client.id);
+      setSelectedClients(newClientsSet);
       setClients(prev => [...prev, client]);
       setShowClientModal(false);
       setClientSearchTerm('');
+      
+      // Sauvegarder immédiatement
+      await savePermissions(new Set(selectedModules), newClientsSet);
     }
   };
 
-  const handleRemoveClient = (clientId: number) => {
-    setSelectedClients(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(clientId);
-      return newSet;
-    });
+  const handleRemoveClient = async (clientId: number) => {
+    const newClientsSet = new Set(selectedClients);
+    newClientsSet.delete(clientId);
+    setSelectedClients(newClientsSet);
     setClients(prev => prev.filter(c => c.id !== clientId));
+    
+    // Sauvegarder immédiatement
+    await savePermissions(new Set(selectedModules), newClientsSet);
+  };
+
+  // Fonction helper pour sauvegarder les permissions
+  const savePermissions = async (modules: Set<string>, clients: Set<number>) => {
+    try {
+      // Supprimer toutes les permissions existantes
+      await employeePortalPermissionsAPI.deleteAllForEmployee(employeeId);
+      
+      // Créer les nouvelles permissions
+      const newPermissions: Array<{
+        employee_id: number;
+        permission_type: 'page' | 'module' | 'client';
+        resource_id: string;
+        metadata?: null;
+        can_view: boolean;
+        can_edit: boolean;
+        can_delete: boolean;
+      }> = [];
+      
+      // Ajouter les permissions de modules
+      modules.forEach(moduleId => {
+        newPermissions.push({
+          employee_id: employeeId,
+          permission_type: 'module',
+          resource_id: moduleId,
+          metadata: null,
+          can_view: true,
+          can_edit: false,
+          can_delete: false,
+        });
+      });
+      
+      // Ajouter les permissions de clients
+      clients.forEach(clientId => {
+        newPermissions.push({
+          employee_id: employeeId,
+          permission_type: 'client',
+          resource_id: clientId.toString(),
+          metadata: null,
+          can_view: true,
+          can_edit: false,
+          can_delete: false,
+        });
+      });
+      
+      if (newPermissions.length > 0) {
+        await employeePortalPermissionsAPI.bulkCreate({
+          employee_id: employeeId,
+          permissions: newPermissions,
+        });
+      }
+      
+      // Mettre à jour les états sauvegardés
+      setSavedModules(modules);
+      setSavedClients(clients);
+      
+      // Déclencher un événement pour notifier les autres composants
+      window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
+        detail: { employeeId }
+      }));
+      
+      // Recharger les données en arrière-plan
+      loadData().catch(err => {
+        console.error('[EmployeePortalPermissionsEditor] Erreur lors du rechargement:', err);
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la sauvegarde',
+        type: 'error',
+      });
+      throw err;
+    }
   };
 
   // Vérifier s'il y a des changements non sauvegardés
