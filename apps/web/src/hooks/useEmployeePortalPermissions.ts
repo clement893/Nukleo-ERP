@@ -2,7 +2,7 @@
  * Hook for employee portal permissions
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { employeePortalPermissionsAPI, type EmployeePortalPermissionSummary } from '@/lib/api/employee-portal-permissions';
 import { handleApiError } from '@/lib/errors/api';
@@ -11,20 +11,55 @@ interface UseEmployeePortalPermissionsOptions {
   employeeId?: number;
 }
 
+// Cache simple en mémoire pour les permissions (valide pendant 1 minute)
+const permissionsCache = new Map<string, { data: EmployeePortalPermissionSummary; timestamp: number }>();
+const CACHE_DURATION = 60 * 1000; // 1 minute
+
+function getCacheKey(employeeId?: number, userId?: number | string): string {
+  if (employeeId) return `employee:${employeeId}`;
+  if (userId) return `user:${userId}`;
+  return 'none';
+}
+
+function getCachedPermissions(key: string): EmployeePortalPermissionSummary | null {
+  const cached = permissionsCache.get(key);
+  if (!cached) return null;
+  
+  const now = Date.now();
+  if (now - cached.timestamp > CACHE_DURATION) {
+    permissionsCache.delete(key);
+    return null;
+  }
+  
+  return cached.data;
+}
+
+function setCachedPermissions(key: string, data: EmployeePortalPermissionSummary): void {
+  permissionsCache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
+}
+
 export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissionsOptions) {
   const { user } = useAuthStore();
   const { employeeId } = options || {};
-  const [permissions, setPermissions] = useState<EmployeePortalPermissionSummary | null>(null);
-  const [loading, setLoading] = useState(false); // Commencer à false pour afficher immédiatement
+  const cacheKey = getCacheKey(employeeId, user?.id);
+  const cachedPermissions = getCachedPermissions(cacheKey);
+  
+  // Utiliser les permissions en cache si disponibles pour un chargement instantané
+  const [permissions, setPermissions] = useState<EmployeePortalPermissionSummary | null>(cachedPermissions);
+  const [loading, setLoading] = useState(!cachedPermissions); // Si on a du cache, on commence à false
   const [error, setError] = useState<string | null>(null);
   const [reloadTrigger, setReloadTrigger] = useState(0);
+  const initialLoadRef = useRef(false);
 
   const loadPermissions = async () => {
     // If employeeId is provided, use it; otherwise use user.id
     if (employeeId) {
       try {
-        // Ne mettre loading à true que si on n'a pas de cache
-        if (!cachedPermissions || initialLoadRef.current) {
+        // Ne mettre loading à true que si on n'a pas de cache au premier chargement
+        if (!cachedPermissions && !initialLoadRef.current) {
           setLoading(true);
         }
         setError(null);
@@ -55,8 +90,8 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
       const userCachedPermissions = getCachedPermissions(userCacheKey);
       
       try {
-        // Ne mettre loading à true que si on n'a pas de cache
-        if (!userCachedPermissions || initialLoadRef.current) {
+        // Ne mettre loading à true que si on n'a pas de cache au premier chargement
+        if (!userCachedPermissions && !initialLoadRef.current) {
           setLoading(true);
         }
         setError(null);
@@ -92,6 +127,11 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
 
   // Function to manually reload permissions
   const reload = () => {
+    // Invalider le cache avant de recharger
+    if (cacheKey && cacheKey !== 'none') {
+      permissionsCache.delete(cacheKey);
+    }
+    initialLoadRef.current = false;
     setReloadTrigger(prev => prev + 1);
   };
 
