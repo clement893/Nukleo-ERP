@@ -58,7 +58,7 @@ export function EmployeesCountWidget({ }: WidgetProps) {
       <div className="text-center">
         {/* Icon */}
         <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-3">
-          <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
         </div>
 
         {/* Count */}

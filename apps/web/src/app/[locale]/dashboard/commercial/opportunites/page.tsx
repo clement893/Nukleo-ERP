@@ -179,7 +179,7 @@ function OpportunitiesContent() {
   // Get stage color
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case 'Découverte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'Découverte': return 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400';
       case 'Qualification': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
       case 'Proposition': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'Négociation': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';

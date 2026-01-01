@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react';
 // Stage colors mapping
 const STAGE_COLORS: Record<string, { bg: string; text: string; gradient: string }> = {
   'lead': { bg: 'bg-gray-500', text: 'text-gray-500', gradient: 'from-gray-500/30 to-gray-500/0' },
-  'qualified': { bg: 'bg-blue-500', text: 'text-blue-500', gradient: 'from-blue-500/30 to-blue-500/0' },
+  'qualified': { bg: 'bg-primary-500', text: 'text-primary-500', gradient: 'from-primary-500/30 to-primary-500/0' },
   'proposal': { bg: 'bg-purple-500', text: 'text-purple-500', gradient: 'from-purple-500/30 to-purple-500/0' },
   'negotiation': { bg: 'bg-amber-500', text: 'text-amber-500', gradient: 'from-amber-500/30 to-amber-500/0' },
   'won': { bg: 'bg-green-500', text: 'text-green-500', gradient: 'from-green-500/30 to-green-500/0' },
@@ -97,7 +97,7 @@ export function OpportunitiesPipelineWidget({ globalFilters }: WidgetProps) {
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             {totalOpportunities}
-            <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <TrendingUp className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </p>
         </div>
         <div className="glass-badge px-3 py-2 rounded-lg">

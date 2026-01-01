@@ -260,7 +260,7 @@ export default function ProjectGantt({
       <div className="glass-card rounded-xl p-4 flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <div className="glass-badge p-2 rounded-lg bg-blue-500/10">
-            <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <Calendar className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           Vue temporelle (Gantt)
         </h3>

@@ -61,7 +61,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
+  const [timerStatus, setTimerStatus] = useState<TimerStatus>({ active: false });
   const [timerElapsed, setTimerElapsed] = useState(0);
   const [showAdjustTimeModal, setShowAdjustTimeModal] = useState(false);
   const [adjustTimeValue, setAdjustTimeValue] = useState({ hours: 0, minutes: 0 });
@@ -118,8 +118,11 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       loadTimerStatus();
     } else if (employee && !employee.user_id) {
       setLoading(false);
+      // Initialize timer status even if no user_id
+      setTimerStatus({ active: false });
     }
   }, [employee]);
+
 
   useEffect(() => {
     if (employee?.user_id) {
@@ -129,7 +132,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
 
   useEffect(() => {
     // Update timer display
-    if (timerStatus?.active) {
+    if (timerStatus.active) {
       const updateTimer = () => {
         if (timerStatus.paused) {
           // If paused, use accumulated time
@@ -689,7 +692,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-foreground">Timer</h2>
           <div className="flex items-center gap-4">
-            {timerStatus && timerStatus.active ? (
+            {timerStatus.active ? (
               <>
                 <div className="flex items-center gap-2">
                   {timerStatus.paused ? (
@@ -822,7 +825,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
           </div>
         )}
         
-        {timerStatus?.active && timerStatus.task_id && (
+        {timerStatus.active && timerStatus.task_id && (
           <div className="mt-4 p-4 bg-accent rounded-lg">
             <p className="text-sm text-muted-foreground">
               Tâche: {tasks.find(t => t.id === timerStatus.task_id)?.title || `Tâche #${timerStatus.task_id}`}
@@ -892,7 +895,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-blue-600" />
+              <FileText className="w-5 h-5 text-primary-600" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Entrées</p>

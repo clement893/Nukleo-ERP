@@ -148,7 +148,7 @@ export function NotificationsWidget({ }: WidgetProps) {
         <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
           <Link
             href="/profile/notifications"
-            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
           >
             Voir toutes les notifications →
           </Link>

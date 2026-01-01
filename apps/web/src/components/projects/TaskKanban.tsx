@@ -31,7 +31,7 @@ interface TaskKanbanProps {
 
 const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string; bgColor: string }[] = [
   { status: 'todo', label: 'À faire', color: 'text-gray-700 dark:text-gray-300', bgColor: 'bg-gray-500/10' },
-  { status: 'in_progress', label: 'En cours', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-500/10' },
+  { status: 'in_progress', label: 'En cours', color: 'text-primary-700 dark:text-primary-300', bgColor: 'bg-primary-500/10' },
   { status: 'blocked', label: 'Bloqué', color: 'text-red-700 dark:text-red-300', bgColor: 'bg-red-500/10' },
   { status: 'to_transfer', label: 'À transférer', color: 'text-yellow-700 dark:text-yellow-300', bgColor: 'bg-yellow-500/10' },
   { status: 'completed', label: 'Terminé', color: 'text-green-700 dark:text-green-300', bgColor: 'bg-green-500/10' },

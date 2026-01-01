@@ -198,9 +198,9 @@ export default function TachesPage() {
         icon: <Circle className="w-3 h-3" />
       },
       in_progress: { 
-        bg: 'bg-blue-500/10', 
-        text: 'text-blue-600 dark:text-blue-400', 
-        border: 'border-blue-500/30',
+        bg: 'bg-primary-500/10', 
+        text: 'text-primary-600 dark:text-primary-400', 
+        border: 'border-primary-500/30',
         icon: <Play className="w-3 h-3" />
       },
       blocked: { 
@@ -229,7 +229,7 @@ export default function TachesPage() {
   const getPriorityColors = (priority: TaskPriority) => {
     const colors: Record<TaskPriority, { bg: string; text: string; border: string }> = {
       low: { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' },
-      medium: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
+      medium: { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/30' },
       high: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30' },
       urgent: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/30' },
     };
@@ -276,7 +276,7 @@ export default function TachesPage() {
 
   const PRIORITY_COLORS: Record<TaskPriority, string> = {
     low: 'bg-gray-500',
-    medium: 'bg-blue-500',
+    medium: 'bg-primary-500',
     high: 'bg-orange-500',
     urgent: 'bg-red-500',
   };
@@ -394,7 +394,7 @@ export default function TachesPage() {
             onClick={() => setStatusFilter('all')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               statusFilter === 'all'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -405,7 +405,7 @@ export default function TachesPage() {
             onClick={() => setStatusFilter('todo')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               statusFilter === 'todo'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -416,7 +416,7 @@ export default function TachesPage() {
             onClick={() => setStatusFilter('in_progress')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               statusFilter === 'in_progress'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -427,7 +427,7 @@ export default function TachesPage() {
             onClick={() => setStatusFilter('blocked')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               statusFilter === 'blocked'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -438,7 +438,7 @@ export default function TachesPage() {
             onClick={() => setStatusFilter('completed')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               statusFilter === 'completed'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -636,7 +636,7 @@ export default function TachesPage() {
           <button
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="glass-button px-6 py-3 rounded-xl text-blue-600 hover:bg-blue-500/10 transition-all"
+            className="glass-button px-6 py-3 rounded-xl text-primary-600 hover:bg-primary-500/10 transition-all"
             aria-label="Charger plus de tâches"
           >
             {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}

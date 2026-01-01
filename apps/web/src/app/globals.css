@@ -448,8 +448,25 @@ body {
   box-shadow: 
     0 4px 16px 0 color-mix(in srgb, var(--color-primary-500) 30%, transparent),
     inset 0 1px 0 0 color-mix(in srgb, var(--color-background) 40%, transparent);
-  color: var(--color-background);
+  color: var(--color-background) !important;
   transition: all 0.2s ease;
+}
+
+/* Surcharge pour les boutons outline/secondaires - permet texte coloré */
+.glass-button.text-primary-600,
+.glass-button.text-primary-500,
+.glass-button.text-primary-700,
+.glass-button[class*="text-primary"] {
+  background: transparent !important;
+  border: 1px solid var(--color-primary-500) !important;
+  color: var(--color-primary-600) !important;
+}
+
+.glass-button.text-primary-600:hover,
+.glass-button.text-primary-500:hover,
+.glass-button.text-primary-700:hover,
+.glass-button[class*="text-primary"]:hover {
+  background: color-mix(in srgb, var(--color-primary-500) 10%, transparent) !important;
 }
 
 .glass-button:hover {
@@ -1224,7 +1241,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid var(--color-primary-500, #523DC9);
   outline-offset: 2px;
   border-radius: 0.25rem;
 }
@@ -1234,14 +1251,14 @@ select:focus-visible {
 .glass-card:focus-visible,
 .glass-button:focus-visible,
 .glass-input:focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid var(--color-primary-500, #523DC9) !important;
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary-500, #523DC9) 20%, transparent) !important;
 }
 
 /* Keyboard navigation helper */
 .keyboard-nav-active *:focus {
-  outline: 2px solid #2563EB !important;
+  outline: 2px solid var(--color-primary-500, #523DC9) !important;
   outline-offset: 2px !important;
 }
 

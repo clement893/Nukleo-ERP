@@ -102,7 +102,7 @@ export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) 
         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <Link
             href="/dashboard/commercial/opportunites"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
           >
             Voir toutes les opportunités ({data.total})
           </Link>

@@ -28,7 +28,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
           {label}
         </p>
-        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+        <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
           {new Intl.NumberFormat('fr-FR', {
             style: 'currency',
             currency: 'EUR',

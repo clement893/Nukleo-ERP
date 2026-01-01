@@ -243,7 +243,7 @@ export default function ContactsPage() {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
       'VIP': { bg: 'bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-500/30' },
       'Client': { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/30' },
-      'Prospect': { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
+      'Prospect': { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/30' },
       'Partenaire': { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' },
       'Fournisseur': { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30' },
     };
@@ -410,7 +410,7 @@ export default function ContactsPage() {
             onClick={() => setViewMode('gallery')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               viewMode === 'gallery'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
             aria-label="Afficher en mode galerie"
@@ -423,7 +423,7 @@ export default function ContactsPage() {
             onClick={() => setViewMode('list')}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               viewMode === 'list'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
             aria-label="Afficher en mode liste"
@@ -443,7 +443,7 @@ export default function ContactsPage() {
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'all' && tagFilter === 'all'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -457,7 +457,7 @@ export default function ContactsPage() {
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'favorites'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -471,7 +471,7 @@ export default function ContactsPage() {
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'vip'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -485,7 +485,7 @@ export default function ContactsPage() {
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'clients'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -499,7 +499,7 @@ export default function ContactsPage() {
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'prospects'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -513,7 +513,7 @@ export default function ContactsPage() {
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               filterType === 'partners'
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                 : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
@@ -537,7 +537,7 @@ export default function ContactsPage() {
                 }}
                 className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
                   tagFilter === tag && filterType === 'all'
-                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                    ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
                     : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
               >
@@ -746,7 +746,7 @@ export default function ContactsPage() {
                     {contact.phone && (
                       <a
                         href={`tel:${contact.phone}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
                         aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
                         title="Appeler"
                       >
@@ -756,7 +756,7 @@ export default function ContactsPage() {
                     {contact.email && (
                       <a
                         href={`mailto:${contact.email}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
                         aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
                         title="Email"
                       >
@@ -780,7 +780,7 @@ export default function ContactsPage() {
                         href={contact.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
                         aria-label={`Voir le profil LinkedIn de ${contact.first_name} ${contact.last_name}`}
                         title="LinkedIn"
                       >
@@ -881,7 +881,7 @@ export default function ContactsPage() {
                     {contact.phone && (
                       <a
                         href={`tel:${contact.phone}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label={`Appeler ${contact.first_name} ${contact.last_name}`}
                         title="Appeler"
                       >
@@ -891,7 +891,7 @@ export default function ContactsPage() {
                     {contact.email && (
                       <a
                         href={`mailto:${contact.email}`}
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label={`Envoyer un email à ${contact.first_name} ${contact.last_name}`}
                         title="Email"
                       >
@@ -915,7 +915,7 @@ export default function ContactsPage() {
                         href={contact.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="glass-badge p-2 rounded-lg hover:bg-blue-500/10 hover:text-blue-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label={`Voir le profil LinkedIn de ${contact.first_name} ${contact.last_name}`}
                         title="LinkedIn"
                       >
@@ -950,7 +950,7 @@ export default function ContactsPage() {
             <button
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
-              className="glass-button px-6 py-3 rounded-xl text-blue-600 hover:bg-blue-500/10 transition-all"
+              className="glass-button px-6 py-3 rounded-xl text-primary-600 hover:bg-primary-500/10 transition-all"
               aria-label="Charger plus de contacts"
             >
               {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}

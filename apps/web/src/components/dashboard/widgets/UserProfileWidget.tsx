@@ -42,7 +42,7 @@ export function UserProfileWidget({ }: WidgetProps) {
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <UserCircle className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+              <UserCircle className="w-12 h-12 text-primary-600 dark:text-primary-400" />
             </div>
           )}
         </div>
@@ -63,7 +63,7 @@ export function UserProfileWidget({ }: WidgetProps) {
         {/* Link to profile */}
         <Link
           href="/profile"
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+          className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
         >
           Voir mon profil →
         </Link>

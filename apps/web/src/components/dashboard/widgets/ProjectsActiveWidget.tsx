@@ -133,7 +133,7 @@ export function ProjectsActiveWidget({ config, globalFilters }: WidgetProps) {
         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <Link
             href="/dashboard/projets/projets"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
           >
             Voir tous les projets ({data.total})
           </Link>

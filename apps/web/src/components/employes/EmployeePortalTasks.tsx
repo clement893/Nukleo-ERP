@@ -165,7 +165,7 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
           </h4>
           {(() => {
             const priorityColors = {
-              low: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
+              low: 'text-primary-600 bg-primary-100 dark:bg-primary-900/30',
               medium: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30',
               high: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30',
               urgent: 'text-red-600 bg-red-100 dark:bg-red-900/30',
@@ -257,10 +257,10 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
 
           {taskDetails.started_at && (
             <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5" />
               <div>
                 <p className="text-xs text-muted-foreground">Commencée le</p>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                <p className="text-sm font-medium text-primary-600 dark:text-primary-400">
                   {new Date(taskDetails.started_at).toLocaleDateString('fr-FR', {
                     year: 'numeric',
                     month: 'long',
@@ -999,7 +999,7 @@ function TaskDocumentsTab({ taskId }: { taskId: number }) {
   const getFileIcon = (contentType: string, filename: string) => {
     // Check by content type first
     if (contentType.startsWith('image/')) {
-      return <Image className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+      return <Image className="w-5 h-5 text-primary-600 dark:text-primary-400" />;
     }
     if (contentType === 'application/pdf') {
       return <FileText className="w-5 h-5 text-red-600 dark:text-red-400" />;
@@ -1009,7 +1009,7 @@ function TaskDocumentsTab({ taskId }: { taskId: number }) {
     const extension = filename.split('.').pop()?.toLowerCase();
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
     if (extension && imageExtensions.includes(extension)) {
-      return <Image className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+      return <Image className="w-5 h-5 text-primary-600 dark:text-primary-400" />;
     }
     
     return <File className="w-5 h-5 text-gray-600 dark:text-gray-400" />;

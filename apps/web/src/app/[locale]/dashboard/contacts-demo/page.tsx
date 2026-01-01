@@ -544,7 +544,7 @@ export default function ContactsDemoPage() {
                   </a>
                   <a
                     href={`mailto:${contact.email}`}
-                    className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     title="Email"
                   >
                     <Mail className="w-4 h-4" />
@@ -563,7 +563,7 @@ export default function ContactsDemoPage() {
                       href={contact.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                       title="LinkedIn"
                     >
                       <Linkedin className="w-4 h-4" />
@@ -647,7 +647,7 @@ export default function ContactsDemoPage() {
                   </a>
                   <a
                     href={`mailto:${contact.email}`}
-                    className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     title="Email"
                   >
                     <Mail className="w-4 h-4" />
@@ -666,7 +666,7 @@ export default function ContactsDemoPage() {
                       href={contact.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="glass-button p-2.5 rounded-lg flex items-center justify-center hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                       title="LinkedIn"
                     >
                       <Linkedin className="w-4 h-4" />

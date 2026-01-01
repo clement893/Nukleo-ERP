@@ -15,18 +15,19 @@ const config: Config = {
       },
       colors: {
         // Primary color palette - Uses CSS variables with fallbacks for theme support
+        // Fallbacks use Nukleo Purple (#523DC9) instead of blue
         primary: {
-          50: 'var(--color-primary-50, #eff6ff)',
-          100: 'var(--color-primary-100, #dbeafe)',
-          200: 'var(--color-primary-200, #bfdbfe)',
-          300: 'var(--color-primary-300, #93c5fd)',
-          400: 'var(--color-primary-400, #60a5fa)',
-          500: 'var(--color-primary-500, #3b82f6)',
-          600: 'var(--color-primary-600, #2563eb)',
-          700: 'var(--color-primary-700, #1d4ed8)',
-          800: 'var(--color-primary-800, #1e40af)',
-          900: 'var(--color-primary-900, #1e3a8a)',
-          950: 'var(--color-primary-950, #172554)',
+          50: 'var(--color-primary-50, #F5F3FF)',
+          100: 'var(--color-primary-100, #EDE9FE)',
+          200: 'var(--color-primary-200, #DDD6FE)',
+          300: 'var(--color-primary-300, #C4B5FD)',
+          400: 'var(--color-primary-400, #A78BFA)',
+          500: 'var(--color-primary-500, #523DC9)', // Nukleo Purple
+          600: 'var(--color-primary-600, #4731A3)',
+          700: 'var(--color-primary-700, #3B2682)',
+          800: 'var(--color-primary-800, #2F1B61)',
+          900: 'var(--color-primary-900, #231040)',
+          950: 'var(--color-primary-950, #1A0D2E)',
         },
         // Custom blue light color (#B4D6FF) - darker in dark mode
         blue: {

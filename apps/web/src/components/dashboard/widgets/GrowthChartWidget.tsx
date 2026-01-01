@@ -109,7 +109,7 @@ export function GrowthChartWidget({ }: WidgetProps) {
       {/* Summary */}
       <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <TrendingUp className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Croissance globale</p>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">
