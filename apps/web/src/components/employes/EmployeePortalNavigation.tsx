@@ -253,7 +253,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                         {isExpanded && (
                           <div className="ml-8 mt-1 space-y-1">
                             {module.subPages?.map((subPage) => {
-                              const isSubPageActive = pathname.includes(subPage.path);
+                              const isSubPageActive = pathname === subPage.path || pathname.startsWith(subPage.path + '/');
                               return (
                                 <Link
                                   key={subPage.path}
@@ -277,7 +277,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                         href={module.basePath}
                         className={clsx(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                          pathname.includes(module.basePath)
+                          pathname === module.basePath || pathname.startsWith(module.basePath + '/')
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
