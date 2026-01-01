@@ -299,20 +299,12 @@ export default function OpportunitiesDemoPage() {
                   </button>
                 </div>
 
-                {/* Value & Probability */}
-                <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {formatCurrency(opp.value)}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Valeur</div>
+                {/* Value */}
+                <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    {formatCurrency(opp.value)}
                   </div>
-                  <div className="text-right">
-                    <div className={`text-2xl font-bold ${getProbabilityColor(opp.probability)}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {opp.probability}%
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Probabilité</div>
-                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Valeur</div>
                 </div>
 
                 {/* Details */}

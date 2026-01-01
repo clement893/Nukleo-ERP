@@ -6,7 +6,7 @@ export const dynamicParams = true;
 import { useState, useMemo } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { Plus, Search, Users, DollarSign, Target, User } from 'lucide-react';
-import { Badge, Button, Input, Modal, Textarea } from '@/components/ui';
+import { Button, Input, Modal, Textarea } from '@/components/ui';
 
 // Mock data
 const mockClients = [
@@ -276,47 +276,47 @@ export default function PipelineClientDemoPage() {
           {clientsByStage.map((stage) => (
             <div
               key={stage.id}
-              className={`flex-1 min-w-[320px] transition-all duration-200 ${
-                dragOverStage === stage.id ? 'scale-105' : ''
+              className={`flex-1 min-w-[320px] transition-all duration-150 ${
+                dragOverStage === stage.id ? 'scale-[1.01]' : ''
               }`}
               onDragOver={(e) => handleDragOver(e, stage.id)}
               onDragLeave={handleDragLeave}
               onDrop={() => handleDrop(stage.id)}
             >
-              <div className={`glass-card rounded-xl border-2 h-full flex flex-col transition-all duration-200 ${
+              <div className={`glass-card rounded-xl border h-full flex flex-col transition-all duration-150 ${
                 dragOverStage === stage.id 
-                  ? 'border-[#523DC9] shadow-2xl shadow-[#523DC9]/20' 
+                  ? 'border-[#523DC9] shadow-lg shadow-[#523DC9]/10' 
                   : 'border-[#A7A2CF]/20'
               }`}>
                 {/* Column Header */}
-                <div className={`p-3 rounded-t-xl ${stage.bgColor}`}>
+                <div className={`px-4 py-3 border-b border-gray-200 dark:border-gray-700 ${stage.bgColor}`}>
                   <div className="flex items-center justify-between">
-                    <h3 className={`text-sm font-bold ${stage.color}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className={`text-xs font-bold uppercase tracking-wider ${stage.color}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {stage.label}
                     </h3>
-                    <Badge variant="default" className="text-xs">{stage.clients.length}</Badge>
+                    <span className={`text-xs font-semibold ${stage.color}`}>{stage.clients.length}</span>
                   </div>
                 </div>
 
                 {/* Clients */}
-                <div className="flex-1 p-3 space-y-2 overflow-y-auto">
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto">
                   {stage.clients.map((client) => (
                     <div
                       key={client.id}
                       draggable
                       onDragStart={() => handleDragStart(client)}
                       onClick={() => router.push(`/dashboard/pipeline-client-demo/${client.id}`)}
-                      className={`bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9] hover:shadow-lg transition-all duration-200 cursor-move group ${
-                        draggedClient?.id === client.id ? 'opacity-50 scale-95' : ''
+                      className={`bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/50 hover:shadow-md transition-all duration-150 cursor-move group ${
+                        draggedClient?.id === client.id ? 'opacity-40 scale-98' : ''
                       }`}
                     >
                       {/* Company Name */}
-                      <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 group-hover:text-[#523DC9] transition-colors truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {client.name}
                       </h4>
 
                       {/* Value */}
-                      <div className="text-lg font-bold text-[#523DC9] mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <div className="text-base font-bold text-[#523DC9] mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {formatCurrency(client.value)}
                       </div>
 
