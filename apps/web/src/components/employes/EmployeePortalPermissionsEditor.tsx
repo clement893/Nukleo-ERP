@@ -21,6 +21,7 @@ import { employeePortalPermissionsAPI, type EmployeePortalPermission, type Emplo
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
+import { getCacheKey, setCachedPermissions, permissionsCache, getCachedPermissions } from '@/hooks/useEmployeePortalPermissions';
 import { Search, Plus, X, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface EmployeePortalPermissionsEditorProps {
@@ -56,6 +57,99 @@ export default function EmployeePortalPermissionsEditor({
 
   const loadData = async () => {
     try {
+      // ✅ Utiliser le cache d'abord pour un chargement instantané
+      const cacheKey = getCacheKey(employeeId);
+      const cachedSummary = cacheKey && cacheKey !== 'none' ? getCachedPermissions(cacheKey) : null;
+      
+      // Si on a un cache valide, l'utiliser immédiatement pour l'affichage
+      if (cachedSummary) {
+        // Afficher immédiatement avec les données du cache
+        setError(null);
+        setSummary(cachedSummary);
+        
+        // Construire les Sets directement depuis le cache
+        const modulesSet = new Set<string>();
+        const clientsSet = new Set<number>();
+        
+        if (cachedSummary.modules.includes('*')) {
+          EMPLOYEE_PORTAL_MODULES.forEach(m => modulesSet.add(m.id));
+        } else {
+          cachedSummary.modules.forEach(moduleId => {
+            if (moduleId !== '*') {
+              modulesSet.add(moduleId);
+            }
+          });
+        }
+        
+        if (!cachedSummary.all_clients) {
+          cachedSummary.clients.forEach(clientId => {
+            clientsSet.add(clientId);
+          });
+        }
+        
+        setSelectedModules(modulesSet);
+        setSelectedClients(clientsSet);
+        setSavedModules(new Set(modulesSet));
+        setSavedClients(new Set(clientsSet));
+        setLoading(false);
+        
+        // Charger les détails et rafraîchir en arrière-plan sans bloquer l'UI
+        Promise.all([
+          employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
+          employeePortalPermissionsAPI.list({ employee_id: employeeId }),
+        ]).then(([freshSummary, permissionsData]) => {
+          // Mettre en cache les données fraîches
+          if (cacheKey && cacheKey !== 'none') {
+            setCachedPermissions(cacheKey, freshSummary);
+          }
+          
+          // Mettre à jour l'UI avec les données fraîches si elles sont différentes
+          setSummary(freshSummary);
+          setPermissions(permissionsData);
+          
+          // Recalculer les Sets avec les données fraîches
+          const newModulesSet = new Set<string>();
+          const newClientsSet = new Set<number>();
+          
+          if (freshSummary.modules.includes('*')) {
+            EMPLOYEE_PORTAL_MODULES.forEach(m => newModulesSet.add(m.id));
+          } else {
+            freshSummary.modules.forEach(moduleId => {
+              if (moduleId !== '*') {
+                newModulesSet.add(moduleId);
+              }
+            });
+          }
+          
+          if (!freshSummary.all_clients) {
+            freshSummary.clients.forEach(clientId => {
+              newClientsSet.add(clientId);
+            });
+          }
+          
+          setSelectedModules(newModulesSet);
+          setSelectedClients(newClientsSet);
+          setSavedModules(new Set(newModulesSet));
+          setSavedClients(new Set(newClientsSet));
+          
+          // Charger les clients si nécessaire
+          if (newClientsSet.size > 0) {
+            Promise.all(
+              Array.from(newClientsSet).map(id => 
+                contactsAPI.get(id).catch(() => null)
+              )
+            ).then(clientsData => {
+              setClients(clientsData.filter(c => c !== null) as Contact[]);
+            });
+          }
+        }).catch(() => {
+          // En cas d'erreur, garder les données du cache
+        });
+        
+        return; // Sortir tôt car on a affiché les données du cache
+      }
+      
+      // Pas de cache, charger normalement depuis le serveur
       setLoading(true);
       setError(null);
 
@@ -63,6 +157,11 @@ export default function EmployeePortalPermissionsEditor({
         employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
         employeePortalPermissionsAPI.list({ employee_id: employeeId }),
       ]);
+      
+      // Mettre en cache pour la prochaine fois
+      if (cacheKey && cacheKey !== 'none') {
+        setCachedPermissions(cacheKey, summaryData);
+      }
 
       setSummary(summaryData);
       setPermissions(permissionsData);
@@ -276,6 +375,14 @@ export default function EmployeePortalPermissionsEditor({
 
   // Fonction helper pour sauvegarder les permissions
   const savePermissions = async (modules: Set<string>, clients: Set<number>) => {
+    // Sauvegarder l'ancien état pour rollback en cas d'erreur
+    const oldModules = new Set(savedModules);
+    const oldClients = new Set(savedClients);
+    const cacheKey = getCacheKey(employeeId);
+    const oldCachedData = cacheKey && cacheKey !== 'none' 
+      ? permissionsCache.get(cacheKey)?.data || null 
+      : null;
+    
     try {
       // IMPORTANT: Supprimer toutes les permissions existantes AVANT de créer les nouvelles
       // Cela garantit que les anciennes permissions sont bien supprimées de la base de données
@@ -331,19 +438,42 @@ export default function EmployeePortalPermissionsEditor({
       setSavedModules(new Set(modules));
       setSavedClients(new Set(clients));
       
+      // ✅ INSTANTANÉ: Mettre à jour le cache directement avec les nouvelles données
+      // Cela permet au portail de se mettre à jour immédiatement sans attendre un rechargement depuis le serveur
+      if (cacheKey && cacheKey !== 'none') {
+        const newSummary: EmployeePortalPermissionSummary = {
+          user_id: null,
+          employee_id: employeeId,
+          pages: ['*'], // Pages de base toujours accessibles
+          modules: Array.from(modules),
+          projects: [],
+          clients: Array.from(clients),
+          all_projects: false,
+          all_clients: false,
+        };
+        setCachedPermissions(cacheKey, newSummary);
+      }
+      
       // Déclencher l'événement APRÈS la mise à jour des états pour notifier les autres composants
-      // Cela force les autres composants (comme EmployeePortalNavigation) à recharger les permissions
-      // On le fait dans un setTimeout pour s'assurer que React a eu le temps de traiter la mise à jour des états
-      setTimeout(() => {
+      // Utiliser Promise.resolve().then() au lieu de setTimeout(0) pour plus de prévisibilité
+      Promise.resolve().then(() => {
         window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
           detail: { employeeId }
         }));
-      }, 0);
+      });
       
       // Ne pas recharger loadData() ici car cela réinitialiserait les états et causerait un flash
       // Les données sont déjà sauvegardées sur le serveur, et les états locaux sont déjà à jour
       // Le rechargement se fera automatiquement via le cache invalidation dans les autres composants
     } catch (err) {
+      // ❌ Erreur: restaurer l'ancien état et le cache
+      setSavedModules(oldModules);
+      setSavedClients(oldClients);
+      
+      if (cacheKey && cacheKey !== 'none' && oldCachedData) {
+        setCachedPermissions(cacheKey, oldCachedData);
+      }
+      
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la sauvegarde',

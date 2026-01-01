@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui';
 import { PageHeader, PageContainer } from '@/components/layout';
 import ContactDetail from '@/components/commercial/ContactDetail';
 import { Loading, Alert, Button } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { useReseauContact, useDeleteReseauContact } from '@/lib/query/reseau-contacts';
 import Modal from '@/components/ui/Modal';
 import ContactForm from '@/components/reseau/ContactForm';
@@ -168,6 +168,18 @@ export default function ContactDetailPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+
+      {/* Quick Action - Edit Button (Floating) */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={handleEdit}
+          className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
+          aria-label="Modifier le contact"
+          title="Modifier le contact"
+        >
+          <Edit className="w-6 h-6" aria-hidden="true" />
+        </button>
+      </div>
 
       {/* Edit Modal */}
       <Modal

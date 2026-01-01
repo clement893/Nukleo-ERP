@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   useInfiniteReseauContacts, 
   useCreateReseauContact, 
@@ -44,6 +45,7 @@ type SortDirection = 'asc' | 'desc';
 
 export default function ContactsPage() {
   const { showToast } = useToast();
+  const router = useRouter();
   
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
@@ -660,7 +662,17 @@ export default function ContactsPage() {
             return (
               <div
                 key={contact.id}
-                className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50"
+                onClick={() => router.push(`/dashboard/reseau/contacts/${contact.id}`)}
+                className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push(`/dashboard/reseau/contacts/${contact.id}`);
+                  }
+                }}
+                aria-label={`Voir la fiche de ${contact.first_name} ${contact.last_name}`}
               >
                 {/* Photo */}
                 <div className="relative">
@@ -680,8 +692,11 @@ export default function ContactsPage() {
                     )}
                   </div>
                   <button
-                    onClick={() => toggleFavorite(contact.id)}
-                    className="absolute top-3 right-3 glass-badge p-2 rounded-full hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(contact.id);
+                    }}
+                    className="absolute top-3 right-3 glass-badge p-2 rounded-full hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center z-10"
                     aria-label={favorites.has(contact.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
                     title={favorites.has(contact.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
                   >
@@ -727,7 +742,7 @@ export default function ContactsPage() {
                   )}
 
                   {/* Actions */}
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-2" onClick={(e) => e.stopPropagation()}>
                     {contact.phone && (
                       <a
                         href={`tel:${contact.phone}`}
@@ -789,7 +804,17 @@ export default function ContactsPage() {
             return (
               <div
                 key={contact.id}
-                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50"
+                onClick={() => router.push(`/dashboard/reseau/contacts/${contact.id}`)}
+                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push(`/dashboard/reseau/contacts/${contact.id}`);
+                  }
+                }}
+                aria-label={`Voir la fiche de ${contact.first_name} ${contact.last_name}`}
               >
                 <div className="flex items-center gap-4">
                   {/* Photo */}
@@ -837,7 +862,7 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => toggleFavorite(contact.id)}
                       className="glass-badge p-2 rounded-lg hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"

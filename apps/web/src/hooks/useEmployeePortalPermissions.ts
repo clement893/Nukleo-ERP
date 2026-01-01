@@ -11,17 +11,17 @@ interface UseEmployeePortalPermissionsOptions {
   employeeId?: number;
 }
 
-// Cache simple en mémoire pour les permissions (valide pendant 1 minute)
-const permissionsCache = new Map<string, { data: EmployeePortalPermissionSummary; timestamp: number }>();
-const CACHE_DURATION = 60 * 1000; // 1 minute
+// Cache simple en mémoire pour les permissions (valide pendant 10 secondes)
+export const permissionsCache = new Map<string, { data: EmployeePortalPermissionSummary; timestamp: number }>();
+export const CACHE_DURATION = 10 * 1000; // 10 secondes
 
-function getCacheKey(employeeId?: number, userId?: number | string): string {
+export function getCacheKey(employeeId?: number, userId?: number | string): string {
   if (employeeId) return `employee:${employeeId}`;
   if (userId) return `user:${userId}`;
   return 'none';
 }
 
-function getCachedPermissions(key: string): EmployeePortalPermissionSummary | null {
+export function getCachedPermissions(key: string): EmployeePortalPermissionSummary | null {
   const cached = permissionsCache.get(key);
   if (!cached) return null;
   
@@ -34,11 +34,18 @@ function getCachedPermissions(key: string): EmployeePortalPermissionSummary | nu
   return cached.data;
 }
 
-function setCachedPermissions(key: string, data: EmployeePortalPermissionSummary): void {
+export function setCachedPermissions(key: string, data: EmployeePortalPermissionSummary): void {
   permissionsCache.set(key, {
     data,
     timestamp: Date.now(),
   });
+}
+
+export function invalidateCache(employeeId?: number, userId?: number | string): void {
+  const key = getCacheKey(employeeId, userId);
+  if (key && key !== 'none') {
+    permissionsCache.delete(key);
+  }
 }
 
 export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissionsOptions) {
