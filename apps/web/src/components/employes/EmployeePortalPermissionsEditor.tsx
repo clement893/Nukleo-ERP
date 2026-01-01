@@ -197,11 +197,9 @@ export default function EmployeePortalPermissionsEditor({
       setSavedModules(new Set(selectedModules));
       setSavedClients(new Set(selectedClients));
       
-      // Recharger les données depuis le serveur en arrière-plan pour synchronisation
+      // Recharger les données depuis le serveur pour synchronisation (en attente pour s'assurer que c'est fait)
       console.log('[EmployeePortalPermissionsEditor] Rechargement des permissions après sauvegarde...');
-      loadData().catch(err => {
-        console.error('[EmployeePortalPermissionsEditor] Erreur lors du rechargement:', err);
-      });
+      await loadData();
       
       // Déclencher un événement pour notifier les autres composants (comme le portail employé)
       window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {

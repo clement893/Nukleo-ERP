@@ -124,7 +124,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   const { user } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions } = useEmployeePortalPermissions({ employeeId });
+  const { hasModuleAccess, loading: permissionsLoading, reload: reloadPermissions, permissions } = useEmployeePortalPermissions({ employeeId });
   
   // Écouter les événements de mise à jour des permissions depuis d'autres composants
   useEffect(() => {
@@ -182,14 +182,25 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   };
 
   // Get enabled ERP modules
+  // IMPORTANT: Ne pas bypasser les permissions même si l'utilisateur est admin
+  // car on veut voir le portail tel que l'employé le voit avec ses permissions
   const enabledModules = EMPLOYEE_PORTAL_MODULES.filter((module) => {
-    if (isAdmin || user?.is_admin) return true;
+    // Si on charge encore les permissions, ne rien afficher
     if (permissionsLoading) return false;
+    
+    // Vérifier les permissions de l'employé (pas de l'utilisateur connecté)
     const hasAccess = hasModuleAccess(module.id);
+    
     // Debug: log permissions check
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[EmployeePortalNavigation] Module ${module.id}: hasAccess=${hasAccess}`);
+      console.log(`[EmployeePortalNavigation] Module ${module.id}: hasAccess=${hasAccess}`, {
+        employeeId,
+        isAdmin,
+        userIsAdmin: user?.is_admin,
+        permissions: permissions,
+      });
     }
+    
     return hasAccess;
   });
 
