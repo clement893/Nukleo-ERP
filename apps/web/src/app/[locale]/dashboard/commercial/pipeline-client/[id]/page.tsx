@@ -487,15 +487,10 @@ function PipelineDetailContent() {
   if (loading) {
     return (
       <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-        <PageHeader
+        <NukleoPageHeader
           title="Pipeline"
           description="Chargement..."
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Module Commercial', href: '/dashboard/commercial' },
-            { label: 'Pipelines', href: '/dashboard/commercial/pipeline-client' },
-            { label: 'Pipeline' },
-          ]}
+          compact
         />
         <Card>
           <div className="py-12 text-center">
@@ -509,15 +504,10 @@ function PipelineDetailContent() {
   if (!pipeline) {
     return (
       <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-        <PageHeader
+        <NukleoPageHeader
           title="Pipeline"
           description="Pipeline non trouvé"
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Module Commercial', href: '/dashboard/commercial' },
-            { label: 'Pipelines', href: '/dashboard/commercial/pipeline-client' },
-            { label: 'Pipeline' },
-          ]}
+          compact
         />
         <Card>
           <div className="p-6 text-center text-muted-foreground">

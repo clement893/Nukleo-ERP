@@ -84,14 +84,10 @@ function PipelinesListContent() {
   if (loading) {
     return (
       <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-        <PageHeader
+        <NukleoPageHeader
           title="Pipelines"
-          description="Gérez vos pipelines commerciaux et vos opportunités"
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Module Commercial', href: '/dashboard/commercial' },
-            { label: 'Pipelines' },
-          ]}
+          description="Chargement..."
+          compact
         />
         <Card>
           <div className="py-12 text-center">

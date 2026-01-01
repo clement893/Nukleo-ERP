@@ -1,0 +1,150 @@
+/**
+ * Nukleo Brand Theme
+ * 
+ * Variables CSS pour appliquer le brand Nukleo partout automatiquement
+ * Basé sur https://nukleobrand-v3ycoqtu.manus.space/
+ */
+
+:root {
+  /* === Couleurs Primaires Nukleo === */
+  --nukleo-purple: #523DC9;
+  --nukleo-violet: #5F2B75;
+  --nukleo-crimson: #6B1817;
+  --nukleo-lavender: #A7A2CF;
+  --nukleo-dark: #291919;
+  --nukleo-light: #F5F3FF;
+  
+  /* === Gradient Aurora Borealis === */
+  --nukleo-gradient: linear-gradient(135deg, #5F2B75 0%, #523DC9 50%, #6B1817 100%);
+  
+  /* === Override Primary Colors === */
+  --color-primary-50: #F5F3FF;
+  --color-primary-100: #EDE9FE;
+  --color-primary-200: #DDD6FE;
+  --color-primary-300: #C4B5FD;
+  --color-primary-400: #A78BFA;
+  --color-primary-500: #523DC9; /* Nukleo Purple */
+  --color-primary-600: #4731A3;
+  --color-primary-700: #3B2682;
+  --color-primary-800: #2F1B61;
+  --color-primary-900: #231040;
+  
+  /* === Glassmorphism Nukleo === */
+  --glassmorphism-card-background: rgba(82, 61, 201, 0.05);
+  --glassmorphism-card-backdrop-blur: blur(12px);
+  --glassmorphism-card-border: rgba(167, 162, 207, 0.2);
+  --glassmorphism-shadow: 0 8px 32px 0 rgba(82, 61, 201, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  
+  /* === Border Colors === */
+  --color-border: rgba(167, 162, 207, 0.2);
+}
+
+/* === Dark Mode === */
+:root[class~="dark"] {
+  --color-primary-500: #7C3AED; /* Plus clair en dark mode */
+  --color-primary-600: #523DC9;
+  
+  --glassmorphism-card-background: rgba(82, 61, 201, 0.1);
+  --glassmorphism-card-border: rgba(167, 162, 207, 0.15);
+  --glassmorphism-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* === Glass Card Utility Class === */
+.glass-card {
+  background: var(--glassmorphism-card-background) !important;
+  backdrop-filter: var(--glassmorphism-card-backdrop-blur) !important;
+  -webkit-backdrop-filter: var(--glassmorphism-card-backdrop-blur) !important;
+  border-color: var(--glassmorphism-card-border) !important;
+  box-shadow: var(--glassmorphism-shadow) !important;
+}
+
+/* === Gradient Utilities === */
+.bg-nukleo-gradient {
+  background: var(--nukleo-gradient);
+}
+
+.text-nukleo-gradient {
+  background: var(--nukleo-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Border Nukleo === */
+.border-nukleo {
+  border-color: var(--nukleo-lavender) !important;
+  border-opacity: 0.2;
+}
+
+/* === Button Primary Override === */
+button[class*="primary"],
+.btn-primary {
+  background-color: var(--nukleo-purple) !important;
+  border-color: var(--nukleo-purple) !important;
+}
+
+button[class*="primary"]:hover,
+.btn-primary:hover {
+  background-color: var(--color-primary-600) !important;
+  border-color: var(--color-primary-600) !important;
+}
+
+/* === Badge Nukleo === */
+.badge-nukleo {
+  background-color: rgba(82, 61, 201, 0.1);
+  color: var(--nukleo-purple);
+  border: 1px solid rgba(82, 61, 201, 0.3);
+}
+
+/* === Typography Nukleo === */
+.font-nukleo {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* === Hover Effects Nukleo === */
+.hover-nukleo {
+  transition: all 0.2s ease;
+}
+
+.hover-nukleo:hover {
+  transform: scale(1.01);
+  border-color: rgba(82, 61, 201, 0.4);
+  box-shadow: 0 4px 16px 0 rgba(82, 61, 201, 0.15);
+}
+
+/* === Focus Ring Nukleo === */
+*:focus-visible {
+  outline: 2px solid var(--nukleo-purple) !important;
+  outline-offset: 2px;
+}
+
+/* === Scrollbar Nukleo === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(167, 162, 207, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(82, 61, 201, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(82, 61, 201, 0.5);
+}
+
+/* === Selection Nukleo === */
+::selection {
+  background-color: rgba(82, 61, 201, 0.2);
+  color: var(--nukleo-purple);
+}
+
+::-moz-selection {
+  background-color: rgba(82, 61, 201, 0.2);
+  color: var(--nukleo-purple);
+}
