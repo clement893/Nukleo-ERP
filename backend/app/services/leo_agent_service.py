@@ -336,7 +336,10 @@ class LeoAgentService:
         self.db.add(message)
         
         # Update conversation updated_at
-        conversation = await self.db.get(LeoConversation, conversation_id)
+        # Use async query instead of db.get() which is synchronous
+        conversation_query = select(LeoConversation).where(LeoConversation.id == conversation_id)
+        conversation_result = await self.db.execute(conversation_query)
+        conversation = conversation_result.scalar_one_or_none()
         if conversation:
             conversation.updated_at = datetime.utcnow()
         
