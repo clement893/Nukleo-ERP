@@ -185,21 +185,11 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
   // IMPORTANT: Ne pas bypasser les permissions même si l'utilisateur est admin
   // car on veut voir le portail tel que l'employé le voit avec ses permissions
   const enabledModules = EMPLOYEE_PORTAL_MODULES.filter((module) => {
-    // Si on charge encore les permissions, ne rien afficher
+    // Si on charge encore les permissions, ne rien afficher pour éviter les flashs
     if (permissionsLoading) return false;
     
     // Vérifier les permissions de l'employé (pas de l'utilisateur connecté)
     const hasAccess = hasModuleAccess(module.id);
-    
-    // Debug: log permissions check
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[EmployeePortalNavigation] Module ${module.id}: hasAccess=${hasAccess}`, {
-        employeeId,
-        isAdmin,
-        userIsAdmin: user?.is_admin,
-        permissions: permissions,
-      });
-    }
     
     return hasAccess;
   });
@@ -218,9 +208,11 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
 
   return (
     <nav className={clsx('space-y-1', className)}>
-      {/* Afficher les modules immédiatement même pendant le chargement initial */}
-      {/* Les permissions seront appliquées dès qu'elles sont chargées */}
-      {(
+      {permissionsLoading ? (
+        <div className="text-sm text-muted-foreground px-3 py-2">
+          Chargement des permissions...
+        </div>
+      ) : (
         <>
           {/* Pages de base - toujours visibles */}
           <div className="mb-4">

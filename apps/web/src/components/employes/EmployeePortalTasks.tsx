@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { projectCommentsAPI, type ProjectComment } from '@/lib/api/project-comments';
 import { projectAttachmentsAPI, type ProjectAttachment } from '@/lib/api/project-attachments';
@@ -12,7 +12,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
 import Avatar from '@/components/ui/Avatar';
 import { useAuthStore } from '@/lib/store';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, FileText, Image, File, Download } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, FileText, Image, File, Download, Plus } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
@@ -810,6 +810,9 @@ function TaskDocumentsTab({ taskId }: { taskId: number }) {
   const { showToast } = useToast();
   const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     loadAttachments();
@@ -878,6 +881,73 @@ function TaskDocumentsTab({ taskId }: { taskId: number }) {
     window.open(attachment.file_url, '_blank');
   };
 
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      showToast({
+        message: 'Le fichier est trop volumineux. Taille maximale : 50MB',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      await projectAttachmentsAPI.upload(file, {
+        task_id: taskId,
+      });
+      await loadAttachments();
+      showToast({
+        message: 'Document uploadé avec succès',
+        type: 'success',
+      });
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'upload du document',
+        type: 'error',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (attachmentId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
+      return;
+    }
+
+    try {
+      setDeletingIds(prev => new Set(prev).add(attachmentId));
+      await projectAttachmentsAPI.delete(attachmentId);
+      await loadAttachments();
+      showToast({
+        message: 'Document supprimé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression du document',
+        type: 'error',
+      });
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(attachmentId);
+        return newSet;
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-8 text-center">
@@ -888,63 +958,131 @@ function TaskDocumentsTab({ taskId }: { taskId: number }) {
 
   return (
     <div className="space-y-4">
+      {/* Bouton d'upload */}
+      <div className="flex items-center justify-between pb-4 border-b border-border">
+        <div>
+          <h4 className="text-sm font-semibold text-foreground mb-1">
+            Documents ({attachments.length})
+          </h4>
+          <p className="text-xs text-muted-foreground">
+            Taille maximale : 50MB
+          </p>
+        </div>
+        <div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+            id="file-upload"
+            disabled={uploading}
+          />
+          <Button
+            onClick={() => {
+              if (fileInputRef.current) {
+                fileInputRef.current.click();
+              }
+            }}
+            disabled={uploading}
+            size="sm"
+            variant="primary"
+          >
+            {uploading ? (
+              <>
+                <Loading className="w-4 h-4 mr-2" />
+                Upload...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un document
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Liste des documents */}
       {attachments.length === 0 ? (
         <div className="py-8 text-center text-muted-foreground">
           <Paperclip className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>Aucun document pour le moment.</p>
-          <p className="text-xs mt-2">Les documents uploadés apparaîtront ici.</p>
+          <p className="text-xs mt-2">Cliquez sur "Ajouter un document" pour commencer.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {attachments.map((attachment) => (
-            <div
-              key={attachment.id}
-              className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-muted transition-colors"
-            >
-              <div className="flex-shrink-0">
-                {getFileIcon(attachment.content_type, attachment.filename)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {attachment.original_filename || attachment.filename}
-                  </p>
+          {attachments.map((attachment) => {
+            const isDeleting = deletingIds.has(attachment.id);
+            return (
+              <div
+                key={attachment.id}
+                className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="flex-shrink-0">
+                  {getFileIcon(attachment.content_type, attachment.filename)}
                 </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-muted-foreground">
-                    {formatFileSize(attachment.file_size)}
-                  </span>
-                  {attachment.uploaded_by_name && (
-                    <>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">
-                        Uploadé par {attachment.uploaded_by_name}
-                      </span>
-                    </>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {attachment.original_filename || attachment.filename}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {formatFileSize(attachment.file_size)}
+                    </span>
+                    {attachment.uploaded_by_name && (
+                      <>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">
+                          Uploadé par {attachment.uploaded_by_name}
+                        </span>
+                      </>
+                    )}
+                    <span className="text-xs text-muted-foreground">•</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(attachment.created_at)}
+                    </span>
+                  </div>
+                  {attachment.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {attachment.description}
+                    </p>
                   )}
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(attachment.created_at)}
-                  </span>
                 </div>
-                {attachment.description && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {attachment.description}
-                  </p>
-                )}
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  <Button
+                    onClick={() => handleDownload(attachment)}
+                    size="sm"
+                    variant="outline"
+                    disabled={isDeleting}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger
+                  </Button>
+                  <Button
+                    onClick={() => handleDelete(attachment.id)}
+                    size="sm"
+                    variant="outline"
+                    disabled={isDeleting}
+                    className="text-red-600 hover:text-red-700 hover:border-red-300"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loading className="w-4 h-4 mr-2" />
+                        Suppression...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Supprimer
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-              <div className="flex-shrink-0">
-                <Button
-                  onClick={() => handleDownload(attachment)}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
