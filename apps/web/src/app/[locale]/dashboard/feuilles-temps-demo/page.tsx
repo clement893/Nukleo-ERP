@@ -14,7 +14,6 @@ import {
   Plus,
   Search,
   Calendar,
-  User,
   Briefcase,
   TrendingUp,
   Download

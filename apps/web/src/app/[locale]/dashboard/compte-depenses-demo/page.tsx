@@ -14,13 +14,10 @@ import {
   Plus,
   Search,
   Calendar,
-  User,
   DollarSign,
-  TrendingUp,
   FileText,
   Download,
   CreditCard,
-  Plane,
   Coffee,
   Car,
   Home
@@ -168,7 +165,7 @@ export default function ExpensesDemoPage() {
   const totalExpenses = mockExpenses.length;
   const approvedExpenses = mockExpenses.filter(e => e.status === 'approved').length;
   const pendingExpenses = mockExpenses.filter(e => e.status === 'pending').length;
-  const rejectedExpenses = mockExpenses.filter(e => e.status === 'rejected').length;
+  // rejectedExpenses is calculated but not displayed
 
   const totalAmount = mockExpenses.reduce((sum, e) => sum + e.amount, 0);
   const approvedAmount = mockExpenses.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.amount, 0);
@@ -320,7 +317,6 @@ export default function ExpensesDemoPage() {
         {/* Expenses List */}
         <div className="space-y-4">
           {filteredExpenses.map((expense) => {
-            const StatusIcon = statusConfig[expense.status as keyof typeof statusConfig].icon;
             const CategoryIcon = categoryConfig[expense.category as keyof typeof categoryConfig]?.icon || Receipt;
             const categoryColor = categoryConfig[expense.category as keyof typeof categoryConfig]?.color || 'text-gray-500';
             

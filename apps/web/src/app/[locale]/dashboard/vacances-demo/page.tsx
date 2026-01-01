@@ -311,7 +311,6 @@ export default function VacationsDemoPage() {
         {/* Vacations List */}
         <div className="space-y-4">
           {filteredVacations.map((vacation) => {
-            const StatusIcon = statusConfig[vacation.status as keyof typeof statusConfig].icon;
             const TypeIcon = typeConfig[vacation.type as keyof typeof typeConfig]?.icon || Plane;
             const typeColor = typeConfig[vacation.type as keyof typeof typeConfig]?.color || 'text-gray-500';
             

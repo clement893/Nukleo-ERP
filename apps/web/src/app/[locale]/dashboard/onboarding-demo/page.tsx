@@ -286,7 +286,6 @@ export default function OnboardingDemoPage() {
         {/* Onboarding List */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredOnboardings.map((onboarding) => {
-            const StatusIcon = statusConfig[onboarding.status as keyof typeof statusConfig].icon;
             const completedTasks = onboarding.tasks.filter(t => t.completed).length;
             const totalTasks = onboarding.tasks.length;
             

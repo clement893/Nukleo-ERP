@@ -9,7 +9,6 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Users, 
   UserCheck,
-  UserX,
   TrendingUp,
   Plus,
   Search,
@@ -20,8 +19,7 @@ import {
   MapPin,
   Briefcase,
   Calendar,
-  DollarSign,
-  Award
+  DollarSign
 } from 'lucide-react';
 import { Badge, Button, Card, Input } from '@/components/ui';
 import Link from 'next/link';
@@ -168,7 +166,7 @@ export default function EmployeesDemoPage() {
   const totalEmployees = mockEmployees.length;
   const activeEmployees = mockEmployees.filter(e => e.status === 'active').length;
   const onVacation = mockEmployees.filter(e => e.status === 'vacation').length;
-  const inactiveEmployees = mockEmployees.filter(e => e.status === 'inactive').length;
+  // inactiveEmployees is calculated but not displayed
 
   const avgSalary = Math.round(mockEmployees.reduce((sum, e) => sum + e.salary, 0) / mockEmployees.length);
 
@@ -307,14 +305,14 @@ export default function EmployeesDemoPage() {
 
           <div className="flex gap-2">
             <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              variant={viewMode === 'grid' ? 'primary' : 'outline'}
               onClick={() => setViewMode('grid')}
               className="hover-nukleo"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              variant={viewMode === 'list' ? 'primary' : 'outline'}
               onClick={() => setViewMode('list')}
               className="hover-nukleo"
             >
