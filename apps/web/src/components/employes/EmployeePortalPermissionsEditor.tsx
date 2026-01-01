@@ -78,7 +78,6 @@ export default function EmployeePortalPermissionsEditor({
 
       // Initialiser les états des cases à cocher
       const modulesSet = new Set<string>();
-      const pagesSet = new Set<string>();
       const clientsSet = new Set<number>();
 
       permissionsData.forEach(perm => {
