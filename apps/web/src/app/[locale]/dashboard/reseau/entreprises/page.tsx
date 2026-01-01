@@ -258,8 +258,8 @@ export default function EntreprisesPage() {
                 className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer"
                 onClick={() => handleView(company.id)}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     {company.logo_url ? (
                       <img 
                         src={company.logo_url} 
@@ -268,23 +268,26 @@ export default function EntreprisesPage() {
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
+                          const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
                         }}
                       />
                     ) : null}
-                    <div className={`w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
+                    <div className={`logo-fallback w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
                       <Building2 className="w-6 h-6 text-[#523DC9]" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
+                  </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">{company.name}</h3>
                       {company.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{company.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{company.description}</p>
                       )}
                     </div>
+                    <Badge className={`flex-shrink-0 ${company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}`}>
+                      {company.is_client ? 'Client' : 'Prospect'}
+                    </Badge>
                   </div>
-                  <Badge className={company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}>
-                    {company.is_client ? 'Client' : 'Prospect'}
-                  </Badge>
                 </div>
 
                 <div className="space-y-2 mb-4">
