@@ -726,3 +726,114 @@ async def invite_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create invitation: {str(e)}"
         )
+
+
+class UserInviteRequestOptional(BaseModel):
+    """Optional invitation data for inactive users"""
+    role_id: Optional[int] = None
+    message: Optional[str] = None
+
+
+@router.post("/{user_id}/send-invitation", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+@rate_limit_decorator("10/hour")
+async def send_invitation_to_inactive_user(
+    request: Request,
+    user_id: int,
+    invite_data: Optional[UserInviteRequestOptional] = None,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """
+    Send an invitation to an inactive user to activate their account
+    
+    This endpoint allows admins to send an invitation email to users who have
+    inactive accounts, enabling them to create a password and activate their account.
+    """
+    try:
+        from app.dependencies import is_admin_or_superadmin
+        
+        # Check if user is admin or superadmin
+        is_admin = await is_admin_or_superadmin(current_user, db)
+        if not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can send invitations to users"
+            )
+        
+        # Get the target user
+        result = await db.execute(select(User).where(User.id == user_id))
+        target_user = result.scalar_one_or_none()
+        
+        if not target_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Only send invitation to inactive users
+        if target_user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot send invitation to an active user. User account is already active."
+            )
+        
+        # Check if there's already a pending invitation for this user
+        from app.models import Invitation
+        from datetime import datetime, timezone
+        
+        existing_invitation_result = await db.execute(
+            select(Invitation)
+            .where(Invitation.email == target_user.email.lower())
+            .where(Invitation.status == "pending")
+        )
+        existing_invitation = existing_invitation_result.scalar_one_or_none()
+        
+        if existing_invitation:
+            # Check if invitation is still valid (not expired)
+            if existing_invitation.expires_at > datetime.now(timezone.utc):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A pending invitation already exists for this user. Please wait for it to expire or cancel it first."
+                )
+            else:
+                # Mark expired invitation as expired
+                existing_invitation.status = "expired"
+                await db.commit()
+        
+        # Create invitation (without team_id for user invitation)
+        invitation_service = InvitationService(db)
+        
+        # Get default role if provided, otherwise None
+        role_id = invite_data.role_id if invite_data and invite_data.role_id else None
+        message = invite_data.message if invite_data and invite_data.message else "You have been invited to activate your account on our platform. Please click the link below to set your password and activate your account."
+        
+        invitation = await invitation_service.create_invitation(
+            email=target_user.email,
+            invited_by_id=current_user.id,
+            team_id=None,  # User invitation, not team invitation
+            role_id=role_id,
+            message=message,
+            expires_in_days=7,  # Default 7 days expiration
+        )
+        
+        logger.info(f"Invitation sent to inactive user {user_id} ({target_user.email}) by {current_user.email}")
+        
+        return InvitationResponse.model_validate(invitation)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending invitation to user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send invitation: {str(e)}"
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending invitation to user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send invitation: {str(e)}"
+        )
