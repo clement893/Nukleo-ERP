@@ -361,15 +361,26 @@ export default function EmployeesPage() {
                   </div>
 
                   <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button size="sm" variant="outline" onClick={() => handleView(employee.id)} className="flex-1">
-                      <Eye className="w-4 h-4 mr-1" />
-                      Voir
+                    <Button size="sm" variant="outline" onClick={() => handleView(employee.id)} className="flex-1" title="Voir">
+                      <Eye className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/management/employes/${employee.id}/portal`)} className="flex-1">
-                      <UserCheck className="w-4 h-4 mr-1" />
-                      Portail
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => {
+                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                        const locale = window.location.pathname.split('/')[1] || 'fr';
+                        const portalUrl = employee.user_id 
+                          ? `${baseUrl}/${locale}/erp/dashboard?user_id=${employee.user_id}`
+                          : `${baseUrl}/${locale}/erp/dashboard?employee_id=${employee.id}`;
+                        window.open(portalUrl, '_blank');
+                      }} 
+                      className="flex-1"
+                      title="Portail"
+                    >
+                      <UserCheck className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)} title="Supprimer">
                       <Trash2 className="w-4 h-4 text-red-600" />
                     </Button>
                   </div>
@@ -430,15 +441,25 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button size="sm" variant="outline" onClick={() => handleView(employee.id)}>
-                          <Eye className="w-4 h-4 mr-1" />
-                          Voir
+                        <Button size="sm" variant="outline" onClick={() => handleView(employee.id)} title="Voir">
+                          <Eye className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/management/employes/${employee.id}/portal`)}>
-                          <UserCheck className="w-4 h-4 mr-1" />
-                          Portail
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                            const locale = window.location.pathname.split('/')[1] || 'fr';
+                            const portalUrl = employee.user_id 
+                              ? `${baseUrl}/${locale}/erp/dashboard?user_id=${employee.user_id}`
+                              : `${baseUrl}/${locale}/erp/dashboard?employee_id=${employee.id}`;
+                            window.open(portalUrl, '_blank');
+                          }}
+                          title="Portail"
+                        >
+                          <UserCheck className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)} title="Supprimer">
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
