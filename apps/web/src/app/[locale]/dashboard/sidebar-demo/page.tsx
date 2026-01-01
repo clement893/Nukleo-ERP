@@ -296,7 +296,7 @@ export default function SidebarDemoPage() {
 
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center flex-shrink-0">
-                      <Badge className="w-4 h-4 text-[#10B981]" />
+                      <div className="w-4 h-4 rounded-full bg-[#10B981]" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Badges de Notification</h4>

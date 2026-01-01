@@ -11,7 +11,7 @@ export const DEFAULT_THEME_CONFIG = {
   // Basic color fields (for backward compatibility and simple usage)
   // Professional color palette - harmonious and accessible
   // All colors adjusted to meet WCAG AA contrast requirements (4.5:1 for text, 3:1 for UI)
-  primary_color: "#2563eb",  // Deep professional blue (4.5:1 on white)
+  primary_color: "#523DC9",  // Nukleo Purple (4.5:1 on white)
   secondary_color: "#6366f1",  // Elegant indigo (4.5:1 on white)
   danger_color: "#dc2626",  // Refined red (5.1:1 on white)
   warning_color: "#b45309",  // Warm amber 700 (4.5:1 on white, improved from #d97706)
@@ -51,14 +51,14 @@ export const DEFAULT_THEME_CONFIG = {
     textSubheading: "#334155",  // Slate 700
     textBody: "#1e293b",  // Slate 800
     textSecondary: "#64748b",  // Slate 500
-    textLink: "#2563eb",  // Matches primary
+    textLink: "#523DC9",  // Matches primary (Nukleo Purple)
     // fontUrl removed - using local Aktiv Grotesk font instead of Google Fonts Inter
   },
   
   // Colors configuration (comprehensive) - Professional and harmonious
   // All colors adjusted to meet WCAG AA contrast requirements
   colors: {
-    primary: "#2563eb",  // Deep professional blue (4.5:1 on white)
+    primary: "#523DC9",  // Nukleo Purple (4.5:1 on white)
     secondary: "#6366f1",  // Elegant indigo (4.5:1 on white)
     danger: "#dc2626",  // Refined red (5.1:1 on white)
     warning: "#b45309",  // Warm amber 700 (4.5:1 on white, improved from #d97706)
@@ -70,7 +70,7 @@ export const DEFAULT_THEME_CONFIG = {
     mutedForeground: "#64748b",  // Slate 500
     border: "#e2e8f0",  // Slate 200 - softer borders
     input: "#ffffff",
-    ring: "#2563eb",  // Matches primary
+    ring: "#523DC9",  // Matches primary (Nukleo Purple)
     destructive: "#dc2626",  // Refined red
     destructiveForeground: "#ffffff",
     successForeground: "#ffffff",

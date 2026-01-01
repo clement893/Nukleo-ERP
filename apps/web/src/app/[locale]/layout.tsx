@@ -137,21 +137,21 @@ export default async function LocaleLayout({
                 --color-muted-foreground: #64748b;
                 --color-border: #e2e8f0;
                 --color-input: #ffffff;
-                --color-ring: #2563eb;
+                --color-ring: #523DC9;
                 
                 /* Default color palette - will be overridden by theme */
-                /* Primary shades - prevent flash on gradients */
-                --color-primary-50: #eff6ff;
-                --color-primary-100: #dbeafe;
-                --color-primary-200: #bfdbfe;
-                --color-primary-300: #93c5fd;
-                --color-primary-400: #60a5fa;
-                --color-primary-500: #2563eb;
-                --color-primary-600: #1d4ed8;
-                --color-primary-700: #1e40af;
-                --color-primary-800: #1e3a8a;
-                --color-primary-900: #1e3a8a;
-                --color-primary-950: #172554;
+                /* Primary shades - prevent flash on gradients - Using Nukleo Purple */
+                --color-primary-50: #F5F3FF;
+                --color-primary-100: #EDE9FE;
+                --color-primary-200: #DDD6FE;
+                --color-primary-300: #C4B5FD;
+                --color-primary-400: #A78BFA;
+                --color-primary-500: #523DC9; /* Nukleo Purple */
+                --color-primary-600: #4731A3;
+                --color-primary-700: #3B2682;
+                --color-primary-800: #2F1B61;
+                --color-primary-900: #231040;
+                --color-primary-950: #1A0D2E;
                 /* Secondary shades */
                 --color-secondary-50: #f5f3ff;
                 --color-secondary-100: #ede9fe;
