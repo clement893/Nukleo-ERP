@@ -337,7 +337,7 @@ async def delete_user(
     - Requires admin or superadmin permissions
     - Prevents self-deletion
     - Prevents deletion of last superadmin
-    - Soft delete (sets is_active=False) or hard delete based on configuration
+    - Hard delete (removes user from database)
     """
     user_email = None
     try:
@@ -425,7 +425,7 @@ async def delete_user(
         await db.delete(user_to_delete)
         await db.commit()
         
-        logger.info(f"User {user_id} ({user_email}) soft-deleted by {current_user.email}")
+        logger.info(f"User {user_id} ({user_email}) deleted by {current_user.email}")
         
         # Log deletion attempt (after successful deletion)
         # Use a separate try/except to ensure audit logging failures don't break the deletion
