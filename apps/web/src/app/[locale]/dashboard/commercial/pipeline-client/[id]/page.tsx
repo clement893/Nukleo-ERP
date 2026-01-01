@@ -7,10 +7,10 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
-import { Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
+import { Button, Modal, Input, Select, Alert, Loading, Card } from '@/components/ui';
 import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown, X, UserCircle, Search } from 'lucide-react';
+import { Plus, Settings, ArrowLeft, Edit, Trash2, ChevronUp, ChevronDown, X, UserCircle, Search, Target, DollarSign, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/components/ui';
 import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
@@ -542,6 +542,56 @@ function PipelineDetailContent() {
         {error && (
           <Alert variant="error" className="mt-2">{error}</Alert>
         )}
+      </div>
+
+      {/* Stats Cards */}
+      <div className="flex-shrink-0 px-6 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="glass-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Opportunités</p>
+                <p className="text-xl font-bold text-foreground">{opportunities.length}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="glass-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Valeur totale</p>
+                <p className="text-xl font-bold text-foreground">${opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="glass-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Valeur pondérée</p>
+                <p className="text-xl font-bold text-foreground">${opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="glass-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                <Settings className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Étapes</p>
+                <p className="text-xl font-bold text-foreground">{pipeline.stages?.length || 0}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* Kanban Board - Prend tout l'espace restant */}
