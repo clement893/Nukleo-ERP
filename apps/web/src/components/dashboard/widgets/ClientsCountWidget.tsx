@@ -29,13 +29,13 @@ export function ClientsCountWidget({ config, globalFilters }: WidgetProps) {
     console.warn('ClientsCountWidget error:', error);
   }
 
-  // Use active_count for "Clients actifs" (companies with is_client=true)
-  // Fallback to count if active_count is not available
-  const count = data?.active_count ?? data?.count ?? 0;
-  // Use active_growth if available, otherwise fallback to growth
-  const growth = data?.active_growth ?? data?.growth ?? 0;
-  // Use previous_active_count if available, otherwise fallback to previous_count
-  const previousCount = data?.previous_active_count ?? data?.previous_count ?? 0;
+  // Use count (total clients) to match the clients page which shows all clients
+  // This ensures the widget count matches what users see on the clients page
+  const count = data?.count ?? 0;
+  // Use growth for total clients
+  const growth = data?.growth ?? 0;
+  // Use previous_count for total clients
+  const previousCount = data?.previous_count ?? 0;
   const isPositive = growth >= 0;
 
   return (
@@ -52,7 +52,7 @@ export function ClientsCountWidget({ config, globalFilters }: WidgetProps) {
             {count.toLocaleString('fr-FR')}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Clients actifs
+            Clients
           </p>
         </div>
 
