@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Calendar, AlertCircle, CheckCircle, Clock, Search, Filter } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle, Clock, Search } from 'lucide-react';
 import { Badge, Button, Card, Input } from '@/components/ui';
 import { useInfiniteProjects } from '@/lib/query/projects';
 import { useInfiniteProjectTasks } from '@/lib/query/project-tasks';
@@ -67,8 +67,8 @@ export default function DeadlinesPage() {
   const { data: projectsData, isLoading: projectsLoading } = useInfiniteProjects();
   const { data: tasksData, isLoading: tasksLoading } = useInfiniteProjectTasks();
 
-  const projects = projectsData?.pages.flatMap(page => page.data) || [];
-  const tasks = tasksData?.pages.flatMap(page => page.data) || [];
+  const projects = projectsData?.pages.flatMap(page => page) || [];
+  const tasks = tasksData?.pages.flatMap(page => page) || [];
 
   const deadlines: DeadlineItem[] = useMemo(() => {
     return tasks
