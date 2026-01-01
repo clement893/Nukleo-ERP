@@ -6,24 +6,29 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { NukleoPageHeader } from '@/components/nukleo';
-import { Button, Alert, Loading, Badge } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
+import { PageContainer } from '@/components/layout';
+import { Button, Alert, Loading, Badge, Input } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import { type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import OpportunityForm from '@/components/commercial/OpportunityForm';
-import SearchBar from '@/components/ui/SearchBar';
+
 import MultiSelect from '@/components/ui/MultiSelect';
 import { 
   Plus, 
   Download, 
   Upload, 
-  FileSpreadsheet, 
   MoreVertical,
-  Trash2
+  Search,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Clock,
+  Building2,
+  Calendar,
+  Edit,
+  Eye
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -31,14 +36,13 @@ import {
   useInfiniteOpportunities, 
   useCreateOpportunity, 
   useUpdateOpportunity, 
-  // useDeleteOpportunity, // Currently unused but kept for future use
   opportunitiesAPI 
 } from '@/lib/query/opportunities';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI } from '@/lib/api/companies';
 import ImportOpportunitiesInstructions from '@/components/commercial/ImportOpportunitiesInstructions';
 import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
-import { HelpCircle } from 'lucide-react';
+
 
 function OpportunitiesContent() {
   const router = useRouter();
@@ -57,7 +61,6 @@ function OpportunitiesContent() {
   // Mutations
   const createOpportunityMutation = useCreateOpportunity();
   const updateOpportunityMutation = useUpdateOpportunity();
-  // const deleteOpportunityMutation = useDeleteOpportunity(); // Currently unused but kept for future use
   
   // Flatten pages into single array
   const opportunities = useMemo(() => {
@@ -71,10 +74,11 @@ function OpportunitiesContent() {
   const [filterPipeline, setFilterPipeline] = useState<string[]>([]);
   const [filterCompany, setFilterCompany] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
+
   const [showImportInstructions, setShowImportInstructions] = useState(false);
   const [currentImportId, setCurrentImportId] = useState<string | null>(null);
   const [showImportLogs, setShowImportLogs] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Load pipelines and companies for filters
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -100,16 +104,16 @@ function OpportunitiesContent() {
     loadData();
   }, [showToast]);
   
-  // Debounce search query to avoid excessive re-renders (300ms delay)
+  // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
-  // Derived state from React Query
+  // Derived state
   const loading = isLoading;
   const loadingMore = isFetchingNextPage;
   const hasMore = hasNextPage ?? false;
   const error = queryError ? handleApiError(queryError).message : null;
 
-  // Extract unique stage names from opportunities for filter
+  // Extract unique stage names
   const stageOptions = useMemo(() => {
     const stages = new Set<string>();
     opportunities.forEach((opp) => {
@@ -118,68 +122,82 @@ function OpportunitiesContent() {
     return Array.from(stages).sort();
   }, [opportunities]);
 
-  // Load more opportunities for infinite scroll
+  // Load more
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
       fetchNextPage();
     }
   }, [loadingMore, hasMore, fetchNextPage]);
 
-  // Extract unique values for dropdowns (currently unused but kept for future use)
-  // const uniqueValues = useMemo(() => {
-  //   const pipelineNames = new Set<string>();
-  //   const companyNames = new Set<string>();
-
-  //   opportunities.forEach((opp) => {
-  //     if (opp.pipeline_name) pipelineNames.add(opp.pipeline_name);
-  //     if (opp.company_name) companyNames.add(opp.company_name);
-  //   });
-
-  //   return {
-  //     pipelineNames: Array.from(pipelineNames).sort(),
-  //     companyNames: Array.from(companyNames).sort(),
-  //   };
-  // }, [opportunities]);
-
-  // Filtered opportunities with debounced search
+  // Filtered opportunities
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
-      // Stage filter (using stage_name instead of status)
+      // Stage filter
       const matchesStatus = filterStatus.length === 0 || (opp.stage_name && filterStatus.includes(opp.stage_name));
       
       // Pipeline filter
-      const matchesPipeline = filterPipeline.length === 0 || 
-        (opp.pipeline_id && filterPipeline.includes(opp.pipeline_id));
+      const matchesPipeline = filterPipeline.length === 0 || (opp.pipeline_id && filterPipeline.includes(opp.pipeline_id));
       
       // Company filter
-      const matchesCompany = filterCompany.length === 0 || 
-        (opp.company_id && filterCompany.includes(opp.company_id.toString()));
+      const matchesCompany = filterCompany.length === 0 || (opp.company_id && filterCompany.includes(String(opp.company_id)));
       
-      // Search filter: search in name, description, company (using debounced query)
+      // Search filter
       const matchesSearch = !debouncedSearchQuery || 
-        opp.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        opp.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         opp.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         opp.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-
+      
       return matchesStatus && matchesPipeline && matchesCompany && matchesSearch;
     });
   }, [opportunities, filterStatus, filterPipeline, filterCompany, debouncedSearchQuery]);
-  
-  // Check if any filters are active
-  const hasActiveFilters = !!(filterStatus.length > 0 || filterPipeline.length > 0 || filterCompany.length > 0 || debouncedSearchQuery);
-  
-  // Clear all filters function
-  const clearAllFilters = useCallback(() => {
-    setFilterStatus([]);
-    setFilterPipeline([]);
-    setFilterCompany([]);
-    setSearchQuery('');
-  }, []);
 
-  // Handle create with React Query mutation
-  const handleCreate = async (data: OpportunityCreate | OpportunityUpdate) => {
+  // Check if any filters are active
+  const hasActiveFilters = filterStatus.length > 0 || filterPipeline.length > 0 || filterCompany.length > 0 || debouncedSearchQuery.trim() !== '';
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const totalValue = filteredOpportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+    const weightedValue = filteredOpportunities.reduce((sum, opp) => {
+      const probability = opp.probability || 50;
+      return sum + ((opp.amount || 0) * probability / 100);
+    }, 0);
+    const avgProbability = filteredOpportunities.length > 0
+      ? filteredOpportunities.reduce((sum, opp) => sum + (opp.probability || 50), 0) / filteredOpportunities.length
+      : 0;
+    
+    return {
+      total: filteredOpportunities.length,
+      totalValue,
+      weightedValue,
+      avgProbability: avgProbability.toFixed(0),
+    };
+  }, [filteredOpportunities]);
+
+  // Format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('fr-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // Get stage color
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'Découverte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'Qualification': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'Proposition': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'Négociation': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'Closing': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+    }
+  };
+
+  // Handle create
+  const handleCreate = async (data: OpportunityCreate) => {
     try {
-      await createOpportunityMutation.mutateAsync(data as OpportunityCreate);
+      await createOpportunityMutation.mutateAsync(data);
       setShowCreateModal(false);
       showToast({
         message: 'Opportunité créée avec succès',
@@ -188,125 +206,34 @@ function OpportunitiesContent() {
     } catch (err) {
       const appError = handleApiError(err);
       showToast({
-        message: appError.message || 'Erreur lors de la création de l\'opportunité',
+        message: appError.message || 'Erreur lors de la création',
         type: 'error',
       });
     }
   };
 
-  // Handle update with React Query mutation
-  const handleUpdate = async (data: OpportunityCreate | OpportunityUpdate) => {
-    if (!selectedOpportunity) return;
-
+  // Handle update
+  const handleUpdate = async (id: string, data: OpportunityUpdate) => {
     try {
-      await updateOpportunityMutation.mutateAsync({
-        id: selectedOpportunity.id,
-        data: data as OpportunityUpdate,
-      });
+      await updateOpportunityMutation.mutateAsync({ id, data });
       setShowEditModal(false);
       setSelectedOpportunity(null);
       showToast({
-        message: 'Opportunité modifiée avec succès',
+        message: 'Opportunité mise à jour avec succès',
         type: 'success',
       });
     } catch (err) {
       const appError = handleApiError(err);
       showToast({
-        message: appError.message || 'Erreur lors de la modification de l\'opportunité',
+        message: appError.message || 'Erreur lors de la mise à jour',
         type: 'error',
       });
     }
   };
 
-  // Handle delete with React Query mutation (currently unused but kept for future use)
-  // const handleDelete = async (opportunityId: string) => {
-  //   if (!confirm('Êtes-vous sûr de vouloir supprimer cette opportunité ?')) {
-  //     return;
-  //   }
-
-  //   try {
-  //     await deleteOpportunityMutation.mutateAsync(opportunityId);
-  //     if (selectedOpportunity?.id === opportunityId) {
-  //       setSelectedOpportunity(null);
-  //     }
-  //     showToast({
-  //       message: 'Opportunité supprimée avec succès',
-  //       type: 'success',
-  //     });
-  //   } catch (err) {
-  //     const appError = handleApiError(err);
-  //     showToast({
-  //       message: appError.message || 'Erreur lors de la suppression de l\'opportunité',
-  //       type: 'error',
-  //     });
-  //   }
-  // };
-
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
-  
-  // Handle delete all opportunities
-  const handleDeleteAll = async () => {
-    if (opportunities.length === 0) {
-      showToast({
-        message: 'Aucune opportunité à supprimer',
-        type: 'info',
-      });
-      return;
-    }
-    
-    const confirmed = window.confirm(
-      `Êtes-vous sûr de vouloir supprimer toutes les ${opportunities.length} opportunité${opportunities.length > 1 ? 's' : ''} ?\n\nCette action est irréversible.`
-    );
-    
-    if (!confirmed) {
-      return;
-    }
-    
-    try {
-      const result = await opportunitiesAPI.deleteAll();
-      // Invalidate opportunities query to refetch after deletion
-      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
-      showToast({
-        message: result.message || `Suppression réussie : ${result.deleted_count} opportunité${result.deleted_count > 1 ? 's' : ''} supprimée${result.deleted_count > 1 ? 's' : ''}`,
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression des opportunités',
-        type: 'error',
-      });
-    }
-  };
-  
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      // Generate import_id before starting import
-      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
-      setShowImportLogs(true);
-      
-      const result = await opportunitiesAPI.import(file, importId);
-      
-      // Update import_id if backend returns a different one (should be the same)
-      if (result.import_id && result.import_id !== importId) {
-        setCurrentImportId(result.import_id);
-      }
-      
-      if (result.valid_rows > 0) {
-        // Invalidate opportunities query to refetch after import
-        queryClient.invalidateQueries({ queryKey: ['opportunities'] });
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-      setShowImportLogs(false);
-    }
+  // Handle row click
+  const handleRowClick = (opportunity: Opportunity) => {
+    router.push(`/dashboard/commercial/opportunites/${opportunity.id}`);
   };
 
   // Handle export
@@ -316,7 +243,7 @@ function OpportunitiesContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `opportunites-${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `opportunites_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -334,362 +261,397 @@ function OpportunitiesContent() {
     }
   };
 
-  // Navigate to detail page
-  const openDetailPage = (opportunity: Opportunity) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/commercial/opportunites/${opportunity.id}`);
+  // Handle import
+  const handleImport = async (file: File) => {
+    try {
+      const result = await opportunitiesAPI.import(file);
+      setCurrentImportId(result.import_id || null);
+      setShowImportInstructions(false);
+      setShowImportLogs(true);
+      showToast({
+        message: 'Import démarré avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'import',
+        type: 'error',
+      });
+    }
   };
 
-  // Format currency
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return '-';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
-
-  // Table columns
-  const columns: Column<Opportunity>[] = [
-    {
-      key: 'name',
-      label: 'Nom de l\'opportunité',
-      sortable: true,
-      render: (_value, opportunity) => (
-        <div style={{ maxWidth: '300px' }} className="whitespace-normal">
-          <div className="font-medium truncate block" title={opportunity.name}>{opportunity.name}</div>
-          {opportunity.description && (
-            <div className="text-sm text-muted-foreground line-clamp-1">{opportunity.description}</div>
-          )}
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-64">
+          <Loading size="lg" />
         </div>
-      ),
-    },
-    {
-      key: 'company_name',
-      label: 'Entreprise',
-      sortable: true,
-      render: (_value, opportunity) => {
-        if (!opportunity.company_name) return <span className="text-muted-foreground">-</span>;
-        
-        // Find company logo if available
-        const company = companies.find(c => c.id === opportunity.company_id);
-        
-        return (
-          <div className="flex items-center gap-2 min-w-0">
-            {company?.logo_url && (
-              <img 
-                src={company.logo_url} 
-                alt={opportunity.company_name} 
-                className="w-6 h-6 rounded object-cover flex-shrink-0"
-              />
-            )}
-            <span className="font-medium truncate" title={opportunity.company_name}>{opportunity.company_name}</span>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'stage_name',
-      label: 'Statut',
-      sortable: true,
-      render: (value, opportunity) => {
-        const stageName = opportunity.stage_name || value;
-        if (!stageName) return <span className="text-muted-foreground">-</span>;
-        
-        return (
-          <Badge className="badge-nukleo">
-            {String(stageName)}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: 'pipeline_name',
-      label: 'Pipeline',
-      sortable: true,
-      render: (_value, opportunity) => (
-        <div className="font-medium">{opportunity.pipeline_name || '-'}</div>
-      ),
-    },
-    {
-      key: 'amount',
-      label: 'Montant',
-      sortable: true,
-      render: (value) => {
-        const amount = value as number | null | undefined;
-        if (!amount) return <span className="text-muted-foreground">-</span>;
-        return (
-          <span className="font-semibold text-foreground">
-            {formatCurrency(amount)}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'region',
-      label: 'Région',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
-      ),
-    },
-  ];
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <Alert variant="error">{error}</Alert>
+      </PageContainer>
+    );
+  }
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <NukleoPageHeader
-        title="Opportunités"
-        description="Gérez vos opportunités commerciales"
-        compact
-      />
-
-      {/* Toolbar */}
-      <div className="glass-card rounded-xl border border-border p-6">
-        <div className="space-y-3">
-          {/* Opportunity count */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {hasActiveFilters ? (
-                <span>
-                  {filteredOpportunities.length} sur {opportunities.length} opportunité{opportunities.length > 1 ? 's' : ''}
-                </span>
-              ) : (
-                <span>
-                  {opportunities.length} opportunité{opportunities.length > 1 ? 's' : ''} au total
-                </span>
-              )}
+    <PageContainer className="flex flex-col h-full">
+      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
+        {/* Hero Header with Aurora Borealis Gradient */}
+        <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
+          
+          <div className="relative flex items-center justify-between">
+            <div>
+              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Opportunités
+              </h1>
+              <p className="text-white/80 text-lg">Gérez votre pipeline de ventes</p>
             </div>
-          </div>
-          
-          {/* Search bar */}
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Rechercher par nom, description, entreprise..."
-            className="w-full"
-          />
-          
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Statut (Stage) */}
-            <MultiSelect
-              options={stageOptions.map((stage) => ({
-                label: stage,
-                value: stage,
-              }))}
-              value={filterStatus}
-              onChange={setFilterStatus}
-              placeholder="Filtrer par stade"
-              className="min-w-[180px]"
-            />
-
-            {/* Pipeline */}
-            {pipelines.length > 0 && (
-              <MultiSelect
-                options={pipelines.map((pipeline) => ({
-                  label: pipeline.name,
-                  value: pipeline.id,
-                }))}
-                value={filterPipeline}
-                onChange={setFilterPipeline}
-                placeholder="Filtrer par pipeline"
-                className="min-w-[180px]"
-              />
-            )}
-
-            {/* Entreprise */}
-            {companies.length > 0 && (
-              <MultiSelect
-                options={companies.map((company) => ({
-                  label: company.name,
-                  value: company.id.toString(),
-                }))}
-                value={filterCompany}
-                onChange={setFilterCompany}
-                placeholder="Filtrer par entreprise"
-                className="min-w-[180px]"
-              />
-            )}
-
-            {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                Effacer les filtres
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowImportInstructions(true)}
+                className="bg-white/10 text-white border-white/30 hover:bg-white/20"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Importer
               </Button>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setShowCreateModal(true)} className="hover-nukleo">
-                <Plus className="w-4 h-4 mr-1.5" />
+              <Button 
+                variant="outline"
+                onClick={handleExport}
+                className="bg-white/10 text-white border-white/30 hover:bg-white/20"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+              <Button 
+                className="bg-white text-[#523DC9] hover:bg-white/90"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
                 Nouvelle opportunité
               </Button>
+            </div>
+          </div>
+        </div>
 
-              {/* Actions menu */}
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowActionsMenu(!showActionsMenu)}
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-                {showActionsMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowActionsMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
-                      <div className="py-1">
-                        <button
-                          onClick={() => {
-                            setShowImportInstructions(true);
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                        >
-                          <HelpCircle className="w-3.5 h-3.5" />
-                          Instructions d'import
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await opportunitiesAPI.downloadTemplate();
-                              setShowActionsMenu(false);
-                            } catch (err) {
-                              const appError = handleApiError(err);
-                              showToast({
-                                message: appError.message || 'Erreur lors du téléchargement du modèle',
-                                type: 'error',
-                              });
-                            }
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5" />
-                          Modèle Excel
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await opportunitiesAPI.downloadZipTemplate();
-                              setShowActionsMenu(false);
-                              showToast({
-                                message: 'Modèle ZIP téléchargé avec succès',
-                                type: 'success',
-                              });
-                            } catch (err) {
-                              const appError = handleApiError(err);
-                              showToast({
-                                message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-                                type: 'error',
-                              });
-                            }
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5" />
-                          Modèle ZIP
-                        </button>
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImport(file);
-                              setShowActionsMenu(false);
-                            }
-                          }}
-                          className="hidden"
-                          id="import-opportunities"
-                        />
-                        <label
-                          htmlFor="import-opportunities"
-                          className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          Importer
-                        </label>
-                        <button
-                          onClick={() => {
-                            handleExport();
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Exporter
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleDeleteAll();
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 border-t border-border"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Supprimer toutes les opportunités
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                <Target className="w-6 h-6 text-[#523DC9]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Opportunités actives</div>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <DollarSign className="w-6 h-6 text-[#10B981]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {formatCurrency(stats.totalValue)}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {formatCurrency(stats.weightedValue)}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur pondérée</div>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+                <Clock className="w-6 h-6 text-[#3B82F6]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.avgProbability}%
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Probabilité moyenne</div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="space-y-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Rechercher une opportunité..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Stage filter */}
+              <MultiSelect
+                options={stageOptions.map((stage) => ({
+                  label: stage,
+                  value: stage,
+                }))}
+                value={filterStatus}
+                onChange={setFilterStatus}
+                placeholder="Filtrer par stade"
+                className="min-w-[180px]"
+              />
+
+              {/* Pipeline filter */}
+              {pipelines.length > 0 && (
+                <MultiSelect
+                  options={pipelines.map((pipeline) => ({
+                    label: pipeline.name,
+                    value: pipeline.id,
+                  }))}
+                  value={filterPipeline}
+                  onChange={setFilterPipeline}
+                  placeholder="Filtrer par pipeline"
+                  className="min-w-[180px]"
+                />
+              )}
+
+              {/* Company filter */}
+              {companies.length > 0 && (
+                <MultiSelect
+                  options={companies.map((company) => ({
+                    label: company.name,
+                    value: String(company.id),
+                  }))}
+                  value={filterCompany}
+                  onChange={setFilterCompany}
+                  placeholder="Filtrer par entreprise"
+                  className="min-w-[180px]"
+                />
+              )}
+
+              {/* View mode toggle */}
+              <div className="ml-auto flex gap-2">
+                <Button variant={viewMode === 'grid' ? undefined : 'outline'} onClick={() => setViewMode('grid')}>Grille</Button>
+                <Button variant={viewMode === 'list' ? undefined : 'outline'} onClick={() => setViewMode('list')}>Liste</Button>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Error */}
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
-      )}
-
-      {/* Content */}
-      {loading && opportunities.length === 0 ? (
-        <div className="glass-card rounded-xl border border-border p-6">
-          <div className="py-12 text-center">
-            <Loading />
+        {/* Opportunities Grid/List */}
+        {filteredOpportunities.length === 0 ? (
+          <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+            <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Aucune opportunité trouvée
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {hasActiveFilters
+                ? 'Essayez de modifier vos filtres'
+                : 'Créez votre première opportunité'}
+            </p>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer une opportunité
+            </Button>
           </div>
-        </div>
-      ) : (
-        <div className="glass-card rounded-xl border border-border">
-          <DataTable
-            data={filteredOpportunities as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            filterable={false}
-            emptyMessage="Aucune opportunité trouvée"
-            loading={loading}
-            infiniteScroll={!hasActiveFilters}
-            hasMore={hasMore && !hasActiveFilters}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-            onRowClick={(row) => openDetailPage(row as unknown as Opportunity)}
-          />
-        </div>
-      )}
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredOpportunities.map((opp) => (
+              <div
+                key={opp.id}
+                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                onClick={() => handleRowClick(opp)}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {opp.name}
+                    </h3>
+                    {opp.stage_name && (
+                      <Badge className={getStageColor(opp.stage_name)}>
+                        {opp.stage_name}
+                      </Badge>
+                    )}
+                  </div>
+                  <button 
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOpportunity(opp);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Value */}
+                <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    {formatCurrency(opp.amount || 0)}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Valeur</div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-2 mb-4">
+                  {opp.company_name && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Building2 className="w-4 h-4" />
+                      <span>{opp.company_name}</span>
+                    </div>
+                  )}
+                  {opp.pipeline_name && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Target className="w-4 h-4" />
+                      <span>{opp.pipeline_name}</span>
+                    </div>
+                  )}
+                  {opp.expected_close_date && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Calendar className="w-4 h-4" />
+                      <span>Clôture: {new Date(opp.expected_close_date).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRowClick(opp);
+                    }}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Voir
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOpportunity(opp);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredOpportunities.map((opp) => (
+              <div
+                key={opp.id}
+                className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                onClick={() => handleRowClick(opp)}
+              >
+                <div className="flex items-center gap-4">
+                  {/* Title & Stage */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-[#523DC9] transition-colors truncate">
+                      {opp.name}
+                    </h3>
+                    {opp.stage_name && (
+                      <Badge className={getStageColor(opp.stage_name)}>
+                        {opp.stage_name}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Company */}
+                  {opp.company_name && (
+                    <div className="hidden md:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 min-w-[200px]">
+                      <Building2 className="w-4 h-4" />
+                      <span className="truncate">{opp.company_name}</span>
+                    </div>
+                  )}
+
+                  {/* Value */}
+                  <div className="text-right min-w-[120px]">
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatCurrency(opp.amount || 0)}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedOpportunity(opp);
+                        setShowEditModal(true);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Load more */}
+        {hasMore && (
+          <div className="flex justify-center pt-4">
+            <Button
+              variant="outline"
+              onClick={loadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Chargement...' : 'Charger plus'}
+            </Button>
+          </div>
+        )}
+      </MotionDiv>
 
       {/* Create Modal */}
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Créer une nouvelle opportunité"
+        title="Nouvelle opportunité"
         size="lg"
       >
         <OpportunityForm
-          onSubmit={handleCreate}
+          onSubmit={handleCreate as any}
           onCancel={() => setShowCreateModal(false)}
-          loading={loading}
+          isSubmitting={createOpportunityMutation.isPending}
         />
       </Modal>
 
       {/* Edit Modal */}
       <Modal
-        isOpen={showEditModal && selectedOpportunity !== null}
+        isOpen={showEditModal}
         onClose={() => {
           setShowEditModal(false);
           setSelectedOpportunity(null);
@@ -700,80 +662,50 @@ function OpportunitiesContent() {
         {selectedOpportunity && (
           <OpportunityForm
             opportunity={selectedOpportunity}
-            onSubmit={handleUpdate}
+            onSubmit={(data: any) => handleUpdate(selectedOpportunity.id, data)}
             onCancel={() => {
               setShowEditModal(false);
               setSelectedOpportunity(null);
             }}
-            loading={loading}
+            isSubmitting={updateOpportunityMutation.isPending}
           />
         )}
       </Modal>
 
       {/* Import Instructions Modal */}
-      <ImportOpportunitiesInstructions
+      <Modal
         isOpen={showImportInstructions}
         onClose={() => setShowImportInstructions(false)}
-        onDownloadTemplate={async () => {
-          try {
-            await opportunitiesAPI.downloadTemplate();
-            showToast({
-              message: 'Modèle Excel téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle',
-              type: 'error',
-            });
-          }
-        }}
-        onDownloadZipTemplate={async () => {
-          try {
-            await opportunitiesAPI.downloadZipTemplate();
-            showToast({
-              message: 'Modèle ZIP téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-              type: 'error',
-            });
-          }
-        }}
-      />
-      
+        title="Importer des opportunités"
+        size="lg"
+      >
+        <ImportOpportunitiesInstructions
+          onImport={handleImport as any}
+          onCancel={() => setShowImportInstructions(false)}
+        />
+      </Modal>
+
       {/* Import Logs Modal */}
-      {showImportLogs && (
-        <Modal
-          isOpen={showImportLogs}
-          onClose={() => {
-            setShowImportLogs(false);
-            setCurrentImportId(null);
-          }}
-          title="Logs d'import en temps réel"
-          size="xl"
-        >
-          {currentImportId ? (
-            <ImportLogsViewer
-              endpointUrl={`/v1/commercial/opportunities/import/${currentImportId}/logs`}
-              importId={currentImportId}
-              onComplete={() => {
-                // Don't auto-close - let user close manually to review logs
-              }}
-            />
-          ) : (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
-            </div>
-          )}
-        </Modal>
-      )}
-    </MotionDiv>
+      <Modal
+        isOpen={showImportLogs}
+        onClose={() => {
+          setShowImportLogs(false);
+          setCurrentImportId(null);
+        }}
+        title="Logs d'import"
+        size="lg"
+      >
+        {currentImportId && (
+          <ImportLogsViewer
+            importId={currentImportId as any}
+            onClose={() => {
+              setShowImportLogs(false);
+              setCurrentImportId(null);
+            }}
+          />
+        )}
+      </Modal>
+    </PageContainer>
   );
 }
 
