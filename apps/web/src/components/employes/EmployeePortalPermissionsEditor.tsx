@@ -216,75 +216,12 @@ export default function EmployeePortalPermissionsEditor({
     }
     setSelectedModules(newSet);
     
-    // Sauvegarder immédiatement
+    // Sauvegarder immédiatement en utilisant la fonction helper
     try {
-      // Supprimer toutes les permissions existantes
-      await employeePortalPermissionsAPI.deleteAllForEmployee(employeeId);
-      
-      // Créer les nouvelles permissions avec le module modifié
-      const newPermissions: Array<{
-        employee_id: number;
-        permission_type: 'page' | 'module' | 'client';
-        resource_id: string;
-        metadata?: null;
-        can_view: boolean;
-        can_edit: boolean;
-        can_delete: boolean;
-      }> = [];
-      
-      // Ajouter les permissions de modules
-      newSet.forEach(mId => {
-        newPermissions.push({
-          employee_id: employeeId,
-          permission_type: 'module',
-          resource_id: mId,
-          metadata: null,
-          can_view: true,
-          can_edit: false,
-          can_delete: false,
-        });
-      });
-      
-      // Ajouter les permissions de clients
-      selectedClients.forEach(clientId => {
-        newPermissions.push({
-          employee_id: employeeId,
-          permission_type: 'client',
-          resource_id: clientId.toString(),
-          metadata: null,
-          can_view: true,
-          can_edit: false,
-          can_delete: false,
-        });
-      });
-      
-      if (newPermissions.length > 0) {
-        await employeePortalPermissionsAPI.bulkCreate({
-          employee_id: employeeId,
-          permissions: newPermissions,
-        });
-      }
-      
-      // Mettre à jour les états sauvegardés
-      setSavedModules(new Set(newSet));
-      
-      // Déclencher un événement pour notifier les autres composants
-      window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
-        detail: { employeeId }
-      }));
-      
-      // Recharger les données en arrière-plan
-      loadData().catch(err => {
-        console.error('[EmployeePortalPermissionsEditor] Erreur lors du rechargement:', err);
-      });
+      await savePermissions(newSet, new Set(selectedClients));
     } catch (err) {
       // En cas d'erreur, restaurer l'état précédent
       setSelectedModules(selectedModules);
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la sauvegarde',
-        type: 'error',
-      });
     }
   };
 
