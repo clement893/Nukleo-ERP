@@ -6,7 +6,7 @@
  */
 
 import Card from './Card.v2';
-import { Users, TrendingUp, DollarSign, Zap } from 'lucide-react';
+import { Users, TrendingUp } from 'lucide-react';
 import Button from './Button';
 
 export function CardExamples() {

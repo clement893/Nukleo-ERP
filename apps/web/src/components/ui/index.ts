@@ -63,7 +63,7 @@ export type { BulkAction, ExportOption, DataTableEnhancedProps } from './DataTab
 export { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from './Table';
 export { default as Pagination } from './Pagination';
 export { default as EmptyState } from './EmptyState';
-export { default as StatsCard } from './StatsCard';
+// StatsCard is exported from Card.migration (line 41) - duplicate removed
 export { default as Timeline } from './Timeline';
 export type { TimelineItem } from './Timeline';
 export { default as List } from './List';
@@ -168,7 +168,7 @@ export * as tokens from './tokens';
 
 // Dashboard Components
 export { default as ServiceTestCard } from './ServiceTestCard';
-export { default as StatusCard } from './StatusCard';
+// StatusCard is exported from Card.migration (line 41) - duplicate removed
 export { default as FAQItem } from './FAQItem';
 export { default as PricingCardSimple } from './PricingCardSimple';
 export { default as BillingPeriodToggle } from './BillingPeriodToggle';

@@ -274,7 +274,7 @@ export default function Card({
   const ariaLabel = onClick && !title ? 'Clickable card' : undefined;
   
   // Check if glass variant or glass class is present
-  const hasGlassClass = variant === 'glass' || className?.includes('glass-card') || className?.includes('glass-');
+  const hasGlassClass = variant === 'glass' || !!className?.includes('glass-card') || !!className?.includes('glass-');
   
   // Get card padding
   const getCardPadding = () => {
