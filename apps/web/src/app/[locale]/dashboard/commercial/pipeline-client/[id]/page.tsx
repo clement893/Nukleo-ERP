@@ -7,7 +7,6 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
-import { PageHeader } from '@/components/layout';
 import { Card, Button, Modal, Input, Select, Alert, Loading } from '@/components/ui';
 import KanbanBoard, { type KanbanCard, type KanbanColumn } from '@/components/ui/KanbanBoard';
 import MotionDiv from '@/components/motion/MotionDiv';

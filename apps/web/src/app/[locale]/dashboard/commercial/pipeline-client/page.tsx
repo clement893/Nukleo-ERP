@@ -7,7 +7,6 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
-import { PageHeader } from '@/components/layout';
 import { Card, Button, Loading, Badge, Modal } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, ArrowRight } from 'lucide-react';

@@ -179,7 +179,11 @@ async def create_time_entry(
     """Create a new time entry"""
     # Verify task exists if provided
     if entry_data.task_id:
-        result = await db.execute(select(ProjectTask).where(ProjectTask.id == entry_data.task_id))
+        result = await db.execute(
+            select(ProjectTask)
+            .where(ProjectTask.id == entry_data.task_id)
+            .options(selectinload(ProjectTask.project))
+        )
         task = result.scalar_one_or_none()
         if not task:
             raise HTTPException(
@@ -189,7 +193,7 @@ async def create_time_entry(
         # Auto-fill project_id and client_id from task
         if task.project_id and not entry_data.project_id:
             entry_data.project_id = task.project_id
-        if task.project and task.project.client_id and not entry_data.client_id:
+        if task.project and hasattr(task.project, 'client_id') and task.project.client_id and not entry_data.client_id:
             entry_data.client_id = task.project.client_id
     
     # Verify project exists if provided
@@ -215,22 +219,48 @@ async def create_time_entry(
                 detail="Client not found"
             )
     
+    # Parse date if it's a string
+    entry_date = entry_data.date
+    if isinstance(entry_date, str):
+        try:
+            entry_date = datetime.fromisoformat(entry_date.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            try:
+                entry_date = datetime.strptime(entry_date, '%Y-%m-%d')
+            except ValueError:
+                entry_date = datetime.now(timezone.utc)
+    elif not isinstance(entry_date, datetime):
+        entry_date = datetime.now(timezone.utc)
+    
+    # Ensure timezone awareness
+    if entry_date.tzinfo is None:
+        entry_date = entry_date.replace(tzinfo=timezone.utc)
+    
     # Create entry
-    entry = TimeEntry(
-        description=entry_data.description,
-        duration=entry_data.duration,
-        date=entry_data.date,
-        user_id=current_user.id,
-        task_id=entry_data.task_id,
-        project_id=entry_data.project_id,
-        client_id=entry_data.client_id,
-    )
-    
-    db.add(entry)
-    await db.commit()
-    await db.refresh(entry)
-    
-    return entry
+    try:
+        entry = TimeEntry(
+            description=entry_data.description,
+            duration=entry_data.duration,
+            date=entry_date,
+            user_id=current_user.id,
+            task_id=entry_data.task_id,
+            project_id=entry_data.project_id,
+            client_id=entry_data.client_id,
+        )
+        
+        db.add(entry)
+        await db.commit()
+        await db.refresh(entry)
+        
+        return entry
+    except Exception as e:
+        await db.rollback()
+        from app.core.logging import logger
+        logger.error(f"Error creating time entry: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"A database error occurred: {str(e)}"
+        )
 
 
 @router.patch("/{entry_id}", response_model=TimeEntryResponse)

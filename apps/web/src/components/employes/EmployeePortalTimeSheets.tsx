@@ -75,7 +75,6 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showTimerModal, setShowTimerModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [creatingTask, setCreatingTask] = useState(false);
   
@@ -267,16 +266,73 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       return;
     }
 
-    // If no task selected, show modal to create one
-    if (!formData.task_id) {
-      setShowTimerModal(true);
+    let taskId = formData.task_id;
+
+    // If no task selected but task name provided, create new task
+    if (!taskId && timerTaskForm.title.trim()) {
+      try {
+        setCreatingTask(true);
+        
+        // Get user's team
+        let teamId: number | null = null;
+        if (employee.team_id) {
+          teamId = employee.team_id;
+        } else {
+          // Try to get user's first team
+          try {
+            const teamsResponse = await teamsAPI.getMyTeams();
+            const teamsData = (teamsResponse as any)?.data?.teams || (teamsResponse as any)?.teams || [];
+            if (teamsData.length > 0) {
+              teamId = teamsData[0].id;
+            }
+          } catch (err) {
+            console.error('Error loading teams:', err);
+          }
+        }
+
+        if (!teamId) {
+          showToast({ message: 'Aucune équipe trouvée. Veuillez créer une équipe d\'abord.', type: 'error' });
+          setCreatingTask(false);
+          return;
+        }
+
+        // Create task
+        const newTask: ProjectTaskCreate = {
+          title: timerTaskForm.title,
+          description: timerTaskForm.description || null,
+          team_id: teamId,
+          project_id: timerTaskForm.project_id,
+          employee_assignee_id: employeeId,
+          status: 'in_progress',
+        };
+
+        const createdTask = await projectTasksAPI.create(newTask);
+        taskId = createdTask.id;
+        
+        await loadData(); // Reload tasks
+        setFormData(prev => ({ ...prev, task_id: taskId }));
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({ message: appError.message || 'Erreur lors de la création de la tâche', type: 'error' });
+        setCreatingTask(false);
+        return;
+      } finally {
+        setCreatingTask(false);
+      }
+    }
+
+    if (!taskId) {
+      showToast({ message: 'Veuillez sélectionner une tâche ou créer une nouvelle tâche', type: 'error' });
       return;
     }
 
     try {
-      await timeEntriesAPI.startTimer(formData.task_id, formData.description || undefined);
+      await timeEntriesAPI.startTimer(taskId, formData.description || undefined);
       await loadTimerStatus();
       showToast({ message: 'Timer démarré', type: 'success' });
+      // Clear form
+      setTimerTaskForm({ title: '', description: '', project_id: null });
+      setFormData(prev => ({ ...prev, description: '' }));
     } catch (err) {
       const appError = handleApiError(err);
       showToast({ message: appError.message || 'Erreur lors du démarrage du timer', type: 'error' });
@@ -304,66 +360,6 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     }
   };
 
-  const handleCreateTaskAndStartTimer = async () => {
-    if (!employee?.user_id || !timerTaskForm.title.trim()) {
-      showToast({ message: 'Le titre de la tâche est requis', type: 'error' });
-      return;
-    }
-
-    try {
-      setCreatingTask(true);
-      
-      // Get user's team
-      let teamId: number | null = null;
-      if (employee.team_id) {
-        teamId = employee.team_id;
-      } else {
-        // Try to get user's first team
-        try {
-          const teamsResponse = await teamsAPI.getMyTeams();
-          const teamsData = (teamsResponse as any)?.data?.teams || (teamsResponse as any)?.teams || [];
-          if (teamsData.length > 0) {
-            teamId = teamsData[0].id;
-          }
-        } catch (err) {
-          console.error('Error loading teams:', err);
-        }
-      }
-
-      if (!teamId) {
-        showToast({ message: 'Aucune équipe trouvée. Veuillez créer une équipe d\'abord.', type: 'error' });
-        setCreatingTask(false);
-        return;
-      }
-
-      // Create task
-      const newTask: ProjectTaskCreate = {
-        title: timerTaskForm.title,
-        description: timerTaskForm.description || null,
-        team_id: teamId,
-        project_id: timerTaskForm.project_id,
-        employee_assignee_id: employeeId,
-        status: 'in_progress',
-      };
-
-      const createdTask = await projectTasksAPI.create(newTask);
-      
-      // Start timer with new task
-      await timeEntriesAPI.startTimer(createdTask.id, formData.description || undefined);
-      await loadTimerStatus();
-      await loadData(); // Reload tasks
-      
-      setFormData(prev => ({ ...prev, task_id: createdTask.id }));
-      setShowTimerModal(false);
-      setTimerTaskForm({ title: '', description: '', project_id: null });
-      showToast({ message: 'Tâche créée et timer démarré', type: 'success' });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({ message: appError.message || 'Erreur lors de la création de la tâche', type: 'error' });
-    } finally {
-      setCreatingTask(false);
-    }
-  };
 
   const handleCreateEntry = async () => {
     if (!employee?.user_id) {
@@ -377,14 +373,24 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     }
 
     try {
-      await timeEntriesAPI.create(formData);
+      // Convert date string to ISO datetime string
+      const dateStr = formData.date;
+      const dateObj = new Date(dateStr);
+      const isoDate = dateObj.toISOString();
+      
+      const entryData: TimeEntryCreate = {
+        ...formData,
+        date: isoDate,
+      };
+      
+      await timeEntriesAPI.create(entryData);
       await loadEntries();
       setShowCreateModal(false);
-      const dateStr = new Date().toISOString().split('T')[0] || '';
+      const todayStr = new Date().toISOString().split('T')[0] || '';
       setFormData({
         description: '',
         duration: 0,
-        date: dateStr,
+        date: todayStr,
         task_id: null,
         project_id: null,
         client_id: null,
@@ -400,15 +406,25 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
     if (!editingEntry) return;
 
     try {
-      await timeEntriesAPI.update(editingEntry.id, formData);
+      // Convert date string to ISO datetime string
+      const dateStr = formData.date;
+      const dateObj = new Date(dateStr);
+      const isoDate = dateObj.toISOString();
+      
+      const entryData: TimeEntryCreate = {
+        ...formData,
+        date: isoDate,
+      };
+      
+      await timeEntriesAPI.update(editingEntry.id, entryData);
       await loadEntries();
       setShowEditModal(false);
       setEditingEntry(null);
-      const dateStr = new Date().toISOString().split('T')[0] || '';
+      const todayStr = new Date().toISOString().split('T')[0] || '';
       setFormData({
         description: '',
         duration: 0,
-        date: dateStr,
+        date: todayStr,
         task_id: null,
         project_id: null,
         client_id: null,
@@ -577,6 +593,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
                 variant="primary"
                 onClick={handleStartTimer}
                 className="flex items-center gap-2"
+                disabled={!timerTaskForm.title.trim() && !formData.task_id}
               >
                 <Play className="w-4 h-4" />
                 Démarrer le timer
@@ -584,6 +601,66 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
             )}
           </div>
         </div>
+        
+        {!timerStatus?.active && (
+          <div className="mt-4 space-y-4 p-4 bg-accent rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <Input
+                  type="text"
+                  label="Nom de la tâche"
+                  placeholder="Ex: Développement fonctionnalité X"
+                  value={timerTaskForm.title}
+                  onChange={(e) => setTimerTaskForm({ ...timerTaskForm, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <Select
+                  label="Projet (optionnel)"
+                  value={timerTaskForm.project_id?.toString() || ''}
+                  onChange={(e) => setTimerTaskForm({ ...timerTaskForm, project_id: e.target.value ? parseInt(e.target.value) : null })}
+                  options={[
+                    { value: '', label: 'Aucun projet' },
+                    ...projects.map((proj) => ({
+                      value: proj.id.toString(),
+                      label: proj.name,
+                    })),
+                  ]}
+                />
+              </div>
+            </div>
+            <div>
+              <Input
+                type="text"
+                label="Description (optionnel)"
+                placeholder="Notes sur le travail effectué"
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Select
+                label="Ou sélectionner une tâche existante"
+                value={formData.task_id?.toString() || ''}
+                onChange={(e) => {
+                  const taskId = e.target.value ? parseInt(e.target.value) : null;
+                  setFormData({ ...formData, task_id: taskId });
+                  if (taskId) {
+                    // Clear new task form if selecting existing task
+                    setTimerTaskForm({ title: '', description: '', project_id: null });
+                  }
+                }}
+                options={[
+                  { value: '', label: 'Créer une nouvelle tâche' },
+                  ...tasks.map((task) => ({
+                    value: task.id.toString(),
+                    label: task.title,
+                  })),
+                ]}
+              />
+            </div>
+          </div>
+        )}
         
         {timerStatus?.active && timerStatus.task_id && (
           <div className="mt-4 p-4 bg-accent rounded-lg">
@@ -1155,74 +1232,6 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
         </div>
       </Modal>
 
-      {/* Timer Task Creation Modal */}
-      <Modal
-        isOpen={showTimerModal}
-        onClose={() => {
-          setShowTimerModal(false);
-          setTimerTaskForm({ title: '', description: '', project_id: null });
-        }}
-        title="Créer une tâche et démarrer le timer"
-      >
-        <div className="space-y-4">
-          <Input
-            type="text"
-            label="Titre de la tâche"
-            value={timerTaskForm.title}
-            onChange={(e) => setTimerTaskForm({ ...timerTaskForm, title: e.target.value })}
-            required
-            placeholder="Ex: Développement fonctionnalité X"
-          />
-          <Input
-            type="text"
-            label="Description"
-            value={timerTaskForm.description}
-            onChange={(e) => setTimerTaskForm({ ...timerTaskForm, description: e.target.value })}
-            placeholder="Description optionnelle"
-          />
-          <Select
-            label="Projet (optionnel)"
-            value={timerTaskForm.project_id?.toString() || ''}
-            onChange={(e) => setTimerTaskForm({ ...timerTaskForm, project_id: e.target.value ? parseInt(e.target.value) : null })}
-            options={[
-              { value: '', label: 'Aucun projet' },
-              ...projects.map((proj) => ({
-                value: proj.id.toString(),
-                label: proj.name,
-              })),
-            ]}
-          />
-          <Input
-            type="text"
-            label="Description de l'entrée de temps (optionnel)"
-            value={formData.description || ''}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Notes sur le travail effectué"
-          />
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowTimerModal(false)}>
-              Annuler
-            </Button>
-            <Button 
-              variant="primary" 
-              onClick={handleCreateTaskAndStartTimer}
-              disabled={creatingTask || !timerTaskForm.title.trim()}
-            >
-              {creatingTask ? (
-                <>
-                  <Loading size="sm" className="mr-2" />
-                  Création...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Créer et démarrer
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
