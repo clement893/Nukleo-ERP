@@ -18,7 +18,7 @@ import {
   Activity,
   MessageSquare,
   Paperclip,
-  Flag
+
 } from 'lucide-react';
 
 type TabId = 'overview' | 'tasks' | 'timeline' | 'files' | 'team' | 'activity';
