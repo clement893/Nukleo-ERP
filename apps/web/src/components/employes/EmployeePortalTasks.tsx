@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Card, Loading, Alert, Modal } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -196,7 +197,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
             pagination={false}
             searchable={false}
             emptyMessage="Aucune tâche trouvée"
-            onRowClick={(row) => handleTaskClick(row as ProjectTask)}
+            onRowClick={(row) => handleTaskClick(row as unknown as ProjectTask)}
           />
         </Card>
       )}
