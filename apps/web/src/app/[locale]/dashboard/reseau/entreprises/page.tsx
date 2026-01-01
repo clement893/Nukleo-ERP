@@ -26,7 +26,6 @@ import { useInfiniteCompanies, useDeleteCompany } from '@/lib/query/companies';
 import { useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import CompanyForm from '@/components/commercial/CompanyForm';
-import type { Company } from '@/lib/api/companies';
 
 export default function EntreprisesPage() {
   const router = useRouter();
@@ -38,6 +37,7 @@ export default function EntreprisesPage() {
 
   // Fetch data
   const { data, isLoading } = useInfiniteCompanies(1000);
+  // data is used in companies useMemo below
   const deleteCompanyMutation = useDeleteCompany();
 
   // Flatten data
@@ -48,7 +48,7 @@ export default function EntreprisesPage() {
     return companies.filter((company) => {
       const matchesSearch = !searchQuery || 
         company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (company.sector && company.sector.toLowerCase().includes(searchQuery.toLowerCase()));
+        (company.description && company.description.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesType = filterType === 'all' || 
         (filterType === 'client' && company.is_client) ||
@@ -63,7 +63,7 @@ export default function EntreprisesPage() {
     const total = companies.length;
     const clients = companies.filter(c => c.is_client).length;
     const prospects = companies.filter(c => !c.is_client).length;
-    const totalRevenue = companies.reduce((sum, c) => sum + (c.revenue || 0), 0);
+    const totalRevenue = 0; // Revenue not available in Company interface
     
     return { total, clients, prospects, totalRevenue };
   }, [companies]);
@@ -265,8 +265,8 @@ export default function EntreprisesPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
-                      {company.sector && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{company.sector}</p>
+                      {company.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{company.description}</p>
                       )}
                     </div>
                   </div>
@@ -294,14 +294,8 @@ export default function EntreprisesPage() {
                   <div className="flex gap-4 text-sm">
                     <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                       <Users className="w-4 h-4" />
-                      <span>{company.contact_count || 0}</span>
+                      <span>{company.contacts_count || 0}</span>
                     </div>
-                    {company.revenue && (
-                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                        <DollarSign className="w-4 h-4" />
-                        <span>{formatCurrency(company.revenue)}</span>
-                      </div>
-                    )}
                   </div>
                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button size="sm" variant="ghost" onClick={() => handleView(company.id)}>
@@ -332,7 +326,7 @@ export default function EntreprisesPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {[company.sector, company.city, company.country].filter(Boolean).join(' • ')}
+                          {[company.description, company.city, company.country].filter(Boolean).map(s => String(s).substring(0, 30)).join(' • ')}
                         </p>
                       </div>
                       <Badge className={company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}>
@@ -341,14 +335,8 @@ export default function EntreprisesPage() {
                       <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          <span>{company.contact_count || 0}</span>
+                          <span>{company.contacts_count || 0}</span>
                         </div>
-                        {company.revenue && (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            <span>{formatCurrency(company.revenue)}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -375,7 +363,7 @@ export default function EntreprisesPage() {
           title="Nouvelle entreprise"
         >
           <CompanyForm
-            onSubmit={async (data) => {
+            onSubmit={async () => {
               setShowCreateModal(false);
               showToast({ message: 'Entreprise créée avec succès', type: 'success' });
             }}

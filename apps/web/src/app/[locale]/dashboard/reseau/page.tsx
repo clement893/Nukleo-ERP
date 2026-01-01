@@ -19,7 +19,7 @@ import { Badge, Button, Card, Loading } from '@/components/ui';
 import Link from 'next/link';
 import { useInfiniteReseauContacts } from '@/lib/query/reseau-contacts';
 import { useInfiniteCompanies } from '@/lib/query/companies';
-import { useInfiniteTestimonials } from '@/lib/query/testimonials';
+import { useInfiniteTestimonials } from '@/lib/query/reseau-testimonials';
 
 export default function ReseauPage() {
   // Fetch data
@@ -224,8 +224,8 @@ export default function ReseauPage() {
                           <h4 className="font-medium text-gray-900 dark:text-white text-sm">
                             {contact.first_name} {contact.last_name}
                           </h4>
-                          {contact.job_title && (
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{contact.job_title}</p>
+                          {contact.position && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{contact.position}</p>
                           )}
                         </div>
                         <Eye className="w-4 h-4 text-gray-400" />
@@ -253,8 +253,8 @@ export default function ReseauPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-gray-900 dark:text-white text-sm">{company.name}</h4>
-                          {company.sector && (
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{company.sector}</p>
+                          {company.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">{company.description}</p>
                           )}
                         </div>
                         <Eye className="w-4 h-4 text-gray-400" />
