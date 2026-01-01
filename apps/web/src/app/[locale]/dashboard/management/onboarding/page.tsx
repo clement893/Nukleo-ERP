@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Card, Button, Input, Textarea, Alert } from '@/components/ui';
+import { Button, Input, Textarea, Alert } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -272,7 +272,8 @@ function OnboardingContent() {
       )}
 
       {/* Main Form */}
-      <Card title="Informations générales">
+      <div className="glass-card rounded-xl border border-border p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Informations générales</h3>
         <div className="space-y-4">
           <Input
             label="Nom de l'onboarding"
@@ -292,21 +293,14 @@ function OnboardingContent() {
             fullWidth
           />
         </div>
-      </Card>
+      </div>
 
       {/* Steps Section */}
-      <Card 
-        title={`Étapes (${template.steps.length})`}
-        footer={
-          <Button
-            variant="primary"
-            onClick={addStep}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter une étape
-          </Button>
-        }
-      >
+      <div className="glass-card rounded-xl border border-border">
+        <div className="p-6 border-b border-border">
+          <h3 className="text-lg font-semibold text-foreground">Étapes ({template.steps.length})</h3>
+        </div>
+        <div className="p-6">
         {template.steps.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <p>Aucune étape créée. Cliquez sur "Ajouter une étape" pour commencer.</p>
@@ -314,10 +308,8 @@ function OnboardingContent() {
         ) : (
           <div className="space-y-4">
             {template.steps.map((step, index) => (
-              <Card
-                key={step.id}
-                className="border-2"
-                header={
+              <div key={step.id} className="glass-card rounded-xl border-2 border-border">
+                <div className="p-4 border-b border-border">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <GripVertical className="w-5 h-5 cursor-move" />
@@ -345,38 +337,8 @@ function OnboardingContent() {
                       </span>
                     )}
                   </div>
-                }
-                footer={
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => moveStep(step.id, 'up')}
-                        disabled={index === 0}
-                      >
-                        ↑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => moveStep(step.id, 'down')}
-                        disabled={index === template.steps.length - 1}
-                      >
-                        ↓
-                      </Button>
-                    </div>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => deleteStep(step.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer
-                    </Button>
-                  </div>
-                }
-              >
+                </div>
+                <div className="p-6">
                 <div className="space-y-4">
                   {/* Step Description */}
                   <div>
@@ -433,7 +395,7 @@ function OnboardingContent() {
                     ) : (
                       <div className="space-y-3">
                         {step.resources.map((resource) => (
-                          <Card key={resource.id} className="border">
+                          <div key={resource.id} className="glass-card rounded-lg border border-border p-4">
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -490,17 +452,56 @@ function OnboardingContent() {
                                 fullWidth
                               />
                             </div>
-                          </Card>
+                          </div>
                         ))}
                       </div>
                     )}
                   </div>
                 </div>
-              </Card>
+                <div className="p-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveStep(step.id, 'up')}
+                        disabled={index === 0}
+                      >
+                        ↑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveStep(step.id, 'down')}
+                        disabled={index === template.steps.length - 1}
+                      >
+                        ↓
+                      </Button>
+                    </div>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => deleteStep(step.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
-      </Card>
+        <div className="p-6 border-t border-border">
+          <Button
+            variant="primary"
+            onClick={addStep}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter une étape
+          </Button>
+        </div>
+      </div>
 
       {/* Save Button */}
       <div className="flex justify-end gap-3">
