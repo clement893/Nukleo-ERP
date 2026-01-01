@@ -13,13 +13,14 @@
 
 'use client';
 
-import { useState, memo, useCallback } from 'react';
+import { useState, memo, useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import QuickActions from '@/components/ui/QuickActions';
 import { Menu } from 'lucide-react';
+import { clsx } from 'clsx';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -28,9 +29,29 @@ interface DashboardLayoutProps {
 // Memoize the sidebar component to prevent re-renders during navigation
 const MemoizedSidebar = memo(Sidebar);
 
+const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
+
 function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Load collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (savedState !== null) {
+      setSidebarCollapsed(JSON.parse(savedState));
+    }
+  }, []);
+
+  // Save collapsed state to localStorage
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const newState = !prev;
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(newState));
+      return newState;
+    });
+  }, []);
 
   const handleMobileMenuClose = useCallback(() => {
     setMobileMenuOpen(false);
@@ -42,10 +63,15 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
       <MemoizedSidebar
         isOpen={mobileMenuOpen}
         onClose={handleMobileMenuClose}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
       />
 
       {/* Main Content */}
-      <div className="flex h-screen pt-0 md:pt-0 md:ml-64">
+      <div className={clsx(
+        "flex h-screen pt-0 md:pt-0 transition-all duration-300",
+        sidebarCollapsed ? "md:ml-0" : "md:ml-64"
+      )}>
         {/* Mobile Header with Menu Button */}
         <header className="md:hidden fixed top-0 left-0 right-0 z-30 glass-navbar">
           <div className="px-4 py-3 flex items-center justify-between">
@@ -62,13 +88,33 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
+        {/* Desktop Header with Toggle Button (when collapsed) */}
+        {sidebarCollapsed && (
+          <header className="hidden md:block fixed top-0 left-0 right-0 z-30 glass-navbar h-16">
+            <div className="px-4 py-3 flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleSidebar}
+                aria-label="Développer le menu"
+                className="mr-4"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </div>
+          </header>
+        )}
+
         {/* Quick Actions FAB */}
         <QuickActions />
 
         {/* Page Content */}
         <main 
           key={pathname} 
-          className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 md:py-8 2xl:py-8 bg-background mt-14 md:mt-0"
+          className={clsx(
+            "flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 xl:px-8 2xl:px-10 py-4 sm:py-6 md:py-8 2xl:py-8 bg-background transition-all duration-300",
+            sidebarCollapsed ? "md:mt-16" : "mt-14 md:mt-0"
+          )}
           style={{
             animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
