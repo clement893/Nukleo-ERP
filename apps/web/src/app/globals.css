@@ -469,6 +469,48 @@ body {
   background: color-mix(in srgb, var(--color-primary-500) 10%, transparent) !important;
 }
 
+/* Empêcher le texte bleu sur fond mauve - forcer blanc pour TOUS les boutons avec bg-[#523DC9] ou bg-purple */
+.glass-button.bg-\[#523DC9\],
+.glass-button.bg-\[#5F2B75\],
+.glass-button[class*="bg-[#523DC9]"],
+.glass-button[class*="bg-[#5F2B75]"],
+button.bg-\[#523DC9\],
+button.bg-\[#5F2B75\],
+button[class*="bg-[#523DC9]"],
+button[class*="bg-[#5F2B75]"],
+button[class*="bg-purple"][class*="text-blue"],
+.glass-button[class*="bg-purple"][class*="text-blue"],
+/* Règles plus larges pour capturer tous les cas */
+button[class*="bg-[#523DC9]"]:not([class*="text-white"]):not([class*="text-primary"]):not([class*="text-[#523DC9]"]),
+button[class*="bg-[#5F2B75]"]:not([class*="text-white"]):not([class*="text-primary"]):not([class*="text-[#5F2B75]"]),
+button[class*="bg-purple-500"]:not([class*="text-white"]):not([class*="text-primary"]),
+button[class*="bg-purple-600"]:not([class*="text-white"]):not([class*="text-primary"]),
+button[class*="bg-purple-700"]:not([class*="text-white"]):not([class*="text-primary"]),
+.glass-button[class*="bg-[#523DC9]"]:not([class*="text-white"]):not([class*="text-primary"]),
+.glass-button[class*="bg-[#5F2B75]"]:not([class*="text-white"]):not([class*="text-primary"]) {
+  color: white !important;
+}
+
+/* Même chose pour les boutons avec gradient mauve */
+button[class*="bg-gradient"][class*="#523DC9"],
+button[class*="bg-gradient"][class*="#5F2B75"],
+button[class*="bg-gradient-to"][class*="from-[#523DC9]"],
+button[class*="bg-gradient-to"][class*="from-[#5F2B75]"],
+button[class*="bg-gradient-to"][class*="via-[#523DC9]"],
+button[class*="bg-gradient-to"][class*="via-[#5F2B75]"] {
+  color: white !important;
+}
+
+/* Surcharge spécifique pour éviter le texte bleu hérité */
+button[class*="bg-[#523DC9]"][class*="text-blue"],
+button[class*="bg-[#5F2B75]"][class*="text-blue"],
+button[class*="bg-purple"][class*="text-blue"],
+.glass-button[class*="bg-[#523DC9]"][class*="text-blue"],
+.glass-button[class*="bg-[#5F2B75]"][class*="text-blue"],
+.glass-button[class*="bg-purple"][class*="text-blue"] {
+  color: white !important;
+}
+
 .glass-button:hover {
   background: color-mix(in srgb, var(--color-primary-500) 90%, transparent);
   box-shadow: 
