@@ -22,7 +22,6 @@ export default function EmployeePortalTimeSheetsPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
   const currentUserId = user?.id ? parseInt(user.id) : null;
@@ -50,7 +49,6 @@ export default function EmployeePortalTimeSheetsPage() {
       ]);
       
       const isAdmin = status.is_superadmin === true;
-      setIsSuperAdmin(isAdmin);
       
       if (!isAdmin && data.user_id !== currentUserId) {
         setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');

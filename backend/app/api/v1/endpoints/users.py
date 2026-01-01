@@ -516,6 +516,15 @@ async def update_current_user(
     try:
         logger.info(f"Updating user profile for: {current_user.email}")
         
+        # Validate email format if provided
+        if user_data.email is not None:
+            # Email validation is handled by Pydantic EmailStr, but we check here for safety
+            if not user_data.email or user_data.email.strip() == '':
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email cannot be empty"
+                )
+        
         # Check if email is being updated and if it's already taken
         if user_data.email and user_data.email != current_user.email:
             result = await db.execute(
@@ -531,8 +540,9 @@ async def update_current_user(
         # Update only provided fields
         update_data = user_data.model_dump(exclude_unset=True, exclude_none=False)
         
-        # Filter to only allow valid User model fields
-        allowed_fields = {'email', 'first_name', 'last_name', 'avatar', 'is_active'}
+        # Filter to only allow valid User model fields that users can modify themselves
+        # Note: is_active should NOT be modifiable by users themselves (only admins)
+        allowed_fields = {'email', 'first_name', 'last_name', 'avatar'}
         filtered_data = {}
         for k, v in update_data.items():
             if k in allowed_fields and hasattr(current_user, k):
@@ -542,7 +552,24 @@ async def update_current_user(
                 # Skip None email updates (email is required)
                 if k == 'email' and (v is None or v == ''):
                     continue
+                # Skip is_active - users cannot modify their own active status
+                if k == 'is_active':
+                    continue
                 filtered_data[k] = v
+        
+        # If no valid fields to update, return current user
+        if not filtered_data:
+            logger.warning(f"No valid fields to update for user: {current_user.email}")
+            return UserResponse(
+                id=current_user.id,
+                email=current_user.email,
+                first_name=current_user.first_name,
+                last_name=current_user.last_name,
+                avatar=getattr(current_user, 'avatar', None),
+                is_active=current_user.is_active,
+                created_at=current_user.created_at,
+                updated_at=current_user.updated_at,
+            )
         
         # Update user object with filtered data
         for field, value in filtered_data.items():
@@ -582,6 +609,8 @@ async def update_current_user(
         logger.error(f"Error updating user profile: {e}", exc_info=True)
         await db.rollback()
         error_detail = str(e)
+        error_type = type(e).__name__
+        
         # Provide more specific error message if possible
         if "not-null" in error_detail.lower() or "null value" in error_detail.lower():
             error_detail = "One or more required fields are missing"
@@ -589,7 +618,16 @@ async def update_current_user(
             error_detail = "Email is already taken"
         elif "value too long" in error_detail.lower() or "string length" in error_detail.lower():
             error_detail = "One or more fields exceed maximum length"
+        elif "integrity" in error_detail.lower():
+            error_detail = "Database integrity constraint violation"
+        elif "operational" in error_detail.lower() or "connection" in error_detail.lower():
+            error_detail = "Database connection error. Please try again later."
+        else:
+            # For unknown errors, provide a generic message but log the full error
+            error_detail = "An error occurred while updating your profile"
+            logger.error(f"Unexpected error type {error_type}: {error_detail}", exc_info=True)
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update user profile: {error_detail}"
+            detail=error_detail
         )

@@ -14,8 +14,7 @@ import {
   Building, 
   ChevronDown, 
   ChevronUp,
-  FileText,
-  Plus
+  FileText
 } from 'lucide-react';
 import {
   groupByWeek,

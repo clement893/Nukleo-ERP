@@ -188,21 +188,19 @@ export default function EmployeeDetailPage() {
   return (
     <PageContainer>
       <PageHeader
-        title={
-          <div className="flex items-center gap-3">
-            <span>{`${employee.first_name} ${employee.last_name}`}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenPortal}
-              className="text-xs px-3 py-1.5 h-auto"
-              title="Accéder au portail employé"
-            >
-              <UserCircle className="w-3.5 h-3.5 mr-1.5" />
-              Portail
-              <ExternalLink className="w-3 h-3 ml-1.5" />
-            </Button>
-          </div>
+        title={`${employee.first_name} ${employee.last_name}`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenPortal}
+            className="text-xs px-3 py-1.5 h-auto"
+            title="Accéder au portail employé"
+          >
+            <UserCircle className="w-3.5 h-3.5 mr-1.5" />
+            Portail
+            <ExternalLink className="w-3 h-3 ml-1.5" />
+          </Button>
         }
         breadcrumbs={[
           { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
