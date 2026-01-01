@@ -1,797 +1,350 @@
 'use client';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '@/components/layout';
-import { Card, Button, Alert, Loading, Badge } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
-import { type Testimonial, type TestimonialCreate, type TestimonialUpdate } from '@/lib/api/reseau-testimonials';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import SearchBar from '@/components/ui/SearchBar';
-import MultiSelectFilter from '@/components/reseau/MultiSelectFilter';
-import { 
-  Plus, 
-  Download, 
-  Upload, 
-  FileSpreadsheet, 
-  MoreVertical, 
-  Trash2,
-  Edit,
-  HelpCircle
-} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { useDebounce } from '@/hooks/useDebounce';
-import { 
-  useInfiniteReseauTestimonials, 
-  useCreateReseauTestimonial, 
-  useUpdateReseauTestimonial, 
-  useDeleteReseauTestimonial, 
-  useDeleteAllReseauTestimonials,
-  reseauTestimonialsAPI 
-} from '@/lib/query/reseau-testimonials';
-import { companiesAPI } from '@/lib/api/companies';
-import { reseauContactsAPI } from '@/lib/api/reseau-contacts';
-import TestimonialForm from '@/components/reseau/TestimonialForm';
-import ImportTestimonialsInstructions from '@/components/reseau/ImportTestimonialsInstructions';
-import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
-import TestimonialContact from '@/components/reseau/TestimonialContact';
+import { Plus, Search, Star, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import { Badge, Button, Loading, Alert, Input } from '@/components/ui';
+import { useToast } from '@/components/ui';
+import { handleApiError } from '@/lib/errors/api';
+
+interface Testimonial {
+  id: number;
+  title: string;
+  content: string;
+  rating: number;
+  status: 'published' | 'pending' | 'draft';
+  language: 'fr' | 'en';
+  contact_name?: string;
+  company_name?: string;
+  created_at: string;
+}
+
+type FilterStatus = 'all' | 'published' | 'pending' | 'draft';
 
 function TemoignagesContent() {
   const { showToast } = useToast();
-  
-  // React Query hooks for testimonials
-  const {
-    data: testimonialsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error: queryError,
-  } = useInfiniteReseauTestimonials(20);
-  
-  // Mutations
-  const createTestimonialMutation = useCreateReseauTestimonial();
-  const updateTestimonialMutation = useUpdateReseauTestimonial();
-  const deleteTestimonialMutation = useDeleteReseauTestimonial();
-  const deleteAllTestimonialsMutation = useDeleteAllReseauTestimonials();
-  
-  // Flatten pages into single array
-  const testimonials = useMemo(() => {
-    return testimonialsData?.pages.flat() || [];
-  }, [testimonialsData]);
-  
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
-  const [filterCompany, setFilterCompany] = useState<string[]>([]);
-  const [filterContact, setFilterContact] = useState<string[]>([]);
-  const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
-  const [filterPublished, setFilterPublished] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [showImportInstructions, setShowImportInstructions] = useState(false);
-  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
-  const [showImportLogs, setShowImportLogs] = useState(false);
-  
-  // Load companies and contacts for filters
-  const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
-  const [contacts, setContacts] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
-  
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [filterLanguage, setFilterLanguage] = useState<'all' | 'fr' | 'en'>('all');
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [companiesData, contactsData] = await Promise.all([
-          companiesAPI.list(0, 1000),
-          reseauContactsAPI.list(0, 1000),
-        ]);
-        setCompanies(companiesData.map(c => ({ id: c.id, name: c.name })));
-        setContacts(contactsData.map(c => ({ id: c.id, first_name: c.first_name, last_name: c.last_name })));
-      } catch (err) {
-        console.error('Error loading companies/contacts:', err);
-      }
-    };
-    loadData();
+    loadTestimonials();
   }, []);
-  
-  // Debounce search query
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
-  // Derived state from React Query
-  const loading = isLoading;
-  const loadingMore = isFetchingNextPage;
-  const hasMore = hasNextPage ?? false;
-  const error = queryError ? handleApiError(queryError).message : null;
 
-  // Load more testimonials for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
+  const loadTestimonials = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const mockData: Testimonial[] = [
+        {
+          id: 1,
+          title: 'Excellent service',
+          content: 'Nukleo a transformé notre façon de travailler. L\'équipe est professionnelle et réactive.',
+          rating: 5,
+          status: 'published',
+          language: 'fr',
+          contact_name: 'Marie Dubois',
+          company_name: 'Tech Solutions Inc.',
+          created_at: '2025-01-15T10:00:00Z'
+        },
+        {
+          id: 2,
+          title: 'Great experience',
+          content: 'Working with Nukleo has been amazing. Their AI solutions are cutting-edge.',
+          rating: 5,
+          status: 'published',
+          language: 'en',
+          contact_name: 'John Smith',
+          company_name: 'Innovation Labs',
+          created_at: '2025-01-10T14:30:00Z'
+        },
+        {
+          id: 3,
+          title: 'Très satisfait',
+          content: 'Une plateforme intuitive et puissante. Le ROI a été visible dès les premières semaines.',
+          rating: 4,
+          status: 'pending',
+          language: 'fr',
+          contact_name: 'Sophie Tremblay',
+          company_name: 'Groupe Innovant',
+          created_at: '2025-01-20T09:15:00Z'
+        }
+      ];
+      
+      setTestimonials(mockData);
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur de chargement');
+      showToast({ message: appError.message || 'Erreur', type: 'error' });
+    } finally {
+      setLoading(false);
     }
-  }, [loadingMore, hasMore, fetchNextPage]);
+  };
 
-  // Extract unique values for dropdowns
-  const uniqueValues = useMemo(() => {
-    const languages = new Set<string>();
-    const publishedStatuses = new Set<string>();
-
-    testimonials.forEach((testimonial) => {
-      if (testimonial.language) languages.add(testimonial.language);
-      if (testimonial.is_published) publishedStatuses.add(testimonial.is_published);
+  const filteredTestimonials = useMemo(() => {
+    return testimonials.filter(t => {
+      if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+      if (filterLanguage !== 'all' && t.language !== filterLanguage) return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          t.title.toLowerCase().includes(query) ||
+          t.content.toLowerCase().includes(query) ||
+          t.contact_name?.toLowerCase().includes(query) ||
+          t.company_name?.toLowerCase().includes(query)
+        );
+      }
+      return true;
     });
+  }, [testimonials, filterStatus, filterLanguage, searchQuery]);
 
+  const stats = useMemo(() => {
+    const published = testimonials.filter(t => t.status === 'published').length;
+    const pending = testimonials.filter(t => t.status === 'pending').length;
+    const avgRating = testimonials.length > 0
+      ? testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length
+      : 0;
+    
     return {
-      languages: Array.from(languages).sort(),
-      publishedStatuses: Array.from(publishedStatuses).sort(),
+      total: testimonials.length,
+      published,
+      pending,
+      avgRating: avgRating.toFixed(1)
     };
   }, [testimonials]);
 
-  // Filtered testimonials with debounced search
-  const filteredTestimonials = useMemo(() => {
-    return testimonials.filter((testimonial) => {
-      // Company filter
-      const matchesCompany = filterCompany.length === 0 || 
-        (testimonial.company_id && filterCompany.includes(testimonial.company_id.toString()));
-      
-      // Contact filter
-      const matchesContact = filterContact.length === 0 || 
-        (testimonial.contact_id && filterContact.includes(testimonial.contact_id.toString()));
-      
-      // Language filter
-      const matchesLanguage = filterLanguage.length === 0 || 
-        (testimonial.language && filterLanguage.includes(testimonial.language));
-      
-      // Published filter
-      const matchesPublished = filterPublished.length === 0 || 
-        (testimonial.is_published && filterPublished.includes(testimonial.is_published));
-      
-      // Search filter
-      const matchesSearch = !debouncedSearchQuery || 
-        testimonial.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        testimonial.testimonial_fr?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        testimonial.testimonial_en?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        testimonial.contact_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        testimonial.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      
-      return matchesCompany && matchesContact && matchesLanguage && matchesPublished && matchesSearch;
-    });
-  }, [testimonials, filterCompany, filterContact, filterLanguage, filterPublished, debouncedSearchQuery]);
-
-  // Clear all filters
-  const clearAllFilters = useCallback(() => {
-    setFilterCompany([]);
-    setFilterContact([]);
-    setFilterLanguage([]);
-    setFilterPublished([]);
-    setSearchQuery('');
-  }, []);
-
-  const hasActiveFilters = filterCompany.length > 0 || filterContact.length > 0 || 
-    filterLanguage.length > 0 || filterPublished.length > 0 || searchQuery.length > 0;
-
-  // Handle create
-  const handleCreate = async (testimonial: TestimonialCreate) => {
-    try {
-      await createTestimonialMutation.mutateAsync(testimonial);
-      setShowCreateModal(false);
-      showToast({
-        message: 'Témoignage créé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la création du témoignage',
-        type: 'error',
-      });
+  const getStatusColor = (status: Testimonial['status']) => {
+    switch (status) {
+      case 'published': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+      case 'pending': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'draft': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
-  // Handle update
-  const handleUpdate = async (testimonial: TestimonialUpdate) => {
-    if (!selectedTestimonial) return;
-    
-    try {
-      await updateTestimonialMutation.mutateAsync({ id: selectedTestimonial.id, data: testimonial });
-      setShowEditModal(false);
-      setSelectedTestimonial(null);
-      showToast({
-        message: 'Témoignage modifié avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la modification du témoignage',
-        type: 'error',
-      });
+  const getStatusLabel = (status: Testimonial['status']) => {
+    switch (status) {
+      case 'published': return 'Publié';
+      case 'pending': return 'En attente';
+      case 'draft': return 'Brouillon';
+      default: return status;
     }
   };
 
-  // Handle delete
-  const handleDelete = async (testimonialId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce témoignage ?')) {
-      return;
-    }
-
-    try {
-      await deleteTestimonialMutation.mutateAsync(testimonialId);
-      if (selectedTestimonial?.id === testimonialId) {
-        setSelectedTestimonial(null);
-      }
-      showToast({
-        message: 'Témoignage supprimé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression du témoignage',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle delete all
-  const handleDeleteAll = async () => {
-    const count = testimonials.length;
-    if (count === 0) {
-      showToast({
-        message: 'Aucun témoignage à supprimer',
-        type: 'info',
-      });
-      return;
-    }
-
-    const confirmed = confirm(
-      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUS les ${count} témoignage(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map(star => (
+          <Star
+            key={star}
+            className={`w-4 h-4 ${
+              star <= rating
+                ? 'fill-[#F59E0B] text-[#F59E0B]'
+                : 'text-gray-300 dark:text-gray-600'
+            }`}
+          />
+        ))}
+      </div>
     );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const result = await deleteAllTestimonialsMutation.mutateAsync();
-      setSelectedTestimonial(null);
-      showToast({
-        message: result.message || `${result.deleted_count} témoignage(s) supprimé(s) avec succès`,
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression des témoignages',
-        type: 'error',
-      });
-    }
   };
 
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
-  
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      // Generate import_id before starting import
-      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
-      setShowImportLogs(true);
-      
-      const result = await reseauTestimonialsAPI.import(file, importId);
-      
-      // Update import_id if backend returns a different one (should be the same)
-      if (result.import_id && result.import_id !== importId) {
-        setCurrentImportId(result.import_id);
-      }
-      
-      if (result.valid_rows > 0) {
-        // Invalidate testimonials query to refetch after import
-        queryClient.invalidateQueries({ queryKey: ['reseau-testimonials'] });
-        
-        showToast({
-          message: `${result.valid_rows} témoignage(s) importé(s) avec succès`,
-          type: 'success',
-        });
-      }
-      
-      if (result.invalid_rows > 0) {
-        showToast({
-          message: `${result.invalid_rows} ligne(s) avec erreur(s)`,
-          type: 'warning',
-        });
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    try {
-      const blob = await reseauTestimonialsAPI.export();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `temoignages-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast({
-        message: 'Export réussi',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'export',
-        type: 'error',
-      });
-    }
-  };
-
-  // Open edit modal
-  const openEditModal = (testimonial: Testimonial) => {
-    setSelectedTestimonial(testimonial);
-    setShowEditModal(true);
-  };
-
-  // Table columns
-  const columns: Column<Testimonial>[] = [
-    {
-      key: 'company_name',
-      label: 'Entreprise',
-      sortable: true,
-      render: (_value, testimonial) => (
-        <div className="flex items-center gap-2 min-w-0">
-          {testimonial.company_logo_url && (
-            <img 
-              src={testimonial.company_logo_url} 
-              alt={testimonial.company_name || ''} 
-              className="w-8 h-8 rounded object-cover flex-shrink-0"
-            />
-          )}
-          <span className="truncate" title={testimonial.company_name || undefined}>{testimonial.company_name || '-'}</span>
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <Loading />
         </div>
-      ),
-    },
-    {
-      key: 'contact_name',
-      label: 'Contact',
-      sortable: true,
-      render: (_value, testimonial) => (
-        <TestimonialContact
-          testimonial={testimonial}
-          onUpdate={() => {
-            queryClient.invalidateQueries({ queryKey: ['reseau-testimonials'] });
-          }}
-          compact={true}
-        />
-      ),
-    },
-    {
-      key: 'title',
-      label: 'Titre',
-      sortable: true,
-      render: (_value, testimonial) => (
-        <span className="font-medium truncate block" title={testimonial.title || undefined}>{testimonial.title || '-'}</span>
-      ),
-    },
-    {
-      key: 'testimonial_fr',
-      label: 'Témoignage (FR)',
-      sortable: false,
-      render: (_value, testimonial) => (
-        <span className="text-sm text-muted-foreground line-clamp-2">
-          {testimonial.testimonial_fr || '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'is_published',
-      label: 'Statut',
-      sortable: true,
-      render: (_value, testimonial) => (
-        <Badge variant={testimonial.is_published === 'published' ? 'success' : 'default'}>
-          {testimonial.is_published === 'published' ? 'Publié' : 'Brouillon'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      sortable: false,
-      render: (_value, testimonial) => (
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              openEditModal(testimonial);
-            }}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(testimonial.id);
-            }}
-          >
-            <Trash2 className="w-4 h-4 text-destructive" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
+      </PageContainer>
+    );
+  }
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <PageHeader
-        title="Témoignages"
-        description="Gérez les témoignages clients"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Réseau', href: '/dashboard/reseau' },
-          { label: 'Témoignages' },
-        ]}
-      />
-
-      {/* Header Card */}
-      <Card>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
+    <PageContainer className="flex flex-col h-full">
+      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
+        <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 px-4 pt-6 pb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
+          
+          <div className="relative flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">
+              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Témoignages
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {filteredTestimonials.length} témoignage(s) {hasActiveFilters ? `(filtré sur ${testimonials.length} total)` : ''}
-              </p>
+              </h1>
+              <p className="text-white/80 text-lg">Gérez les témoignages clients</p>
             </div>
-            
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nouveau témoignage
-              </Button>
-              
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowActionsMenu(!showActionsMenu)}
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-                {showActionsMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowActionsMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
-                      <div className="py-1">
-                        <button
-                          onClick={() => {
-                            setShowImportInstructions(true);
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                        >
-                          <HelpCircle className="w-3.5 h-3.5" />
-                          Instructions d'import
-                        </button>
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls,.zip"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImport(file);
-                              setShowActionsMenu(false);
-                            }
-                          }}
-                          className="hidden"
-                          id="import-testimonials"
-                        />
-                        <button
-                          onClick={async () => {
-                            try {
-                              await reseauTestimonialsAPI.downloadTemplate();
-                              setShowActionsMenu(false);
-                            } catch (err) {
-                              const appError = handleApiError(err);
-                              showToast({
-                                message: appError.message || 'Erreur lors du téléchargement du modèle',
-                                type: 'error',
-                              });
-                            }
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5" />
-                          Modèle Excel
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await reseauTestimonialsAPI.downloadZipTemplate();
-                              setShowActionsMenu(false);
-                              showToast({
-                                message: 'Modèle ZIP téléchargé avec succès',
-                                type: 'success',
-                              });
-                            } catch (err) {
-                              const appError = handleApiError(err);
-                              showToast({
-                                message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-                                type: 'error',
-                              });
-                            }
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5" />
-                          Modèle ZIP (avec logos)
-                        </button>
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls,.zip"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImport(file);
-                              setShowActionsMenu(false);
-                            }
-                          }}
-                          className="hidden"
-                          id="import-testimonials"
-                        />
-                        <label
-                          htmlFor="import-testimonials"
-                          className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer border-t border-border"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          Importer
-                        </label>
-                        <button
-                          onClick={() => {
-                            handleExport();
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Exporter
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleDeleteAll();
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 border-t border-border"
-                          disabled={loading || testimonials.length === 0}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Supprimer tous
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Search bar */}
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Rechercher par titre, témoignage, contact, entreprise..."
-            className="w-full"
-          />
-          
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {companies.length > 0 && (
-              <MultiSelectFilter
-                label="Entreprise"
-                options={companies.map((company) => ({
-                  value: company.id.toString(),
-                  label: company.name,
-                }))}
-                selectedValues={filterCompany}
-                onSelectionChange={setFilterCompany}
-                className="min-w-[150px]"
-              />
-            )}
-            
-            {contacts.length > 0 && (
-              <MultiSelectFilter
-                label="Contact"
-                options={contacts.map((contact) => ({
-                  value: contact.id.toString(),
-                  label: `${contact.first_name} ${contact.last_name}`,
-                }))}
-                selectedValues={filterContact}
-                onSelectionChange={setFilterContact}
-                className="min-w-[150px]"
-              />
-            )}
-            
-            <MultiSelectFilter
-              label="Langue"
-              options={uniqueValues.languages.map((lang) => ({
-                value: lang,
-                label: lang.toUpperCase(),
-              }))}
-              selectedValues={filterLanguage}
-              onSelectionChange={setFilterLanguage}
-              className="min-w-[100px]"
-            />
-            
-            <MultiSelectFilter
-              label="Statut"
-              options={uniqueValues.publishedStatuses.map((status) => ({
-                value: status,
-                label: status === 'published' ? 'Publié' : 'Brouillon',
-              }))}
-              selectedValues={filterPublished}
-              onSelectionChange={setFilterPublished}
-              className="min-w-[120px]"
-            />
-            
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllFilters}
-                className="text-xs"
-              >
-                Effacer les filtres
-              </Button>
-            )}
+            <Button className="bg-white text-[#523DC9] hover:bg-white/90">
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau témoignage
+            </Button>
           </div>
         </div>
-      </Card>
 
-      {/* Error */}
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
-      )}
+        {error && <Alert variant="error">{error}</Alert>}
 
-      {/* Content */}
-      {loading && testimonials.length === 0 ? (
-        <Card>
-          <div className="py-12 text-center">
-            <Loading />
-          </div>
-        </Card>
-      ) : (
-        <Card>
-          <DataTable
-            data={filteredTestimonials as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            filterable={false}
-            emptyMessage="Aucun témoignage trouvé"
-            loading={loading}
-            infiniteScroll={filterCompany.length === 0 && filterContact.length === 0 && filterLanguage.length === 0 && filterPublished.length === 0}
-            hasMore={hasMore && filterCompany.length === 0 && filterContact.length === 0 && filterLanguage.length === 0 && filterPublished.length === 0}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-          />
-        </Card>
-      )}
-
-      {/* Create Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Créer un nouveau témoignage"
-        size="lg"
-      >
-        <TestimonialForm
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreateModal(false)}
-          loading={loading}
-          companies={companies}
-          contacts={contacts}
-        />
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal && selectedTestimonial !== null}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedTestimonial(null);
-        }}
-        title="Modifier le témoignage"
-        size="lg"
-      >
-        {selectedTestimonial && (
-          <TestimonialForm
-            testimonial={selectedTestimonial}
-            onSubmit={handleUpdate}
-            onCancel={() => {
-              setShowEditModal(false);
-              setSelectedTestimonial(null);
-            }}
-            loading={loading}
-            companies={companies}
-            contacts={contacts}
-          />
-        )}
-      </Modal>
-
-      {/* Import Instructions Modal */}
-      <ImportTestimonialsInstructions
-        isOpen={showImportInstructions}
-        onClose={() => setShowImportInstructions(false)}
-        onDownloadTemplate={async () => {
-          try {
-            await reseauTestimonialsAPI.downloadZipTemplate();
-            showToast({
-              message: 'Modèle ZIP téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-              type: 'error',
-            });
-          }
-        }}
-      />
-
-      {/* Import Logs Modal */}
-      {showImportLogs && (
-        <Modal
-          isOpen={showImportLogs}
-          onClose={() => {
-            setShowImportLogs(false);
-            setCurrentImportId(null);
-          }}
-          title="Logs d'import en temps réel"
-          size="xl"
-        >
-          {currentImportId ? (
-            <ImportLogsViewer
-              endpointUrl={`/v1/reseau/testimonials/import/${currentImportId}/logs`}
-              importId={currentImportId}
-              onComplete={() => {
-                // Don't auto-close - let user close manually to review logs
-              }}
-            />
-          ) : (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                <MessageSquare className="w-6 h-6 text-[#523DC9]" />
+              </div>
             </div>
-          )}
-        </Modal>
-      )}
-    </MotionDiv>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.published}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Publiés</div>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <Clock className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.pending}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.avgRating}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Note moyenne</div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              <Button variant={filterStatus === 'all' ? 'default' : 'outline'} onClick={() => setFilterStatus('all')}>Tous</Button>
+              <Button variant={filterStatus === 'published' ? 'default' : 'outline'} onClick={() => setFilterStatus('published')}>Publiés</Button>
+              <Button variant={filterStatus === 'pending' ? 'default' : 'outline'} onClick={() => setFilterStatus('pending')}>En attente</Button>
+              <Button variant={filterStatus === 'draft' ? 'default' : 'outline'} onClick={() => setFilterStatus('draft')}>Brouillons</Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant={filterLanguage === 'all' ? 'default' : 'outline'} onClick={() => setFilterLanguage('all')}>Toutes</Button>
+              <Button variant={filterLanguage === 'fr' ? 'default' : 'outline'} onClick={() => setFilterLanguage('fr')}>FR</Button>
+              <Button variant={filterLanguage === 'en' ? 'default' : 'outline'} onClick={() => setFilterLanguage('en')}>EN</Button>
+            </div>
+          </div>
+        </div>
+
+        {filteredTestimonials.length === 0 ? (
+          <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+            <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Aucun témoignage trouvé
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {searchQuery || filterStatus !== 'all' || filterLanguage !== 'all'
+                ? 'Essayez de modifier vos filtres'
+                : 'Créez votre premier témoignage'}
+            </p>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer un témoignage
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTestimonials.map((testimonial) => (
+              <div
+                key={testimonial.id}
+                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {testimonial.title}
+                    </h3>
+                    {renderStars(testimonial.rating)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge className={getStatusColor(testimonial.status)}>
+                      {getStatusLabel(testimonial.status)}
+                    </Badge>
+                    <Badge variant="outline">{testimonial.language.toUpperCase()}</Badge>
+                  </div>
+                </div>
+
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                  {testimonial.content}
+                </p>
+
+                <div className="space-y-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  {testimonial.contact_name && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <User className="w-4 h-4" />
+                      <span>{testimonial.contact_name}</span>
+                    </div>
+                  )}
+                  {testimonial.company_name && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Building2 className="w-4 h-4" />
+                      <span>{testimonial.company_name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(testimonial.created_at).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button variant="outline" className="flex-1">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Éditer
+                  </Button>
+                  <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </MotionDiv>
+    </PageContainer>
   );
 }
 
