@@ -193,7 +193,14 @@ export default function SoumissionsDemoPage() {
     pending: mockSubmissions.filter(s => s.status === 'Soumis' || s.status === 'En préparation').length,
   };
 
-  const currentStats = activeTab === 'quotes' ? quotesStats : submissionsStats;
+  // Type-safe access to stats
+  const getAcceptedOrWon = () => {
+    if (activeTab === 'quotes') {
+      return quotesStats.accepted;
+    } else {
+      return submissionsStats.won;
+    }
+  };
 
   return (
     <PageContainer className="flex flex-col h-full">
@@ -293,7 +300,7 @@ export default function SoumissionsDemoPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {activeTab === 'quotes' ? quotesStats.accepted : submissionsStats.won}
+              {getAcceptedOrWon()}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {activeTab === 'quotes' ? 'Acceptés' : 'Gagnés'}
