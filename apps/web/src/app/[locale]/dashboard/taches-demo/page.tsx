@@ -151,10 +151,13 @@ const priorityConfig = {
   URGENT: { label: 'Urgente', color: 'bg-red-500/10 text-red-600' },
 };
 
+type GroupBy = 'none' | 'project' | 'assignee' | 'team';
+
 export default function TachesDemoPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
+  const [groupBy, setGroupBy] = useState<GroupBy>('none');
 
   // Calculate stats
   const totalTasks = mockTasks.length;
@@ -181,6 +184,42 @@ export default function TachesDemoPage() {
     IN_PROGRESS: filteredTasks.filter(t => t.status === 'IN_PROGRESS'),
     BLOCKED: filteredTasks.filter(t => t.status === 'BLOCKED'),
     DONE: filteredTasks.filter(t => t.status === 'DONE'),
+  };
+
+  // Group tasks by selected criteria
+  const groupedTasks = () => {
+    if (groupBy === 'none') return { 'Toutes les tâches': filteredTasks };
+    
+    if (groupBy === 'project') {
+      const groups: Record<string, typeof filteredTasks> = {};
+      filteredTasks.forEach(task => {
+        if (!groups[task.project]) groups[task.project] = [];
+        groups[task.project].push(task);
+      });
+      return groups;
+    }
+    
+    if (groupBy === 'assignee') {
+      const groups: Record<string, typeof filteredTasks> = {};
+      filteredTasks.forEach(task => {
+        if (!groups[task.assignee]) groups[task.assignee] = [];
+        groups[task.assignee].push(task);
+      });
+      return groups;
+    }
+    
+    // Team grouping (mock - group by first letter of assignee name)
+    if (groupBy === 'team') {
+      const groups: Record<string, typeof filteredTasks> = {};
+      filteredTasks.forEach(task => {
+        const team = task.assignee[0] < 'M' ? 'Équipe Alpha' : 'Équipe Beta';
+        if (!groups[team]) groups[team] = [];
+        groups[team].push(task);
+      });
+      return groups;
+    }
+    
+    return { 'Toutes les tâches': filteredTasks };
   };
 
   return (
@@ -297,7 +336,17 @@ export default function TachesDemoPage() {
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <select
+              value={groupBy}
+              onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+            >
+              <option value="none">Sans groupement</option>
+              <option value="project">Par projet</option>
+              <option value="assignee">Par employé</option>
+              <option value="team">Par équipe</option>
+            </select>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
@@ -327,8 +376,19 @@ export default function TachesDemoPage() {
 
         {/* Tasks View */}
         {viewMode === 'list' ? (
-          <div className="space-y-2">
-            {filteredTasks.map((task) => {
+          <div className="space-y-6">
+            {Object.entries(groupedTasks()).map(([groupName, tasks]) => (
+              <div key={groupName}>
+                {groupBy !== 'none' && (
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span className="text-[#523DC9]">{groupName}</span>
+                    <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30 border">
+                      {tasks.length}
+                    </Badge>
+                  </h3>
+                )}
+                <div className="space-y-2">
+                  {tasks.map((task) => {
               const StatusIcon = statusConfig[task.status].icon;
               return (
                 <Card key={task.id} className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group">
@@ -378,6 +438,9 @@ export default function TachesDemoPage() {
                 </Card>
               );
             })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

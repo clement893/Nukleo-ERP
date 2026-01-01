@@ -142,80 +142,89 @@ export default function ProjetsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Briefcase className="w-6 h-6 text-[#523DC9]" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                <Briefcase className="w-5 h-5 text-[#523DC9]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.total}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Total</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Total Projets</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <TrendingUp className="w-6 h-6 text-[#3B82F6]" />
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+                <TrendingUp className="w-5 h-5 text-[#3B82F6]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.active}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Actifs</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.active}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Actifs</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.completed}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Terminés</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.completed}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Terminés</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
-                <Archive className="w-6 h-6 text-gray-600" />
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gray-500/10 border border-gray-500/30">
+                <Archive className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.archived}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Archivés</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.archived}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Archivés</div>
-          </Card>
-        </div>
-
-        {/* Budget Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <DollarSign className="w-6 h-6 text-[#F59E0B]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(stats.totalBudget)}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Budget Total</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
-                <DollarSign className="w-6 h-6 text-[#EF4444]" />
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <DollarSign className="w-5 h-5 text-[#F59E0B]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {formatCurrency(stats.totalBudget)}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Budget</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(stats.totalSpent)}
+          </Card>
+
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
+                <DollarSign className="w-5 h-5 text-[#EF4444]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {formatCurrency(stats.totalSpent)}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dépenses</div>
+              </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Dépenses Totales</div>
           </Card>
         </div>
 
