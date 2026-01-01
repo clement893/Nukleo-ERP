@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+import { useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -17,137 +18,68 @@ import {
   ArrowUp,
   ArrowDown,
   Phone,
-  Mail
+  Mail,
+  UserPlus,
+  Briefcase
 } from 'lucide-react';
-import { Badge, Button, Card } from '@/components/ui';
+import { Badge, Button, Card, Loading } from '@/components/ui';
 import Link from 'next/link';
+import { useInfiniteOpportunities } from '@/lib/query/opportunities';
+import { useInfinitePipelines } from '@/lib/query/pipelines';
+import { useInfiniteQuotes, useInfiniteSubmissions } from '@/lib/query/quotes-submissions';
 
-// Mock data
-const mockStats = {
-  opportunities: {
-    total: 24,
-    value: 1250000,
-    change: 12.5,
-    trend: 'up' as const,
-  },
-  pipelines: {
-    total: 5,
-    active: 3,
-    change: 0,
-    trend: 'stable' as const,
-  },
-  quotes: {
-    total: 18,
-    pending: 8,
-    change: -5.2,
-    trend: 'down' as const,
-  },
-  submissions: {
-    total: 12,
-    won: 4,
-    change: 8.3,
-    trend: 'up' as const,
-  },
-};
+export default function CommercialPage() {
+  // Fetch real data
+  const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(100);
+  const { data: pipelinesData, isLoading: loadingPipelines } = useInfinitePipelines(100);
+  const { data: quotesData, isLoading: loadingQuotes } = useInfiniteQuotes(100);
+  const { data: submissionsData, isLoading: loadingSubmissions } = useInfiniteSubmissions(100);
 
-const mockRecentActivities = [
-  {
-    id: 1,
-    type: 'opportunity',
-    title: 'Nouvelle opportunité créée',
-    description: 'Refonte site web e-commerce - TechCorp Inc.',
-    time: 'Il y a 2 heures',
-    icon: Target,
-    color: 'purple',
-  },
-  {
-    id: 2,
-    type: 'quote',
-    title: 'Devis accepté',
-    description: 'DEV-2024-002 - InnoSoft Solutions - 60 000 $',
-    time: 'Il y a 4 heures',
-    icon: FileText,
-    color: 'green',
-  },
-  {
-    id: 3,
-    type: 'call',
-    title: 'Appel de suivi',
-    description: 'Discussion avec Marie Dubois - TechCorp',
-    time: 'Il y a 6 heures',
-    icon: Phone,
-    color: 'blue',
-  },
-  {
-    id: 4,
-    type: 'email',
-    title: 'Proposition envoyée',
-    description: 'Projet mobile - CloudNet Technologies',
-    time: 'Hier',
-    icon: Mail,
-    color: 'orange',
-  },
-];
+  // Flatten data
+  const opportunities = useMemo(() => opportunitiesData?.pages.flat() || [], [opportunitiesData]);
+  const pipelines = useMemo(() => pipelinesData?.pages.flat() || [], [pipelinesData]);
+  const quotes = useMemo(() => quotesData?.pages.flat() || [], [quotesData]);
+  const submissions = useMemo(() => submissionsData?.pages.flat() || [], [submissionsData]);
 
-const mockUpcomingDeadlines = [
-  {
-    id: 1,
-    title: 'Soumission Ville de Montréal',
-    deadline: '2024-02-28',
-    daysLeft: 15,
-    priority: 'high',
-  },
-  {
-    id: 2,
-    title: 'Devis TechCorp - Validité',
-    deadline: '2024-02-15',
-    daysLeft: 2,
-    priority: 'urgent',
-  },
-  {
-    id: 3,
-    title: 'Clôture opportunité InnoSoft',
-    deadline: '2024-02-28',
-    daysLeft: 15,
-    priority: 'medium',
-  },
-  {
-    id: 4,
-    title: 'Soumission Gouvernement QC',
-    deadline: '2024-03-15',
-    daysLeft: 30,
-    priority: 'medium',
-  },
-];
+  const loading = loadingOpps || loadingPipelines || loadingQuotes || loadingSubmissions;
 
-const mockTopOpportunities = [
-  {
-    id: 1,
-    name: 'Migration infrastructure cloud',
-    company: 'CloudNet Technologies',
-    amount: 85000,
-    probability: 75,
-    stage: 'Négociation',
-  },
-  {
-    id: 2,
-    name: 'Application mobile iOS/Android',
-    company: 'InnoSoft Solutions',
-    amount: 60000,
-    probability: 80,
-    stage: 'Closing',
-  },
-  {
-    id: 3,
-    name: 'Refonte site web e-commerce',
-    company: 'TechCorp Inc.',
-    amount: 45000,
-    probability: 70,
-    stage: 'Proposition',
-  },
-];
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalOpportunities = opportunities.length;
+    const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+    const totalPipelines = pipelines.length;
+    const activePipelines = pipelines.filter(p => !p.is_archived).length;
+    const totalQuotes = quotes.length;
+    const pendingQuotes = quotes.filter(q => q.status === 'sent' || q.status === 'pending').length;
+    const totalSubmissions = submissions.length;
+    const wonSubmissions = submissions.filter(s => s.status === 'won' || s.status === 'accepted').length;
 
-export default function CommercialDemoPage() {
+    return {
+      opportunities: {
+        total: totalOpportunities,
+        value: totalValue,
+      },
+      pipelines: {
+        total: totalPipelines,
+        active: activePipelines,
+      },
+      quotes: {
+        total: totalQuotes,
+        pending: pendingQuotes,
+      },
+      submissions: {
+        total: totalSubmissions,
+        won: wonSubmissions,
+      },
+    };
+  }, [opportunities, pipelines, quotes, submissions]);
+
+  // Top opportunities (by amount)
+  const topOpportunities = useMemo(() => {
+    return [...opportunities]
+      .sort((a, b) => (b.amount || 0) - (a.amount || 0))
+      .slice(0, 3);
+  }, [opportunities]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-CA', {
@@ -157,40 +89,15 @@ export default function CommercialDemoPage() {
     }).format(value);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-    });
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
-      case 'high':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
-    }
-  };
-
-  const getActivityColor = (color: string) => {
-    switch (color) {
-      case 'purple':
-        return 'bg-[#523DC9]/10 border-[#523DC9]/30 text-[#523DC9]';
-      case 'green':
-        return 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]';
-      case 'blue':
-        return 'bg-[#3B82F6]/10 border-[#3B82F6]/30 text-[#3B82F6]';
-      case 'orange':
-        return 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]';
-      default:
-        return 'bg-gray-100 border-gray-300 text-gray-600';
-    }
-  };
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <Loading />
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer className="flex flex-col h-full">
@@ -238,23 +145,13 @@ export default function CommercialDemoPage() {
               <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
                 <Target className="w-6 h-6 text-[#523DC9]" />
               </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${
-                mockStats.opportunities.trend === 'up' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {mockStats.opportunities.trend === 'up' ? (
-                  <ArrowUp className="w-4 h-4" />
-                ) : (
-                  <ArrowDown className="w-4 h-4" />
-                )}
-                <span>{Math.abs(mockStats.opportunities.change)}%</span>
-              </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {mockStats.opportunities.total}
+              {stats.opportunities.total}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Opportunités</div>
             <div className="text-xs text-gray-500 dark:text-gray-500">
-              Valeur: {formatCurrency(mockStats.opportunities.value)}
+              Valeur: {formatCurrency(stats.opportunities.value)}
             </div>
           </Card>
 
@@ -263,16 +160,13 @@ export default function CommercialDemoPage() {
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <TrendingUp className="w-6 h-6 text-[#10B981]" />
               </div>
-              <div className="flex items-center gap-1 text-sm font-medium text-gray-500">
-                <span>—</span>
-              </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {mockStats.pipelines.total}
+              {stats.pipelines.total}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Pipelines</div>
             <div className="text-xs text-gray-500 dark:text-gray-500">
-              {mockStats.pipelines.active} actifs
+              {stats.pipelines.active} actifs
             </div>
           </Card>
 
@@ -281,171 +175,80 @@ export default function CommercialDemoPage() {
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <FileText className="w-6 h-6 text-[#F59E0B]" />
               </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${
-                mockStats.quotes.trend === 'down' ? 'text-red-600' : 'text-green-600'
-              }`}>
-                {mockStats.quotes.trend === 'down' ? (
-                  <ArrowDown className="w-4 h-4" />
-                ) : (
-                  <ArrowUp className="w-4 h-4" />
-                )}
-                <span>{Math.abs(mockStats.quotes.change)}%</span>
-              </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {mockStats.quotes.total}
+              {stats.quotes.total}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Devis</div>
             <div className="text-xs text-gray-500 dark:text-gray-500">
-              {mockStats.quotes.pending} en attente
+              {stats.quotes.pending} en attente
             </div>
           </Card>
 
           <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Building2 className="w-6 h-6 text-[#3B82F6]" />
-              </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${
-                mockStats.submissions.trend === 'up' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <ArrowUp className="w-4 h-4" />
-                <span>{Math.abs(mockStats.submissions.change)}%</span>
+                <Briefcase className="w-6 h-6 text-[#3B82F6]" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {mockStats.submissions.total}
+              {stats.submissions.total}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Soumissions</div>
             <div className="text-xs text-gray-500 dark:text-gray-500">
-              {mockStats.submissions.won} gagnées
+              {stats.submissions.won} gagnées
             </div>
           </Card>
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - 2/3 */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Top Opportunities */}
+          {/* Left Column - Top Opportunities */}
+          <div className="lg:col-span-2">
             <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  Opportunités prioritaires
-                </h2>
-                <Link href="/dashboard/commercial/opportunites">
-                  <Button size="sm" variant="outline">
-                    Voir tout
-                  </Button>
-                </Link>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Opportunités prioritaires</h3>
+                <Badge className="bg-[#523DC9]/10 text-[#523DC9]">{topOpportunities.length}</Badge>
               </div>
               <div className="space-y-3">
-                {mockTopOpportunities.map((opp) => (
-                  <div key={opp.id} className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Building2 className="w-4 h-4" />
-                          <span>{opp.company}</span>
-                        </div>
-                      </div>
-                      <Badge className="bg-[#523DC9]/10 text-[#523DC9]">
-                        {opp.stage}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(opp.amount)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Target className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600 dark:text-gray-400">
-                          {opp.probability}%
-                        </span>
-                      </div>
-                    </div>
+                {topOpportunities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Aucune opportunité pour le moment
                   </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Recent Activities */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Activités récentes
-              </h2>
-              <div className="space-y-4">
-                {mockRecentActivities.map((activity) => {
-                  const Icon = activity.icon;
-                  return (
-                    <div key={activity.id} className="flex items-start gap-4">
-                      <div className={`p-2 rounded-lg border ${getActivityColor(activity.color)}`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
-                          {activity.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                          {activity.description}
-                        </p>
-                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
-                          <Clock className="w-3 h-3" />
-                          <span>{activity.time}</span>
+                ) : (
+                  topOpportunities.map((opp) => (
+                    <Link key={opp.id} href={`/dashboard/commercial/opportunites/${opp.id}`}>
+                      <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{opp.company_name || 'Entreprise non définie'}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-[#10B981]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                              {formatCurrency(opp.amount || 0)}
+                            </div>
+                            {opp.probability && (
+                              <div className="text-xs text-gray-500">{opp.probability}% prob.</div>
+                            )}
+                          </div>
                         </div>
+                        {opp.stage_name && (
+                          <Badge className="bg-[#523DC9]/10 text-[#523DC9]">{opp.stage_name}</Badge>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    </Link>
+                  ))
+                )}
               </div>
             </Card>
           </div>
 
-          {/* Right Column - 1/3 */}
+          {/* Right Column - Quick Actions */}
           <div className="space-y-6">
-            {/* Upcoming Deadlines */}
             <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-              <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-[#523DC9]" />
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  Échéances
-                </h2>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h3>
               <div className="space-y-3">
-                {mockUpcomingDeadlines.map((deadline) => (
-                  <div key={deadline.id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
-                        {deadline.title}
-                      </h3>
-                      <Badge className={getPriorityColor(deadline.priority)}>
-                        {deadline.priority === 'urgent' && 'Urgent'}
-                        {deadline.priority === 'high' && 'Haute'}
-                        {deadline.priority === 'medium' && 'Moyenne'}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                      <Calendar className="w-3 h-3" />
-                      <span>{formatDate(deadline.deadline)}</span>
-                    </div>
-                    <div className="mt-2 text-xs font-medium text-gray-700 dark:text-gray-300">
-                      {deadline.daysLeft} jours restants
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Actions rapides
-              </h2>
-              <div className="space-y-2">
                 <Link href="/dashboard/commercial/opportunites">
                   <Button className="w-full justify-start hover-nukleo" variant="outline">
                     <Target className="w-4 h-4 mr-2" />
@@ -460,7 +263,7 @@ export default function CommercialDemoPage() {
                 </Link>
                 <Link href="/dashboard/reseau/contacts">
                   <Button className="w-full justify-start hover-nukleo" variant="outline">
-                    <Users className="w-4 h-4 mr-2" />
+                    <UserPlus className="w-4 h-4 mr-2" />
                     Ajouter un contact
                   </Button>
                 </Link>
