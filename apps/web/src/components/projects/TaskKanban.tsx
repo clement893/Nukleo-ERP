@@ -59,7 +59,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
   const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
-  const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ user_id: number; first_name: string; last_name: string; email?: string }>>([]);
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -146,14 +146,16 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
         setProjects(projectsList.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })));
 
-        // Load employees
+        // Load employees (only those with user_id since assignee_id points to users.id)
         const employeesData = await employeesAPI.list(0, 1000);
-        setEmployees(employeesData.map((e) => ({
-          id: e.id,
-          first_name: e.first_name,
-          last_name: e.last_name,
-          email: e.email ?? undefined,
-        })));
+        setEmployees(employeesData
+          .filter((e) => e.user_id != null) // Only include employees with a linked user
+          .map((e) => ({
+            user_id: e.user_id!,
+            first_name: e.first_name,
+            last_name: e.last_name,
+            email: e.email ?? undefined,
+          })));
       } catch (err) {
         console.error('Error loading projects/employees:', err);
       }
@@ -539,7 +541,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                 options={[
                   { value: '', label: 'Non assigné' },
                   ...employees.map(e => ({ 
-                    value: e.id.toString(), 
+                    value: e.user_id.toString(), 
                     label: `${e.first_name} ${e.last_name}${e.email ? ` (${e.email})` : ''}` 
                   }))
                 ]}
