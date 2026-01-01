@@ -10,18 +10,7 @@ import { Plus, Search, Star, Building2, User, Calendar, Edit, Trash2, MessageSqu
 import { Badge, Button, Loading, Alert, Input } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import { handleApiError } from '@/lib/errors/api';
-
-interface Testimonial {
-  id: number;
-  title: string;
-  content: string;
-  rating: number;
-  status: 'published' | 'pending' | 'draft';
-  language: 'fr' | 'en';
-  contact_name?: string;
-  company_name?: string;
-  created_at: string;
-}
+import { reseauTestimonialsAPI, type Testimonial } from '@/lib/api/reseau-testimonials';
 
 type FilterStatus = 'all' | 'published' | 'pending' | 'draft';
 
@@ -43,43 +32,8 @@ function TemoignagesContent() {
       setLoading(true);
       setError(null);
       
-      const mockData: Testimonial[] = [
-        {
-          id: 1,
-          title: 'Excellent service',
-          content: 'Nukleo a transformé notre façon de travailler. L\'équipe est professionnelle et réactive.',
-          rating: 5,
-          status: 'published',
-          language: 'fr',
-          contact_name: 'Marie Dubois',
-          company_name: 'Tech Solutions Inc.',
-          created_at: '2025-01-15T10:00:00Z'
-        },
-        {
-          id: 2,
-          title: 'Great experience',
-          content: 'Working with Nukleo has been amazing. Their AI solutions are cutting-edge.',
-          rating: 5,
-          status: 'published',
-          language: 'en',
-          contact_name: 'John Smith',
-          company_name: 'Innovation Labs',
-          created_at: '2025-01-10T14:30:00Z'
-        },
-        {
-          id: 3,
-          title: 'Très satisfait',
-          content: 'Une plateforme intuitive et puissante. Le ROI a été visible dès les premières semaines.',
-          rating: 4,
-          status: 'pending',
-          language: 'fr',
-          contact_name: 'Sophie Tremblay',
-          company_name: 'Groupe Innovant',
-          created_at: '2025-01-20T09:15:00Z'
-        }
-      ];
-      
-      setTestimonials(mockData);
+      const data = await reseauTestimonialsAPI.list(0, 1000);
+      setTestimonials(data);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur de chargement');
@@ -89,28 +43,50 @@ function TemoignagesContent() {
     }
   };
 
+  const getStatus = (isPublished?: string): 'published' | 'pending' | 'draft' => {
+    if (isPublished === 'yes' || isPublished === '1' || isPublished === 'true') return 'published';
+    if (isPublished === 'pending') return 'pending';
+    return 'draft';
+  };
+
+  const getContent = (testimonial: Testimonial): string => {
+    if (testimonial.language === 'fr' && testimonial.testimonial_fr) {
+      return testimonial.testimonial_fr;
+    }
+    if (testimonial.language === 'en' && testimonial.testimonial_en) {
+      return testimonial.testimonial_en;
+    }
+    return testimonial.testimonial_fr || testimonial.testimonial_en || '';
+  };
+
   const filteredTestimonials = useMemo(() => {
     return testimonials.filter(t => {
-      if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+      const status = getStatus(t.is_published);
+      
+      if (filterStatus !== 'all' && status !== filterStatus) return false;
       if (filterLanguage !== 'all' && t.language !== filterLanguage) return false;
+      
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
+        const content = getContent(t);
         return (
-          t.title.toLowerCase().includes(query) ||
-          t.content.toLowerCase().includes(query) ||
+          t.title?.toLowerCase().includes(query) ||
+          content.toLowerCase().includes(query) ||
           t.contact_name?.toLowerCase().includes(query) ||
           t.company_name?.toLowerCase().includes(query)
         );
       }
+      
       return true;
     });
   }, [testimonials, filterStatus, filterLanguage, searchQuery]);
 
   const stats = useMemo(() => {
-    const published = testimonials.filter(t => t.status === 'published').length;
-    const pending = testimonials.filter(t => t.status === 'pending').length;
-    const avgRating = testimonials.length > 0
-      ? testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length
+    const published = testimonials.filter(t => getStatus(t.is_published) === 'published').length;
+    const pending = testimonials.filter(t => getStatus(t.is_published) === 'pending').length;
+    const validRatings = testimonials.filter(t => t.rating && t.rating > 0);
+    const avgRating = validRatings.length > 0
+      ? validRatings.reduce((sum, t) => sum + (t.rating || 0), 0) / validRatings.length
       : 0;
     
     return {
@@ -121,32 +97,31 @@ function TemoignagesContent() {
     };
   }, [testimonials]);
 
-  const getStatusColor = (status: Testimonial['status']) => {
+  const getStatusColor = (status: 'published' | 'pending' | 'draft') => {
     switch (status) {
       case 'published': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
       case 'pending': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'draft': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
-      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const getStatusLabel = (status: Testimonial['status']) => {
+  const getStatusLabel = (status: 'published' | 'pending' | 'draft') => {
     switch (status) {
       case 'published': return 'Publié';
       case 'pending': return 'En attente';
       case 'draft': return 'Brouillon';
-      default: return status;
     }
   };
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating?: number | null) => {
+    const ratingValue = rating || 0;
     return (
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map(star => (
           <Star
             key={star}
             className={`w-4 h-4 ${
-              star <= rating
+              star <= ratingValue
                 ? 'fill-[#F59E0B] text-[#F59E0B]'
                 : 'text-gray-300 dark:text-gray-600'
             }`}
@@ -255,16 +230,16 @@ function TemoignagesContent() {
             </div>
 
             <div className="flex gap-2 flex-wrap">
-              <Button variant={filterStatus === 'all' ? 'primary' : 'outline'} onClick={() => setFilterStatus('all')}>Tous</Button>
-              <Button variant={filterStatus === 'published' ? 'primary' : 'outline'} onClick={() => setFilterStatus('published')}>Publiés</Button>
-              <Button variant={filterStatus === 'pending' ? 'primary' : 'outline'} onClick={() => setFilterStatus('pending')}>En attente</Button>
-              <Button variant={filterStatus === 'draft' ? 'primary' : 'outline'} onClick={() => setFilterStatus('draft')}>Brouillons</Button>
+              <Button variant={filterStatus === 'all' ? 'default' : 'outline'} onClick={() => setFilterStatus('all')}>Tous</Button>
+              <Button variant={filterStatus === 'published' ? 'default' : 'outline'} onClick={() => setFilterStatus('published')}>Publiés</Button>
+              <Button variant={filterStatus === 'pending' ? 'default' : 'outline'} onClick={() => setFilterStatus('pending')}>En attente</Button>
+              <Button variant={filterStatus === 'draft' ? 'default' : 'outline'} onClick={() => setFilterStatus('draft')}>Brouillons</Button>
             </div>
 
             <div className="flex gap-2">
-              <Button variant={filterLanguage === 'all' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('all')}>Toutes</Button>
-              <Button variant={filterLanguage === 'fr' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('fr')}>FR</Button>
-              <Button variant={filterLanguage === 'en' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('en')}>EN</Button>
+              <Button variant={filterLanguage === 'all' ? 'default' : 'outline'} onClick={() => setFilterLanguage('all')}>Toutes</Button>
+              <Button variant={filterLanguage === 'fr' ? 'default' : 'outline'} onClick={() => setFilterLanguage('fr')}>FR</Button>
+              <Button variant={filterLanguage === 'en' ? 'default' : 'outline'} onClick={() => setFilterLanguage('en')}>EN</Button>
             </div>
           </div>
         </div>
@@ -287,60 +262,67 @@ function TemoignagesContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTestimonials.map((testimonial) => (
-              <div
-                key={testimonial.id}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {testimonial.title}
-                    </h3>
-                    {renderStars(testimonial.rating)}
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge className={getStatusColor(testimonial.status)}>
-                      {getStatusLabel(testimonial.status)}
-                    </Badge>
-                    <Badge variant="default">{testimonial.language.toUpperCase()}</Badge>
-                  </div>
-                </div>
-
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
-                  {testimonial.content}
-                </p>
-
-                <div className="space-y-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  {testimonial.contact_name && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <User className="w-4 h-4" />
-                      <span>{testimonial.contact_name}</span>
+            {filteredTestimonials.map((testimonial) => {
+              const status = getStatus(testimonial.is_published);
+              const content = getContent(testimonial);
+              
+              return (
+                <div
+                  key={testimonial.id}
+                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                        {testimonial.title || 'Sans titre'}
+                      </h3>
+                      {renderStars(testimonial.rating)}
                     </div>
-                  )}
-                  {testimonial.company_name && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Building2 className="w-4 h-4" />
-                      <span>{testimonial.company_name}</span>
+                    <div className="flex gap-2">
+                      <Badge className={getStatusColor(status)}>
+                        {getStatusLabel(status)}
+                      </Badge>
+                      {testimonial.language && (
+                        <Badge variant="outline">{testimonial.language.toUpperCase()}</Badge>
+                      )}
                     </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Calendar className="w-4 h-4" />
-                    <span>{new Date(testimonial.created_at).toLocaleDateString('fr-FR')}</span>
+                  </div>
+
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                    {content}
+                  </p>
+
+                  <div className="space-y-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    {testimonial.contact_name && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <User className="w-4 h-4" />
+                        <span>{testimonial.contact_name}</span>
+                      </div>
+                    )}
+                    {testimonial.company_name && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Building2 className="w-4 h-4" />
+                        <span>{testimonial.company_name}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(testimonial.created_at).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <Button variant="outline" className="flex-1">
+                      <Edit className="w-4 h-4 mr-2" />
+                      Éditer
+                    </Button>
+                    <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-
-                <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <Button variant="outline" className="flex-1">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Éditer
-                  </Button>
-                  <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </MotionDiv>
