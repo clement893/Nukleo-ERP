@@ -109,7 +109,9 @@ export default function VacancesPage() {
   // Filter vacations
   const filteredVacations = useMemo(() => {
     return vacations.filter((vacation: VacationRequest) => {
-      const employeeName = vacation.employee_name || '';
+      const employeeName = vacation.employee_first_name && vacation.employee_last_name
+        ? `${vacation.employee_first_name} ${vacation.employee_last_name}`
+        : '';
       const matchesSearch = !searchQuery || 
         employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (vacation.reason && vacation.reason.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -322,15 +324,17 @@ export default function VacancesPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredVacations.map((vacation: VacationRequest) => {
-              const employeeName = vacation.employee_name || 'Employé';
-              const initials = employeeName.split(' ').map(n => n[0]).join('').toUpperCase();
+              const employeeName = vacation.employee_first_name && vacation.employee_last_name
+                ? `${vacation.employee_first_name} ${vacation.employee_last_name}`
+                : 'Employé';
+              const initials = employeeName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
               const avatarColor = getAvatarColor(employeeName);
               const statusInfo = statusConfig[vacation.status as keyof typeof statusConfig] || statusConfig.pending;
-              const StatusIcon = statusInfo.icon;
               
-              const vacationType = vacation.vacation_type || 'vacation';
-              const typeInfo = typeConfig[vacationType] || typeConfig.vacation;
-              const TypeIcon = typeInfo.icon;
+              // vacation_type doesn't exist in VacationRequest, using 'vacation' as default
+              const vacationType = 'vacation';
+              const typeInfo = typeConfig[vacationType];
+              const TypeIcon = typeInfo?.icon || Sun;
               
               const days = vacation.start_date && vacation.end_date 
                 ? calculateBusinessDays(vacation.start_date, vacation.end_date)
@@ -355,7 +359,7 @@ export default function VacancesPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <TypeIcon className={`w-4 h-4 ${typeInfo.color}`} />
+                        <TypeIcon className={`w-4 h-4 ${typeInfo?.color || 'text-yellow-500'}`} />
                         <span className="capitalize">{vacationType}</span>
                       </div>
                     </div>
@@ -414,9 +418,9 @@ export default function VacancesPage() {
                         </Button>
                       </div>
                     )}
-                    {vacation.status === 'approved' && vacation.approved_by && (
+                    {vacation.status === 'approved' && vacation.approved_by_name && (
                       <div className="text-xs text-green-600 dark:text-green-400">
-                        Approuvé par {vacation.approved_by}
+                        Approuvé par {vacation.approved_by_name}
                       </div>
                     )}
                     {vacation.status === 'rejected' && (
