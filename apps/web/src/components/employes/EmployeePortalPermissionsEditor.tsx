@@ -84,15 +84,9 @@ export default function EmployeePortalPermissionsEditor({
       permissionsData.forEach(perm => {
         if (perm.permission_type === 'module') {
           if (perm.resource_id === '*') {
-            AVAILABLE_MODULES.forEach(m => modulesSet.add(m.id));
+            EMPLOYEE_PORTAL_MODULES.forEach(m => modulesSet.add(m.id));
           } else {
             modulesSet.add(perm.resource_id);
-          }
-        } else if (perm.permission_type === 'page') {
-          if (perm.resource_id === '*') {
-            EMPLOYEE_PORTAL_BASE_PAGES.forEach(p => pagesSet.add(p.path));
-          } else {
-            pagesSet.add(perm.resource_id);
           }
         } else if (perm.permission_type === 'client') {
           if (perm.resource_id === '*') {
@@ -107,7 +101,6 @@ export default function EmployeePortalPermissionsEditor({
       });
 
       setSelectedModules(modulesSet);
-      setSelectedPages(pagesSet);
       setSelectedClients(clientsSet);
 
       // Charger les clients sélectionnés
