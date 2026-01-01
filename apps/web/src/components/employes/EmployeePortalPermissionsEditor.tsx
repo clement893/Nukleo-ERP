@@ -68,9 +68,34 @@ export default function EmployeePortalPermissionsEditor({
       setPermissions(permissionsData);
 
       // Initialiser les états des cases à cocher
+      // Utiliser summaryData comme source principale car elle est plus fiable
       const modulesSet = new Set<string>();
       const clientsSet = new Set<number>();
 
+      // D'abord, utiliser summaryData qui est plus direct
+      if (summaryData.modules.includes('*')) {
+        // Tous les modules
+        EMPLOYEE_PORTAL_MODULES.forEach(m => modulesSet.add(m.id));
+      } else {
+        // Modules spécifiques
+        summaryData.modules.forEach(moduleId => {
+          if (moduleId !== '*') {
+            modulesSet.add(moduleId);
+          }
+        });
+      }
+
+      if (summaryData.all_clients) {
+        // Tous les clients - on ne peut pas charger tous les clients, donc on laisse vide
+        // L'utilisateur devra les ajouter manuellement
+      } else {
+        // Clients spécifiques
+        summaryData.clients.forEach(clientId => {
+          clientsSet.add(clientId);
+        });
+      }
+
+      // Ensuite, utiliser permissionsData comme source secondaire pour s'assurer qu'on ne manque rien
       permissionsData.forEach(perm => {
         if (perm.permission_type === 'module') {
           if (perm.resource_id === '*') {
