@@ -8,28 +8,19 @@ import { useState, useMemo } from 'react';
 import { 
   useInfiniteProjectTasks,
 } from '@/lib/query/project-tasks';
-import type { ProjectTask, TaskStatus, TaskPriority } from '@/lib/api/project-tasks';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
+import type { TaskStatus, TaskPriority } from '@/lib/api/project-tasks';
 import Alert from '@/components/ui/Alert';
 import EmptyState from '@/components/ui/EmptyState';
 import Skeleton from '@/components/ui/Skeleton';
 import { 
-  Plus,
   Search,
-  LayoutGrid,
   List as ListIcon,
   CheckSquare,
   Clock,
-  AlertCircle,
   User,
   Calendar,
-  Filter,
-  ArrowUpDown,
   FolderKanban,
   Users,
-  TrendingUp,
-  TrendingDown,
   Circle,
   Play,
   Ban,
@@ -44,8 +35,6 @@ type SortBy = 'created_at' | 'due_date' | 'priority' | 'title' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 export default function TachesPage() {
-  const { showToast } = useToast();
-  
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
