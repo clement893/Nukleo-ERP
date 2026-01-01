@@ -22,7 +22,6 @@
 
 import Card from './Card.v2';
 import type { StatusType } from './Card.v2';
-import type { ReactNode } from 'react';
 
 /**
  * StatsCard - Migration helper for StatsCard component
