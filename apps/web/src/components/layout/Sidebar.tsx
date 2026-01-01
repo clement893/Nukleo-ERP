@@ -94,20 +94,7 @@ export default function Sidebar({
     return !moreSpecificMatch;
   };
 
-  // Get category color based on group name
-  const getCategoryColor = (name: string) => {
-    const colors: Record<string, string> = {
-      'Dashboard': '#523DC9',
-      'Commercial': '#3B82F6',
-      'Projets': '#10B981',
-      'Réseau': '#F59E0B',
-      'Admin': '#6B7280',
-      'Agenda': '#8B5CF6',
-      'Ressources': '#EC4899',
-      'Finance': '#14B8A6',
-    };
-    return colors[name] || '#523DC9';
-  };
+
 
   // Filter navigation based on search query
   const filteredNavigation = useMemo(() => {
@@ -166,42 +153,38 @@ export default function Sidebar({
     }
   }, [searchQuery, filteredNavigation]);
 
-  // Render navigation item
-  const renderNavItem = (item: NavigationItem, groupName?: string) => {
+  // Render navigation item (SIMPLIFIÉ)
+  const renderNavItem = (item: NavigationItem) => {
     const active = isActive(item.href);
     const external = isExternalLink(item.href);
-    const color = groupName ? getCategoryColor(groupName) : '#523DC9';
     
     const className = clsx(
-      'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+      'group relative flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
       active
-        ? 'glass-card text-[#523DC9] shadow-sm border border-[#523DC9]/20'
-        : 'text-foreground/70 hover:glass-card hover:text-foreground'
+        ? 'bg-[#523DC9]/10 text-[#523DC9] dark:bg-[#523DC9]/20'
+        : 'text-foreground/70 hover:bg-muted hover:text-foreground'
     );
 
     const content = (
       <>
-        {/* Active indicator with gradient */}
+        {/* Active indicator simple */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-[#523DC9] rounded-r" />
         )}
         
-        {/* Icon with colored background */}
-        <div 
-          className={clsx(
-            'p-2 rounded-lg transition-all duration-200 flex-shrink-0',
-            active ? 'scale-110' : 'group-hover:scale-105'
-          )}
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <span className="w-4 h-4 flex items-center justify-center" style={{ color }}>
-            {item.icon}
-          </span>
-        </div>
+        {/* Icon simple sans background */}
+        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-current opacity-70">
+          {item.icon}
+        </span>
         
-        <span className="flex-1">{item.name}</span>
-        {item.badge && (
-          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[#523DC9]/10 text-[#523DC9]">
+        {/* Text */}
+        {!collapsed && (
+          <span className="truncate">{item.name}</span>
+        )}
+        
+        {/* Badge */}
+        {!collapsed && item.badge && (
+          <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold rounded bg-[#523DC9]/10 text-[#523DC9]">
             {item.badge}
           </span>
         )}
@@ -223,78 +206,64 @@ export default function Sidebar({
     }
 
     return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className={className}
-      >
+      <Link key={item.href} href={item.href} className={className}>
         {content}
       </Link>
     );
   };
 
-  // Render navigation group
+  // Render navigation group (SIMPLIFIÉ)
   const renderNavGroup = (group: NavigationGroup) => {
     const isGroupOpen = openGroups.has(group.name);
     const hasActiveItem = group.items.some((item) => isActive(item.href));
-    const color = getCategoryColor(group.name);
-
-    // Auto-open group if it has an active item
-    if (hasActiveItem && !isGroupOpen && group.collapsible) {
-      setOpenGroups((prev) => new Set(prev).add(group.name));
-    }
 
     return (
-      <div key={group.name} className="space-y-1">
+      <div key={group.name} className="space-y-0.5">
         {group.collapsible ? (
           <button
             onClick={() => toggleGroup(group.name)}
             className={clsx(
-              'group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+              'group w-full flex items-center justify-between gap-2.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
               hasActiveItem
-                ? 'glass-card text-[#523DC9] shadow-sm'
-                : 'text-foreground/70 hover:glass-card hover:text-foreground'
+                ? 'bg-[#523DC9]/5 text-[#523DC9]'
+                : 'text-foreground/70 hover:bg-muted hover:text-foreground'
             )}
             aria-expanded={isGroupOpen}
             aria-label={`Toggle ${group.name} group`}
           >
-            <div className="flex items-center gap-3">
-              <div 
-                className="p-2 rounded-lg transition-all duration-200"
-                style={{ backgroundColor: `${color}15` }}
-              >
-                <span className="w-4 h-4 flex items-center justify-center" style={{ color }}>
-                  {group.icon}
-                </span>
-              </div>
-              <span className="font-nukleo">{group.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[#523DC9]/10 text-[#523DC9]">
-                {group.items.length}
-              </span>
-              <ChevronDown className={clsx(
-                'w-4 h-4 transition-transform duration-300',
-                isGroupOpen && 'rotate-180'
-              )} />
-            </div>
-          </button>
-        ) : (
-          <div className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <div 
-              className="p-2 rounded-lg"
-              style={{ backgroundColor: `${color}15` }}
-            >
-              <span className="w-4 h-4 flex items-center justify-center" style={{ color }}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              {/* Icon simple */}
+              <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-current opacity-70">
                 {group.icon}
               </span>
+              {!collapsed && <span className="truncate">{group.name}</span>}
             </div>
-            <span className="font-nukleo">{group.name}</span>
+            {!collapsed && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-muted text-muted-foreground">
+                  {group.items.length}
+                </span>
+                <ChevronDown className={clsx(
+                  'w-3.5 h-3.5 transition-transform duration-200',
+                  isGroupOpen && 'rotate-180'
+                )} />
+              </div>
+            )}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-70">
+              {group.icon}
+            </span>
+            {!collapsed && <span>{group.name}</span>}
           </div>
         )}
         {(!group.collapsible || isGroupOpen) && (
-          <div className="ml-3 space-y-1 border-l-2 border-[#A7A2CF]/20 pl-3">
-            {group.items.map((item) => renderNavItem(item, group.name))}
+          <div className={clsx(
+            "space-y-0.5",
+            !collapsed && "ml-3 border-l border-border/50 pl-3"
+          )}>
+            {group.items.map((item) => renderNavItem(item))}
           </div>
         )}
       </div>
@@ -306,7 +275,7 @@ export default function Sidebar({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 glass-overlay md:hidden"
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
           onClick={handleClose}
           aria-hidden="true"
         />
@@ -315,92 +284,64 @@ export default function Sidebar({
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-40 h-screen glass-sidebar-enhanced flex flex-col',
-          'transition-all duration-normal ease-smooth',
+          'fixed left-0 top-0 z-40 h-screen bg-background border-r border-border flex flex-col',
+          'transition-all duration-300 ease-in-out',
           collapsed ? 'w-0 md:w-0' : 'w-72',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
           collapsed && 'md:overflow-hidden'
         )}
       >
-        {/* Header with Aurora Borealis gradient */}
+        {/* Header simple */}
         <div className={clsx(
-          "relative bg-nukleo-gradient overflow-hidden flex-shrink-0 transition-all duration-300",
-          collapsed ? "p-0" : "p-6"
+          "border-b border-border flex-shrink-0 transition-all duration-300",
+          collapsed ? "p-0" : "p-4"
         )}>
           {!collapsed && (
-            <>
-              {/* Texture grain */}
-              <div 
-                className="absolute inset-0 opacity-30"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
-                }}
-              />
-              
-              {/* Logo + Nom */}
-              <div className="relative flex items-center gap-3">
-                <Link href="/dashboard" className="flex items-center gap-3 group">
-                  {logoUrl ? (
-                    <div className="w-12 h-12 rounded-xl glass-card p-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <img
-                        src={logoUrl}
-                        alt="Logo"
-                        className="object-contain h-full w-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-xl glass-card p-2 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <span className="text-2xl font-bold text-white">N</span>
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h2 className="text-white font-nukleo font-bold text-lg">Nukleo ERP</h2>
-                    <p className="text-white/70 text-xs">Gestion d'entreprise</p>
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="flex items-center gap-3 group">
+                {logoUrl ? (
+                  <div className="w-10 h-10 rounded-lg bg-muted p-2 flex items-center justify-center group-hover:bg-muted/80 transition-colors">
+                    <img
+                      src={logoUrl}
+                      alt="Logo"
+                      className="object-contain h-full w-full"
+                    />
                   </div>
-                </Link>
-              </div>
-
-              {/* Close button (mobile) */}
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 md:hidden text-white/70 hover:text-white transition-colors"
-                aria-label="Fermer le menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Toggle collapse button (desktop) */}
-              {onToggleCollapse && (
-                <button
-                  onClick={onToggleCollapse}
-                  className="absolute -right-3 top-1/2 -translate-y-1/2 hidden md:flex w-6 h-6 rounded-full bg-[#523DC9] text-white items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                  aria-label={collapsed ? "Développer le menu" : "Réduire le menu"}
-                >
-                  {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                </button>
-              )}
-            </>
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-[#523DC9] flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">N</span>
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-foreground">
+                    Nukleo ERP
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Dashboard
+                  </span>
+                </div>
+              </Link>
+            </div>
           )}
         </div>
 
-        {/* Search Bar */}
+        {/* Search bar simple */}
         {!collapsed && (
-          <div className="px-4 py-3 flex-shrink-0">
+          <div className="p-3 border-b border-border flex-shrink-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#523DC9]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-10 h-10 text-sm glass-card border border-[#A7A2CF]/20 focus:border-[#523DC9] focus:ring-2 focus:ring-[#523DC9]/20"
-                aria-label="Rechercher dans la navigation"
+                className="w-full pl-9 pr-9 py-2 text-sm bg-muted border-0 focus:ring-1 focus:ring-[#523DC9]"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Effacer la recherche"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -410,65 +351,68 @@ export default function Sidebar({
         )}
 
         {/* Navigation */}
-        {!collapsed && (
-          <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto custom-scrollbar">
-            {filteredNavigation.length === 0 ? (
-              <div className="px-3 py-8 text-sm text-muted-foreground text-center">
-                <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>Aucun résultat trouvé</p>
-              </div>
-            ) : (
-              filteredNavigation.map((item) =>
-                'items' in item ? renderNavGroup(item) : renderNavItem(item)
-              )
-            )}
-          </nav>
-        )}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          {filteredNavigation.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              Aucun résultat trouvé
+            </div>
+          ) : (
+            filteredNavigation.map((item) => {
+              if ('items' in item) {
+                return renderNavGroup(item);
+              } else {
+                return renderNavItem(item);
+              }
+            })
+          )}
+        </nav>
 
-        {/* Footer with user profile */}
+        {/* Footer simple */}
         {!collapsed && (
-          <div className="border-t border-[#A7A2CF]/20 p-4 flex-shrink-0">
-            <div className="glass-card p-3 hover-nukleo rounded-xl mb-3">
-              <div className="flex items-center gap-3">
-                {/* Avatar with gradient border */}
-                <div className="relative flex-shrink-0">
-                  <div className="absolute inset-0 bg-nukleo-gradient rounded-full opacity-30 blur-sm" />
-                  <div className="relative w-10 h-10 rounded-full border-2 border-white/20 bg-gradient-to-br from-[#523DC9] to-[#5F2B75] flex items-center justify-center shadow-sm">
-                    <span className="text-white text-sm font-bold">
-                      {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Infos */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {user?.name || 'Utilisateur'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user?.email || ''}
-                  </p>
-                </div>
+          <div className="border-t border-border p-3 flex-shrink-0 space-y-2">
+            <div className="flex items-center gap-3 px-3 py-2">
+              <div className="w-8 h-8 rounded-full bg-[#523DC9] flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-sm font-semibold">
+                  {user?.email?.[0]?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user?.email?.split('@')[0] || 'User'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.email}
+                </p>
               </div>
             </div>
-            
-            {/* Actions */}
             <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <ThemeToggleWithIcon />
-              </div>
+              <ThemeToggleWithIcon />
               <Button
+                variant="outline"
                 size="sm"
-                variant="ghost"
                 onClick={logout}
-                className="p-2.5 h-10 w-10 rounded-xl hover:glass-card-hover hover:text-red-500 transition-all"
-                aria-label="Déconnexion"
-                title="Déconnexion"
+                className="flex-1 text-xs"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                Déconnexion
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Collapse toggle */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="absolute -right-3 top-20 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors hidden md:flex"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <ChevronRight className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronLeft className="w-3.5 h-3.5" />
+            )}
+          </button>
         )}
       </aside>
     </>
