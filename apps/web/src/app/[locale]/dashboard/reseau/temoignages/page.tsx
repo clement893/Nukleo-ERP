@@ -153,9 +153,9 @@ function TemoignagesContent() {
           
           <div className="relative flex items-center justify-between">
             <div>
-              <Heading level={1} className="text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Témoignages
-              </Heading>
+              </h1>
               <Text variant="body" className="text-white/80 text-lg">Gérez les témoignages clients</Text>
             </div>
             <Button className="bg-white text-[#523DC9] hover:bg-white/90" aria-label="Créer un nouveau témoignage">
@@ -248,9 +248,9 @@ function TemoignagesContent() {
         {filteredTestimonials.length === 0 ? (
           <div className="glass-card p-3xl rounded-xl border border-border text-center">
             <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
-            <Heading level={3} className="mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Aucun témoignage trouvé
-            </Heading>
+            </h3>
             <Text variant="body" className="text-muted-foreground mb-6">
               {searchQuery || filterStatus !== 'all' || filterLanguage !== 'all'
                 ? 'Essayez de modifier vos filtres'
@@ -274,10 +274,9 @@ function TemoignagesContent() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <Heading level={3} className="mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <h3 className="text-base font-semibold mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {testimonial.title || 'Sans titre'}
-                      </Heading>
-                      {renderStars(testimonial.rating)}
+                      </h3>
                     </div>
                     <div className="flex gap-2">
                       <Badge className={getStatusColor(status)}>
