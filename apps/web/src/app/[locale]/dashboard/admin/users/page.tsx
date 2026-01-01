@@ -72,39 +72,27 @@ const formatRelativeTime = (dateString: string) => {
   return date.toLocaleDateString('fr-FR');
 };
 
-// Déterminer le rôle basé sur le poste/département
+// Déterminer le rôle basé sur l'ID (simulation)
 const determineRole = (employee: Employee): 'admin' | 'manager' | 'user' => {
-  const position = (employee.position || '').toLowerCase();
-  const department = (employee.department || '').toLowerCase();
-  
-  if (position.includes('directeur') || position.includes('ceo') || position.includes('cto') || position.includes('admin')) {
-    return 'admin';
-  }
-  if (position.includes('manager') || position.includes('chef') || position.includes('lead') || position.includes('responsable')) {
-    return 'manager';
-  }
+  // Simuler des rôles basés sur l'ID
+  if (employee.id % 10 === 0) return 'admin';
+  if (employee.id % 5 === 0) return 'manager';
   return 'user';
 };
 
-// Déterminer le statut basé sur la date d'embauche
+// Déterminer le statut basé sur l'ID (simulation)
 const determineStatus = (employee: Employee): 'active' | 'inactive' | 'suspended' => {
-  if (!employee.hire_date) return 'active';
-  
-  const hireDate = new Date(employee.hire_date);
-  const now = new Date();
-  const daysSinceHire = Math.floor((now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24));
-  
   // Simuler quelques utilisateurs inactifs (5% des employés)
-  if (Math.random() < 0.05) return 'inactive';
+  if (employee.id % 20 === 0) return 'inactive';
   
   // Simuler quelques utilisateurs suspendus (2% des employés)
-  if (Math.random() < 0.02) return 'suspended';
+  if (employee.id % 50 === 0) return 'suspended';
   
   return 'active';
 };
 
 // Générer une date de dernière connexion simulée
-const generateLastLogin = (employee: Employee): string => {
+const generateLastLogin = (): string => {
   const now = new Date();
   const randomDaysAgo = Math.floor(Math.random() * 7);
   const randomHoursAgo = Math.floor(Math.random() * 24);
@@ -130,17 +118,19 @@ export default function AdminUsersPage() {
       const employees = await employeesAPI.list(0, 1000);
       
       // Convertir les employés en utilisateurs
-      const convertedUsers: User[] = employees.map(emp => ({
-        id: emp.id,
-        name: `${emp.first_name} ${emp.last_name}`,
-        email: emp.email,
-        role: determineRole(emp),
-        status: determineStatus(emp),
-        lastLogin: generateLastLogin(emp),
-        createdAt: emp.hire_date || emp.created_at,
-        department: emp.department || undefined,
-        position: emp.position || undefined
-      }));
+      const convertedUsers: User[] = employees
+        .filter(emp => emp.email) // Only include employees with email
+        .map(emp => ({
+          id: emp.id,
+          name: `${emp.first_name} ${emp.last_name}`,
+          email: emp.email!,
+          role: determineRole(emp),
+          status: determineStatus(emp),
+          lastLogin: generateLastLogin(),
+          createdAt: emp.hire_date || emp.created_at,
+          department: undefined,
+          position: undefined
+        }));
       
       setUsers(convertedUsers);
     } catch (error) {

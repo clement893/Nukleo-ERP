@@ -57,7 +57,7 @@ export default function TresoreriePage() {
       // Générer transactions depuis projets (entrées)
       const entreesTransactions: Transaction[] = projects
         .filter(p => p.budget && p.budget > 0)
-        .map((p, index) => {
+        .map((p) => {
           // Répartir le budget sur 2-4 semaines
           const nbSemaines = Math.floor(Math.random() * 3) + 2;
           const montantParSemaine = p.budget! / nbSemaines;
@@ -85,25 +85,24 @@ export default function TresoreriePage() {
       const today = new Date();
       
       // Salaires bi-hebdomadaires pour les 8 prochaines semaines
+      // Utiliser un salaire moyen simulé de 60k par année
+      const salaireAnnuelMoyen = 60000;
+      const salaireBiHebdo = salaireAnnuelMoyen / 26;
+      
       for (let semaine = 0; semaine < 8; semaine += 2) {
         const datePaie = new Date(today);
         datePaie.setDate(datePaie.getDate() + (semaine * 7));
         
         employees.forEach(emp => {
-          if (emp.salary && emp.salary > 0) {
-            // Salaire bi-hebdomadaire (salaire annuel / 26)
-            const salaireBiHebdo = emp.salary / 26;
-            
-            sortiesTransactions.push({
-              id: `sortie-salaire-${emp.id}-${semaine}`,
-              type: 'sortie',
-              categorie: 'Salaire',
-              description: `Paie - ${emp.first_name} ${emp.last_name}`,
-              montant: salaireBiHebdo,
-              date: datePaie.toISOString().split('T')[0],
-              statut: semaine === 0 ? 'confirme' : 'projete'
-            });
-          }
+          sortiesTransactions.push({
+            id: `sortie-salaire-${emp.id}-${semaine}`,
+            type: 'sortie',
+            categorie: 'Salaire',
+            description: `Paie - ${emp.first_name} ${emp.last_name}`,
+            montant: salaireBiHebdo,
+            date: datePaie.toISOString().split('T')[0],
+            statut: semaine === 0 ? 'confirme' : 'projete'
+          });
         });
       }
 
@@ -122,6 +121,7 @@ export default function TresoreriePage() {
           const dateCharge = new Date(today);
           dateCharge.setMonth(dateCharge.getMonth() + mois);
           dateCharge.setDate(charge.jour);
+          const dateStr = dateCharge.toISOString().split('T')[0];
           
           sortiesTransactions.push({
             id: `sortie-charge-${index}-${mois}`,
@@ -129,7 +129,7 @@ export default function TresoreriePage() {
             categorie: 'Charge fixe',
             description: charge.description,
             montant: charge.montant,
-            date: dateCharge.toISOString().split('T')[0],
+            date: dateStr,
             statut: mois === 0 ? 'confirme' : 'projete'
           });
         });
@@ -228,7 +228,6 @@ export default function TresoreriePage() {
 
   const soldeAvecMarge = soldeActuel * 0.8; // 20% de marge
   const projection30j = soldesHebdo[4]?.solde || soldeActuel;
-  const projection60j = soldesHebdo[8]?.solde || soldeActuel;
   
   const variation = soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0;
   const alerteNiveau = soldeAvecMarge < 50000 ? 'rouge' : soldeAvecMarge < 100000 ? 'orange' : 'vert';
