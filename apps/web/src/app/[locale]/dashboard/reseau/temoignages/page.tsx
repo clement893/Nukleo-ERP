@@ -313,11 +313,19 @@ function TemoignagesContent() {
                   </div>
 
                   <div className="flex gap-2 pt-4 border-t border-border">
-                    <Button variant="outline" className="flex-1" aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 text-white border-white hover:bg-white/10" 
+                      aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
+                    >
                       <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
                       Éditer
                     </Button>
-                    <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}>
+                    <Button 
+                      variant="outline" 
+                      className="text-white border-white hover:bg-white/10" 
+                      aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
+                    >
                       <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </Button>
                   </div>

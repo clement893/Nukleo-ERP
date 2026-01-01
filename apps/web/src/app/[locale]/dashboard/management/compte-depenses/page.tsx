@@ -707,6 +707,7 @@ function ManagementCompteDepensesContent() {
                       setShowViewModal(false);
                       setShowEditModal(true);
                     }}
+                    className="text-white border-white hover:bg-white/10"
                   >
                     <Edit className="w-4 h-4 mr-1.5" />
                     Modifier
@@ -716,7 +717,7 @@ function ManagementCompteDepensesContent() {
                     size="sm"
                     onClick={() => handleDelete(selectedExpenseAccount.id)}
                     disabled={deleteExpenseAccountMutation.isPending}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="text-white border-white hover:bg-white/10"
                   >
                     <Trash2 className="w-4 h-4 mr-1.5" />
                     Supprimer
@@ -821,6 +822,7 @@ function ManagementCompteDepensesContent() {
                 setActionType(null);
                 setActionData({ notes: null, rejection_reason: null, clarification_request: null });
               }}
+              className="text-white border-white hover:bg-white/10"
             >
               Annuler
             </Button>

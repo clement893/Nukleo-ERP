@@ -678,7 +678,11 @@ function TemoignagesContent() {
           />
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCreateModal(false)}
+              className="text-white border-white hover:bg-white/10"
+            >
               Annuler
             </Button>
             <Button onClick={handleCreate}>
@@ -768,7 +772,11 @@ function TemoignagesContent() {
           />
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEditModal(false)}
+              className="text-white border-white hover:bg-white/10"
+            >
               Annuler
             </Button>
             <Button onClick={handleUpdate}>
