@@ -21,7 +21,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Button, Badge, useToast } from '@/components/ui';
-import { leoAgentAPI, type LeoMessage, type LeoConversation } from '@/lib/api/leo-agent';
+import { leoAgentAPI, type LeoConversation } from '@/lib/api/leo-agent';
 
 const mockSuggestions = [
   {
@@ -176,7 +176,7 @@ export default function LeoPage() {
     }
   };
 
-  const getLastMessage = (conv: LeoConversation) => {
+  const getLastMessage = (_conv: LeoConversation) => {
     // We don't have last message in conversation object, so we'll use a placeholder
     return 'Conversation avec Leo';
   };
