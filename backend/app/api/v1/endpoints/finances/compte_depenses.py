@@ -548,10 +548,21 @@ async def approve_compte_depenses(
     account.review_notes = action.notes
     
     await db.commit()
-    logger.debug(f"[approve_compte_depenses] Committed changes for account {account.id}, status={account.status}")
+    logger.debug(f"[approve_compte_depenses] Committed changes for account {account.id}")
     
     # Reload account from DB to ensure we have the latest values after commit
-    await db.refresh(account)
+    # This ensures we have the correct status and all updated fields
+    result = await db.execute(
+        select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
+    )
+    account = result.scalar_one_or_none()
+    
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense account not found after update"
+        )
+    
     logger.debug(f"[approve_compte_depenses] Reloaded account {account.id} from DB, status={account.status}")
     
     # Safely load relationships to avoid lazy loading issues
