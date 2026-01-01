@@ -257,12 +257,10 @@ export default function ProjectGantt({
   const hasAnyDates = startDate || endDate || deadline || tasks.some(t => t.due_date || t.started_at);
 
   return (
-    <div className="space-y-6">
-      <div className="glass-card rounded-xl p-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <div className="glass-badge p-2 rounded-lg bg-blue-500/10">
-            <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Calendar className="w-5 h-5" />
           Vue temporelle (Gantt)
         </h3>
         <div className="flex items-center gap-2">
@@ -294,36 +292,32 @@ export default function ProjectGantt({
       </div>
 
       {!hasAnyDates ? (
-        <div className="glass-card rounded-xl p-12 text-center">
-          <div className="glass-badge p-4 rounded-full bg-gray-500/10 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-gray-400" />
+        <Card className="p-6">
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>Aucune date renseignée pour ce projet</p>
+            <p className="text-sm mt-2">Ajoutez des dates de début/fin ou des dates aux tâches pour voir la vue Gantt</p>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            Aucune date renseignée
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Ajoutez des dates de début/fin ou des dates aux tâches pour voir la vue Gantt
-          </p>
-        </div>
+        </Card>
       ) : (
-        <div className="glass-card rounded-xl p-6">
+        <Card className="p-6">
           <div className="overflow-x-auto">
             <div className="min-w-[800px]">
               {/* Header */}
-              <div className="grid grid-cols-7 gap-3 mb-6">
+              <div className="grid grid-cols-7 gap-2 mb-4">
                 {weekDays.map((day: Date, index: number) => (
                   <div
                     key={index}
-                    className={`glass-card text-center p-3 rounded-xl transition-all ${
+                    className={`text-center p-2 rounded ${
                       isSameDay(day, new Date())
-                        ? 'bg-blue-500/10 border-2 border-blue-500/30 scale-105'
-                        : 'bg-gray-500/5'
+                        ? 'bg-primary/10 border-2 border-primary'
+                        : 'bg-muted/30'
                     }`}
                   >
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    <div className="text-xs text-muted-foreground">
                       {formatDate(day, 'EEE')}
                     </div>
-                    <div className="text-lg font-black text-gray-900 dark:text-white mt-1">
+                    <div className="text-sm font-medium text-foreground">
                       {day.getDate()}
                     </div>
                   </div>
@@ -337,19 +331,19 @@ export default function ProjectGantt({
                   if (!position) return null;
 
                   return (
-                    <div key={item.id} className="relative h-12">
+                    <div key={item.id} className="relative h-10">
                       <div
-                        className={`glass-card absolute top-0 left-0 h-full rounded-xl flex items-center px-4 ${item.color} text-white text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer`}
+                        className={`absolute top-0 left-0 h-full rounded flex items-center px-3 ${item.color} text-white text-sm font-medium shadow-sm`}
                         style={{
                           left: `${position.left}%`,
                           width: `${position.width}%`,
-                          minWidth: '80px',
+                          minWidth: '60px',
                         }}
                         title={`${item.name}${item.startDate ? ` - ${formatDate(item.startDate, 'd MMM yyyy')}` : ''}${item.endDate && !isSameDay(item.startDate, item.endDate) ? ` au ${formatDate(item.endDate, 'd MMM yyyy')}` : ''}`}
                       >
-                        <span className="truncate font-bold">{item.name}</span>
+                        <span className="truncate font-medium">{item.name}</span>
                         {item.type === 'deadline' && (
-                          <span className="ml-2 text-base">⚠️</span>
+                          <span className="ml-2 text-xs">⚠️</span>
                         )}
                       </div>
                     </div>
@@ -397,7 +391,7 @@ export default function ProjectGantt({
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
