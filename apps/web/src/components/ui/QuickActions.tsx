@@ -188,6 +188,7 @@ export default function QuickActions() {
               rounded-full
               animate-ping
               opacity-20
+              pointer-events-none
             " />
           )}
         </div>
