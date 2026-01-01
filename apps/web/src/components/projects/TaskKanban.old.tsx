@@ -27,12 +27,12 @@ interface TaskKanbanProps {
   assigneeId?: number;
 }
 
-const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string; bgColor: string }[] = [
-  { status: 'todo', label: 'À faire', color: 'text-gray-700 dark:text-gray-300', bgColor: 'bg-gray-500/10' },
-  { status: 'in_progress', label: 'En cours', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-500/10' },
-  { status: 'blocked', label: 'Bloqué', color: 'text-red-700 dark:text-red-300', bgColor: 'bg-red-500/10' },
-  { status: 'to_transfer', label: 'À transférer', color: 'text-yellow-700 dark:text-yellow-300', bgColor: 'bg-yellow-500/10' },
-  { status: 'completed', label: 'Terminé', color: 'text-green-700 dark:text-green-300', bgColor: 'bg-green-500/10' },
+const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
+  { status: 'todo', label: 'À faire', color: 'bg-gray-100' },
+  { status: 'in_progress', label: 'En cours', color: 'bg-blue-100' },
+  { status: 'blocked', label: 'Bloqué', color: 'bg-red-100' },
+  { status: 'to_transfer', label: 'À transférer', color: 'bg-yellow-100' },
+  { status: 'completed', label: 'Terminé', color: 'bg-green-100' },
 ];
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
@@ -413,7 +413,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
-        {STATUS_COLUMNS.map(({ status, label, color, bgColor }) => {
+        {STATUS_COLUMNS.map(({ status, label, color }) => {
           const columnTasks = getTasksByStatus(status);
           return (
             <div
@@ -422,26 +422,27 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, status)}
             >
-              <div className={`glass-card rounded-xl p-4 mb-3 ${bgColor}`}>
-                <h3 className={`font-bold ${color} flex items-center justify-between`}>
-                  <span>{label}</span>
-                  <span className="glass-badge px-2 py-1 rounded-full text-sm">{columnTasks.length}</span>
+              <div className={`${color} rounded-t-lg p-3 mb-2`}>
+                <h3 className="font-semibold text-foreground">
+                  {label} ({columnTasks.length})
                 </h3>
               </div>
               <div className="space-y-3 flex-1 min-h-[400px]">
                 {columnTasks.map((task) => (
                   <Card
                     key={task.id}
-                    className="glass-card p-4 rounded-xl cursor-move hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                    className="glass-card p-4 cursor-move hover:shadow-lg transition-shadow"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2 flex-1">
                         <GripVertical className="w-4 h-4 text-muted-foreground" />
-                        <span className={`glass-badge px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[task.priority]} text-white`}>
+                        <Badge
+                          className={`${PRIORITY_COLORS[task.priority]} text-white text-xs`}
+                        >
                           {PRIORITY_LABELS[task.priority]}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="flex gap-1">
                         <button
