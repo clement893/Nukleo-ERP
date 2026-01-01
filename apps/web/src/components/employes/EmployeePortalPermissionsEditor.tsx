@@ -183,28 +183,8 @@ export default function EmployeePortalPermissionsEditor({
         });
       });
 
-      if (newPermissions.length > 0) {
-        const created = await employeePortalPermissionsAPI.bulkCreate({
-          employee_id: employeeId,
-          permissions: newPermissions,
-        });
-        console.log('[EmployeePortalPermissionsEditor] Permissions créées:', created);
-      } else {
-        console.log('[EmployeePortalPermissionsEditor] Aucune permission à créer');
-      }
-
-      // Mettre à jour IMMÉDIATEMENT les états sauvegardés pour éviter le délai
-      setSavedModules(new Set(selectedModules));
-      setSavedClients(new Set(selectedClients));
-      
-      // Recharger les données depuis le serveur pour synchronisation (en attente pour s'assurer que c'est fait)
-      console.log('[EmployeePortalPermissionsEditor] Rechargement des permissions après sauvegarde...');
-      await loadData();
-      
-      // Déclencher un événement pour notifier les autres composants (comme le portail employé)
-      window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
-        detail: { employeeId }
-      }));
+      // Utiliser la fonction helper pour sauvegarder
+      await savePermissions(new Set(selectedModules), new Set(selectedClients));
       
       showToast({
         message: 'Permissions sauvegardées avec succès',
