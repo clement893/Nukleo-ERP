@@ -187,8 +187,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       description: task.description || '',
       status: task.status,
       priority: task.priority,
-      project_id: task.project_id,
-      assignee_id: task.assignee_id,
+      project_id: task.project_id ?? null,
+      assignee_id: task.assignee_id ?? null,
       due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
       estimated_hours: task.estimated_hours || null,
     });
