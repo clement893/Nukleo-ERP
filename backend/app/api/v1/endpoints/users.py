@@ -328,7 +328,7 @@ async def delete_user(
     user_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> None:
+) -> Response:
     """
     Delete a user (admin/superadmin only)
     
