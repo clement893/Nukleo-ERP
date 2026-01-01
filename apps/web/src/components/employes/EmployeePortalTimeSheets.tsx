@@ -9,7 +9,6 @@ import { projectsAPI } from '@/lib/api/projects';
 import { clientsAPI } from '@/lib/api/clients';
 import { projectTasksAPI, type ProjectTask, type ProjectTaskCreate } from '@/lib/api/project-tasks';
 import { teamsAPI } from '@/lib/api/teams';
-import { useAuthStore } from '@/lib/store';
 import { useToast } from '@/components/ui';
 import { 
   Calendar, 

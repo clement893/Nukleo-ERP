@@ -21,7 +21,7 @@ export function getCacheKey(employeeId?: number, userId?: number | string): stri
   return 'none';
 }
 
-function getCachedPermissions(key: string): EmployeePortalPermissionSummary | null {
+export function getCachedPermissions(key: string): EmployeePortalPermissionSummary | null {
   const cached = permissionsCache.get(key);
   if (!cached) return null;
   

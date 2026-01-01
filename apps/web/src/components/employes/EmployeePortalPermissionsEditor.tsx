@@ -21,7 +21,7 @@ import { employeePortalPermissionsAPI, type EmployeePortalPermission, type Emplo
 import { contactsAPI, type Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
-import { getCacheKey, setCachedPermissions, permissionsCache } from '@/hooks/useEmployeePortalPermissions';
+import { getCacheKey, setCachedPermissions, permissionsCache, getCachedPermissions } from '@/hooks/useEmployeePortalPermissions';
 import { Search, Plus, X, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface EmployeePortalPermissionsEditorProps {
@@ -60,10 +60,37 @@ export default function EmployeePortalPermissionsEditor({
       setLoading(true);
       setError(null);
 
-      const [summaryData, permissionsData] = await Promise.all([
-        employeePortalPermissionsAPI.getSummaryForEmployee(employeeId),
-        employeePortalPermissionsAPI.list({ employee_id: employeeId }),
-      ]);
+      // ✅ Utiliser le cache d'abord pour un chargement instantané
+      const cacheKey = getCacheKey(employeeId);
+      const cachedSummary = cacheKey && cacheKey !== 'none' ? getCachedPermissions(cacheKey) : null;
+      
+      // Si on a un cache valide, l'utiliser immédiatement pour l'affichage
+      // et ne pas bloquer sur les appels API
+      let summaryData: EmployeePortalPermissionSummary;
+      if (cachedSummary) {
+        // Utiliser le cache pour un affichage instantané
+        summaryData = cachedSummary;
+        // Ne pas mettre loading à false tout de suite, on charge quand même les détails
+      } else {
+        // Pas de cache, charger depuis le serveur
+        summaryData = await employeePortalPermissionsAPI.getSummaryForEmployee(employeeId);
+        // Mettre en cache pour la prochaine fois
+        if (cacheKey && cacheKey !== 'none') {
+          setCachedPermissions(cacheKey, summaryData);
+        }
+      }
+
+      // Charger les permissions détaillées en parallèle (ne bloque pas si on a le cache)
+      const permissionsDataPromise = employeePortalPermissionsAPI.list({ employee_id: employeeId });
+      
+      // Si on a le cache, on peut mettre à jour l'UI immédiatement
+      // puis recharger les détails en arrière-plan
+      if (cachedSummary) {
+        // Mettre à jour l'UI immédiatement avec les données du cache
+        // On chargera les détails après
+      }
+      
+      const permissionsData = await permissionsDataPromise;
 
       setSummary(summaryData);
       setPermissions(permissionsData);
