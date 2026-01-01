@@ -200,6 +200,11 @@ class ApiClient {
         response = await this.client[method](url, data, config);
       }
       
+      // Handle 204 No Content responses (empty response body)
+      if (response.status === 204 || !response.data) {
+        return { success: true, data: undefined as any } as ApiResponse<T>;
+      }
+      
       return response.data;
     } catch (error) {
       throw handleApiError(error);

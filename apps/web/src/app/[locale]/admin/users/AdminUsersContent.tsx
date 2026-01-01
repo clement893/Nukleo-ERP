@@ -105,10 +105,12 @@ export default function AdminUsersContent() {
     if (!selectedUser) return;
 
     try {
-      const { apiClient } = await import('@/lib/api');
-      await apiClient.delete(`/v1/users/${selectedUser.id}`);
+      const { usersAPI } = await import('@/lib/api');
+      const userId = typeof selectedUser.id === 'string' ? selectedUser.id : String(selectedUser.id);
+      await usersAPI.deleteUser(userId);
 
-      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      // Refresh users list after deletion
+      await fetchUsers();
       setDeleteModalOpen(false);
       setSelectedUser(null);
       
