@@ -20,7 +20,8 @@ import {
   CreditCard,
   Coffee,
   Car,
-  Home
+  Home,
+  Eye
 } from 'lucide-react';
 import { Badge, Button, Card, Input } from '@/components/ui';
 
