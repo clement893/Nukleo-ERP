@@ -358,17 +358,26 @@ async def update_compte_depenses(
     is_admin = await is_admin_or_superadmin(current_user, db)
     is_owner = employee.user_id == current_user.id if employee.user_id else False
     
-    # Non-admins can only update their own DRAFT accounts
+    # Non-admins can update their own accounts if status allows modification
+    # Allow modification for: DRAFT, SUBMITTED, UNDER_REVIEW, NEEDS_CLARIFICATION
+    # Do not allow modification for: APPROVED, REJECTED
     if not is_admin:
         if not is_owner:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to update this expense account"
             )
-        if account.status != ExpenseAccountStatus.DRAFT.value:
+        # Allow modification only for statuses that can be modified
+        allowed_statuses_for_modification = [
+            ExpenseAccountStatus.DRAFT.value,
+            ExpenseAccountStatus.SUBMITTED.value,
+            ExpenseAccountStatus.UNDER_REVIEW.value,
+            ExpenseAccountStatus.NEEDS_CLARIFICATION.value,
+        ]
+        if account.status not in allowed_statuses_for_modification:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot update expense account that is not in DRAFT status"
+                detail=f"Cannot update expense account with status '{account.status}'. Only draft, submitted, under_review, and needs_clarification accounts can be modified."
             )
         # Non-admins cannot change status
         if expense_account.status is not None:
@@ -1307,4 +1316,140 @@ If information is not found, use null. Be precise with amounts and dates."""
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to extract expense data: {str(e)}"
+        )
+
+
+@router.post("/{expense_account_id}/attachments")
+async def upload_expense_attachment(
+    expense_account_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Upload an attachment file to an expense account.
+    
+    Args:
+        expense_account_id: ID of the expense account
+        file: File to upload (max size: 10MB, allowed: images, PDFs)
+        current_user: Authenticated user (must own the expense account)
+        db: Database session
+        
+    Returns:
+        dict: Success message with file information
+        
+    Raises:
+        HTTPException: 404 if expense account not found
+        HTTPException: 403 if user doesn't own the expense account
+        HTTPException: 400 if file is too large or invalid format
+    """
+    # Validate file type
+    allowed_types = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf'
+    ]
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type: {file.content_type}. Supported types: {', '.join(allowed_types)}"
+        )
+    
+    # Check file size (max 10MB)
+    file_content = await file.read()
+    if len(file_content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds 10MB limit"
+        )
+    
+    # Reset file pointer for upload
+    await file.seek(0)
+    
+    # Verify expense account exists and user has permission
+    result = await db.execute(
+        select(ExpenseAccount).where(ExpenseAccount.id == expense_account_id)
+    )
+    account = result.scalar_one_or_none()
+    
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense account not found"
+        )
+    
+    # Load employee to check user_id
+    employee_result = await db.execute(
+        select(Employee).where(Employee.id == account.employee_id)
+    )
+    employee = employee_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee associated with this expense account not found"
+        )
+    
+    # Check if user is admin/superadmin or the owner
+    is_admin = await is_admin_or_superadmin(current_user, db)
+    is_owner = employee.user_id == current_user.id if employee.user_id else False
+    
+    if not is_admin and not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to upload attachments to this expense account"
+        )
+    
+    # Upload file to S3
+    try:
+        if not S3Service.is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="File upload service is not configured"
+            )
+        
+        s3_service = S3Service()
+        upload_result = s3_service.upload_file(
+            file=file,
+            folder="expense-account-attachments",
+            user_id=str(current_user.id),
+        )
+        
+        # Get existing metadata or create new dict
+        metadata = account.account_metadata or {}
+        attachments = metadata.get("attachments", [])
+        
+        # Add new attachment to list
+        attachment_info = {
+            "file_key": upload_result["file_key"],
+            "url": upload_result["url"],
+            "filename": upload_result["filename"],
+            "size": upload_result["size"],
+            "content_type": upload_result["content_type"],
+            "uploaded_at": datetime.now().isoformat(),
+            "uploaded_by": current_user.id,
+        }
+        attachments.append(attachment_info)
+        
+        # Update metadata with attachments list
+        metadata["attachments"] = attachments
+        account.account_metadata = metadata
+        
+        await db.commit()
+        await db.refresh(account)
+        
+        logger.info(f"Successfully uploaded attachment for expense account {expense_account_id}")
+        
+        return {
+            "success": True,
+            "message": "File uploaded successfully",
+            "attachment": attachment_info,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to upload file: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file: {str(e)}"
         )

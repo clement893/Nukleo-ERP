@@ -17,6 +17,7 @@ interface ExpenseAccountFormProps {
   loading?: boolean;
   employees?: Array<{ id: number; first_name: string; last_name: string }>;
   defaultEmployeeId?: number; // Optional default employee ID to pre-fill
+  onFileSelected?: (file: File | null) => void; // Callback when file is selected
 }
 
 const CURRENCY_OPTIONS = [
@@ -33,6 +34,7 @@ export default function ExpenseAccountForm({
   loading = false,
   employees = [],
   defaultEmployeeId,
+  onFileSelected,
 }: ExpenseAccountFormProps) {
   const [formData, setFormData] = useState<ExpenseAccountCreate>({
     employee_id: expenseAccount?.employee_id || defaultEmployeeId || 0,
@@ -80,6 +82,11 @@ export default function ExpenseAccountForm({
     }
 
     setUploadedFile(file);
+    
+    // Notify parent component about file selection
+    if (onFileSelected) {
+      onFileSelected(file);
+    }
 
     // Create preview for images
     if (file.type.startsWith('image/')) {
@@ -98,6 +105,10 @@ export default function ExpenseAccountForm({
     setFilePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    // Notify parent component about file removal
+    if (onFileSelected) {
+      onFileSelected(null);
     }
   };
 
@@ -189,7 +200,12 @@ export default function ExpenseAccountForm({
         : null,
     };
 
+    // Submit the form data first
     await onSubmit(submitData);
+    
+    // If there's an uploaded file and we just created an expense account, upload the attachment
+    // We need to wait for the expense account ID from the onSubmit callback
+    // For now, we'll handle this in the parent component
   };
 
   return (
@@ -197,7 +213,7 @@ export default function ExpenseAccountForm({
       {/* Upload de document */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Importer une facture/reçu (optionnel)
+          Pièce jointe (optionnel)
         </label>
         <div className="space-y-2">
           {!uploadedFile ? (
@@ -289,7 +305,9 @@ export default function ExpenseAccountForm({
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Téléversez un fichier puis cliquez sur "Importer avec IA" pour extraire automatiquement les détails
+          {uploadedFile 
+            ? 'La pièce jointe sera téléversée lors de l\'enregistrement. Cliquez sur "Importer avec IA" pour extraire automatiquement les détails.'
+            : 'Téléversez une pièce jointe (facture, reçu, etc.) qui sera associée à cette demande. Vous pouvez également utiliser "Importer avec IA" pour extraire automatiquement les détails.'}
         </p>
       </div>
 

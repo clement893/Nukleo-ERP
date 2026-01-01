@@ -288,4 +288,51 @@ export const expenseAccountsAPI = {
     }
     return data;
   },
+
+  /**
+   * Upload an attachment file to an expense account
+   */
+  uploadAttachment: async (expenseAccountId: number, file: File): Promise<{
+    success: boolean;
+    message: string;
+    attachment: {
+      file_key: string;
+      url: string;
+      filename: string;
+      size: number;
+      content_type: string;
+      uploaded_at: string;
+      uploaded_by: number;
+    };
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      attachment: {
+        file_key: string;
+        url: string;
+        filename: string;
+        size: number;
+        content_type: string;
+        uploaded_at: string;
+        uploaded_by: number;
+      };
+    }>(
+      `/v1/finances/compte-depenses/${expenseAccountId}/attachments`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    const data = extractApiData(response);
+    if (!data || !data.success) {
+      throw new Error('Failed to upload attachment: no data returned');
+    }
+    return data;
+  },
 };

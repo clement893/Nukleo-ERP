@@ -9,7 +9,7 @@ import Textarea from '@/components/ui/Textarea';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
-import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit, Trash2, Reply } from 'lucide-react';
+import { Receipt, DollarSign, Plus, Send, Eye, CheckCircle, XCircle, MessageSquare, Edit, Trash2, Reply, Paperclip, Download } from 'lucide-react';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
@@ -32,6 +32,7 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
   const [creating, setCreating] = useState(false);
   const [clarificationResponse, setClarificationResponse] = useState('');
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const submitMutation = useSubmitExpenseAccount();
   const updateMutation = useUpdateExpenseAccount();
   const deleteMutation = useDeleteExpenseAccount();
@@ -90,12 +91,32 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
         currency: data.currency || 'EUR',
         metadata: data.metadata ?? null,
       };
-      await expenseAccountsAPI.create(expenseData);
+      const createdExpense = await expenseAccountsAPI.create(expenseData);
+      
+      // If there's a pending file, upload it as an attachment
+      if (pendingFile) {
+        try {
+          await expenseAccountsAPI.uploadAttachment(createdExpense.id, pendingFile);
+          showToast({
+            message: 'Compte de dépense créé avec succès et pièce jointe téléversée',
+            type: 'success',
+          });
+        } catch (uploadErr) {
+          const uploadError = handleApiError(uploadErr);
+          showToast({
+            message: 'Compte de dépense créé mais erreur lors du téléversement de la pièce jointe: ' + uploadError.message,
+            type: 'warning',
+          });
+        }
+        setPendingFile(null);
+      } else {
+        showToast({
+          message: 'Compte de dépense créé avec succès',
+          type: 'success',
+        });
+      }
+      
       setShowCreateModal(false);
-      showToast({
-        message: 'Compte de dépense créé avec succès',
-        type: 'success',
-      });
       // Reload expenses
       await loadExpenses();
     } catch (err) {
@@ -117,12 +138,32 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
         id: selectedExpense.id,
         data: data as ExpenseAccountUpdate,
       });
+      
+      // If there's a pending file, upload it as an attachment
+      if (pendingFile) {
+        try {
+          await expenseAccountsAPI.uploadAttachment(selectedExpense.id, pendingFile);
+          showToast({
+            message: 'Compte de dépenses modifié avec succès et pièce jointe téléversée',
+            type: 'success',
+          });
+        } catch (uploadErr) {
+          const uploadError = handleApiError(uploadErr);
+          showToast({
+            message: 'Compte de dépenses modifié mais erreur lors du téléversement de la pièce jointe: ' + uploadError.message,
+            type: 'warning',
+          });
+        }
+        setPendingFile(null);
+      } else {
+        showToast({
+          message: 'Compte de dépenses modifié avec succès',
+          type: 'success',
+        });
+      }
+      
       setShowEditModal(false);
       setSelectedExpense(null);
-      showToast({
-        message: 'Compte de dépenses modifié avec succès',
-        type: 'success',
-      });
       await loadExpenses();
     } catch (err) {
       const appError = handleApiError(err);
@@ -450,6 +491,40 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
               </div>
             )}
 
+            {/* Attachments */}
+            {selectedExpense.metadata && (selectedExpense.metadata as any).attachments && Array.isArray((selectedExpense.metadata as any).attachments) && (selectedExpense.metadata as any).attachments.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">Pièces jointes</label>
+                <div className="space-y-2">
+                  {(selectedExpense.metadata as any).attachments.map((attachment: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <Paperclip className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{attachment.filename || 'Fichier'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : ''}
+                            {attachment.uploaded_at ? ` • ${new Date(attachment.uploaded_at).toLocaleDateString('fr-FR')}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {attachment.url && (
+                        <a
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:text-primary-600 flex items-center gap-1 text-sm"
+                        >
+                          <Download className="w-4 h-4" />
+                          Télécharger
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedExpense.status === 'approved' && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
@@ -530,8 +605,34 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
                 </Button>
               </div>
             )}
-            {/* Allow deletion for non-approved accounts (not draft) */}
-            {selectedExpense.status !== 'draft' && selectedExpense.status !== 'approved' && (
+            {/* Allow modification for submitted/under_review/needs_clarification statuses (can be modified before approval) */}
+            {(selectedExpense.status === 'submitted' || selectedExpense.status === 'under_review' || selectedExpense.status === 'needs_clarification') && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-1.5" />
+                  Modifier
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedExpense.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+            {/* Allow deletion for rejected accounts */}
+            {selectedExpense.status === 'rejected' && (
               <div className="flex gap-2 pt-4 border-t">
                 <Button
                   variant="outline"
@@ -552,16 +653,23 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
       {/* Create Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false);
+          setPendingFile(null);
+        }}
         title="Créer une demande de compte de dépense"
         size="lg"
       >
         <ExpenseAccountForm
           onSubmit={handleCreate}
-          onCancel={() => setShowCreateModal(false)}
+          onCancel={() => {
+            setShowCreateModal(false);
+            setPendingFile(null);
+          }}
           loading={creating}
           employees={employees}
           defaultEmployeeId={employee.id}
+          onFileSelected={setPendingFile}
         />
       </Modal>
 
@@ -571,6 +679,7 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
         onClose={() => {
           setShowEditModal(false);
           setSelectedExpense(null);
+          setPendingFile(null);
         }}
         title="Modifier le compte de dépenses"
         size="lg"
@@ -582,10 +691,12 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
             onCancel={() => {
               setShowEditModal(false);
               setSelectedExpense(null);
+              setPendingFile(null);
             }}
             loading={updateMutation.isPending}
             employees={employees}
             defaultEmployeeId={employee.id}
+            onFileSelected={setPendingFile}
           />
         )}
       </Modal>
