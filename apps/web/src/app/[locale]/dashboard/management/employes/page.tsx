@@ -1,729 +1,449 @@
 'use client';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '@/components/layout';
-import { Button, Alert, Loading } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
-import { type Employee, type EmployeeCreate, type EmployeeUpdate } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import EmployeesGallery from '@/components/employes/EmployeesGallery';
-import EmployeeForm from '@/components/employes/EmployeeForm';
-import EmployeeAvatar from '@/components/employes/EmployeeAvatar';
-import EmployeeCounter from '@/components/employes/EmployeeCounter';
-import ViewModeToggle, { type ViewMode } from '@/components/employes/ViewModeToggle';
-import EmployeeRowActions from '@/components/employes/EmployeeRowActions';
-import SearchBar from '@/components/ui/SearchBar';
+import { PageContainer } from '@/components/layout';
+import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  Plus, 
-  Download, 
-  Upload, 
-  FileSpreadsheet, 
-  MoreVertical, 
-  Trash2,
+  Users, 
+  UserCheck,
+  TrendingUp,
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
   Mail,
   Phone,
-  Linkedin,
+  MapPin,
+  Briefcase,
   Calendar,
-  UserCircle
+  DollarSign,
+  Eye,
+  Trash2,
+  Plane
 } from 'lucide-react';
-import ImportEmployeesInstructions from '@/components/employes/ImportEmployeesInstructions';
-import ImportLogsViewer from '@/components/commercial/ImportLogsViewer';
-import MotionDiv from '@/components/motion/MotionDiv';
-import { useDebounce } from '@/hooks/useDebounce';
-import { 
-  useInfiniteEmployees, 
-  useCreateEmployee, 
-  useUpdateEmployee, 
-  useDeleteEmployee, 
-  useDeleteAllEmployees,
-  employeesAPI 
-} from '@/lib/query/employees';
+import { Badge, Button, Card, Input, Loading } from '@/components/ui';
+import { useInfiniteEmployees, useDeleteEmployee } from '@/lib/query/employees';
+import { useToast } from '@/components/ui';
+import type { Employee } from '@/lib/api/employees';
 
-function EmployeesContent() {
-  const router = useRouter();
-  const { showToast } = useToast();
-  
-  // React Query hooks for employees
-  const {
-    data: employeesData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error: queryError,
-  } = useInfiniteEmployees(20);
-  
-  // Mutations
-  const createEmployeeMutation = useCreateEmployee();
-  const updateEmployeeMutation = useUpdateEmployee();
-  const deleteEmployeeMutation = useDeleteEmployee();
-  const deleteAllEmployeesMutation = useDeleteAllEmployees();
-  
-  // Flatten pages into single array
-  const employees = useMemo(() => {
-    return employeesData?.pages.flat() || [];
-  }, [employeesData]);
-  
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [showImportInstructions, setShowImportInstructions] = useState(false);
-  const [currentImportId, setCurrentImportId] = useState<string | null>(null);
-  const [showImportLogs, setShowImportLogs] = useState(false);
-  
-  // Debounce search query
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
-  // Derived state from React Query
-  const loading = isLoading;
-  const loadingMore = isFetchingNextPage;
-  const hasMore = hasNextPage ?? false;
-  const error = queryError ? handleApiError(queryError).message : null;
+type ViewMode = 'grid' | 'list';
 
-  // Load more employees for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
-    }
-  }, [loadingMore, hasMore, fetchNextPage]);
+const statusConfig = {
+  active: { label: 'Actif', color: 'bg-green-500/10 text-green-600 border-green-500/30' },
+  vacation: { label: 'En vacances', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30' },
+  inactive: { label: 'Inactif', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30' },
+};
 
-  // Filtered employees with debounced search
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      const matchesSearch = !debouncedSearchQuery || 
-        `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        employee.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        employee.phone?.includes(debouncedSearchQuery) ||
-        employee.linkedin?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-
-      return matchesSearch;
-    });
-  }, [employees, debouncedSearchQuery]);
-  
-  // Check if any filters are active
-  const hasActiveFilters = !!debouncedSearchQuery;
-  
-  // Clear all filters function
-  const clearAllFilters = useCallback(() => {
-    setSearchQuery('');
-  }, []);
-
-  // Handle create
-  const handleCreate = async (data: EmployeeCreate | EmployeeUpdate) => {
-    try {
-      await createEmployeeMutation.mutateAsync(data as EmployeeCreate);
-      setShowCreateModal(false);
-      showToast({
-        message: 'Employé créé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la création de l\'employé',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle update
-  const handleUpdate = async (data: EmployeeCreate | EmployeeUpdate) => {
-    if (!selectedEmployee) return;
-
-    try {
-      await updateEmployeeMutation.mutateAsync({
-        id: selectedEmployee.id,
-        data: data as EmployeeUpdate,
-      });
-      setShowEditModal(false);
-      setSelectedEmployee(null);
-      showToast({
-        message: 'Employé modifié avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la modification de l\'employé',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle delete
-  const handleDelete = async (employeeId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-      return;
-    }
-
-    try {
-      await deleteEmployeeMutation.mutateAsync(employeeId);
-      if (selectedEmployee?.id === employeeId) {
-        setSelectedEmployee(null);
-      }
-      showToast({
-        message: 'Employé supprimé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression de l\'employé',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle delete all employees
-  const handleDeleteAll = async () => {
-    const count = employees.length;
-    if (count === 0) {
-      showToast({
-        message: 'Aucun employé à supprimer',
-        type: 'info',
-      });
-      return;
-    }
-
-    const confirmed = confirm(
-      `⚠️ ATTENTION: Vous êtes sur le point de supprimer TOUS les ${count} employé(s) de la base de données.\n\nCette action est irréversible. Êtes-vous sûr de vouloir continuer ?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const doubleConfirmed = confirm(
-      '⚠️ DERNIÈRE CONFIRMATION: Tous les employés seront définitivement supprimés. Tapez OK pour confirmer.'
-    );
-
-    if (!doubleConfirmed) {
-      return;
-    }
-
-    try {
-      const result = await deleteAllEmployeesMutation.mutateAsync();
-      setSelectedEmployee(null);
-      showToast({
-        message: result.message || `${result.deleted_count} employé(s) supprimé(s) avec succès`,
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression des employés',
-        type: 'error',
-      });
-    }
-  };
-
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
-  
-  // Handle import
-  const handleImport = async (file: File) => {
-    try {
-      // Generate import_id before starting import
-      const importId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentImportId(importId);
-      setShowImportLogs(true);
-      
-      const result = await employeesAPI.import(file, importId);
-      
-      // Update import_id if backend returns a different one (should be the same)
-      if (result.import_id && result.import_id !== importId) {
-        setCurrentImportId(result.import_id);
-      }
-      
-      if (result.valid_rows > 0) {
-        queryClient.invalidateQueries({ queryKey: ['employees'] });
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import',
-        type: 'error',
-      });
-      setShowImportLogs(false);
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    try {
-      const blob = await employeesAPI.export();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `employees-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast({
-        message: 'Export réussi',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'export',
-        type: 'error',
-      });
-    }
-  };
-
-  // Navigate to detail page
-  const openDetailPage = (employee: Employee) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/management/employes/${employee.id}`);
-  };
-
-  // Navigate to portal page
-  const openPortalPage = (employee: Employee) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/portail-employe/${employee.id}`);
-  };
-
-  // Open edit modal
-  const openEditModal = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setShowEditModal(true);
-  };
-
-  // Table columns
-  const columns: Column<Employee>[] = [
-    {
-      key: 'photo_url',
-      label: '',
-      sortable: false,
-      render: (_value, employee) => (
-        <div className="flex items-center">
-          <EmployeeAvatar employee={employee} size="md" />
-        </div>
-      ),
-    },
-    {
-      key: 'first_name',
-      label: 'Prénom',
-      sortable: true,
-      render: (_value, employee) => (
-        <div className="flex items-center justify-between group">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2 flex items-center gap-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openPortalPage(employee);
-              }}
-              className="p-1 rounded hover:bg-muted transition-colors"
-              title="Accéder au portail employé"
-              aria-label="Accéder au portail employé"
-            >
-              <UserCircle className="w-4 h-4 text-primary" />
-            </button>
-            <EmployeeRowActions
-              employee={employee}
-              onView={() => openDetailPage(employee)}
-              onEdit={() => openEditModal(employee)}
-              onDelete={() => handleDelete(employee.id)}
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'email',
-      label: 'Courriel',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <a href={`mailto:${value}`} className="text-primary hover:underline flex items-center gap-1">
-            <Mail className="w-3.5 h-3.5" />
-            {String(value)}
-          </a>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'phone',
-      label: 'Téléphone',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <a href={`tel:${value}`} className="text-primary hover:underline flex items-center gap-1">
-            <Phone className="w-3.5 h-3.5" />
-            {String(value)}
-          </a>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'linkedin',
-      label: 'LinkedIn',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-            <Linkedin className="w-3.5 h-3.5" />
-            LinkedIn
-          </a>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'hire_date',
-      label: 'Date d\'embauche',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            {new Date(String(value)).toLocaleDateString('fr-FR')}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      key: 'birthday',
-      label: 'Anniversaire',
-      sortable: true,
-      render: (value) => (
-        value ? (
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            {new Date(String(value)).toLocaleDateString('fr-FR')}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
+// Generate avatar color based on name
+const getAvatarColor = (name: string) => {
+  const colors = [
+    'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500',
+    'bg-pink-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-red-500'
   ];
-
-  return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <PageHeader
-        title="Employés"
-        description={`Gérez vos employés${employees.length > 0 ? ` - ${employees.length} employé${employees.length > 1 ? 's' : ''} au total` : ''}`}
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Management', href: '/dashboard/management' },
-          { label: 'Employés' },
-        ]}
-      />
-
-      {/* Toolbar */}
-      <div className="glass-card rounded-xl border border-border p-6">
-        <div className="space-y-3">
-          {/* Employee count */}
-          <div className="flex items-center justify-between">
-            <EmployeeCounter
-              filtered={filteredEmployees.length}
-              total={employees.length}
-              showFilteredBadge={hasActiveFilters}
-            />
-          </div>
-          
-          {/* Search bar */}
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Rechercher par nom, email, téléphone, LinkedIn..."
-            className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-          
-          {/* Active filters badges */}
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {debouncedSearchQuery && (
-                <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
-                  Recherche: {debouncedSearchQuery}
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="ml-1 hover:text-primary-700"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              <button
-                onClick={clearAllFilters}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Effacer tous les filtres
-              </button>
-            </div>
-          )}
-          
-          {/* Bottom row: View toggle, Actions */}
-          <div className="flex items-center justify-between">
-            {/* View mode toggle */}
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
-
-            {/* Actions menu */}
-            <div className="relative ml-auto">
-              <div className="flex items-center gap-2">
-                {/* Primary action */}
-                <Button size="sm" onClick={() => setShowCreateModal(true)} className="text-xs px-3 py-1.5 h-auto">
-                  <Plus className="w-3.5 h-3.5 mr-1.5" />
-                  Nouvel employé
-                </Button>
-
-                {/* Secondary actions dropdown */}
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowActionsMenu(!showActionsMenu)}
-                    className="text-xs px-2 py-1.5 h-auto"
-                    aria-label="Actions"
-                  >
-                    <MoreVertical className="w-3.5 h-3.5" />
-                  </Button>
-                  {showActionsMenu && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setShowActionsMenu(false)}
-                      ></div>
-                      <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-20">
-                        <div className="py-1">
-                          <button
-                            onClick={() => {
-                              setShowImportInstructions(true);
-                              setShowActionsMenu(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                            Instructions d'import
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await employeesAPI.downloadZipTemplate();
-                                setShowActionsMenu(false);
-                                showToast({
-                                  message: 'Modèle ZIP téléchargé avec succès',
-                                  type: 'success',
-                                });
-                              } catch (err) {
-                                const appError = handleApiError(err);
-                                showToast({
-                                  message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-                                  type: 'error',
-                                });
-                              }
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                            Modèle ZIP (avec photos)
-                          </button>
-                          <input
-                            type="file"
-                            accept=".xlsx,.xls,.zip"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                handleImport(file);
-                                setShowActionsMenu(false);
-                              }
-                            }}
-                            className="hidden"
-                            id="import-employees"
-                          />
-                          <label
-                            htmlFor="import-employees"
-                            className="flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted cursor-pointer border-t border-border"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                            Importer
-                          </label>
-                          <button
-                            onClick={() => {
-                              handleExport();
-                              setShowActionsMenu(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-muted border-t border-border"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Exporter
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteAll();
-                              setShowActionsMenu(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 border-t border-border"
-                            disabled={loading || employees.length === 0}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Supprimer tous les employés
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
-      )}
-
-      {/* Content */}
-      {loading && employees.length === 0 ? (
-        <div className="glass-card rounded-xl border border-border p-6">
-          <div className="py-12 text-center">
-            <Loading />
-          </div>
-        </div>
-      ) : viewMode === 'list' ? (
-        <div className="glass-card rounded-xl border border-border">
-          <DataTable
-            data={filteredEmployees as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            filterable={false}
-            emptyMessage="Aucun employé trouvé"
-            loading={loading}
-            infiniteScroll={true}
-            hasMore={hasMore}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-            onRowClick={(row) => openDetailPage(row as unknown as Employee)}
-          />
-        </div>
-      ) : (
-        <EmployeesGallery
-          employees={filteredEmployees}
-          onEmployeeClick={openDetailPage}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          onLoadMore={loadMore}
-        />
-      )}
-
-      {/* Create Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Créer un nouvel employé"
-        size="lg"
-      >
-        <EmployeeForm
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreateModal(false)}
-          loading={loading}
-        />
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal && selectedEmployee !== null}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedEmployee(null);
-        }}
-        title="Modifier l'employé"
-        size="lg"
-      >
-        {selectedEmployee && (
-          <EmployeeForm
-            employee={selectedEmployee}
-            onSubmit={handleUpdate}
-            onCancel={() => {
-              setShowEditModal(false);
-              setSelectedEmployee(null);
-            }}
-            loading={loading}
-          />
-        )}
-      </Modal>
-
-      {/* Import Instructions Modal */}
-      <ImportEmployeesInstructions
-        isOpen={showImportInstructions}
-        onClose={() => setShowImportInstructions(false)}
-        onDownloadTemplate={async () => {
-          try {
-            await employeesAPI.downloadZipTemplate();
-            showToast({
-              message: 'Modèle ZIP téléchargé avec succès',
-              type: 'success',
-            });
-          } catch (err) {
-            const appError = handleApiError(err);
-            showToast({
-              message: appError.message || 'Erreur lors du téléchargement du modèle ZIP',
-              type: 'error',
-            });
-          }
-        }}
-      />
-      
-      {/* Import Logs Modal */}
-      {showImportLogs && (
-        <Modal
-          isOpen={showImportLogs}
-          onClose={() => {
-            setShowImportLogs(false);
-            setCurrentImportId(null);
-          }}
-          title="Logs d'import en temps réel"
-          size="xl"
-        >
-          {currentImportId ? (
-            <ImportLogsViewer
-              endpointUrl={`/v1/employes/employees/import/${currentImportId}/logs`}
-              importId={currentImportId}
-              onComplete={() => {
-                // Don't auto-close - let user close manually to review logs
-              }}
-            />
-          ) : (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Initialisation de l'import...</p>
-            </div>
-          )}
-        </Modal>
-      )}
-    </MotionDiv>
-  );
-}
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index] || 'bg-gray-500';
+};
 
 export default function EmployeesPage() {
-  return <EmployeesContent />;
+  const router = useRouter();
+  const { showToast } = useToast();
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+
+  // Fetch data
+  const { data, isLoading } = useInfiniteEmployees(1000);
+  const deleteEmployeeMutation = useDeleteEmployee();
+
+  // Flatten data
+  const employees = useMemo(() => data?.pages.flat() || [], [data]);
+
+  // Get unique departments
+  const departments = useMemo(() => {
+    const depts = employees
+      .map((e: Employee) => e.department)
+      .filter((d): d is string => !!d);
+    return Array.from(new Set(depts)).sort();
+  }, [employees]);
+
+  // Filter employees
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((employee: Employee) => {
+      const matchesSearch = !searchQuery || 
+        `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (employee.email && employee.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (employee.position && employee.position.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
+      const matchesDepartment = departmentFilter === 'all' || employee.department === departmentFilter;
+      
+      return matchesSearch && matchesStatus && matchesDepartment;
+    });
+  }, [employees, searchQuery, statusFilter, departmentFilter]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = employees.length;
+    const active = employees.filter((e: Employee) => e.status === 'active').length;
+    const onVacation = employees.filter((e: Employee) => e.status === 'vacation').length;
+    
+    // Calculate average salary
+    const salaries = employees
+      .map((e: Employee) => e.salary)
+      .filter((s): s is number => typeof s === 'number' && s > 0);
+    const avgSalary = salaries.length > 0 
+      ? Math.round(salaries.reduce((sum, s) => sum + s, 0) / salaries.length)
+      : 0;
+    
+    return { total, active, onVacation, avgSalary };
+  }, [employees]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('fr-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) return;
+    
+    try {
+      await deleteEmployeeMutation.mutateAsync(id);
+      showToast({ message: 'Employé supprimé avec succès', type: 'success' });
+    } catch (error) {
+      showToast({ message: 'Erreur lors de la suppression', type: 'error' });
+    }
+  };
+
+  const handleView = (id: number) => {
+    router.push(`/dashboard/management/employes/${id}`);
+  };
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <Loading />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer className="flex flex-col h-full">
+      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
+        {/* Hero Header */}
+        <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
+          
+          <div className="relative flex items-center justify-between">
+            <div>
+              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Employés
+              </h1>
+              <p className="text-white/80 text-lg">Gérez votre équipe et leurs informations</p>
+            </div>
+            <Button 
+              className="bg-white text-[#523DC9] hover:bg-white/90"
+              onClick={() => router.push('/dashboard/management/employes/new')}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvel employé
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
+                <Users className="w-6 h-6 text-[#523DC9]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total Employés</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <UserCheck className="w-6 h-6 text-[#10B981]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.active}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Actifs</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <Plane className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.onVacation}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">En Vacances</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+                <DollarSign className="w-6 h-6 text-[#3B82F6]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {formatCurrency(stats.avgSalary)}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Salaire Moyen</div>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 w-full relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Rechercher un employé..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full"
+              />
+            </div>
+            
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                variant={statusFilter === 'all' ? 'primary' : 'outline'}
+                onClick={() => setStatusFilter('all')}
+                size="sm"
+              >
+                Tous
+              </Button>
+              <Button 
+                variant={statusFilter === 'active' ? 'primary' : 'outline'}
+                onClick={() => setStatusFilter('active')}
+                size="sm"
+              >
+                Actifs
+              </Button>
+              <Button 
+                variant={statusFilter === 'vacation' ? 'primary' : 'outline'}
+                onClick={() => setStatusFilter('vacation')}
+                size="sm"
+              >
+                En vacances
+              </Button>
+              <Button 
+                variant={statusFilter === 'inactive' ? 'primary' : 'outline'}
+                onClick={() => setStatusFilter('inactive')}
+                size="sm"
+              >
+                Inactifs
+              </Button>
+            </div>
+
+            {departments.length > 0 && (
+              <div className="flex gap-2 border-l pl-4">
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                >
+                  <option value="all">Tous les départements</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex gap-2 border-l pl-4">
+              <Button
+                variant={viewMode === 'grid' ? 'primary' : 'outline'}
+                onClick={() => setViewMode('grid')}
+                size="sm"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'primary' : 'outline'}
+                onClick={() => setViewMode('list')}
+                size="sm"
+              >
+                <ListIcon className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Employees Grid/List */}
+        {filteredEmployees.length === 0 ? (
+          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Aucun employé trouvé
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {searchQuery || statusFilter !== 'all' || departmentFilter !== 'all'
+                ? 'Essayez de modifier vos filtres' 
+                : 'Créez votre premier employé'}
+            </p>
+            <Button onClick={() => router.push('/dashboard/management/employes/new')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvel employé
+            </Button>
+          </Card>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredEmployees.map((employee: Employee) => {
+              const initials = `${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase();
+              const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
+              const avatarColor = getAvatarColor(fullName);
+              const status = employee.status || 'active';
+              const statusInfo = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
+              
+              return (
+                <Card 
+                  key={employee.id}
+                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer"
+                  onClick={() => handleView(employee.id)}
+                >
+                  <div className="flex flex-col items-center text-center mb-4">
+                    <div className={`w-16 h-16 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-xl mb-3`}>
+                      {initials}
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                      {fullName}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {employee.position || 'Employé'}
+                    </p>
+                    <Badge className={`${statusInfo.color} border`}>
+                      {statusInfo.label}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    {employee.email && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Mail className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{employee.email}</span>
+                      </div>
+                    )}
+                    {employee.phone && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Phone className="w-4 h-4 flex-shrink-0" />
+                        <span>{employee.phone}</span>
+                      </div>
+                    )}
+                    {employee.department && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Briefcase className="w-4 h-4 flex-shrink-0" />
+                        <span>{employee.department}</span>
+                      </div>
+                    )}
+                    {employee.hire_date && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <span>{new Date(employee.hire_date).toLocaleDateString('fr-CA')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Button size="sm" variant="ghost" onClick={() => handleView(employee.id)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredEmployees.map((employee: Employee) => {
+                const initials = `${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase();
+                const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
+                const avatarColor = getAvatarColor(fullName);
+                const status = employee.status || 'active';
+                const statusInfo = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
+                
+                return (
+                  <div 
+                    key={employee.id}
+                    className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                    onClick={() => handleView(employee.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-semibold`}>
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">{fullName}</h3>
+                            <Badge className={`${statusInfo.color} border`}>
+                              {statusInfo.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                            {employee.position && (
+                              <div className="flex items-center gap-2">
+                                <Briefcase className="w-4 h-4" />
+                                <span>{employee.position}</span>
+                              </div>
+                            )}
+                            {employee.department && (
+                              <span>• {employee.department}</span>
+                            )}
+                            {employee.email && (
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                <span className="truncate">{employee.email}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button size="sm" variant="ghost" onClick={() => handleView(employee.id)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDelete(employee.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+      </MotionDiv>
+    </PageContainer>
+  );
 }
