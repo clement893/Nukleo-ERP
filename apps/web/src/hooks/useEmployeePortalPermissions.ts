@@ -80,18 +80,21 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
         initialLoadRef.current = true;
       } catch (err) {
         const appError = handleApiError(err);
+        console.error('[useEmployeePortalPermissions] Error loading permissions:', err);
         setError(appError.message || 'Erreur lors du chargement des permissions');
-        // Don't fail silently - set empty permissions
+        // Don't fail silently - set empty permissions with default access
+        // Allow base pages by default
         setPermissions({
           user_id: null,
           employee_id: employeeId,
-          pages: [],
+          pages: ['*'], // Allow all base pages by default
           modules: [],
           projects: [],
           clients: [],
           all_projects: false,
           all_clients: false,
         });
+        initialLoadRef.current = true;
       } finally {
         setLoading(false);
       }
@@ -120,23 +123,38 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
         initialLoadRef.current = true;
       } catch (err) {
         const appError = handleApiError(err);
+        console.error('[useEmployeePortalPermissions] Error loading permissions:', err);
         setError(appError.message || 'Erreur lors du chargement des permissions');
-        // Don't fail silently - set empty permissions
+        // Don't fail silently - set empty permissions with default access
+        // Allow base pages by default
         setPermissions({
           user_id: userId,
           employee_id: null,
-          pages: [],
+          pages: ['*'], // Allow all base pages by default
           modules: [],
           projects: [],
           clients: [],
           all_projects: false,
           all_clients: false,
         });
+        initialLoadRef.current = true;
       } finally {
         setLoading(false);
       }
     } else {
+      // No employeeId and no userId - set default permissions and stop loading
+      setPermissions({
+        user_id: null,
+        employee_id: null,
+        pages: ['*'], // Allow all base pages by default
+        modules: [],
+        projects: [],
+        clients: [],
+        all_projects: false,
+        all_clients: false,
+      });
       setLoading(false);
+      initialLoadRef.current = true;
     }
   };
 

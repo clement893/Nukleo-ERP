@@ -3,7 +3,7 @@ Authentication Endpoints
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Optional
 from urllib.parse import urlencode
 
 import httpx

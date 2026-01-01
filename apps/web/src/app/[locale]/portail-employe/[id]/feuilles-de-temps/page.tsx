@@ -36,27 +36,43 @@ export default function EmployeePortalTimeSheetsPage() {
   }, [employeeId, currentUserId]);
 
   const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
+    if (!employeeId) {
+      setError('ID d\'employé invalide');
       setLoading(false);
+      return;
+    }
+
+    if (!currentUserId) {
+      // Si pas d'utilisateur connecté, on charge quand même l'employé
+      // mais on ne pourra pas vérifier les permissions
+      try {
+        const data = await employeesAPI.get(employeeId);
+        setEmployee(data);
+        setLoading(false);
+      } catch (err) {
+        const appError = handleApiError(err);
+        setError(appError.message || 'Erreur lors du chargement de l\'employé');
+        setLoading(false);
+      }
       return;
     }
 
     try {
       const [status, data] = await Promise.all([
-        checkMySuperAdminStatus(),
+        checkMySuperAdminStatus().catch(() => ({ is_superadmin: false })),
         employeesAPI.get(employeeId),
       ]);
       
       const isAdmin = status.is_superadmin === true;
       
-      if (!isAdmin && data.user_id !== currentUserId) {
+      if (!isAdmin && data.user_id && data.user_id !== currentUserId) {
         setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
         setLoading(false);
         return;
       }
       
       setEmployee(data);
+      setLoading(false);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la vérification des permissions');
