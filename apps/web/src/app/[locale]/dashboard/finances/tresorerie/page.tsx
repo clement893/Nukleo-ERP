@@ -66,6 +66,7 @@ export default function TresoreriePage() {
           return Array.from({ length: nbSemaines }, (_, i) => {
             const date = new Date(dateDebut);
             date.setDate(date.getDate() + (i * 7));
+            const dateStr = date.toISOString().split('T')[0];
             
             return {
               id: `entree-${p.id}-${i}`,
@@ -73,7 +74,7 @@ export default function TresoreriePage() {
               categorie: 'Projet',
               description: p.name,
               montant: montantParSemaine,
-              date: date.toISOString().split('T')[0],
+              date: dateStr,
               statut: i === 0 ? 'confirme' as const : 'probable' as const
             };
           });
@@ -94,13 +95,14 @@ export default function TresoreriePage() {
         datePaie.setDate(datePaie.getDate() + (semaine * 7));
         
         employees.forEach(emp => {
+          const dateStr = datePaie.toISOString().split('T')[0];
           sortiesTransactions.push({
             id: `sortie-salaire-${emp.id}-${semaine}`,
             type: 'sortie',
             categorie: 'Salaire',
             description: `Paie - ${emp.first_name} ${emp.last_name}`,
             montant: salaireBiHebdo,
-            date: datePaie.toISOString().split('T')[0],
+            date: dateStr,
             statut: semaine === 0 ? 'confirme' : 'projete'
           });
         });
