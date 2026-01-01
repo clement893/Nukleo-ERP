@@ -11,7 +11,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
 import Avatar from '@/components/ui/Avatar';
 import { useAuthStore } from '@/lib/store';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2 } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
   employeeId: number;
@@ -388,7 +388,7 @@ function TaskCommentsTab({ taskId }: { taskId: number }) {
 function TaskCommentItem({
   comment,
   taskId,
-  currentUserId: _currentUserId, // Will be used in Batch 3 for edit/delete
+  currentUserId,
   onUpdate,
 }: {
   comment: ProjectComment;
@@ -398,10 +398,15 @@ function TaskCommentItem({
 }) {
   const { showToast } = useToast();
   const [isReplying, setIsReplying] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [replyContent, setReplyContent] = useState('');
+  const [editContent, setEditContent] = useState(comment.content);
   const [submittingReply, setSubmittingReply] = useState(false);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const userName = comment.user_name || comment.user_email || 'Utilisateur inconnu';
+  const isOwnComment = currentUserId === comment.user_id;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -450,6 +455,55 @@ function TaskCommentItem({
     }
   };
 
+  const handleEdit = async () => {
+    if (!editContent.trim() || submittingEdit) return;
+
+    try {
+      setSubmittingEdit(true);
+      await projectCommentsAPI.update(comment.id, {
+        content: editContent.trim(),
+      });
+      setIsEditing(false);
+      onUpdate();
+      showToast({
+        message: 'Commentaire modifié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification du commentaire',
+        type: 'error',
+      });
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await projectCommentsAPI.delete(comment.id);
+      onUpdate();
+      showToast({
+        message: 'Commentaire supprimé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression du commentaire',
+        type: 'error',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Commentaire principal */}
@@ -465,14 +519,70 @@ function TaskCommentItem({
               <span className="text-xs text-muted-foreground italic">(modifié)</span>
             )}
           </div>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
-          {!isReplying && (
-            <button
-              onClick={() => setIsReplying(true)}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Répondre
-            </button>
+          
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full p-2 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleEdit}
+                  disabled={!editContent.trim() || submittingEdit}
+                  size="sm"
+                  variant="primary"
+                >
+                  Enregistrer
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditContent(comment.content);
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
+              <div className="flex items-center gap-3">
+                {!isReplying && (
+                  <button
+                    onClick={() => setIsReplying(true)}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Répondre
+                  </button>
+                )}
+                {isOwnComment && (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      disabled={deleting}
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      Modifier
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="text-xs text-red-600 hover:text-red-700 transition-colors flex items-center gap-1"
+                      disabled={deleting}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      {deleting ? 'Suppression...' : 'Supprimer'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -513,28 +623,181 @@ function TaskCommentItem({
       {/* Réponses */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-11 space-y-3 border-l-2 border-border pl-4">
-          {comment.replies.map((reply) => {
-            const replyUserName = reply.user_name || reply.user_email || 'Utilisateur inconnu';
-            return (
-              <div key={reply.id} className="flex gap-3">
-                <Avatar name={replyUserName} size="sm" />
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{replyUserName}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(reply.created_at)}
-                    </span>
-                    {reply.is_edited && (
-                      <span className="text-xs text-muted-foreground italic">(modifié)</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{reply.content}</p>
-                </div>
-              </div>
-            );
-          })}
+          {comment.replies.map((reply) => (
+            <TaskCommentReply
+              key={reply.id}
+              reply={reply}
+              taskId={taskId}
+              currentUserId={currentUserId}
+              onUpdate={onUpdate}
+            />
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Component to display a comment reply with edit/delete actions
+ */
+function TaskCommentReply({
+  reply,
+  taskId: _taskId, // Reserved for future use
+  currentUserId,
+  onUpdate,
+}: {
+  reply: ProjectComment;
+  taskId: number;
+  currentUserId?: number;
+  onUpdate: () => void;
+}) {
+  const { showToast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(reply.content);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const replyUserName = reply.user_name || reply.user_email || 'Utilisateur inconnu';
+  const isOwnReply = currentUserId === reply.user_id;
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
+  const handleEdit = async () => {
+    if (!editContent.trim() || submittingEdit) return;
+
+    try {
+      setSubmittingEdit(true);
+      await projectCommentsAPI.update(reply.id, {
+        content: editContent.trim(),
+      });
+      setIsEditing(false);
+      onUpdate();
+      showToast({
+        message: 'Réponse modifiée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification de la réponse',
+        type: 'error',
+      });
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette réponse ?')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await projectCommentsAPI.delete(reply.id);
+      onUpdate();
+      showToast({
+        message: 'Réponse supprimée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression de la réponse',
+        type: 'error',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="flex gap-3">
+      <Avatar name={replyUserName} size="sm" />
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{replyUserName}</span>
+          <span className="text-xs text-muted-foreground">
+            {formatDate(reply.created_at)}
+          </span>
+          {reply.is_edited && (
+            <span className="text-xs text-muted-foreground italic">(modifié)</span>
+          )}
+        </div>
+        
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full p-2 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              rows={2}
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={handleEdit}
+                disabled={!editContent.trim() || submittingEdit}
+                size="sm"
+                variant="primary"
+              >
+                Enregistrer
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditContent(reply.content);
+                }}
+                size="sm"
+                variant="outline"
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{reply.content}</p>
+            {isOwnReply && (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  disabled={deleting}
+                >
+                  <Edit2 className="w-3 h-3" />
+                  Modifier
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-xs text-red-600 hover:text-red-700 transition-colors flex items-center gap-1"
+                  disabled={deleting}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  {deleting ? 'Suppression...' : 'Supprimer'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

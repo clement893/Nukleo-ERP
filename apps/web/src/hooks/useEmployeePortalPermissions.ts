@@ -15,7 +15,7 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
   const { user } = useAuthStore();
   const { employeeId } = options || {};
   const [permissions, setPermissions] = useState<EmployeePortalPermissionSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Commencer à false pour afficher immédiatement
   const [error, setError] = useState<string | null>(null);
   const [reloadTrigger, setReloadTrigger] = useState(0);
 

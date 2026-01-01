@@ -218,11 +218,9 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
 
   return (
     <nav className={clsx('space-y-1', className)}>
-      {permissionsLoading ? (
-        <div className="text-sm text-muted-foreground px-3 py-2">
-          Chargement des permissions...
-        </div>
-      ) : (
+      {/* Afficher les modules immédiatement même pendant le chargement initial */}
+      {/* Les permissions seront appliquées dès qu'elles sont chargées */}
+      {(
         <>
           {/* Pages de base - toujours visibles */}
           <div className="mb-4">
