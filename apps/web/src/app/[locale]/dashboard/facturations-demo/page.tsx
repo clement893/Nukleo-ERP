@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  FileText, Plus, Search, Download, Send, Eye, Edit, Trash2, 
+  FileText, Plus, Search, Download, Send, Eye, Edit, 
   DollarSign, Calendar, User, Building, Clock, AlertCircle,
   CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, MoreVertical
 } from 'lucide-react';
