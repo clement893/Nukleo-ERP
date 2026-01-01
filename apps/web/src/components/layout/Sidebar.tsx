@@ -1,5 +1,5 @@
 'use client';
-// Sidebar simplifié - Design Nukleo sobre et compact
+// Sidebar Nukleo - Design moderne avec Aurora Borealis gradient
 
 import { useState, useMemo, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
@@ -95,8 +95,6 @@ export default function Sidebar({
     return !moreSpecificMatch;
   };
 
-
-
   // Filter navigation based on search query
   const filteredNavigation = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -154,27 +152,44 @@ export default function Sidebar({
     }
   }, [searchQuery, filteredNavigation]);
 
-  // Render navigation item (SIMPLIFIÉ)
+  // Get badge color based on badge content
+  const getBadgeColor = (badge: string | number) => {
+    const badgeStr = String(badge);
+    const num = parseInt(badgeStr);
+    if (!isNaN(num)) {
+      if (num > 10) return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30';
+      if (num > 5) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30';
+      if (num > 0) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30';
+    }
+    return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30';
+  };
+
+  // Render navigation item with Nukleo design
   const renderNavItem = (item: NavigationItem) => {
     const active = isActive(item.href);
     const external = isExternalLink(item.href);
     
     const className = clsx(
-      'group relative flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
+      'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
       active
-        ? 'bg-[#523DC9]/10 text-[#523DC9] dark:bg-[#523DC9]/20'
-        : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+        : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
     );
 
     const content = (
       <>
-        {/* Active indicator simple */}
+        {/* Active indicator */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-[#523DC9] rounded-r" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
         )}
         
-        {/* Icon simple sans background */}
-        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-current opacity-70">
+        {/* Icon with subtle background */}
+        <span className={clsx(
+          "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
+          active 
+            ? "bg-[#523DC9]/10 text-[#523DC9]" 
+            : "text-current opacity-70 group-hover:opacity-100"
+        )}>
           {item.icon}
         </span>
         
@@ -183,9 +198,12 @@ export default function Sidebar({
           <span className="truncate">{item.name}</span>
         )}
         
-        {/* Badge */}
+        {/* Badge with color coding */}
         {!collapsed && item.badge && (
-          <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold rounded bg-[#523DC9]/10 text-[#523DC9]">
+          <span className={clsx(
+            "ml-auto px-2 py-0.5 text-xs font-semibold rounded-full border",
+            getBadgeColor(item.badge)
+          )}>
             {item.badge}
           </span>
         )}
@@ -213,47 +231,52 @@ export default function Sidebar({
     );
   };
 
-  // Render navigation group (SIMPLIFIÉ)
+  // Render navigation group with Nukleo design
   const renderNavGroup = (group: NavigationGroup) => {
     const isGroupOpen = openGroups.has(group.name);
     const hasActiveItem = group.items.some((item) => isActive(item.href));
 
     return (
-      <div key={group.name} className="space-y-0.5">
+      <div key={group.name} className="space-y-1">
         {group.collapsible ? (
           <button
             onClick={() => toggleGroup(group.name)}
             className={clsx(
-              'group w-full flex items-center justify-between gap-2.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
+              'group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
               hasActiveItem
-                ? 'bg-[#523DC9]/5 text-[#523DC9]'
-                : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                ? 'bg-[#523DC9]/5 text-[#523DC9] dark:text-[#A7A2CF]'
+                : 'text-foreground/80 hover:bg-muted/50 hover:text-foreground'
             )}
             aria-expanded={isGroupOpen}
             aria-label={`Toggle ${group.name} group`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              {/* Icon simple */}
-              <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-current opacity-70">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Icon */}
+              <span className={clsx(
+                "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
+                hasActiveItem 
+                  ? "bg-[#523DC9]/10 text-[#523DC9]" 
+                  : "text-current opacity-70 group-hover:opacity-100"
+              )}>
                 {group.icon}
               </span>
               {!collapsed && <span className="truncate">{group.name}</span>}
             </div>
             {!collapsed && (
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-muted text-muted-foreground">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-muted text-muted-foreground">
                   {group.items.length}
                 </span>
                 <ChevronDown className={clsx(
-                  'w-3.5 h-3.5 transition-transform duration-200',
+                  'w-4 h-4 transition-transform duration-200',
                   isGroupOpen && 'rotate-180'
                 )} />
               </div>
             )}
           </button>
         ) : (
-          <div className="flex items-center gap-2.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-70">
+          <div className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 opacity-70">
               {group.icon}
             </span>
             {!collapsed && <span>{group.name}</span>}
@@ -262,7 +285,7 @@ export default function Sidebar({
         {(!group.collapsible || isGroupOpen) && (
           <div className={clsx(
             "space-y-0.5",
-            !collapsed && "ml-3 border-l border-border/50 pl-3"
+            !collapsed && "ml-4 border-l-2 border-border/30 pl-3"
           )}>
             {group.items.map((item) => renderNavItem(item))}
           </div>
@@ -276,7 +299,7 @@ export default function Sidebar({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden"
           onClick={handleClose}
           aria-hidden="true"
         />
@@ -285,23 +308,30 @@ export default function Sidebar({
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-40 h-screen bg-background border-r border-border flex flex-col',
+          'fixed left-0 top-0 z-40 h-screen bg-background/95 backdrop-blur-xl border-r border-border/50 flex flex-col shadow-xl',
           'transition-all duration-300 ease-in-out',
           collapsed ? 'w-0 md:w-0' : 'w-72',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
           collapsed && 'md:overflow-hidden'
         )}
       >
-        {/* Header simple */}
+        {/* Header with Aurora Borealis Gradient */}
         <div className={clsx(
-          "border-b border-border flex-shrink-0 transition-all duration-300",
+          "relative border-b border-border/50 flex-shrink-0 transition-all duration-300 overflow-hidden",
           collapsed ? "p-0" : "p-4"
         )}>
+          {/* Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-10" />
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+            backgroundSize: '200px 200px'
+          }} />
+          
           {!collapsed && (
-            <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-3">
               <Link href="/dashboard" className="flex items-center gap-3 group">
                 {logoUrl ? (
-                  <div className="w-10 h-10 rounded-lg bg-muted p-2 flex items-center justify-center group-hover:bg-muted/80 transition-colors">
+                  <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-sm p-2.5 flex items-center justify-center group-hover:bg-white/20 transition-all duration-200 border border-white/20">
                     <img
                       src={logoUrl}
                       alt="Logo"
@@ -309,15 +339,15 @@ export default function Sidebar({
                     />
                   </div>
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-[#523DC9] flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">N</span>
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] flex items-center justify-center shadow-lg">
+                    <span className="text-white font-black text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>N</span>
                   </div>
                 )}
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-foreground">
+                  <span className="text-base font-black text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Nukleo ERP
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground font-medium">
                     Dashboard
                   </span>
                 </div>
@@ -326,9 +356,9 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Search bar simple */}
+        {/* Search bar with glassmorphism */}
         {!collapsed && (
-          <div className="p-3 border-b border-border flex-shrink-0">
+          <div className="p-3 border-b border-border/50 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -336,12 +366,12 @@ export default function Sidebar({
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-9 py-2 text-sm bg-muted border-0 focus:ring-1 focus:ring-[#523DC9]"
+                className="w-full pl-9 pr-9 py-2 text-sm bg-muted/50 backdrop-blur-sm border-border/50 focus:ring-2 focus:ring-[#523DC9]/30 focus:border-[#523DC9]/50"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
@@ -352,7 +382,7 @@ export default function Sidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
           {filteredNavigation.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Aucun résultat trouvé
@@ -368,17 +398,17 @@ export default function Sidebar({
           )}
         </nav>
 
-        {/* Footer simple */}
+        {/* Footer with user profile */}
         {!collapsed && (
-          <div className="border-t border-border p-3 flex-shrink-0 space-y-2">
-            <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-8 h-8 rounded-full bg-[#523DC9] flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-sm font-semibold">
+          <div className="border-t border-border/50 p-3 flex-shrink-0 space-y-2 bg-muted/20 backdrop-blur-sm">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] flex items-center justify-center flex-shrink-0 shadow-md">
+                <span className="text-white text-sm font-bold">
                   {user?.email?.[0]?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {user?.email?.split('@')[0] || 'User'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -392,7 +422,7 @@ export default function Sidebar({
                 variant="primary"
                 size="sm"
                 onClick={logout}
-                className="flex-1 text-xs"
+                className="flex-1 text-xs bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817] hover:opacity-90 transition-opacity"
               >
                 <LogOut className="w-3.5 h-3.5 mr-1.5" />
                 Déconnexion
@@ -405,7 +435,7 @@ export default function Sidebar({
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="absolute -right-3 top-20 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors hidden md:flex"
+            className="absolute -right-3 top-20 w-6 h-6 bg-background border-2 border-border/50 rounded-full flex items-center justify-center hover:bg-muted hover:border-[#523DC9]/50 transition-all shadow-md hidden md:flex"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
