@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
-import { Badge, Button, Loading, Alert, Modal, Input, Textarea, Select } from '@/components/ui';
+import { Badge, Button, Loading, Alert, Modal, Input, Textarea, Select, Heading, Text } from '@/components/ui';
 import TaskKanban from '@/components/projects/TaskKanban';
 import CapacityVisualization from '@/components/projects/CapacityVisualization';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -262,10 +262,10 @@ function TeamProjectManagementContent() {
             }} />
             
             <div className="relative">
-              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <Heading level={1} className="text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Équipe
-              </h1>
-              <p className="text-white/80 text-lg">Gestion de projet</p>
+              </Heading>
+              <Text variant="body" className="text-white/80 text-lg">Gestion de projet</Text>
             </div>
           </div>
           
@@ -290,25 +290,27 @@ function TeamProjectManagementContent() {
             <button
               onClick={() => router.push('/dashboard/projets/equipes')}
               className="flex items-center gap-2 text-white/80 hover:text-white mb-3 transition-colors"
+              aria-label="Retour à la liste des équipes"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               <span>Retour aux équipes</span>
             </button>
             
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <Heading level={1} className="text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   {team.name}
-                </h1>
-                <p className="text-white/80 text-lg">
+                </Heading>
+                <Text variant="body" className="text-white/80 text-lg">
                   {team.description || 'Gérez les tâches et les employés de l\'équipe'}
-                </p>
+                </Text>
               </div>
               <Button 
                 className="bg-white text-[#523DC9] hover:bg-white/90"
                 onClick={() => setShowCreateTaskModal(true)}
+                aria-label="Ajouter une nouvelle tâche"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
                 Ajouter une tâche
               </Button>
             </div>
@@ -316,12 +318,12 @@ function TeamProjectManagementContent() {
         </div>
 
         {/* Vue des employés et leurs tâches en cours */}
-        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <div className="glass-card p-lg rounded-xl border border-border">
           <div className="flex items-center gap-2 mb-6">
-            <Users className="w-5 h-5 text-[#523DC9]" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <Users className="w-5 h-5 text-[#523DC9]" aria-hidden="true" />
+            <Heading level={2} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Employés et tâches en cours
-            </h2>
+            </Heading>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -337,12 +339,12 @@ function TeamProjectManagementContent() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <Text variant="small" className="font-medium text-foreground truncate">
                       {employee.name}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                    </Text>
+                    <Text variant="caption" className="text-muted-foreground truncate">
                       {employee.email}
-                    </p>
+                    </Text>
                   </div>
                 </div>
 
@@ -352,11 +354,12 @@ function TeamProjectManagementContent() {
                       <div
                         key={task.id}
                         draggable
-                        className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-[#A7A2CF]/20 cursor-move hover:shadow-sm hover:border-[#523DC9]/40 transition-all"
+                        className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-border cursor-move hover:shadow-sm hover:border-[#523DC9]/40 transition-all"
+                        aria-label={`Tâche ${task.title}, priorité ${task.priority}`}
                       >
-                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                        <Text variant="small" className="font-medium text-foreground mb-1">
                           {task.title}
-                        </p>
+                        </Text>
                         <div className="flex items-center gap-2">
                           <Badge
                             className={`text-xs px-2 py-0.5 ${getPriorityColor(task.priority)}`}
@@ -367,9 +370,9 @@ function TeamProjectManagementContent() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-2">
+                    <Text variant="small" className="text-muted-foreground text-center py-2">
                       Aucune tâche en cours
-                    </p>
+                    </Text>
                   )}
                 </div>
               </div>
@@ -379,7 +382,7 @@ function TeamProjectManagementContent() {
 
         {/* Visualisation de la capacité */}
         {team && employeesWithCapacity.length > 0 && (
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-lg rounded-xl border border-border">
             <CapacityVisualization
               tasks={tasks}
               employees={employeesWithCapacity}
@@ -389,7 +392,7 @@ function TeamProjectManagementContent() {
         )}
 
         {/* Kanban Board avec le composant TaskKanban */}
-        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <div className="glass-card p-lg rounded-xl border border-border">
           {team && (
             <TaskKanban teamId={team.id} />
           )}

@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Search, Star, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
-import { Badge, Button, Loading, Alert, Input } from '@/components/ui';
+import { Badge, Button, Loading, Alert, Input, Heading, Text } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import { handleApiError } from '@/lib/errors/api';
 import { reseauTestimonialsAPI, type Testimonial } from '@/lib/api/reseau-testimonials';
@@ -153,13 +153,13 @@ function TemoignagesContent() {
           
           <div className="relative flex items-center justify-between">
             <div>
-              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <Heading level={1} className="text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Témoignages
-              </h1>
-              <p className="text-white/80 text-lg">Gérez les témoignages clients</p>
+              </Heading>
+              <Text variant="body" className="text-white/80 text-lg">Gérez les témoignages clients</Text>
             </div>
-            <Button className="bg-white text-[#523DC9] hover:bg-white/90">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button className="bg-white text-[#523DC9] hover:bg-white/90" aria-label="Créer un nouveau témoignage">
+              <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
               Nouveau témoignage
             </Button>
           </div>
@@ -168,95 +168,96 @@ function TemoignagesContent() {
         {error && <Alert variant="error">{error}</Alert>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <MessageSquare className="w-6 h-6 text-[#523DC9]" />
+                <MessageSquare className="w-6 h-6 text-[#523DC9]" aria-hidden="true" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.total}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
+            <Text variant="small" className="text-muted-foreground">Total</Text>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
+                <CheckCircle2 className="w-6 h-6 text-[#10B981]" aria-hidden="true" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.published}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Publiés</div>
+            <Text variant="small" className="text-muted-foreground">Publiés</Text>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Clock className="w-6 h-6 text-[#F59E0B]" />
+                <Clock className="w-6 h-6 text-[#F59E0B]" aria-hidden="true" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.pending}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
+            <Text variant="small" className="text-muted-foreground">En attente</Text>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+                <TrendingUp className="w-6 h-6 text-[#F59E0B]" aria-hidden="true" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.avgRating}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Note moyenne</div>
+            <Text variant="small" className="text-muted-foreground">Note moyenne</Text>
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="glass-card p-lg rounded-xl border border-border">
+          <div className="flex flex-col md:flex-row gap-md">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
               <Input
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                aria-label="Rechercher un témoignage"
               />
             </div>
 
-            <div className="flex gap-2 flex-wrap">
-              <Button variant={filterStatus === 'all' ? 'primary' : 'outline'} onClick={() => setFilterStatus('all')}>Tous</Button>
-              <Button variant={filterStatus === 'published' ? 'primary' : 'outline'} onClick={() => setFilterStatus('published')}>Publiés</Button>
-              <Button variant={filterStatus === 'pending' ? 'primary' : 'outline'} onClick={() => setFilterStatus('pending')}>En attente</Button>
-              <Button variant={filterStatus === 'draft' ? 'primary' : 'outline'} onClick={() => setFilterStatus('draft')}>Brouillons</Button>
+            <div className="flex gap-2 flex-wrap" role="group" aria-label="Filtres par statut">
+              <Button variant={filterStatus === 'all' ? 'primary' : 'outline'} onClick={() => setFilterStatus('all')} aria-pressed={filterStatus === 'all'}>Tous</Button>
+              <Button variant={filterStatus === 'published' ? 'primary' : 'outline'} onClick={() => setFilterStatus('published')} aria-pressed={filterStatus === 'published'}>Publiés</Button>
+              <Button variant={filterStatus === 'pending' ? 'primary' : 'outline'} onClick={() => setFilterStatus('pending')} aria-pressed={filterStatus === 'pending'}>En attente</Button>
+              <Button variant={filterStatus === 'draft' ? 'primary' : 'outline'} onClick={() => setFilterStatus('draft')} aria-pressed={filterStatus === 'draft'}>Brouillons</Button>
             </div>
 
-            <div className="flex gap-2">
-              <Button variant={filterLanguage === 'all' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('all')}>Toutes</Button>
-              <Button variant={filterLanguage === 'fr' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('fr')}>FR</Button>
-              <Button variant={filterLanguage === 'en' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('en')}>EN</Button>
+            <div className="flex gap-2" role="group" aria-label="Filtres par langue">
+              <Button variant={filterLanguage === 'all' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('all')} aria-pressed={filterLanguage === 'all'}>Toutes</Button>
+              <Button variant={filterLanguage === 'fr' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('fr')} aria-pressed={filterLanguage === 'fr'}>FR</Button>
+              <Button variant={filterLanguage === 'en' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('en')} aria-pressed={filterLanguage === 'en'}>EN</Button>
             </div>
           </div>
         </div>
 
         {filteredTestimonials.length === 0 ? (
-          <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
-            <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="glass-card p-3xl rounded-xl border border-border text-center">
+            <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
+            <Heading level={3} className="mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Aucun témoignage trouvé
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            </Heading>
+            <Text variant="body" className="text-muted-foreground mb-6">
               {searchQuery || filterStatus !== 'all' || filterLanguage !== 'all'
                 ? 'Essayez de modifier vos filtres'
                 : 'Créez votre premier témoignage'}
-            </p>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
+            </Text>
+            <Button aria-label="Créer un nouveau témoignage">
+              <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
               Créer un témoignage
             </Button>
           </div>
@@ -269,13 +270,13 @@ function TemoignagesContent() {
               return (
                 <div
                   key={testimonial.id}
-                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                  className="glass-card p-lg rounded-xl border border-border hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <Heading level={3} className="mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {testimonial.title || 'Sans titre'}
-                      </h3>
+                      </Heading>
                       {renderStars(testimonial.rating)}
                     </div>
                     <div className="flex gap-2">
@@ -288,36 +289,36 @@ function TemoignagesContent() {
                     </div>
                   </div>
 
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                  <Text variant="small" className="text-muted-foreground mb-4 line-clamp-3">
                     {content}
-                  </p>
+                  </Text>
 
-                  <div className="space-y-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="space-y-2 mb-4 pt-4 border-t border-border">
                     {testimonial.contact_name && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <User className="w-4 h-4" />
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="w-4 h-4" aria-hidden="true" />
                         <span>{testimonial.contact_name}</span>
                       </div>
                     )}
                     {testimonial.company_name && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Building2 className="w-4 h-4" />
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Building2 className="w-4 h-4" aria-hidden="true" />
                         <span>{testimonial.company_name}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Calendar className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4" aria-hidden="true" />
                       <span>{new Date(testimonial.created_at).toLocaleDateString('fr-FR')}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button variant="outline" className="flex-1">
-                      <Edit className="w-4 h-4 mr-2" />
+                  <div className="flex gap-2 pt-4 border-t border-border">
+                    <Button variant="outline" className="flex-1" aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}>
+                      <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
                       Éditer
                     </Button>
-                    <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                      <Trash2 className="w-4 h-4" />
+                    <Button variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}>
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>

@@ -7,7 +7,7 @@ export const dynamicParams = true;
 import { useState, useEffect } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
-import { Badge, Loading, Alert } from '@/components/ui';
+import { Badge, Loading, Alert, Heading, Text } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Users, CheckCircle2, TrendingUp, Target } from 'lucide-react';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
@@ -238,12 +238,12 @@ function EquipesContent() {
               <span className="text-white">Équipes</span>
             </div>
             
-            <h1 className="text-5xl font-black text-white mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <Heading level={1} className="text-white mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Équipes
-            </h1>
-            <p className="text-white/80 text-lg max-w-2xl">
+            </Heading>
+            <Text variant="body" className="text-white/80 text-lg max-w-2xl">
               Gérez vos équipes et leurs projets avec des pipelines de gestion modernes
-            </p>
+            </Text>
           </div>
         </div>
 
@@ -253,56 +253,56 @@ function EquipesContent() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform duration-200">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Users className="w-6 h-6 text-[#523DC9]" />
+                <Users className="w-6 h-6 text-[#523DC9]" aria-hidden="true" />
               </div>
               <Badge variant="info">{teams.length} équipes</Badge>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {totalMembers}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Membres totaux</div>
+            <Text variant="small" className="text-muted-foreground">Membres totaux</Text>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform duration-200">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Target className="w-6 h-6 text-[#3B82F6]" />
+                <Target className="w-6 h-6 text-[#3B82F6]" aria-hidden="true" />
               </div>
               <Badge variant="default">{totalTasks} total</Badge>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {totalInProgress}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Tâches en cours</div>
+            <Text variant="small" className="text-muted-foreground">Tâches en cours</Text>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform duration-200">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
+                <CheckCircle2 className="w-6 h-6 text-[#10B981]" aria-hidden="true" />
               </div>
               <Badge variant="success">{completionRate}%</Badge>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {totalCompleted}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Tâches complétées</div>
+            <Text variant="small" className="text-muted-foreground">Tâches complétées</Text>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform duration-200">
+          <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+                <TrendingUp className="w-6 h-6 text-[#F59E0B]" aria-hidden="true" />
               </div>
               <Badge variant="warning">Performance</Badge>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {completionRate}%
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Taux de complétion</div>
+            <Text variant="small" className="text-muted-foreground">Taux de complétion</Text>
           </div>
         </div>
 
@@ -318,19 +318,28 @@ function EquipesContent() {
               <div
                 key={team.id}
                 onClick={() => handleTeamClick(team.slug)}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                className="glass-card p-lg rounded-xl border border-border hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleTeamClick(team.slug);
+                  }
+                }}
+                aria-label={`Voir les détails de l'équipe ${team.name}`}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="text-4xl">{teamInfo?.icon || '👥'}</div>
+                    <div className="text-4xl" aria-hidden="true">{teamInfo?.icon || '👥'}</div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <Heading level={3} className="group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {team.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      </Heading>
+                      <Text variant="small" className="text-muted-foreground">
                         {teamInfo?.description || team.description}
-                      </p>
+                      </Text>
                     </div>
                   </div>
                   <Badge variant="info">{team.members?.length || 0} membres</Badge>
@@ -338,56 +347,61 @@ function EquipesContent() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {team.totalTasks}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Total</div>
+                    <Text variant="caption" className="text-muted-foreground">Total</Text>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {team.inProgressTasks}
                     </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400">En cours</div>
+                    <Text variant="caption" className="text-blue-600 dark:text-blue-400">En cours</Text>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {team.completedTasks}
                     </div>
-                    <div className="text-xs text-green-600 dark:text-green-400">Terminé</div>
+                    <Text variant="caption" className="text-green-600 dark:text-green-400">Terminé</Text>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
                 <div className="mb-3">
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-600 dark:text-gray-400">Progression</span>
+                    <Text variant="small" className="text-muted-foreground">Progression</Text>
                     <span className="font-bold text-[#523DC9]">{completionRate}%</span>
                   </div>
-                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-[#523DC9] to-[#5F2B75] transition-all duration-500"
                       style={{ width: `${completionRate}%` }}
+                      role="progressbar"
+                      aria-valuenow={completionRate}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
                     />
                   </div>
                 </div>
 
                 {/* Members Preview */}
                 {team.employees.length > 0 && (
-                  <div className="flex items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <Users className="w-4 h-4 text-gray-400" />
+                  <div className="flex items-center gap-2 pt-3 border-t border-border">
+                    <Users className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     <div className="flex -space-x-2">
                       {team.employees.slice(0, 5).map((employee) => (
                         <div
                           key={employee.id}
                           className="w-8 h-8 rounded-full bg-gradient-to-br from-[#523DC9] to-[#5F2B75] flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-gray-800"
                           title={employee.name}
+                          aria-label={employee.name}
                         >
                           {employee.name.charAt(0).toUpperCase()}
                         </div>
                       ))}
                       {team.employees.length > 5 && (
-                        <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-700 dark:text-gray-300 text-xs font-bold border-2 border-white dark:border-gray-800">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xs font-bold border-2 border-white dark:border-gray-800" aria-label={`${team.employees.length - 5} autres membres`}>
                           +{team.employees.length - 5}
                         </div>
                       )}
