@@ -66,7 +66,7 @@ function ManagementCompteDepensesContent() {
   const [selectedExpenseAccount, setSelectedExpenseAccount] = useState<ExpenseAccount | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | 'clarification' | null>(null);
   const [actionData, setActionData] = useState<ExpenseAccountAction>({ notes: null, rejection_reason: null, clarification_request: null });
-  const [filterStatus, setFilterStatus] = useState<string[]>(['submitted', 'under_review']); // Default: only show pending validation
+  const [filterStatus, setFilterStatus] = useState<string[]>([]); // No default filters
   const [filterEmployee, setFilterEmployee] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -104,10 +104,10 @@ function ManagementCompteDepensesContent() {
     }
   }, [loadingMore, hasMore, fetchNextPage]);
   
-  // Filtered expense accounts with debounced search - only show pending validation by default
+  // Filtered expense accounts with debounced search
   const filteredExpenseAccounts = useMemo(() => {
     return expenseAccounts.filter((account) => {
-      // Status filter - default to pending validation
+      // Status filter
       const matchesStatus = filterStatus.length === 0 || filterStatus.includes(account.status);
       
       // Employee filter
@@ -129,7 +129,7 @@ function ManagementCompteDepensesContent() {
   
   // Clear all filters function
   const clearAllFilters = useCallback(() => {
-    setFilterStatus(['submitted', 'under_review']); // Reset to default
+    setFilterStatus([]); // Reset to no filters
     setFilterEmployee([]);
     setSearchQuery('');
   }, []);
@@ -193,29 +193,27 @@ function ManagementCompteDepensesContent() {
         successMessage = 'Demande de précisions envoyée';
       }
       
-      // Fermer la modal avant d'afficher le message de succès
-      setShowActionModal(false);
-      setSelectedExpenseAccount(null);
-      setActionType(null);
-      setActionData({ notes: null, rejection_reason: null, clarification_request: null });
-      
-      // Afficher le message de succès après avoir fermé la modal
+      // Afficher le message de succès
       if (successMessage) {
         showToast({
           message: successMessage,
           type: 'success',
         });
       }
+      
+      // Fermer les modals après succès
+      setShowActionModal(false);
+      setShowViewModal(false);
+      setSelectedExpenseAccount(null);
+      setActionType(null);
+      setActionData({ notes: null, rejection_reason: null, clarification_request: null });
     } catch (err) {
       const appError = handleApiError(err);
-      // Ne pas afficher les erreurs de base de données qui peuvent apparaître après succès
       const errorMessage = appError.message || 'Erreur lors de l\'action';
-      if (!errorMessage.toLowerCase().includes('database error')) {
-        showToast({
-          message: errorMessage,
-          type: 'error',
-        });
-      }
+      showToast({
+        message: errorMessage,
+        type: 'error',
+      });
     }
   };
   

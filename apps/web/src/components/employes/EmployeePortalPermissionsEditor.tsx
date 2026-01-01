@@ -39,16 +39,13 @@ interface EmployeePortalPermissionsEditorProps {
   onUpdate?: () => void;
 }
 
-// Modules disponibles dans le portail ERP
+// Modules disponibles dans le portail employé (doivent correspondre à EmployeePortalNavigation)
 const AVAILABLE_MODULES = [
-  { id: 'crm', label: 'CRM' },
-  { id: 'orders', label: 'Commandes' },
-  { id: 'inventory', label: 'Inventaire' },
-  { id: 'accounting', label: 'Comptabilité' },
-  { id: 'reports', label: 'Rapports' },
-  { id: 'tasks', label: 'Tâches' },
-  { id: 'timesheet', label: 'Feuilles de temps' },
-  { id: 'settings', label: 'Paramètres' },
+  { id: 'crm', label: 'CRM', description: 'Tableau de bord, Projets, Leo, Vacances' },
+  { id: 'tasks', label: 'Tâches', description: 'Mes tâches, Mes deadlines' },
+  { id: 'timesheet', label: 'Feuilles de temps', description: 'Mes feuilles de temps' },
+  { id: 'accounting', label: 'Comptabilité', description: 'Mes comptes de dépenses' },
+  { id: 'settings', label: 'Paramètres', description: 'Mon profil' },
 ];
 
 export default function EmployeePortalPermissionsEditor({
