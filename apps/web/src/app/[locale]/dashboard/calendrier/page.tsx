@@ -8,19 +8,15 @@ import {
   Plus,
   Filter,
   Clock,
-  MapPin,
-  Users,
   AlertCircle,
-  Star,
   Briefcase,
   Plane,
-  Heart,
   Loader2
 } from 'lucide-react';
-import { projectsAPI, type Project } from '@/lib/api/projects';
-import { vacationsAPI, type Vacation } from '@/lib/api/vacations';
+import { projectsAPI } from '@/lib/api/projects';
+import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
-import { employeesAPI } from '@/lib/api/employees';
+import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { useToast } from '@/lib/toast';
 
 type ViewMode = 'month' | 'week' | 'day';
@@ -41,7 +37,6 @@ interface CalendarEvent {
 }
 
 export default function CalendrierPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterType, setFilterType] = useState<EventType>('all');
   const [loading, setLoading] = useState(true);
@@ -59,18 +54,18 @@ export default function CalendrierPage() {
       // Charger toutes les données en parallèle
       const [projects, vacations, timeEntries, employees] = await Promise.all([
         projectsAPI.list(0, 100),
-        vacationsAPI.list(0, 100),
-        timeEntriesAPI.list(0, 500),
+        vacationRequestsAPI.list({ limit: 100 }),
+        timeEntriesAPI.list({ limit: 500 }),
         employeesAPI.list(0, 100)
       ]);
 
       const calendarEvents: CalendarEvent[] = [];
 
       // Créer un map des employés pour référence rapide
-      const employeeMap = new Map(employees.map(emp => [emp.id, `${emp.first_name} ${emp.last_name}`]));
+      const employeeMap = new Map(employees.map((emp: Employee) => [emp.id, `${emp.first_name} ${emp.last_name}`]));
 
       // Ajouter les projets (début et fin)
-      projects.forEach(project => {
+      projects.forEach((project) => {
         if (project.start_date) {
           calendarEvents.push({
             id: `project-start-${project.id}`,
@@ -97,19 +92,20 @@ export default function CalendrierPage() {
       });
 
       // Ajouter les vacances
-      vacations.forEach(vacation => {
+      vacations.forEach((vacation: VacationRequest) => {
         const employeeName = employeeMap.get(vacation.employee_id) || 'Employé';
         const startDate = new Date(vacation.start_date);
         const endDate = new Date(vacation.end_date);
         
         // Ajouter un événement pour chaque jour de vacances
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0] || d.toISOString().substring(0, 10);
           calendarEvents.push({
             id: `vacation-${vacation.id}-${d.toISOString()}`,
             title: `🏖️ ${employeeName} en vacances`,
-            date: d.toISOString().split('T')[0],
+            date: dateStr,
             type: 'vacation',
-            description: `Type: ${vacation.type}`,
+            description: vacation.reason || 'Vacances',
             priority: 'low',
             color: '#0EA5E9'
           });
@@ -118,8 +114,8 @@ export default function CalendrierPage() {
 
       // Grouper les time entries par date
       const timeEntriesByDate = new Map<string, TimeEntry[]>();
-      timeEntries.forEach(entry => {
-        const date = entry.date.split('T')[0];
+      timeEntries.forEach((entry: TimeEntry) => {
+        const date = entry.date.split('T')[0] || entry.date.substring(0, 10);
         if (!timeEntriesByDate.has(date)) {
           timeEntriesByDate.set(date, []);
         }
@@ -128,8 +124,9 @@ export default function CalendrierPage() {
 
       // Ajouter les feuilles de temps (agrégées par jour)
       timeEntriesByDate.forEach((entries, date) => {
-        const totalHours = entries.reduce((sum, e) => sum + e.hours, 0);
-        const uniqueEmployees = new Set(entries.map(e => e.employee_id));
+        // Convertir duration (secondes) en heures
+        const totalHours = entries.reduce((sum, e) => sum + (e.duration / 3600), 0);
+        const uniqueEmployees = new Set(entries.map(e => e.user_id));
         
         calendarEvents.push({
           id: `timesheet-${date}`,
@@ -192,24 +189,6 @@ export default function CalendrierPage() {
     return colors[type];
   };
 
-  // Get priority badge
-  const getPriorityBadge = (priority?: string) => {
-    if (!priority) return null;
-    
-    const badges = {
-      urgent: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', label: 'Urgent' },
-      high: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', label: 'Haute' },
-      medium: { bg: 'bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', label: 'Moyenne' },
-      low: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', label: 'Basse' }
-    };
-    
-    const badge = badges[priority as keyof typeof badges];
-    return (
-      <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
-    );
-  };
 
   // Filter events
   const filteredEvents = useMemo(() => {
