@@ -299,19 +299,22 @@ export default function EmployeePortalPermissionsEditor({
         });
       }
       
-      // Mettre à jour les états sauvegardés
+      // Mettre à jour les états sauvegardés IMMÉDIATEMENT
       setSavedModules(modules);
       setSavedClients(clients);
+      
+      // Mettre à jour aussi selectedModules et selectedClients pour être cohérent
+      // (sauf si on est dans handleModuleToggle où c'est déjà fait)
+      setSelectedModules(modules);
+      setSelectedClients(clients);
       
       // Déclencher un événement pour notifier les autres composants
       window.dispatchEvent(new CustomEvent('employee-portal-permissions-updated', {
         detail: { employeeId }
       }));
       
-      // Recharger les données en arrière-plan
-      loadData().catch(err => {
-        console.error('[EmployeePortalPermissionsEditor] Erreur lors du rechargement:', err);
-      });
+      // Ne pas recharger loadData() ici car il réinitialiserait les états et causerait un délai
+      // Les états sont déjà à jour et cohérents avec le serveur
     } catch (err) {
       const appError = handleApiError(err);
       showToast({
