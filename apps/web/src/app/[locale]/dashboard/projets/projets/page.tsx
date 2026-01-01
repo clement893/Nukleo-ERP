@@ -39,9 +39,18 @@ function getClientLogo(clientName: string | null | undefined): { initials: strin
   if (!trimmed) return { initials: '??', color: 'bg-gray-500' };
   
   const words = trimmed.split(/\s+/);
-  const initials = words.length >= 2 && words[0] && words[1] && words[0][0] && words[1][0]
-    ? (words[0][0] + words[1][0]).toUpperCase()
-    : trimmed.substring(0, 2).toUpperCase();
+  let initials: string;
+  if (words.length >= 2 && words[0] && words[1]) {
+    const firstChar = words[0][0];
+    const secondChar = words[1][0];
+    if (firstChar && secondChar) {
+      initials = (firstChar + secondChar).toUpperCase();
+    } else {
+      initials = trimmed.substring(0, 2).toUpperCase() || '??';
+    }
+  } else {
+    initials = trimmed.substring(0, 2).toUpperCase() || '??';
+  }
   
   // Generate consistent color based on first letter
   const colors = [

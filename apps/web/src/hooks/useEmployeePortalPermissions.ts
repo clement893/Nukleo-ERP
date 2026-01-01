@@ -177,7 +177,8 @@ export function useEmployeePortalPermissions(options?: UseEmployeePortalPermissi
     return () => {
       window.removeEventListener('employee-portal-permissions-updated', handlePermissionsUpdate as EventListener);
     };
-  }, [employeeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeId]); // Ne pas inclure reload ou cacheKey dans les dépendances
 
   /**
    * Check if user has access to a page
