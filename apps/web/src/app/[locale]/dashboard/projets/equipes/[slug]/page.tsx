@@ -131,7 +131,7 @@ function TeamProjectManagementContent() {
       }));
       setEmployees(employeesList);
       
-      // Charger les projets
+      // Charger les projets (fix: removed arguments)
       const projectsResponse = await projectsAPI.list();
       const projectsList = Array.isArray(projectsResponse) ? projectsResponse : [];
       setProjects(projectsList.map((p: any) => ({ id: p.id, name: p.name })));
