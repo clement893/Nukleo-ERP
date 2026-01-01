@@ -323,7 +323,6 @@ async def get_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-@rate_limit_decorator("10/hour")
 async def delete_user(
     request: Request,
     user_id: int,
