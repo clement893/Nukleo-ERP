@@ -23,10 +23,10 @@ import { useInfiniteOpportunities } from '@/lib/query/opportunities';
 import { useInfiniteQuotes, useInfiniteSubmissions } from '@/lib/query/commercial';
 
 export default function CommercialPage() {
-  // Fetch real data
-  const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(100);
-  const { data: quotesData, isLoading: loadingQuotes } = useInfiniteQuotes(100);
-  const { data: submissionsData, isLoading: loadingSubmissions } = useInfiniteSubmissions(100);
+  // Fetch real data - increase limit to get all data for accurate stats
+  const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(1000);
+  const { data: quotesData, isLoading: loadingQuotes } = useInfiniteQuotes(1000);
+  const { data: submissionsData, isLoading: loadingSubmissions } = useInfiniteSubmissions(1000);
 
   // Flatten data
   const opportunities = useMemo(() => opportunitiesData?.pages.flat() || [], [opportunitiesData]);
