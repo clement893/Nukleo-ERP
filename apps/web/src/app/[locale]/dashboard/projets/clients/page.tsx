@@ -983,7 +983,7 @@ function ClientsContent() {
                           >
                             <span>{option.label}</span>
                             {client.status === option.value && (
-                              <Check className="w-4 h-4 text-[#523DC9]" />
+                              <Check className="w-4 h-4 text-primary-500" />
                             )}
                           </button>
                         ))}
@@ -1045,16 +1045,16 @@ function ClientsContent() {
             })}
           </div>
         ) : (
-          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card rounded-xl border border-nukleo-lavender/20">
             {/* Select all header */}
             {filteredClients.length > 0 && (
-              <div className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 flex items-center gap-3 mb-2">
+              <div className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 flex items-center gap-3 mb-2">
                 <button
                   onClick={toggleSelectAll}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                 >
                   {selectedClients.size === filteredClients.length ? (
-                    <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                    <CheckSquare className="w-5 h-5 text-primary-500" />
                   ) : (
                     <Square className="w-5 h-5 text-gray-400" />
                   )}
@@ -1130,7 +1130,7 @@ function ClientsContent() {
                                 className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1"
                                 title={project.name}
                               >
-                                <Briefcase className="w-3 h-3 text-[#523DC9]" />
+                                <Briefcase className="w-3 h-3 text-primary-500" />
                                 <span className="truncate max-w-[150px]">{project.name}</span>
                               </span>
                             ))}
@@ -1173,7 +1173,7 @@ function ClientsContent() {
                               >
                                 <span>{option.label}</span>
                                 {client.status === option.value && (
-                                  <Check className="w-4 h-4 text-[#523DC9]" />
+                                  <Check className="w-4 h-4 text-primary-500" />
                                 )}
                               </button>
                             ))}
@@ -1350,7 +1350,7 @@ function ClientsContent() {
                               href={clientDetails.portal_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-[#523DC9] hover:underline"
+                              className="text-sm text-primary-500 hover:underline"
                             >
                               {clientDetails.portal_url}
                             </a>
@@ -1386,7 +1386,7 @@ function ClientsContent() {
                                 key={project.id}
                                 className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800"
                               >
-                                <Briefcase className="w-4 h-4 text-[#523DC9]" />
+                                <Briefcase className="w-4 h-4 text-primary-500" />
                                 <span className="text-sm text-gray-900 dark:text-white">{project.name}</span>
                               </div>
                             ))}

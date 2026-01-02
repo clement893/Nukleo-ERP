@@ -51,9 +51,8 @@ import {
   useSensors,
   closestCorners,
   useDroppable,
+  useDraggable,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 // Droppable Stage Column Component
@@ -98,15 +97,11 @@ function OpportunityKanbanCard({
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: opportunity.id });
+    isDragging: isDraggableDragging,
+  } = useDraggable({ id: opportunity.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging || isSortableDragging ? 0.5 : 1,
+    opacity: isDragging || isDraggableDragging ? 0.5 : 1,
   };
 
   const formatCurrency = (amount: number) => {
@@ -1040,30 +1035,25 @@ export default function PipelineDetailPage() {
                               </div>
 
                               {/* Droppable Area */}
-                              <SortableContext
-                                items={stageOpps.map(o => o.id)}
-                                strategy={verticalListSortingStrategy}
-                              >
-                                <div className="flex-1 min-h-[200px]">
-                                  {stageOpps.length > 0 ? (
-                                    <div className="space-y-2">
-                                      {stageOpps.map((opp) => (
-                                        <OpportunityKanbanCard 
-                                          key={opp.id} 
-                                          opportunity={opp}
-                                          onView={() => handleViewOpportunity(opp)}
-                                          onEdit={() => handleEditOpportunity(opp)}
-                                          onDelete={() => handleDeleteOpportunity(opp)}
-                                        />
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-center h-[200px] text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                                      Glissez une opportunité ici
-                                    </div>
-                                  )}
-                                </div>
-                              </SortableContext>
+                              <div className="flex-1 min-h-[200px]">
+                                {stageOpps.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {stageOpps.map((opp) => (
+                                      <OpportunityKanbanCard 
+                                        key={opp.id} 
+                                        opportunity={opp}
+                                        onView={() => handleViewOpportunity(opp)}
+                                        onEdit={() => handleEditOpportunity(opp)}
+                                        onDelete={() => handleDeleteOpportunity(opp)}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center h-[200px] text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                    Glissez une opportunité ici
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </DroppableStageColumn>
                         </div>

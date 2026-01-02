@@ -285,8 +285,8 @@ function EquipesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Target className="w-6 h-6 text-[#3B82F6]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Target className="w-6 h-6 text-primary-500" aria-hidden="true" />
               </div>
               <Badge variant="default">{totalTasks} total</Badge>
             </div>
@@ -298,8 +298,8 @@ function EquipesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <CheckCircle2 className="w-6 h-6 text-secondary-500" aria-hidden="true" />
               </div>
               <Badge variant="success">{completionRate}%</Badge>
             </div>
@@ -311,8 +311,8 @@ function EquipesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <TrendingUp className="w-6 h-6 text-[#F59E0B]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <TrendingUp className="w-6 h-6 text-warning-500" aria-hidden="true" />
               </div>
               <Badge variant="warning">Performance</Badge>
             </div>
@@ -335,7 +335,7 @@ function EquipesContent() {
               <div
                 key={team.id}
                 onClick={() => handleTeamClick(team.slug)}
-                className="glass-card p-lg rounded-xl border border-border hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                className="glass-card p-lg rounded-xl border border-border hover:scale-105 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -392,7 +392,7 @@ function EquipesContent() {
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-[#523DC9] to-[#5F2B75] transition-all duration-500"
+                      className="h-full bg-nukleo-gradient transition-all duration-500"
                       style={{ width: `${completionRate}%` }}
                       role="progressbar"
                       aria-valuenow={completionRate}
@@ -410,7 +410,7 @@ function EquipesContent() {
                       {team.employees.slice(0, 5).map((employee) => (
                         <div
                           key={employee.id}
-                          className="w-8 h-8 rounded-full bg-gradient-to-br from-[#523DC9] to-[#5F2B75] flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-gray-800"
+                          className="w-8 h-8 rounded-full bg-nukleo-gradient flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-gray-800"
                           title={employee.name}
                           aria-label={employee.name}
                         >

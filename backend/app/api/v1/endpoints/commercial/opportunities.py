@@ -247,6 +247,55 @@ async def stream_import_logs(
     )
 
 
+@router.get("/stats")
+async def get_opportunities_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """
+    Get aggregated statistics for active opportunities (not closed won/lost)
+    
+    Returns:
+        Dictionary with:
+        - total: Total count of active opportunities
+        - total_value: Sum of all active opportunity amounts
+        - weighted_value: Sum of (amount * probability / 100) for all active opportunities
+        - avg_probability: Average probability of active opportunities
+    """
+    # Filter out closed won/lost opportunities
+    query = select(Opportunite).where(
+        ~or_(
+            Opportunite.status == 'closed won',
+            Opportunite.status == 'closed lost',
+            Opportunite.status == 'won',
+            Opportunite.status == 'lost',
+        )
+    )
+    
+    result = await db.execute(query)
+    active_opportunities = result.scalars().all()
+    
+    # Calculate statistics
+    total = len(active_opportunities)
+    total_value = sum(float(opp.amount) if opp.amount else 0.0 for opp in active_opportunities)
+    weighted_value = sum(
+        (float(opp.amount) if opp.amount else 0.0) * (opp.probability or 50) / 100.0
+        for opp in active_opportunities
+    )
+    avg_probability = (
+        sum(opp.probability or 50 for opp in active_opportunities) / total
+        if total > 0
+        else 0.0
+    )
+    
+    return {
+        "total": total,
+        "total_value": total_value,
+        "weighted_value": weighted_value,
+        "avg_probability": round(avg_probability, 1),
+    }
+
+
 @router.get("/", response_model=List[OpportunitySchema])
 async def list_opportunities(
     request: Request,

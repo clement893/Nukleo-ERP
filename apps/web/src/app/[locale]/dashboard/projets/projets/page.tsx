@@ -382,8 +382,8 @@ export default function ProjetsPage() {
 
           <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <TrendingUp className="w-5 h-5 text-[#3B82F6]" />
+              <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <TrendingUp className="w-5 h-5 text-primary-500" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -396,8 +396,8 @@ export default function ProjetsPage() {
 
           <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
+              <div className="p-2 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <CheckCircle2 className="w-5 h-5 text-secondary-500" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -424,8 +424,8 @@ export default function ProjetsPage() {
 
           <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <DollarSign className="w-5 h-5 text-[#F59E0B]" />
+              <div className="p-2 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <DollarSign className="w-5 h-5 text-warning-500" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -438,8 +438,8 @@ export default function ProjetsPage() {
 
           <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
-                <DollarSign className="w-5 h-5 text-[#EF4444]" />
+              <div className="p-2 rounded-lg bg-danger-500/10 border border-danger-500/30">
+                <DollarSign className="w-5 h-5 text-danger-500" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -852,7 +852,7 @@ export default function ProjetsPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div
-                                className="bg-gradient-to-r from-[#523DC9] to-[#6B1817] h-2 rounded-full"
+                                className="bg-nukleo-gradient h-2 rounded-full"
                                 style={{ width: `${Math.max(progress, 0)}%` }}
                               />
                             </div>

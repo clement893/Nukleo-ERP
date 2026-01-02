@@ -292,4 +292,27 @@ export const opportunitiesAPI = {
     const { downloadOpportunityZipTemplate } = await import('@/lib/utils/generateOpportunityTemplate');
     await downloadOpportunityZipTemplate();
   },
+
+  /**
+   * Get aggregated statistics for active opportunities
+   */
+  getStats: async (): Promise<{
+    total: number;
+    total_value: number;
+    weighted_value: number;
+    avg_probability: number;
+  }> => {
+    const response = await apiClient.get<{
+      total: number;
+      total_value: number;
+      weighted_value: number;
+      avg_probability: number;
+    }>('/v1/commercial/opportunities/stats');
+    return extractApiData(response) || {
+      total: 0,
+      total_value: 0,
+      weighted_value: 0,
+      avg_probability: 0,
+    };
+  },
 };

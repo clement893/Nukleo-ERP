@@ -84,6 +84,18 @@ function OpportunitiesContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
   const [hideClosed, setHideClosed] = useState<boolean>(true); // Filtre par défaut pour cacher closed won/lost
+  const [activeStats, setActiveStats] = useState<{
+    total: number;
+    total_value: number;
+    weighted_value: number;
+    avg_probability: number;
+  }>({
+    total: 0,
+    total_value: 0,
+    weighted_value: 0,
+    avg_probability: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -111,6 +123,76 @@ function OpportunitiesContent() {
     };
     loadData();
   }, [showToast]);
+
+  // Load active opportunities stats from API
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadStats = async () => {
+      setLoadingStats(true);
+      try {
+        const stats = await opportunitiesAPI.getStats();
+        if (isMounted) {
+          setActiveStats(stats);
+        }
+      } catch (err) {
+        logger.error('Erreur lors du chargement des statistiques des opportunités actives', err);
+        if (isMounted) {
+          // Fallback: calculate from loaded opportunities
+          const totalActive = opportunities.filter(opp => {
+            const isClosed = opp.status === 'closed won' || 
+                            opp.status === 'closed lost' || 
+                            opp.status === 'won' || 
+                            opp.status === 'lost';
+            return !isClosed;
+          }).length;
+          const totalValue = opportunities
+            .filter(opp => {
+              const isClosed = opp.status === 'closed won' || 
+                              opp.status === 'closed lost' || 
+                              opp.status === 'won' || 
+                              opp.status === 'lost';
+              return !isClosed;
+            })
+            .reduce((sum, opp) => sum + (opp.amount || 0), 0);
+          const weightedValue = opportunities
+            .filter(opp => {
+              const isClosed = opp.status === 'closed won' || 
+                              opp.status === 'closed lost' || 
+                              opp.status === 'won' || 
+                              opp.status === 'lost';
+              return !isClosed;
+            })
+            .reduce((sum, opp) => {
+              const probability = opp.probability || 50;
+              return sum + ((opp.amount || 0) * probability / 100);
+            }, 0);
+          setActiveStats({
+            total: totalActive,
+            total_value: totalValue,
+            weighted_value: weightedValue,
+            avg_probability: 0,
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingStats(false);
+        }
+      }
+    };
+    
+    loadStats();
+    
+    // Refresh stats when opportunities change (after mutations)
+    const interval = setInterval(() => {
+      loadStats();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [opportunities.length]); // Re-fetch when opportunities count changes
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -189,31 +271,39 @@ function OpportunitiesContent() {
 
   // Stats calculation
   const stats = useMemo(() => {
-    const totalValue = filteredOpportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
-    const weightedValue = filteredOpportunities.reduce((sum, opp) => {
-      const probability = opp.probability || 50;
-      return sum + ((opp.amount || 0) * probability / 100);
-    }, 0);
-    const avgProbability = filteredOpportunities.length > 0
-      ? filteredOpportunities.reduce((sum, opp) => sum + (opp.probability || 50), 0) / filteredOpportunities.length
-      : 0;
-    
-    // Calculer le nombre total d'opportunités actives (pas closed won/lost) depuis toutes les opportunités chargées
-    const totalActive = opportunities.filter(opp => {
-      const isClosed = opp.status === 'closed won' || 
-                      opp.status === 'closed lost' || 
-                      opp.status === 'won' || 
-                      opp.status === 'lost';
-      return !isClosed;
-    }).length;
-    
-    return {
-      total: hideClosed ? totalActive : opportunities.length, // Afficher le total actif si le filtre est actif, sinon le total chargé
-      totalValue,
-      weightedValue,
-      avgProbability: avgProbability.toFixed(0),
-    };
-  }, [filteredOpportunities, hideClosed, opportunities]);
+    // Use API stats for total, total_value, and weighted_value when hideClosed is true
+    // Otherwise, calculate from filtered opportunities
+    if (hideClosed && !loadingStats) {
+      // Calculate avg probability from filtered opportunities
+      const avgProbability = filteredOpportunities.length > 0
+        ? filteredOpportunities.reduce((sum, opp) => sum + (opp.probability || 50), 0) / filteredOpportunities.length
+        : 0;
+      
+      return {
+        total: activeStats.total,
+        totalValue: activeStats.total_value,
+        weightedValue: activeStats.weighted_value,
+        avgProbability: avgProbability.toFixed(0),
+      };
+    } else {
+      // Calculate from filtered opportunities when showing all (including closed)
+      const totalValue = filteredOpportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+      const weightedValue = filteredOpportunities.reduce((sum, opp) => {
+        const probability = opp.probability || 50;
+        return sum + ((opp.amount || 0) * probability / 100);
+      }, 0);
+      const avgProbability = filteredOpportunities.length > 0
+        ? filteredOpportunities.reduce((sum, opp) => sum + (opp.probability || 50), 0) / filteredOpportunities.length
+        : 0;
+      
+      return {
+        total: opportunities.length,
+        totalValue,
+        weightedValue,
+        avgProbability: avgProbability.toFixed(0),
+      };
+    }
+  }, [filteredOpportunities, hideClosed, activeStats, loadingStats, opportunities.length]);
 
   // Format currency
   const formatCurrency = useCallback((value: number) => {
@@ -241,6 +331,9 @@ function OpportunitiesContent() {
     try {
       await createOpportunityMutation.mutateAsync(data as OpportunityCreate);
       setShowCreateModal(false);
+      // Refresh stats after creation
+      const stats = await opportunitiesAPI.getStats();
+      setActiveStats(stats);
       showToast({
         message: 'Opportunité créée avec succès',
         type: 'success',
@@ -260,6 +353,9 @@ function OpportunitiesContent() {
       await updateOpportunityMutation.mutateAsync({ id, data });
       setShowEditModal(false);
       setSelectedOpportunity(null);
+      // Refresh stats after update
+      const stats = await opportunitiesAPI.getStats();
+      setActiveStats(stats);
       showToast({
         message: 'Opportunité mise à jour avec succès',
         type: 'success',
@@ -286,6 +382,9 @@ function OpportunitiesContent() {
 
     try {
       await deleteOpportunityMutation.mutateAsync(opportunityId);
+      // Refresh stats after deletion
+      const stats = await opportunitiesAPI.getStats();
+      setActiveStats(stats);
       showToast({
         message: 'Opportunité supprimée avec succès',
         type: 'success',
@@ -318,9 +417,13 @@ function OpportunitiesContent() {
         deleteOpportunityMutation.mutateAsync(id)
       );
       await Promise.all(deletePromises);
+      const deletedCount = selectedOpportunities.size;
       setSelectedOpportunities(new Set());
+      // Refresh stats after bulk deletion
+      const stats = await opportunitiesAPI.getStats();
+      setActiveStats(stats);
       showToast({
-        message: `${selectedOpportunities.size} opportunité${selectedOpportunities.size > 1 ? 's' : ''} supprimée${selectedOpportunities.size > 1 ? 's' : ''} avec succès`,
+        message: `${deletedCount} opportunité${deletedCount > 1 ? 's' : ''} supprimée${deletedCount > 1 ? 's' : ''} avec succès`,
         type: 'success',
       });
     } catch (err) {
@@ -422,8 +525,15 @@ function OpportunitiesContent() {
   };
 
   // Handle import complete
-  const handleImportComplete = () => {
+  const handleImportComplete = async () => {
     queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+    // Refresh stats after import
+    try {
+      const stats = await opportunitiesAPI.getStats();
+      setActiveStats(stats);
+    } catch (err) {
+      logger.error('Erreur lors du rafraîchissement des stats après import', err);
+    }
   };
 
 
