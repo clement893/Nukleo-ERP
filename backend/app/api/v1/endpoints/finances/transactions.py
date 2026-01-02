@@ -74,13 +74,13 @@ async def get_transactions(
         
         return [TransactionResponse.model_validate(t) for t in transactions]
     except ProgrammingError as e:
-        # Check if error is about missing currency column
+        # Check if error is about missing columns
         error_str = str(e).lower()
-        if 'currency' in error_str and 'does not exist' in error_str:
-            logger.error(f"Currency column missing in transactions table. Migration 073 needs to be executed: {e}", exc_info=True)
+        if ('currency' in error_str or 'transaction_date' in error_str or 'date' in error_str) and 'does not exist' in error_str:
+            logger.error(f"Transaction table schema error. Migration 073 needs to be executed: {e}", exc_info=True)
             raise HTTPException(
                 status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database schema is out of date. Please run migration 073 to add the currency column to the transactions table."
+                detail="Database schema is out of date. Please run migration 073 to update the transactions table schema (add currency column and rename date to transaction_date)."
             )
         # Re-raise other programming errors
         logger.error(f"Database programming error: {e}", exc_info=True)
