@@ -876,13 +876,21 @@ function ClientsContent() {
                   onClick={() => handleView(client.id)}
                 >
                   {/* Selection checkbox */}
-                  {isSelected && (
-                    <div className="absolute top-3 left-3 z-10">
-                      <div className="p-1 bg-primary-500 rounded">
-                        <CheckSquare className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                  )}
+                  <div className="absolute top-3 left-3 z-10" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelection(client.id);
+                      }}
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-primary-500" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
                   
                   <div className="flex flex-col">
                     {/* Logo Section - Photo rectangulaire en hauteur comme les entreprises */}
