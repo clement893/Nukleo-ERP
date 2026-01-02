@@ -56,6 +56,9 @@ from app.models.testimonial import Testimonial
 from app.models.employee_portal_permission import EmployeePortalPermission
 from app.models.project_attachment import ProjectAttachment
 from app.models.project_comment import ProjectComment
+from app.models.bank_account import BankAccount, BankAccountType
+from app.models.transaction import Transaction, TransactionStatus
+from app.models.transaction_category import TransactionCategory, TransactionType
 from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory as LeoDocumentationCategory, DocumentationPriority as LeoDocumentationPriority
 from app.core.security_audit import SecurityAuditLog
 
@@ -159,5 +162,11 @@ __all__ = [
     "EmployeePortalPermission",
     "ProjectAttachment",
     "ProjectComment",
+    "BankAccount",
+    "BankAccountType",
+    "Transaction",
+    "TransactionStatus",
+    "TransactionCategory",
+    "TransactionType",
 ]
 

@@ -14,7 +14,7 @@ from app.modules.commercial.api import router as commercial_module_router
 from app.api.v1.endpoints.agenda import events as agenda_events
 from app.api.v1.endpoints.reseau import contacts as reseau_contacts
 from app.api.v1.endpoints.reseau import testimonials as reseau_testimonials
-from app.api.v1.endpoints.finances import facturations_router, rapport_router, compte_depenses_router, revenue_router
+from app.api.v1.endpoints.finances import facturations_router, rapport_router, compte_depenses_router, revenue_router, tresorerie_router
 from app.modules.finances.api import router as finances_module_router
 from app.modules.projects.api import router as projects_module_router
 from app.modules.management.api import router as management_module_router
@@ -537,6 +537,11 @@ api_router.include_router(
 
 api_router.include_router(
     revenue_router,
+    tags=["finances"]
+)
+
+api_router.include_router(
+    tresorerie_router,
     tags=["finances"]
 )
 
