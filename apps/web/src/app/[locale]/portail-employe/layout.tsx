@@ -83,7 +83,9 @@ export default function EmployeePortalLayout({
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-background">
-          {children}
+          <div className="p-6 md:p-8">
+            {children}
+          </div>
         </main>
       </div>
     </ErrorBoundary>

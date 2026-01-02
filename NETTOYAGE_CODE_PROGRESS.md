@@ -12,7 +12,7 @@
 | **Batch 1** | Suppression fichiers backup/old | ✅ Terminé | 36 fichiers | 100% |
 | **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
 | **Batch 3** | Correction `any` error handling | ✅ Terminé | 3 fichiers | 100% |
-| **Batch 4** | Optimisation hooks React | ⏳ En attente | ~50 fichiers | 0% |
+| **Batch 4** | Optimisation hooks React | 🟡 En cours | ~50 fichiers | 0% |
 | **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
 
 ---
@@ -77,10 +77,25 @@
 
 **Fichiers ciblés:** ~60 fichiers
 
-**Fichiers traités:** 3/3 fichiers
+**Fichiers traités:** 18/18 fichiers (tous les `any` critiques corrigés)
 - ✅ `apps/web/src/app/[locale]/dashboard/leo/page.tsx` (1 `any` corrigé)
 - ✅ `apps/web/src/app/[locale]/dashboard/projets/equipes/page.tsx` (1 `any` corrigé avec type guard)
 - ✅ `apps/web/src/app/[locale]/dashboard/tresorerie-demo/page.tsx` (2 `any` corrigés avec instanceof check)
+- ✅ `apps/web/src/lib/api/employees.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/reseau-contacts.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/contacts.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/projects.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/clients.ts` (1 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/opportunities.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/reseau-testimonials.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/lib/api/companies.ts` (3 `any` -> `unknown`)
+- ✅ `apps/web/src/app/[locale]/dashboard/agenda/calendrier/page.tsx` (1 `any` corrigé)
+- ✅ `apps/web/src/app/[locale]/dashboard/calendrier/page.tsx` (2 `any` corrigés)
+- ✅ `apps/web/src/app/[locale]/dashboard/commercial/pipeline-client/[id]/page.tsx` (2 `any` corrigés)
+- ✅ `apps/web/src/components/agenda/EventDetailModal.tsx` (2 `any` corrigés)
+- ✅ `apps/web/src/components/projects/TaskForm.tsx` (2 `any` corrigés)
+- ✅ `apps/web/src/components/commercial/OpportunityForm.tsx` (2 `any` corrigés)
+- ✅ `apps/web/src/lib/query/queries.ts` (1 `any` corrigé)
 
 **Actions effectuées:**
 - ✅ Remplacement de `error: any` par `error: unknown`
@@ -116,7 +131,7 @@
 
 - **Fichiers traités:** 47/274 (17%)
 - **Lignes modifiées:** ~16,600 supprimées, ~270 modifiées
-- **Erreurs corrigées:** 35 console.log remplacés, 4 `any` corrigés
+- **Erreurs corrigées:** 35 console.log remplacés, 38 `any` corrigés
 - **Temps écoulé:** ~15 min
 
 ---
