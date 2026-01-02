@@ -7,10 +7,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Plus, Search, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock, Languages } from 'lucide-react';
-import { Badge, Button, Loading, Alert, Input, Text } from '@/components/ui';
+import { Badge, Button, Loading, Alert, Input, Text, Select, Textarea } from '@/components/ui';
 import { useToast } from '@/components/ui';
+import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import { handleApiError } from '@/lib/errors/api';
-import { reseauTestimonialsAPI, type Testimonial } from '@/lib/api/reseau-testimonials';
+import { reseauTestimonialsAPI, type Testimonial, type TestimonialCreate } from '@/lib/api/reseau-testimonials';
+import { contactsAPI } from '@/lib/api/contacts';
+import { companiesAPI } from '@/lib/api/companies';
 
 type FilterStatus = 'all' | 'published' | 'pending' | 'draft';
 
@@ -24,9 +27,36 @@ function TemoignagesContent() {
   const [filterLanguage, setFilterLanguage] = useState<'all' | 'fr' | 'en'>('all');
   // État pour la langue affichée par témoignage (id -> langue)
   const [displayLanguages, setDisplayLanguages] = useState<Record<number, 'fr' | 'en'>>({});
+  
+  // États pour les modals
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
+  const [testimonialToDelete, setTestimonialToDelete] = useState<Testimonial | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // États pour les formulaires
+  const [testimonialForm, setTestimonialForm] = useState<TestimonialCreate>({
+    contact_id: null,
+    company_id: null,
+    title: '',
+    testimonial_fr: '',
+    testimonial_en: '',
+    language: 'fr',
+    logo_url: null,
+    logo_filename: null,
+    is_published: 'false',
+    rating: null,
+  });
+  
+  // États pour les listes de contacts et entreprises
+  const [allCompanies, setAllCompanies] = useState<Array<{ id: number; name: string }>>([]);
+  const [allContacts, setAllContacts] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
 
   useEffect(() => {
     loadTestimonials();
+    loadCompaniesAndContacts();
   }, []);
 
   const loadTestimonials = async () => {
@@ -42,6 +72,126 @@ function TemoignagesContent() {
       showToast({ message: appError.message || 'Erreur', type: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCompaniesAndContacts = async () => {
+    try {
+      const [companiesData, contactsData] = await Promise.all([
+        companiesAPI.list(0, 1000),
+        contactsAPI.list(0, 1000, true), // skipPhotoUrls pour éviter les timeouts
+      ]);
+      setAllCompanies(companiesData.map(c => ({ id: c.id, name: c.name || '' })));
+      setAllContacts(contactsData.map(c => ({ id: c.id, first_name: c.first_name, last_name: c.last_name })));
+    } catch (err) {
+      console.error('Error loading companies/contacts:', err);
+      // Ne pas bloquer l'affichage si ça échoue
+    }
+  };
+
+  // Handler pour créer un témoignage
+  const handleCreate = async () => {
+    try {
+      setIsSubmitting(true);
+      const created = await reseauTestimonialsAPI.create(testimonialForm);
+      setTestimonials(prev => [created, ...prev]);
+      setShowCreateModal(false);
+      setTestimonialForm({
+        contact_id: null,
+        company_id: null,
+        title: '',
+        testimonial_fr: '',
+        testimonial_en: '',
+        language: 'fr',
+        logo_url: null,
+        logo_filename: null,
+        is_published: 'false',
+        rating: null,
+      });
+      showToast({
+        message: 'Témoignage créé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création du témoignage',
+        type: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handler pour ouvrir la modal d'édition
+  const handleOpenEdit = (testimonial: Testimonial) => {
+    setSelectedTestimonial(testimonial);
+    setTestimonialForm({
+      contact_id: testimonial.contact_id,
+      company_id: testimonial.company_id,
+      title: testimonial.title || '',
+      testimonial_fr: testimonial.testimonial_fr || '',
+      testimonial_en: testimonial.testimonial_en || '',
+      language: testimonial.language || 'fr',
+      logo_url: testimonial.logo_url,
+      logo_filename: testimonial.logo_filename,
+      is_published: testimonial.is_published || 'false',
+      rating: testimonial.rating,
+    });
+    setShowEditModal(true);
+  };
+
+  // Handler pour mettre à jour un témoignage
+  const handleUpdate = async () => {
+    if (!selectedTestimonial) return;
+    try {
+      setIsSubmitting(true);
+      const updated = await reseauTestimonialsAPI.update(selectedTestimonial.id, testimonialForm);
+      setTestimonials(prev => prev.map(t => t.id === updated.id ? updated : t));
+      setShowEditModal(false);
+      setSelectedTestimonial(null);
+      showToast({
+        message: 'Témoignage modifié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification du témoignage',
+        type: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handler pour ouvrir la modal de suppression
+  const handleOpenDelete = (testimonial: Testimonial) => {
+    setTestimonialToDelete(testimonial);
+    setShowDeleteModal(true);
+  };
+
+  // Handler pour confirmer la suppression
+  const handleConfirmDelete = async () => {
+    if (!testimonialToDelete) return;
+    try {
+      setIsSubmitting(true);
+      await reseauTestimonialsAPI.delete(testimonialToDelete.id);
+      setTestimonials(prev => prev.filter(t => t.id !== testimonialToDelete.id));
+      setShowDeleteModal(false);
+      setTestimonialToDelete(null);
+      showToast({
+        message: 'Témoignage supprimé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression du témoignage',
+        type: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -162,7 +312,11 @@ function TemoignagesContent() {
               </h1>
               <Text variant="body" className="text-white/80 text-lg">Gérez les témoignages clients</Text>
             </div>
-            <Button className="bg-white text-[#523DC9] hover:bg-white/90" aria-label="Créer un nouveau témoignage">
+            <Button 
+              className="bg-white text-[#523DC9] hover:bg-white/90" 
+              aria-label="Créer un nouveau témoignage"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
               Nouveau témoignage
             </Button>
@@ -260,7 +414,10 @@ function TemoignagesContent() {
                 ? 'Essayez de modifier vos filtres'
                 : 'Créez votre premier témoignage'}
             </Text>
-            <Button aria-label="Créer un nouveau témoignage">
+            <Button 
+              aria-label="Créer un nouveau témoignage"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
               Créer un témoignage
             </Button>
@@ -344,7 +501,7 @@ function TemoignagesContent() {
                         aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: Ouvrir modal d'édition
+                          handleOpenEdit(testimonial);
                         }}
                         title="Éditer"
                       >
@@ -357,7 +514,7 @@ function TemoignagesContent() {
                         aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: Confirmer et supprimer
+                          handleOpenDelete(testimonial);
                         }}
                         title="Supprimer"
                       >
@@ -376,6 +533,250 @@ function TemoignagesContent() {
             })}
           </div>
         )}
+
+        {/* Modal de création */}
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            setTestimonialForm({
+              contact_id: null,
+              company_id: null,
+              title: '',
+              testimonial_fr: '',
+              testimonial_en: '',
+              language: 'fr',
+              logo_url: null,
+              logo_filename: null,
+              is_published: 'false',
+              rating: null,
+            });
+          }}
+          title="Créer un témoignage"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Select
+              label="Entreprise"
+              value={testimonialForm.company_id?.toString() || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, company_id: e.target.value ? Number(e.target.value) : null })}
+              options={allCompanies.map(c => ({ label: c.name, value: c.id.toString() }))}
+              placeholder="Sélectionner une entreprise (optionnel)"
+            />
+            
+            <Select
+              label="Contact"
+              value={testimonialForm.contact_id?.toString() || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, contact_id: e.target.value ? Number(e.target.value) : null })}
+              options={allContacts.map(c => ({ label: `${c.first_name} ${c.last_name}`, value: c.id.toString() }))}
+              placeholder="Sélectionner un contact (optionnel)"
+            />
+            
+            <Input
+              label="Titre"
+              value={testimonialForm.title || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, title: e.target.value })}
+              placeholder="Titre du témoignage"
+            />
+            
+            <Textarea
+              label="Témoignage (FR)"
+              value={testimonialForm.testimonial_fr || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, testimonial_fr: e.target.value })}
+              placeholder="Témoignage en français"
+              rows={5}
+            />
+            
+            <Textarea
+              label="Témoignage (EN)"
+              value={testimonialForm.testimonial_en || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, testimonial_en: e.target.value })}
+              placeholder="Témoignage en anglais (optionnel)"
+              rows={5}
+            />
+            
+            <Select
+              label="Langue principale"
+              value={testimonialForm.language || 'fr'}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, language: e.target.value })}
+              options={[
+                { label: 'Français', value: 'fr' },
+                { label: 'Anglais', value: 'en' },
+              ]}
+            />
+            
+            <Select
+              label="Statut de publication"
+              value={testimonialForm.is_published || 'false'}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, is_published: e.target.value })}
+              options={[
+                { label: 'Publié', value: 'true' },
+                { label: 'En attente', value: 'pending' },
+                { label: 'Brouillon', value: 'false' },
+              ]}
+            />
+            
+            <Input
+              label="Note (1-5)"
+              type="number"
+              min="1"
+              max="5"
+              value={testimonialForm.rating?.toString() || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: e.target.value ? Number(e.target.value) : null })}
+              placeholder="Note sur 5 (optionnel)"
+            />
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setTestimonialForm({
+                    contact_id: null,
+                    company_id: null,
+                    title: '',
+                    testimonial_fr: '',
+                    testimonial_en: '',
+                    language: 'fr',
+                    logo_url: null,
+                    logo_filename: null,
+                    is_published: 'false',
+                    rating: null,
+                  });
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleCreate}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Création...' : 'Créer'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal d'édition */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedTestimonial(null);
+          }}
+          title="Modifier le témoignage"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Select
+              label="Entreprise"
+              value={testimonialForm.company_id?.toString() || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, company_id: e.target.value ? Number(e.target.value) : null })}
+              options={allCompanies.map(c => ({ label: c.name, value: c.id.toString() }))}
+              placeholder="Sélectionner une entreprise (optionnel)"
+            />
+            
+            <Select
+              label="Contact"
+              value={testimonialForm.contact_id?.toString() || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, contact_id: e.target.value ? Number(e.target.value) : null })}
+              options={allContacts.map(c => ({ label: `${c.first_name} ${c.last_name}`, value: c.id.toString() }))}
+              placeholder="Sélectionner un contact (optionnel)"
+            />
+            
+            <Input
+              label="Titre"
+              value={testimonialForm.title || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, title: e.target.value })}
+              placeholder="Titre du témoignage"
+            />
+            
+            <Textarea
+              label="Témoignage (FR)"
+              value={testimonialForm.testimonial_fr || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, testimonial_fr: e.target.value })}
+              placeholder="Témoignage en français"
+              rows={5}
+            />
+            
+            <Textarea
+              label="Témoignage (EN)"
+              value={testimonialForm.testimonial_en || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, testimonial_en: e.target.value })}
+              placeholder="Témoignage en anglais (optionnel)"
+              rows={5}
+            />
+            
+            <Select
+              label="Langue principale"
+              value={testimonialForm.language || 'fr'}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, language: e.target.value })}
+              options={[
+                { label: 'Français', value: 'fr' },
+                { label: 'Anglais', value: 'en' },
+              ]}
+            />
+            
+            <Select
+              label="Statut de publication"
+              value={testimonialForm.is_published || 'false'}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, is_published: e.target.value })}
+              options={[
+                { label: 'Publié', value: 'true' },
+                { label: 'En attente', value: 'pending' },
+                { label: 'Brouillon', value: 'false' },
+              ]}
+            />
+            
+            <Input
+              label="Note (1-5)"
+              type="number"
+              min="1"
+              max="5"
+              value={testimonialForm.rating?.toString() || ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: e.target.value ? Number(e.target.value) : null })}
+              placeholder="Note sur 5 (optionnel)"
+            />
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedTestimonial(null);
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleUpdate}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal de confirmation de suppression */}
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setTestimonialToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          title="Supprimer le témoignage"
+          message={testimonialToDelete 
+            ? `Êtes-vous sûr de vouloir supprimer le témoignage "${testimonialToDelete.title || 'Sans titre'}" ? Cette action est irréversible.`
+            : 'Êtes-vous sûr de vouloir supprimer ce témoignage ? Cette action est irréversible.'}
+          confirmText="Supprimer"
+          cancelText="Annuler"
+          variant="danger"
+          loading={isSubmitting}
+        />
       </MotionDiv>
     </PageContainer>
   );

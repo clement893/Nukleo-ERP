@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'use';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   CheckSquare, 
@@ -17,15 +17,17 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { Responsive, Layout } from 'react-grid-layout';
-import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import 'react-grid-layout/css/styles.css';
 import 'react-grid-layout/css/resizable.css';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { projectsAPI } from '@/lib/api';
-import { timeEntriesAPI } from '@/lib/api/time-entries';
-import { vacationsAPI } from '@/lib/api/vacations';
+import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
+import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacation-requests';
 
+// WidthProvider is not available in types, so we use a workaround
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const WidthProvider = require('react-grid-layout').WidthProvider || ((c: typeof Responsive) => c);
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // Widget types
@@ -64,9 +66,9 @@ export default function PortailEmployeDashboard() {
   // Data states
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [timeEntries, setTimeEntries] = useState<any[]>([]);
-  const [vacations, setVacations] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Array<{ id?: number | null; name?: string }>>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [vacations, setVacations] = useState<VacationRequest[]>([]);
 
   // Load layouts from localStorage on mount
   useEffect(() => {
@@ -111,13 +113,13 @@ export default function PortailEmployeDashboard() {
       startOfWeek.setHours(0, 0, 0, 0);
       
       const timeEntriesData = await timeEntriesAPI.list({
-        employee_id: employeeId,
-        start_date: startOfWeek.toISOString().split('T')[0],
+        user_id: employeeId,
+        start_date: startOfWeek.toISOString().split('T')[0] || startOfWeek.toISOString().substring(0, 10),
       });
       setTimeEntries(timeEntriesData);
       
       // Load vacations
-      const vacationsData = await vacationsAPI.list({ employee_id: employeeId });
+      const vacationsData = await vacationRequestsAPI.list({ employee_id: employeeId });
       setVacations(vacationsData);
       
     } catch (error) {
@@ -130,8 +132,9 @@ export default function PortailEmployeDashboard() {
   // Save layouts to localStorage
   const saveLayout = (newLayouts: Layout[]) => {
     const layoutsWithTypes: WidgetLayout[] = newLayouts.map((l: Layout) => {
-      const existing = layouts.find(w => w.i === l.i);
-      return { ...l, type: existing?.type || 'stats' } as WidgetLayout;
+      const layoutItem = l as unknown as Layout & { i: string; x: number; y: number; w: number; h: number };
+      const existing = layouts.find((w: WidgetLayout) => w.i === layoutItem.i);
+      return { ...layoutItem, type: existing?.type || 'stats' } as unknown as WidgetLayout;
     });
     setLayouts(layoutsWithTypes);
     localStorage.setItem(`portail-dashboard-layout-${employeeId}`, JSON.stringify(layoutsWithTypes));
@@ -152,7 +155,7 @@ export default function PortailEmployeDashboard() {
   
   const hoursThisWeek = timeEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
   
-  const upcomingDeadlines = tasks.filter(t => {
+  const upcomingDeadlines = tasks.filter((t: ProjectTask) => {
     if (!t.due_date) return false;
     const dueDate = new Date(t.due_date);
     const now = new Date();
@@ -197,12 +200,12 @@ export default function PortailEmployeDashboard() {
 
   // Recent tasks (real data)
   const recentTasks = tasks
-    .filter(t => t.status === 'in_progress' || t.status === 'todo')
+    .filter((t: ProjectTask) => t.status === 'in_progress' || t.status === 'todo')
     .slice(0, 4)
-    .map(t => ({
+    .map((t: ProjectTask) => ({
       id: t.id,
       title: t.title,
-      project: t.project_name || 'Sans projet',
+      project: 'Sans projet',
       status: t.status === 'in_progress' ? 'En cours' : 'À faire',
       priority: t.priority === 'high' ? 'Haute' : t.priority === 'medium' ? 'Moyenne' : 'Basse',
       dueDate: t.due_date || '',
@@ -211,9 +214,9 @@ export default function PortailEmployeDashboard() {
   // Upcoming events (vacations + deadlines)
   const upcomingEvents = [
     ...vacations
-      .filter(v => new Date(v.start_date) >= new Date())
+      .filter((v: VacationRequest) => new Date(v.start_date) >= new Date())
       .slice(0, 2)
-      .map(v => ({
+      .map((v: VacationRequest) => ({
         id: `vacation-${v.id}`,
         title: `Vacances: ${v.reason || 'Congés'}`,
         date: v.start_date,
@@ -221,10 +224,10 @@ export default function PortailEmployeDashboard() {
         type: 'vacation' as const,
       })),
     ...tasks
-      .filter(t => t.due_date && new Date(t.due_date) >= new Date())
-      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+      .filter((t: ProjectTask) => t.due_date && new Date(t.due_date) >= new Date())
+      .sort((a: ProjectTask, b: ProjectTask) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
       .slice(0, 3)
-      .map(t => ({
+      .map((t: ProjectTask) => ({
         id: `deadline-${t.id}`,
         title: `Deadline: ${t.title}`,
         date: t.due_date!,
@@ -235,17 +238,17 @@ export default function PortailEmployeDashboard() {
 
   // Recent activities (from time entries and tasks)
   const recentActivities = [
-    ...timeEntries.slice(0, 2).map(entry => ({
+    ...timeEntries.slice(0, 2).map((entry: TimeEntry) => ({
       id: `time-${entry.id}`,
       action: 'Temps enregistré',
-      description: `${entry.hours}h sur ${entry.project_name || 'un projet'}`,
+      description: `${(entry.duration || 0) / 3600}h sur ${entry.project_name || 'un projet'}`,
       time: new Date(entry.date).toLocaleDateString('fr-FR'),
     })),
     ...tasks
-      .filter(t => t.updated_at)
-      .sort((a, b) => new Date(b.updated_at!).getTime() - new Date(a.updated_at!).getTime())
+      .filter((t: ProjectTask) => t.updated_at)
+      .sort((a: ProjectTask, b: ProjectTask) => new Date(b.updated_at!).getTime() - new Date(a.updated_at!).getTime())
       .slice(0, 2)
-      .map(t => ({
+      .map((t: ProjectTask) => ({
         id: `task-${t.id}`,
         action: 'Tâche mise à jour',
         description: t.title,
@@ -254,7 +257,7 @@ export default function PortailEmployeDashboard() {
   ].slice(0, 4);
 
   // Performance metrics
-  const completedTasks = tasks.filter(t => t.status === 'done').length;
+  const completedTasks = tasks.filter((t: ProjectTask) => t.status === 'completed').length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const productivity = hoursThisWeek > 0 ? Math.min(Math.round((hoursThisWeek / 40) * 100), 100) : 0;
   const avgTimePerTask = completedTasks > 0 ? (hoursThisWeek / completedTasks).toFixed(1) : '0';
@@ -372,7 +375,7 @@ export default function PortailEmployeDashboard() {
         rowHeight={100}
         isDraggable={isEditMode}
         isResizable={isEditMode}
-        onLayoutChange={(layout) => isEditMode && saveLayout(layout)}
+        onLayoutChange={(layout: Layout[]) => isEditMode && saveLayout(layout)}
         compactType="vertical"
       >
         {layouts.map((widget) => (
@@ -405,7 +408,7 @@ export default function PortailEmployeDashboard() {
                   Tâches récentes
                 </h3>
                 <div className="space-y-3">
-                  {recentTasks.map((task) => (
+                  {recentTasks.map((task: { id: number; title: string; project: string; status: string; priority: string; dueDate: string }) => (
                     <div key={task.id} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-semibold text-sm">{task.title}</h4>

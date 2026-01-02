@@ -405,7 +405,7 @@ export default function PipelineDetailPage() {
     }
   };
 
-  const handleUpdateOpportunity = async (data: OpportunityUpdate) => {
+  const handleUpdateOpportunity = async (data: OpportunityCreate | OpportunityUpdate) => {
     if (!selectedOpportunity) return;
     
     try {
@@ -1089,7 +1089,7 @@ export default function PipelineDetailPage() {
                         data={(pipeline.stages || [])
                           .sort((a, b) => (a.order || 0) - (b.order || 0))
                           .map(stage => ({
-                            label: stage.name,
+                            label: stage.name || '',
                             value: opportunitiesByStage[stage.id]?.length || 0,
                             color: stage.color || '#523DC9',
                           }))}
@@ -1114,7 +1114,7 @@ export default function PipelineDetailPage() {
                             const stageOpps = opportunitiesByStage[stage.id] || [];
                             const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
                             return {
-                              label: stage.name,
+                              label: stage.name || '',
                               value: stageValue,
                               color: stage.color || '#523DC9',
                             };
