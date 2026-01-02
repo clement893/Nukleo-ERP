@@ -14,6 +14,12 @@ export { default as SettingsNavigation } from './SettingsNavigation';
 export { default as GeneralSettings } from './GeneralSettings';
 export { default as IntegrationsSettings } from './IntegrationsSettings';
 export { default as APISettings } from './APISettings';
+export { default as AutomationSettings } from './AutomationSettings';
+export { ScheduledTasksList } from './ScheduledTasksList';
+export { ScheduledTaskForm } from './ScheduledTaskForm';
+export { AutomationRulesList } from './AutomationRulesList';
+export { AutomationRuleForm } from './AutomationRuleForm';
+export { AutomationTemplates } from './AutomationTemplates';
 
 export type { UserSettingsProps, UserSettingsData } from './UserSettings';
 export type { OrganizationSettingsProps, OrganizationSettingsData } from './OrganizationSettings';
@@ -26,4 +32,9 @@ export type { SettingsNavigationProps, SettingsNavItem } from './SettingsNavigat
 export type { GeneralSettingsProps, GeneralSettingsData } from './GeneralSettings';
 export type { IntegrationsSettingsProps, Integration } from './IntegrationsSettings';
 export type { APISettingsProps, APISettingsData } from './APISettings';
+export type { ScheduledTasksListProps } from './ScheduledTasksList';
+export type { ScheduledTaskFormProps } from './ScheduledTaskForm';
+export type { AutomationRulesListProps } from './AutomationRulesList';
+export type { AutomationRuleFormProps } from './AutomationRuleForm';
+export type { AutomationTemplatesProps } from './AutomationTemplates';
 

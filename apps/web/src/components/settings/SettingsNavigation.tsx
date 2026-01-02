@@ -27,7 +27,8 @@ import {
   Shield, 
   Bell, 
   FileText,
-  User
+  User,
+  Zap
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -116,6 +117,13 @@ export default function SettingsNavigation({ className }: SettingsNavigationProp
       href: '/settings/notifications',
       icon: <Bell className="w-6 h-6" />,
       description: t('navigation.notificationsDescription') || 'Notification preferences and settings',
+    },
+    {
+      id: 'automation',
+      label: t('navigation.automation') || 'Automatisation',
+      href: '/settings/automation',
+      icon: <Zap className="w-6 h-6" />,
+      description: t('navigation.automationDescription') || 'Gérez vos automatisations et tâches planifiées',
     },
     {
       id: 'logs',

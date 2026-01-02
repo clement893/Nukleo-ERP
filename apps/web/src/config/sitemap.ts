@@ -381,6 +381,14 @@ export const sitePages: Record<string, SitemapPage[]> = {
       changefreq: 'monthly',
       requiresAuth: true,
     },
+    { 
+      path: '/settings/automation', 
+      title: 'Automation Settings', 
+      description: 'Gérez vos automatisations et tâches planifiées',
+      priority: 0.7,
+      changefreq: 'monthly',
+      requiresAuth: true,
+    },
   ],
   'Abonnements': [
     { 
