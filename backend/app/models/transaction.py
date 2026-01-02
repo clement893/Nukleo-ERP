@@ -33,7 +33,7 @@ class Transaction(Base):
         Index("idx_transactions_type", "type"),
         Index("idx_transactions_status", "status"),
         Index("idx_transactions_date", "transaction_date"),
-        Index("idx_transactions_category", "category"),
+        Index("idx_transactions_category_id", "category_id"),
     )
     
     id = Column(Integer, primary_key=True, index=True)
@@ -46,8 +46,8 @@ class Transaction(Base):
     tax_amount = Column(Numeric(10, 2), nullable=True, default=0)  # Tax amount (GST, QST, etc.)
     currency = Column(String(3), default="CAD", nullable=False)
     
-    # Categorization
-    category = Column(String(100), nullable=True, index=True)  # e.g., "Sales", "Marketing", "Office Supplies"
+    # Categorization - using category_id to match database schema from migration 066
+    category_id = Column(Integer, ForeignKey("transaction_categories.id", ondelete="SET NULL"), nullable=True, index=True)
     
     # Dates
     transaction_date = Column(DateTime(timezone=True), nullable=False, index=True)  # Date d'émission

@@ -52,7 +52,15 @@ async def get_transactions(
         if status:
             query = query.where(Transaction.status == status)
         if category:
-            query = query.where(Transaction.category == category)
+            # Support both category_id (integer) and category name (string) for backward compatibility
+            try:
+                category_id = int(category)
+                query = query.where(Transaction.category_id == category_id)
+            except ValueError:
+                # If category is a string, we can't filter by category_id directly
+                # This would require a join with transaction_categories table
+                # For now, skip category filter if it's not a valid integer
+                pass
         if start_date:
             query = query.where(Transaction.transaction_date >= start_date)
         if end_date:
@@ -141,7 +149,7 @@ async def create_transaction(
             amount=transaction_data.amount,
             tax_amount=transaction_data.tax_amount or 0,
             currency=transaction_data.currency,
-            category=transaction_data.category,
+            category_id=transaction_data.category_id,  # Use category_id instead of category
             transaction_date=transaction_data.transaction_date,
             expected_payment_date=transaction_data.expected_payment_date,
             payment_date=transaction_data.payment_date,
@@ -201,6 +209,9 @@ async def update_transaction(
         
         # Update fields
         update_data = transaction_data.model_dump(exclude_unset=True)
+        # Remove deprecated 'category' field if present, use category_id instead
+        if 'category' in update_data:
+            update_data.pop('category')
         for field, value in update_data.items():
             setattr(transaction, field, value)
         

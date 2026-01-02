@@ -17,7 +17,8 @@ class TransactionBase(BaseModel):
     amount: Decimal = Field(..., gt=0)
     tax_amount: Optional[Decimal] = Field(None, ge=0)  # Montant des taxes
     currency: Optional[str] = Field(default="CAD", max_length=3)  # Optional to handle missing column during migration
-    category: Optional[str] = Field(None, max_length=100)
+    category_id: Optional[int] = Field(None, description="Category ID from transaction_categories table")
+    category: Optional[str] = Field(None, max_length=100, description="Deprecated: use category_id instead")
     transaction_date: datetime  # Date d'émission
     expected_payment_date: Optional[datetime] = None  # Date de réception prévue
     payment_date: Optional[datetime] = None  # Date de réception réelle
@@ -44,7 +45,8 @@ class TransactionUpdate(BaseModel):
     amount: Optional[Decimal] = Field(None, gt=0)
     tax_amount: Optional[Decimal] = Field(None, ge=0)
     currency: Optional[str] = Field(None, max_length=3)
-    category: Optional[str] = Field(None, max_length=100)
+    category_id: Optional[int] = Field(None, description="Category ID from transaction_categories table")
+    category: Optional[str] = Field(None, max_length=100, description="Deprecated: use category_id instead")
     transaction_date: Optional[datetime] = None
     expected_payment_date: Optional[datetime] = None
     payment_date: Optional[datetime] = None
