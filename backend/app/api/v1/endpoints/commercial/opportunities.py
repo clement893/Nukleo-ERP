@@ -706,13 +706,18 @@ async def update_opportunity(
                 detail="Assigned user not found"
             )
     
-    # Store old status for notifications
+    # Store old status and stage for notifications and automation
     old_status = opportunity.status
+    old_stage_id = opportunity.stage_id
     
     # Update fields
     update_data = opportunity_data.model_dump(exclude_unset=True, exclude={'contact_ids'})
     for field, value in update_data.items():
         setattr(opportunity, field, value)
+    
+    # Check if stage changed for automation
+    new_stage_id = opportunity.stage_id if 'stage_id' in update_data else old_stage_id
+    stage_changed = old_stage_id != new_stage_id
     
     # Update contacts if provided
     if 'contact_ids' in opportunity_data.model_dump(exclude_unset=True):
@@ -727,6 +732,20 @@ async def update_opportunity(
     await db.commit()
     await db.refresh(opportunity)
     await db.refresh(opportunity, ["pipeline", "stage", "company", "assigned_to", "created_by", "contacts"])
+    
+    # Handle automation for stage changes
+    if stage_changed:
+        try:
+            from app.services.automation_service import handle_opportunity_stage_change
+            await handle_opportunity_stage_change(
+                opportunity=opportunity,
+                old_stage_id=old_stage_id,
+                new_stage_id=new_stage_id,
+                db=db
+            )
+        except Exception as automation_error:
+            logger.error(f"Error in automation for opportunity {opportunity.id}: {automation_error}", exc_info=True)
+            # Don't fail the request if automation fails
     
     # Create notification for opportunity won
     try:
