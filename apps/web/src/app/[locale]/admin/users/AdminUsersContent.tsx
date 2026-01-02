@@ -37,10 +37,19 @@ interface User extends Record<string, unknown> {
   };
 }
 
+interface PendingInvitation {
+  id: string | number;
+  email: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+}
+
 export default function AdminUsersContent() {
   const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +66,7 @@ export default function AdminUsersContent() {
   useEffect(() => {
     fetchUsers();
     fetchEmployees();
+    fetchPendingInvitations();
   }, []);
 
   const fetchEmployees = async () => {
@@ -69,11 +79,33 @@ export default function AdminUsersContent() {
     }
   };
 
+  const fetchPendingInvitations = async () => {
+    try {
+      const { invitationsAPI } = await import('@/lib/api');
+      const response = await invitationsAPI.list({ status: 'pending' });
+      
+      if (response.data && response.data.invitations) {
+        setPendingInvitations(response.data.invitations.map((inv: any) => ({
+          id: inv.id,
+          email: inv.email,
+          status: inv.status,
+          expires_at: inv.expires_at,
+          created_at: inv.created_at,
+        })));
+      }
+    } catch (err) {
+      // Silently fail if invitations API is not available
+      console.warn('Failed to fetch pending invitations:', err);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const { apiClient } = await import('@/lib/api');
-      const response = await apiClient.get('/v1/users?page=1&page_size=100');
+      // Add cache-busting parameter to force refresh after deletion
+      const timestamp = Date.now();
+      const response = await apiClient.get(`/v1/users?page=1&page_size=100&_t=${timestamp}`);
       
       // Backend returns paginated response: { items: [...], total: ..., page: ..., page_size: ... }
       interface PaginatedResponse<T> {
@@ -210,8 +242,9 @@ export default function AdminUsersContent() {
         type: 'success',
       });
       
-      // Refresh users list to get updated status
+      // Refresh users list and invitations to get updated status
       await fetchUsers();
+      await fetchPendingInvitations();
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Erreur lors de l\'envoi de l\'invitation');
       setError(errorMessage);
@@ -277,6 +310,34 @@ export default function AdminUsersContent() {
           {value ? 'Actif' : 'Inactif'}
         </Badge>
       ),
+    },
+    {
+      key: 'pending_invitations',
+      label: 'Invitations en attente',
+      render: (_value, row) => {
+        const userInvitations = pendingInvitations.filter(
+          (inv) => inv.email.toLowerCase() === row.email.toLowerCase() && inv.status === 'pending'
+        );
+        
+        if (userInvitations.length === 0) {
+          return <span className="text-muted-foreground text-sm">Aucune</span>;
+        }
+        
+        return (
+          <div className="flex flex-col gap-1">
+            {userInvitations.map((inv) => (
+              <div key={inv.id} className="flex items-center gap-2">
+                <Badge variant="warning" className="text-xs">
+                  En attente
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      },
     },
     {
       key: 'roles',
