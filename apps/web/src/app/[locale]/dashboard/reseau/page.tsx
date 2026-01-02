@@ -15,8 +15,7 @@ import {
   Plus,
   Eye,
   Calendar,
-  ArrowUpRight,
-  ArrowDownRight
+  ArrowUpRight
 } from 'lucide-react';
 import { Badge, Button, Card, Loading, Chart } from '@/components/ui';
 import type { ChartDataPoint } from '@/components/ui';
@@ -511,10 +510,10 @@ export default function ReseauPage() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Contacts</h3>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">{stats.totalContacts} contact{stats.totalContacts > 1 ? 's' : ''}</p>
-                    {stats.contactsGrowth > 0 && (
+                    {stats.contactsGrowthPercent > 0 && (
                       <Badge className="bg-success-500/10 text-success-500 border-success-500/30 text-xs">
                         <ArrowUpRight className="w-3 h-3 mr-1" />
-                        +{stats.contactsGrowth}
+                        +{stats.contactsGrowthPercent}%
                       </Badge>
                     )}
                   </div>
@@ -556,10 +555,10 @@ export default function ReseauPage() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Entreprises</h3>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">{stats.totalCompanies} entreprise{stats.totalCompanies > 1 ? 's' : ''}</p>
-                    {stats.companiesGrowth > 0 && (
+                    {stats.companiesGrowthPercent > 0 && (
                       <Badge className="bg-success-500/10 text-success-500 border-success-500/30 text-xs">
                         <ArrowUpRight className="w-3 h-3 mr-1" />
-                        +{stats.companiesGrowth}
+                        +{stats.companiesGrowthPercent}%
                       </Badge>
                     )}
                   </div>
@@ -596,10 +595,10 @@ export default function ReseauPage() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Témoignages</h3>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">{stats.totalTestimonials} témoignage{stats.totalTestimonials > 1 ? 's' : ''}</p>
-                    {stats.testimonialsGrowth > 0 && (
+                    {stats.testimonialsGrowthPercent > 0 && (
                       <Badge className="bg-success-500/10 text-success-500 border-success-500/30 text-xs">
                         <ArrowUpRight className="w-3 h-3 mr-1" />
-                        +{stats.testimonialsGrowth}
+                        +{stats.testimonialsGrowthPercent}%
                       </Badge>
                     )}
                   </div>
