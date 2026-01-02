@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import { Button, Alert, Loading, Badge, Card, Input } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
+import Dropdown from '@/components/ui/Dropdown';
 import { type Client, type ClientCreate, type ClientUpdate, ClientStatus } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
@@ -25,14 +26,25 @@ import {
   ExternalLink,
   Briefcase,
   ChevronDown,
-  Check
+  Check,
+  Edit,
+  Trash2,
+  MoreVertical,
+  Download,
+  Copy,
+  CheckSquare,
+  Square,
+  Grid,
+  List
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteClients, 
   useCreateClient, 
-  useUpdateClient
+  useUpdateClient,
+  useDeleteClient,
+  clientsAPI
 } from '@/lib/query/clients';
 
 function ClientsContent() {
@@ -52,6 +64,7 @@ function ClientsContent() {
   // Mutations
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
+  const deleteClientMutation = useDeleteClient();
   
   // Flatten pages into single array
   const clients = useMemo(() => {
@@ -61,7 +74,15 @@ function ClientsContent() {
   // State for companies (for logos) and projects
   const [companies, setCompanies] = useState<Company[]>([]);
   const [projectsByClient, setProjectsByClient] = useState<Record<number, Project[]>>({});
+  const [contactsByClient, setContactsByClient] = useState<Record<number, number>>({});
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<Record<number, boolean>>({});
+  const [actionDropdownOpen, setActionDropdownOpen] = useState<Record<number, boolean>>({});
+  
+  // Selection
+  const [selectedClients, setSelectedClients] = useState<Set<number>>(new Set());
+  
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -111,12 +132,40 @@ function ClientsContent() {
     loadProjects();
   }, [clients]);
   
+  // Load contacts for each client
+  useEffect(() => {
+    const loadContacts = async () => {
+      if (clients.length === 0) return;
+      
+      try {
+        const contactsMap: Record<number, number> = {};
+        
+        // Load contacts for each client
+        const contactsPromises = clients.map(async (client) => {
+          try {
+            const contacts = await clientsAPI.getContacts(client.id);
+            contactsMap[client.id] = contacts.length;
+          } catch (error) {
+            contactsMap[client.id] = 0;
+          }
+        });
+        
+        await Promise.all(contactsPromises);
+        setContactsByClient(contactsMap);
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+      }
+    };
+    loadContacts();
+  }, [clients]);
+  
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('.status-dropdown-container')) {
+      if (!target.closest('.status-dropdown-container') && !target.closest('.action-dropdown-container')) {
         setStatusDropdownOpen({});
+        setActionDropdownOpen({});
       }
     };
     
@@ -141,6 +190,11 @@ function ClientsContent() {
     return projectsByClient[clientId] || [];
   }, [projectsByClient]);
   
+  // Get contacts count for a client
+  const getClientContactsCount = useCallback((clientId: number): number => {
+    return contactsByClient[clientId] || 0;
+  }, [contactsByClient]);
+  
   // Handle status change
   const handleStatusChange = useCallback(async (client: Client, newStatus: ClientStatus) => {
     try {
@@ -161,6 +215,186 @@ function ClientsContent() {
       });
     }
   }, [updateClientMutation, showToast]);
+  
+  // Handle delete
+  const handleDelete = useCallback(async (client: Client) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le client "${client.company_name}" ?\n\nCette action est irréversible.`)) {
+      return;
+    }
+    
+    try {
+      await deleteClientMutation.mutateAsync(client.id);
+      showToast({
+        message: 'Client supprimé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression du client',
+        type: 'error',
+      });
+    }
+  }, [deleteClientMutation, showToast]);
+  
+  // Handle duplicate
+  const handleDuplicate = useCallback(async (client: Client) => {
+    try {
+      const duplicateData: ClientCreate = {
+        company_name: `${client.company_name} (Copie)`,
+        type: client.type,
+        portal_url: null,
+        status: 'ACTIVE',
+      };
+      await createClientMutation.mutateAsync(duplicateData);
+      showToast({
+        message: 'Client dupliqué avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la duplication du client',
+        type: 'error',
+      });
+    }
+  }, [createClientMutation, showToast]);
+  
+  // Handle edit
+  const handleEdit = useCallback((client: Client) => {
+    setSelectedClient(client);
+    setShowEditModal(true);
+    setActionDropdownOpen(prev => ({ ...prev, [client.id]: false }));
+  }, []);
+  
+  // Bulk delete
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedClients.size === 0) return;
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedClients.size} client${selectedClients.size > 1 ? 's' : ''} ?\n\nCette action est irréversible.`)) {
+      return;
+    }
+    
+    try {
+      const deletePromises = Array.from(selectedClients).map(id =>
+        deleteClientMutation.mutateAsync(id)
+      );
+      await Promise.all(deletePromises);
+      setSelectedClients(new Set());
+      showToast({
+        message: `${selectedClients.size} client${selectedClients.size > 1 ? 's' : ''} supprimé${selectedClients.size > 1 ? 's' : ''} avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  }, [selectedClients, deleteClientMutation, showToast]);
+  
+  // Bulk status change
+  const handleBulkStatusChange = useCallback(async (newStatus: ClientStatus) => {
+    if (selectedClients.size === 0) return;
+    
+    try {
+      const updatePromises = Array.from(selectedClients).map(id =>
+        updateClientMutation.mutateAsync({
+          id,
+          data: { status: newStatus },
+        })
+      );
+      await Promise.all(updatePromises);
+      setSelectedClients(new Set());
+      showToast({
+        message: `Statut de ${selectedClients.size} client${selectedClients.size > 1 ? 's' : ''} changé avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du changement de statut',
+        type: 'error',
+      });
+    }
+  }, [selectedClients, updateClientMutation, showToast]);
+  
+  // Toggle selection
+  const toggleSelection = useCallback((clientId: number) => {
+    setSelectedClients(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId);
+      } else {
+        newSet.add(clientId);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  const toggleSelectAll = useCallback(() => {
+    if (selectedClients.size === filteredClients.length) {
+      setSelectedClients(new Set());
+    } else {
+      setSelectedClients(new Set(filteredClients.map(c => c.id)));
+    }
+  }, [selectedClients.size, filteredClients]);
+  
+  // Export handlers
+  const handleExport = useCallback(async (format: 'csv' | 'excel') => {
+    setIsExporting(true);
+    try {
+      const data = filteredClients.map(client => ({
+        Nom: client.company_name,
+        Type: client.type || '',
+        Statut: client.status,
+        'Nombre de projets': client.project_count || getClientProjects(client.id).length || 0,
+        'Nombre de contacts': getClientContactsCount(client.id),
+        'Date de création': client.created_at ? new Date(client.created_at).toLocaleDateString('fr-FR') : '',
+      }));
+      
+      if (data.length === 0) {
+        showToast({
+          message: 'Aucune donnée à exporter',
+          type: 'error',
+        });
+        return;
+      }
+      
+      const headers = Object.keys(data[0] || {});
+      const csvRows = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+          const value = row[header as keyof typeof row];
+          if (value === null || value === undefined) return '';
+          return String(value).replace(/"/g, '""');
+        }).join(','))
+      ];
+      const csv = csvRows.join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `clients_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      showToast({
+        message: `Export ${format.toUpperCase()} réussi`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'export',
+        type: 'error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filteredClients, getClientProjects, getClientContactsCount, showToast]);
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -198,14 +432,15 @@ function ClientsContent() {
   const stats = useMemo(() => {
     const activeClients = clients.filter(c => c.status === 'ACTIVE').length;
     const totalProjects = clients.reduce((sum, c) => sum + (c.project_count || 0), 0);
+    const totalContacts = clients.reduce((sum, c) => sum + getClientContactsCount(c.id), 0);
     
     return {
       totalClients: clients.length,
       activeClients,
       totalProjects,
-      totalContacts: 0, // Contact count not available in Client type
+      totalContacts,
     };
-  }, [clients]);
+  }, [clients, getClientContactsCount]);
 
   // Quick filters
   const quickFilters = useMemo(() => {
@@ -263,13 +498,11 @@ function ClientsContent() {
     }
   };
 
-
   // Navigate to detail page
   const openDetailPage = (client: Client) => {
     const locale = window.location.pathname.split('/')[1] || 'fr';
     router.push(`/${locale}/dashboard/projets/clients/${client.id}`);
   };
-
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
@@ -296,6 +529,9 @@ function ClientsContent() {
     { value: 'INACTIVE', label: 'Inactif' },
     { value: 'MAINTENANCE', label: 'Maintenance' },
   ];
+  
+  const selectedCount = selectedClients.size;
+  const hasActiveFilters = searchQuery.trim() !== '' || selectedType !== 'all';
 
   if (loading) {
     return (
@@ -325,13 +561,38 @@ function ClientsContent() {
               </h1>
               <p className="text-white/80 text-lg">Gérez vos clients et suivez vos relations d'affaires</p>
             </div>
-            <Button 
-              className="bg-white text-[#523DC9] hover:bg-white/90"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau client
-            </Button>
+            <div className="flex gap-2">
+              <Dropdown
+                trigger={
+                  <Button variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter
+                  </Button>
+                }
+                items={[
+                  {
+                    label: 'Exporter en Excel',
+                    onClick: () => handleExport('excel'),
+                    icon: <Download className="w-4 h-4" />,
+                    disabled: isExporting || filteredClients.length === 0,
+                  },
+                  {
+                    label: 'Exporter en CSV',
+                    onClick: () => handleExport('csv'),
+                    icon: <Download className="w-4 h-4" />,
+                    disabled: isExporting || filteredClients.length === 0,
+                  },
+                ]}
+                position="bottom"
+              />
+              <Button 
+                className="bg-white text-[#523DC9] hover:bg-white/90"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau client
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -402,7 +663,7 @@ function ClientsContent() {
             </div>
 
             {/* Quick Filters */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {quickFilters.map((filter) => (
                 <button
                   key={filter.id}
@@ -416,14 +677,60 @@ function ClientsContent() {
                   {filter.label} ({filter.count})
                 </button>
               ))}
-            </div>
+              
+              {/* Bulk actions */}
+              {selectedCount > 0 && (
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
+                  </span>
+                  <Dropdown
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        Actions en masse
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                      </Button>
+                    }
+                    items={[
+                      {
+                        label: 'Marquer comme Actif',
+                        onClick: () => handleBulkStatusChange('ACTIVE'),
+                        icon: <Check className="w-4 h-4" />,
+                      },
+                      {
+                        label: 'Marquer comme Inactif',
+                        onClick: () => handleBulkStatusChange('INACTIVE'),
+                        icon: <Check className="w-4 h-4" />,
+                      },
+                      {
+                        label: 'Marquer comme Maintenance',
+                        onClick: () => handleBulkStatusChange('MAINTENANCE'),
+                        icon: <Check className="w-4 h-4" />,
+                      },
+                      { divider: true },
+                      {
+                        label: 'Supprimer',
+                        onClick: handleBulkDelete,
+                        icon: <Trash2 className="w-4 h-4" />,
+                        variant: 'danger',
+                      },
+                    ]}
+                    position="bottom"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer
+                  </Button>
+                </div>
+              )}
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredClients.length} client{filteredClients.length > 1 ? 's' : ''} trouvé{filteredClients.length > 1 ? 's' : ''}
-              </p>
-              <div className="flex gap-2">
+              {/* View Mode Toggle */}
+              <div className={selectedCount > 0 ? '' : 'ml-auto flex gap-2'}>
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`px-3 py-1.5 rounded text-sm ${
@@ -432,7 +739,7 @@ function ClientsContent() {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  Grille
+                  <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
@@ -442,9 +749,16 @@ function ClientsContent() {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  Liste
+                  <List className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {filteredClients.length} client{filteredClients.length > 1 ? 's' : ''} trouvé{filteredClients.length > 1 ? 's' : ''}
+              </p>
             </div>
           </div>
         </Card>
@@ -464,9 +778,9 @@ function ClientsContent() {
               Aucun client trouvé
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchQuery || selectedType !== 'all' ? 'Aucun client ne correspond à vos critères' : 'Créez votre premier client pour commencer'}
+              {hasActiveFilters ? 'Aucun client ne correspond à vos critères' : 'Créez votre premier client pour commencer'}
             </p>
-            {!searchQuery && selectedType === 'all' && (
+            {!hasActiveFilters && (
               <Button onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Créer un client
@@ -478,16 +792,36 @@ function ClientsContent() {
             {filteredClients.map((client) => {
               const logoUrl = getClientLogo(client);
               const projects = getClientProjects(client.id);
+              const contactsCount = getClientContactsCount(client.id);
               const isDropdownOpen = statusDropdownOpen[client.id] || false;
+              const isActionDropdownOpen = actionDropdownOpen[client.id] || false;
+              const isSelected = selectedClients.has(client.id);
               
               return (
                 <div
                   key={client.id}
                   className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 relative"
                 >
-                  {/* Logo + Status Dropdown */}
+                  {/* Selection checkbox */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <button
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelection(client.id);
+                      }}
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Logo + Actions */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 ml-8">
                       {logoUrl ? (
                         <img 
                           src={logoUrl} 
@@ -506,43 +840,85 @@ function ClientsContent() {
                       </div>
                     </div>
                     
-                    {/* Status Dropdown */}
-                    <div className="relative status-dropdown-container">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setStatusDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
-                        }}
-                        className="relative"
-                      >
-                        <Badge className={`${getStatusColor(client.status || 'ACTIVE')} cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1`}>
-                          {getStatusLabel(client.status || 'ACTIVE')}
-                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                        </Badge>
-                      </button>
-                      
-                      {isDropdownOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                          {statusOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatusChange(client, option.value);
-                              }}
-                              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
-                                client.status === option.value ? 'bg-gray-50 dark:bg-gray-700/50' : ''
-                              }`}
-                            >
-                              <span>{option.label}</span>
-                              {client.status === option.value && (
-                                <Check className="w-4 h-4 text-[#523DC9]" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    {/* Action Dropdown */}
+                    <div className="relative action-dropdown-container">
+                      <Dropdown
+                        trigger={
+                          <button
+                            onClick={(e: React.MouseEvent) => {
+                              e.stopPropagation();
+                              setActionDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
+                            }}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          </button>
+                        }
+                        items={[
+                          {
+                            label: 'Voir les détails',
+                            onClick: () => openDetailPage(client),
+                            icon: <ExternalLink className="w-4 h-4" />,
+                          },
+                          {
+                            label: 'Modifier',
+                            onClick: () => handleEdit(client),
+                            icon: <Edit className="w-4 h-4" />,
+                          },
+                          {
+                            label: 'Dupliquer',
+                            onClick: () => handleDuplicate(client),
+                            icon: <Copy className="w-4 h-4" />,
+                          },
+                          { divider: true },
+                          {
+                            label: 'Supprimer',
+                            onClick: () => handleDelete(client),
+                            icon: <Trash2 className="w-4 h-4" />,
+                            variant: 'danger',
+                          },
+                        ]}
+                        position="bottom"
+                      />
                     </div>
+                  </div>
+                    
+                  {/* Status Dropdown */}
+                  <div className="relative status-dropdown-container mb-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStatusDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
+                      }}
+                      className="relative"
+                    >
+                      <Badge className={`${getStatusColor(client.status || 'ACTIVE')} cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1`}>
+                        {getStatusLabel(client.status || 'ACTIVE')}
+                        <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                      </Badge>
+                    </button>
+                    
+                    {isDropdownOpen && (
+                      <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        {statusOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(client, option.value);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
+                              client.status === option.value ? 'bg-gray-50 dark:bg-gray-700/50' : ''
+                            }`}
+                          >
+                            <span>{option.label}</span>
+                            {client.status === option.value && (
+                              <Check className="w-4 h-4 text-[#523DC9]" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Nom + Type */}
@@ -590,7 +966,7 @@ function ClientsContent() {
                     <div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contacts</p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        0
+                        {contactsCount}
                       </p>
                     </div>
                   </div>
@@ -600,11 +976,33 @@ function ClientsContent() {
           </div>
         ) : (
           <Card className="glass-card rounded-xl border border-[#A7A2CF]/20">
+            {/* Select all header */}
+            {filteredClients.length > 0 && (
+              <div className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 flex items-center gap-3 mb-2">
+                <button
+                  onClick={toggleSelectAll}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                >
+                  {selectedClients.size === filteredClients.length ? (
+                    <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                  ) : (
+                    <Square className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedClients.size > 0 
+                    ? `${selectedClients.size} sélectionné${selectedClients.size > 1 ? 's' : ''}`
+                    : 'Sélectionner tout'}
+                </span>
+              </div>
+            )}
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredClients.map((client) => {
                 const logoUrl = getClientLogo(client);
                 const projects = getClientProjects(client.id);
+                const contactsCount = getClientContactsCount(client.id);
                 const isDropdownOpen = statusDropdownOpen[client.id] || false;
+                const isSelected = selectedClients.has(client.id);
                 
                 return (
                   <div
@@ -612,6 +1010,21 @@ function ClientsContent() {
                     className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors relative"
                   >
                     <div className="flex items-center gap-4">
+                      {/* Selection checkbox */}
+                      <button
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelection(client.id);
+                        }}
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+
                       {/* Logo */}
                       {logoUrl ? (
                         <img 
@@ -705,16 +1118,52 @@ function ClientsContent() {
                           <p className="text-xs text-gray-600 dark:text-gray-400">Projets</p>
                         </div>
                         <div className="text-center">
-                          <p className="font-semibold text-gray-900 dark:text-white">0</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{contactsCount}</p>
                           <p className="text-xs text-gray-600 dark:text-gray-400">Contacts</p>
                         </div>
                       </div>
 
-                      {/* Arrow */}
-                      <ExternalLink 
-                        className="w-5 h-5 text-gray-400 flex-shrink-0 cursor-pointer" 
-                        onClick={() => openDetailPage(client)}
-                      />
+                      {/* Action Dropdown */}
+                      <div className="relative action-dropdown-container">
+                        <Dropdown
+                          trigger={
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                              }}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          }
+                          items={[
+                            {
+                              label: 'Voir les détails',
+                              onClick: () => openDetailPage(client),
+                              icon: <ExternalLink className="w-4 h-4" />,
+                            },
+                            {
+                              label: 'Modifier',
+                              onClick: () => handleEdit(client),
+                              icon: <Edit className="w-4 h-4" />,
+                            },
+                            {
+                              label: 'Dupliquer',
+                              onClick: () => handleDuplicate(client),
+                              icon: <Copy className="w-4 h-4" />,
+                            },
+                            { divider: true },
+                            {
+                              label: 'Supprimer',
+                              onClick: () => handleDelete(client),
+                              icon: <Trash2 className="w-4 h-4" />,
+                              variant: 'danger',
+                            },
+                          ]}
+                          position="bottom"
+                        />
+                      </div>
                     </div>
                   </div>
                 );
