@@ -469,6 +469,15 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
+        # Invalidate cache for users list and user detail
+        try:
+            from app.core.cache_enhanced import enhanced_cache
+            invalidated = await enhanced_cache.invalidate_by_tags(["users"])
+            logger.info(f"[DELETE USER] Invalidated {invalidated} cache entries for tag 'users'")
+        except Exception as cache_error:
+            # Log but don't fail the request if cache invalidation fails
+            logger.warning(f"[DELETE USER] Failed to invalidate cache: {cache_error}", exc_info=True)
+        
         # Return None - FastAPI will automatically convert to 204 No Content
         # This avoids slowapi headers injection issues with 204 responses
         logger.info(f"[DELETE USER] User {user_id} ({user_email}) successfully deleted by {current_user.email}")
