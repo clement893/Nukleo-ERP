@@ -5,7 +5,6 @@ export const dynamicParams = true;
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Send, 
@@ -200,15 +199,37 @@ export default function LeoPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer toutes les conversations ?')) return;
     
     try {
+      // Récupérer TOUTES les conversations, pas seulement celles chargées
+      let allConversations: LeoConversation[] = [];
+      let currentSkip = 0;
+      const batchLimit = 100;
+      
+      // Charger toutes les conversations par batch
+      while (true) {
+        const batch = await leoAgentAPI.listConversations({ skip: currentSkip, limit: batchLimit });
+        if (batch.items.length === 0) break;
+        allConversations = [...allConversations, ...batch.items];
+        if (batch.items.length < batchLimit || allConversations.length >= batch.total) break;
+        currentSkip += batchLimit;
+      }
+      
+      // Supprimer toutes les conversations
       const results = await Promise.allSettled(
-        conversations.map(conv => leoAgentAPI.deleteConversation(conv.id))
+        allConversations.map(conv => leoAgentAPI.deleteConversation(conv.id))
       );
       
       const failed = results.filter(r => r.status === 'rejected').length;
       const succeeded = results.filter(r => r.status === 'fulfilled').length;
       
+      // Réinitialiser la pagination et l'état local
+      setSkip(0);
       setActiveConversation(null);
-      queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
+      setConversationsWithLastMessage([]);
+      setSearchQuery('');
+      
+      // Invalider toutes les queries liées à LEO et forcer le refetch
+      await queryClient.invalidateQueries({ queryKey: ['leo'] });
+      await queryClient.refetchQueries({ queryKey: ['leo', 'conversations'] });
       
       if (failed > 0) {
         showToast({ 
@@ -318,7 +339,7 @@ export default function LeoPage() {
   };
 
   return (
-    <PageContainer maxWidth="full" className="flex flex-col h-full">
+    <div className="relative flex flex-col h-[calc(100vh-3.5rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden -mx-4 sm:-mx-6 md:-mx-8 lg:-mx-10 xl:-mx-12 2xl:-mx-16 -my-4 sm:-my-6 md:-my-8 2xl:-my-10 bg-background">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
@@ -757,6 +778,6 @@ export default function LeoPage() {
           </div>
         </div>
       </div>
-    </PageContainer>
+    </div>
   );
 }
