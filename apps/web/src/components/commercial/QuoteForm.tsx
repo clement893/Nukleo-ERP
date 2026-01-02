@@ -88,7 +88,7 @@ export default function QuoteForm({
 
   useEffect(() => {
     loadCompanies();
-  }, [showToast]);
+  }, []);
 
   // Handle create company
   const handleCreateCompany = async (companyData: CompanyCreate | CompanyUpdate) => {
@@ -280,19 +280,27 @@ export default function QuoteForm({
             Créer un client
           </Button>
         </div>
-        <Select
-          value={formData.company_id?.toString() || ''}
-          onChange={(e) => setFormData({
-            ...formData,
-            company_id: e.target.value ? parseInt(e.target.value) : null,
-          })}
-          options={[
-            { value: '', label: 'Aucun client' },
-            ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
-          ]}
-          fullWidth
-          disabled={loadingCompanies}
-        />
+        {loadingCompanies ? (
+          <div className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground">
+            Chargement des clients...
+          </div>
+        ) : (
+          <Select
+            value={formData.company_id?.toString() || ''}
+            onChange={(e) => {
+              const selectedValue = e.target.value;
+              setFormData({
+                ...formData,
+                company_id: selectedValue ? parseInt(selectedValue, 10) : null,
+              });
+            }}
+            options={[
+              { value: '', label: 'Aucun client' },
+              ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
+            ]}
+            fullWidth
+          />
+        )}
       </div>
 
       {/* Type de tarification */}
