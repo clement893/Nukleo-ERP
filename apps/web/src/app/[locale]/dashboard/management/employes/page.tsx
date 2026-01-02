@@ -7,6 +7,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
+import { logger } from '@/lib/logger';
 import { 
   Users, 
   UserCheck,

@@ -88,33 +88,25 @@ export const employeesAPI = {
         },
       });
       
-      // FastAPI returns data directly in response.data
-      // Check if response.data is the array directly
-      let data: Employee[] | { items: Employee[] } | undefined = response.data;
+      // apiClient.get returns ApiResponse<T>
+      // FastAPI endpoint returns List[EmployeeSchema] directly
+      // So response.data should be the array, or response itself if FastAPI returns directly
+      const data = extractApiData<Employee[] | { items: Employee[] }>(response);
       
-      // If response.data is undefined or null, try to extract from response
-      if (!data && 'data' in response) {
-        data = (response as any).data;
+      // Handle different response formats
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (data && typeof data === 'object' && 'items' in data) {
+        return (data as { items: Employee[] }).items;
       }
       
-      // If still no data, check if response itself is an array
-      if (!data && Array.isArray(response)) {
-        data = response;
-      }
-      
-      // Extract using extractApiData utility
-      const extracted = extractApiData<Employee[] | { items: Employee[] }>(data || response);
-      
-      if (Array.isArray(extracted)) {
-        return extracted;
-      }
-      if (extracted && typeof extracted === 'object' && 'items' in extracted) {
-        return (extracted as { items: Employee[] }).items;
-      }
-      
-      // Fallback: check if response.data is directly an array
-      if (Array.isArray(response.data)) {
-        return response.data;
+      // Fallback: if response.data is directly an array (FastAPI direct return)
+      if (response && typeof response === 'object' && 'data' in response) {
+        const responseData = (response as any).data;
+        if (Array.isArray(responseData)) {
+          return responseData;
+        }
       }
       
       return [];
