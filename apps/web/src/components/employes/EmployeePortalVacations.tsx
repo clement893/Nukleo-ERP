@@ -30,15 +30,6 @@ const calculateDays = (startDate: string, endDate: string): number => {
   return diffDays;
 };
 
-// Format date
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
-
 export default function EmployeePortalVacations({ employee }: EmployeePortalVacationsProps) {
   const { showToast } = useToast();
   
