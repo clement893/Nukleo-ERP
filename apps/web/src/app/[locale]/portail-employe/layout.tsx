@@ -13,9 +13,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import { ErrorBoundary } from '@/components/errors';
 import EmployeePortalSidebar from '@/components/employes/EmployeePortalSidebar';
+import NotificationBellConnected from '@/components/notifications/NotificationBellConnected';
 import Button from '@/components/ui/Button';
 import { Menu } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useEmployeePortalRouteGuard } from '@/hooks/useEmployeePortalRouteGuard';
+import { EmployeePortalProvider } from '@/contexts/EmployeePortalContext';
 
 const SIDEBAR_COLLAPSED_KEY = 'employee-portal-sidebar-collapsed';
 
@@ -29,6 +32,9 @@ function EmployeePortalLayoutContent({
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Activer le guard de routage pour protéger les routes du portail employé
+  useEmployeePortalRouteGuard();
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -90,7 +96,9 @@ function EmployeePortalLayoutContent({
                 <Menu className="w-5 h-5" />
               </Button>
               <h1 className="text-lg font-semibold text-foreground">Mon Portail Employé</h1>
-              <div className="w-10" /> {/* Spacer for centering */}
+              <div className="flex items-center gap-2">
+                <NotificationBellConnected />
+              </div>
             </div>
           </header>
 
@@ -135,5 +143,9 @@ export default function EmployeePortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <EmployeePortalLayoutContent>{children}</EmployeePortalLayoutContent>;
+  return (
+    <EmployeePortalProvider>
+      <EmployeePortalLayoutContent>{children}</EmployeePortalLayoutContent>
+    </EmployeePortalProvider>
+  );
 }

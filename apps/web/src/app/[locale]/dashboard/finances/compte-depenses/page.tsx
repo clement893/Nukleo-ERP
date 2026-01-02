@@ -759,7 +759,7 @@ export default function MesDepenses() {
             <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun compte de dépenses</p>
             <Button 
-              className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+              className="bg-primary-500 hover:bg-nukleo-violet text-white"
               onClick={() => setShowCreateModal(true)}
             >
               <Upload className="w-4 h-4 mr-2" />

@@ -6,10 +6,10 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { Loading } from '@/components/ui';
 
-const OpportunitiesPageContent = dynamic(
+const OpportunitiesPageContent = dynamicImport(
   () => import('@/app/[locale]/dashboard/commercial/opportunites/page'),
   { 
     ssr: false,

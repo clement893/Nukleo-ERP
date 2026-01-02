@@ -188,25 +188,36 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
       // Check if user is an employee trying to access main dashboard - redirect to employee portal
       const userForCheck = fetchedUser || user;
-      if (userForCheck && pathname && pathname.startsWith('/dashboard') && !pathname.startsWith('/portail-employe')) {
-        try {
-          const userId = typeof userForCheck.id === 'string' ? parseInt(userForCheck.id, 10) : userForCheck.id;
-          const employee = await employeesAPI.getByUserId(userId);
-          if (employee) {
-            logger.info('Employee detected, redirecting to employee portal', { 
-              userId: userForCheck.id, 
-              employeeId: employee.id,
-              pathname 
-            });
-            checkingRef.current = false;
-            setIsChecking(false);
-            setIsAuthorized(false);
-            router.replace(`/portail-employe/${employee.id}/dashboard`);
-            return;
+      if (userForCheck && pathname) {
+        // Allow access to employee management pages even for employees (for admin viewing employee portals)
+        const isEmployeeManagementPage = pathname.startsWith('/dashboard/management/employes') || 
+                                         pathname.startsWith('/dashboard/management/feuilles-temps') ||
+                                         pathname.startsWith('/dashboard/management/vacances');
+        
+        // If accessing /dashboard/* (but not employee management), check if user is an employee
+        if (pathname.startsWith('/dashboard') && !pathname.startsWith('/portail-employe') && !isEmployeeManagementPage) {
+          try {
+            const userId = typeof userForCheck.id === 'string' ? parseInt(userForCheck.id, 10) : userForCheck.id;
+            const employee = await employeesAPI.getByUserId(userId);
+            if (employee) {
+              logger.warn('Employee attempting to access main dashboard, redirecting to employee portal', { 
+                userId: userForCheck.id, 
+                employeeId: employee.id,
+                pathname 
+              });
+              checkingRef.current = false;
+              setIsChecking(false);
+              setIsAuthorized(false);
+              // Get locale from pathname or use default
+              const localeMatch = pathname.match(/^\/(en|fr|ar|he)/);
+              const locale = localeMatch ? localeMatch[1] : 'fr';
+              router.replace(`/${locale}/portail-employe/${employee.id}/dashboard?error=employee_redirect`);
+              return;
+            }
+          } catch (err) {
+            // If check fails, continue normally (user might not be an employee)
+            logger.debug('Employee check failed, continuing normally', { error: err });
           }
-        } catch (err) {
-          // If check fails, continue normally (user might not be an employee)
-          logger.debug('Employee check failed, continuing normally', { error: err });
         }
       }
 

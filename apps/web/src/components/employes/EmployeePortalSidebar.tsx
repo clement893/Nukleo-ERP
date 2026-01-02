@@ -31,6 +31,7 @@ import {
   User,
   Plane,
   LayoutDashboard,
+  Bell,
 } from 'lucide-react';
 
 interface EmployeePortalSidebarProps {
@@ -103,6 +104,12 @@ const BASE_PAGES: NavItem[] = [
     label: 'Mon profil',
     path: 'profil',
     icon: User,
+  },
+  {
+    id: 'notifications',
+    label: 'Mes notifications',
+    path: 'notifications',
+    icon: Bell,
   },
 ];
 

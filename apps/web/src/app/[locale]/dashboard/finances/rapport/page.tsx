@@ -96,7 +96,7 @@ export default function RapportPage() {
     return (
       <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </PageContainer>
     );
@@ -122,7 +122,7 @@ export default function RapportPage() {
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -150,7 +150,7 @@ export default function RapportPage() {
 
         {/* Current Month Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Revenus</h3>
               <Badge className={`${Number(revenueGrowth) >= 0 ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-red-500/10 text-red-600 border-red-500/30'} border`}>
@@ -170,7 +170,7 @@ export default function RapportPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Dépenses</h3>
               <Badge className={`${Number(expensesGrowth) <= 0 ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-red-500/10 text-red-600 border-red-500/30'} border`}>
@@ -190,7 +190,7 @@ export default function RapportPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Profit Net</h3>
               <TrendingUp className={`w-5 h-5 ${(currentMonth?.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
@@ -210,7 +210,7 @@ export default function RapportPage() {
         </div>
 
         {/* Monthly Evolution */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
           <h2 className="text-xl font-bold mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Évolution Mensuelle
           </h2>
@@ -267,7 +267,7 @@ export default function RapportPage() {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Performance sur 6 mois
             </h3>
@@ -293,7 +293,7 @@ export default function RapportPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Projets par mois
             </h3>
@@ -324,7 +324,7 @@ export default function RapportPage() {
         </div>
 
         {/* Insights */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mt-6">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mt-6">
           <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Insights
           </h3>

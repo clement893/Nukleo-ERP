@@ -196,7 +196,7 @@ export default function FacturationsPage() {
     return (
       <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </PageContainer>
     );
@@ -221,7 +221,7 @@ export default function FacturationsPage() {
 
           {/* Invoice Detail Header */}
           <div className="relative mb-6 overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+            <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
             <div className="absolute inset-0 opacity-20" style={{
               backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
               backgroundSize: '200px 200px'
@@ -287,7 +287,7 @@ export default function FacturationsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Client Info */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Informations client
@@ -319,7 +319,7 @@ export default function FacturationsPage() {
             </Card>
 
             {/* Dates */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 Dates importantes
@@ -343,7 +343,7 @@ export default function FacturationsPage() {
             </Card>
 
             {/* Payment Summary */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
                 Résumé des paiements
@@ -368,7 +368,7 @@ export default function FacturationsPage() {
           </div>
 
           {/* Line Items */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
             <h3 className="font-semibold mb-4">Articles facturés</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -414,7 +414,7 @@ export default function FacturationsPage() {
 
           {/* Payments */}
           {selectedInvoice.payments && selectedInvoice.payments.length > 0 && (
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
               <h3 className="font-semibold mb-4">Historique des paiements</h3>
               <div className="space-y-3">
                 {selectedInvoice.payments.map((payment) => {
@@ -445,13 +445,13 @@ export default function FacturationsPage() {
           {(selectedInvoice.notes || selectedInvoice.terms) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {selectedInvoice.terms && (
-                <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+                <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                   <h3 className="font-semibold mb-2">Conditions de paiement</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{selectedInvoice.terms}</p>
                 </Card>
               )}
               {selectedInvoice.notes && (
-                <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+                <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                   <h3 className="font-semibold mb-2">Notes</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{selectedInvoice.notes}</p>
                 </Card>
@@ -499,7 +499,7 @@ export default function FacturationsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <DollarSign className="w-5 h-5 text-blue-600" />
@@ -514,7 +514,7 @@ export default function FacturationsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
                 <CheckCircle className="w-5 h-5 text-green-600" />
@@ -529,7 +529,7 @@ export default function FacturationsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
                 <Clock className="w-5 h-5 text-orange-600" />
@@ -544,7 +544,7 @@ export default function FacturationsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <AlertCircle className="w-5 h-5 text-red-600" />
@@ -561,7 +561,7 @@ export default function FacturationsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />

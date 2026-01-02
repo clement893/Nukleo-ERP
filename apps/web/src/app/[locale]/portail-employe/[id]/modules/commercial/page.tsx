@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { Loading } from '@/components/ui';
 
 // Charger dynamiquement la page commerciale
-const CommercialPageContent = dynamic(
+const CommercialPageContent = dynamicImport(
   () => import('@/app/[locale]/dashboard/commercial/page'),
   { 
     ssr: false,
