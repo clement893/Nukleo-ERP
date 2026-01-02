@@ -151,75 +151,76 @@ async def list_employees(
     """
     logger.info(f"Listing employees for user {current_user.id}, skip={skip}, limit={limit}")
     # Handle case where columns might not exist yet (migration not applied)
-    # Try normal query first, fallback to explicit column selection if columns are missing
+    # Use explicit column selection to avoid issues with missing columns
     employees = []
+    from types import SimpleNamespace
+    
+    # First, try to rollback any existing failed transaction
     try:
-        query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
+        await db.rollback()
+    except Exception:
+        pass  # Ignore rollback errors if there's no transaction
+    
+    # Use explicit column selection to avoid issues with missing columns like employee_number
+    # Select only core columns that definitely exist
+    try:
+        query = select(
+            Employee.id,
+            Employee.first_name,
+            Employee.last_name,
+            Employee.email,
+            Employee.phone,
+            Employee.linkedin,
+            Employee.photo_url,
+            Employee.photo_filename,
+            Employee.hire_date,
+            Employee.birthday,
+            Employee.created_at,
+            Employee.updated_at
+        ).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(query)
-        employees = result.scalars().all()
+        # Convert result tuples to simple objects with Employee attributes
+        employees = []
+        for row in result.all():
+            emp = SimpleNamespace(
+                id=row[0],
+                first_name=row[1],
+                last_name=row[2],
+                email=row[3],
+                phone=row[4],
+                linkedin=row[5],
+                photo_url=row[6],
+                photo_filename=row[7],
+                hire_date=row[8],
+                birthday=row[9],
+                created_at=row[10],
+                updated_at=row[11],
+                user_id=None,  # Column might not exist yet
+                team_id=None,  # Column might not exist yet
+                capacity_hours_per_week=None,  # Column might not exist yet
+                employee_number=None  # Column might not exist yet
+            )
+            employees.append(emp)
         logger.info(f"Found {len(employees)} employees in database")
     except Exception as e:
-        # Check if it's a transaction error (asyncpg wraps it in OperationalError)
         error_str = str(e).lower()
-        is_transaction_error = False
+        logger.error(f"Error querying employees: {e}", exc_info=True)
         
-        # Check error message
-        if 'transaction is aborted' in error_str or 'infailed' in error_str:
-            is_transaction_error = True
-        
-        # Check if it's the specific asyncpg exception type
-        if isinstance(e, OperationalError) and hasattr(e, 'orig'):
-            if isinstance(e.orig, asyncpg.exceptions.InFailedSQLTransactionError):
-                is_transaction_error = True
+        # Check if it's a transaction error
+        is_transaction_error = (
+            'transaction is aborted' in error_str or 
+            'infailed' in error_str or
+            (isinstance(e, OperationalError) and hasattr(e, 'orig') and 
+             isinstance(e.orig, asyncpg.exceptions.InFailedSQLTransactionError))
+        )
         
         if is_transaction_error:
-            # This is a transaction error - rollback and retry
-            logger.warning(f"Transaction error detected, rolling back: {e}")
+            # Rollback and try again with a fresh transaction
+            logger.warning(f"Transaction error detected, rolling back and retrying: {e}")
             try:
                 await db.rollback()
-                # Retry the query after rollback
-                query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
+                # Retry with the same query
                 result = await db.execute(query)
-                employees = result.scalars().all()
-            except Exception as retry_error:
-                logger.error(f"Query failed after rollback retry: {retry_error}", exc_info=True)
-                # Fall through to handle as regular error
-                error_str = str(retry_error).lower()
-                # Check if it's still a transaction error
-                if 'transaction is aborted' in error_str or 'infailed' in error_str:
-                    # Try one more rollback
-                    try:
-                        await db.rollback()
-                    except Exception:
-                        pass
-                # Re-raise to fall through to column check logic
-                raise retry_error
-        
-        # Not a transaction error, check for other error types
-        error_str = str(e).lower()
-        
-        # Check if error is due to missing columns
-        if 'does not exist' in error_str or 'undefinedcolumn' in error_str or 'column' in error_str:
-            logger.warning(f"Some columns not found in database. Using fallback query. Error: {e}")
-            # Fallback: select only columns that definitely exist (core columns)
-            from types import SimpleNamespace
-            try:
-                query = select(
-                    Employee.id,
-                    Employee.first_name,
-                    Employee.last_name,
-                    Employee.email,
-                    Employee.phone,
-                    Employee.linkedin,
-                    Employee.photo_url,
-                    Employee.photo_filename,
-                    Employee.hire_date,
-                    Employee.birthday,
-                    Employee.created_at,
-                    Employee.updated_at
-                ).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
-                result = await db.execute(query)
-                # Convert result tuples to simple objects with Employee attributes
                 employees = []
                 for row in result.all():
                     emp = SimpleNamespace(
@@ -235,24 +236,26 @@ async def list_employees(
                         birthday=row[9],
                         created_at=row[10],
                         updated_at=row[11],
-                        user_id=None,  # Column might not exist yet
-                        team_id=None,  # Column might not exist yet
-                        capacity_hours_per_week=None  # Column might not exist yet
+                        user_id=None,
+                        team_id=None,
+                        capacity_hours_per_week=None,
+                        employee_number=None
                     )
                     employees.append(emp)
-            except Exception as fallback_error:
-                logger.error(f"Fallback query also failed: {fallback_error}", exc_info=True)
-                # Try rollback again if fallback fails
-                try:
-                    await db.rollback()
-                except Exception:
-                    pass
+                logger.info(f"Found {len(employees)} employees after retry")
+            except Exception as retry_error:
+                logger.error(f"Query failed after rollback retry: {retry_error}", exc_info=True)
+                await db.rollback()  # Ensure transaction is rolled back
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"A database error occurred: {str(fallback_error)}"
+                    detail=f"A database error occurred: {str(retry_error)}"
                 )
         else:
-            logger.error(f"Database error in list_employees: {e}", exc_info=True)
+            # Other error - rollback and raise
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"A database error occurred: {str(e)}"

@@ -31,10 +31,12 @@ export default function AutomationSettings() {
   });
 
   // Fetch automation rules
-  const { data: rules = [], isLoading: rulesLoading, error: rulesError } = useQuery({
+  const { data: rules = [], isLoading: rulesLoading, error: rulesError, refetch: refetchRules } = useQuery({
     queryKey: ['automation', 'rules'],
     queryFn: () => automationAPI.getAutomationRules(),
     retry: false, // Don't retry if endpoint doesn't exist
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus to avoid unnecessary requests
   });
 
   // Mutations for scheduled tasks
@@ -104,8 +106,10 @@ export default function AutomationSettings() {
   const createRuleMutation = useMutation({
     mutationFn: (rule: Parameters<typeof automationAPI.createAutomationRule>[0]) =>
       automationAPI.createAutomationRule(rule),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+    onSuccess: async (newRule) => {
+      // Invalidate and refetch to ensure the new rule appears immediately
+      await queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+      await refetchRules();
       showToast({ message: 'Règle d\'automatisation créée avec succès', type: 'success' });
     },
     onError: (error: unknown) => {
@@ -121,8 +125,9 @@ export default function AutomationSettings() {
   const updateRuleMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Parameters<typeof automationAPI.updateAutomationRule>[1] }) =>
       automationAPI.updateAutomationRule(String(id), data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+      await refetchRules();
       showToast({ message: 'Règle d\'automatisation mise à jour avec succès', type: 'success' });
     },
     onError: (error: unknown) => {
@@ -136,8 +141,9 @@ export default function AutomationSettings() {
 
   const deleteRuleMutation = useMutation({
     mutationFn: (id: number) => automationAPI.deleteAutomationRule(String(id)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+      await refetchRules();
       showToast({ message: 'Règle d\'automatisation supprimée avec succès', type: 'success' });
     },
     onError: (error: unknown) => {
@@ -152,8 +158,9 @@ export default function AutomationSettings() {
   const toggleRuleMutation = useMutation({
     mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
       automationAPI.toggleAutomationRule(String(id), enabled),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
+      await refetchRules();
       showToast({ message: 'Statut de la règle mis à jour', type: 'success' });
     },
     onError: (error: unknown) => {
