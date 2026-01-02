@@ -6,7 +6,7 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Search, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Search, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock, Languages } from 'lucide-react';
 import { Badge, Button, Loading, Alert, Input, Text } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import { handleApiError } from '@/lib/errors/api';
@@ -22,6 +22,8 @@ function TemoignagesContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterLanguage, setFilterLanguage] = useState<'all' | 'fr' | 'en'>('all');
+  // État pour la langue affichée par témoignage (id -> langue)
+  const [displayLanguages, setDisplayLanguages] = useState<Record<number, 'fr' | 'en'>>({});
 
   useEffect(() => {
     loadTestimonials();
@@ -49,14 +51,31 @@ function TemoignagesContent() {
     return 'draft';
   };
 
-  const getContent = (testimonial: Testimonial): string => {
-    if (testimonial.language === 'fr' && testimonial.testimonial_fr) {
+  const getContent = (testimonial: Testimonial, displayLang?: 'fr' | 'en'): string => {
+    // Utiliser la langue d'affichage si fournie, sinon utiliser la langue du témoignage
+    const lang = displayLang || displayLanguages[testimonial.id] || testimonial.language || 'fr';
+    
+    if (lang === 'fr' && testimonial.testimonial_fr) {
       return testimonial.testimonial_fr;
     }
-    if (testimonial.language === 'en' && testimonial.testimonial_en) {
+    if (lang === 'en' && testimonial.testimonial_en) {
       return testimonial.testimonial_en;
     }
+    // Fallback: utiliser l'autre langue si disponible
     return testimonial.testimonial_fr || testimonial.testimonial_en || '';
+  };
+
+  const toggleLanguage = (testimonialId: number) => {
+    const currentLang = displayLanguages[testimonialId] || 'fr';
+    const newLang = currentLang === 'fr' ? 'en' : 'fr';
+    setDisplayLanguages(prev => ({
+      ...prev,
+      [testimonialId]: newLang
+    }));
+  };
+
+  const hasBothLanguages = (testimonial: Testimonial): boolean => {
+    return !!(testimonial.testimonial_fr && testimonial.testimonial_en);
   };
 
   const filteredTestimonials = useMemo(() => {
@@ -68,10 +87,12 @@ function TemoignagesContent() {
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const content = getContent(t);
+        const contentFr = t.testimonial_fr || '';
+        const contentEn = t.testimonial_en || '';
         return (
           t.title?.toLowerCase().includes(query) ||
-          content.toLowerCase().includes(query) ||
+          contentFr.toLowerCase().includes(query) ||
+          contentEn.toLowerCase().includes(query) ||
           t.contact_name?.toLowerCase().includes(query) ||
           t.company_name?.toLowerCase().includes(query)
         );
@@ -248,12 +269,14 @@ function TemoignagesContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTestimonials.map((testimonial) => {
               const status = getStatus(testimonial.is_published);
-              const content = getContent(testimonial);
+              const displayLang = displayLanguages[testimonial.id] || testimonial.language || 'fr';
+              const content = getContent(testimonial, displayLang as 'fr' | 'en');
+              const hasBoth = hasBothLanguages(testimonial);
               
               return (
                 <div
                   key={testimonial.id}
-                  className="glass-card p-lg rounded-xl border border-border hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                  className="glass-card p-lg rounded-xl border border-border hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 group relative"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -261,12 +284,30 @@ function TemoignagesContent() {
                         {testimonial.title || 'Sans titre'}
                       </h3>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-start flex-shrink-0">
                       <Badge className={getStatusColor(status)}>
                         {getStatusLabel(status)}
                       </Badge>
-                      {testimonial.language && (
-                        <Badge variant="default">{testimonial.language.toUpperCase()}</Badge>
+                      {hasBoth && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLanguage(testimonial.id);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-[#523DC9]/10 hover:border-[#523DC9]/30 border border-transparent transition-all flex items-center gap-1"
+                          aria-label={`Changer la langue (actuellement ${displayLang.toUpperCase()})`}
+                          title={`Basculer entre FR et EN`}
+                        >
+                          <Languages className="w-3.5 h-3.5 text-[#523DC9]" />
+                          <span className="text-xs font-medium text-[#523DC9]">
+                            {displayLang === 'fr' ? 'EN' : 'FR'}
+                          </span>
+                        </button>
+                      )}
+                      {!hasBoth && displayLang && (
+                        <Badge variant="outline" className="text-xs">
+                          {displayLang.toUpperCase()}
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -278,38 +319,57 @@ function TemoignagesContent() {
                   <div className="space-y-2 mb-4 pt-4 border-t border-border">
                     {testimonial.contact_name && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="w-4 h-4" aria-hidden="true" />
-                        <span>{testimonial.contact_name}</span>
+                        <User className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                        <span className="truncate">{testimonial.contact_name}</span>
                       </div>
                     )}
                     {testimonial.company_name && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Building2 className="w-4 h-4" aria-hidden="true" />
-                        <span>{testimonial.company_name}</span>
+                        <Building2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                        <span className="truncate">{testimonial.company_name}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" aria-hidden="true" />
+                      <Calendar className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                       <span>{new Date(testimonial.created_at).toLocaleDateString('fr-FR')}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-4 border-t border-border">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 text-white border-white hover:bg-white/10" 
-                      aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
-                    >
-                      <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Éditer
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="text-white border-white hover:bg-white/10" 
-                      aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
-                    >
-                      <Trash2 className="w-4 h-4" aria-hidden="true" />
-                    </Button>
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 w-7 p-0 hover:bg-gray-100 dark:hover:bg-gray-800" 
+                        aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Ouvrir modal d'édition
+                        }}
+                        title="Éditer"
+                      >
+                        <Edit className="w-3.5 h-3.5" aria-hidden="true" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400" 
+                        aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Confirmer et supprimer
+                        }}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      </Button>
+                    </div>
+                    {hasBoth && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">
+                        <Languages className="w-3 h-3" />
+                        <span>FR/EN</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
