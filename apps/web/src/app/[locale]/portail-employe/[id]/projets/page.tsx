@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Briefcase, DollarSign, Clock, Loader2, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
-import { projectsAPI } from '@/lib/api';
+import { projectsAPI } from '@/lib/api/projects';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 
 export default function MesProjets() {
