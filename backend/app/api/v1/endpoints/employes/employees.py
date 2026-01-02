@@ -25,6 +25,7 @@ from app.dependencies import get_current_user
 from app.models.employee import Employee
 from app.models.user import User
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, Employee as EmployeeSchema
+from pydantic import ValidationError
 from app.services.import_service import ImportService
 from app.services.export_service import ExportService
 from app.services.s3_service import S3Service
@@ -260,75 +261,50 @@ async def list_employees(
     employee_list = []
     for employee in employees:
         try:
+            # Regenerate photo URL if needed
             photo_url = regenerate_photo_url(employee.photo_url, employee.id)
-            employee_dict = {
-                "id": employee.id,
-                "first_name": employee.first_name,
-                "last_name": employee.last_name,
-                "email": employee.email,
-                "phone": employee.phone,
-                "linkedin": employee.linkedin,
-                "photo_url": photo_url,
-                "photo_filename": getattr(employee, 'photo_filename', None),
-                "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
-                "birthday": employee.birthday.isoformat() if employee.birthday else None,
-                "user_id": getattr(employee, 'user_id', None),
-                "team_id": getattr(employee, 'team_id', None),
-                "capacity_hours_per_week": getattr(employee, 'capacity_hours_per_week', None),
-                "employee_number": getattr(employee, 'employee_number', None),
-                "created_at": employee.created_at,
-                "updated_at": employee.updated_at,
-            }
-            # Try to get extended fields if they exist
-            extended_fields = {
-                "status": getattr(employee, 'status', None),
-                "department": getattr(employee, 'department', None),
-                "job_title": getattr(employee, 'job_title', None),
-                "employee_type": getattr(employee, 'employee_type', None),
-                "salary": getattr(employee, 'salary', None),
-                "hourly_rate": getattr(employee, 'hourly_rate', None),
-                "address": getattr(employee, 'address', None),
-                "city": getattr(employee, 'city', None),
-                "postal_code": getattr(employee, 'postal_code', None),
-                "country": getattr(employee, 'country', None),
-                "notes": getattr(employee, 'notes', None),
-                "termination_date": getattr(employee, 'termination_date', None),
-                "manager_id": getattr(employee, 'manager_id', None),
-            }
-            # Only add extended fields if they're not None
-            for key, value in extended_fields.items():
-                if value is not None:
-                    employee_dict[key] = value
+            if photo_url and photo_url != employee.photo_url:
+                # Update photo_url on employee object temporarily for serialization
+                employee.photo_url = photo_url
             
+            # Use from_attributes=True to serialize directly from SQLAlchemy model
+            # This is more reliable than manual dictionary creation
             try:
-                employee_schema = EmployeeSchema(**employee_dict)
+                employee_schema = EmployeeSchema.model_validate(employee, from_attributes=True)
                 employee_list.append(employee_schema)
-            except Exception as schema_error:
-                logger.warning(f"Error creating EmployeeSchema for employee {employee.id}: {schema_error}")
-                # Try without optional fields that might not be in schema
-                employee_dict_minimal = {
-                    "id": employee.id,
-                    "first_name": employee.first_name,
-                    "last_name": employee.last_name,
-                    "email": employee.email,
-                    "phone": employee.phone,
-                    "linkedin": employee.linkedin,
-                    "photo_url": photo_url,
-                    "photo_filename": getattr(employee, 'photo_filename', None),
-                    "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
-                    "birthday": employee.birthday.isoformat() if employee.birthday else None,
-                    "employee_number": getattr(employee, 'employee_number', None),
-                    "created_at": employee.created_at,
-                    "updated_at": employee.updated_at,
-                }
-                employee_schema = EmployeeSchema(**employee_dict_minimal)
-                employee_list.append(employee_schema)
+            except ValidationError as validation_error:
+                logger.warning(f"Validation error for employee {employee.id}: {validation_error}")
+                # Fallback: try with minimal required fields
+                try:
+                    employee_schema = EmployeeSchema(
+                        id=employee.id,
+                        first_name=employee.first_name,
+                        last_name=employee.last_name,
+                        email=employee.email,
+                        phone=employee.phone,
+                        linkedin=employee.linkedin,
+                        photo_url=photo_url,
+                        photo_filename=getattr(employee, 'photo_filename', None),
+                        hire_date=employee.hire_date,
+                        birthday=employee.birthday,
+                        user_id=getattr(employee, 'user_id', None),
+                        team_id=getattr(employee, 'team_id', None),
+                        capacity_hours_per_week=getattr(employee, 'capacity_hours_per_week', 35.0),
+                        employee_number=getattr(employee, 'employee_number', None),
+                        created_at=employee.created_at,
+                        updated_at=employee.updated_at,
+                    )
+                    employee_list.append(employee_schema)
+                except Exception as fallback_error:
+                    logger.error(f"Fallback serialization also failed for employee {employee.id}: {fallback_error}", exc_info=True)
+                    # Skip this employee
+                    continue
         except Exception as emp_error:
             logger.error(f"Error processing employee {getattr(employee, 'id', 'unknown')}: {emp_error}", exc_info=True)
             # Skip this employee and continue
             continue
     
-    logger.info(f"Returning {len(employee_list)} employees to client")
+    logger.info(f"Returning {len(employee_list)} employees to client (out of {len(employees)} found in DB)")
     return employee_list
 
 
