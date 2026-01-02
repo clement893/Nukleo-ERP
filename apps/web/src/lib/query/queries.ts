@@ -388,3 +388,109 @@ export function useEmployees(options?: { team_id?: number; enabled?: boolean }) 
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
+
+// Facturations Hooks
+export function useFacturations(options?: {
+  status?: string;
+  project_id?: number;
+  skip?: number;
+  limit?: number;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: queryKeys.facturations.list(options),
+    queryFn: () => facturationsAPI.list({
+      status: options?.status,
+      project_id: options?.project_id,
+      skip: options?.skip || 0,
+      limit: options?.limit || 100,
+    }),
+    enabled: options?.enabled !== false,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useFacturation(invoiceId: number, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.facturations.detail(invoiceId),
+    queryFn: () => facturationsAPI.get(invoiceId),
+    enabled: enabled && !!invoiceId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useCreateFacturation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (invoiceData: Parameters<typeof facturationsAPI.create>[0]) =>
+      facturationsAPI.create(invoiceData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.list() });
+    },
+  });
+}
+
+export function useUpdateFacturation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof facturationsAPI.update>[1] }) =>
+      facturationsAPI.update(id, data),
+    onSuccess: (updatedInvoice) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.detail(updatedInvoice.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.list() });
+    },
+  });
+}
+
+export function useDeleteFacturation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.delete(invoiceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.list() });
+    },
+  });
+}
+
+export function useSendFacturation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.send(invoiceId),
+    onSuccess: (updatedInvoice) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.detail(updatedInvoice.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.list() });
+    },
+  });
+}
+
+export function useCreatePayment() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ invoiceId, paymentData }: { invoiceId: number; paymentData: Parameters<typeof facturationsAPI.createPayment>[1] }) =>
+      facturationsAPI.createPayment(invoiceId, paymentData),
+    onSuccess: (_, { invoiceId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.detail(invoiceId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.list() });
+    },
+  });
+}
+
+export function useDeletePayment() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ invoiceId, paymentId }: { invoiceId: number; paymentId: number }) =>
+      facturationsAPI.deletePayment(invoiceId, paymentId),
+    onSuccess: (_, { invoiceId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.detail(invoiceId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.facturations.list() });
+    },
+  });
+}

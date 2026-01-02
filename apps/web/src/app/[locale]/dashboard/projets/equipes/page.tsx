@@ -13,7 +13,7 @@ import { Users, CheckCircle2, TrendingUp, Target } from 'lucide-react';
 import { useProjectTasks } from '@/lib/query/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { useTeams, useCreateTeam, useTeamBySlug } from '@/lib/query/queries';
+import { useTeams, useCreateTeam } from '@/lib/query/queries';
 import { extractApiData } from '@/lib/api/utils';
 import type { Team as TeamType, TeamMember } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
@@ -27,12 +27,6 @@ interface Employee {
   tasks: ProjectTask[];
 }
 
-interface TeamWithStats extends TeamType {
-  employees: Employee[];
-  totalTasks: number;
-  inProgressTasks: number;
-  completedTasks: number;
-}
 
 // Définition des équipes à créer/afficher
 const REQUIRED_TEAMS = [

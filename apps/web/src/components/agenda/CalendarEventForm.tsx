@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button, Input, Select, Textarea } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import type { CalendarEvent, CalendarEventCreate, CalendarEventUpdate } from '@/lib/api/agenda';
