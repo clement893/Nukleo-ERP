@@ -3,11 +3,16 @@ Finances - Transactions Endpoints
 API endpoints for managing financial transactions (revenues and expenses)
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, File, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
-from typing import List, Optional
+from sqlalchemy import select, and_, or_, func, cast, String
+from typing import List, Optional, Dict, Any
 from datetime import datetime
+from decimal import Decimal
+import zipfile
+import os
+from io import BytesIO
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -284,4 +289,511 @@ async def get_transaction_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error getting transaction summary"
+        )
+
+
+@router.post("/import", status_code=status.HTTP_201_CREATED)
+async def import_transactions(
+    file: UploadFile = File(...),
+    dry_run: bool = Query(False, description="Dry run mode (validate without importing)"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Import transactions (revenues and expenses) from CSV, Excel, or ZIP file
+    
+    Required columns:
+    - Type: 'revenue' or 'expense'
+    - Description: Transaction description
+    - Amount: Transaction amount (HT)
+    - Transaction Date: Date d'émission (YYYY-MM-DD)
+    
+    Optional columns:
+    - Tax Amount: Montant des taxes
+    - Currency: CAD, USD, EUR (default: CAD)
+    - Category: Transaction category
+    - Expected Payment Date: Date de réception prévue
+    - Payment Date: Date de réception réelle
+    - Status: 'pending', 'paid', 'cancelled' (default: pending)
+    - Client Name: For revenues
+    - Supplier Name: For expenses
+    - Invoice Number: Invoice number
+    - Notes: Additional notes
+    """
+    try:
+        from app.services.import_service import ImportService
+        
+        # Read file content
+        file_content = await file.read()
+        filename = file.filename or ""
+        file_ext = os.path.splitext(filename.lower())[1]
+        
+        excel_content = None
+        csv_content = None
+        
+        # Check if it's a ZIP file
+        if file_ext == '.zip':
+            try:
+                with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                    for file_info in zip_ref.namelist():
+                        file_name_lower = file_info.lower()
+                        
+                        if file_name_lower.endswith(('.xlsx', '.xls')):
+                            if excel_content is None:
+                                excel_content = zip_ref.read(file_info)
+                        elif file_name_lower.endswith('.csv'):
+                            if csv_content is None:
+                                csv_content = zip_ref.read(file_info)
+                    
+                    if excel_content is None and csv_content is None:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="No Excel or CSV file found in ZIP"
+                        )
+                    
+                    file_content = excel_content if excel_content else csv_content
+            except zipfile.BadZipFile:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid ZIP file format"
+                )
+        
+        # Determine format
+        if file_ext == '.zip':
+            format_type = 'excel' if excel_content else 'csv'
+        elif file_ext in ['.xlsx', '.xls']:
+            format_type = 'excel'
+        elif file_ext == '.csv':
+            format_type = 'csv'
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unsupported file format. Supported: CSV, Excel (.xlsx, .xls), or ZIP"
+            )
+        
+        # Helper function to get field value (case-insensitive)
+        def get_field_value(row_data: Dict[str, Any], possible_keys: List[str]) -> Any:
+            for key in possible_keys:
+                for row_key, value in row_data.items():
+                    if row_key.lower().strip() == key.lower().strip():
+                        return value
+            return None
+        
+        # Validate transaction row
+        def validate_transaction(row_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
+            """Validate transaction row"""
+            # Check type
+            transaction_type = get_field_value(row_data, [
+                'type', 'type_transaction', 'revenue_expense'
+            ])
+            if not transaction_type:
+                return False, "Missing required field: type"
+            
+            type_str = str(transaction_type).lower().strip()
+            if type_str in ['revenue', 'revenu', 'revenus', 'income', 'recette']:
+                transaction_type = TransactionType.REVENUE
+            elif type_str in ['expense', 'depense', 'dépense', 'depenses', 'dépenses', 'sortie']:
+                transaction_type = TransactionType.EXPENSE
+            else:
+                return False, f"Invalid type: {transaction_type}. Must be 'revenue' or 'expense'"
+            
+            # Check description
+            description = get_field_value(row_data, [
+                'description', 'libelle', 'libellé', 'description_transaction'
+            ])
+            if not description:
+                return False, "Missing required field: description"
+            
+            # Check amount
+            amount = get_field_value(row_data, ['amount', 'montant', 'montant_ht'])
+            if not amount:
+                return False, "Missing required field: amount"
+            
+            try:
+                amount_decimal = Decimal(str(amount))
+                if amount_decimal <= 0:
+                    return False, "Amount must be greater than 0"
+            except (ValueError, TypeError):
+                return False, f"Invalid amount: {amount}"
+            
+            # Check transaction date
+            date_str = get_field_value(row_data, [
+                'transaction_date', 'date_transaction', 'date_emission', 
+                'date_émission', 'date', 'date_operation'
+            ])
+            if not date_str:
+                return False, "Missing required field: transaction_date"
+            
+            try:
+                if isinstance(date_str, datetime):
+                    pass
+                elif isinstance(date_str, str):
+                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
+                        try:
+                            datetime.strptime(date_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                    else:
+                        return False, f"Invalid date format: {date_str}"
+            except Exception:
+                return False, f"Invalid date: {date_str}"
+            
+            return True, None
+        
+        # Import data
+        if format_type == 'excel':
+            result = ImportService.import_from_excel(
+                file_content=file_content,
+                has_headers=True,
+                validator=validate_transaction
+            )
+        else:  # CSV
+            result = ImportService.import_from_csv(
+                file_content=file_content,
+                encoding='utf-8',
+                has_headers=True,
+                validator=validate_transaction
+            )
+        
+        if dry_run:
+            return {
+                "dry_run": True,
+                "total_rows": result['total_rows'],
+                "valid_rows": result['valid_rows'],
+                "invalid_rows": result['invalid_rows'],
+                "errors": result['errors'],
+                "warnings": result['warnings'],
+                "preview": result['data'][:5] if result['data'] else []
+            }
+        
+        # Process valid rows and create transactions
+        created_transactions = []
+        errors = []
+        
+        for idx, row_data in enumerate(result['data'], start=2):  # Start at 2 (header + 1-based)
+            try:
+                # Get and normalize type
+                transaction_type = get_field_value(row_data, ['type', 'type_transaction', 'revenue_expense'])
+                type_str = str(transaction_type).lower().strip()
+                if type_str in ['revenue', 'revenu', 'revenus', 'income', 'recette']:
+                    final_type = TransactionType.REVENUE
+                else:
+                    final_type = TransactionType.EXPENSE
+                
+                # Get required fields
+                description = str(get_field_value(row_data, ['description', 'libelle', 'libellé']))
+                amount = Decimal(str(get_field_value(row_data, ['amount', 'montant', 'montant_ht'])))
+                
+                # Parse transaction date
+                date_str = get_field_value(row_data, [
+                    'transaction_date', 'date_transaction', 'date_emission', 'date'
+                ])
+                if isinstance(date_str, datetime):
+                    transaction_date = date_str
+                else:
+                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
+                        try:
+                            transaction_date = datetime.strptime(str(date_str), fmt)
+                            break
+                        except ValueError:
+                            continue
+                    else:
+                        transaction_date = datetime.now()
+                
+                # Get optional fields
+                tax_amount = get_field_value(row_data, ['tax_amount', 'montant_taxes', 'taxes'])
+                tax_amount_decimal = Decimal(str(tax_amount)) if tax_amount else Decimal(0)
+                
+                currency = get_field_value(row_data, ['currency', 'devise']) or 'CAD'
+                category = get_field_value(row_data, ['category', 'categorie'])
+                
+                # Parse dates
+                expected_payment_date = None
+                expected_date_str = get_field_value(row_data, [
+                    'expected_payment_date', 'date_reception_prevue', 'date_prevue'
+                ])
+                if expected_date_str:
+                    if isinstance(expected_date_str, datetime):
+                        expected_payment_date = expected_date_str
+                    else:
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']:
+                            try:
+                                expected_payment_date = datetime.strptime(str(expected_date_str), fmt)
+                                break
+                            except ValueError:
+                                continue
+                
+                payment_date = None
+                payment_date_str = get_field_value(row_data, [
+                    'payment_date', 'date_reception_reelle', 'date_reelle', 'date_paiement'
+                ])
+                if payment_date_str:
+                    if isinstance(payment_date_str, datetime):
+                        payment_date = payment_date_str
+                    else:
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']:
+                            try:
+                                payment_date = datetime.strptime(str(payment_date_str), fmt)
+                                break
+                            except ValueError:
+                                continue
+                
+                # Get status
+                status_str = get_field_value(row_data, ['status', 'statut', 'etat'])
+                if status_str:
+                    status_lower = str(status_str).lower()
+                    if status_lower in ['paid', 'paye', 'payé', 'recu', 'reçu']:
+                        transaction_status = TransactionStatus.PAID
+                    elif status_lower in ['cancelled', 'annule', 'annulé']:
+                        transaction_status = TransactionStatus.CANCELLED
+                    else:
+                        transaction_status = TransactionStatus.PENDING
+                else:
+                    transaction_status = TransactionStatus.PENDING
+                
+                # Get client/supplier
+                client_name = None
+                supplier_name = None
+                if final_type == TransactionType.REVENUE:
+                    client_name = get_field_value(row_data, ['client_name', 'client', 'nom_client'])
+                else:
+                    supplier_name = get_field_value(row_data, ['supplier_name', 'supplier', 'fournisseur', 'nom_fournisseur'])
+                
+                invoice_number = get_field_value(row_data, ['invoice_number', 'numero_facture', 'facture'])
+                notes = get_field_value(row_data, ['notes', 'remarques', 'commentaires'])
+                
+                # Create transaction
+                transaction = Transaction(
+                    user_id=current_user.id,
+                    type=final_type,
+                    description=description,
+                    amount=amount,
+                    tax_amount=tax_amount_decimal,
+                    currency=str(currency).upper()[:3],
+                    category=str(category) if category else None,
+                    transaction_date=transaction_date,
+                    expected_payment_date=expected_payment_date,
+                    payment_date=payment_date,
+                    status=transaction_status,
+                    client_name=str(client_name) if client_name else None,
+                    supplier_name=str(supplier_name) if supplier_name else None,
+                    invoice_number=str(invoice_number) if invoice_number else None,
+                    notes=str(notes) if notes else None,
+                )
+                
+                db.add(transaction)
+                created_transactions.append(transaction)
+                
+            except Exception as e:
+                errors.append({
+                    "row": idx,
+                    "data": row_data,
+                    "error": str(e)
+                })
+                logger.error(f"Error processing row {idx}: {e}", exc_info=True)
+        
+        # Commit all transactions
+        await db.commit()
+        
+        # Refresh transactions to get IDs
+        for transaction in created_transactions:
+            await db.refresh(transaction)
+        
+        logger.info(f"User {current_user.id} imported {len(created_transactions)} transactions")
+        
+        return {
+            "success": True,
+            "created_count": len(created_transactions),
+            "error_count": len(errors),
+            "errors": errors,
+            "warnings": result.get('warnings', []),
+            "transactions": [
+                TransactionResponse.model_validate(t) for t in created_transactions[:10]
+            ]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error importing transactions: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error importing transactions: {str(e)}"
+        )
+
+
+@router.get("/import/template")
+async def download_import_template(
+    format: str = Query("zip", description="Template format: zip, csv, or excel"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Download import template file for transactions
+    
+    Returns a template file (ZIP with CSV/Excel + instructions, or standalone CSV/Excel)
+    """
+    try:
+        from app.services.export_service import ExportService
+        
+        # Create sample data for template
+        sample_data = [
+            {
+                "Type": "revenue",
+                "Description": "Vente de services de consultation",
+                "Montant HT": 1000.00,
+                "Montant Taxes": 150.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-01-15",
+                "Date Reception Prevue": "2025-01-30",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Client": "Client ABC",
+                "Numero Facture": "FAC-2025-001",
+                "Categorie": "Ventes",
+                "Notes": "Premier paiement"
+            },
+            {
+                "Type": "expense",
+                "Description": "Achat de fournitures de bureau",
+                "Montant HT": 500.00,
+                "Montant Taxes": 75.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-01-16",
+                "Date Reception Prevue": "2025-01-20",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Fournisseur": "Fournisseur XYZ",
+                "Numero Facture": "INV-2025-001",
+                "Categorie": "Fournitures",
+                "Notes": "Commande urgente"
+            }
+        ]
+        
+        if format == "zip":
+            # Create ZIP with CSV and instructions
+            zip_buffer = BytesIO()
+            
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                # Add CSV template
+                csv_buffer, csv_filename = ExportService.export_to_csv(
+                    data=sample_data,
+                    headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
+                            "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
+                            "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Notes"],
+                    filename="transactions.csv"
+                )
+                zip_file.writestr("transactions.csv", csv_buffer.getvalue())
+                
+                # Add instructions
+                instructions = """INSTRUCTIONS D'IMPORT - REVENUS ET DÉPENSES
+===============================================
+
+FORMAT DU FICHIER
+-----------------
+Le fichier transactions.csv contient les transactions à importer.
+
+COLONNES REQUISES
+-----------------
+- Type: 'revenue' (revenu) ou 'expense' (dépense)
+- Description: Description de la transaction
+- Montant HT: Montant hors taxes (ex: 1000.00)
+- Date Emission: Date d'émission au format YYYY-MM-DD (ex: 2025-01-15)
+
+COLONNES OPTIONNELLES
+---------------------
+- Montant Taxes: Montant des taxes (GST, QST, etc.) - défaut: 0
+- Devise: CAD, USD, EUR - défaut: CAD
+- Date Reception Prevue: Date de réception prévue (YYYY-MM-DD)
+- Date Reception Reelle: Date de réception réelle (YYYY-MM-DD)
+- Statut: 'pending', 'paid', 'cancelled' - défaut: pending
+- Client: Nom du client (pour les revenus)
+- Fournisseur: Nom du fournisseur (pour les dépenses)
+- Numero Facture: Numéro de facture
+- Categorie: Catégorie de la transaction
+- Notes: Notes supplémentaires
+
+FORMATS DE DATE ACCEPTÉS
+------------------------
+- YYYY-MM-DD (ex: 2025-01-15)
+- DD/MM/YYYY (ex: 15/01/2025)
+- MM/DD/YYYY (ex: 01/15/2025)
+
+EXEMPLES
+--------
+revenue,"Vente services",1000.00,150.00,CAD,2025-01-15,2025-01-30,,pending,"Client ABC",,FAC-001,Ventes,"Premier paiement"
+expense,"Fournitures",500.00,75.00,CAD,2025-01-16,2025-01-20,,pending,,"Fournisseur XYZ",INV-001,Fournitures,"Commande urgente"
+
+IMPORT
+------
+1. Modifiez le fichier transactions.csv avec vos données
+2. Compressez le fichier en ZIP (optionnel)
+3. Uploadez via l'interface d'import
+4. Vérifiez les erreurs et warnings avant de confirmer
+
+LIMITES
+-------
+- Taille max: 10MB
+- Formats: CSV, Excel (.xlsx, .xls), ou ZIP
+- Encodage: UTF-8 recommandé
+"""
+                zip_file.writestr("INSTRUCTIONS.txt", instructions.encode('utf-8'))
+            
+            zip_buffer.seek(0)
+            
+            return Response(
+                content=zip_buffer.getvalue(),
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": "attachment; filename=template_import_transactions.zip"
+                }
+            )
+        
+        elif format == "csv":
+            csv_buffer, csv_filename = ExportService.export_to_csv(
+                data=sample_data,
+                headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
+                        "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
+                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Notes"],
+                filename="template_transactions.csv"
+            )
+            
+            return Response(
+                content=csv_buffer.getvalue(),
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": f"attachment; filename={csv_filename}"
+                }
+            )
+        
+        elif format == "excel":
+            excel_buffer, excel_filename = ExportService.export_to_excel(
+                data=sample_data,
+                headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
+                        "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
+                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Notes"],
+                filename="template_transactions.xlsx"
+            )
+            
+            return Response(
+                content=excel_buffer.getvalue(),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f"attachment; filename={excel_filename}"
+                }
+            )
+        
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported format: {format}. Supported: zip, csv, excel"
+            )
+            
+    except Exception as e:
+        logger.error(f"Error generating import template: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error generating import template"
         )

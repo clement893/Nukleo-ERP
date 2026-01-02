@@ -2,12 +2,12 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   TrendingUp, Plus, Edit, Trash2, Eye, Search, Calendar,
-  DollarSign, Filter, Download, Upload
+  DollarSign, Filter, Download, Upload, FileText, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import { Button, Badge, Input, Select, Modal, Textarea, Loading, useToast } from '@/components/ui';
 import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionType, type TransactionStatus } from '@/lib/api/finances/transactions';
@@ -40,8 +40,13 @@ export default function RevenusPage() {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
   const [formData, setFormData] = useState<TransactionCreate>({
@@ -793,6 +798,167 @@ export default function RevenusPage() {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Import Modal */}
+        <Modal
+          isOpen={showImportModal}
+          onClose={() => {
+            setShowImportModal(false);
+            setImportFile(null);
+            setImportResult(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          }}
+          title="Importer des revenus"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Instructions</h3>
+                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                    <li>Téléchargez le modèle pour voir le format attendu</li>
+                    <li>Remplissez le fichier CSV ou Excel avec vos données</li>
+                    <li>Colonnes requises: Type, Description, Montant HT, Date Emission</li>
+                    <li>Colonnes optionnelles: Montant Taxes, Client, Date Reception Prevue, etc.</li>
+                    <li>Formats acceptés: CSV, Excel (.xlsx, .xls), ou ZIP</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Fichier à importer
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls,.zip"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setImportFile(file);
+                    setImportResult(null);
+                  }
+                }}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-primary-500 file:text-white
+                  hover:file:bg-primary-600
+                  file:cursor-pointer"
+              />
+            </div>
+
+            {importResult && (
+              <div className={`p-4 rounded-lg border ${
+                importResult.success 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-start gap-3">
+                  {importResult.success ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className={`font-semibold mb-2 ${
+                      importResult.success 
+                        ? 'text-green-900 dark:text-green-100' 
+                        : 'text-red-900 dark:text-red-100'
+                    }`}>
+                      {importResult.success ? 'Import réussi' : 'Erreurs lors de l\'import'}
+                    </h3>
+                    <div className="text-sm space-y-1">
+                      <p className={importResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}>
+                        {importResult.success 
+                          ? `${importResult.created_count} transaction(s) créée(s)`
+                          : `${importResult.error_count} erreur(s) trouvée(s)`
+                        }
+                      </p>
+                      {importResult.errors && importResult.errors.length > 0 && (
+                        <div className="mt-2">
+                          <p className="font-semibold mb-1">Erreurs:</p>
+                          <ul className="list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
+                            {importResult.errors.slice(0, 10).map((error: any, idx: number) => (
+                              <li key={idx} className="text-xs">
+                                Ligne {error.row}: {error.error}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                  setImportResult(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
+                }}
+                disabled={importing}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!importFile) {
+                    showToast({ 
+                      message: 'Veuillez sélectionner un fichier', 
+                      type: 'error' 
+                    });
+                    return;
+                  }
+
+                  try {
+                    setImporting(true);
+                    const result = await transactionsAPI.import(importFile, false);
+                    setImportResult(result);
+                    
+                    if (result.success && result.created_count > 0) {
+                      await loadTransactions();
+                      showToast({ 
+                        message: `${result.created_count} transaction(s) importée(s) avec succès`, 
+                        type: 'success' 
+                      });
+                    } else if (result.error_count > 0) {
+                      showToast({ 
+                        message: `${result.error_count} erreur(s) lors de l'import`, 
+                        type: 'error' 
+                      });
+                    }
+                  } catch (err) {
+                    const appError = handleApiError(err);
+                    showToast({ 
+                      message: appError.message || 'Erreur lors de l\'import', 
+                      type: 'error' 
+                    });
+                  } finally {
+                    setImporting(false);
+                  }
+                }}
+                disabled={!importFile || importing}
+              >
+                {importing ? 'Import en cours...' : 'Importer'}
               </Button>
             </div>
           </div>

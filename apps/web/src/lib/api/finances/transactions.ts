@@ -181,4 +181,63 @@ export const transactionsAPI = {
     }
     return data;
   },
+
+  /**
+   * Import transactions from file
+   */
+  import: async (
+    file: File,
+    dryRun: boolean = false
+  ): Promise<{
+    success: boolean;
+    created_count: number;
+    error_count: number;
+    errors: Array<{ row: number; data: unknown; error: string }>;
+    warnings?: Array<{ row: number; type: string; message: string }>;
+    transactions?: Transaction[];
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await apiClient.post<{
+      success: boolean;
+      created_count: number;
+      error_count: number;
+      errors: Array<{ row: number; data: unknown; error: string }>;
+      warnings?: Array<{ row: number; type: string; message: string }>;
+      transactions?: Transaction[];
+    }>(`/v1/finances/transactions/import?dry_run=${dryRun}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    const data = extractApiData(response);
+    if (!data) {
+      throw new Error('Failed to import transactions: no data returned');
+    }
+    return data;
+  },
+
+  /**
+   * Download import template
+   */
+  downloadTemplate: async (format: 'zip' | 'csv' | 'excel' = 'zip'): Promise<Blob> => {
+    const response = await apiClient.get(`/v1/finances/transactions/import/template?format=${format}`, {
+      responseType: 'blob',
+    });
+    
+    if (response.status >= 400) {
+      const text = await (response.data as Blob).text();
+      let errorData: unknown;
+      try {
+        errorData = JSON.parse(text);
+      } catch {
+        errorData = { detail: text || 'Download failed' };
+      }
+      throw new Error((errorData as { detail?: string })?.detail || 'Download failed');
+    }
+    
+    return response.data as Blob;
+  },
 };
