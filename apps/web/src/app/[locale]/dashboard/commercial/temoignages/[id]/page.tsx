@@ -54,7 +54,7 @@ export default function TestimonialDetailPage() {
   const handleEdit = () => {
     if (testimonial) {
       const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/commercial/temoignages/${testimonial.id}/edit`);
+      router.push(`/${locale}/dashboard/commercial/temoignages?edit=${testimonial.id}`);
     }
   };
 

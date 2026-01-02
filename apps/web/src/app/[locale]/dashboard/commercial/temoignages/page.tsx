@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { Button, Alert, Loading, Badge, Input, Select, Textarea, Card } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -31,6 +31,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 function TemoignagesContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -263,7 +264,7 @@ function TemoignagesContent() {
   };
 
   // Open edit modal
-  const openEditModal = (testimonial: Testimonial) => {
+  const openEditModal = useCallback((testimonial: Testimonial) => {
     setSelectedTestimonial(testimonial);
     setTestimonialForm({
       contact_id: testimonial.contact_id,
@@ -278,7 +279,26 @@ function TemoignagesContent() {
       rating: testimonial.rating,
     });
     setShowEditModal(true);
-  };
+  }, []);
+
+  // Handle edit parameter from URL
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && testimonials.length > 0) {
+      const testimonialId = parseInt(editId, 10);
+      const testimonial = testimonials.find(t => t.id === testimonialId);
+      if (testimonial) {
+        openEditModal(testimonial);
+        // Remove the edit parameter from URL
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete('edit');
+        const newUrl = newSearchParams.toString() 
+          ? `${window.location.pathname}?${newSearchParams.toString()}`
+          : window.location.pathname;
+        router.replace(newUrl);
+      }
+    }
+  }, [searchParams, testimonials, router, openEditModal]);
 
   // Table columns
   const columns: Column<Testimonial>[] = [
