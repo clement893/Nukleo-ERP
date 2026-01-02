@@ -58,7 +58,7 @@ export default function ProjectDeadlines({ projectId }: ProjectDeadlinesProps) {
     description: null,
     priority: 'medium',
     status: 'pending',
-    due_date: new Date().toISOString().split('T')[0],
+    due_date: new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10),
     due_time: null,
     project_id: String(projectId),
   });
@@ -92,7 +92,7 @@ export default function ProjectDeadlines({ projectId }: ProjectDeadlinesProps) {
         description: null,
         priority: 'medium',
         status: 'pending',
-        due_date: new Date().toISOString().split('T')[0],
+        due_date: new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10),
         due_time: null,
         project_id: String(projectId),
       });
@@ -334,7 +334,7 @@ export default function ProjectDeadlines({ projectId }: ProjectDeadlinesProps) {
             description: null,
             priority: 'medium',
             status: 'pending',
-            due_date: new Date().toISOString().split('T')[0],
+            due_date: new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10),
             due_time: null,
             project_id: String(projectId),
           });
@@ -393,7 +393,7 @@ export default function ProjectDeadlines({ projectId }: ProjectDeadlinesProps) {
                   description: null,
                   priority: 'medium',
                   status: 'pending',
-                  due_date: new Date().toISOString().split('T')[0],
+                  due_date: new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10),
                   due_time: null,
                   project_id: String(projectId),
                 });

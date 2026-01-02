@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Calendar, AlertCircle, CheckCircle, Clock, Search } from 'lucide-react';
@@ -10,7 +10,6 @@ import { Badge, Button, Card, Input } from '@/components/ui';
 import { useInfiniteProjects } from '@/lib/query/projects';
 import { useInfiniteProjectTasks } from '@/lib/query/project-tasks';
 import { deadlinesAPI, type Deadline } from '@/lib/api/deadlines';
-import { useEffect, useState } from 'react';
 
 type DeadlineStatus = 'overdue' | 'today' | 'upcoming' | 'completed';
 
