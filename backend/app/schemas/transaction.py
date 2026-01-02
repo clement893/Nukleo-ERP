@@ -16,7 +16,7 @@ class TransactionBase(BaseModel):
     description: str = Field(..., min_length=1, max_length=500)
     amount: Decimal = Field(..., gt=0)
     tax_amount: Optional[Decimal] = Field(None, ge=0)  # Montant des taxes
-    currency: str = Field(default="CAD", max_length=3)
+    currency: Optional[str] = Field(default="CAD", max_length=3)  # Optional to handle missing column during migration
     category: Optional[str] = Field(None, max_length=100)
     transaction_date: datetime  # Date d'émission
     expected_payment_date: Optional[datetime] = None  # Date de réception prévue
