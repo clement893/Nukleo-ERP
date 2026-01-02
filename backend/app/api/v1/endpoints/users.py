@@ -323,6 +323,7 @@ async def get_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@rate_limit_decorator("10/hour")
 async def delete_user(
     user_id: int,
     request: Request,
@@ -469,10 +470,12 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return None - FastAPI will automatically convert to 204 No Content
-        # This works correctly with slowapi rate limiting (unlike explicit Response objects)
+        # Return explicit Response object - slowapi requires this for headers injection
+        # Using starlette.responses.Response directly to ensure compatibility
+        from starlette.responses import Response as StarletteResponse
+        response = StarletteResponse(status_code=status.HTTP_204_NO_CONTENT)
         logger.info(f"[DELETE USER] User {user_id} ({user_email}) successfully deleted by {current_user.email}")
-        return None
+        return response
         
     except HTTPException as http_exc:
         # Re-raise HTTP exceptions as-is
