@@ -10,6 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision: str = '070'
@@ -19,6 +20,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    """Upgrade database schema - create transactions table if it doesn't exist"""
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    
+    # Check if transactions table already exists
+    if 'transactions' in inspector.get_table_names():
+        return  # Table already exists, skip migration
+    
     # Create transactions table
     op.create_table(
         'transactions',
@@ -45,12 +54,19 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id')
     )
     
-    # Create indexes
-    op.create_index('idx_transactions_user_id', 'transactions', ['user_id'])
-    op.create_index('idx_transactions_type', 'transactions', ['type'])
-    op.create_index('idx_transactions_status', 'transactions', ['status'])
-    op.create_index('idx_transactions_date', 'transactions', ['transaction_date'])
-    op.create_index('idx_transactions_category', 'transactions', ['category'])
+    # Create indexes (check if they exist first)
+    existing_indexes = [idx['name'] for idx in inspector.get_indexes('transactions')]
+    
+    if 'idx_transactions_user_id' not in existing_indexes:
+        op.create_index('idx_transactions_user_id', 'transactions', ['user_id'])
+    if 'idx_transactions_type' not in existing_indexes:
+        op.create_index('idx_transactions_type', 'transactions', ['type'])
+    if 'idx_transactions_status' not in existing_indexes:
+        op.create_index('idx_transactions_status', 'transactions', ['status'])
+    if 'idx_transactions_date' not in existing_indexes:
+        op.create_index('idx_transactions_date', 'transactions', ['transaction_date'])
+    if 'idx_transactions_category' not in existing_indexes:
+        op.create_index('idx_transactions_category', 'transactions', ['category'])
 
 
 def downgrade() -> None:

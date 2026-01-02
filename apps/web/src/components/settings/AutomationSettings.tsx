@@ -106,7 +106,7 @@ export default function AutomationSettings() {
   const createRuleMutation = useMutation({
     mutationFn: (rule: Parameters<typeof automationAPI.createAutomationRule>[0]) =>
       automationAPI.createAutomationRule(rule),
-    onSuccess: async (newRule) => {
+    onSuccess: async () => {
       // Invalidate and refetch to ensure the new rule appears immediately
       await queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
       await refetchRules();
