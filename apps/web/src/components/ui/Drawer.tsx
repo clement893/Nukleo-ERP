@@ -215,17 +215,18 @@ export default function Drawer({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const animation = slideAnimations[position];
   const sizeClass = sizeClasses[size][position];
+
+  if (!isOpen) return null;
 
   return (
     <div
       className={clsx(
         'fixed inset-0 z-50',
         overlay && 'bg-black/50 dark:bg-black/70',
-        overlayClassName
+        overlayClassName,
+        'animate-fade-in'
       )}
       onClick={closeOnOverlayClick ? onClose : undefined}
     >
@@ -236,10 +237,13 @@ export default function Drawer({
           'flex flex-col',
           positionClasses[position],
           sizeClass,
-          isOpen ? animation.enter : animation.exit,
-          'transition-transform duration-300 ease-in-out',
+          animation.enter,
+          'transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
           className
         )}
+        style={{
+          animation: 'slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

@@ -1018,6 +1018,23 @@ button[style*="var(--color-primary"] {
   animation: scale-in 0.2s ease-out;
 }
 
+/* ============================================
+   DRAWER SLIDE-IN ANIMATIONS
+   ============================================ */
+
+/* Smooth slide-in animation for drawers */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
 /* Glass Input - For search bars and form inputs */
 .glass-input {
