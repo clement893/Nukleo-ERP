@@ -2,13 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
   AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
-  Building2, Loader2
+  Building2, Loader2, Upload, X, FileText, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats } from '@/lib/api/tresorerie';
@@ -28,6 +28,10 @@ export default function TresoreriePage() {
   const [soldesHebdo, setSoldesHebdo] = useState<SoldeHebdomadaire[]>([]);
   const [soldeActuel, setSoldeActuel] = useState(0);
   const [stats, setStats] = useState<TreasuryStats | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -151,9 +155,42 @@ export default function TresoreriePage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={async () => {
+                    try {
+                      const blob = await tresorerieAPI.downloadImportTemplate('zip');
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'template_import_tresorerie.zip';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                      showToast({
+                        title: 'Téléchargement',
+                        message: 'Modèle d\'import téléchargé',
+                        type: 'success'
+                      });
+                    } catch (error) {
+                      showToast({
+                        title: 'Erreur',
+                        message: 'Impossible de télécharger le modèle',
+                        type: 'error'
+                      });
+                    }
+                  }}
+                >
                   <Download className="w-4 h-4 mr-2" />
-                  Exporter
+                  Télécharger Modèle
+                </Button>
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importer
                 </Button>
                 <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
                   <Plus className="w-4 h-4 mr-2" />
@@ -441,6 +478,232 @@ export default function TresoreriePage() {
           </div>
         </Card>
       </MotionDiv>
+
+      {/* Modal d'Import */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Importer des Transactions
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResult(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Importez vos transactions depuis un fichier CSV, Excel ou ZIP. 
+                    Téléchargez d'abord le modèle pour voir le format attendu.
+                  </p>
+                  
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,.xlsx,.xls,.zip"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        try {
+                          setImporting(true);
+                          setImportResult(null);
+
+                          // Dry run first
+                          const dryRunResult = await tresorerieAPI.importTransactions(file, { dry_run: true });
+                          setImportResult(dryRunResult);
+
+                          if (dryRunResult.invalid_rows > 0) {
+                            showToast({
+                              title: 'Attention',
+                              message: `${dryRunResult.invalid_rows} ligne(s) avec erreurs détectées`,
+                              type: 'warning'
+                            });
+                          }
+                        } catch (error: any) {
+                          showToast({
+                            title: 'Erreur',
+                            message: error?.message || 'Erreur lors de l\'import',
+                            type: 'error'
+                          });
+                        } finally {
+                          setImporting(false);
+                        }
+                      }}
+                      className="hidden"
+                      id="import-file-input"
+                    />
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Cliquez pour sélectionner un fichier
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        CSV, Excel (.xlsx, .xls) ou ZIP (max 10MB)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {importResult && (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Total lignes</div>
+                          <div className="font-bold text-lg">{importResult.total_rows}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Valides</div>
+                          <div className="font-bold text-lg text-green-600">{importResult.valid_rows}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Erreurs</div>
+                          <div className="font-bold text-lg text-red-600">{importResult.invalid_rows}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-h-48 overflow-y-auto">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-5 h-5 text-red-600" />
+                          <h3 className="font-semibold text-red-900 dark:text-red-200">Erreurs</h3>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          {importResult.errors.slice(0, 5).map((err: any, idx: number) => (
+                            <div key={idx} className="text-red-700 dark:text-red-300">
+                              <strong>Ligne {err.row}:</strong> {err.error}
+                            </div>
+                          ))}
+                          {importResult.errors.length > 5 && (
+                            <div className="text-red-600 dark:text-red-400 text-xs">
+                              ... et {importResult.errors.length - 5} autre(s) erreur(s)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {importResult.warnings && importResult.warnings.length > 0 && (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 max-h-48 overflow-y-auto">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                          <h3 className="font-semibold text-yellow-900 dark:text-yellow-200">Avertissements</h3>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          {importResult.warnings.slice(0, 5).map((warn: any, idx: number) => (
+                            <div key={idx} className="text-yellow-700 dark:text-yellow-300">
+                              <strong>Ligne {warn.row}:</strong> {warn.warning}
+                            </div>
+                          ))}
+                          {importResult.warnings.length > 5 && (
+                            <div className="text-yellow-600 dark:text-yellow-400 text-xs">
+                              ... et {importResult.warnings.length - 5} autre(s) avertissement(s)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!importResult.dry_run && importResult.created_count > 0 && (
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="font-semibold text-green-900 dark:text-green-200">
+                            {importResult.created_count} transaction(s) importée(s) avec succès
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      {importResult.dry_run && (
+                        <Button
+                          className="flex-1"
+                          onClick={async () => {
+                            const file = fileInputRef.current?.files?.[0];
+                            if (!file) return;
+
+                            try {
+                              setImporting(true);
+                              const result = await tresorerieAPI.importTransactions(file, { dry_run: false });
+                              setImportResult(result);
+                              
+                              if (result.created_count > 0) {
+                                showToast({
+                                  title: 'Succès',
+                                  message: `${result.created_count} transaction(s) importée(s)`,
+                                  type: 'success'
+                                });
+                                // Recharger les données
+                                await loadTresorerie();
+                                setTimeout(() => {
+                                  setShowImportModal(false);
+                                  setImportResult(null);
+                                }, 2000);
+                              }
+                            } catch (error: any) {
+                              showToast({
+                                title: 'Erreur',
+                                message: error.message || 'Erreur lors de l\'import',
+                                type: 'error'
+                              });
+                            } finally {
+                              setImporting(false);
+                            }
+                          }}
+                          disabled={importing || importResult.invalid_rows > 0}
+                        >
+                          {importing ? 'Importation...' : 'Confirmer l\'Import'}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowImportModal(false);
+                          setImportResult(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        }}
+                      >
+                        {importResult.dry_run ? 'Annuler' : 'Fermer'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {importing && !importResult && (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#523DC9]" />
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Validation du fichier...
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 }
