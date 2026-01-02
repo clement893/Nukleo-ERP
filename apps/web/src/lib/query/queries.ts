@@ -12,6 +12,10 @@ import {
   teamsAPI, 
   invitationsAPI,
 } from '@/lib/api';
+import { teamsAPI as teamsAPIClient } from '@/lib/api/teams';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { employeesAPI } from '@/lib/api/employees';
+import { extractApiData } from '@/lib/api/utils';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 
 // Query Keys Factory
@@ -32,8 +36,25 @@ export const queryKeys = {
   },
   teams: {
     all: ['teams'] as const,
-    detail: (id: string) => ['teams', id] as const,
-    members: (id: string) => ['teams', id, 'members'] as const,
+    detail: (id: string | number) => ['teams', id] as const,
+    bySlug: (slug: string) => ['teams', 'slug', slug] as const,
+    members: (id: string | number) => ['teams', id, 'members'] as const,
+  },
+  projectTasks: {
+    all: ['project-tasks'] as const,
+    lists: () => ['project-tasks', 'list'] as const,
+    list: (filters?: {
+      team_id?: number;
+      project_id?: number;
+      assignee_id?: number;
+      status?: string;
+    }) => ['project-tasks', 'list', filters] as const,
+    detail: (id: number) => ['project-tasks', id] as const,
+  },
+  employees: {
+    all: ['employees'] as const,
+    list: (filters?: { team_id?: number }) => ['employees', 'list', filters] as const,
+    detail: (id: number) => ['employees', id] as const,
   },
   invitations: {
     all: (params?: { status?: string }) => ['invitations', params] as const,
@@ -183,19 +204,39 @@ export function useTeams() {
   });
 }
 
-export function useTeam(teamId: string) {
+export function useTeam(teamId: string | number) {
   return useQuery({
     queryKey: queryKeys.teams.detail(teamId),
-    queryFn: () => teamsAPI.get(teamId),
+    queryFn: async () => {
+      const response = await teamsAPIClient.getTeam(typeof teamId === 'string' ? parseInt(teamId) : teamId);
+      return extractApiData(response);
+    },
     enabled: !!teamId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
-export function useTeamMembers(teamId: string) {
+export function useTeamBySlug(slug: string) {
+  return useQuery({
+    queryKey: queryKeys.teams.bySlug(slug),
+    queryFn: async () => {
+      const response = await teamsAPIClient.getTeamBySlug(slug);
+      return extractApiData(response);
+    },
+    enabled: !!slug,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+export function useTeamMembers(teamId: string | number) {
   return useQuery({
     queryKey: queryKeys.teams.members(teamId),
-    queryFn: () => teamsAPI.getMembers(teamId),
+    queryFn: async () => {
+      const response = await teamsAPIClient.getTeamMembers(typeof teamId === 'string' ? parseInt(teamId) : teamId);
+      return extractApiData(response) || [];
+    },
     enabled: !!teamId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
@@ -203,10 +244,15 @@ export function useCreateTeam() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: { name: string; description?: string; organization_id?: string }) =>
-      teamsAPI.create(data),
-    onSuccess: () => {
+    mutationFn: async (data: { name: string; slug: string; description?: string }) => {
+      const response = await teamsAPIClient.create(data);
+      return extractApiData(response);
+    },
+    onSuccess: (newTeam) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+      if (newTeam?.slug) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.teams.bySlug(newTeam.slug) });
+      }
     },
   });
 }
@@ -280,3 +326,51 @@ export function useResendInvitation() {
   });
 }
 
+// Project Tasks Hooks
+export function useProjectTasks(options?: {
+  team_id?: number;
+  project_id?: number;
+  assignee_id?: number;
+  status?: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: queryKeys.projectTasks.list(options),
+    queryFn: () => projectTasksAPI.list({
+      team_id: options?.team_id,
+      project_id: options?.project_id,
+      assignee_id: options?.assignee_id,
+      status: options?.status as any,
+    }),
+    enabled: options?.enabled !== false,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useUpdateProjectTask() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) =>
+      projectTasksAPI.update(id, data),
+    onSuccess: (updatedTask) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projectTasks.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projectTasks.detail(updatedTask.id) });
+    },
+  });
+}
+
+// Employees Hooks
+export function useEmployees(options?: { team_id?: number; enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.employees.list(options),
+    queryFn: () => employeesAPI.list(0, 1000).then(employees => {
+      if (options?.team_id) {
+        return employees.filter(emp => emp.team_id === options.team_id);
+      }
+      return employees;
+    }),
+    enabled: options?.enabled !== false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}

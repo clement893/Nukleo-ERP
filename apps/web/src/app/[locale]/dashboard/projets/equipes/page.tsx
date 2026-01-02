@@ -4,19 +4,19 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
 import { Badge, Loading, Alert, Heading, Text } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { Users, CheckCircle2, TrendingUp, Target } from 'lucide-react';
-import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { useProjectTasks } from '@/lib/query/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { teamsAPI } from '@/lib/api/teams';
+import { useTeams, useCreateTeam, useTeamBySlug } from '@/lib/query/queries';
+import { extractApiData } from '@/lib/api/utils';
 import type { Team as TeamType, TeamMember } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
-import { extractApiData } from '@/lib/api/utils';
 
 // Types
 interface Employee {
@@ -45,13 +45,18 @@ const REQUIRED_TEAMS = [
 function EquipesContent() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [teams, setTeams] = useState<TeamWithStats[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadTeams();
-  }, []);
+  
+  // Use React Query hooks
+  const { data: teamsResponse, isLoading: teamsLoading, error: teamsError } = useTeams();
+  const createTeamMutation = useCreateTeam();
+  
+  // Extract teams data
+  const teamsData = useMemo(() => {
+    if (!teamsResponse?.data) return null;
+    const data = extractApiData<{ teams: TeamType[]; total: number }>(teamsResponse);
+    return data?.teams || [];
+  }, [teamsResponse]);
 
   const generateSlug = (name: string): string => {
     return name
@@ -62,60 +67,70 @@ function EquipesContent() {
       .replace(/^-+|-+$/g, '');
   };
 
-  const ensureTeamsExist = async (existingTeams: TeamType[]): Promise<TeamType[]> => {
-    const teamsToCreate: typeof REQUIRED_TEAMS = [];
+  // Ensure required teams exist (only once on mount)
+  useEffect(() => {
+    if (!teamsData || teamsData.length === 0) return;
     
-    // Vérifier quelles équipes manquent
-    for (const requiredTeam of REQUIRED_TEAMS) {
-      const exists = existingTeams.some(
-        (team: TeamType) => {
-          const nameMatch = team.name === requiredTeam.name;
-          const slugMatch = team.slug === requiredTeam.slug;
-          const generatedSlugMatch = team.slug === generateSlug(requiredTeam.name);
-          return nameMatch || slugMatch || generatedSlugMatch;
-        }
-      );
+    const ensureTeamsExist = async () => {
+      const teamsToCreate: typeof REQUIRED_TEAMS = [];
       
-      if (!exists) {
-        teamsToCreate.push(requiredTeam);
+      // Vérifier quelles équipes manquent
+      for (const requiredTeam of REQUIRED_TEAMS) {
+        const exists = teamsData.some(
+          (team: TeamType) => {
+            const nameMatch = team.name === requiredTeam.name;
+            const slugMatch = team.slug === requiredTeam.slug;
+            const generatedSlugMatch = team.slug === generateSlug(requiredTeam.name);
+            return nameMatch || slugMatch || generatedSlugMatch;
+          }
+        );
+        
+        if (!exists) {
+          teamsToCreate.push(requiredTeam);
+        }
       }
-    }
-    
-    // Créer les équipes manquantes
-    if (teamsToCreate.length > 0) {
-      for (const teamToCreate of teamsToCreate) {
-        try {
-          const quickCheck = existingTeams.some(
-            (team: TeamType) => 
-              team.name === teamToCreate.name || 
-              team.slug === teamToCreate.slug ||
-              team.slug === generateSlug(teamToCreate.name)
-          );
-          
-          if (quickCheck) continue;
-          
-          await teamsAPI.create({
-            name: teamToCreate.name,
-            slug: teamToCreate.slug,
-            description: teamToCreate.description,
-          });
-        } catch (err: any) {
-          if (!(err?.response?.status === 400 && err?.response?.data?.detail?.includes('already exists'))) {
-            console.error(`Erreur création équipe ${teamToCreate.name}:`, err);
+      
+      // Créer les équipes manquantes
+      if (teamsToCreate.length > 0) {
+        for (const teamToCreate of teamsToCreate) {
+          try {
+            const quickCheck = teamsData.some(
+              (team: TeamType) => 
+                team.name === teamToCreate.name || 
+                team.slug === teamToCreate.slug ||
+                team.slug === generateSlug(teamToCreate.name)
+            );
+            
+            if (quickCheck) continue;
+            
+            await createTeamMutation.mutateAsync({
+              name: teamToCreate.name,
+              slug: teamToCreate.slug,
+              description: teamToCreate.description,
+            });
+          } catch (err: any) {
+            if (!(err?.response?.status === 400 && err?.response?.data?.detail?.includes('already exists'))) {
+              const appError = handleApiError(err);
+              showToast({
+                message: `Erreur lors de la création de l'équipe ${teamToCreate.name}: ${appError.message}`,
+                type: 'error',
+              });
+            }
           }
         }
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const reloadResponse = await teamsAPI.list();
-      const reloadListData = extractApiData<{ teams: TeamType[]; total: number }>(reloadResponse);
-      existingTeams = reloadListData?.teams || [];
-    }
+    };
     
-    // Filtrer pour ne garder que les équipes requises dans l'ordre spécifié
+    ensureTeamsExist();
+  }, [teamsData]); // Only run when teamsData changes
+
+  // Filter and order teams
+  const targetTeams = useMemo(() => {
+    if (!teamsData) return [];
+    
     const orderedTeams: TeamType[] = [];
     for (const requiredTeam of REQUIRED_TEAMS) {
-      const foundTeam = existingTeams.find(
+      const foundTeam = teamsData.find(
         (team: TeamType) => {
           const nameMatch = team.name === requiredTeam.name;
           const slugMatch = team.slug === requiredTeam.slug;
@@ -129,76 +144,69 @@ function EquipesContent() {
     }
     
     return orderedTeams;
-  };
-
-  const loadTeams = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  }, [teamsData]);
+  
+  // Load tasks for all teams - use a single query with all team IDs
+  const teamIds = useMemo(() => targetTeams.map(t => t.id), [targetTeams]);
+  const allTasksQuery = useProjectTasks({ 
+    enabled: teamIds.length > 0 
+  });
+  
+  // Build teams with stats
+  const teams = useMemo(() => {
+    if (!targetTeams.length || !allTasksQuery.data) return [];
+    
+    return targetTeams.map((team) => {
+      const tasks = allTasksQuery.data.filter((task: ProjectTask) => task.team_id === team.id);
       
-      const teamsResponse = await teamsAPI.list();
-      const teamsListData = extractApiData<{ teams: TeamType[]; total: number }>(teamsResponse);
-      const teamsData = teamsListData?.teams || [];
+      const employees: Employee[] = (team.members || []).map((member: TeamMember) => {
+        const memberTasks = tasks.filter(
+          (task: ProjectTask) => task.assignee_id === member.user_id
+        );
+        return {
+          id: member.user_id,
+          name: member.user?.name || 
+                `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.trim() ||
+                member.user?.email ||
+                'Utilisateur',
+          email: member.user?.email || '',
+          tasks: memberTasks,
+        };
+      });
       
-      const targetTeams = await ensureTeamsExist(teamsData);
+      const totalTasks = tasks.length;
+      const inProgressTasks = tasks.filter((task: ProjectTask) => task.status === 'in_progress').length;
+      const completedTasks = tasks.filter((task: ProjectTask) => task.status === 'completed').length;
       
-      if (targetTeams.length === 0) {
-        setError('Impossible de charger ou créer les équipes');
-        return;
-      }
-      
-      // Charger les tâches et statistiques pour chaque équipe
-      const teamsWithStats: TeamWithStats[] = await Promise.all(
-        targetTeams.map(async (team: TeamType) => {
-          const tasks = await projectTasksAPI.list({ team_id: team.id });
-          
-          const employees: Employee[] = (team.members || []).map((member: TeamMember) => {
-            const memberTasks = tasks.filter(
-              (task: ProjectTask) => task.assignee_id === member.user_id
-            );
-            return {
-              id: member.user_id,
-              name: member.user?.name || 
-                    `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.trim() ||
-                    member.user?.email ||
-                    'Utilisateur',
-              email: member.user?.email || '',
-              tasks: memberTasks,
-            };
-          });
-          
-          const totalTasks = tasks.length;
-          const inProgressTasks = tasks.filter((task: ProjectTask) => task.status === 'in_progress').length;
-          const completedTasks = tasks.filter((task: ProjectTask) => task.status === 'completed').length;
-          
-          return {
-            ...team,
-            employees,
-            totalTasks,
-            inProgressTasks,
-            completedTasks,
-          };
-        })
-      );
-      
-      setTeams(teamsWithStats);
-    } catch (err) {
-      const appError = handleApiError(err);
+      return {
+        ...team,
+        employees,
+        totalTasks,
+        inProgressTasks,
+        completedTasks,
+      };
+    });
+  }, [targetTeams, allTasksQuery.data]);
+  
+  const loading = teamsLoading || allTasksQuery.isLoading;
+  
+  // Handle errors
+  useEffect(() => {
+    if (teamsError) {
+      const appError = handleApiError(teamsError);
       setError(appError.message || 'Erreur lors du chargement des équipes');
       showToast({
         message: appError.message || 'Erreur lors du chargement des équipes',
         type: 'error',
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [teamsError, showToast]);
 
   const handleTeamClick = (teamSlug: string) => {
     router.push(`/dashboard/projets/equipes/${teamSlug}`);
   };
 
-  if (loading) {
+  if (loading && !teams.length) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-96">

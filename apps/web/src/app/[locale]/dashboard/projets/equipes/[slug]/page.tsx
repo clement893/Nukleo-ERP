@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import { Badge, Button, Loading, Alert, Card } from '@/components/ui';
@@ -13,9 +13,9 @@ import {
   Users, Clock, AlertCircle, CheckCircle, 
   Lock, Package, ShoppingCart, Calendar, TrendingUp, User
 } from 'lucide-react';
-import { teamsAPI } from '@/lib/api/teams';
-import { projectTasksAPI } from '@/lib/api/project-tasks';
-import { employeesAPI } from '@/lib/api/employees';
+import { useTeamBySlug, useCreateTeam } from '@/lib/query/queries';
+import { useProjectTasks, useUpdateProjectTask } from '@/lib/query/project-tasks';
+import { useEmployees } from '@/lib/query/queries';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { extractApiData } from '@/lib/api/utils';
@@ -44,7 +44,7 @@ interface Employee {
   currentTask?: ProjectTask | null;
 }
 
-type ViewMode = 'board' | 'capacity' | 'timeline';
+type ViewMode = 'board' | 'capacity';
 
 // Task Card Component
 function TaskCard({ task, isDragging }: { task: ProjectTask; isDragging?: boolean }) {
@@ -199,13 +199,28 @@ function TeamProjectManagementContent() {
   const { showToast } = useToast();
   const teamSlug = params?.slug as string;
   
-  const [team, setTeam] = useState<Team | null>(null);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [tasks, setTasks] = useState<ProjectTask[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<ProjectTask | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
+  
+  // Use React Query hooks
+  const { data: team, isLoading: teamLoading, error: teamError } = useTeamBySlug(teamSlug);
+  const createTeamMutation = useCreateTeam();
+  const updateTaskMutation = useUpdateProjectTask();
+  
+  // Load tasks for this team
+  const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useProjectTasks({
+    team_id: team?.id,
+    enabled: !!team?.id,
+  });
+  
+  // Load employees for this team
+  const { data: employeesData = [], isLoading: employeesLoading } = useEmployees({
+    team_id: team?.id,
+    enabled: !!team?.id,
+  });
+  
+  const loading = teamLoading || tasksLoading || employeesLoading;
+  const error = teamError ? handleApiError(teamError).message : null;
 
   // Drag & Drop sensors
   const sensors = useSensors(
@@ -215,114 +230,61 @@ function TeamProjectManagementContent() {
       },
     })
   );
-
+  
+  // Ensure team exists if not found
   useEffect(() => {
-    if (teamSlug) {
-      loadTeamData();
-    }
-  }, [teamSlug]);
-
-  const loadTeamData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      let foundTeam: Team | null = null;
-      
-      // Récupérer l'équipe directement par slug
-      try {
-        const teamResponse = await teamsAPI.getTeamBySlug(teamSlug);
-        foundTeam = extractApiData<Team>(teamResponse);
+    if (teamError && teamSlug) {
+      const appError = handleApiError(teamError);
+      if (appError.statusCode === 404) {
+        const requiredTeams = [
+          { name: 'Le Bureau', slug: 'le-bureau' },
+          { name: 'Le Studio', slug: 'le-studio' },
+          { name: 'Le Lab', slug: 'le-lab' },
+          { name: 'Équipe Gestion', slug: 'equipe-gestion' },
+        ];
         
-        if (!foundTeam) {
-          setError('Équipe non trouvée');
-          return;
-        }
-      } catch (err) {
-        const appError = handleApiError(err);
-        if (appError.statusCode === 404) {
-          const requiredTeams = [
-            { name: 'Le Bureau', slug: 'le-bureau' },
-            { name: 'Le Studio', slug: 'le-studio' },
-            { name: 'Le Lab', slug: 'le-lab' },
-            { name: 'Équipe Gestion', slug: 'equipe-gestion' },
-          ];
-          
-          const teamToCreate = requiredTeams.find(t => t.slug === teamSlug);
-          if (teamToCreate) {
-            try {
-              const createResponse = await teamsAPI.create({
-                name: teamToCreate.name,
-                slug: teamToCreate.slug,
-                description: `Équipe ${teamToCreate.name}`,
+        const teamToCreate = requiredTeams.find(t => t.slug === teamSlug);
+        if (teamToCreate) {
+          createTeamMutation.mutate({
+            name: teamToCreate.name,
+            slug: teamToCreate.slug,
+            description: `Équipe ${teamToCreate.name}`,
+          }, {
+            onError: (err) => {
+              const createError = handleApiError(err);
+              showToast({
+                message: createError.message || 'Erreur lors de la création de l\'équipe',
+                type: 'error',
               });
-              foundTeam = extractApiData<Team>(createResponse) as Team | null;
-            } catch (createErr) {
-              console.error('Error creating team:', createErr);
-            }
-          }
-        }
-        
-        if (!foundTeam) {
-          setError(appError.message || 'Équipe non trouvée');
-          return;
+            },
+          });
         }
       }
-      
-      if (!foundTeam) {
-        setError('Équipe non trouvée');
-        return;
-      }
-      
-      setTeam(foundTeam);
-      
-      // Charger les tâches de l'équipe
-      let teamTasks: ProjectTask[] = [];
-      try {
-        teamTasks = await projectTasksAPI.list({ team_id: foundTeam.id });
-        setTasks(teamTasks);
-      } catch (taskErr) {
-        console.error('Error loading team tasks:', taskErr);
-        setTasks([]);
-      }
-      
-      // Charger les employés
-      try {
-        const allEmployees = await employeesAPI.list();
-        const teamEmployeesData = allEmployees.filter(
-          (emp) => emp.team_id === foundTeam.id
-        );
-        
-        // Convertir en Employee avec tâche en cours
-        const employeesWithTasks: Employee[] = teamEmployeesData.map((emp) => {
-          const currentTask = teamTasks.find(
-            (t) => t.assignee_id === emp.id && t.status === 'in_progress'
-          );
-          
-          return {
-            id: emp.id,
-            name: `${emp.first_name} ${emp.last_name}`,
-            email: emp.email || '',
-            currentTask: currentTask || null,
-          };
-        });
-        
-        setEmployees(employeesWithTasks);
-      } catch (empErr) {
-        console.error('Error loading employees:', empErr);
-        setEmployees([]);
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement des données');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement des données',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [teamError, teamSlug, createTeamMutation, showToast]);
+  
+  // Build employees with current tasks
+  const employees = useMemo(() => {
+    if (!employeesData.length || !tasks.length) return [];
+    
+    return employeesData.map((emp) => {
+      const currentTask = tasks.find(
+        (t) => {
+          // Use employee_assignee_id logic: if task has assignee_id, check if it matches employee's user_id
+          // Otherwise, check if employee_assignee_id matches (though this is not in the API response)
+          return t.assignee_id === emp.user_id && t.status === 'in_progress';
+        }
+      );
+      
+      return {
+        id: emp.id,
+        name: `${emp.first_name} ${emp.last_name}`,
+        email: emp.email || '',
+        currentTask: currentTask || null,
+      };
+    });
+  }, [employeesData, tasks]);
+
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -357,6 +319,14 @@ function TeamProjectManagementContent() {
       const employeeId = parseInt(over.id.toString().replace('employee-', ''));
       const employee = employees.find(e => e.id === employeeId);
       
+      if (!employee) {
+        showToast({
+          message: 'Employé non trouvé',
+          type: 'error',
+        });
+        return;
+      }
+      
       // Vérifier si l'employé a déjà une tâche en cours
       if (employee?.currentTask) {
         showToast({
@@ -367,48 +337,29 @@ function TeamProjectManagementContent() {
       }
       
       newStatus = 'in_progress';
+      // Use employee.id (not user_id) because API expects employee_assignee_id
       newAssigneeId = employeeId;
     }
 
-    // Optimistic update
-    setTasks(prev =>
-      prev.map(t =>
-        t.id === taskId
-          ? { ...t, status: newStatus, assignee_id: newAssigneeId }
-          : t
-      )
-    );
-
-    // Update employees
-    if (newAssigneeId) {
-      setEmployees(prev =>
-        prev.map(e =>
-          e.id === newAssigneeId
-            ? { ...e, currentTask: task }
-            : e
-        )
-      );
-    }
-
-    // Update on server
+    // Update on server using React Query mutation (no optimistic update to avoid ID mismatch)
     try {
-      await projectTasksAPI.update(taskId, {
-        status: newStatus,
-        employee_assignee_id: newAssigneeId,
+      await updateTaskMutation.mutateAsync({
+        id: taskId,
+        data: {
+          status: newStatus,
+          employee_assignee_id: newAssigneeId, // API will map employee_id to user_id automatically
+        },
       });
+      
+      // Refetch tasks to get updated data from server
+      await refetchTasks();
+      
       showToast({
         message: 'Tâche mise à jour',
         type: 'success',
       });
     } catch (err) {
-      // Revert on error
-      setTasks(prev =>
-        prev.map(t =>
-          t.id === taskId
-            ? task
-            : t
-        )
-      );
+      // Revert on error (React Query will handle the revert automatically)
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la mise à jour',
@@ -422,13 +373,23 @@ function TeamProjectManagementContent() {
   const storageTasks = tasks.filter(t => t.status === 'blocked');
   const checkoutTasks = tasks.filter(t => t.status === 'to_transfer' || t.status === 'completed');
 
-  // Calculate capacity
-  const totalHoursPerWeek = employees.length * 40;
-  const usedHours = tasks
-    .filter(t => t.status === 'in_progress' || t.status === 'to_transfer')
-    .reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
+  // Calculate capacity using actual employee capacity
+  const totalHoursPerWeek = useMemo(() => {
+    return employeesData.reduce((sum, emp) => {
+      return sum + (emp.capacity_hours_per_week || 35); // Default 35h if not specified
+    }, 0);
+  }, [employeesData]);
+  
+  const usedHours = useMemo(() => {
+    return tasks
+      .filter(t => t.status === 'in_progress' || t.status === 'to_transfer')
+      .reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
+  }, [tasks]);
+  
   const availableHours = totalHoursPerWeek - usedHours;
-  const capacityPercentage = Math.round((usedHours / totalHoursPerWeek) * 100);
+  const capacityPercentage = totalHoursPerWeek > 0 
+    ? Math.round((usedHours / totalHoursPerWeek) * 100) 
+    : 0;
 
   if (loading) {
     return (
@@ -486,12 +447,6 @@ function TeamProjectManagementContent() {
                   className={viewMode === 'capacity' ? 'bg-white text-[#523DC9]' : 'bg-white/20 text-white border-white/30'}
                 >
                   Capacité
-                </Button>
-                <Button
-                  onClick={() => setViewMode('timeline')}
-                  className={viewMode === 'timeline' ? 'bg-white text-[#523DC9]' : 'bg-white/20 text-white border-white/30'}
-                >
-                  Timeline
                 </Button>
               </div>
             </div>
@@ -711,7 +666,12 @@ function TeamProjectManagementContent() {
               </h3>
               <div className="space-y-4">
                 {employees.map((employee) => {
-                  const employeeTasks = tasks.filter(t => t.assignee_id === employee.id && t.status === 'in_progress');
+                  // Find tasks assigned to this employee: assignee_id is user_id, so match with employee's user_id
+                  // But we need to find employee by matching user_id from tasks with employee.user_id
+                  const employeeTasks = tasks.filter(t => {
+                    const taskEmployee = employeesData.find(emp => emp.user_id === t.assignee_id);
+                    return taskEmployee?.id === employee.id && t.status === 'in_progress';
+                  });
                   const employeeHours = employeeTasks.reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
                   const employeeCapacity = (employeeHours / 40) * 100;
 
@@ -743,7 +703,8 @@ function TeamProjectManagementContent() {
           </div>
         )}
 
-        {viewMode === 'timeline' && (
+        {/* Timeline mode removed - not implemented */}
+        {false && viewMode === 'timeline' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Timeline des tâches
