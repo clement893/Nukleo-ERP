@@ -153,7 +153,7 @@ export default function TresoreriePage() {
       setSoldeActuel(soldeInitial);
 
     } catch (error) {
-      console.error('Erreur lors du chargement de la trésorerie:', error);
+      logger.error('Erreur lors du chargement de la trésorerie', error);
       showToast({
         title: 'Erreur',
         message: 'Impossible de charger les données de trésorerie',
