@@ -39,7 +39,8 @@ import {
   FileBarChart,
   Wallet,
   MessageSquare,
-  CheckSquare
+  CheckSquare,
+  Zap
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -332,6 +333,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Sécurité',
             href: '/settings/security',
             icon: <Lock className="w-5 h-5" />,
+          },
+          {
+            name: 'Automatisations',
+            href: '/settings/automation',
+            icon: <Zap className="w-5 h-5" />,
           },
           {
             name: 'Admin',
