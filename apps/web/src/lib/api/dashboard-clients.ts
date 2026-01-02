@@ -41,7 +41,7 @@ export async function fetchClientsStats(params?: {
     if (Array.isArray(clientsResponse.data)) {
       clientsData = clientsResponse.data;
     } else if (clientsResponse.data && typeof clientsResponse.data === 'object' && 'items' in clientsResponse.data) {
-      clientsData = clientsResponse.data.items;
+      clientsData = Array.isArray(clientsResponse.data.items) ? clientsResponse.data.items : undefined;
     } else if (clientsResponse.data && typeof clientsResponse.data === 'object' && 'data' in clientsResponse.data) {
       // Some APIs wrap data in a 'data' field
       const wrappedData = clientsResponse.data.data;

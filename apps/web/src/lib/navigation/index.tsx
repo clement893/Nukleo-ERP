@@ -38,8 +38,7 @@ import {
   FileBarChart,
   Wallet,
   MessageSquare,
-  CheckSquare,
-  BarChart3
+  CheckSquare
 } from 'lucide-react';
 
 export interface NavigationItem {
