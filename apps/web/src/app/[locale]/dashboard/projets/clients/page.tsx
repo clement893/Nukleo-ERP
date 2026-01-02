@@ -13,6 +13,7 @@ import Dropdown from '@/components/ui/Dropdown';
 import { type Client, type ClientCreate, type ClientUpdate, ClientStatus } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import ClientForm from '@/components/projects/ClientForm';
 import ClientAvatar from '@/components/projects/ClientAvatar';
 import { companiesAPI, type Company } from '@/lib/api/companies';
@@ -98,7 +99,7 @@ function ClientsContent() {
         const allCompanies = await companiesAPI.list(0, 1000);
         setCompanies(allCompanies);
       } catch (error) {
-        console.error('Error loading companies:', error);
+        logger.error('Error loading companies', error);
       }
     };
     loadCompanies();
@@ -126,7 +127,7 @@ function ClientsContent() {
         
         setProjectsByClient(projectsMap);
       } catch (error) {
-        console.error('Error loading projects:', error);
+        logger.error('Error loading projects', error);
       }
     };
     loadProjects();
@@ -153,7 +154,7 @@ function ClientsContent() {
         await Promise.all(contactsPromises);
         setContactsByClient(contactsMap);
       } catch (error) {
-        console.error('Error loading contacts:', error);
+        logger.error('Error loading contacts', error);
       }
     };
     loadContacts();

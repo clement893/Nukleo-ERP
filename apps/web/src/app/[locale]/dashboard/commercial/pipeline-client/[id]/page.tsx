@@ -36,6 +36,7 @@ import { Badge, Button, Loading, Alert, Card, Input, Select, Modal, Drawer, useT
 import { pipelinesAPI, type Pipeline, type PipelineUpdate } from '@/lib/api/pipelines';
 import { opportunitiesAPI, type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
+import { logger } from '@/lib/logger';
 import Link from 'next/link';
 import PipelineForm from '@/components/commercial/PipelineForm';
 import OpportunityForm from '@/components/commercial/OpportunityForm';
@@ -328,7 +329,7 @@ export default function PipelineDetailPage() {
       
       setOpportunities(filteredOpps);
     } catch (err) {
-      console.error('Error loading opportunities:', err);
+      logger.error('Error loading opportunities', err);
       setOpportunities([]);
     }
   };
