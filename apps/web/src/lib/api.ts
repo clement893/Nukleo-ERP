@@ -547,7 +547,7 @@ export const teamsAPI = {
 };
 
 export const invitationsAPI = {
-  list: (params?: { status?: string; organization_id?: string }) => {
+  list: (params?: { status?: string; organization_id?: string; email?: string; all_invitations?: boolean }) => {
     return apiClient.get('/v1/invitations', { params });
   },
   get: (invitationId: string) => {

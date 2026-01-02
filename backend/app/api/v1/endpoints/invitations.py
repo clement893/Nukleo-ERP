@@ -85,18 +85,13 @@ async def list_invitations(
         # List invitations
         from app.models import Invitation
         from sqlalchemy import select
-        from app.api.v1.endpoints.admin import checkMySuperAdminStatus
+        from app.dependencies import is_superadmin
         
         # Check if user is superadmin
-        is_superadmin = False
-        try:
-            superadmin_status = await checkMySuperAdminStatus(current_user.id, db)
-            is_superadmin = superadmin_status.get("is_superadmin", False)
-        except Exception:
-            pass
+        user_is_superadmin = await is_superadmin(current_user, db)
         
         # Build query
-        if is_superadmin and (all_invitations or email):
+        if user_is_superadmin and (all_invitations or email):
             # Superadmin can see all invitations or filter by email
             query = select(Invitation)
             if email:
