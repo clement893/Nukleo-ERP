@@ -10,6 +10,7 @@ import { Badge, Button, Card } from '@/components/ui';
 import { projectsAPI } from '@/lib/api/projects';
 import { employeesAPI } from '@/lib/api/employees';
 import { logger } from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 interface MonthlyData {
   month: string;
@@ -78,7 +79,7 @@ export default function RapportPage() {
       
       setMonthlyData(monthsData.reverse());
     } catch (error) {
-      console.error('Erreur lors du chargement des données du rapport:', error);
+      logger.error('Erreur lors du chargement des données du rapport', error);
     } finally {
       setLoading(false);
     }

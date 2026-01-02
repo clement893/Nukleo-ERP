@@ -99,7 +99,7 @@ function ProjectDetailContent() {
       }
     } catch (err) {
       // Silently fail - team_id is optional for tasks
-      console.warn('Could not load team ID:', err);
+      logger.warn('Could not load team ID', err);
     }
   };
 

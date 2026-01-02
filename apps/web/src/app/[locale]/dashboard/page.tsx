@@ -41,12 +41,9 @@ function DashboardContent() {
         await new Promise(resolve => setTimeout(resolve, 200));
         await loadFromServer();
       } catch (error) {
-        console.error('Error loading dashboard from server:', error);
+        logger.error('Error loading dashboard from server', error);
         // Continue even if server load fails - localStorage data will be used
         // Log error but don't crash the dashboard
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Dashboard load error details:', error);
-        }
       } finally {
         setIsLoading(false);
       }
