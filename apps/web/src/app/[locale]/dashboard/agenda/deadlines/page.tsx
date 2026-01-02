@@ -123,7 +123,7 @@ export default function DeadlinesPage() {
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -135,7 +135,7 @@ export default function DeadlinesPage() {
                 <Calendar className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h1 className="text-3xl font-black text-white mb-1 font-nukleo">
                   Échéances Projets
                 </h1>
                 <p className="text-white/80 text-sm">Suivez les deadlines de vos projets et tâches</p>
@@ -146,13 +146,13 @@ export default function DeadlinesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
                 <Clock className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className="text-2xl font-bold font-nukleo">
                   {stats.ongoing}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">En cours</div>
@@ -160,13 +160,13 @@ export default function DeadlinesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <AlertCircle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className="text-2xl font-bold font-nukleo">
                   {stats.overdue}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">En retard</div>
@@ -174,13 +174,13 @@ export default function DeadlinesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
                 <Clock className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className="text-2xl font-bold font-nukleo">
                   {stats.today}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">Aujourd'hui</div>
@@ -188,13 +188,13 @@ export default function DeadlinesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <Calendar className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className="text-2xl font-bold font-nukleo">
                   {stats.upcoming}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">À venir</div>
@@ -267,14 +267,14 @@ export default function DeadlinesPage() {
             {filteredDeadlines.map((deadline) => {
               const StatusIcon = statusConfig[deadline.status].icon;
               return (
-                <Card key={deadline.id} className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all">
+                <Card key={deadline.id} className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/30 transition-all">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
-                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] flex flex-col items-center justify-center text-white">
+                      <div className="w-16 h-16 rounded-xl bg-nukleo-gradient flex flex-col items-center justify-center text-white">
                         <div className="text-xs font-medium">
                           {new Date(deadline.dueDate).toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase()}
                         </div>
-                        <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                        <div className="text-2xl font-bold font-nukleo">
                           {new Date(deadline.dueDate).getDate()}
                         </div>
                       </div>

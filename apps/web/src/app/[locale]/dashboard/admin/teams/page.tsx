@@ -98,7 +98,7 @@ export default function AdminTeamsDemo() {
       <PageContainer>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#523DC9] mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Chargement des équipes...</p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function AdminTeamsDemo() {
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -136,7 +136,7 @@ export default function AdminTeamsDemo() {
                   <UsersIcon className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h1 className="text-3xl font-black text-white mb-1 font-nukleo">
                     Gestion des Équipes
                   </h1>
                   <p className="text-white/80 text-sm">Gérez les équipes et leurs membres</p>
@@ -152,38 +152,38 @@ export default function AdminTeamsDemo() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
                 <UsersIcon className="w-5 h-5 text-purple-600" />
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Équipes</div>
             </div>
-            <div className="text-2xl font-bold text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold text-purple-600 font-nukleo">
               {totalTeams}
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <UsersIcon className="w-5 h-5 text-blue-600" />
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Membres Total</div>
             </div>
-            <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold text-blue-600 font-nukleo">
               {totalMembers}
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
                 <UsersIcon className="w-5 h-5 text-green-600" />
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Moyenne/Équipe</div>
             </div>
-            <div className="text-2xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold text-green-600 font-nukleo">
               {avgMembersPerTeam}
             </div>
           </Card>
@@ -215,11 +215,11 @@ export default function AdminTeamsDemo() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredTeams.map((team) => (
-              <Card key={team.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-lg transition-all duration-200">
+              <Card key={team.id} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-lg transition-all duration-200">
                 {/* Team Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-xl font-bold mb-1 font-nukleo">
                       {team.name}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
