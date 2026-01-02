@@ -317,9 +317,9 @@ export default function LeoPage() {
   const getSuggestionColor = (color: string) => {
     switch (color) {
       case 'purple':
-        return 'bg-primary-500/10 border-primary-500/30 text-primary-500 hover:bg-primary-500/20';
+        return 'bg-primary-500 border-primary-500/30 text-white hover:bg-primary-600';
       case 'blue':
-        return 'bg-primary-500/10 border-primary-500/30 text-primary-500 hover:bg-primary-500/20';
+        return 'bg-primary-500 border-primary-500/30 text-white hover:bg-primary-600';
       case 'green':
         return 'bg-success-500/10 border-success-500/30 text-success-500 hover:bg-success-500/20';
       case 'orange':
@@ -339,7 +339,7 @@ export default function LeoPage() {
   };
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-3.5rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden -mx-4 sm:-mx-6 md:-mx-8 lg:-mx-10 xl:-mx-12 2xl:-mx-16 -my-4 sm:-my-6 md:-my-8 2xl:-my-10 bg-background">
+    <div className="relative flex flex-col h-[calc(100vh-3.5rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden bg-background">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
