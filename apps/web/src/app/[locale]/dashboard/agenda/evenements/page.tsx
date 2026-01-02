@@ -4,95 +4,109 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Button, Alert, Loading, Badge, Modal } from '@/components/ui';
+import { Button, Alert, Loading, Badge, Modal, Card } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import SearchBar from '@/components/ui/SearchBar';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { agendaAPI, type CalendarEvent, type CalendarEventCreate, type CalendarEventUpdate } from '@/lib/api/agenda';
+import Drawer from '@/components/ui/Drawer';
+import Tabs from '@/components/ui/Tabs';
+import Dropdown from '@/components/ui/Dropdown';
+import { 
+  useEvents, 
+  useCreateEvent, 
+  useUpdateEvent, 
+  useDeleteEvent,
+  useEvent 
+} from '@/lib/query/agenda';
+import { type CalendarEvent, type CalendarEventCreate, type CalendarEventUpdate } from '@/lib/api/agenda';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import EventForm from '@/components/agenda/EventForm';
 import { DayEvent } from '@/components/agenda/DayEventsModal';
-import { Plus, Edit, Trash2, Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Calendar, 
+  MapPin, 
+  Users, 
+  Clock, 
+  Eye,
+  Copy,
+  MoreVertical,
+  Download,
+  FileDown,
+  CheckSquare as CheckSquareIcon,
+  Square,
+  Info
+} from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 function EvenementsContent() {
   const { showToast } = useToast();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailDrawer, setShowDetailDrawer] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+  
+  // Selection
+  const [selectedEvents, setSelectedEvents] = useState<Set<number>>(new Set());
 
-  // Load events
-  useEffect(() => {
-    loadEvents();
-  }, []);
+  // Calculate date filters for server-side filtering
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayString = today.toISOString().split('T')[0];
 
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Load all events, we'll filter them client-side
-      const allEvents = await agendaAPI.list({
-        limit: 1000,
-      });
-      
-      setEvents(allEvents);
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement des événements');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement des événements',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
+  // Build API params
+  const apiParams = useMemo(() => {
+    const params: {
+      start_date?: string;
+      end_date?: string;
+      event_type?: string;
+      limit?: number;
+    } = {
+      limit: 1000, // Load more for client-side search
+    };
+
+    if (filterDate === 'upcoming') {
+      params.start_date = todayString;
+    } else if (filterDate === 'past') {
+      params.end_date = todayString;
     }
-  };
 
-  // Filter events
+    if (filterType !== 'all') {
+      params.event_type = filterType;
+    }
+
+    return params;
+  }, [filterDate, filterType, todayString]);
+
+  // React Query hooks
+  const { data: events = [], isLoading, error } = useEvents(apiParams);
+  const createEventMutation = useCreateEvent();
+  const updateEventMutation = useUpdateEvent();
+  const deleteEventMutation = useDeleteEvent();
+  const { data: eventDetail } = useEvent(selectedEventId || 0, !!selectedEventId && showDetailDrawer);
+
+  // Filter events (client-side for search)
   const filteredEvents = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (!debouncedSearchQuery) return events;
 
+    const query = debouncedSearchQuery.toLowerCase();
     return events.filter((event) => {
-      // Date filter
-      const eventDate = new Date(event.date);
-      eventDate.setHours(0, 0, 0, 0);
-      
-      if (filterDate === 'upcoming' && eventDate < today) {
-        return false;
-      }
-      if (filterDate === 'past' && eventDate >= today) {
-        return false;
-      }
-
-      // Type filter
-      if (filterType !== 'all' && event.type !== filterType) {
-        return false;
-      }
-
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = event.title.toLowerCase().includes(query);
-        const matchesDescription = event.description?.toLowerCase().includes(query) || false;
-        const matchesLocation = event.location?.toLowerCase().includes(query) || false;
-        if (!matchesTitle && !matchesDescription && !matchesLocation) {
-          return false;
-        }
-      }
-
-      return true;
+      const matchesTitle = event.title.toLowerCase().includes(query);
+      const matchesDescription = event.description?.toLowerCase().includes(query) || false;
+      const matchesLocation = event.location?.toLowerCase().includes(query) || false;
+      return matchesTitle || matchesDescription || matchesLocation;
     });
-  }, [events, filterType, filterDate, searchQuery]);
+  }, [events, debouncedSearchQuery]);
 
   // Sort events by date (upcoming first)
   const sortedEvents = useMemo(() => {
@@ -126,9 +140,8 @@ function EvenementsContent() {
         color: eventData.color,
       };
 
-      await agendaAPI.create(createData);
+      await createEventMutation.mutateAsync(createData);
       setShowCreateModal(false);
-      await loadEvents();
       showToast({
         message: 'Événement créé avec succès',
         type: 'success',
@@ -160,10 +173,9 @@ function EvenementsContent() {
         color: eventData.color,
       };
 
-      await agendaAPI.update(selectedEvent.id, updateData);
+      await updateEventMutation.mutateAsync({ id: selectedEvent.id, data: updateData });
       setShowEditModal(false);
       setSelectedEvent(null);
-      await loadEvents();
       showToast({
         message: 'Événement modifié avec succès',
         type: 'success',
@@ -185,8 +197,7 @@ function EvenementsContent() {
     }
 
     try {
-      await agendaAPI.delete(event.id);
-      await loadEvents();
+      await deleteEventMutation.mutateAsync(event.id);
       showToast({
         message: 'Événement supprimé avec succès',
         type: 'success',
@@ -198,6 +209,131 @@ function EvenementsContent() {
         type: 'error',
       });
     }
+  };
+
+  // Handle delete selected
+  const handleDeleteSelected = async () => {
+    if (selectedEvents.size === 0) return;
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedEvents.size} événement(s) ?`)) return;
+
+    try {
+      await Promise.all(Array.from(selectedEvents).map(id => deleteEventMutation.mutateAsync(id)));
+      showToast({ message: `${selectedEvents.size} événement(s) supprimé(s) avec succès`, type: 'success' });
+      setSelectedEvents(new Set());
+    } catch (error) {
+      showToast({ message: 'Erreur lors de la suppression', type: 'error' });
+    }
+  };
+
+  // Handle bulk type change
+  const handleBulkTypeChange = async (newType: string) => {
+    if (selectedEvents.size === 0) return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedEvents).map(id => {
+          const event = events.find(e => e.id === id);
+          if (!event) return Promise.resolve();
+          return updateEventMutation.mutateAsync({ 
+            id, 
+            data: { type: newType as CalendarEvent['type'] } 
+          });
+        })
+      );
+      showToast({ message: `${selectedEvents.size} événement(s) mis(e) à jour`, type: 'success' });
+      setSelectedEvents(new Set());
+    } catch (error) {
+      showToast({ message: 'Erreur lors de la mise à jour', type: 'error' });
+    }
+  };
+
+  // Handle duplicate
+  const handleDuplicate = async (event: CalendarEvent) => {
+    try {
+      const duplicateData: CalendarEventCreate = {
+        title: `${event.title} (copie)`,
+        description: event.description,
+        date: event.date,
+        end_date: event.end_date,
+        time: event.time,
+        type: event.type,
+        location: event.location,
+        attendees: event.attendees,
+        color: event.color,
+      };
+      await createEventMutation.mutateAsync(duplicateData);
+      showToast({ message: 'Événement dupliqué avec succès', type: 'success' });
+    } catch (error) {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors de la duplication', type: 'error' });
+    }
+  };
+
+  // Handle export
+  const handleExport = async (format: 'csv' | 'excel') => {
+    try {
+      const headers = ['ID', 'Titre', 'Description', 'Date', 'Date de fin', 'Heure', 'Type', 'Lieu', 'Participants', 'Créé le'];
+      const rows = sortedEvents.map(event => [
+        event.id,
+        event.title,
+        event.description || '',
+        event.date,
+        event.end_date || '',
+        event.time || '',
+        eventTypeLabels[event.type] || event.type,
+        event.location || '',
+        event.attendees?.join(', ') || '',
+        new Date(event.created_at).toLocaleDateString('fr-FR'),
+      ]);
+
+      let content = '';
+      if (format === 'csv') {
+        content = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+      } else {
+        // Excel format (TSV-like)
+        content = [headers, ...rows].map(row => row.join('\t')).join('\n');
+      }
+
+      const blob = new Blob([content], { type: format === 'csv' ? 'text/csv' : 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `evenements_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xls'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast({ message: `Export ${format.toUpperCase()} réussi`, type: 'success' });
+    } catch (error) {
+      showToast({ message: 'Erreur lors de l\'export', type: 'error' });
+    }
+  };
+
+  // Toggle selection
+  const toggleEventSelection = (eventId: number) => {
+    const newSelection = new Set(selectedEvents);
+    if (newSelection.has(eventId)) {
+      newSelection.delete(eventId);
+    } else {
+      newSelection.add(eventId);
+    }
+    setSelectedEvents(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedEvents.size === sortedEvents.length && sortedEvents.length > 0) {
+      setSelectedEvents(new Set());
+    } else {
+      setSelectedEvents(new Set(sortedEvents.map(e => e.id)));
+    }
+  };
+
+  // Handle view details
+  const handleViewDetails = (event: CalendarEvent) => {
+    setSelectedEventId(event.id);
+    setSelectedEvent(event);
+    setShowDetailDrawer(true);
   };
 
   // Format date
@@ -224,6 +360,25 @@ function EvenementsContent() {
 
   // Table columns
   const columns: Column<CalendarEvent>[] = [
+    {
+      key: 'select',
+      label: '',
+      render: (_value, event) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleEventSelection(event.id);
+          }}
+          className="flex items-center justify-center"
+        >
+          {selectedEvents.has(event.id) ? (
+            <CheckSquareIcon className="w-4 h-4 text-primary" />
+          ) : (
+            <Square className="w-4 h-4 text-gray-400" />
+          )}
+        </button>
+      ),
+    },
     {
       key: 'title',
       label: 'Titre',
@@ -298,30 +453,27 @@ function EvenementsContent() {
       key: 'actions',
       label: 'Actions',
       render: (_value, event) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedEvent(event);
-              setShowEditModal(true);
-            }}
-            className="text-primary hover:text-primary-600"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(event)}
-            className="text-destructive hover:text-destructive-600"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Dropdown
+            trigger={
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            }
+            items={[
+              { label: 'Voir les détails', onClick: () => handleViewDetails(event), icon: <Eye className="w-4 h-4" /> },
+              { label: 'Modifier', onClick: () => { setSelectedEvent(event); setShowEditModal(true); }, icon: <Edit className="w-4 h-4" /> },
+              { label: 'Dupliquer', onClick: () => handleDuplicate(event), icon: <Copy className="w-4 h-4" /> },
+              { divider: true },
+              { label: 'Supprimer', onClick: () => handleDelete(event), icon: <Trash2 className="w-4 h-4" />, variant: 'danger' },
+            ]}
+          />
         </div>
       ),
     },
   ];
+
+  const displayEvent = eventDetail || selectedEvent;
 
   return (
     <PageContainer>
@@ -378,14 +530,68 @@ function EvenementsContent() {
 
             {/* Actions */}
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {sortedEvents.length} événement{sortedEvents.length > 1 ? 's' : ''} 
-                {filterDate !== 'all' || filterType !== 'all' || searchQuery ? ` (filtré${sortedEvents.length > 1 ? 's' : ''})` : ''}
+              <div className="flex items-center gap-2">
+                {sortedEvents.length > 0 && (
+                  <button
+                    onClick={toggleSelectAll}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    {selectedEvents.size === sortedEvents.length ? (
+                      <CheckSquareIcon className="w-4 h-4" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                    <span>Sélectionner tout</span>
+                  </button>
+                )}
+                {selectedEvents.size > 0 && (
+                  <>
+                    <span className="text-sm text-muted-foreground">|</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDeleteSelected}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer ({selectedEvents.size})
+                    </Button>
+                    <Dropdown
+                      trigger={
+                        <Button size="sm" variant="outline">
+                          Changer type ({selectedEvents.size})
+                        </Button>
+                      }
+                      items={[
+                        { label: 'Réunion', onClick: () => handleBulkTypeChange('meeting') },
+                        { label: 'Rendez-vous', onClick: () => handleBulkTypeChange('appointment') },
+                        { label: 'Rappel', onClick: () => handleBulkTypeChange('reminder') },
+                        { label: 'Deadline', onClick: () => handleBulkTypeChange('deadline') },
+                        { label: 'Vacances', onClick: () => handleBulkTypeChange('vacation') },
+                        { label: 'Jour férié', onClick: () => handleBulkTypeChange('holiday') },
+                        { label: 'Autre', onClick: () => handleBulkTypeChange('other') },
+                      ]}
+                    />
+                  </>
+                )}
               </div>
-              <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvel événement
-              </Button>
+              <div className="flex items-center gap-2">
+                <Dropdown
+                  trigger={
+                    <Button size="sm" variant="outline">
+                      <Download className="w-4 h-4 mr-2" />
+                      Exporter
+                    </Button>
+                  }
+                  items={[
+                    { label: 'Exporter CSV', onClick: () => handleExport('csv'), icon: <FileDown className="w-4 h-4" /> },
+                    { label: 'Exporter Excel', onClick: () => handleExport('excel'), icon: <FileDown className="w-4 h-4" /> },
+                  ]}
+                />
+                <Button size="sm" onClick={() => setShowCreateModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvel événement
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -393,12 +599,12 @@ function EvenementsContent() {
         {/* Error */}
         {error && (
           <Alert variant="error">
-            {error}
+            {error instanceof Error ? error.message : 'Erreur lors du chargement des événements'}
           </Alert>
         )}
 
         {/* Content */}
-        {loading ? (
+        {isLoading ? (
           <div className="glass-card rounded-xl border border-border p-6">
             <div className="py-12 text-center">
               <Loading />
@@ -431,7 +637,7 @@ function EvenementsContent() {
               await handleCreate(eventData);
             }}
             onCancel={() => setShowCreateModal(false)}
-            loading={loading}
+            loading={createEventMutation.isPending}
           />
         </Modal>
 
@@ -467,10 +673,168 @@ function EvenementsContent() {
                 setShowEditModal(false);
                 setSelectedEvent(null);
               }}
-              loading={loading}
+              loading={updateEventMutation.isPending}
             />
           )}
         </Modal>
+
+        {/* Detail Drawer */}
+        <Drawer
+          isOpen={showDetailDrawer}
+          onClose={() => {
+            setShowDetailDrawer(false);
+            setSelectedEventId(null);
+            setSelectedEvent(null);
+          }}
+          title={displayEvent?.title || 'Détails de l\'événement'}
+          position="right"
+          size="lg"
+        >
+          {displayEvent ? (
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6 py-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                          Description
+                        </h4>
+                        <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                          {displayEvent.description || 'Aucune description'}
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Date
+                          </h4>
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {formatDate(displayEvent.date)}
+                          </p>
+                        </div>
+                        {displayEvent.end_date && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Date de fin
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {formatDate(displayEvent.end_date)}
+                            </p>
+                          </div>
+                        )}
+                        {displayEvent.time && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Heure
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {displayEvent.time}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Type
+                          </h4>
+                          <Badge variant="default" className="text-xs">
+                            {eventTypeLabels[displayEvent.type] || displayEvent.type}
+                          </Badge>
+                        </div>
+                        {displayEvent.location && (
+                          <div className="col-span-2">
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Lieu
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              {displayEvent.location}
+                            </p>
+                          </div>
+                        )}
+                        {displayEvent.attendees && displayEvent.attendees.length > 0 && (
+                          <div className="col-span-2">
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Participants
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {displayEvent.attendees.map((attendee, index) => (
+                                <Badge key={index} variant="default" className="text-xs">
+                                  {attendee}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Créé le
+                          </h4>
+                          <p className="text-xs text-gray-900 dark:text-white">
+                            {new Date(displayEvent.created_at).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'edit',
+                  label: 'Modifier',
+                  icon: <Edit className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <EventForm
+                        date={new Date(displayEvent.date)}
+                        event={{
+                          id: displayEvent.id.toString(),
+                          title: displayEvent.title,
+                          description: displayEvent.description,
+                          date: new Date(displayEvent.date),
+                          endDate: displayEvent.end_date ? new Date(displayEvent.end_date) : undefined,
+                          time: displayEvent.time,
+                          type: displayEvent.type,
+                          location: displayEvent.location,
+                          attendees: displayEvent.attendees,
+                          color: displayEvent.color,
+                        }}
+                        onSubmit={async (eventData) => {
+                          await handleUpdate(displayEvent.id.toString(), eventData);
+                          setShowDetailDrawer(false);
+                          setSelectedEventId(null);
+                          setSelectedEvent(null);
+                        }}
+                        onCancel={() => {
+                          setShowDetailDrawer(false);
+                          setSelectedEventId(null);
+                          setSelectedEvent(null);
+                        }}
+                        loading={updateEventMutation.isPending}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          ) : (
+            <div className="py-8 text-center">
+              <Loading />
+            </div>
+          )}
+        </Drawer>
       </MotionDiv>
     </PageContainer>
   );
