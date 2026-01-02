@@ -9,31 +9,30 @@ import {
   TrendingDown, FileText, Upload, Download, 
   Building2, Repeat, Receipt, Calendar, Search,
   Plus, Edit, Eye, CheckCircle, XCircle, Clock,
-  AlertCircle, Info
+  AlertCircle, Info, Trash2
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
+import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Textarea, useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
-import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
-import { apiClient } from '@/lib/api/client';
+import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionStatus } from '@/lib/api/finances/transactions';
+import { handleApiError } from '@/lib/errors/api';
 
-// Types
-interface Expense {
-  id: number;
-  description: string;
-  amount: number;
-  currency: string;
-  date: string;
-  category: string;
-  supplier_id?: number;
-  supplier_name?: string;
-  status: 'paid' | 'pending' | 'projected' | 'cancelled';
-  invoice_number?: string;
-  is_recurring: boolean;
-  recurring_id?: number;
-  payment_date?: string;
-  notes?: string;
-}
+const EXPENSE_CATEGORIES = [
+  'Fournitures',
+  'Marketing',
+  'Infrastructure',
+  'Salaires',
+  'Services',
+  'Transport',
+  'Formation',
+  'Autre',
+];
+
+const STATUS_OPTIONS: { value: TransactionStatus; label: string }[] = [
+  { value: 'pending', label: 'En attente' },
+  { value: 'paid', label: 'Payé' },
+  { value: 'cancelled', label: 'Annulé' },
+];
 
 interface Supplier {
   id: number;
@@ -80,23 +79,44 @@ export default function DepensesPage() {
   
   // State
   const [activeTab, setActiveTab] = useState('expenses');
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<Transaction[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'projected'>('all');
-  const [categoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<TransactionStatus | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dateRange] = useState<{ start?: string; end?: string }>({});
   
   // Modals
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Upload
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState<TransactionCreate>({
+    type: 'expense',
+    description: '',
+    amount: '',
+    currency: 'CAD',
+    category: null,
+    transaction_date: new Date().toISOString().split('T')[0],
+    payment_date: null,
+    status: 'pending',
+    supplier_id: null,
+    supplier_name: null,
+    invoice_number: null,
+    notes: null,
+  });
 
   useEffect(() => {
     loadData();
@@ -104,19 +124,161 @@ export default function DepensesPage() {
 
   const loadData = async () => {
     try {
-      // TODO: Load from API
-      // For now, using mock data
-      setExpenses([]);
-      setSuppliers([]);
-      setRecurringExpenses([]);
-      setInvoices([]);
+      setLoading(true);
+      if (activeTab === 'expenses') {
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+        });
+        setExpenses(data);
+      } else {
+        // TODO: Load suppliers, recurring expenses, invoices
+        setSuppliers([]);
+        setRecurringExpenses([]);
+        setInvoices([]);
+      }
     } catch (error) {
       logger.error('Error loading expenses data', error);
+      const appError = handleApiError(error);
       showToast({
-        message: 'Erreur lors du chargement des données',
+        message: appError.message || 'Erreur lors du chargement des données',
         type: 'error',
       });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleCreate = async () => {
+    try {
+      setIsSubmitting(true);
+      if (!formData.description.trim() || !formData.amount) {
+        showToast({ 
+          message: 'Veuillez remplir tous les champs requis', 
+          type: 'error' 
+        });
+        return;
+      }
+
+      const transactionData: TransactionCreate = {
+        ...formData,
+        amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+        transaction_date: new Date(formData.transaction_date).toISOString(),
+        payment_date: formData.payment_date ? new Date(formData.payment_date).toISOString() : null,
+      };
+
+      await transactionsAPI.create(transactionData);
+      await loadData();
+      setShowCreateModal(false);
+      resetForm();
+      showToast({ 
+        message: 'Dépense créée avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors de la création', 
+        type: 'error' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedExpense) return;
+    
+    try {
+      setIsSubmitting(true);
+      const updateData: TransactionUpdate = {
+        description: formData.description,
+        amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+        currency: formData.currency,
+        category: formData.category,
+        transaction_date: new Date(formData.transaction_date).toISOString(),
+        payment_date: formData.payment_date ? new Date(formData.payment_date).toISOString() : null,
+        status: formData.status,
+        supplier_id: formData.supplier_id,
+        supplier_name: formData.supplier_name,
+        invoice_number: formData.invoice_number,
+        notes: formData.notes,
+      };
+
+      await transactionsAPI.update(selectedExpense.id, updateData);
+      await loadData();
+      setShowEditModal(false);
+      setSelectedExpense(null);
+      resetForm();
+      showToast({ 
+        message: 'Dépense modifiée avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors de la modification', 
+        type: 'error' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette dépense ?')) return;
+    
+    try {
+      await transactionsAPI.delete(id);
+      await loadData();
+      showToast({ 
+        message: 'Dépense supprimée avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors de la suppression', 
+        type: 'error' 
+      });
+    }
+  };
+
+  const handleOpenEdit = (expense: Transaction) => {
+    setSelectedExpense(expense);
+    setFormData({
+      type: 'expense',
+      description: expense.description,
+      amount: parseFloat(expense.amount),
+      currency: expense.currency,
+      category: expense.category || null,
+      transaction_date: expense.transaction_date.split('T')[0],
+      payment_date: expense.payment_date ? expense.payment_date.split('T')[0] : null,
+      status: expense.status,
+      supplier_id: expense.supplier_id || null,
+      supplier_name: expense.supplier_name || null,
+      invoice_number: expense.invoice_number || null,
+      notes: expense.notes || null,
+    });
+    setShowEditModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      type: 'expense',
+      description: '',
+      amount: '',
+      currency: 'CAD',
+      category: null,
+      transaction_date: new Date().toISOString().split('T')[0],
+      payment_date: null,
+      status: 'pending',
+      supplier_id: null,
+      supplier_name: null,
+      invoice_number: null,
+      notes: null,
+    });
   };
 
   const handleDownloadTemplate = () => {
@@ -174,21 +336,11 @@ export default function DepensesPage() {
 
     try {
       setUploading(true);
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      formData.append('format', 'auto');
-      formData.append('has_headers', 'true');
-
-      // TODO: Use expenses-specific import endpoint
-      await apiClient.post('/api/v1/imports/import', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
+      // TODO: Implement Excel import for expenses
+      // For now, show a message
       showToast({
-        message: 'Fichier importé avec succès',
-        type: 'success',
+        message: 'Import Excel à venir prochainement',
+        type: 'info',
       });
       
       setShowUploadModal(false);
@@ -196,7 +348,6 @@ export default function DepensesPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-      await loadData();
     } catch (error) {
       logger.error('Error uploading file', error);
       showToast({
@@ -220,16 +371,13 @@ export default function DepensesPage() {
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: TransactionStatus) => {
     const badges = {
       paid: { label: 'Payé', color: 'bg-green-100 text-green-700 border-green-300', icon: CheckCircle },
       pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: Clock },
-      projected: { label: 'Prévisionnel', color: 'bg-blue-100 text-blue-700 border-blue-300', icon: Calendar },
       cancelled: { label: 'Annulé', color: 'bg-red-100 text-red-700 border-red-300', icon: XCircle },
-      received: { label: 'Reçue', color: 'bg-purple-100 text-purple-700 border-purple-300', icon: Receipt },
-      overdue: { label: 'En retard', color: 'bg-red-100 text-red-700 border-red-300', icon: AlertCircle },
     };
-    return badges[status as keyof typeof badges] || badges.pending;
+    return badges[status];
   };
 
   const filteredExpenses = expenses.filter(expense => {
@@ -242,18 +390,24 @@ export default function DepensesPage() {
     if (categoryFilter !== 'all' && expense.category !== categoryFilter) {
       return false;
     }
-    if (dateRange.start && expense.date < dateRange.start) {
+    if (dateRange.start && expense.transaction_date < dateRange.start) {
       return false;
     }
-    if (dateRange.end && expense.date > dateRange.end) {
+    if (dateRange.end && expense.transaction_date > dateRange.end) {
       return false;
     }
     return true;
   });
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const pendingExpenses = expenses.filter(e => e.status === 'pending').reduce((sum, e) => sum + e.amount, 0);
-  const paidExpenses = expenses.filter(e => e.status === 'paid').reduce((sum, e) => sum + e.amount, 0);
+  const totalExpenses = expenses
+    .filter(e => e.status !== 'cancelled')
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const pendingExpenses = expenses
+    .filter(e => e.status === 'pending')
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const paidExpenses = expenses
+    .filter(e => e.status === 'paid')
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
   return (
     <PageContainer maxWidth="full">
@@ -384,24 +538,27 @@ export default function DepensesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <select
+                    <Select
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as any)}
-                      className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                    >
-                      <option value="all">Tous les statuts</option>
-                      <option value="paid">Payé</option>
-                      <option value="pending">En attente</option>
-                      <option value="projected">Prévisionnel</option>
-                    </select>
+                      onChange={(e) => setStatusFilter(e.target.value as TransactionStatus | 'all')}
+                      options={[
+                        { label: 'Tous les statuts', value: 'all' },
+                        ...STATUS_OPTIONS.map(s => ({ label: s.label, value: s.value })),
+                      ]}
+                    />
+                    <Select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      options={[
+                        { label: 'Toutes les catégories', value: 'all' },
+                        ...EXPENSE_CATEGORIES.map(c => ({ label: c, value: c })),
+                      ]}
+                    />
                     <Button
                       variant="primary"
                       onClick={() => {
-                        // TODO: Open expense modal
-                        showToast({
-                          message: 'Fonctionnalité à venir',
-                          type: 'info',
-                        });
+                        resetForm();
+                        setShowCreateModal(true);
                       }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -411,18 +568,21 @@ export default function DepensesPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {filteredExpenses.length === 0 ? (
+                  {loading ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                    </div>
+                  ) : filteredExpenses.length === 0 ? (
                     <div className="text-center py-12">
                       <Receipt className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune dépense trouvée</p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        {expenses.length === 0 ? 'Aucune dépense trouvée' : 'Aucune dépense ne correspond à votre recherche'}
+                      </p>
                       <Button
                         variant="primary"
                         onClick={() => {
-                          // TODO: Open expense modal
-                          showToast({
-                            message: 'Fonctionnalité à venir',
-                            type: 'info',
-                          });
+                          resetForm();
+                          setShowCreateModal(true);
                         }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -445,7 +605,10 @@ export default function DepensesPage() {
                                 <Icon className="w-3 h-3" />
                                 {badge.label}
                               </Badge>
-                              {expense.is_recurring && (
+                              {expense.category && (
+                                <Badge variant="default">{expense.category}</Badge>
+                              )}
+                              {expense.is_recurring === 'true' && (
                                 <Badge className="bg-purple-100 text-purple-700 border-purple-300 flex items-center gap-1">
                                   <Repeat className="w-3 h-3" />
                                   Récurrente
@@ -453,9 +616,13 @@ export default function DepensesPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                              <span>{formatDate(expense.date)}</span>
-                              <span>•</span>
-                              <span>{expense.category}</span>
+                              <span>{formatDate(expense.transaction_date)}</span>
+                              {expense.category && (
+                                <>
+                                  <span>•</span>
+                                  <span>{expense.category}</span>
+                                </>
+                              )}
                               {expense.supplier_name && (
                                 <>
                                   <span>•</span>
@@ -468,27 +635,36 @@ export default function DepensesPage() {
                                   <span className="font-mono">{expense.invoice_number}</span>
                                 </>
                               )}
+                              {expense.payment_date && (
+                                <>
+                                  <span>•</span>
+                                  <span>Payé le: {formatDate(expense.payment_date)}</span>
+                                </>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="text-right">
                               <div className="text-xl font-bold text-red-600">
-                                {formatCurrency(expense.amount, expense.currency)}
+                                {formatCurrency(parseFloat(expense.amount), expense.currency)}
                               </div>
+                              <div className="text-xs text-gray-500">{expense.currency}</div>
                             </div>
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  // TODO: Open expense details
-                                  showToast({
-                                    message: 'Fonctionnalité à venir',
-                                    type: 'info',
-                                  });
-                                }}
+                                onClick={() => handleOpenEdit(expense)}
                               >
-                                <Eye className="w-4 h-4" />
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(expense.id)}
+                                className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -787,6 +963,246 @@ export default function DepensesPage() {
             </TabPanel>
           </TabPanels>
         </Tabs>
+
+        {/* Create Expense Modal */}
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            resetForm();
+          }}
+          title="Nouvelle dépense"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Description *"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Ex: Achat de fournitures de bureau"
+              required
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Montant *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+              <Select
+                label="Devise"
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                options={[
+                  { label: 'CAD', value: 'CAD' },
+                  { label: 'USD', value: 'USD' },
+                  { label: 'EUR', value: 'EUR' },
+                ]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Date de transaction *"
+                type="date"
+                value={formData.transaction_date}
+                onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+                required
+              />
+              <Input
+                label="Date de paiement"
+                type="date"
+                value={formData.payment_date || ''}
+                onChange={(e) => setFormData({ ...formData, payment_date: e.target.value || null })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Catégorie"
+                value={formData.category || ''}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value || null })}
+                options={[
+                  { label: 'Aucune', value: '' },
+                  ...EXPENSE_CATEGORIES.map(c => ({ label: c, value: c })),
+                ]}
+              />
+              <Select
+                label="Statut"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as TransactionStatus })}
+                options={STATUS_OPTIONS.map(s => ({ label: s.label, value: s.value }))}
+              />
+            </div>
+
+            <Input
+              label="Fournisseur"
+              value={formData.supplier_name || ''}
+              onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value || null })}
+              placeholder="Nom du fournisseur"
+            />
+
+            <Input
+              label="Numéro de facture"
+              value={formData.invoice_number || ''}
+              onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value || null })}
+              placeholder="Ex: FAC-2025-001"
+            />
+
+            <Textarea
+              label="Notes"
+              value={formData.notes || ''}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value || null })}
+              placeholder="Notes additionnelles..."
+              rows={3}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Création...' : 'Créer'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Edit Expense Modal */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedExpense(null);
+            resetForm();
+          }}
+          title="Modifier la dépense"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Description *"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Ex: Achat de fournitures de bureau"
+              required
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Montant *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+              <Select
+                label="Devise"
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                options={[
+                  { label: 'CAD', value: 'CAD' },
+                  { label: 'USD', value: 'USD' },
+                  { label: 'EUR', value: 'EUR' },
+                ]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Date de transaction *"
+                type="date"
+                value={formData.transaction_date}
+                onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+                required
+              />
+              <Input
+                label="Date de paiement"
+                type="date"
+                value={formData.payment_date || ''}
+                onChange={(e) => setFormData({ ...formData, payment_date: e.target.value || null })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Catégorie"
+                value={formData.category || ''}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value || null })}
+                options={[
+                  { label: 'Aucune', value: '' },
+                  ...EXPENSE_CATEGORIES.map(c => ({ label: c, value: c })),
+                ]}
+              />
+              <Select
+                label="Statut"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as TransactionStatus })}
+                options={STATUS_OPTIONS.map(s => ({ label: s.label, value: s.value }))}
+              />
+            </div>
+
+            <Input
+              label="Fournisseur"
+              value={formData.supplier_name || ''}
+              onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value || null })}
+              placeholder="Nom du fournisseur"
+            />
+
+            <Input
+              label="Numéro de facture"
+              value={formData.invoice_number || ''}
+              onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value || null })}
+              placeholder="Ex: FAC-2025-001"
+            />
+
+            <Textarea
+              label="Notes"
+              value={formData.notes || ''}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value || null })}
+              placeholder="Notes additionnelles..."
+              rows={3}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedExpense(null);
+                  resetForm();
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleUpdate}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
 
         {/* Upload Modal */}
         <Modal

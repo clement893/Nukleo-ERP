@@ -119,8 +119,8 @@ export default function AutomationSettings() {
   });
 
   const updateRuleMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof automationAPI.updateAutomationRule>[1] }) =>
-      automationAPI.updateAutomationRule(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof automationAPI.updateAutomationRule>[1] }) =>
+      automationAPI.updateAutomationRule(String(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
       showToast({ message: 'Règle d\'automatisation mise à jour avec succès', type: 'success' });
@@ -135,7 +135,7 @@ export default function AutomationSettings() {
   });
 
   const deleteRuleMutation = useMutation({
-    mutationFn: (id: string) => automationAPI.deleteAutomationRule(id),
+    mutationFn: (id: number) => automationAPI.deleteAutomationRule(String(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
       showToast({ message: 'Règle d\'automatisation supprimée avec succès', type: 'success' });
@@ -150,8 +150,8 @@ export default function AutomationSettings() {
   });
 
   const toggleRuleMutation = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
-      automationAPI.toggleAutomationRule(id, enabled),
+    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
+      automationAPI.toggleAutomationRule(String(id), enabled),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automation', 'rules'] });
       showToast({ message: 'Statut de la règle mis à jour', type: 'success' });

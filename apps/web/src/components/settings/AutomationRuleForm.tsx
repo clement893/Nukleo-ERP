@@ -12,11 +12,12 @@ import type { AutomationRule, CreateAutomationRuleRequest } from '@/lib/api/auto
 
 export interface AutomationRuleFormProps {
   rule?: AutomationRule | null;
-  onSave: (rule: CreateAutomationRuleRequest) => void;
+  onSave: (rule: CreateAutomationRuleRequest | UpdateAutomationRuleRequest) => void;
   onCancel: () => void;
 }
 
 const triggerEventOptions = [
+  { value: 'opportunity.stage_changed', label: 'Opportunité change de stage' },
   { value: 'user.created', label: 'Utilisateur créé' },
   { value: 'user.updated', label: 'Utilisateur modifié' },
   { value: 'project.created', label: 'Projet créé' },
@@ -43,10 +44,8 @@ export function AutomationRuleForm({ rule, onSave, onCancel }: AutomationRuleFor
     name: '',
     description: '',
     enabled: true,
-    trigger: {
-      event: '',
-      conditions: [],
-    },
+    trigger_event: '',
+    trigger_conditions: {},
     actions: [
       {
         type: '',
@@ -61,7 +60,8 @@ export function AutomationRuleForm({ rule, onSave, onCancel }: AutomationRuleFor
         name: rule.name,
         description: rule.description || '',
         enabled: rule.enabled,
-        trigger: rule.trigger,
+        trigger_event: rule.trigger_event,
+        trigger_conditions: rule.trigger_conditions || {},
         actions: rule.actions,
       });
     }
@@ -69,7 +69,7 @@ export function AutomationRuleForm({ rule, onSave, onCancel }: AutomationRuleFor
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.trigger.event || formData.actions.length === 0) {
+    if (!formData.name.trim() || !formData.trigger_event || formData.actions.length === 0) {
       return;
     }
     onSave(formData);
@@ -123,11 +123,11 @@ export function AutomationRuleForm({ rule, onSave, onCancel }: AutomationRuleFor
 
         <Select
           label="Événement déclencheur"
-          value={formData.trigger.event}
+          value={formData.trigger_event}
           onChange={(e) =>
             setFormData({
               ...formData,
-              trigger: { ...formData.trigger, event: e.target.value },
+              trigger_event: e.target.value,
             })
           }
           options={triggerEventOptions}

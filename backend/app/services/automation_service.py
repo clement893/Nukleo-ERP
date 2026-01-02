@@ -12,6 +12,7 @@ from uuid import UUID
 from app.models.pipeline import Opportunite, Pipeline, PipelineStage
 from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
 from app.models.team import Team
+from app.models.automation_rule import AutomationRule, AutomationRuleExecutionLog
 from app.core.logging import logger
 
 # Try to import Employee model (may not exist in all installations)
@@ -133,6 +134,103 @@ async def find_employee_by_name(
         return None
 
 
+async def execute_automation_action(
+    action: dict,
+    context: dict,
+    db: AsyncSession
+) -> bool:
+    """
+    Execute a single automation action.
+    
+    Args:
+        action: Action configuration (type, config)
+        context: Context data (opportunity, etc.)
+        db: Database session
+        
+    Returns:
+        True if action succeeded, False otherwise
+    """
+    try:
+        action_type = action.get('type')
+        action_config = action.get('config', {})
+        
+        if action_type == 'task.create':
+            # Create a task
+            title = action_config.get('title', 'Nouvelle tâche')
+            description = action_config.get('description', '')
+            assignee_name = action_config.get('assignee_name')  # e.g., "Clément Roy"
+            due_date_today = action_config.get('due_date_today', False)
+            priority = action_config.get('priority', 'high')
+            
+            # Find employee by name if provided
+            user_id = None
+            if assignee_name:
+                name_parts = assignee_name.split(' ', 1)
+                if len(name_parts) == 2:
+                    employee_id = await find_employee_by_name(name_parts[0], name_parts[1], db)
+                    if employee_id:
+                        user_id = await get_or_create_user_for_employee(employee_id, db)
+            
+            # Get team (use first team or from config)
+            team_id = action_config.get('team_id')
+            if not team_id:
+                team_result = await db.execute(select(Team).limit(1))
+                team = team_result.scalar_one_or_none()
+                if team:
+                    team_id = team.id
+            
+            if not team_id:
+                logger.warning("No team found for task creation")
+                return False
+            
+            # Set due date
+            due_date = None
+            if due_date_today:
+                today = datetime.now().date()
+                due_date = datetime.combine(today, datetime.min.time())
+            
+            # Replace placeholders in title and description
+            if 'opportunity' in context:
+                opp = context['opportunity']
+                title = title.replace('{opportunity_name}', opp.name or '')
+                description = description.replace('{opportunity_name}', opp.name or '')
+            
+            task = ProjectTask(
+                title=title,
+                description=description,
+                status=TaskStatus.TODO.value,
+                priority=priority.upper() if isinstance(priority, str) else priority,
+                team_id=team_id,
+                assignee_id=user_id,
+                due_date=due_date,
+            )
+            
+            db.add(task)
+            await db.commit()
+            await db.refresh(task)
+            
+            logger.info(f"Created task {task.id} via automation")
+            return True
+            
+        elif action_type == 'email.send':
+            # TODO: Implement email sending
+            logger.warning("Email sending not yet implemented in automation")
+            return False
+            
+        elif action_type == 'notification.send':
+            # TODO: Implement notification sending
+            logger.warning("Notification sending not yet implemented in automation")
+            return False
+            
+        else:
+            logger.warning(f"Unknown action type: {action_type}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error executing automation action: {e}", exc_info=True)
+        return False
+
+
 async def handle_opportunity_stage_change(
     opportunity: Opportunite,
     old_stage_id: Optional[UUID],
@@ -142,8 +240,8 @@ async def handle_opportunity_stage_change(
     """
     Handle automation when an opportunity changes stage.
     
-    This function checks if the opportunity moved to a specific stage
-    and triggers the appropriate automation.
+    This function loads enabled automation rules from the database
+    and executes matching rules.
     """
     try:
         # Load pipeline and stage information
@@ -155,52 +253,86 @@ async def handle_opportunity_stage_change(
         pipeline_name = opportunity.pipeline.name
         stage_name = opportunity.stage.name
         
-        # Check if this is the MAIN pipeline and stage is "05-Proposal to do"
-        if pipeline_name and pipeline_name.upper() == "MAIN" and stage_name and "05-Proposal to do" in stage_name:
-            logger.info(f"Automation triggered: Opportunity {opportunity.id} moved to stage '{stage_name}' in pipeline '{pipeline_name}'")
-            
-            # Find employee "Clément Roy"
-            employee_id = await find_employee_by_name("Clément", "Roy", db)
-            
-            if not employee_id:
-                logger.warning("Employee 'Clément Roy' not found, cannot create task")
-                return
-            
-            # Get or create user for employee
-            user_id = await get_or_create_user_for_employee(employee_id, db)
-            
-            if not user_id:
-                logger.warning(f"Could not get or create user for employee {employee_id}")
-                return
-            
-            # Get the first team (or a default team)
-            # You may want to make this configurable
-            team_result = await db.execute(select(Team).limit(1))
-            team = team_result.scalar_one_or_none()
-            
-            if not team:
-                logger.warning("No team found, cannot create task")
-                return
-            
-            # Create task with due date = today
-            today = datetime.now().date()
-            due_date = datetime.combine(today, datetime.min.time())
-            
-            task = ProjectTask(
-                title=f"Proposition à faire - {opportunity.name}",
-                description=f"Opportunité '{opportunity.name}' est passée dans le stage '05-Proposal to do'. Créer la proposition.",
-                status=TaskStatus.TODO.value,
-                priority=TaskPriority.HIGH.value,
-                team_id=team.id,
-                assignee_id=user_id,
-                due_date=due_date,
+        # Find all enabled automation rules for the event 'opportunity.stage_changed'
+        rules_result = await db.execute(
+            select(AutomationRule).where(
+                AutomationRule.enabled == True,
+                AutomationRule.trigger_event == 'opportunity.stage_changed'
             )
-            
-            db.add(task)
-            await db.commit()
-            await db.refresh(task)
-            
-            logger.info(f"Created task {task.id} for opportunity {opportunity.id} automation")
+        )
+        rules = rules_result.scalars().all()
+        
+        # Execute matching rules
+        for rule in rules:
+            try:
+                # Check trigger conditions
+                conditions = rule.trigger_conditions or {}
+                matches = True
+                
+                # Check pipeline condition
+                if 'pipeline_name' in conditions:
+                    expected_pipeline = conditions['pipeline_name']
+                    if pipeline_name.upper() != expected_pipeline.upper():
+                        matches = False
+                
+                # Check stage condition
+                if 'stage_name' in conditions:
+                    expected_stage = conditions['stage_name']
+                    if expected_stage not in stage_name:
+                        matches = False
+                
+                if not matches:
+                    continue
+                
+                # Rule matches! Execute actions
+                logger.info(f"Executing automation rule '{rule.name}' for opportunity {opportunity.id}")
+                
+                context = {
+                    'opportunity': opportunity,
+                    'pipeline_name': pipeline_name,
+                    'stage_name': stage_name,
+                    'old_stage_id': str(old_stage_id) if old_stage_id else None,
+                    'new_stage_id': str(new_stage_id) if new_stage_id else None,
+                }
+                
+                # Execute all actions
+                all_succeeded = True
+                for action in rule.actions:
+                    success = await execute_automation_action(action, context, db)
+                    if not success:
+                        all_succeeded = False
+                
+                # Update rule statistics
+                rule.trigger_count += 1
+                rule.last_triggered_at = datetime.now()
+                
+                # Log execution
+                log = AutomationRuleExecutionLog(
+                    rule_id=rule.id,
+                    executed_at=datetime.now(),
+                    success=all_succeeded,
+                    execution_data=context
+                )
+                db.add(log)
+                
+                await db.commit()
+                await db.refresh(rule)
+                
+                logger.info(f"Automation rule '{rule.name}' executed successfully")
+                
+            except Exception as rule_error:
+                logger.error(f"Error executing automation rule {rule.id}: {rule_error}", exc_info=True)
+                # Log the error
+                log = AutomationRuleExecutionLog(
+                    rule_id=rule.id,
+                    executed_at=datetime.now(),
+                    success=False,
+                    error_message=str(rule_error),
+                    execution_data={'opportunity_id': str(opportunity.id)}
+                )
+                db.add(log)
+                await db.commit()
+                # Continue with other rules
             
     except Exception as e:
         logger.error(f"Error in handle_opportunity_stage_change: {e}", exc_info=True)

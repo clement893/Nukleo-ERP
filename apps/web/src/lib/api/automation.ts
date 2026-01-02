@@ -81,27 +81,21 @@ export interface ExecutionLog {
  * Automation Rule
  */
 export interface AutomationRule {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   enabled: boolean;
-  trigger: {
-    event: string;
-    conditions?: Array<{
-      field: string;
-      operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'between';
-      value: string | number | boolean;
-    }>;
-  };
+  trigger_event: string;
+  trigger_conditions?: Record<string, unknown>;
   actions: Array<{
     type: string;
     config: Record<string, unknown>;
   }>;
-  createdAt: string;
-  updatedAt: string;
-  lastTriggered?: string;
-  triggerCount: number;
-  userId: number;
+  trigger_count: number;
+  last_triggered_at?: string | null;
+  user_id?: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /**
@@ -111,14 +105,8 @@ export interface CreateAutomationRuleRequest {
   name: string;
   description?: string;
   enabled: boolean;
-  trigger: {
-    event: string;
-    conditions?: Array<{
-      field: string;
-      operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'between';
-      value: string | number | boolean;
-    }>;
-  };
+  trigger_event: string;
+  trigger_conditions?: Record<string, unknown>;
   actions: Array<{
     type: string;
     config: Record<string, unknown>;
@@ -132,14 +120,8 @@ export interface UpdateAutomationRuleRequest {
   name?: string;
   description?: string;
   enabled?: boolean;
-  trigger?: {
-    event: string;
-    conditions?: Array<{
-      field: string;
-      operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'between';
-      value: string | number | boolean;
-    }>;
-  };
+  trigger_event?: string;
+  trigger_conditions?: Record<string, unknown>;
   actions?: Array<{
     type: string;
     config: Record<string, unknown>;
@@ -304,11 +286,7 @@ export const automationAPI = {
    * Delete an automation rule
    */
   deleteAutomationRule: async (ruleId: string): Promise<void> => {
-    try {
-      await apiClient.delete(`/v1/automation-rules/${ruleId}`);
-    } catch (error) {
-      throw new Error('Automation rules endpoint not available yet.');
-    }
+    await apiClient.delete(`/v1/automation-rules/${ruleId}`);
   },
 
   /**

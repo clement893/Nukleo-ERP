@@ -17,9 +17,9 @@ export interface AutomationRulesListProps {
   isLoading: boolean;
   error: Error | null;
   onCreate: (rule: CreateAutomationRuleRequest) => void;
-  onUpdate: (id: string, rule: UpdateAutomationRuleRequest) => void;
-  onDelete: (id: string) => void;
-  onToggle: (id: string, enabled: boolean) => void;
+  onUpdate: (id: number, rule: UpdateAutomationRuleRequest) => void;
+  onDelete: (id: number) => void;
+  onToggle: (id: number, enabled: boolean) => void;
 }
 
 export function AutomationRulesList({
@@ -38,16 +38,16 @@ export function AutomationRulesList({
   const filteredRules = rules.filter((rule) => {
     return rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rule.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rule.trigger.event.toLowerCase().includes(searchQuery.toLowerCase());
+      rule.trigger_event.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette règle d\'automatisation ?')) {
       onDelete(id);
     }
   };
 
-  const handleToggle = (id: string, enabled: boolean) => {
+  const handleToggle = (id: number, enabled: boolean) => {
     onToggle(id, enabled);
   };
 
@@ -65,27 +65,7 @@ export function AutomationRulesList({
     }
   };
 
-  // Check if automation rules endpoint is available
-  const endpointAvailable = !error || !error.message.includes('not available');
-
-  if (!endpointAvailable) {
-    return (
-      <Card className="p-6">
-        <div className="text-center py-8">
-          <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Règles d'automatisation</h3>
-          <p className="text-muted-foreground mb-4">
-            Les règles d'automatisation seront bientôt disponibles.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            En attendant, vous pouvez utiliser les tâches planifiées pour automatiser vos workflows.
-          </p>
-        </div>
-      </Card>
-    );
-  }
-
-  if (error && endpointAvailable) {
+  if (error) {
     return (
       <Card className="p-6">
         <div className="text-center py-8">
@@ -152,7 +132,7 @@ export function AutomationRulesList({
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="text-muted-foreground">Déclencheur:</span>
-                        <span className="ml-2 font-medium">{rule.trigger.event}</span>
+                        <span className="ml-2 font-medium">{rule.trigger_event}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Actions:</span>
@@ -160,19 +140,19 @@ export function AutomationRulesList({
                           {rule.actions.map((a) => a.type).join(', ')}
                         </span>
                       </div>
-                      {rule.lastTriggered && (
+                      {rule.last_triggered_at && (
                         <div>
                           <span className="text-muted-foreground">Dernière exécution:</span>
-                          <span className="ml-2 font-medium">{formatDate(rule.lastTriggered)}</span>
+                          <span className="ml-2 font-medium">{formatDate(rule.last_triggered_at)}</span>
                         </div>
                       )}
                       <div>
                         <span className="text-muted-foreground">Exécutions:</span>
-                        <span className="ml-2 font-medium">{rule.triggerCount} fois</span>
+                        <span className="ml-2 font-medium">{rule.trigger_count} fois</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Créée le:</span>
-                        <span className="ml-2 font-medium">{formatDate(rule.createdAt)}</span>
+                        <span className="ml-2 font-medium">{formatDate(rule.created_at)}</span>
                       </div>
                     </div>
                   </div>

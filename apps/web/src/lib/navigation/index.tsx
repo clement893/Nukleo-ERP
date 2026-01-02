@@ -25,6 +25,7 @@ import {
   UserCircle,
   Target,
   TrendingUp,
+  TrendingDown,
   FolderOpen,
   Clock,
   UserPlus,
@@ -239,6 +240,16 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Accueil',
             href: '/dashboard/finances',
             icon: <DollarSign className="w-5 h-5" />,
+          },
+          {
+            name: 'Revenus',
+            href: '/dashboard/finances/revenus',
+            icon: <TrendingUp className="w-5 h-5" />,
+          },
+          {
+            name: 'Dépenses',
+            href: '/dashboard/finances/depenses',
+            icon: <TrendingDown className="w-5 h-5" />,
           },
           {
             name: 'Trésorerie',

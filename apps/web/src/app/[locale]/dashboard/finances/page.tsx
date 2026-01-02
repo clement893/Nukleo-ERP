@@ -8,7 +8,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   DollarSign, TrendingUp, TrendingDown, FileText, 
   ArrowUpRight, ArrowDownRight,
-  CreditCard, Wallet, Building, Package, Users, Zap, Loader2
+  Wallet, Building, Package, Users, Zap, Loader2, FileBarChart
 } from 'lucide-react';
 import { Badge, Card } from '@/components/ui';
 import Link from 'next/link';
@@ -385,7 +385,37 @@ export default function FinancesPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          <Link href="/fr/dashboard/finances/revenus">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30 group-hover:bg-green-500/20 transition-all">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Revenus</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Saisir les revenus</p>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/fr/dashboard/finances/depenses">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 group-hover:bg-orange-500/20 transition-all">
+                  <TrendingDown className="w-6 h-6 text-orange-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Dépenses</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Saisir les dépenses</p>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
+              </div>
+            </Card>
+          </Link>
+
           <Link href="/fr/dashboard/finances/tresorerie">
             <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
@@ -420,7 +450,7 @@ export default function FinancesPage() {
             <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30 group-hover:bg-green-500/20 transition-all">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
+                  <FileBarChart className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">Rapports</h3>
@@ -431,20 +461,6 @@ export default function FinancesPage() {
             </Card>
           </Link>
 
-          <Link href="/fr/dashboard/finances/depenses">
-            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 group-hover:bg-orange-500/20 transition-all">
-                  <CreditCard className="w-6 h-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1">Dépenses</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Gestion des dépenses et fournisseurs</p>
-                </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
-              </div>
-            </Card>
-          </Link>
           <Link href="/fr/dashboard/finances/compte-depenses">
             <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">

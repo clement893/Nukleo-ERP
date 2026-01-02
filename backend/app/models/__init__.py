@@ -60,6 +60,7 @@ from app.models.bank_account import BankAccount, BankAccountType
 from app.models.transaction import Transaction, TransactionStatus
 from app.models.transaction_category import TransactionCategory, TransactionType
 from app.models.custom_widget import CustomWidget
+from app.models.automation_rule import AutomationRule, AutomationRuleExecutionLog
 from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory as LeoDocumentationCategory, DocumentationPriority as LeoDocumentationPriority
 from app.core.security_audit import SecurityAuditLog
 
@@ -170,5 +171,7 @@ __all__ = [
     "TransactionCategory",
     "TransactionType",
     "CustomWidget",
+    "AutomationRule",
+    "AutomationRuleExecutionLog",
 ]
 
