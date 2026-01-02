@@ -59,6 +59,7 @@ from app.models.project_comment import ProjectComment
 from app.models.bank_account import BankAccount, BankAccountType
 from app.models.transaction import Transaction, TransactionStatus
 from app.models.transaction_category import TransactionCategory, TransactionType
+from app.models.custom_widget import CustomWidget
 from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory as LeoDocumentationCategory, DocumentationPriority as LeoDocumentationPriority
 from app.core.security_audit import SecurityAuditLog
 
@@ -168,5 +169,6 @@ __all__ = [
     "TransactionStatus",
     "TransactionCategory",
     "TransactionType",
+    "CustomWidget",
 ]
 

@@ -5,12 +5,13 @@
  */
 
 import { useState } from 'react';
-import { Settings, RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
+import { Settings, RefreshCw, X, GripVertical, AlertCircle, Sparkles } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { getWidget } from '@/lib/dashboard/widgetRegistry';
 import type { WidgetLayout } from '@/lib/dashboard/types';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
+import { CustomWidget } from '@/components/dashboard/widgets/CustomWidget';
 
 interface WidgetContainerProps {
   widgetLayout: WidgetLayout;
@@ -58,6 +59,25 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
   const queryClient = useQueryClient();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   
+  // Handle custom widgets
+  if (widgetLayout.widget_type === 'custom') {
+    return (
+      <ErrorBoundary
+        fallback={(error) => (
+          <WidgetErrorFallback error={error} widgetType="custom" />
+        )}
+      >
+        <div className="h-full w-full glass-card rounded-lg flex flex-col">
+          <CustomWidget
+            id={widgetLayout.id}
+            config={widgetLayout.config}
+            globalFilters={globalFilters}
+          />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
   const widgetDef = getWidget(widgetLayout.widget_type);
   
   if (!widgetDef) {

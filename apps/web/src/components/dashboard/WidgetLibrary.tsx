@@ -4,12 +4,16 @@
  * Bibliothèque de widgets - Modal pour ajouter des widgets
  */
 
-import { useState, useMemo } from 'react';
-import { X, Search, Plus } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { X, Search, Plus, Edit, Trash2, Sparkles } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { widgetRegistry } from '@/lib/dashboard/widgetRegistry';
 import { getFilteredWidgetRegistry } from '@/lib/dashboard/widgetPermissions';
 import type { WidgetType } from '@/lib/dashboard/types';
+import { customWidgetsAPI, type CustomWidget } from '@/lib/api/custom-widgets';
+import { WidgetEditor } from './WidgetEditor';
+import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 
 interface WidgetLibraryProps {
   isOpen: boolean;
@@ -27,9 +31,34 @@ const categoryLabels: Record<string, string> = {
 };
 
 export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibraryProps) {
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [customWidgets, setCustomWidgets] = useState<CustomWidget[]>([]);
+  const [isLoadingCustom, setIsLoadingCustom] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingWidgetId, setEditingWidgetId] = useState<number | undefined>();
   const { addWidget } = useDashboardStore();
+
+  // Load custom widgets
+  useEffect(() => {
+    if (isOpen) {
+      loadCustomWidgets();
+    }
+  }, [isOpen]);
+
+  const loadCustomWidgets = async () => {
+    try {
+      setIsLoadingCustom(true);
+      const widgets = await customWidgetsAPI.list({ include_public: true });
+      setCustomWidgets(widgets);
+    } catch (error) {
+      logger.error('Error loading custom widgets', error);
+      showToast({ message: 'Erreur lors du chargement des widgets personnalisés', type: 'error' });
+    } finally {
+      setIsLoadingCustom(false);
+    }
+  };
 
   // Filter widgets based on permissions if provided
   const filteredRegistry = useMemo(() => {
@@ -64,6 +93,56 @@ export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibrar
     });
 
     onClose();
+  };
+
+  const handleAddCustomWidget = (customWidget: CustomWidget) => {
+    // Trouver la position disponible (en bas de la grille)
+    const activeConfig = useDashboardStore.getState().getActiveConfig();
+    const maxY = activeConfig?.layouts.reduce((max, w) => Math.max(max, w.y + w.h), 0) || 0;
+
+    addWidget({
+      widget_type: 'custom' as WidgetType,
+      x: 0,
+      y: maxY,
+      w: 4,
+      h: 2,
+      config: {
+        widget_id: customWidget.id,
+      },
+    });
+
+    onClose();
+  };
+
+  const handleEditCustomWidget = (widgetId: number) => {
+    setEditingWidgetId(widgetId);
+    setIsEditorOpen(true);
+  };
+
+  const handleDeleteCustomWidget = async (widgetId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce widget ?')) {
+      return;
+    }
+
+    try {
+      await customWidgetsAPI.delete(widgetId);
+      showToast({ message: 'Widget supprimé avec succès', type: 'success' });
+      loadCustomWidgets();
+    } catch (error) {
+      logger.error('Error deleting custom widget', error);
+      showToast({ message: 'Erreur lors de la suppression', type: 'error' });
+    }
+  };
+
+  const handleCreateWidget = () => {
+    setEditingWidgetId(undefined);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditorClose = () => {
+    setIsEditorOpen(false);
+    setEditingWidgetId(undefined);
+    loadCustomWidgets();
   };
 
   const filteredWidgets = Object.values(filteredRegistry).filter((widget) => {
@@ -111,7 +190,7 @@ export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibrar
           </div>
 
           {/* Category filters */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             <button
               onClick={() => setSelectedCategory('all')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -135,20 +214,127 @@ export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibrar
                 {categoryLabels[category] || category}
               </button>
             ))}
+            <button
+              onClick={() => setSelectedCategory('custom')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedCategory === 'custom'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              Mes Widgets
+            </button>
           </div>
         </div>
 
         {/* Widget grid */}
         <div className="flex-1 overflow-auto p-6">
-          {filteredWidgets.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500 dark:text-gray-400">
-                Aucun widget trouvé
-              </p>
+          {/* Custom Widgets Section */}
+          {selectedCategory === 'custom' && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Mes Widgets Personnalisés
+                </h3>
+                <button
+                  onClick={handleCreateWidget}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Créer un Widget
+                </button>
+              </div>
+              {isLoadingCustom ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                </div>
+              ) : customWidgets.length === 0 ? (
+                <div className="text-center py-12">
+                  <Sparkles className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Aucun widget personnalisé pour le moment
+                  </p>
+                  <button
+                    onClick={handleCreateWidget}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Créer votre premier widget
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {customWidgets.map((customWidget) => (
+                    <div
+                      key={customWidget.id}
+                      className="group relative bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors border border-purple-200 dark:border-purple-800"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            {customWidget.name}
+                          </h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                            {customWidget.description || 'Widget personnalisé'}
+                          </p>
+                          {customWidget.is_public && (
+                            <span className="text-xs text-purple-600 dark:text-purple-400 mt-1 inline-block">
+                              Public
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditCustomWidget(customWidget.id)}
+                          className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          title="Modifier"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCustomWidget(customWidget.id)}
+                          className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => handleAddCustomWidget(customWidget)}
+                          className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700"
+                          title="Ajouter au dashboard"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="px-2 py-0.5 bg-white dark:bg-gray-800 rounded">
+                          {customWidget.type}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredWidgets.map((widget) => {
+          )}
+
+          {/* Standard Widgets */}
+          {selectedCategory !== 'custom' && (
+            <>
+              {filteredWidgets.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Aucun widget trouvé
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredWidgets.map((widget) => {
                 const Icon = widget.icon;
                 const isImplemented = widget.component !== null;
 
@@ -199,19 +385,41 @@ export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibrar
                     </div>
                   </div>
                 );
-              })}
-            </div>
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {filteredWidgets.length} widget{filteredWidgets.length !== 1 ? 's' : ''} disponible
-            {filteredWidgets.length !== 1 ? 's' : ''}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {selectedCategory === 'custom'
+                ? `${customWidgets.length} widget${customWidgets.length !== 1 ? 's' : ''} personnalisé${customWidgets.length !== 1 ? 's' : ''}`
+                : `${filteredWidgets.length} widget${filteredWidgets.length !== 1 ? 's' : ''} disponible${filteredWidgets.length !== 1 ? 's' : ''}`}
+            </p>
+            {selectedCategory !== 'custom' && (
+              <button
+                onClick={handleCreateWidget}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+              >
+                <Sparkles className="w-4 h-4" />
+                Créer un Widget
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Widget Editor Modal */}
+      <WidgetEditor
+        isOpen={isEditorOpen}
+        onClose={handleEditorClose}
+        widgetId={editingWidgetId}
+        onSave={loadCustomWidgets}
+      />
     </div>
   );
 }

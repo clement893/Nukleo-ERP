@@ -44,7 +44,9 @@ export type WidgetType =
   | 'workload-chart'
   // System
   | 'user-profile'
-  | 'notifications';
+  | 'notifications'
+  // Custom
+  | 'custom';
 
 /**
  * Périodes temporelles disponibles

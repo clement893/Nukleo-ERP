@@ -50,10 +50,36 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+// Droppable Stage Column Component
+function DroppableStageColumn({ 
+  stageId, 
+  children,
+  className = '',
+}: { 
+  stageId: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: stageId,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className} ${isOver ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 // Opportunity Card Component for Kanban
 function OpportunityKanbanCard({ 
@@ -75,12 +101,13 @@ function OpportunityKanbanCard({
     setNodeRef,
     transform,
     transition,
+    isDragging: isSortableDragging,
   } = useSortable({ id: opportunity.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging || isSortableDragging ? 0.5 : 1,
   };
 
   const formatCurrency = (amount: number) => {
@@ -106,10 +133,21 @@ function OpportunityKanbanCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className="cursor-grab active:cursor-grabbing touch-none"
+      className="mb-2"
     >
-      <Card className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group mb-2 relative">
+      <Card className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative">
+        {/* Drag Handle */}
+        <div
+          {...listeners}
+          className="absolute top-2 left-2 w-6 h-6 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-4 h-4 flex flex-col gap-0.5 justify-center">
+            <div className="w-full h-0.5 bg-gray-400 rounded"></div>
+            <div className="w-full h-0.5 bg-gray-400 rounded"></div>
+            <div className="w-full h-0.5 bg-gray-400 rounded"></div>
+          </div>
+        </div>
         {/* Actions on hover */}
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
           {onView && (
@@ -264,7 +302,7 @@ export default function PipelineDetailPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3,
+        distance: 8,
       },
     })
   );

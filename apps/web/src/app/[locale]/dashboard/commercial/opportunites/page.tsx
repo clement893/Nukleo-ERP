@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import { Button, Alert, Loading, Badge, Input } from '@/components/ui';
@@ -26,7 +26,8 @@ import {
   Building2,
   Calendar,
   Edit,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -81,8 +82,11 @@ function OpportunitiesContent() {
   const [filterCompany, setFilterCompany] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
+  const [hideClosed, setHideClosed] = useState<boolean>(true); // Filtre par défaut pour cacher closed won/lost
+  const [totalActiveOpportunities, setTotalActiveOpportunities] = useState<number>(0);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   
   // Load pipelines and companies for filters
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -107,6 +111,49 @@ function OpportunitiesContent() {
     };
     loadData();
   }, [showToast]);
+
+  // Charger le total exact des opportunités actives (une seule fois au début)
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadTotalActive = async () => {
+      try {
+        // Charger toutes les opportunités pour compter (avec une limite élevée)
+        const allOpps = await opportunitiesAPI.list(0, 10000);
+        // Compter celles qui ne sont pas closed won ou closed lost
+        const activeCount = allOpps.filter(opp => {
+          const isClosed = opp.status === 'closed won' || 
+                          opp.status === 'closed lost' || 
+                          opp.status === 'won' || 
+                          opp.status === 'lost';
+          return !isClosed;
+        }).length;
+        
+        if (isMounted) {
+          setTotalActiveOpportunities(activeCount);
+        }
+      } catch (err) {
+        console.error('Erreur lors du chargement du total:', err);
+        // En cas d'erreur, utiliser le count des opportunités déjà chargées
+        if (isMounted) {
+          const activeCount = opportunities.filter(opp => {
+            const isClosed = opp.status === 'closed won' || 
+                            opp.status === 'closed lost' || 
+                            opp.status === 'won' || 
+                            opp.status === 'lost';
+            return !isClosed;
+          }).length;
+          setTotalActiveOpportunities(activeCount);
+        }
+      }
+    };
+    
+    loadTotalActive();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Charger une seule fois au montage
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -126,16 +173,41 @@ function OpportunitiesContent() {
     return Array.from(stages).sort();
   }, [opportunities]);
 
-  // Load more
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore && hasMore) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
   }, [loadingMore, hasMore, fetchNextPage]);
 
   // Filtered opportunities
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
+      // Hide closed won/lost filter (par défaut actif)
+      if (hideClosed) {
+        const isClosed = opp.status === 'closed won' || 
+                        opp.status === 'closed lost' || 
+                        opp.status === 'won' || 
+                        opp.status === 'lost';
+        if (isClosed) return false;
+      }
+      
       // Stage filter
       const matchesStatus = filterStatus.length === 0 || (opp.stage_name && filterStatus.includes(opp.stage_name));
       
@@ -153,7 +225,7 @@ function OpportunitiesContent() {
       
       return matchesStatus && matchesPipeline && matchesCompany && matchesSearch;
     });
-  }, [opportunities, filterStatus, filterPipeline, filterCompany, debouncedSearchQuery]);
+  }, [opportunities, filterStatus, filterPipeline, filterCompany, debouncedSearchQuery, hideClosed]);
 
   // Check if any filters are active
   const hasActiveFilters = filterStatus.length > 0 || filterPipeline.length > 0 || filterCompany.length > 0 || debouncedSearchQuery.trim() !== '';
@@ -170,12 +242,12 @@ function OpportunitiesContent() {
       : 0;
     
     return {
-      total: filteredOpportunities.length,
+      total: hideClosed ? totalActiveOpportunities : opportunities.length, // Afficher le total actif (toutes les pages) si le filtre est actif, sinon le total chargé
       totalValue,
       weightedValue,
       avgProbability: avgProbability.toFixed(0),
     };
-  }, [filteredOpportunities]);
+  }, [filteredOpportunities, hideClosed, totalActiveOpportunities, opportunities.length]);
 
   // Format currency
   const formatCurrency = useCallback((value: number) => {
@@ -574,6 +646,26 @@ function OpportunitiesContent() {
                 />
               )}
 
+              {/* Hide closed filter */}
+              <Button
+                variant={hideClosed ? undefined : 'outline'}
+                size="sm"
+                onClick={() => setHideClosed(!hideClosed)}
+                className="min-w-[180px]"
+              >
+                {hideClosed ? (
+                  <>
+                    <CheckSquare className="w-4 h-4 mr-2" />
+                    Masquer les fermées
+                  </>
+                ) : (
+                  <>
+                    <Square className="w-4 h-4 mr-2" />
+                    Afficher les fermées
+                  </>
+                )}
+              </Button>
+
               {/* Bulk actions */}
               {selectedOpportunities.size > 0 && (
                 <div className="flex items-center gap-2 ml-auto">
@@ -875,16 +967,15 @@ function OpportunitiesContent() {
           </div>
         )}
 
-        {/* Load more */}
+        {/* Infinite scroll trigger */}
         {hasMore && (
-          <div className="flex justify-center pt-4">
-            <Button
-              variant="outline"
-              onClick={loadMore}
-              disabled={loadingMore}
-            >
-              {loadingMore ? 'Chargement...' : 'Charger plus'}
-            </Button>
+          <div ref={loadMoreRef} className="flex justify-center pt-4 pb-8 min-h-[100px]">
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Chargement...</span>
+              </div>
+            )}
           </div>
         )}
       </MotionDiv>

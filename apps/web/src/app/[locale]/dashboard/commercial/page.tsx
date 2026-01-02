@@ -12,7 +12,10 @@ import {
   FileText,
   Building2,
   UserPlus,
-  Briefcase
+  Briefcase,
+  AlertCircle,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { Badge, Button, Card, Loading } from '@/components/ui';
 import Link from 'next/link';
@@ -32,6 +35,96 @@ export default function CommercialPage() {
 
   const loading = loadingOpps || loadingQuotes || loadingSubmissions;
 
+  // Helper function to check if opportunity has submission
+  const hasSubmission = (opportunity: any) => {
+    if (!opportunity.company_id) return false;
+    return submissions.some((s: any) => s.company_id === opportunity.company_id);
+  };
+
+  // Helper function to get days until deadline
+  const getDaysUntilDeadline = (dateString: string | null | undefined): number | null => {
+    if (!dateString) return null;
+    const deadline = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    deadline.setHours(0, 0, 0, 0);
+    const diffTime = deadline.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  // Helper function to get action needed type
+  const getActionNeeded = (opp: any): { type: 'submission' | 'followup' | 'deadline'; priority: 'high' | 'medium' | 'low'; label: string } => {
+    const daysUntilDeadline = getDaysUntilDeadline(opp.expected_close_date);
+    const hasDeadline = daysUntilDeadline !== null;
+    const isDeadlineNear = hasDeadline && daysUntilDeadline <= 30 && daysUntilDeadline >= 0;
+    const isDeadlineUrgent = hasDeadline && daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
+    const isProposalStage = opp.status?.toLowerCase() === 'proposal' || 
+                           opp.stage_name?.toLowerCase().includes('proposition') ||
+                           opp.stage_name?.toLowerCase().includes('proposal');
+    const hasHighProbability = opp.probability && opp.probability > 50;
+
+    if (isDeadlineUrgent && !hasSubmission(opp)) {
+      return { type: 'deadline', priority: 'high', label: 'Deadline urgente - Soumission nécessaire' };
+    }
+    if (isDeadlineNear && !hasSubmission(opp)) {
+      return { type: 'deadline', priority: 'medium', label: 'Deadline approchante - Soumission nécessaire' };
+    }
+    if (isProposalStage && !hasSubmission(opp)) {
+      return { type: 'submission', priority: 'high', label: 'Soumission nécessaire' };
+    }
+    if (hasHighProbability && !hasSubmission(opp)) {
+      return { type: 'submission', priority: 'medium', label: 'Soumission recommandée' };
+    }
+    return { type: 'followup', priority: 'low', label: 'Suivi recommandé' };
+  };
+
+  // Opportunities needing action
+  const opportunitiesNeedingAction = useMemo(() => {
+    return opportunities
+      .filter((opp: any) => {
+        // Exclude closed opportunities
+        const status = opp.status?.toLowerCase() || '';
+        if (['won', 'lost', 'cancelled'].includes(status)) return false;
+
+        const daysUntilDeadline = getDaysUntilDeadline(opp.expected_close_date);
+        const hasDeadline = daysUntilDeadline !== null;
+        const isDeadlineNear = hasDeadline && daysUntilDeadline <= 30 && daysUntilDeadline >= 0;
+        const isProposalStage = opp.status?.toLowerCase() === 'proposal' || 
+                               opp.stage_name?.toLowerCase().includes('proposition') ||
+                               opp.stage_name?.toLowerCase().includes('proposal');
+        const hasHighProbability = opp.probability && opp.probability > 50;
+        const noSubmission = !hasSubmission(opp);
+
+        // Include opportunities that need action
+        return (isProposalStage || isDeadlineNear || hasHighProbability) && noSubmission;
+      })
+      .map((opp: any) => ({
+        ...opp,
+        actionNeeded: getActionNeeded(opp),
+        daysUntilDeadline: getDaysUntilDeadline(opp.expected_close_date),
+      }))
+      .sort((a: any, b: any) => {
+        // Sort by priority (high > medium > low)
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        if (priorityOrder[a.actionNeeded.priority] !== priorityOrder[b.actionNeeded.priority]) {
+          return priorityOrder[b.actionNeeded.priority] - priorityOrder[a.actionNeeded.priority];
+        }
+        // Then by deadline (sooner first)
+        if (a.daysUntilDeadline !== null && b.daysUntilDeadline !== null) {
+          return a.daysUntilDeadline - b.daysUntilDeadline;
+        }
+        if (a.daysUntilDeadline !== null) return -1;
+        if (b.daysUntilDeadline !== null) return 1;
+        // Then by probability (higher first)
+        if (a.probability !== b.probability) {
+          return (b.probability || 0) - (a.probability || 0);
+        }
+        // Finally by amount (higher first)
+        return (b.amount || 0) - (a.amount || 0);
+      })
+      .slice(0, 5); // Top 5 opportunities needing action
+  }, [opportunities, submissions]);
+
   // Calculate stats
   const stats = useMemo(() => {
     const totalOpportunities = opportunities.length;
@@ -44,11 +137,13 @@ export default function CommercialPage() {
     const pendingQuotes = quotes.filter((q: any) => q.status === 'sent' || q.status === 'pending').length;
     const totalSubmissions = submissions.length;
     const wonSubmissions = submissions.filter((s: any) => s.status === 'won' || s.status === 'accepted').length;
+    const needingAction = opportunitiesNeedingAction.length;
 
     return {
       opportunities: {
         total: totalOpportunities,
         value: totalValue,
+        needingAction,
       },
       pipelines: {
         total: totalPipelines,
@@ -63,14 +158,7 @@ export default function CommercialPage() {
         won: wonSubmissions,
       },
     };
-  }, [opportunities, quotes, submissions]);
-
-  // Top opportunities (by amount)
-  const topOpportunities = useMemo(() => {
-    return [...opportunities]
-      .sort((a: any, b: any) => (b.amount || 0) - (a.amount || 0))
-      .slice(0, 3);
-  }, [opportunities]);
+  }, [opportunities, quotes, submissions, opportunitiesNeedingAction]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-CA', {
@@ -148,6 +236,24 @@ export default function CommercialPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
+                <AlertCircle className="w-6 h-6 text-[#EF4444]" />
+              </div>
+              {stats.opportunities.needingAction > 0 && (
+                <Badge className="bg-[#EF4444] text-white">{stats.opportunities.needingAction}</Badge>
+              )}
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.opportunities.needingAction}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Nécessitent une action</div>
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              Soumissions ou suivi requis
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <TrendingUp className="w-6 h-6 text-[#10B981]" />
               </div>
@@ -158,6 +264,36 @@ export default function CommercialPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Pipelines</div>
             <div className="text-xs text-gray-500 dark:text-gray-500">
               {stats.pipelines.active} actifs
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                <FileText className="w-6 h-6 text-[#F59E0B]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.quotes.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Devis</div>
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              {stats.quotes.pending} en attente
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+                <Briefcase className="w-6 h-6 text-[#3B82F6]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.submissions.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Soumissions</div>
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              {stats.submissions.won} gagnées
             </div>
           </Card>
 
