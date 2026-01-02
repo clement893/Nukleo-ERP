@@ -147,8 +147,8 @@ export default function FeuillesTempsPage() {
     queryFn: async () => {
       try {
         const response = await apiClient.get('/v1/users', { params: { page: 1, page_size: 1000 } });
-        const data = extractApiData<{ items?: Array<{ id: number; first_name?: string; last_name?: string; email: string }> }>(response);
-        if (data && 'items' in data && Array.isArray(data.items)) {
+        const data = extractApiData<{ items?: Array<{ id: number; first_name?: string; last_name?: string; email: string }> }>(response as any);
+        if (data && typeof data === 'object' && 'items' in data && Array.isArray(data.items)) {
           return data.items.map(u => ({
             id: u.id,
             name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,

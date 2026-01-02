@@ -53,9 +53,15 @@ function EquipesContent() {
   
   // Extract teams data
   const teamsData = useMemo(() => {
-    if (!teamsResponse?.data) return null;
-    const data = extractApiData<{ teams: TeamType[]; total: number }>(teamsResponse);
-    return data?.teams || [];
+    if (!teamsResponse) return null;
+    if (Array.isArray(teamsResponse)) {
+      return teamsResponse;
+    }
+    if (teamsResponse && typeof teamsResponse === 'object' && 'data' in teamsResponse) {
+      const data = extractApiData<{ teams: TeamType[]; total: number }>(teamsResponse as any);
+      return data?.teams || [];
+    }
+    return [];
   }, [teamsResponse]);
 
   const generateSlug = (name: string): string => {
