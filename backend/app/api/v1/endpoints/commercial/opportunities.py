@@ -34,6 +34,9 @@ from app.utils.import_logs import (
     import_logs, import_status, add_import_log, update_import_status,
     get_current_user_from_query, stream_import_logs_generator
 )
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.models.notification import NotificationType
 
 router = APIRouter(prefix="/commercial/opportunities", tags=["commercial-opportunities"])
 
@@ -522,6 +525,22 @@ async def create_opportunity(
     # Load relationships
     await db.refresh(opportunity, ["pipeline", "stage", "company", "assigned_to", "created_by", "contacts"])
     
+    # Create notification for assigned user
+    try:
+        if opportunity.assigned_to_id and opportunity.assigned_to_id != current_user.id:
+            template = NotificationTemplates.opportunity_created(
+                opportunity_name=opportunity.name,
+                opportunity_id=opportunity.id
+            )
+            await create_notification_async(
+                db=db,
+                user_id=opportunity.assigned_to_id,
+                **template
+            )
+            logger.info(f"Created opportunity assignment notification for user {opportunity.assigned_to_id}")
+    except Exception as notif_error:
+        logger.error(f"Failed to create notification for opportunity {opportunity.id}: {notif_error}", exc_info=True)
+    
     # Get contact names and IDs
     contact_names = [f"{c.first_name} {c.last_name}" for c in opportunity.contacts] if opportunity.contacts else []
     contact_ids = [c.id for c in opportunity.contacts] if opportunity.contacts else []
@@ -638,6 +657,9 @@ async def update_opportunity(
                 detail="Assigned user not found"
             )
     
+    # Store old status for notifications
+    old_status = opportunity.status
+    
     # Update fields
     update_data = opportunity_data.model_dump(exclude_unset=True, exclude={'contact_ids'})
     for field, value in update_data.items():
@@ -656,6 +678,31 @@ async def update_opportunity(
     await db.commit()
     await db.refresh(opportunity)
     await db.refresh(opportunity, ["pipeline", "stage", "company", "assigned_to", "created_by", "contacts"])
+    
+    # Create notification for opportunity won
+    try:
+        if 'status' in update_data and opportunity.status == 'won' and old_status != 'won':
+            # Notify assigned user and creator
+            user_ids_to_notify = []
+            if opportunity.assigned_to_id:
+                user_ids_to_notify.append(opportunity.assigned_to_id)
+            if opportunity.created_by_id and opportunity.created_by_id != opportunity.assigned_to_id:
+                user_ids_to_notify.append(opportunity.created_by_id)
+            
+            for user_id in user_ids_to_notify:
+                template = NotificationTemplates.opportunity_won(
+                    opportunity_name=opportunity.name,
+                    amount=float(opportunity.amount) if opportunity.amount else None,
+                    opportunity_id=opportunity.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=user_id,
+                    **template
+                )
+                logger.info(f"Created opportunity won notification for user {user_id}")
+    except Exception as notif_error:
+        logger.error(f"Failed to create notification for opportunity {opportunity.id} update: {notif_error}", exc_info=True)
     
     # Get contact names and IDs
     contact_names = [f"{c.first_name} {c.last_name}" for c in opportunity.contacts] if opportunity.contacts else []

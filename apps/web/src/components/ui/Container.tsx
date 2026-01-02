@@ -44,7 +44,8 @@ export default function Container({
         maxWidthClass,
         // Progressive expansion on very large screens while maintaining reasonable margins
         maxWidth !== 'full' && '3xl:max-w-[1800px] 4xl:max-w-[2000px]',
-        padding && 'px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20',
+        // Padding réduit pour mieux utiliser l'espace sur grands écrans (max 64px au lieu de 80px)
+        padding && 'px-4 sm:px-6 lg:px-8 xl:px-8 2xl:px-10 3xl:px-12 4xl:px-16',
         className
       )}
       style={containerStyle}

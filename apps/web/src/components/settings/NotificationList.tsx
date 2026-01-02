@@ -10,25 +10,34 @@ import type { Notification } from '@/types/notification';
 
 interface NotificationListProps {
   className?: string;
+  initialFilter?: 'all' | 'unread' | 'read';
+  typeFilter?: string | null;
+  showFilters?: boolean;
 }
 
-export default function NotificationList({ className }: NotificationListProps) {
+export default function NotificationList({ 
+  className,
+  initialFilter = 'all',
+  typeFilter = null,
+  showFilters = true
+}: NotificationListProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAsRead, setMarkingAsRead] = useState<Set<number>>(new Set());
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>(initialFilter);
   const { showToast } = useToast();
 
   useEffect(() => {
     loadNotifications();
-  }, [filter]);
+  }, [filter, typeFilter]);
 
   const loadNotifications = async () => {
     try {
       setLoading(true);
       const response = await notificationsAPI.getNotifications({
         read: filter === 'all' ? undefined : filter === 'read',
-        limit: 100
+        notification_type: typeFilter as any || undefined,
+        limit: 200
       });
       setNotifications(response.notifications);
     } catch (error) {
@@ -145,7 +154,7 @@ export default function NotificationList({ className }: NotificationListProps) {
     return (
       <Card className={className}>
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </Card>
     );
@@ -178,29 +187,31 @@ export default function NotificationList({ className }: NotificationListProps) {
       </div>
 
       {/* Filtres */}
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant={filter === 'all' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('all')}
-        >
-          Toutes
-        </Button>
-        <Button
-          variant={filter === 'unread' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('unread')}
-        >
-          Non lues ({unreadCount})
-        </Button>
-        <Button
-          variant={filter === 'read' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('read')}
-        >
-          Lues
-        </Button>
-      </div>
+      {showFilters && (
+        <div className="flex gap-2 mb-4">
+          <Button
+            variant={filter === 'all' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+          >
+            Toutes
+          </Button>
+          <Button
+            variant={filter === 'unread' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('unread')}
+          >
+            Non lues ({unreadCount})
+          </Button>
+          <Button
+            variant={filter === 'read' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('read')}
+          >
+            Lues
+          </Button>
+        </div>
+      )}
 
       {/* Liste des notifications */}
       <div className="space-y-2">
@@ -229,7 +240,7 @@ export default function NotificationList({ className }: NotificationListProps) {
                           {notification.title}
                         </h4>
                         {!notification.read && (
-                          <div className="w-2 h-2 rounded-full bg-[#523DC9]" />
+                          <div className="w-2 h-2 rounded-full bg-primary-500" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -247,7 +258,7 @@ export default function NotificationList({ className }: NotificationListProps) {
                       {notification.action_url && (
                         <a
                           href={notification.action_url}
-                          className="text-[#523DC9] hover:underline"
+                          className="text-primary-500 hover:underline"
                         >
                           {notification.action_label || 'Voir'}
                         </a>

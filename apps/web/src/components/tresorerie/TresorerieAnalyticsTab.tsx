@@ -210,7 +210,7 @@ export default function TresorerieAnalyticsTab() {
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Taux de croissance revenus</div>
           </div>
-          <div className={`text-2xl font-bold mb-1 ${entriesGrowthRate >= 0 ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className={`text-2xl font-bold mb-1 font-nukleo ${entriesGrowthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {entriesGrowthRate >= 0 ? '+' : ''}{entriesGrowthRate.toFixed(1)}%
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -225,7 +225,7 @@ export default function TresorerieAnalyticsTab() {
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Taux de croissance dépenses</div>
           </div>
-          <div className={`text-2xl font-bold mb-1 ${exitsGrowthRate >= 0 ? 'text-red-600' : 'text-green-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className={`text-2xl font-bold mb-1 font-nukleo ${exitsGrowthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
             {exitsGrowthRate >= 0 ? '+' : ''}{exitsGrowthRate.toFixed(1)}%
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -240,7 +240,7 @@ export default function TresorerieAnalyticsTab() {
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Ratio Entrées/Sorties</div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-blue-600 font-nukleo">
             {totalExits > 0 ? (totalEntries / totalExits).toFixed(2) : '∞'}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -255,7 +255,7 @@ export default function TresorerieAnalyticsTab() {
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Délai moyen paiement</div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-purple-600 font-nukleo">
             {avgPaymentDelay}j
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -268,7 +268,7 @@ export default function TresorerieAnalyticsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Évolution du Solde */}
         <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold mb-4 font-nukleo">
             Évolution du Solde
           </h3>
           {balanceEvolutionData.length > 0 ? (
@@ -286,7 +286,7 @@ export default function TresorerieAnalyticsTab() {
 
         {/* Répartition par Catégorie */}
         <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold mb-4 font-nukleo">
             Répartition par Catégorie
           </h3>
           {categoryDistributionData.length > 0 ? (
@@ -304,8 +304,8 @@ export default function TresorerieAnalyticsTab() {
       </div>
 
       {/* Entrées vs Sorties */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
-        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
+        <h3 className="text-lg font-bold mb-4 font-nukleo">
           Entrées vs Sorties (6 derniers mois)
         </h3>
         {entriesVsExitsData.length > 0 ? (
@@ -355,8 +355,8 @@ export default function TresorerieAnalyticsTab() {
       </Card>
 
       {/* Tendances Mensuelles */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
-        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
+        <h3 className="text-lg font-bold mb-4 font-nukleo">
           Tendances Mensuelles
         </h3>
         {entriesVsExitsData.length > 0 ? (
@@ -377,14 +377,14 @@ export default function TresorerieAnalyticsTab() {
       </Card>
 
       {/* Résumé Statistique */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+        <h3 className="text-lg font-bold mb-4 font-nukleo">
           Résumé Statistique
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Entrées</div>
-            <div className="text-2xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold text-green-600 font-nukleo">
               {formatCurrency(totalEntries)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -393,7 +393,7 @@ export default function TresorerieAnalyticsTab() {
           </div>
           <div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Sorties</div>
-            <div className="text-2xl font-bold text-red-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold text-red-600 font-nukleo">
               {formatCurrency(totalExits)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -402,7 +402,7 @@ export default function TresorerieAnalyticsTab() {
           </div>
           <div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Cashflow Net</div>
-            <div className={`text-2xl font-bold ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className={`text-2xl font-bold font-nukleo ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {netCashflow >= 0 ? '+' : ''}{formatCurrency(netCashflow)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">

@@ -183,7 +183,7 @@ export default function TresorerieAccountsTab() {
       {/* Actions */}
       <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold font-nukleo">
             Comptes Bancaires ({accounts.length})
           </h3>
           <div className="flex gap-2">
@@ -219,7 +219,7 @@ export default function TresorerieAccountsTab() {
             <Card 
               key={account.id} 
               className={`glass-card p-6 rounded-xl border ${
-                isLowBalance ? 'border-orange-500/30 bg-orange-50/50 dark:bg-orange-900/10' : 'border-[#A7A2CF]/20'
+                isLowBalance ? 'border-orange-500/30 bg-orange-50/50 dark:bg-orange-900/10' : 'border-nukleo-lavender/20'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
@@ -237,7 +237,7 @@ export default function TresorerieAccountsTab() {
                     )}
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h4 className="font-bold text-lg font-nukleo">
                       {account.name}
                     </h4>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -253,7 +253,7 @@ export default function TresorerieAccountsTab() {
               <div className="space-y-3 mb-4">
                 <div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Solde actuel</div>
-                  <div className={`text-2xl font-bold ${account.currentBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className={`text-2xl font-bold font-nukleo ${account.currentBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`}>
                     {formatCurrency(account.currentBalance)}
                   </div>
                 </div>
@@ -298,9 +298,9 @@ export default function TresorerieAccountsTab() {
       </div>
 
       {accounts.length === 0 && (
-        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+        <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
           <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-semibold mb-2 font-nukleo">
             Aucun compte bancaire
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">

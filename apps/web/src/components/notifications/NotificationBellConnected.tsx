@@ -53,7 +53,7 @@ export default function NotificationBellConnected({
   }));
 
   const handleViewAll = () => {
-    router.push('/profile/notifications-list');
+    router.push('/notifications');
   };
 
   const handleActionClick = (notification: NotificationUI) => {

@@ -367,7 +367,7 @@ export default function TresorerieTransactionsTab() {
       {/* Liste des Transactions */}
       <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold font-nukleo">
             Transactions ({filteredAndSortedTransactions.length})
           </h3>
         </div>
@@ -399,7 +399,7 @@ export default function TresorerieTransactionsTab() {
                   <th className="text-right py-3 px-4 text-sm font-semibold">
                     <button
                       onClick={() => handleSort('amount')}
-                      className="flex items-center gap-1 hover:text-[#523DC9] ml-auto"
+                      className="flex items-center gap-1 hover:text-primary-500 ml-auto"
                     >
                       Montant
                       <ArrowUpDown className="w-4 h-4" />

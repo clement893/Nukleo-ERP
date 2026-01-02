@@ -195,7 +195,7 @@ export default function TresorerieForecastTab() {
     return (
       <MotionDiv variant="slideUp" duration="normal">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </MotionDiv>
     );
@@ -226,7 +226,7 @@ export default function TresorerieForecastTab() {
   return (
     <MotionDiv variant="slideUp" duration="normal">
       {/* Filtres et Scénarios */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -288,14 +288,14 @@ export default function TresorerieForecastTab() {
 
       {/* Métriques de Prévision */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Revenus Prévus</div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-green-600 font-nukleo">
             {formatCurrency(totalUpcomingRevenues)}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -303,14 +303,14 @@ export default function TresorerieForecastTab() {
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
               <TrendingDown className="w-5 h-5 text-red-600" />
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Dépenses Prévues</div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-red-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-red-600 font-nukleo">
             {formatCurrency(totalUpcomingExpenses)}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -318,14 +318,14 @@ export default function TresorerieForecastTab() {
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className={`p-2 rounded-lg ${netForecast >= 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
               <DollarSign className={`w-5 h-5 ${netForecast >= 0 ? 'text-green-600' : 'text-red-600'}`} />
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Cashflow Net</div>
           </div>
-          <div className={`text-2xl font-bold mb-1 ${netForecast >= 0 ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className={`text-2xl font-bold mb-1 font-nukleo ${netForecast >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {netForecast >= 0 ? '+' : ''}{formatCurrency(netForecast)}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -333,14 +333,14 @@ export default function TresorerieForecastTab() {
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className={`p-2 rounded-lg ${daysOfCash >= 90 ? 'bg-green-500/10 border-green-500/30' : daysOfCash >= 30 ? 'bg-orange-500/10 border-orange-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
               <AlertTriangle className={`w-5 h-5 ${daysOfCash >= 90 ? 'text-green-600' : daysOfCash >= 30 ? 'text-orange-600' : 'text-red-600'}`} />
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Jours de Trésorerie</div>
           </div>
-          <div className={`text-2xl font-bold mb-1 ${daysOfCash >= 90 ? 'text-green-600' : daysOfCash >= 30 ? 'text-orange-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className={`text-2xl font-bold mb-1 font-nukleo ${daysOfCash >= 90 ? 'text-green-600' : daysOfCash >= 30 ? 'text-orange-600' : 'text-red-600'}`}>
             {daysOfCash}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -364,8 +364,8 @@ export default function TresorerieForecastTab() {
         )}
 
         {/* Analyse de Solvabilité */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+          <h3 className="text-lg font-bold mb-4 font-nukleo">
             Analyse de Solvabilité
           </h3>
           <div className="space-y-4">

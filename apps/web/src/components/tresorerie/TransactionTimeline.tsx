@@ -115,9 +115,9 @@ export default function TransactionTimeline({
   const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <Card className={`glass-card p-6 rounded-xl border border-[#A7A2CF]/20 ${className || ''}`}>
+    <Card className={`glass-card p-6 rounded-xl border border-nukleo-lavender/20 ${className || ''}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h3 className="text-lg font-bold flex items-center gap-2 font-nukleo">
           {type === 'entry' ? (
             <ArrowUpRight className="w-5 h-5 text-green-600" />
           ) : (

@@ -41,8 +41,8 @@ export default function ForecastChart({ data, currentBalance, className }: Forec
   const range = maxValue - minValue || 1;
 
   return (
-    <Card className={`glass-card p-6 rounded-xl border border-[#A7A2CF]/20 ${className || ''}`}>
-      <h3 className="text-lg font-bold mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+    <Card className={`glass-card p-6 rounded-xl border border-nukleo-lavender/20 ${className || ''}`}>
+      <h3 className="text-lg font-bold mb-6 font-nukleo">
         Projection du Cashflow
       </h3>
       

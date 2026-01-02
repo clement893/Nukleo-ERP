@@ -160,6 +160,12 @@ async def create_comment(
         try:
             commenter_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.email
             task_title = task.title or "Untitled Task"
+            comment_content = comment_data.content or ""
+            
+            # Check for mentions (@username or @email)
+            import re
+            mention_pattern = r'@(\w+(?:\.\w+)*@?\w*\.?\w*)'  # Matches @username or @email
+            mentions = re.findall(mention_pattern, comment_content)
             
             # Notify task assignee if different from commenter
             assignee_id = getattr(task, 'assignee_id', None)
@@ -205,6 +211,38 @@ async def create_comment(
                         action_label="Voir le commentaire"
                     )
                     logger.info(f"Created reply notification for parent comment author {parent_author_id}")
+            
+            # Notify mentioned users
+            if mentions:
+                from app.models.user import User
+                for mention in mentions:
+                    # Try to find user by email or username
+                    mention_clean = mention.strip().lower()
+                    user_result = await db.execute(
+                        select(User).where(
+                            or_(
+                                User.email.ilike(f"%{mention_clean}%"),
+                                User.first_name.ilike(f"%{mention_clean}%"),
+                                User.last_name.ilike(f"%{mention_clean}%")
+                            )
+                        )
+                    )
+                    mentioned_user = user_result.scalar_one_or_none()
+                    
+                    if mentioned_user and mentioned_user.id != current_user.id:
+                        # Avoid duplicate notifications (don't notify if already notified above)
+                        if mentioned_user.id not in [assignee_id, creator_id, parent.user_id if parent else None]:
+                            template = NotificationTemplates.mention_in_comment(
+                                author_name=commenter_name,
+                                context=f"sur la tâche '{task_title}'",
+                                comment_id=comment.id
+                            )
+                            await create_notification_async(
+                                db=db,
+                                user_id=mentioned_user.id,
+                                **template
+                            )
+                            logger.info(f"Created mention notification for user {mentioned_user.id}")
         except Exception as notif_error:
             # Don't fail comment creation if notification fails
             logger.error(f"Failed to create notification for comment {comment.id}: {notif_error}", exc_info=True)

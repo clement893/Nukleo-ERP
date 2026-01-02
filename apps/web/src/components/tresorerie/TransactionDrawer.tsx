@@ -70,7 +70,7 @@ export default function TransactionDrawer({
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl h-full overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h2 className="text-2xl font-bold font-nukleo">
               Détails de la Transaction
             </h2>
             <Button
@@ -85,13 +85,13 @@ export default function TransactionDrawer({
 
         <div className="p-6 space-y-6">
           {/* En-tête avec montant */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                   {transaction.type === 'entry' ? 'Entrée' : 'Sortie'}
                 </div>
-                <div className={`text-3xl font-bold ${transaction.type === 'entry' ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className={`text-3xl font-bold font-nukleo ${transaction.type === 'entry' ? 'text-green-600' : 'text-red-600'}`}>
                   {transaction.type === 'entry' ? '+' : '-'}{formatCurrency(Number(transaction.amount))}
                 </div>
               </div>
@@ -100,8 +100,8 @@ export default function TransactionDrawer({
           </Card>
 
           {/* Informations principales */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <h3 className="text-lg font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <h3 className="text-lg font-semibold mb-4 font-nukleo">
               Informations
             </h3>
             <div className="space-y-4">
@@ -159,8 +159,8 @@ export default function TransactionDrawer({
           </Card>
 
           {/* Informations supplémentaires */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <h3 className="text-lg font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <h3 className="text-lg font-semibold mb-4 font-nukleo">
               Détails supplémentaires
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">

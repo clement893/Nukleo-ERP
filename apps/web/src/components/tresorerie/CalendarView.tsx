@@ -112,9 +112,9 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
   const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   return (
-    <Card className={`glass-card p-6 rounded-xl border border-[#A7A2CF]/20 ${className || ''}`}>
+    <Card className={`glass-card p-6 rounded-xl border border-nukleo-lavender/20 ${className || ''}`}>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h3 className="text-lg font-bold flex items-center gap-2 font-nukleo">
           <CalendarIcon className="w-5 h-5" />
           Calendrier des Flux
         </h3>
@@ -132,7 +132,7 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
       </div>
 
       <div className="mb-4">
-        <h4 className="text-xl font-semibold text-center" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h4 className="text-xl font-semibold text-center font-nukleo">
           {formatMonthYear(currentDate)}
         </h4>
       </div>
@@ -158,7 +158,7 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
               key={day.date}
               className={`aspect-square p-1 rounded-lg border-2 transition-all ${
                 day.isToday
-                  ? 'border-[#523DC9] bg-[#523DC9]/10'
+                  ? 'border-primary-500 bg-primary-500/10'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
@@ -188,7 +188,7 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
       {/* Légende */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center gap-4 text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded border-2 border-[#523DC9] bg-[#523DC9]/10" />
+          <div className="w-3 h-3 rounded border-2 border-primary-500 bg-primary-500/10" />
           <span>Aujourd'hui</span>
         </div>
         <div className="flex items-center gap-2">

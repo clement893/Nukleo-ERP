@@ -25,6 +25,9 @@ from app.schemas.team import (
     TeamListResponse,
 )
 from app.services.team_service import TeamService
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.core.logging import logger
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -512,6 +515,25 @@ async def add_team_member(
         user_id=member_data.user_id,
         role_id=member_data.role_id,
     )
+    
+    # Create notification for new team member
+    try:
+        # Get team name
+        team = await team_service.get_team(team_id)
+        if team and member_data.user_id != current_user.id:
+            template = NotificationTemplates.team_member_added(
+                team_name=team.name,
+                team_id=team.id
+            )
+            await create_notification_async(
+                db=db,
+                user_id=member_data.user_id,
+                **template
+            )
+            logger.info(f"Created team member notification for user {member_data.user_id}")
+    except Exception as notif_error:
+        # Don't fail member addition if notification fails
+        logger.error(f"Failed to create notification for team member: {notif_error}", exc_info=True)
     
     # Invalidate cache after adding member
     await invalidate_cache_pattern_async(f"team:{team_id}:*")

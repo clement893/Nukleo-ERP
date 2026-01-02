@@ -22,6 +22,9 @@ from app.models.transaction_category import TransactionCategory, TransactionType
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.expense_account import ExpenseAccount, ExpenseAccountStatus
 from app.core.logging import logger
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.models.notification import NotificationType
 
 from app.schemas.tresorerie import (
     BankAccountCreate,
@@ -556,6 +559,68 @@ async def create_transaction(
         db.add(transaction)
         await db.commit()
         await db.refresh(transaction)
+        
+        # Create notifications for important transactions
+        try:
+            transaction_amount = Decimal(str(transaction.amount))
+            # Notify for large transactions (> $10,000)
+            if transaction_amount > Decimal(10000):
+                await create_notification_async(
+                    db=db,
+                    user_id=current_user.id,
+                    title="Transaction importante créée",
+                    message=f"Une transaction de {transaction_amount:,.2f} $ a été créée sur le compte '{account.name}'.",
+                    notification_type=NotificationType.INFO,
+                    action_url=f"/dashboard/finances/tresorerie?transaction={transaction.id}",
+                    action_label="Voir la transaction",
+                    metadata={
+                        "event_type": "large_transaction",
+                        "transaction_id": transaction.id,
+                        "amount": float(transaction_amount),
+                        "account_id": account.id
+                    }
+                )
+                logger.info(f"Created notification for large transaction {transaction.id}")
+            
+            # Check for low balance after transaction
+            entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+                and_(
+                    Transaction.bank_account_id == account.id,
+                    Transaction.type == "entry",
+                    Transaction.status != TransactionStatus.CANCELLED
+                )
+            )
+            exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+                and_(
+                    Transaction.bank_account_id == account.id,
+                    Transaction.type == "exit",
+                    Transaction.status != TransactionStatus.CANCELLED
+                )
+            )
+            
+            entries_result = await db.execute(entries_query)
+            exits_result = await db.execute(exits_query)
+            
+            entries_sum = entries_result.scalar() or Decimal(0)
+            exits_sum = exits_result.scalar() or Decimal(0)
+            current_balance = account.initial_balance + entries_sum - exits_sum
+            
+            # Alert for low balance (< $10,000)
+            if current_balance < Decimal(10000):
+                template = NotificationTemplates.treasury_low_balance(
+                    account_name=account.name,
+                    balance=float(current_balance),
+                    account_id=account.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=current_user.id,
+                    **template
+                )
+                logger.info(f"Created low balance notification for account {account.id}")
+        except Exception as notif_error:
+            # Don't fail transaction creation if notification fails
+            logger.error(f"Failed to create notification for transaction {transaction.id}: {notif_error}", exc_info=True)
         
         return TransactionResponse(**transaction.__dict__)
     except HTTPException:

@@ -28,6 +28,9 @@ from app.schemas.expense_account import (
 from app.core.logging import logger
 from app.services.openai_service import OpenAIService
 from app.services.s3_service import S3Service
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.models.notification import NotificationType
 from pydantic import BaseModel
 
 # Try to import PyMuPDF for PDF to image conversion
@@ -501,6 +504,38 @@ async def submit_compte_depenses(
     
     # Safely load relationships to avoid lazy loading issues
     employee, reviewer = await safe_refresh_account(db, account)
+    
+    # Create notification for admins/reviewers
+    try:
+        # Get all admins to notify
+        from app.dependencies import is_admin_or_superadmin
+        from sqlalchemy import select
+        from app.models.user import User
+        
+        # Find admin users (simplified - in production use proper RBAC)
+        admins_result = await db.execute(
+            select(User).where(User.is_superuser == True)
+        )
+        admins = admins_result.scalars().all()
+        
+        employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Un employé"
+        period = f"{account.expense_period_start.strftime('%Y-%m-%d')} - {account.expense_period_end.strftime('%Y-%m-%d')}" if account.expense_period_start and account.expense_period_end else "N/A"
+        
+        for admin in admins:
+            if admin.id != current_user.id:  # Don't notify the submitter if they're an admin
+                template = NotificationTemplates.expense_account_submitted(
+                    employee_name=employee_name,
+                    amount=float(account.total_amount),
+                    account_id=account.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=admin.id,
+                    **template
+                )
+                logger.info(f"Created expense account submission notification for admin {admin.id}")
+    except Exception as notif_error:
+        logger.error(f"Failed to create notification for expense account {account.id} submission: {notif_error}", exc_info=True)
     logger.debug(f"[submit_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
     
     account_dict = {
@@ -594,6 +629,22 @@ async def approve_compte_depenses(
     # Safely load relationships to avoid lazy loading issues
     employee, reviewer = await safe_refresh_account(db, account)
     logger.debug(f"[approve_compte_depenses] Loaded relationships for account {account.id}: employee={employee is not None}, reviewer={reviewer is not None}")
+    
+    # Create notification for employee
+    try:
+        if employee and employee.user_id:
+            template = NotificationTemplates.expense_account_approved(
+                amount=float(account.total_amount),
+                account_id=account.id
+            )
+            await create_notification_async(
+                db=db,
+                user_id=employee.user_id,
+                **template
+            )
+            logger.info(f"Created expense account approval notification for employee {employee.user_id}")
+    except Exception as notif_error:
+        logger.error(f"Failed to create notification for expense account {account.id} approval: {notif_error}", exc_info=True)
     
     account_dict = {
         "id": account.id,
@@ -699,6 +750,23 @@ async def reject_compte_depenses(
     # Safely load relationships to avoid lazy loading issues
     account_employee, account_reviewer = await safe_refresh_account(db, account)
     logger.debug(f"[reject_compte_depenses] Loaded relationships for account {account.id}: employee={account_employee is not None}, reviewer={account_reviewer is not None}")
+    
+    # Create notification for employee
+    try:
+        if account_employee and account_employee.user_id:
+            template = NotificationTemplates.expense_account_rejected(
+                amount=float(account.total_amount),
+                reason=account.rejection_reason,
+                account_id=account.id
+            )
+            await create_notification_async(
+                db=db,
+                user_id=account_employee.user_id,
+                **template
+            )
+            logger.info(f"Created expense account rejection notification for employee {account_employee.user_id}")
+    except Exception as notif_error:
+        logger.error(f"Failed to create notification for expense account {account.id} rejection: {notif_error}", exc_info=True)
     
     account_dict = {
         "id": account.id,

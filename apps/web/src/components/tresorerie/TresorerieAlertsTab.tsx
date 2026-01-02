@@ -259,7 +259,7 @@ export default function TresorerieAlertsTab() {
     return (
       <MotionDiv variant="slideUp" duration="normal">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </MotionDiv>
     );
@@ -268,14 +268,14 @@ export default function TresorerieAlertsTab() {
   return (
     <MotionDiv variant="slideUp" duration="normal">
       {/* En-tête */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
               <Bell className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h3 className="text-lg font-bold font-nukleo">
                 Alertes de Trésorerie
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -297,7 +297,7 @@ export default function TresorerieAlertsTab() {
             <AlertTriangle className="w-5 h-5 text-red-600" />
             <div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Critiques</div>
-              <div className="text-xl font-bold text-red-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <div className="text-xl font-bold text-red-600 font-nukleo">
                 {activeAlerts.filter(a => a.type === 'critical').length}
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function TresorerieAlertsTab() {
             <AlertCircle className="w-5 h-5 text-orange-600" />
             <div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Avertissements</div>
-              <div className="text-xl font-bold text-orange-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <div className="text-xl font-bold text-orange-600 font-nukleo">
                 {activeAlerts.filter(a => a.type === 'warning').length}
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function TresorerieAlertsTab() {
             <CheckCircle2 className="w-5 h-5 text-blue-600" />
             <div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Informations</div>
-              <div className="text-xl font-bold text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <div className="text-xl font-bold text-blue-600 font-nukleo">
                 {activeAlerts.filter(a => a.type === 'info').length}
               </div>
             </div>
@@ -346,7 +346,7 @@ export default function TresorerieAlertsTab() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h4 className="font-bold text-lg mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <h4 className="font-bold text-lg mb-1 font-nukleo">
                         {alert.title}
                       </h4>
                       {getAlertBadge(alert.type)}
@@ -388,9 +388,9 @@ export default function TresorerieAlertsTab() {
           ))}
         </div>
       ) : (
-        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+        <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
           <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-600" />
-          <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-semibold mb-2 font-nukleo">
             Aucune alerte active
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
@@ -401,7 +401,7 @@ export default function TresorerieAlertsTab() {
 
       {/* Alertes rejetées */}
       {dismissedAlerts.size > 0 && (
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mt-6">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mt-6">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {dismissedAlerts.size} alerte{dismissedAlerts.size > 1 ? 's' : ''} rejetée{dismissedAlerts.size > 1 ? 's' : ''}

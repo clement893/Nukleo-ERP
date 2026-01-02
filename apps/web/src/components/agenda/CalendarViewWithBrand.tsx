@@ -722,12 +722,12 @@ export default function CalendarView({ className }: CalendarViewProps) {
       )}
 
       {/* Filtres et légende avec Brand Nukleo */}
-      <div className="glass-card p-6 rounded-xl mb-4 flex-shrink-0 border border-[#A7A2CF]/20">
+      <div className="glass-card p-6 rounded-xl mb-4 flex-shrink-0 border border-nukleo-lavender/20">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-            <Filter className="w-5 h-5 text-[#523DC9]" />
+          <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
+            <Filter className="w-5 h-5 text-primary-500" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Filtres</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white font-nukleo">Filtres</h3>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
@@ -736,69 +736,69 @@ export default function CalendarView({ className }: CalendarViewProps) {
               type="checkbox"
               checked={showHolidays}
               onChange={(e) => setShowHolidays(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Jours fériés</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Jours fériés</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={showSummerVacation}
               onChange={(e) => setShowSummerVacation(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Vacances d'été</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Vacances d'été</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={showVacations}
               onChange={(e) => setShowVacations(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Vacances approuvées</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Vacances approuvées</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={showDeadlines}
               onChange={(e) => setShowDeadlines(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Deadlines</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Deadlines</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={showEvents}
               onChange={(e) => setShowEvents(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Événements</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Événements</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={showBirthdays}
               onChange={(e) => setShowBirthdays(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Anniversaires</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Anniversaires</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={showHireDates}
               onChange={(e) => setShowHireDates(e.target.checked)}
-              className="rounded border-[#A7A2CF] text-[#523DC9] focus:ring-[#523DC9] focus:ring-offset-0"
+              className="rounded border-nukleo-lavender text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-[#523DC9] transition-colors">Dates d'embauche</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Dates d'embauche</span>
           </label>
         </div>
 
         {/* Légende */}
-        <div className="mt-6 pt-6 border-t border-[#A7A2CF]/20">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Légende</h4>
+        <div className="mt-6 pt-6 border-t border-nukleo-lavender/20">
+          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 font-nukleo">Légende</h4>
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-md border border-gray-300 dark:border-gray-600" style={{ backgroundColor: '#EF4444' }} />
@@ -833,7 +833,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
       </div>
 
       {/* Calendrier */}
-      <div className="glass-card flex-1 flex flex-col min-h-0 rounded-xl border border-[#A7A2CF]/20">
+      <div className="glass-card flex-1 flex flex-col min-h-0 rounded-xl border border-nukleo-lavender/20">
         <div className="flex-1 overflow-auto">
           <Calendar
             events={calendarEvents}

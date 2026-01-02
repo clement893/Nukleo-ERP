@@ -206,3 +206,259 @@ class NotificationTemplates:
                 "weeks_count": weeks_count
             }
         }
+    
+    @staticmethod
+    def task_overdue(
+        task_title: str,
+        days_overdue: int,
+        task_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for overdue task notification"""
+        return {
+            "title": "Tâche en retard",
+            "message": f"La tâche '{task_title}' est en retard de {days_overdue} jour{'s' if days_overdue > 1 else ''}.",
+            "type": NotificationType.ERROR,
+            "action_url": f"/dashboard/projects/tasks{f'?task={task_id}' if task_id else ''}",
+            "action_label": "Voir la tâche",
+            "metadata": {
+                "event_type": "task_overdue",
+                "task_id": task_id,
+                "task_title": task_title,
+                "days_overdue": days_overdue
+            }
+        }
+    
+    @staticmethod
+    def timesheet_submitted(
+        employee_name: str,
+        period: str,
+        timesheet_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for timesheet submission notification"""
+        return {
+            "title": "Feuille de temps soumise",
+            "message": f"{employee_name} a soumis sa feuille de temps pour la période {period}.",
+            "type": NotificationType.INFO,
+            "action_url": f"/dashboard/feuilles-de-temps{f'?entry={timesheet_id}' if timesheet_id else ''}",
+            "action_label": "Voir la feuille de temps",
+            "metadata": {
+                "event_type": "timesheet_submitted",
+                "timesheet_id": timesheet_id,
+                "employee_name": employee_name,
+                "period": period
+            }
+        }
+    
+    @staticmethod
+    def timesheet_approved(
+        period: str,
+        timesheet_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for timesheet approval notification"""
+        return {
+            "title": "Feuille de temps approuvée",
+            "message": f"Votre feuille de temps pour la période {period} a été approuvée.",
+            "type": NotificationType.SUCCESS,
+            "action_url": f"/dashboard/feuilles-de-temps{f'?entry={timesheet_id}' if timesheet_id else ''}",
+            "action_label": "Voir la feuille de temps",
+            "metadata": {
+                "event_type": "timesheet_approved",
+                "timesheet_id": timesheet_id,
+                "period": period
+            }
+        }
+    
+    @staticmethod
+    def timesheet_rejected(
+        period: str,
+        reason: Optional[str] = None,
+        timesheet_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for timesheet rejection notification"""
+        message = f"Votre feuille de temps pour la période {period} a été rejetée."
+        if reason:
+            message += f" Raison: {reason}."
+        return {
+            "title": "Feuille de temps rejetée",
+            "message": message,
+            "type": NotificationType.WARNING,
+            "action_url": f"/dashboard/feuilles-de-temps{f'?entry={timesheet_id}' if timesheet_id else ''}",
+            "action_label": "Voir la feuille de temps",
+            "metadata": {
+                "event_type": "timesheet_rejected",
+                "timesheet_id": timesheet_id,
+                "period": period,
+                "reason": reason
+            }
+        }
+    
+    @staticmethod
+    def expense_account_submitted(
+        employee_name: str,
+        amount: float,
+        account_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for expense account submission notification"""
+        return {
+            "title": "Compte de dépenses soumis",
+            "message": f"{employee_name} a soumis un compte de dépenses de {amount:,.2f} $.",
+            "type": NotificationType.INFO,
+            "action_url": f"/dashboard/compte-depenses{f'?account={account_id}' if account_id else ''}",
+            "action_label": "Voir le compte de dépenses",
+            "metadata": {
+                "event_type": "expense_account_submitted",
+                "account_id": account_id,
+                "employee_name": employee_name,
+                "amount": amount
+            }
+        }
+    
+    @staticmethod
+    def expense_account_approved(
+        amount: float,
+        account_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for expense account approval notification"""
+        return {
+            "title": "Compte de dépenses approuvé",
+            "message": f"Votre compte de dépenses de {amount:,.2f} $ a été approuvé.",
+            "type": NotificationType.SUCCESS,
+            "action_url": f"/dashboard/compte-depenses{f'?account={account_id}' if account_id else ''}",
+            "action_label": "Voir le compte de dépenses",
+            "metadata": {
+                "event_type": "expense_account_approved",
+                "account_id": account_id,
+                "amount": amount
+            }
+        }
+    
+    @staticmethod
+    def expense_account_rejected(
+        amount: float,
+        reason: Optional[str] = None,
+        account_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for expense account rejection notification"""
+        message = f"Votre compte de dépenses de {amount:,.2f} $ a été rejeté."
+        if reason:
+            message += f" Raison: {reason}."
+        return {
+            "title": "Compte de dépenses rejeté",
+            "message": message,
+            "type": NotificationType.WARNING,
+            "action_url": f"/dashboard/compte-depenses{f'?account={account_id}' if account_id else ''}",
+            "action_label": "Voir le compte de dépenses",
+            "metadata": {
+                "event_type": "expense_account_rejected",
+                "account_id": account_id,
+                "amount": amount,
+                "reason": reason
+            }
+        }
+    
+    @staticmethod
+    def invoice_paid(
+        invoice_number: str,
+        amount: float,
+        invoice_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for invoice payment notification"""
+        return {
+            "title": "Facture payée",
+            "message": f"La facture '{invoice_number}' a été payée ({amount:,.2f} $).",
+            "type": NotificationType.SUCCESS,
+            "action_url": f"/dashboard/finances/facturations{f'?invoice={invoice_id}' if invoice_id else ''}",
+            "action_label": "Voir la facture",
+            "metadata": {
+                "event_type": "invoice_paid",
+                "invoice_id": invoice_id,
+                "invoice_number": invoice_number,
+                "amount": amount
+            }
+        }
+    
+    @staticmethod
+    def invoice_overdue(
+        invoice_number: str,
+        days_overdue: int,
+        amount: float,
+        invoice_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for overdue invoice notification"""
+        return {
+            "title": "Facture en retard",
+            "message": f"La facture '{invoice_number}' est en retard de {days_overdue} jour{'s' if days_overdue > 1 else ''} ({amount:,.2f} $).",
+            "type": NotificationType.ERROR,
+            "action_url": f"/dashboard/finances/facturations{f'?invoice={invoice_id}' if invoice_id else ''}",
+            "action_label": "Voir la facture",
+            "metadata": {
+                "event_type": "invoice_overdue",
+                "invoice_id": invoice_id,
+                "invoice_number": invoice_number,
+                "days_overdue": days_overdue,
+                "amount": amount
+            }
+        }
+    
+    @staticmethod
+    def opportunity_created(
+        opportunity_name: str,
+        opportunity_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for opportunity creation notification"""
+        return {
+            "title": "Nouvelle opportunité assignée",
+            "message": f"Une nouvelle opportunité '{opportunity_name}' vous a été assignée.",
+            "type": NotificationType.INFO,
+            "action_url": f"/dashboard/opportunites{f'?opportunity={opportunity_id}' if opportunity_id else ''}",
+            "action_label": "Voir l'opportunité",
+            "metadata": {
+                "event_type": "opportunity_created",
+                "opportunity_id": opportunity_id,
+                "opportunity_name": opportunity_name
+            }
+        }
+    
+    @staticmethod
+    def opportunity_won(
+        opportunity_name: str,
+        amount: Optional[float] = None,
+        opportunity_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for opportunity won notification"""
+        message = f"L'opportunité '{opportunity_name}' a été gagnée !"
+        if amount:
+            message += f" ({amount:,.2f} $)"
+        return {
+            "title": "Opportunité gagnée",
+            "message": message,
+            "type": NotificationType.SUCCESS,
+            "action_url": f"/dashboard/opportunites{f'?opportunity={opportunity_id}' if opportunity_id else ''}",
+            "action_label": "Voir l'opportunité",
+            "metadata": {
+                "event_type": "opportunity_won",
+                "opportunity_id": opportunity_id,
+                "opportunity_name": opportunity_name,
+                "amount": amount
+            }
+        }
+    
+    @staticmethod
+    def mention_in_comment(
+        author_name: str,
+        context: str,
+        comment_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Template for mention in comment notification"""
+        return {
+            "title": "Vous avez été mentionné",
+            "message": f"{author_name} vous a mentionné dans un commentaire: {context}",
+            "type": NotificationType.INFO,
+            "action_url": f"/dashboard/comments{f'?comment={comment_id}' if comment_id else ''}",
+            "action_label": "Voir le commentaire",
+            "metadata": {
+                "event_type": "mention_in_comment",
+                "comment_id": comment_id,
+                "author_name": author_name
+            }
+        }

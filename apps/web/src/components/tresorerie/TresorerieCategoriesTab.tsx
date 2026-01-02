@@ -161,7 +161,7 @@ export default function TresorerieCategoriesTab() {
     return (
       <MotionDiv variant="slideUp" duration="normal">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </MotionDiv>
     );
@@ -170,9 +170,9 @@ export default function TresorerieCategoriesTab() {
   return (
     <MotionDiv variant="slideUp" duration="normal">
       {/* Actions */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold font-nukleo">
             Catégories ({categories.length})
           </h3>
           <div className="flex gap-2">
@@ -193,10 +193,10 @@ export default function TresorerieCategoriesTab() {
       </Card>
 
       {/* Catégories Entrées */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <ArrowUpCircle className="w-5 h-5 text-green-600" />
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold font-nukleo">
             Catégories d'Entrées ({entryCategories.length})
           </h3>
         </div>
@@ -263,10 +263,10 @@ export default function TresorerieCategoriesTab() {
       </Card>
 
       {/* Catégories Sorties */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <ArrowDownCircle className="w-5 h-5 text-red-600" />
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h3 className="text-lg font-bold font-nukleo">
             Catégories de Sorties ({exitCategories.length})
           </h3>
         </div>

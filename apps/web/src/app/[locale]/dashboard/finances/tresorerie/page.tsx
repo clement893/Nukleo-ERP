@@ -102,7 +102,7 @@ export default function TresoreriePage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </PageContainer>
     );

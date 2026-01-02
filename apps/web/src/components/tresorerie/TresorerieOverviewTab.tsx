@@ -162,7 +162,7 @@ export default function TresorerieOverviewTab({
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className={`p-2 rounded-lg ${
               alerteNiveau === 'vert' ? 'bg-green-500/10 border border-green-500/30' :
@@ -193,14 +193,14 @@ export default function TresorerieOverviewTab({
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
               <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Avec Marge (20%)</div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-blue-600 font-nukleo">
             {formatCurrency(soldeAvecMarge)}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -208,7 +208,7 @@ export default function TresorerieOverviewTab({
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className={`p-2 rounded-lg ${netCashflow >= 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
               {netCashflow >= 0 ? (
@@ -219,7 +219,7 @@ export default function TresorerieOverviewTab({
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Cashflow net</div>
           </div>
-          <div className={`text-2xl font-bold mb-1 ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className={`text-2xl font-bold mb-1 font-nukleo ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {netCashflow >= 0 ? '+' : ''}{formatCurrency(netCashflow)}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -227,7 +227,7 @@ export default function TresorerieOverviewTab({
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className={`p-2 rounded-lg ${
               alerteNiveau === 'vert' ? 'bg-green-500/10 border-green-500/30' :
@@ -254,8 +254,8 @@ export default function TresorerieOverviewTab({
       </div>
 
       {/* Graphique Évolution */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
-        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
+        <h3 className="text-lg font-bold mb-4 font-nukleo">
           Évolution du cashflow - {selectedPeriod === '4w' ? '4 semaines' : selectedPeriod === '8w' ? '8 semaines' : '12 semaines'}
         </h3>
         <div className="space-y-6 mb-6">
@@ -326,9 +326,9 @@ export default function TresorerieOverviewTab({
       {/* Entrées et Sorties Prévues */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Entrées Prévues */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h3 className="text-lg font-bold flex items-center gap-2 font-nukleo">
               <ArrowUpRight className="w-5 h-5 text-green-600" />
               Entrées Prévues
             </h3>
@@ -376,9 +376,9 @@ export default function TresorerieOverviewTab({
         </Card>
 
         {/* Sorties Prévues */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h3 className="text-lg font-bold flex items-center gap-2 font-nukleo">
               <ArrowDownRight className="w-5 h-5 text-red-600" />
               Sorties Prévues
             </h3>
@@ -430,8 +430,8 @@ export default function TresorerieOverviewTab({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Entrées par Catégorie */}
         {entriesByCategory.length > 0 && entriesByCategory.some(e => e.total > 0) && (
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <h3 className="font-semibold mb-4 flex items-center gap-2 font-nukleo">
               <ArrowDown className="w-5 h-5 text-green-600 transform rotate-180" />
               Détail des entrées par catégorie
             </h3>
@@ -468,8 +468,8 @@ export default function TresorerieOverviewTab({
 
         {/* Sorties par Catégorie */}
         {exitsByCategory.length > 0 && exitsByCategory.some(e => e.total > 0) && (
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+            <h3 className="font-semibold mb-4 flex items-center gap-2 font-nukleo">
               <ArrowUp className="w-5 h-5 text-red-600 transform rotate-180" />
               Détail des sorties par catégorie
             </h3>
@@ -506,8 +506,8 @@ export default function TresorerieOverviewTab({
       </div>
 
       {/* Tableau Détaillé par Semaine */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+        <h3 className="text-lg font-bold mb-4 font-nukleo">
           Détail par Semaine
         </h3>
         <div className="overflow-x-auto">

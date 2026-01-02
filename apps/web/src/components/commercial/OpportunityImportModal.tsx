@@ -217,7 +217,7 @@ export default function OpportunityImportModal({
             className={`
               border-2 border-dashed rounded-lg p-8 text-center transition-colors
               ${isDragging
-                ? 'border-[#523DC9] bg-[#523DC9]/10'
+                ? 'border-primary-500 bg-primary-500/10'
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
               }
             `}

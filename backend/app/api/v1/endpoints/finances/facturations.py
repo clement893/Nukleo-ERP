@@ -26,6 +26,9 @@ from app.schemas.finance_invoice import (
     PaymentResponse,
 )
 from app.core.logging import logger
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.models.notification import NotificationType
 
 router = APIRouter(prefix="/finances/facturations", tags=["finances-facturations"])
 
@@ -655,6 +658,24 @@ async def create_payment(
     
     await db.commit()
     await db.refresh(payment)
+    
+    # Create notification for invoice payment
+    try:
+        # Check if invoice is fully paid
+        if invoice.amount_paid >= invoice.total:
+            template = NotificationTemplates.invoice_paid(
+                invoice_number=invoice.invoice_number,
+                amount=float(invoice.amount_paid),
+                invoice_id=invoice.id
+            )
+            await create_notification_async(
+                db=db,
+                user_id=current_user.id,
+                **template
+            )
+            logger.info(f"Created invoice paid notification for invoice {invoice.id}")
+    except Exception as notif_error:
+        logger.error(f"Failed to create notification for invoice {invoice.id} payment: {notif_error}", exc_info=True)
     
     return PaymentResponse(
         id=payment.id,

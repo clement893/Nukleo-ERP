@@ -24,6 +24,9 @@ from app.schemas.project import Project as ProjectSchema, ProjectCreate, Project
 from app.schemas.client import Client as ClientSchema
 from sqlalchemy.orm import aliased
 from app.core.logging import logger
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.models.notification import NotificationType
 from . import import_export
 from . import clients as projects_clients
 
@@ -980,6 +983,40 @@ async def create_project(
     await db.commit()
     await db.refresh(project, ["client", "responsable"])
     
+    # Create notification for project creation
+    try:
+        template = NotificationTemplates.project_created(
+            project_name=project.name,
+            project_id=project.id
+        )
+        await create_notification_async(
+            db=db,
+            user_id=current_user.id,
+            **template
+        )
+        logger.info(f"Created project creation notification for user {current_user.id}")
+        
+        # Notify responsable if assigned
+        if project.responsable_id:
+            # Get user_id from employee if responsable is an employee
+            from app.models.employee import Employee
+            result = await db.execute(select(Employee).where(Employee.id == project.responsable_id))
+            employee = result.scalar_one_or_none()
+            if employee and employee.user_id:
+                template = NotificationTemplates.project_member_added(
+                    project_name=project.name,
+                    project_id=project.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=employee.user_id,
+                    **template
+                )
+                logger.info(f"Created project member notification for responsable {employee.user_id}")
+    except Exception as notif_error:
+        # Don't fail project creation if notification fails
+        logger.error(f"Failed to create notification for project {project.id}: {notif_error}", exc_info=True)
+    
     # Convert to response format
     # Safely access relationships - check if they exist before accessing attributes
     client_name = None
@@ -1073,12 +1110,37 @@ async def update_project(
     if "client_name" in update_data:
         del update_data["client_name"]  # Remove client_name as it's not a database field
     
+    # Store old responsable_id for notifications
+    old_responsable_id = project.responsable_id
+    
     for field, value in update_data.items():
         if hasattr(project, field):
             setattr(project, field, value)
     
     await db.commit()
     await db.refresh(project, ["client", "responsable"])
+    
+    # Create notifications for project updates
+    try:
+        # Notify new responsable if changed
+        if 'responsable_id' in update_data and project.responsable_id and project.responsable_id != old_responsable_id:
+            from app.models.employee import Employee
+            result = await db.execute(select(Employee).where(Employee.id == project.responsable_id))
+            employee = result.scalar_one_or_none()
+            if employee and employee.user_id:
+                template = NotificationTemplates.project_member_added(
+                    project_name=project.name,
+                    project_id=project.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=employee.user_id,
+                    **template
+                )
+                logger.info(f"Created project member notification for new responsable {employee.user_id}")
+    except Exception as notif_error:
+        # Don't fail project update if notification fails
+        logger.error(f"Failed to create notification for project {project.id} update: {notif_error}", exc_info=True)
     
     # Convert to response format
     # Safely access relationships - check if they exist before accessing attributes
