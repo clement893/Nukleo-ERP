@@ -206,7 +206,7 @@ export const automationAPI = {
    * Toggle task status (enable/disable)
    */
   toggleScheduledTask: async (taskId: number): Promise<ScheduledTask> => {
-    const response = await apiClient.put<ScheduledTask>(`/v1/content/schedule/${taskId}/toggle`);
+    const response = await apiClient.put<ScheduledTask>(`/v1/scheduled-tasks/${taskId}/toggle`);
     const data = extractApiData<ScheduledTask>(response);
     if (!data) {
       throw new Error('Failed to toggle scheduled task: no data returned');
