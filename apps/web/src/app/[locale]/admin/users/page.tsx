@@ -164,20 +164,40 @@ export default function AdminUsersPage() {
     },
   });
 
-  // Fetch pending invitations
+  // Fetch pending invitations - show all for superadmins
   const { data: invitationsData, isLoading: isLoadingInvitations, refetch: refetchInvitations } = useQuery<Invitation[]>({
     queryKey: ['pending-invitations'],
     queryFn: async () => {
-      const response = await invitationsAPI.list({ status: 'pending' });
-      // Handle both array and object with items property
-      const data = response.data;
-      if (Array.isArray(data)) {
-        return data;
+      // Try to fetch all invitations (for superadmins) first
+      try {
+        const response = await invitationsAPI.list({ status: 'pending', all_invitations: true });
+        // Handle both array and object with items property
+        const data = response.data;
+        if (Array.isArray(data)) {
+          return data;
+        }
+        if (data && typeof data === 'object' && 'items' in data) {
+          return (data as { items: Invitation[] }).items;
+        }
+        if (data && typeof data === 'object' && 'invitations' in data) {
+          return (data as { invitations: Invitation[] }).invitations;
+        }
+        return [];
+      } catch (error) {
+        // If all_invitations fails (not superadmin), fallback to user's own invitations
+        const response = await invitationsAPI.list({ status: 'pending' });
+        const data = response.data;
+        if (Array.isArray(data)) {
+          return data;
+        }
+        if (data && typeof data === 'object' && 'items' in data) {
+          return (data as { items: Invitation[] }).items;
+        }
+        if (data && typeof data === 'object' && 'invitations' in data) {
+          return (data as { invitations: Invitation[] }).invitations;
+        }
+        return [];
       }
-      if (data && typeof data === 'object' && 'items' in data) {
-        return (data as { items: Invitation[] }).items;
-      }
-      return [];
     },
   });
 

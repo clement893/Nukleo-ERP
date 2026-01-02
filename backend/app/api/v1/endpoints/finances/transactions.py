@@ -93,7 +93,7 @@ async def get_transaction(
         
         if not transaction:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Transaction not found"
             )
         
@@ -103,12 +103,12 @@ async def get_transaction(
     except Exception as e:
         logger.error(f"Error fetching transaction: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching transaction"
         )
 
 
-@router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TransactionResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_transaction(
     transaction_data: TransactionCreate,
     db: AsyncSession = Depends(get_db),
@@ -152,7 +152,7 @@ async def create_transaction(
         await db.rollback()
         logger.error(f"Error creating transaction: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error creating transaction"
         )
 
@@ -179,7 +179,7 @@ async def update_transaction(
         
         if not transaction:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Transaction not found"
             )
         
@@ -200,12 +200,12 @@ async def update_transaction(
         await db.rollback()
         logger.error(f"Error updating transaction: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error updating transaction"
         )
 
 
-@router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{transaction_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_transaction(
     transaction_id: int,
     db: AsyncSession = Depends(get_db),
@@ -226,7 +226,7 @@ async def delete_transaction(
         
         if not transaction:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Transaction not found"
             )
         
@@ -242,7 +242,7 @@ async def delete_transaction(
         await db.rollback()
         logger.error(f"Error deleting transaction: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error deleting transaction"
         )
 
@@ -287,12 +287,12 @@ async def get_transaction_summary(
     except Exception as e:
         logger.error(f"Error getting transaction summary: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error getting transaction summary"
         )
 
 
-@router.post("/import", status_code=status.HTTP_201_CREATED)
+@router.post("/import", status_code=http_status.HTTP_201_CREATED)
 async def import_transactions(
     file: UploadFile = File(...),
     dry_run: bool = Query(False, description="Dry run mode (validate without importing)"),
@@ -347,14 +347,14 @@ async def import_transactions(
                     
                     if excel_content is None and csv_content is None:
                         raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
+                            status_code=http_status.HTTP_400_BAD_REQUEST,
                             detail="No Excel or CSV file found in ZIP"
                         )
                     
                     file_content = excel_content if excel_content else csv_content
             except zipfile.BadZipFile:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="Invalid ZIP file format"
                 )
         
@@ -367,7 +367,7 @@ async def import_transactions(
             format_type = 'csv'
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Unsupported file format. Supported: CSV, Excel (.xlsx, .xls), or ZIP"
             )
         
@@ -619,7 +619,7 @@ async def import_transactions(
         await db.rollback()
         logger.error(f"Error importing transactions: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error importing transactions: {str(e)}"
         )
 
@@ -787,13 +787,13 @@ LIMITES
         
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=f"Unsupported format: {format}. Supported: zip, csv, excel"
             )
             
     except Exception as e:
         logger.error(f"Error generating import template: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error generating import template"
         )
