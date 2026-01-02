@@ -91,11 +91,13 @@ def get_rate_limit_key(request: Request) -> str:
 
 
 # Initialize rate limiter with enhanced key function
+# headers_enabled=False to avoid issues with 204 No Content responses
+# Headers will be added manually for endpoints that need them
 limiter = Limiter(
     key_func=get_rate_limit_key,
     default_limits=["1000/hour"],  # Default limit: 1000 requests per hour
     storage_uri=get_storage_uri(),  # Redis if available, otherwise memory
-    headers_enabled=True,  # Enable rate limit headers in responses
+    headers_enabled=False,  # Disabled to avoid issues with 204 responses
 )
 
 # Comprehensive rate limits by endpoint category
