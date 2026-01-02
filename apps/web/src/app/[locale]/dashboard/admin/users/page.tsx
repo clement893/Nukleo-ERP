@@ -72,22 +72,12 @@ const formatRelativeTime = (dateString: string) => {
   return date.toLocaleDateString('fr-FR');
 };
 
-// Déterminer le rôle basé sur le poste
+// Déterminer le rôle basé sur l'ID (simulation)
 const determineRole = (employee: Employee): 'admin' | 'manager' | 'user' => {
-  const position = employee.position?.toLowerCase() || '';
-  
-  // Admin keywords
-  if (position.includes('directeur') || position.includes('ceo') || 
-      position.includes('cto') || position.includes('admin')) {
-    return 'admin';
-  }
-  
-  // Manager keywords
-  if (position.includes('manager') || position.includes('chef') || 
-      position.includes('lead') || position.includes('responsable')) {
-    return 'manager';
-  }
-  
+  // Simuler les rôles basés sur l'ID : 5% admin, 15% manager, 80% user
+  const roleValue = employee.id % 100;
+  if (roleValue < 5) return 'admin';
+  if (roleValue < 20) return 'manager';
   return 'user';
 };
 
@@ -137,8 +127,8 @@ export default function AdminUsersPage() {
           status: determineStatus(emp),
           lastLogin: generateLastLogin(emp.id),
           createdAt: emp.hire_date || emp.created_at,
-          department: emp.department || undefined,
-          position: emp.position || undefined
+          department: undefined, // Department not available in Employee interface
+          position: undefined // Position not available in Employee interface
         }));
       
       setUsers(convertedUsers);
