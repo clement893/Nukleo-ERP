@@ -58,7 +58,7 @@ function calculateEaster(year: number): Date {
 function getQuebecHolidays(year: number): CalendarEvent[] {
   const holidays: CalendarEvent[] = [];
   
-  holidays.push({ id: `h-${year}-01-01`, title: 'Jour de l\'an', date: `${year}-01-01`, type: 'holiday', color: '#EF4444' });
+  holidays.push({ id: `h-${year}-01-01`, title: 'Jour de l\'an', date: `${year}-01-01`, type: 'holiday', color: 'var(--color-danger-500)' });
   
   const easter = calculateEaster(year);
   const goodFriday = new Date(easter);
@@ -68,7 +68,7 @@ function getQuebecHolidays(year: number): CalendarEvent[] {
     title: 'Vendredi saint', 
     date: goodFriday.toISOString().split('T')[0] || `${year}-03-30`, 
     type: 'holiday', 
-    color: '#EF4444' 
+    color: 'var(--color-danger-500)' 
   });
   
   holidays.push({ id: `h-${year}-05-24`, title: 'Fête de la Reine', date: `${year}-05-24`, type: 'holiday', color: '#EF4444' });
@@ -95,7 +95,7 @@ function getSummerVacation(year: number): CalendarEvent[] {
         title: 'Vacances d\'été',
         date: dateStr,
         type: 'summer',
-        color: '#F59E0B'
+        color: 'var(--color-warning-500)'
       });
     }
   }
@@ -143,7 +143,7 @@ function CalendrierContent() {
                 title: `Vacances - ${vac.employee_first_name} ${vac.employee_last_name}`,
                 date: dateStr,
                 type: 'vacation',
-                color: '#10B981'
+                color: 'var(--color-secondary-500)'
               });
             }
           }
@@ -161,7 +161,7 @@ function CalendrierContent() {
             title: event.title,
             date: event.date,
             type: event.type === 'holiday' ? 'holiday' : 'event',
-            color: '#3B82F6'
+            color: 'var(--color-primary-500)'
           });
         });
       } catch (err) {
@@ -188,7 +188,7 @@ function CalendrierContent() {
               title: `🎂 Anniversaire - ${emp.first_name} ${emp.last_name}`,
               date: thisYearBirthday.toISOString().split('T')[0] || '',
               type: 'birthday',
-              color: '#EC4899'
+              color: 'var(--color-primary-400)'
             });
             
             // Anniversaire l'année prochaine (pour les calendriers qui affichent plusieurs mois)
@@ -198,7 +198,7 @@ function CalendrierContent() {
               title: `🎂 Anniversaire - ${emp.first_name} ${emp.last_name}`,
               date: nextYearBirthday.toISOString().split('T')[0] || '',
               type: 'birthday',
-              color: '#EC4899'
+              color: 'var(--color-primary-400)'
             });
           }
           
@@ -217,7 +217,7 @@ function CalendrierContent() {
                 title: `🎉 Embauche - ${emp.first_name} ${emp.last_name}`,
                 date: thisYearHireDate.toISOString().split('T')[0] || '',
                 type: 'hiredate',
-                color: '#06B6D4'
+                color: 'var(--color-info-500)'
               });
             }
           }
@@ -325,7 +325,7 @@ function CalendrierContent() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -333,14 +333,14 @@ function CalendrierContent() {
           
           <div className="relative flex items-center justify-between">
             <div>
-              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h1 className="text-5xl font-black text-white mb-2 font-nukleo">
                 Calendrier
               </h1>
               <p className="text-white/80 text-lg">
                 Gérez vos événements, deadlines et jours fériés avec style
               </p>
             </div>
-            <Button className="bg-white text-[#523DC9] hover:bg-white/90">
+            <Button className="bg-white text-primary-500 hover:bg-white/90">
               <Plus className="w-4 h-4 mr-2" />
               Nouvel événement
             </Button>
@@ -349,49 +349,49 @@ function CalendrierContent() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
-                <Star className="w-6 h-6 text-[#EF4444]" />
+              <div className="p-3 rounded-lg bg-danger-500/10 border border-danger-500/30">
+                <Star className="w-6 h-6 text-danger-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {stats.holidays}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Jours fériés</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <Briefcase className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <Briefcase className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {stats.vacations}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Vacances</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <Clock className="w-6 h-6 text-[#3B82F6]" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {stats.events}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Événements</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#EC4899]/10 border border-[#EC4899]/30">
                 <Cake className="w-6 h-6 text-[#EC4899]" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {stats.birthdays}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Anniversaires</div>
