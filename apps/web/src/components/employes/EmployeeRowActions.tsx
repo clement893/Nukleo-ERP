@@ -3,7 +3,7 @@
 import { Employee } from '@/lib/api/employees';
 import { MoreVertical, Eye, Edit, Trash2, UserCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 
 interface EmployeeRowActionsProps {
   employee: Employee;
@@ -56,8 +56,7 @@ export default function EmployeeRowActions({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const locale = window.location.pathname.split('/')[1] || 'fr';
-                router.push(`/${locale}/portail-employe/${employee.id}/dashboard`);
+                router.push(`/portail-employe/${employee.id}/dashboard`);
                 setIsOpen(false);
               }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"

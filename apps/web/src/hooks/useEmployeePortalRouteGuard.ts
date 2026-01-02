@@ -5,7 +5,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/lib/store';
 import { employeesAPI } from '@/lib/api/employees';
 import { useEmployeePortalPermissions } from './useEmployeePortalPermissions';
@@ -38,7 +39,7 @@ export function useEmployeePortalRouteGuard() {
                 moduleName,
                 pathname,
               });
-              router.replace(`/${locale}/portail-employe/${employeeId}/dashboard?error=no_permission`);
+              router.replace(`/portail-employe/${employeeId}/dashboard?error=no_permission`);
               return;
             }
           }
@@ -55,7 +56,7 @@ export function useEmployeePortalRouteGuard() {
                 employeeId: employee.id,
                 pathname,
               });
-              router.replace(`/${locale}/portail-employe/${employee.id}/dashboard?error=employee_redirect`);
+              router.replace(`/portail-employe/${employee.id}/dashboard?error=employee_redirect`);
             }
           } catch (err) {
             // User might not be an employee, continue

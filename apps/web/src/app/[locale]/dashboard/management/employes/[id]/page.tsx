@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
@@ -180,8 +181,7 @@ export default function EmployeeDetailPage() {
 
   const handleOpenPortal = () => {
     if (employee) {
-      const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/portail-employe/${employee.id}`);
+      router.push(`/portail-employe/${employee.id}`);
     }
   };
 

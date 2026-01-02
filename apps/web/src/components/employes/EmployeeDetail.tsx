@@ -222,7 +222,7 @@ export default function EmployeeDetail({
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Accès au portail employé</p>
               <a
-                href={`/${locale}/portail-employe/${employee.id}/dashboard`}
+                href={`/portail-employe/${employee.id}/dashboard`}
                 className="text-primary hover:underline flex items-center gap-1 mt-1"
               >
                 Ouvrir le portail employé

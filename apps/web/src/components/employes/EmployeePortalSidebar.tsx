@@ -226,7 +226,7 @@ export default function EmployeePortalSidebar({
   // Render navigation item with Nukleo design
   const renderNavItem = (item: NavItem) => {
     const active = isActive(item.path);
-    const href = `/${locale}/portail-employe/${employeeId}${item.path === 'dashboard' ? '/dashboard' : `/${item.path}`}`;
+    const href = `/portail-employe/${employeeId}${item.path === 'dashboard' ? '/dashboard' : `/${item.path}`}`;
     const Icon = item.icon;
 
     const className = clsx(
@@ -408,7 +408,7 @@ export default function EmployeePortalSidebar({
 
           {!collapsed && (
             <div className="relative flex items-center gap-3">
-              <Link href={`/${locale}/portail-employe/${employeeId}/dashboard`} className="flex items-center gap-3 group">
+              <Link href={`/portail-employe/${employeeId}/dashboard`} className="flex items-center gap-3 group">
                 <div className="w-11 h-11 rounded-xl bg-nukleo-gradient flex items-center justify-center shadow-lg">
                   <span
                     className="text-white font-black text-xl font-nukleo"

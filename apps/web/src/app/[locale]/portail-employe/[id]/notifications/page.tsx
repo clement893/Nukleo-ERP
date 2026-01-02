@@ -29,7 +29,7 @@ export default function EmployeeNotificationsPage() {
 
   useEffect(() => {
     if (!employeeId) {
-      router.push(`/${locale}/portail-employe`);
+      router.push(`/portail-employe`);
       return;
     }
 
@@ -122,7 +122,7 @@ export default function EmployeeNotificationsPage() {
         title={t('title') || 'Mes Notifications'}
         description={t('description') || 'Consultez toutes vos notifications'}
         breadcrumbs={[
-          { label: 'Portail Employé', href: `/${locale}/portail-employe/${employeeId}/dashboard` },
+          { label: 'Portail Employé', href: `/portail-employe/${employeeId}/dashboard` },
           { label: t('breadcrumbs.notifications') || 'Notifications' },
         ]}
       />
@@ -148,7 +148,7 @@ export default function EmployeeNotificationsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push(`/${locale}/portail-employe/${employeeId}/notifications/preferences`)}
+              onClick={() => router.push(`/portail-employe/${employeeId}/notifications/preferences`)}
             >
               <Settings className="w-4 h-4 mr-2" />
               Préférences
