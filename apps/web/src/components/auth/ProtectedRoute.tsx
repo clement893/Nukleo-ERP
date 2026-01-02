@@ -48,6 +48,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   const lastUserRef = useRef(user);
   const lastTokenRef = useRef(token);
   const lastPathnameRef = useRef<string>(pathname);
+  const employeeRedirectCheckedRef = useRef<string | null>(null); // Track paths where we've already checked for employee redirect
 
   useEffect(() => {
     // Wait for hydration to complete before checking auth
@@ -79,6 +80,11 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     // Update pathname ref
     if (pathnameChanged) {
       lastPathnameRef.current = pathname;
+      // Reset employee redirect check when pathname changes to a new path
+      // (but only if we're not navigating to the portail-employe to avoid resetting during redirect)
+      if (!pathname.startsWith('/portail-employe')) {
+        employeeRedirectCheckedRef.current = null;
+      }
     }
 
     // Prevent multiple simultaneous checks
@@ -195,7 +201,9 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
                                          pathname.startsWith('/dashboard/management/vacances');
         
         // If accessing /dashboard/* (but not employee management), check if user is an employee
-        if (pathname.startsWith('/dashboard') && !pathname.startsWith('/portail-employe') && !isEmployeeManagementPage) {
+        // Only check if we haven't already checked for this pathname (prevent infinite loops)
+        if (pathname.startsWith('/dashboard') && !pathname.startsWith('/portail-employe') && !isEmployeeManagementPage && employeeRedirectCheckedRef.current !== pathname) {
+          employeeRedirectCheckedRef.current = pathname; // Mark as checked
           try {
             const userId = typeof userForCheck.id === 'string' ? parseInt(userForCheck.id, 10) : userForCheck.id;
             const employee = await employeesAPI.getByUserId(userId);
@@ -217,6 +225,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
           } catch (err) {
             // If check fails, continue normally (user might not be an employee)
             logger.debug('Employee check failed, continuing normally', { error: err });
+            employeeRedirectCheckedRef.current = null; // Reset on error to allow retry on next pathname change
           }
         }
       }
