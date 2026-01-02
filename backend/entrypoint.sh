@@ -355,6 +355,16 @@ exit(0 if result else 1)
         else
             python scripts/seed_main_pipeline.py 2>&1 || echo "⚠️  Could not ensure MAIN pipeline (will be created manually if needed)"
         fi
+        
+        # Update employees with numbers and teams (with timeout)
+        echo "=========================================="
+        echo "Updating employees with numbers and teams..."
+        echo "=========================================="
+        if command -v timeout >/dev/null 2>&1; then
+            timeout 60 python scripts/update_employees_numbers_and_teams.py 2>&1 || echo "⚠️  Could not update employees (will be updated manually if needed)"
+        else
+            python scripts/update_employees_numbers_and_teams.py 2>&1 || echo "⚠️  Could not update employees (will be updated manually if needed)"
+        fi
     else
         echo "⚠️  Database migrations failed, timed out, or skipped!"
         echo "This may be due to:"
