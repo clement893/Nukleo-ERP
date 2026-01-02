@@ -13,7 +13,7 @@
 | **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
 | **Batch 3** | Correction `any` error handling | ✅ Terminé | 3 fichiers | 100% |
 | **Batch 4** | Optimisation hooks React | 🟡 En cours | ~50 fichiers | 6% |
-| **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
+| **Batch 5** | Nettoyage TODOs obsolètes | 🟡 En cours | ~30 fichiers | 0% |
 
 ---
 
@@ -125,13 +125,14 @@
 
 ---
 
-### Batch 5: Nettoyage TODOs obsolètes
+### Batch 5: Nettoyage TODOs obsolètes 🟡
 
 **Objectif:** Supprimer ou documenter les TODOs obsolètes
 
 **Fichiers ciblés:** ~30 fichiers
 
-**Statut:** ⏳ En attente
+**Statut:** 🟡 En cours  
+**Dernière mise à jour:** 2025-01-27
 
 ---
 
