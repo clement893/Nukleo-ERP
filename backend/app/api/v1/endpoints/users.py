@@ -471,10 +471,14 @@ async def delete_user(
         
         # Return explicit Response to work with slowapi rate limiting
         logger.info(f"[DELETE USER] Creating Response object for user {user_id}")
-        response = Response(status_code=status.HTTP_204_NO_CONTENT)
-        logger.info(f"[DELETE USER] Response type: {type(response)}, is Response instance: {isinstance(response, Response)}")
+        from starlette.responses import Response as StarletteResponse
+        response = StarletteResponse(status_code=status.HTTP_204_NO_CONTENT)
+        logger.info(f"[DELETE USER] Response type: {type(response)}, module: {type(response).__module__}")
+        logger.info(f"[DELETE USER] Is Response instance: {isinstance(response, Response)}")
+        logger.info(f"[DELETE USER] Is StarletteResponse instance: {isinstance(response, StarletteResponse)}")
         logger.info(f"[DELETE USER] Response status_code: {response.status_code}")
         logger.info(f"[DELETE USER] Response headers: {dict(response.headers)}")
+        logger.info(f"[DELETE USER] Response class: {response.__class__}, MRO: {response.__class__.__mro__}")
         logger.info(f"[DELETE USER] About to return response for user {user_id}")
         try:
             return response
