@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, Button, Badge, Input, Select, Textarea, Modal, Switch } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  CreditCard, Plus, Edit, Trash2, TrendingUp, 
+  CreditCard, Plus, Edit, Trash2, 
   Loader2, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import { tresorerieAPI, type BankAccount, type BankAccountCreate } from '@/lib/api/tresorerie';

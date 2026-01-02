@@ -67,7 +67,7 @@ class ExecutionLogResponse(BaseModel):
         from_attributes = True
 
 
-@router.post("/scheduled-tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED, tags=["scheduled-tasks"])
+@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED, tags=["scheduled-tasks"])
 async def create_task(
     task_data: TaskCreate,
     current_user: User = Depends(get_current_user),
@@ -88,7 +88,7 @@ async def create_task(
     return TaskResponse.model_validate(task)
 
 
-@router.get("/scheduled-tasks", response_model=List[TaskResponse], tags=["scheduled-tasks"])
+@router.get("", response_model=List[TaskResponse], tags=["scheduled-tasks"])
 async def get_tasks(
     status: Optional[TaskStatus] = Query(None),
     task_type: Optional[TaskType] = Query(None),
@@ -105,7 +105,7 @@ async def get_tasks(
     return [TaskResponse.model_validate(t) for t in tasks]
 
 
-@router.get("/scheduled-tasks/{task_id}", response_model=TaskResponse, tags=["scheduled-tasks"])
+@router.get("/{task_id}", response_model=TaskResponse, tags=["scheduled-tasks"])
 async def get_task(
     task_id: int,
     current_user: User = Depends(get_current_user),
@@ -133,7 +133,7 @@ async def get_task(
     return TaskResponse.model_validate(task)
 
 
-@router.get("/scheduled-tasks/{task_id}/logs", response_model=List[ExecutionLogResponse], tags=["scheduled-tasks"])
+@router.get("/{task_id}/logs", response_model=List[ExecutionLogResponse], tags=["scheduled-tasks"])
 async def get_task_logs(
     task_id: int,
     limit: int = Query(50, le=100),
@@ -153,7 +153,7 @@ async def get_task_logs(
     return [ExecutionLogResponse.model_validate(l) for l in logs]
 
 
-@router.put("/scheduled-tasks/{task_id}", response_model=TaskResponse, tags=["scheduled-tasks"])
+@router.put("/{task_id}", response_model=TaskResponse, tags=["scheduled-tasks"])
 async def update_task(
     task_id: int,
     task_data: TaskUpdate,
@@ -181,7 +181,7 @@ async def update_task(
     return TaskResponse.model_validate(task)
 
 
-@router.post("/scheduled-tasks/{task_id}/cancel", tags=["scheduled-tasks"])
+@router.post("/{task_id}/cancel", tags=["scheduled-tasks"])
 async def cancel_task(
     task_id: int,
     current_user: User = Depends(get_current_user),
@@ -205,7 +205,7 @@ async def cancel_task(
     return {"success": True, "message": "Task cancelled"}
 
 
-@router.delete("/scheduled-tasks/{task_id}", tags=["scheduled-tasks"])
+@router.delete("/{task_id}", tags=["scheduled-tasks"])
 async def delete_task(
     task_id: int,
     current_user: User = Depends(get_current_user),
@@ -229,7 +229,7 @@ async def delete_task(
     )
 
 
-@router.put("/content/schedule/{task_id}/toggle", response_model=TaskResponse, tags=["scheduled-tasks"])
+@router.put("/{task_id}/toggle", response_model=TaskResponse, tags=["scheduled-tasks"])
 async def toggle_task(
     task_id: int,
     current_user: User = Depends(get_current_user),

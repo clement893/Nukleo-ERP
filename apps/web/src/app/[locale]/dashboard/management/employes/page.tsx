@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -98,13 +98,18 @@ export default function EmployeesPage() {
   const [importing, setImporting] = useState(false);
 
   // Fetch data
-  const { data, isLoading, refetch } = useInfiniteEmployees(1000);
+  const { data, isLoading, error, refetch } = useInfiniteEmployees(1000);
   const deleteEmployeeMutation = useDeleteEmployee();
   const createEmployeeMutation = useCreateEmployee();
   const updateEmployeeMutation = useUpdateEmployee();
 
   // Flatten data
-  const employees = useMemo(() => data?.pages.flat() || [], [data]);
+  const employees = useMemo(() => {
+    if (!data?.pages) return [];
+    const flattened = data.pages.flat();
+    console.log('Employees data:', { pages: data.pages, flattened, count: flattened.length });
+    return flattened;
+  }, [data]);
 
   // Get unique departments
   const departments = useMemo(() => {
@@ -332,9 +337,22 @@ export default function EmployeesPage() {
 
   const hasActiveFilters = statusFilter !== 'all' || departmentFilter !== 'all' || typeFilter !== 'all' || searchQuery;
 
+  // Log error if any
+  useEffect(() => {
+    if (error) {
+      console.error('Error loading employees:', error);
+      logger.error('Error loading employees', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de charger les employés. Veuillez réessayer.',
+        type: 'error'
+      });
+    }
+  }, [error, showToast]);
+
   if (isLoading) {
-  return (
-    <PageContainer maxWidth="full">
+    return (
+      <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
           <Loading />
         </div>

@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { Card, Button, Badge, Input, Select, Textarea, Modal, Switch } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  Wallet, Plus, Edit, Trash2, Building2, 
-  Loader2, RefreshCw, CreditCard
+  Plus, Edit, Trash2, Building2, 
+  Loader2, RefreshCw
 } from 'lucide-react';
 import { tresorerieAPI, type BankAccount, type BankAccountCreate } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
@@ -188,10 +188,10 @@ export default function TresorerieBankBalancesTab() {
   }
 
   // Filtrer les comptes qui correspondent aux banques prédéfinies
-  const predefinedAccounts = PREDEFINED_BANKS.map(bank => {
-    const account = accounts.find(acc => acc.bank_name === bank.name);
-    return { bank, account };
-  });
+  // const predefinedAccounts = PREDEFINED_BANKS.map(bank => {
+  //   const account = accounts.find(acc => acc.bank_name === bank.name);
+  //   return { bank, account };
+  // });
 
   // Autres comptes (non prédéfinis)
   const otherAccounts = accounts.filter(acc => 
