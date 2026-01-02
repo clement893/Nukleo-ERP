@@ -490,12 +490,12 @@ async def list_transactions(
             query = query.where(Transaction.status == status)
         
         if date_from:
-            query = query.where(Transaction.date >= date_from)
+            query = query.where(Transaction.transaction_date >= date_from)
         
         if date_to:
-            query = query.where(Transaction.date <= date_to)
+            query = query.where(Transaction.transaction_date <= date_to)
         
-        query = query.order_by(Transaction.date.desc()).offset(skip).limit(limit)
+        query = query.order_by(Transaction.transaction_date.desc()).offset(skip).limit(limit)
         
         result = await db.execute(query)
         transactions = result.scalars().all()
@@ -776,8 +776,8 @@ async def get_weekly_cashflow(
         query = select(Transaction).where(
             and_(
                 Transaction.user_id == current_user.id,
-                Transaction.date >= date_from,
-                Transaction.date <= date_to,
+                Transaction.transaction_date >= date_from,
+                Transaction.transaction_date <= date_to,
                 cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )

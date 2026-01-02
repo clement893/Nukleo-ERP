@@ -15,10 +15,14 @@ import {
   useFacturations, 
   useFacturation, 
   useDeleteFacturation, 
-  useSendFacturation 
+  useSendFacturation,
+  useCreateFacturation
 } from '@/lib/query/queries';
 import { projectsAPI } from '@/lib/api/projects';
 import { useQuery } from '@tanstack/react-query';
+import InvoiceForm from '@/components/finances/InvoiceForm';
+import { facturationsAPI, type FinanceInvoiceCreate } from '@/lib/api/finances/facturations';
+import { handleApiError } from '@/lib/errors/api';
 
 const statusConfig = {
   draft: { label: 'Brouillon', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: Edit },
@@ -66,6 +70,7 @@ export default function FacturationsPage() {
   // Mutations
   const deleteMutation = useDeleteFacturation();
   const sendMutation = useSendFacturation();
+  const createMutation = useCreateFacturation();
 
   const invoices = invoicesData?.items || [];
 
@@ -701,22 +706,36 @@ export default function FacturationsPage() {
           </div>
         </Modal>
 
-        {/* Create Invoice Modal - Placeholder */}
+        {/* Create Invoice Modal */}
         <Modal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           title="Nouvelle facture"
+          size="lg"
         >
-          <div className="space-y-4">
-            <p className="text-gray-600 dark:text-gray-400">
-              Le formulaire de création de facture sera implémenté prochainement.
-            </p>
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-                Fermer
-              </Button>
-            </div>
-          </div>
+          <InvoiceForm
+            invoice={null}
+            onSubmit={async (data: FinanceInvoiceCreate) => {
+              try {
+                await createMutation.mutateAsync(data);
+                showToast({
+                  message: 'Facture créée avec succès',
+                  type: 'success',
+                });
+                setShowCreateModal(false);
+              } catch (error) {
+                const appError = handleApiError(error);
+                showToast({
+                  message: appError.message || 'Erreur lors de la création de la facture',
+                  type: 'error',
+                });
+                throw error;
+              }
+            }}
+            onCancel={() => setShowCreateModal(false)}
+            loading={createMutation.isPending}
+            projects={projects || []}
+          />
         </Modal>
       </MotionDiv>
     </PageContainer>

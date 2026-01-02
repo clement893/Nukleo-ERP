@@ -894,12 +894,12 @@ function ClientsContent() {
                   <div className="flex flex-col">
                     {/* Logo Section - Photo rectangulaire en hauteur comme les entreprises */}
                     <div className="relative">
-                      <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                      <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-6">
                         {logoUrl ? (
                           <img
                             src={logoUrl}
                             alt={`${client.company_name} logo`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain max-w-full max-h-full"
                             loading="lazy"
                             decoding="async"
                             onError={(e) => {
@@ -1055,20 +1055,23 @@ function ClientsContent() {
                       </button>
 
                       {/* Logo */}
-                      {logoUrl ? (
-                        <img 
-                          src={logoUrl} 
-                          alt={`${client.company_name} logo`}
-                          className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={logoUrl ? 'hidden' : ''}>
-                        <ClientAvatar client={client} size="md" />
+                      <div className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800 p-1 flex items-center justify-center overflow-hidden relative">
+                        {logoUrl ? (
+                          <img 
+                            src={logoUrl} 
+                            alt={`${client.company_name} logo`}
+                            className="w-full h-full object-contain max-w-full max-h-full"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.parentElement?.querySelector('.list-logo-fallback') as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`list-logo-fallback ${logoUrl ? 'hidden absolute inset-0' : ''} flex items-center justify-center`}>
+                          <ClientAvatar client={client} size="md" />
+                        </div>
                       </div>
 
                       {/* Infos */}
@@ -1273,12 +1276,12 @@ function ClientsContent() {
                       
                       {/* Logo and Basic Info */}
                       <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                        <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0 p-3">
                           {getClientLogo(clientDetails) ? (
                             <img 
                               src={getClientLogo(clientDetails) || undefined} 
                               alt={`${clientDetails.company_name} logo`}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain max-w-full max-h-full"
                             />
                           ) : (
                             <Building2 className="w-10 h-10 text-gray-400" />
