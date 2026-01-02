@@ -133,32 +133,43 @@ function TemoignagesContent() {
           .filter((id): id is number => id !== null && id !== undefined)
       );
       
-      // Identifier les contacts qui n'ont pas de photo mais sont utilisés dans les témoignages
+      // Identifier les contacts utilisés dans les témoignages
+      // On charge les photos pour tous car même si photo_url existe, 
+      // il peut s'agir d'un file_key et non d'une URL presignée valide
       const contactsToLoad = allContacts.filter(
-        c => testimonialContactIds.has(c.id) && !c.photo_url
+        c => testimonialContactIds.has(c.id)
       );
       
       if (contactsToLoad.length === 0) return;
       
       // Charger les photos individuellement pour ces contacts
-      const photoPromises = contactsToLoad.map(async (contact) => {
-        try {
-          const fullContact = await contactsAPI.get(contact.id);
-          if (fullContact.photo_url) {
-            setAllContacts(prev => 
-              prev.map(c => c.id === contact.id 
-                ? { ...c, photo_url: fullContact.photo_url } 
-                : c
-              )
-            );
+      // On limite à 10 contacts en parallèle pour éviter de surcharger
+      const batchSize = 10;
+      for (let i = 0; i < contactsToLoad.length; i += batchSize) {
+        const batch = contactsToLoad.slice(i, i + batchSize);
+        const photoPromises = batch.map(async (contact) => {
+          try {
+            const fullContact = await contactsAPI.get(contact.id);
+            if (fullContact.photo_url) {
+              setAllContacts(prev => 
+                prev.map(c => c.id === contact.id 
+                  ? { ...c, photo_url: fullContact.photo_url } 
+                  : c
+                )
+              );
+            }
+          } catch (err) {
+            // Ignorer les erreurs pour ne pas bloquer
+            logger.debug(`Failed to load photo for contact ${contact.id}`, err);
           }
-        } catch (err) {
-          // Ignorer les erreurs pour ne pas bloquer
-          logger.debug(`Failed to load photo for contact ${contact.id}`, err);
+        });
+        
+        await Promise.all(photoPromises);
+        // Petit délai entre les lots pour éviter de surcharger
+        if (i + batchSize < contactsToLoad.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
-      });
-      
-      await Promise.all(photoPromises);
+      }
     };
     
     // Charger les photos en arrière-plan après un court délai
@@ -538,7 +549,7 @@ function TemoignagesContent() {
                               }}
                             />
                           ) : null}
-                          <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center photo-fallback ${contactPhoto ? 'hidden absolute inset-0' : ''}`}>
+                          <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center photo-fallback absolute inset-0 ${contactPhoto ? 'hidden' : ''}`}>
                             <User className="w-5 h-5 text-primary-500" />
                           </div>
                         </div>
