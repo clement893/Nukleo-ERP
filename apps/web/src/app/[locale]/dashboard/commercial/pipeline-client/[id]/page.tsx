@@ -22,14 +22,17 @@ import {
   Eye,
   Search,
   X,
-  FileText,
-  Filter,
   Download,
-  Upload,
-  GripVertical,
-  MoreVertical
+  Table,
+  List,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  CheckSquare,
+  Square,
+  Upload
 } from 'lucide-react';
-import { Badge, Button, Loading, Alert, Card, Input, Select, Modal, Drawer, Textarea, useToast } from '@/components/ui';
+import { Badge, Button, Loading, Alert, Card, Input, Select, Modal, Drawer, useToast, Chart } from '@/components/ui';
 import { pipelinesAPI, type Pipeline, type PipelineUpdate, type PipelineStageCreate } from '@/lib/api/pipelines';
 import { opportunitiesAPI, type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
@@ -236,6 +239,7 @@ export default function PipelineDetailPage() {
   const [showEditOpportunityModal, setShowEditOpportunityModal] = useState(false);
   const [showOpportunityDetailDrawer, setShowOpportunityDetailDrawer] = useState(false);
   const [showEditStagesModal, setShowEditStagesModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   
   // Filters and search
@@ -245,6 +249,12 @@ export default function PipelineDetailPage() {
   const [companyFilter, setCompanyFilter] = useState<string>('all');
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
+  
+  // View and sorting
+  const [opportunityView, setOpportunityView] = useState<'list' | 'table'>('list');
+  const [sortField, setSortField] = useState<'name' | 'amount' | 'probability' | 'expected_close_date' | 'stage_name'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedOpportunities, setSelectedOpportunities] = useState<Set<string>>(new Set());
 
   const pipelineId = params?.id ? String(params.id) : null;
   const locale = params?.locale as string || 'fr';
@@ -501,6 +511,78 @@ export default function PipelineDetailPage() {
     }
   };
 
+  const handleImportOpportunities = async (file: File) => {
+    try {
+      const result = await opportunitiesAPI.import(file);
+      showToast({
+        message: `Import réussi: ${result.valid_rows} opportunité(s) importée(s)`,
+        type: 'success',
+      });
+      await loadOpportunities();
+      setShowImportModal(false);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'import',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedOpportunities.size === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedOpportunities.size} opportunité(s) ?`)) return;
+    
+    try {
+      // Delete opportunities one by one (bulk delete endpoint might not support specific IDs)
+      const deletePromises = Array.from(selectedOpportunities).map(id => 
+        opportunitiesAPI.delete(id)
+      );
+      await Promise.all(deletePromises);
+      
+      setSelectedOpportunities(new Set());
+      await loadOpportunities();
+      showToast({
+        message: `${selectedOpportunities.size} opportunité(s) supprimée(s) avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const toggleOpportunitySelection = (id: string) => {
+    const newSelection = new Set(selectedOpportunities);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedOpportunities(newSelection);
+  };
+
+  const toggleAllOpportunitiesSelection = () => {
+    if (selectedOpportunities.size === filteredAndSortedOpportunities.length) {
+      setSelectedOpportunities(new Set());
+    } else {
+      setSelectedOpportunities(new Set(filteredAndSortedOpportunities.map(o => o.id)));
+    }
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const opportunity = opportunities.find(o => o.id === active.id);
@@ -610,6 +692,75 @@ export default function PipelineDetailPage() {
       return { id, name };
     });
   }, [opportunities]);
+
+  // Filtered and sorted opportunities
+  const filteredAndSortedOpportunities = useMemo(() => {
+    let filtered = [...opportunities];
+
+    // Apply filters
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(opp => opp.status === statusFilter);
+    }
+    if (stageFilter !== 'all') {
+      filtered = filtered.filter(opp => opp.stage_id === stageFilter);
+    }
+    if (companyFilter !== 'all') {
+      filtered = filtered.filter(opp => opp.company_id === parseInt(companyFilter));
+    }
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(opp => 
+        opp.name.toLowerCase().includes(query) ||
+        opp.description?.toLowerCase().includes(query) ||
+        opp.company_name?.toLowerCase().includes(query)
+      );
+    }
+    if (minAmount || maxAmount) {
+      filtered = filtered.filter(opp => {
+        const amount = opp.amount || 0;
+        if (minAmount && amount < parseFloat(minAmount)) return false;
+        if (maxAmount && amount > parseFloat(maxAmount)) return false;
+        return true;
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'amount':
+          aValue = a.amount || 0;
+          bValue = b.amount || 0;
+          break;
+        case 'probability':
+          aValue = a.probability || 0;
+          bValue = b.probability || 0;
+          break;
+        case 'expected_close_date':
+          aValue = a.expected_close_date ? new Date(a.expected_close_date).getTime() : 0;
+          bValue = b.expected_close_date ? new Date(b.expected_close_date).getTime() : 0;
+          break;
+        case 'stage_name':
+          aValue = a.stage_name || '';
+          bValue = b.stage_name || '';
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [opportunities, statusFilter, stageFilter, companyFilter, searchQuery, minAmount, maxAmount, sortField, sortDirection]);
 
   if (loading) {
     return (
@@ -925,6 +1076,163 @@ export default function PipelineDetailPage() {
                   </div>
                 </div>
 
+                {/* Statistics Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Funnel Chart - Opportunities by Stage */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      Distribution par étape
+                    </h3>
+                    {pipeline.stages && pipeline.stages.length > 0 ? (
+                      <Chart
+                        type="bar"
+                        data={(pipeline.stages || [])
+                          .sort((a, b) => (a.order || 0) - (b.order || 0))
+                          .map(stage => ({
+                            label: stage.name,
+                            value: opportunitiesByStage[stage.id]?.length || 0,
+                            color: stage.color || '#523DC9',
+                          }))}
+                        height={250}
+                      />
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucune étape définie</p>
+                    )}
+                  </Card>
+
+                  {/* Value by Stage Chart */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      Valeur par étape
+                    </h3>
+                    {pipeline.stages && pipeline.stages.length > 0 ? (
+                      <Chart
+                        type="bar"
+                        data={(pipeline.stages || [])
+                          .sort((a, b) => (a.order || 0) - (b.order || 0))
+                          .map(stage => {
+                            const stageOpps = opportunitiesByStage[stage.id] || [];
+                            const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+                            return {
+                              label: stage.name,
+                              value: stageValue,
+                              color: stage.color || '#523DC9',
+                            };
+                          })}
+                        height={250}
+                      />
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucune étape définie</p>
+                    )}
+                  </Card>
+                </div>
+
+                {/* Conversion Rates */}
+                {pipeline.stages && pipeline.stages.length > 1 && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      Taux de conversion entre étapes
+                    </h3>
+                    <div className="space-y-3">
+                      {(pipeline.stages || [])
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .slice(0, -1)
+                        .map((stage, index) => {
+                          const currentStageOpps = opportunitiesByStage[stage.id] || [];
+                          const nextStage = pipeline.stages?.find(s => s.order === (stage.order || 0) + 1);
+                          const nextStageOpps = nextStage ? (opportunitiesByStage[nextStage.id] || []) : [];
+                          
+                          const currentCount = currentStageOpps.length;
+                          const nextCount = nextStageOpps.length;
+                          const conversionRate = currentCount > 0 ? ((nextCount / currentCount) * 100).toFixed(1) : '0';
+                          
+                          return (
+                            <div key={stage.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: stage.color || '#523DC9' }}
+                                />
+                                <span className="font-medium">{stage.name}</span>
+                                <span className="text-gray-400">→</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {nextStage?.name || 'Fin'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {currentCount} → {nextCount}
+                                </span>
+                                <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+                                  {conversionRate}%
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Stage Statistics */}
+                {pipeline.stages && pipeline.stages.length > 0 && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      Statistiques détaillées par étape
+                    </h3>
+                    <div className="space-y-4">
+                      {(pipeline.stages || [])
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .map(stage => {
+                          const stageOpps = opportunitiesByStage[stage.id] || [];
+                          const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+                          const avgValue = stageOpps.length > 0 ? stageValue / stageOpps.length : 0;
+                          const avgProbability = stageOpps.length > 0 
+                            ? stageOpps.reduce((sum, opp) => sum + (opp.probability || 0), 0) / stageOpps.length 
+                            : 0;
+                          
+                          return (
+                            <div 
+                              key={stage.id}
+                              className="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                              style={{
+                                borderLeftColor: stage.color || undefined,
+                                borderLeftWidth: stage.color ? '4px' : undefined
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
+                                <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+                                  {stageOpps.length} opportunité{stageOpps.length > 1 ? 's' : ''}
+                                </Badge>
+                              </div>
+                              <div className="grid grid-cols-3 gap-4 mt-3">
+                                <div>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Valeur totale</p>
+                                  <p className="font-medium text-gray-900 dark:text-white">
+                                    {formatCurrency(stageValue)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Valeur moyenne</p>
+                                  <p className="font-medium text-gray-900 dark:text-white">
+                                    {formatCurrency(avgValue)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Probabilité moyenne</p>
+                                  <p className="font-medium text-gray-900 dark:text-white">
+                                    {avgProbability.toFixed(1)}%
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </Card>
+                )}
+
                 {pipeline.description && (
                   <div>
                     <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -940,9 +1248,46 @@ export default function PipelineDetailPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Opportunités ({opportunities.length})
+                    Opportunités ({filteredAndSortedOpportunities.length})
                   </h3>
                   <div className="flex gap-2">
+                    <div className="flex gap-1 border border-gray-200 dark:border-gray-700 rounded-md">
+                      <Button
+                        size="sm"
+                        variant={opportunityView === 'list' ? 'default' : 'ghost'}
+                        onClick={() => setOpportunityView('list')}
+                        className="rounded-r-none"
+                      >
+                        <List className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={opportunityView === 'table' ? 'default' : 'ghost'}
+                        onClick={() => setOpportunityView('table')}
+                        className="rounded-l-none"
+                      >
+                        <Table className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {selectedOpportunities.size > 0 && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={handleBulkDelete}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Supprimer ({selectedOpportunities.size})
+                      </Button>
+                    )}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setShowImportModal(true)}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Importer
+                    </Button>
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -1048,86 +1393,250 @@ export default function PipelineDetailPage() {
                   )}
                 </div>
                 
-                {opportunities.length > 0 ? (
-                  <div className="space-y-3">
-                    {opportunities.map((opp) => (
-                      <div 
-                        key={opp.id} 
-                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer group"
-                        onClick={() => handleViewOpportunity(opp)}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h4>
-                            {opp.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">
-                                {opp.description}
-                              </p>
+                {filteredAndSortedOpportunities.length > 0 ? (
+                  opportunityView === 'list' ? (
+                    <div className="space-y-3">
+                      {filteredAndSortedOpportunities.map((opp) => (
+                        <div 
+                          key={opp.id} 
+                          className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer group"
+                          onClick={() => handleViewOpportunity(opp)}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h4>
+                              {opp.description && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">
+                                  {opp.description}
+                                </p>
+                              )}
+                              {opp.company_name && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                  <Building2 className="w-4 h-4" />
+                                  <span>{opp.company_name}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getOpportunityStageColor(opp.stage_name)}>
+                                {opp.stage_name || 'Non défini'}
+                              </Badge>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEditOpportunity(opp)}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleDeleteOpportunity(opp)}
+                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {formatCurrency(opp.amount || 0)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-600 dark:text-gray-400">
+                                {opp.probability || 0}%
+                              </span>
+                            </div>
+                            {opp.expected_close_date && (
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  {formatDate(opp.expected_close_date)}
+                                </span>
+                              </div>
                             )}
-                            {opp.company_name && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <Building2 className="w-4 h-4" />
-                                <span>{opp.company_name}</span>
+                            {opp.assigned_to_name && (
+                              <div className="flex items-center gap-1">
+                                <User className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  {opp.assigned_to_name}
+                                </span>
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getOpportunityStageColor(opp.stage_name)}>
-                              {opp.stage_name || 'Non défini'}
-                            </Badge>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleEditOpportunity(opp)}
-                                className="h-7 w-7 p-0"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteOpportunity(opp)}
-                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4 text-gray-400" />
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              {formatCurrency(opp.amount || 0)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-600 dark:text-gray-400">
-                              {opp.probability || 0}%
-                            </span>
-                          </div>
-                          {opp.expected_close_date && (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-600 dark:text-gray-400">
-                                {formatDate(opp.expected_close_date)}
-                              </span>
-                            </div>
-                          )}
-                          {opp.assigned_to_name && (
-                            <div className="flex items-center gap-1">
-                              <User className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-600 dark:text-gray-400">
-                                {opp.assigned_to_name}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-gray-700">
+                            <th className="p-3 text-left">
+                              <button
+                                onClick={toggleAllOpportunitiesSelection}
+                                className="flex items-center"
+                              >
+                                {selectedOpportunities.size === filteredAndSortedOpportunities.length ? (
+                                  <CheckSquare className="w-4 h-4" />
+                                ) : (
+                                  <Square className="w-4 h-4" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="p-3 text-left">
+                              <button
+                                onClick={() => handleSort('name')}
+                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                              >
+                                Nom
+                                {sortField === 'name' ? (
+                                  sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                ) : (
+                                  <ArrowUpDown className="w-3 h-3 opacity-50" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="p-3 text-left">
+                              <span className="flex items-center gap-1">Entreprise</span>
+                            </th>
+                            <th className="p-3 text-left">
+                              <button
+                                onClick={() => handleSort('amount')}
+                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                              >
+                                Montant
+                                {sortField === 'amount' ? (
+                                  sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                ) : (
+                                  <ArrowUpDown className="w-3 h-3 opacity-50" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="p-3 text-left">
+                              <button
+                                onClick={() => handleSort('probability')}
+                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                              >
+                                Probabilité
+                                {sortField === 'probability' ? (
+                                  sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                ) : (
+                                  <ArrowUpDown className="w-3 h-3 opacity-50" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="p-3 text-left">
+                              <button
+                                onClick={() => handleSort('expected_close_date')}
+                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                              >
+                                Date de fermeture
+                                {sortField === 'expected_close_date' ? (
+                                  sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                ) : (
+                                  <ArrowUpDown className="w-3 h-3 opacity-50" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="p-3 text-left">
+                              <button
+                                onClick={() => handleSort('stage_name')}
+                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                              >
+                                Étape
+                                {sortField === 'stage_name' ? (
+                                  sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                ) : (
+                                  <ArrowUpDown className="w-3 h-3 opacity-50" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="p-3 text-left">Assigné à</th>
+                            <th className="p-3 text-left">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAndSortedOpportunities.map((opp) => (
+                            <tr
+                              key={opp.id}
+                              className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                            >
+                              <td className="p-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleOpportunitySelection(opp.id);
+                                  }}
+                                >
+                                  {selectedOpportunities.has(opp.id) ? (
+                                    <CheckSquare className="w-4 h-4" />
+                                  ) : (
+                                    <Square className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </td>
+                              <td className="p-3">
+                                <button
+                                  onClick={() => handleViewOpportunity(opp)}
+                                  className="text-left font-medium text-[#523DC9] hover:underline"
+                                >
+                                  {opp.name}
+                                </button>
+                              </td>
+                              <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                                {opp.company_name || '-'}
+                              </td>
+                              <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
+                                {formatCurrency(opp.amount || 0)}
+                              </td>
+                              <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                                {opp.probability || 0}%
+                              </td>
+                              <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                                {opp.expected_close_date ? formatDate(opp.expected_close_date) : '-'}
+                              </td>
+                              <td className="p-3">
+                                <Badge className={getOpportunityStageColor(opp.stage_name)}>
+                                  {opp.stage_name || 'Non défini'}
+                                </Badge>
+                              </td>
+                              <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                                {opp.assigned_to_name || '-'}
+                              </td>
+                              <td className="p-3">
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditOpportunity(opp)}
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteOpportunity(opp)}
+                                    className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
                 ) : (
                   <div className="text-center py-12">
                     <Target className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -1562,6 +2071,73 @@ export default function PipelineDetailPage() {
             <Button
               variant="outline"
               onClick={() => setShowEditStagesModal(false)}
+            >
+              Fermer
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Import Opportunities Modal */}
+      <Modal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title="Importer des opportunités"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <Alert variant="info">
+            Téléchargez d'abord le modèle Excel, remplissez-le avec vos données, puis importez-le ici.
+          </Alert>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await opportunitiesAPI.downloadTemplate();
+                  showToast({
+                    message: 'Modèle téléchargé',
+                    type: 'success',
+                  });
+                } catch (err) {
+                  const appError = handleApiError(err);
+                  showToast({
+                    message: appError.message || 'Erreur lors du téléchargement',
+                    type: 'error',
+                  });
+                }
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Télécharger le modèle
+            </Button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Fichier Excel à importer
+            </label>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  await handleImportOpportunities(file);
+                }
+              }}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Formats acceptés: .xlsx, .xls
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="outline"
+              onClick={() => setShowImportModal(false)}
             >
               Fermer
             </Button>
