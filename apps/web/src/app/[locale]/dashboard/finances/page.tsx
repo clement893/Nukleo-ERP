@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import { Badge, Card } from '@/components/ui';
 import Link from 'next/link';
-import { transactionsAPI, Transaction as APITransaction } from '@/lib/api/finances/transactions';
-import { facturationsAPI } from '@/lib/api/finances/facturations';
+import { transactionsAPI } from '@/lib/api/finances/transactions';
+import { facturationsAPI, type FinanceInvoice } from '@/lib/api/finances/facturations';
 
 interface FinancialStats {
   revenue: number;
@@ -82,25 +82,23 @@ export default function FinancesPage() {
       
       // Premier jour du mois actuel
       const firstDayThisMonth = new Date(currentYear, currentMonth, 1);
-      const firstDayThisMonthISO = firstDayThisMonth.toISOString().split('T')[0];
       
       // Premier jour du mois dernier
       const firstDayLastMonth = new Date(currentYear, currentMonth - 1, 1);
-      const firstDayLastMonthISO = firstDayLastMonth.toISOString().split('T')[0];
       
       // Dernier jour du mois actuel
       const lastDayThisMonth = new Date(currentYear, currentMonth + 1, 0);
-      const lastDayThisMonthISO = lastDayThisMonth.toISOString().split('T')[0];
       
       // Dernier jour du mois dernier
       const lastDayLastMonth = new Date(currentYear, currentMonth, 0);
-      const lastDayLastMonthISO = lastDayLastMonth.toISOString().split('T')[0];
       
       // Charger les transactions et factures
-      const [allTransactions, invoices] = await Promise.all([
+      const [allTransactions, invoicesResponse] = await Promise.all([
         transactionsAPI.list({ limit: 10000 }),
         facturationsAPI.list({ limit: 1000 })
       ]);
+      
+      const invoices = invoicesResponse.items;
 
       // Filtrer les transactions pour ce mois et le mois dernier
       const transactionsThisMonth = allTransactions.filter(t => {
@@ -147,12 +145,12 @@ export default function FinancesPage() {
         : 0;
 
       // Compter les factures
-      const invoicesThisMonth = invoices.filter(inv => {
+      const invoicesThisMonth = invoices.filter((inv: FinanceInvoice) => {
         const invDate = new Date(inv.issue_date);
         return invDate >= firstDayThisMonth && invDate <= lastDayThisMonth;
       }).length;
       
-      const invoicesLastMonth = invoices.filter(inv => {
+      const invoicesLastMonth = invoices.filter((inv: FinanceInvoice) => {
         const invDate = new Date(inv.issue_date);
         return invDate >= firstDayLastMonth && invDate < firstDayThisMonth;
       }).length;
@@ -184,30 +182,30 @@ export default function FinancesPage() {
       setRecentTransactions(recentAPITransactions);
 
       // Statuts des factures
-      const paidInvoices = invoices.filter(inv => inv.status === 'paid');
-      const pendingInvoices = invoices.filter(inv => inv.status === 'sent' || inv.status === 'partial');
-      const overdueInvoices = invoices.filter(inv => inv.status === 'overdue');
+      const paidInvoices = invoices.filter((inv: FinanceInvoice) => inv.status === 'paid');
+      const pendingInvoices = invoices.filter((inv: FinanceInvoice) => inv.status === 'sent' || inv.status === 'partial');
+      const overdueInvoices = invoices.filter((inv: FinanceInvoice) => inv.status === 'overdue');
 
       setInvoicesByStatus([
         { 
           status: 'paid', 
           label: 'Payées', 
           count: paidInvoices.length, 
-          amount: paidInvoices.reduce((sum, inv) => sum + inv.total, 0), 
+          amount: paidInvoices.reduce((sum: number, inv: FinanceInvoice) => sum + inv.total, 0), 
           color: 'bg-green-500' 
         },
         { 
           status: 'pending', 
           label: 'En attente', 
           count: pendingInvoices.length, 
-          amount: pendingInvoices.reduce((sum, inv) => sum + inv.amount_due, 0), 
+          amount: pendingInvoices.reduce((sum: number, inv: FinanceInvoice) => sum + inv.amount_due, 0), 
           color: 'bg-orange-500' 
         },
         { 
           status: 'overdue', 
           label: 'En retard', 
           count: overdueInvoices.length, 
-          amount: overdueInvoices.reduce((sum, inv) => sum + inv.amount_due, 0), 
+          amount: overdueInvoices.reduce((sum: number, inv: FinanceInvoice) => sum + inv.amount_due, 0), 
           color: 'bg-red-500' 
         }
       ]);
