@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Card, Button, Select } from '@/components/ui';
-import Chart, { type ChartDataPoint } from '@/components/ui/Chart';
+import Chart from '@/components/ui/Chart';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { TrendingUp, TrendingDown, DollarSign, Loader2, Download, Calendar } from 'lucide-react';
 import { tresorerieAPI, type Transaction, type CashflowWeek, type TreasuryStats, type TransactionCategory } from '@/lib/api/tresorerie';
@@ -124,7 +124,9 @@ export default function TresorerieAnalyticsTab() {
             type: t.type
           };
         }
-        categoryTotals[t.category_id].total += Number(t.amount);
+        if (categoryTotals[t.category_id]) {
+          categoryTotals[t.category_id]!.total += Number(t.amount);
+        }
       }
     });
 

@@ -6,6 +6,7 @@ export { default as UserSettings } from './UserSettings';
 export { default as OrganizationSettings } from './OrganizationSettings';
 export { default as SecuritySettings } from './SecuritySettings';
 export { default as NotificationSettings } from './NotificationSettings';
+export { default as NotificationList } from './NotificationList';
 export { default as PrivacySettings } from './PrivacySettings';
 export { default as APIKeys } from './APIKeys';
 export { default as WebhooksSettings } from './WebhooksSettings';

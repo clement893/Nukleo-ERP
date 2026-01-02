@@ -92,6 +92,7 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateKey = date.toISOString().split('T')[0];
+    if (!dateKey) continue;
     const dayTransactions = transactionsByDate[dateKey] || { entries: [], exits: [] };
     const totalEntries = dayTransactions.entries.reduce((sum: number, t: CalendarTransaction) => sum + t.amount, 0);
     const totalExits = dayTransactions.exits.reduce((sum: number, t: CalendarTransaction) => sum + t.amount, 0);

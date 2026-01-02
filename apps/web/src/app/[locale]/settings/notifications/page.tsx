@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/lib/store';
-import { NotificationSettings } from '@/components/settings';
+import { NotificationSettings, NotificationList } from '@/components/settings';
 import type { NotificationSettingsData } from '@/components/settings';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { Loading, Alert } from '@/components/ui';
@@ -132,8 +132,17 @@ export default function NotificationSettingsPage() {
           </div>
         )}
 
-        <div className="mt-8">
-          <NotificationSettings settings={notificationSettings} onSave={handleSave} />
+        <div className="mt-8 space-y-6">
+          {/* Liste des notifications */}
+          <NotificationList />
+          
+          {/* Préférences de notifications */}
+          <div>
+            <h2 className="text-xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Préférences de Notifications
+            </h2>
+            <NotificationSettings settings={notificationSettings} onSave={handleSave} />
+          </div>
         </div>
       </PageContainer>
     </ProtectedRoute>

@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Button, Badge, Input, Select, Modal, Switch } from '@/components/ui';
+import { Card, Button, Badge, Input, Modal, Switch } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Tag, Plus, Edit, Trash2, RefreshCw, Loader2, 
-  ArrowUpCircle, ArrowDownCircle, DollarSign
+  ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
-import { tresorerieAPI, type TransactionCategory, type TransactionCategoryCreate, type TransactionCategoryUpdate, type Transaction } from '@/lib/api/tresorerie';
+import { tresorerieAPI, type TransactionCategory, type TransactionCategoryCreate, type Transaction } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
 
@@ -439,7 +439,7 @@ export default function TresorerieCategoriesTab() {
             <label className="flex items-center gap-2">
               <Switch
                 checked={formData.is_active ?? true}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               />
               <span className="text-sm font-medium">Catégorie active</span>
             </label>

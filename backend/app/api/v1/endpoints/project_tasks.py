@@ -20,6 +20,8 @@ from app.schemas.project_task import (
     ProjectTaskWithAssignee,
 )
 from app.core.logging import logger
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
 
 router = APIRouter(prefix="/project-tasks", tags=["project-tasks"])
 
@@ -391,6 +393,39 @@ async def create_task(
         db.add(task)
         await db.commit()
         await db.refresh(task)
+        
+        # Create notifications
+        try:
+            # Notify assignee if task is assigned
+            if final_assignee_id and final_assignee_id != current_user.id:
+                project_name = project.name if project else None
+                template = NotificationTemplates.task_assigned(
+                    task_title=task.title or "Untitled Task",
+                    project_name=project_name,
+                    task_id=task.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=final_assignee_id,
+                    **template
+                )
+                logger.info(f"Created task assignment notification for user {final_assignee_id}")
+            
+            # Notify creator (confirmation)
+            template = NotificationTemplates.task_created(
+                task_title=task.title or "Untitled Task",
+                project_name=project.name if project else None,
+                task_id=task.id
+            )
+            await create_notification_async(
+                db=db,
+                user_id=current_user.id,
+                **template
+            )
+            logger.info(f"Created task creation notification for user {current_user.id}")
+        except Exception as notif_error:
+            # Don't fail task creation if notification fails
+            logger.error(f"Failed to create notification for task {task.id}: {notif_error}", exc_info=True)
         
         return task
     except (ProgrammingError, PendingRollbackError) as e:

@@ -399,16 +399,14 @@ export default function EmployeePortalSidebar({
               <Link href={`/${locale}/portail-employe/${employeeId}/dashboard`} className="flex items-center gap-3 group">
                 <div className="w-11 h-11 rounded-xl bg-nukleo-gradient flex items-center justify-center shadow-lg">
                   <span
-                    className="text-white font-black text-xl"
-                    className="font-nukleo"
+                    className="text-white font-black text-xl font-nukleo"
                   >
                     N
                   </span>
                 </div>
                 <div className="flex flex-col">
                   <span
-                    className="text-base font-black text-foreground"
-                    className="font-nukleo"
+                    className="text-base font-black text-foreground font-nukleo"
                   >
                     Mon Portail Employé
                   </span>

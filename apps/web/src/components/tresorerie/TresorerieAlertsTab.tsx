@@ -5,7 +5,7 @@ import { Card, Badge, Button } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Bell, AlertTriangle, AlertCircle, CheckCircle2, 
-  Wallet, TrendingDown, DollarSign, Calendar, 
+  Calendar, 
   RefreshCw, Loader2, X, Eye
 } from 'lucide-react';
 import { tresorerieAPI, type Transaction, type BankAccount, type CashflowWeek, type TreasuryStats } from '@/lib/api/tresorerie';
