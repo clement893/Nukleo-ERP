@@ -31,19 +31,19 @@ export default function ReseauPage() {
     isLoading: loadingContacts, 
     error: contactsError,
     refetch: refetchContacts 
-  } = useInfiniteReseauContacts(10000);
+  } = useInfiniteReseauContacts(1000);
   const { 
     data: companiesData, 
     isLoading: loadingCompanies,
     error: companiesError,
     refetch: refetchCompanies 
-  } = useInfiniteCompanies(10000);
+  } = useInfiniteCompanies(1000);
   const { 
     data: testimonialsData, 
     isLoading: loadingTestimonials,
     error: testimonialsError,
     refetch: refetchTestimonials 
-  } = useInfiniteReseauTestimonials(10000);
+  } = useInfiniteReseauTestimonials(1000);
 
   // Flatten data
   const contacts = useMemo(() => contactsData?.pages.flat() || [], [contactsData]);

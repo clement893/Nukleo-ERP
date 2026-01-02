@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status as http_sta
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func, cast, String, text
-from sqlalchemy.exc import ProgrammingError, text
+from sqlalchemy.exc import ProgrammingError
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from decimal import Decimal
