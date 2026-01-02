@@ -428,28 +428,6 @@ function ClientsContent() {
     }
   }, [filteredClients, getClientProjects, getClientContactsCount, showToast]);
   
-  // Derived state from React Query
-  const loading = isLoading;
-  const loadingMore = isFetchingNextPage;
-  const hasMore = hasNextPage ?? false;
-  const error = queryError ? handleApiError(queryError).message : null;
-
-  // Load more clients for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
-    }
-  }, [loadingMore, hasMore, fetchNextPage]);
-
-      if (selectedType === 'all') return matchesSearch;
-      if (selectedType === 'active') return matchesSearch && client.status === 'ACTIVE';
-      if (selectedType === 'inactive') return matchesSearch && client.status === 'INACTIVE';
-      if (selectedType === 'maintenance') return matchesSearch && client.status === 'MAINTENANCE';
-      
-      return matchesSearch;
-    });
-  }, [clients, debouncedSearchQuery, selectedType]);
-  
   // Calculate stats
   const stats = useMemo(() => {
     const activeClients = clients.filter(c => c.status === 'ACTIVE').length;
