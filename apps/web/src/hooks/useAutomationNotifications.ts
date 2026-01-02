@@ -9,7 +9,7 @@ import { Zap } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 export function useAutomationNotifications(enabled = true) {
-  const { showToast } = useToast();
+  const toast = useToast();
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
@@ -40,10 +40,9 @@ export function useAutomationNotifications(enabled = true) {
       }
 
       // Show toast notification
-      showToast({
+      const toastMethod = data.success ? toast.success : toast.warning;
+      toastMethod(message, {
         title: 'Automatisation déclenchée',
-        message,
-        type: data.success ? 'success' : 'warning',
         icon: <Zap className="w-5 h-5" />,
         duration: 6000, // 6 seconds for automation notifications
       });
@@ -58,5 +57,5 @@ export function useAutomationNotifications(enabled = true) {
     return () => {
       disconnectNotificationSocket();
     };
-  }, [enabled, showToast]);
+  }, [enabled, toast]);
 }

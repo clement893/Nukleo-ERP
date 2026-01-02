@@ -29,6 +29,15 @@ function ThemeManagerInitializer({ children }: { children: ReactNode }) {
 }
 
 /**
+ * Automation Notifications Initializer
+ * Separated to avoid re-renders
+ */
+function AutomationNotificationsInitializer() {
+  useAutomationNotifications(true);
+  return null;
+}
+
+/**
  * Combined App Providers
  * Reduces provider nesting from 5 levels to 1
  */
@@ -43,6 +52,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <NextAuthSessionProvider>
             <AuthInitializer />
+            <AutomationNotificationsInitializer />
             {children}
             <ToastContainer />
             {process.env.NODE_ENV === 'development' && (
