@@ -160,7 +160,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         
         # Ensure transaction currency column exists
         try:
-            from app.core.migrations import ensure_transaction_currency_column
             await ensure_transaction_currency_column()
         except (ConnectionError, TimeoutError) as e:
             if logger:
