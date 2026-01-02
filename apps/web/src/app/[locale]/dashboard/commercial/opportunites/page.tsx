@@ -84,7 +84,6 @@ function OpportunitiesContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
   const [hideClosed, setHideClosed] = useState<boolean>(true); // Filtre par défaut pour cacher closed won/lost
-  const [totalActiveOpportunities, setTotalActiveOpportunities] = useState<number>(0);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -112,49 +111,6 @@ function OpportunitiesContent() {
     };
     loadData();
   }, [showToast]);
-
-  // Charger le total exact des opportunités actives (une seule fois au début)
-  useEffect(() => {
-    let isMounted = true;
-    
-    const loadTotalActive = async () => {
-      try {
-        // Charger toutes les opportunités pour compter (avec une limite élevée)
-        const allOpps = await opportunitiesAPI.list(0, 10000);
-        // Compter celles qui ne sont pas closed won ou closed lost
-        const activeCount = allOpps.filter(opp => {
-          const isClosed = opp.status === 'closed won' || 
-                          opp.status === 'closed lost' || 
-                          opp.status === 'won' || 
-                          opp.status === 'lost';
-          return !isClosed;
-        }).length;
-        
-        if (isMounted) {
-          setTotalActiveOpportunities(activeCount);
-        }
-      } catch (err) {
-        logger.error('Erreur lors du chargement du total des opportunités actives', err);
-        // En cas d'erreur, utiliser le count des opportunités déjà chargées
-        if (isMounted) {
-          const activeCount = opportunities.filter(opp => {
-            const isClosed = opp.status === 'closed won' || 
-                            opp.status === 'closed lost' || 
-                            opp.status === 'won' || 
-                            opp.status === 'lost';
-            return !isClosed;
-          }).length;
-          setTotalActiveOpportunities(activeCount);
-        }
-      }
-    };
-    
-    loadTotalActive();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []); // Charger une seule fois au montage
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -242,13 +198,22 @@ function OpportunitiesContent() {
       ? filteredOpportunities.reduce((sum, opp) => sum + (opp.probability || 50), 0) / filteredOpportunities.length
       : 0;
     
+    // Calculer le nombre total d'opportunités actives (pas closed won/lost) depuis toutes les opportunités chargées
+    const totalActive = opportunities.filter(opp => {
+      const isClosed = opp.status === 'closed won' || 
+                      opp.status === 'closed lost' || 
+                      opp.status === 'won' || 
+                      opp.status === 'lost';
+      return !isClosed;
+    }).length;
+    
     return {
-      total: hideClosed ? totalActiveOpportunities : opportunities.length, // Afficher le total actif (toutes les pages) si le filtre est actif, sinon le total chargé
+      total: hideClosed ? totalActive : opportunities.length, // Afficher le total actif si le filtre est actif, sinon le total chargé
       totalValue,
       weightedValue,
       avgProbability: avgProbability.toFixed(0),
     };
-  }, [filteredOpportunities, hideClosed, totalActiveOpportunities, opportunities.length]);
+  }, [filteredOpportunities, hideClosed, opportunities]);
 
   // Format currency
   const formatCurrency = useCallback((value: number) => {
