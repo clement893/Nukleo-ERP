@@ -12,7 +12,6 @@ import Badge from '@/components/ui/Badge';
 import Dropdown from '@/components/ui/Dropdown';
 import type { DropdownItem } from '@/components/ui/Dropdown';
 import NotificationCenter from './NotificationCenter';
-import NotificationDrawer from './NotificationDrawer';
 import type { NotificationUI } from '@/types/notification';
 
 export interface NotificationBellProps {
@@ -38,7 +37,6 @@ export default function NotificationBell({
   className,
 }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
 
   // Use provided unreadCount if available, otherwise calculate from notifications
@@ -87,13 +85,7 @@ export default function NotificationBell({
       <button
         onClick={() => {
           setIsOpen(!isOpen);
-          // Open drawer on mobile, dropdown on desktop
-          if (window.innerWidth < 768) {
-            setDrawerOpen(true);
-            setIsOpen(false);
-          }
         }}
-        onDoubleClick={() => setDrawerOpen(true)}
         className={clsx(
           'relative p-2.5 rounded-xl transition-all duration-200',
           'text-foreground/70 hover:text-foreground',
@@ -184,12 +176,6 @@ export default function NotificationBell({
           </div>
         </div>
       )}
-
-      {/* Drawer for mobile and expanded view */}
-      <NotificationDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
     </div>
   );
 }
