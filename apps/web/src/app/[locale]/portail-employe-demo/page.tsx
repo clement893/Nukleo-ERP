@@ -15,12 +15,12 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { Responsive, Layout } from 'react-grid-layout';
-// @ts-expect-error - WidthProvider is not exported as named export, but exists in the package
-import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import 'react-grid-layout/css/styles.css';
 import 'react-grid-layout/css/resizable.css';
 
-// @ts-expect-error - WidthProvider typing issue
+// WidthProvider is not available in types, so we use a workaround
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const WidthProvider = require('react-grid-layout').WidthProvider || ((c: typeof Responsive) => c);
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // Widget types
@@ -68,9 +68,9 @@ export default function PortailEmployeDashboard() {
   const saveLayout = (newLayouts: Layout[]) => {
     const layoutsWithTypes: WidgetLayout[] = newLayouts.map((l: Layout) => {
       // Layout from react-grid-layout has i property, but TypeScript types may not reflect it correctly
-      const layoutItem = l as Layout & { i: string };
+      const layoutItem = l as unknown as Layout & { i: string; x: number; y: number; w: number; h: number };
       const existing = layouts.find(w => w.i === layoutItem.i);
-      return { ...layoutItem, type: existing?.type || 'stats' } as WidgetLayout;
+      return { ...layoutItem, type: existing?.type || 'stats' } as unknown as WidgetLayout;
     });
     setLayouts(layoutsWithTypes);
     localStorage.setItem('portail-dashboard-layout', JSON.stringify(layoutsWithTypes));

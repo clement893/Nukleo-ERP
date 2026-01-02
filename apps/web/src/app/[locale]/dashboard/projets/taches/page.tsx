@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import Drawer from '@/components/ui/Drawer';
@@ -26,8 +25,7 @@ import {
   Loader2,
   Info,
   MessageSquare,
-  Paperclip,
-  Clock
+  Paperclip
 } from 'lucide-react';
 import { Badge, Button, Card, Input, useToast, Loading } from '@/components/ui';
 import { useInfiniteProjectTasks, useDeleteProjectTask, useProjectTask } from '@/lib/query/project-tasks';
@@ -56,7 +54,6 @@ const priorityConfig: Record<TaskPriority, { label: string; color: string }> = {
 };
 
 export default function TachesPage() {
-  const router = useRouter();
   const { showToast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
@@ -635,16 +632,6 @@ export default function TachesPage() {
                                   ({taskDetails.assignee_email})
                                 </span>
                               )}
-                            </p>
-                          </div>
-                        )}
-                        {taskDetails.project_name && (
-                          <div className="col-span-2">
-                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                              Projet
-                            </h4>
-                            <p className="text-sm text-gray-900 dark:text-white">
-                              {taskDetails.project_name}
                             </p>
                           </div>
                         )}

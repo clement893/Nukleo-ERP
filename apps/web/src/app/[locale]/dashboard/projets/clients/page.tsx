@@ -95,10 +95,11 @@ function ClientsContent() {
         const allProjects = await projectsAPI.list(0, 1000);
         allProjects.forEach(project => {
           if (project.client_id) {
-            if (!projectsMap[project.client_id]) {
-              projectsMap[project.client_id] = [];
+            const clientId = project.client_id;
+            if (!projectsMap[clientId]) {
+              projectsMap[clientId] = [];
             }
-            projectsMap[project.client_id]!.push(project);
+            projectsMap[clientId]!.push(project);
           }
         });
         

@@ -10,18 +10,16 @@ import { PageContainer } from '@/components/layout';
 import { Badge, Button, Loading, Alert, Card } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  Plus, Users, ArrowLeft, Clock, AlertCircle, CheckCircle, 
+  Users, Clock, AlertCircle, CheckCircle, 
   Lock, Package, ShoppingCart, Calendar, TrendingUp, User
 } from 'lucide-react';
 import { teamsAPI } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
-import { projectsAPI } from '@/lib/api';
-import { employeesAPI, type Employee as EmployeeType } from '@/lib/api/employees';
+import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { extractApiData } from '@/lib/api/utils';
-import { useRouter } from '@/i18n/routing';
-import type { Team, TeamMember } from '@/lib/api/teams';
+import type { Team } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
 import {
   DndContext,
@@ -46,7 +44,6 @@ interface Employee {
   currentTask?: ProjectTask | null;
 }
 
-type TaskSection = 'shelf' | 'storage' | 'checkout' | 'employee';
 type ViewMode = 'board' | 'capacity' | 'timeline';
 
 // Task Card Component
@@ -100,12 +97,6 @@ function TaskCard({ task, isDragging }: { task: ProjectTask; isDragging?: boolea
           </p>
         )}
         <div className="flex items-center justify-between text-xs text-gray-500">
-          {task.project_name && (
-            <span className="flex items-center gap-1">
-              <Package className="w-3 h-3" />
-              {task.project_name}
-            </span>
-          )}
           {task.estimated_hours && (
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -205,7 +196,6 @@ function EmployeeCard({
 
 function TeamProjectManagementContent() {
   const params = useParams();
-  const router = useRouter();
   const { showToast } = useToast();
   const teamSlug = params?.slug as string;
   
@@ -304,7 +294,7 @@ function TeamProjectManagementContent() {
         
         // Convertir en Employee avec tâche en cours
         const employeesWithTasks: Employee[] = teamEmployeesData.map(emp => {
-          const currentTask = teamTasks.find(
+          const currentTask = tasks.find(
             t => t.assignee_id === emp.id && t.status === 'in_progress'
           );
           
@@ -350,7 +340,7 @@ function TeamProjectManagementContent() {
     if (!task) return;
 
     let newStatus: ProjectTask['status'] = task.status;
-    let newAssigneeId: number | null = task.assignee_id;
+    let newAssigneeId: number | null = task.assignee_id ?? null;
 
     // Déterminer la nouvelle destination
     if (over.id === 'shelf') {
@@ -360,7 +350,7 @@ function TeamProjectManagementContent() {
       newStatus = 'blocked';
       newAssigneeId = null;
     } else if (over.id === 'checkout') {
-      newStatus = 'review';
+      newStatus = 'to_transfer';
       newAssigneeId = null;
     } else if (over.id.toString().startsWith('employee-')) {
       const employeeId = parseInt(over.id.toString().replace('employee-', ''));
@@ -429,12 +419,12 @@ function TeamProjectManagementContent() {
   // Group tasks by section
   const shelfTasks = tasks.filter(t => t.status === 'todo' && !t.assignee_id);
   const storageTasks = tasks.filter(t => t.status === 'blocked');
-  const checkoutTasks = tasks.filter(t => t.status === 'review' || t.status === 'done');
+  const checkoutTasks = tasks.filter(t => t.status === 'to_transfer' || t.status === 'completed');
 
   // Calculate capacity
   const totalHoursPerWeek = employees.length * 40;
   const usedHours = tasks
-    .filter(t => t.status === 'in_progress' || t.status === 'review')
+    .filter(t => t.status === 'in_progress' || t.status === 'to_transfer')
     .reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
   const availableHours = totalHoursPerWeek - usedHours;
   const capacityPercentage = Math.round((usedHours / totalHoursPerWeek) * 100);
@@ -769,8 +759,8 @@ function TeamProjectManagementContent() {
                       todo: { label: 'À faire', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: Package },
                       in_progress: { label: 'En cours', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', icon: Clock },
                       blocked: { label: 'Bloqué', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', icon: Lock },
-                      review: { label: 'Révision', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', icon: AlertCircle },
-                      done: { label: 'Terminé', color: 'bg-green-500/10 text-green-600 border-green-500/30', icon: CheckCircle },
+                      to_transfer: { label: 'À transférer', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', icon: AlertCircle },
+                      completed: { label: 'Terminé', color: 'bg-green-500/10 text-green-600 border-green-500/30', icon: CheckCircle },
                     };
                     const config = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
                     const Icon = config.icon;
@@ -799,12 +789,6 @@ function TeamProjectManagementContent() {
                               <span className="flex items-center gap-1">
                                 <User className="w-3 h-3" />
                                 {employee.name}
-                              </span>
-                            )}
-                            {task.project_name && (
-                              <span className="flex items-center gap-1">
-                                <Package className="w-3 h-3" />
-                                {task.project_name}
                               </span>
                             )}
                             {task.created_at && (
