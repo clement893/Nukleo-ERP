@@ -8,7 +8,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
   AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
-  Building2, Loader2, Upload, X, FileText, CheckCircle2, AlertCircle
+  Building2, Loader2, Upload, X, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats } from '@/lib/api/tresorerie';
