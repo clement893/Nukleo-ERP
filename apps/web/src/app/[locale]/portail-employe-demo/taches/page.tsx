@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckSquare, Clock, AlertCircle, Filter, Search, Loader2 } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, Search, Loader2 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
-import { employeesAPI, type Employee } from '@/lib/api/employees';
+import { employeesAPI } from '@/lib/api/employees';
+import { projectsAPI } from '@/lib/api';
 
 export default function MesTaches() {
   const params = useParams();
   const employeeId = parseInt(params?.id as string);
   
   const [loading, setLoading] = useState(true);
-  const [employee, setEmployee] = useState<Employee | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<ProjectTask[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,17 +32,35 @@ export default function MesTaches() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [empData, tasksData] = await Promise.all([
-        employeesAPI.get(employeeId),
-        projectTasksAPI.list({ assignee_id: employeeId }),
+      const employee = await employeesAPI.get(employeeId);
+      const userId = employee.user_id;
+
+      if (!userId) {
+        console.error('Employee has no associated user_id');
+        setTasks([]);
+        setProjects([]);
+        return;
+      }
+
+      const [tasksData, projectsData] = await Promise.all([
+        projectTasksAPI.list({ assignee_id: userId }),
+        projectsAPI.list(),
       ]);
-      setEmployee(empData);
+      
+      const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
       setTasks(tasksData);
+      setProjects(projectsList);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getProjectName = (projectId: number | null | undefined): string => {
+    if (!projectId) return '';
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || '';
   };
 
   const filterTasks = () => {
@@ -105,7 +124,7 @@ export default function MesTaches() {
 
   const todoTasks = tasks.filter(t => t.status === 'todo').length;
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
-  const doneTasks = tasks.filter(t => t.status === 'done').length;
+  const doneTasks = tasks.filter(t => t.status === 'completed').length;
 
   if (loading) {
     return (
@@ -245,8 +264,8 @@ export default function MesTaches() {
             </div>
             
             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-              {task.project_name && (
-                <span>📁 {task.project_name}</span>
+              {task.project_id && getProjectName(task.project_id) && (
+                <span>📁 {getProjectName(task.project_id)}</span>
               )}
               {task.estimated_hours && (
                 <span>⏱️ {task.estimated_hours}h estimées</span>

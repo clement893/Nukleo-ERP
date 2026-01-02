@@ -4,16 +4,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Calendar, Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
-import { vacationsAPI } from '@/lib/api/vacations';
-import { employeesAPI } from '@/lib/api/employees';
+import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 
 export default function MesVacances() {
   const params = useParams();
   const employeeId = parseInt(params?.id as string);
   
   const [loading, setLoading] = useState(true);
-  const [vacations, setVacations] = useState<any[]>([]);
-  const [employee, setEmployee] = useState<any>(null);
+  const [vacations, setVacations] = useState<VacationRequest[]>([]);
 
   useEffect(() => {
     if (employeeId) {
@@ -24,12 +22,8 @@ export default function MesVacances() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [vacData, empData] = await Promise.all([
-        vacationsAPI.list({ employee_id: employeeId }),
-        employeesAPI.get(employeeId),
-      ]);
+      const vacData = await vacationRequestsAPI.list({ employee_id: employeeId });
       setVacations(vacData);
-      setEmployee(empData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -52,14 +46,14 @@ export default function MesVacances() {
     return <Clock className="w-4 h-4" />;
   };
 
-  const totalDays = vacations.reduce((sum, v) => {
+  const totalDays = vacations.reduce((sum: number, v: VacationRequest) => {
     const start = new Date(v.start_date);
     const end = new Date(v.end_date);
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     return sum + days;
   }, 0);
 
-  const approvedDays = vacations.filter(v => v.status === 'approved').reduce((sum, v) => {
+  const approvedDays = vacations.filter((v: VacationRequest) => v.status === 'approved').reduce((sum: number, v: VacationRequest) => {
     const start = new Date(v.start_date);
     const end = new Date(v.end_date);
     return sum + Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -113,7 +107,7 @@ export default function MesVacances() {
       </div>
 
       <div className="space-y-4">
-        {vacations.map((vacation) => {
+        {vacations.map((vacation: VacationRequest) => {
           const start = new Date(vacation.start_date);
           const end = new Date(vacation.end_date);
           const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -135,8 +129,8 @@ export default function MesVacances() {
                   <div className="text-sm text-gray-600 mb-2">
                     Du {start.toLocaleDateString('fr-FR')} au {end.toLocaleDateString('fr-FR')} • {days} jour{days > 1 ? 's' : ''}
                   </div>
-                  {vacation.notes && (
-                    <p className="text-sm text-gray-500 mt-2">{vacation.notes}</p>
+                  {vacation.rejection_reason && (
+                    <p className="text-sm text-gray-500 mt-2">{vacation.rejection_reason}</p>
                   )}
                 </div>
               </div>
