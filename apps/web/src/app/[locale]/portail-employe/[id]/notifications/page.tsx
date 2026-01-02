@@ -7,7 +7,6 @@ import { PageHeader, PageContainer } from '@/components/layout';
 import { NotificationList } from '@/components/settings';
 import { Card, Button } from '@/components/ui';
 import { Bell, Settings, Filter } from 'lucide-react';
-import { useAuthStore } from '@/lib/store';
 import { notificationsAPI } from '@/lib/api/notifications';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';

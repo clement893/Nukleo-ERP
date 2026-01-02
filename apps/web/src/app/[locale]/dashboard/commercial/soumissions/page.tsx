@@ -964,7 +964,7 @@ export default function SoumissionsPage() {
           <>
             {activeTab === 'quotes' ? (
               filteredQuotes.length === 0 ? (
-                <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+                <div className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Aucun devis trouvé
@@ -1107,7 +1107,7 @@ export default function SoumissionsPage() {
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                       >
                         {selectedQuotes.size === filteredQuotes.length ? (
-                          <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                          <CheckSquare className="w-5 h-5 text-primary-500" />
                         ) : (
                           <Square className="w-5 h-5 text-gray-400" />
                         )}
@@ -1233,7 +1233,7 @@ export default function SoumissionsPage() {
               )
             ) : (
               filteredSubmissions.length === 0 ? (
-                <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+                <div className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
                   <FileCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Aucune soumission trouvée
@@ -1276,7 +1276,7 @@ export default function SoumissionsPage() {
                           }}
                         >
                           {selectedSubmissions.has(submission.id) ? (
-                            <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                            <CheckSquare className="w-5 h-5 text-primary-500" />
                           ) : (
                             <Square className="w-5 h-5 text-gray-400" />
                           )}
@@ -1386,7 +1386,7 @@ export default function SoumissionsPage() {
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                       >
                         {selectedSubmissions.size === filteredSubmissions.length ? (
-                          <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                          <CheckSquare className="w-5 h-5 text-primary-500" />
                         ) : (
                           <Square className="w-5 h-5 text-gray-400" />
                         )}
@@ -1430,7 +1430,7 @@ export default function SoumissionsPage() {
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <FileCheck className="w-4 h-4 text-[#523DC9]" />
+                              <FileCheck className="w-4 h-4 text-primary-500" />
                               <span className="font-bold text-gray-900 dark:text-white">
                                 {submission.submission_number}
                               </span>

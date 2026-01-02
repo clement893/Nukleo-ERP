@@ -413,7 +413,7 @@ function OpportunitiesContent() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -459,7 +459,7 @@ function OpportunitiesContent() {
                 Importer
               </Button>
               <Button 
-                className="bg-white text-[#523DC9] hover:bg-white/90"
+                className="bg-white text-primary-500 hover:bg-white/90"
                 onClick={() => setShowCreateModal(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -473,8 +473,8 @@ function OpportunitiesContent() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Target className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Target className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -521,7 +521,7 @@ function OpportunitiesContent() {
         </div>
 
         {/* Filters */}
-        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <div className="space-y-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -603,7 +603,7 @@ function OpportunitiesContent() {
 
         {/* Opportunities Grid/List */}
         {filteredOpportunities.length === 0 ? (
-          <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <div className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Aucune opportunité trouvée
@@ -623,7 +623,7 @@ function OpportunitiesContent() {
             {filteredOpportunities.map((opp) => (
               <div
                 key={opp.id}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group relative"
+                className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group relative"
                 onClick={(e) => {
                   // Don't navigate if clicking on checkbox or dropdown
                   if ((e.target as HTMLElement).closest('.selection-checkbox') || 
@@ -643,7 +643,7 @@ function OpportunitiesContent() {
                     }}
                   >
                     {selectedOpportunities.has(opp.id) ? (
-                      <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                      <CheckSquare className="w-5 h-5 text-primary-500" />
                     ) : (
                       <Square className="w-5 h-5 text-gray-400" />
                     )}
@@ -653,7 +653,7 @@ function OpportunitiesContent() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 ml-8">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-500 transition-colors font-nukleo">
                       {opp.name}
                     </h3>
                     {opp.stage_name && (
@@ -758,7 +758,7 @@ function OpportunitiesContent() {
           <div className="space-y-2">
             {/* Select all header */}
             {filteredOpportunities.length > 0 && (
-              <div className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 flex items-center gap-3">
+              <div className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 flex items-center gap-3">
                 <button
                   onClick={toggleSelectAll}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
@@ -779,7 +779,7 @@ function OpportunitiesContent() {
             {filteredOpportunities.map((opp) => (
               <div
                 key={opp.id}
-                className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group relative"
+                className="glass-card p-4 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group relative"
                 onClick={(e) => {
                   if ((e.target as HTMLElement).closest('.selection-checkbox') || 
                       (e.target as HTMLElement).closest('.dropdown-trigger')) {
@@ -798,7 +798,7 @@ function OpportunitiesContent() {
                     }}
                   >
                     {selectedOpportunities.has(opp.id) ? (
-                      <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                      <CheckSquare className="w-5 h-5 text-primary-500" />
                     ) : (
                       <Square className="w-5 h-5 text-gray-400" />
                     )}
@@ -806,7 +806,7 @@ function OpportunitiesContent() {
 
                   {/* Title & Stage */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-[#523DC9] transition-colors truncate">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary-500 transition-colors truncate">
                       {opp.name}
                     </h3>
                     {opp.stage_name && (

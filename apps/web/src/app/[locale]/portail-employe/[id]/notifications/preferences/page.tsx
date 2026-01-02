@@ -7,7 +7,6 @@ import { PageHeader, PageContainer } from '@/components/layout';
 import { NotificationSettings } from '@/components/settings';
 import { Card } from '@/components/ui';
 import { Bell, ArrowLeft } from 'lucide-react';
-import { useAuthStore } from '@/lib/store';
 import { employeesAPI } from '@/lib/api/employees';
 import { logger } from '@/lib/logger';
 import Button from '@/components/ui/Button';
@@ -18,7 +17,6 @@ export default function EmployeeNotificationPreferencesPage() {
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
   const locale = (params?.locale as string) || 'fr';
   const t = useTranslations('settings.notifications');
-  const [employee, setEmployee] = useState<{ user_id?: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,8 +32,7 @@ export default function EmployeeNotificationPreferencesPage() {
     try {
       if (!employeeId) return;
       setLoading(true);
-      const emp = await employeesAPI.get(employeeId);
-      setEmployee(emp);
+      await employeesAPI.get(employeeId);
     } catch (error) {
       logger.error('Failed to load employee', error);
     } finally {
