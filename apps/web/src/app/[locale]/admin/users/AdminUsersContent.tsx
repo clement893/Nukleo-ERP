@@ -62,6 +62,7 @@ export default function AdminUsersContent() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [linking, setLinking] = useState(false);
   const [sendingInvitation, setSendingInvitation] = useState(false);
+  const [resendingInvitationId, setResendingInvitationId] = useState<string | number | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -257,6 +258,32 @@ export default function AdminUsersContent() {
     }
   };
 
+  const handleResendInvitation = async (invitationId: string | number) => {
+    try {
+      setResendingInvitationId(invitationId);
+      setError(null);
+      const { invitationsAPI } = await import('@/lib/api');
+      await invitationsAPI.resend(String(invitationId));
+      
+      showToast({
+        message: 'Invitation renvoyée avec succès',
+        type: 'success',
+      });
+      
+      // Refresh invitations to get updated status
+      await fetchPendingInvitations();
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, 'Erreur lors du renvoi de l\'invitation');
+      setError(errorMessage);
+      showToast({
+        message: errorMessage,
+        type: 'error',
+      });
+    } finally {
+      setResendingInvitationId(null);
+    }
+  };
+
   const handleUnlinkEmployee = async (employeeId: number | string) => {
     if (!confirm('Êtes-vous sûr de vouloir délier cet employé ?')) {
       return;
@@ -326,13 +353,22 @@ export default function AdminUsersContent() {
         return (
           <div className="flex flex-col gap-1">
             {userInvitations.map((inv) => (
-              <div key={inv.id} className="flex items-center gap-2">
+              <div key={inv.id} className="flex items-center gap-2 flex-wrap">
                 <Badge variant="warning" className="text-xs">
                   En attente
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   Expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}
                 </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleResendInvitation(inv.id)}
+                  disabled={resendingInvitationId === inv.id}
+                  className="text-xs h-6 px-2"
+                >
+                  {resendingInvitationId === inv.id ? 'Envoi...' : 'Renvoyer'}
+                </Button>
               </div>
             ))}
           </div>
