@@ -94,7 +94,7 @@ export default function OpportunityForm({
           const userId = typeof u.id === 'string' ? parseInt(u.id) : (u.id || 0);
           return {
             id: userId,
-            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || u.name || `User ${userId}`,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || `User ${userId}`,
             email: u.email || '',
           };
         }).filter(u => u.id > 0));

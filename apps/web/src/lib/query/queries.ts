@@ -13,7 +13,7 @@ import {
   invitationsAPI,
 } from '@/lib/api';
 import { teamsAPI as teamsAPIClient } from '@/lib/api/teams';
-import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { projectTasksAPI, type ProjectTaskUpdate } from '@/lib/api/project-tasks';
 import { employeesAPI } from '@/lib/api/employees';
 import { facturationsAPI } from '@/lib/api/finances/facturations';
 import { onboardingAPI } from '@/lib/api/onboarding';
@@ -369,7 +369,7 @@ export function useUpdateProjectTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<{ title: string; description: string; status: string; priority: string; team_id: number; project_id: number; assigned_to_id: number; due_date: string; estimated_hours: number }> }) =>
+    mutationFn: ({ id, data }: { id: number; data: ProjectTaskUpdate }) =>
       projectTasksAPI.update(id, data),
     onSuccess: (updatedTask) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projectTasks.lists() });

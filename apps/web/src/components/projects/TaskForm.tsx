@@ -72,7 +72,7 @@ export default function TaskForm({
           const teamsResponse = await teamsAPI.list(0, 1000);
           const teamsData = teamsResponse.data || teamsResponse;
           const teamsList = (teamsData as { teams?: Array<{ id: number; name?: string; slug?: string }> })?.teams || (Array.isArray(teamsData) ? teamsData : []);
-          setTeams(teamsList.map((t: { id: number; name?: string; slug?: string }) => ({ id: t.id, name: t.name || t.slug })));
+          setTeams(teamsList.map((t: { id: number; name?: string; slug?: string }) => ({ id: t.id, name: t.name || t.slug || `Team ${t.id}` })));
         } catch (err) {
           console.error('Error loading teams:', err);
         }

@@ -97,7 +97,7 @@ export default function OnboardingPage() {
 
   // Fetch teams for filter
   const { data: teamsData } = useTeams();
-  const teams = Array.isArray(teamsData) ? teamsData : (teamsData?.data ? (teamsData.data as any).teams || [] : []);
+  const teams = Array.isArray(teamsData) ? teamsData : (teamsData?.teams || []);
 
   // Fetch onboarding data
   const { data: onboardingData = [], isLoading: onboardingLoading, refetch: refetchOnboarding } = useEmployeesOnboarding({

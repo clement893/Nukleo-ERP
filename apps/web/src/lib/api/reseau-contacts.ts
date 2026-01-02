@@ -224,10 +224,10 @@ export const reseauContactsAPI = {
             errorData = { detail: text || 'Export failed' };
           }
           // Replace blob with parsed JSON
-          error.response.data = errorData;
+          (error as { response: { data: unknown } }).response.data = errorData;
         } catch (parseError) {
           // If parsing fails, create a generic error
-          error.response.data = { detail: 'Erreur lors de l\'export' };
+          (error as { response: { data: unknown } }).response.data = { detail: 'Erreur lors de l\'export' };
         }
       }
       throw error;

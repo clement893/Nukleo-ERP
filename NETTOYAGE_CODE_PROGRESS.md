@@ -12,7 +12,7 @@
 | **Batch 1** | Suppression fichiers backup/old | ✅ Terminé | 36 fichiers | 100% |
 | **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
 | **Batch 3** | Correction `any` error handling | ✅ Terminé | 3 fichiers | 100% |
-| **Batch 4** | Optimisation hooks React | 🟡 En cours | ~50 fichiers | 2% |
+| **Batch 4** | Optimisation hooks React | 🟡 En cours | ~50 fichiers | 6% |
 | **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
 
 ---
@@ -113,8 +113,10 @@
 
 **Fichiers ciblés:** ~50 fichiers
 
-**Fichiers traités:** 1/50
+**Fichiers traités:** 3/50
 - ✅ `apps/web/src/app/[locale]/dashboard/commercial/opportunites/page.tsx` (9 handlers optimisés avec useCallback)
+- ✅ `apps/web/src/app/[locale]/dashboard/commercial/soumissions/page.tsx` (13 handlers optimisés avec useCallback)
+- ✅ `apps/web/src/app/[locale]/dashboard/projets/taches/page.tsx` (10 handlers optimisés avec useCallback)
 
 **Note:** Beaucoup de fichiers utilisent déjà `useCallback` et `useMemo`. Recherche des fichiers restants à optimiser.
 

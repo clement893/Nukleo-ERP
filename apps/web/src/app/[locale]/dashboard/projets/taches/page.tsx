@@ -245,7 +245,7 @@ export default function TachesPage() {
       const appError = handleApiError(error);
       showToast({ message: appError.message || 'Erreur lors de la création', type: 'error' });
     }
-  };
+  }, [createTaskMutation, showToast, setShowCreateModal]);
 
   const handleUpdate = async (data: ProjectTaskCreate | ProjectTaskUpdate) => {
     if (!editingTask) return;

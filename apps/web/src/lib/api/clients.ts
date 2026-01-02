@@ -6,6 +6,7 @@
 
 import { apiClient } from './client';
 import { extractApiData } from './utils';
+import { logger } from '@/lib/logger';
 
 export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
 

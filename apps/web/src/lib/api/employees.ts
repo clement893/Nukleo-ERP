@@ -284,9 +284,9 @@ export const employeesAPI = {
           } catch (parseError) {
             errorData = { detail: text || 'Export failed' };
           }
-          error.response.data = errorData;
+          (error as { response: { data: unknown } }).response.data = errorData;
         } catch (parseError) {
-          error.response.data = { detail: 'Erreur lors de l\'export' };
+          (error as { response: { data: unknown } }).response.data = { detail: 'Erreur lors de l\'export' };
         }
       }
       throw error;
