@@ -133,7 +133,11 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
         // Le widget_id devrait être dans la config
         const widgetId = config?.widget_id as number | undefined;
         if (!widgetId) {
-          throw new Error('Widget ID not found in config');
+          const errorMsg = 'Widget ID not found in config';
+          logger.warn('CustomWidget: Widget ID missing', { config });
+          setError(errorMsg);
+          setIsLoading(false);
+          return;
         }
 
         const widget = await customWidgetsAPI.get(widgetId);
@@ -254,7 +258,9 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
             />
           )}
           {widget.config.css_content && (
-            <style>{widget.config.css_content}</style>
+            <style
+              dangerouslySetInnerHTML={{ __html: widget.config.css_content }}
+            />
           )}
         </div>
       );

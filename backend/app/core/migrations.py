@@ -74,7 +74,7 @@ async def ensure_avatar_column() -> None:
 
 async def ensure_transaction_currency_column() -> None:
     """
-    Ensure currency column exists in transactions table.
+    Ensure all required columns exist in transactions table.
     This is a temporary fix until proper migrations are run.
     Also handles renaming 'date' to 'transaction_date' if needed.
     """
@@ -90,39 +90,31 @@ async def ensure_transaction_currency_column() -> None:
             table_exists = result.fetchone() is not None
             
             if not table_exists:
-                logger.debug("transactions table does not exist, skipping currency column check")
+                logger.debug("transactions table does not exist, skipping column checks")
                 return
             
-            # Check if currency column exists
+            # Get all existing columns
             result = await conn.execute(text("""
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name = 'transactions' AND column_name = 'currency'
+                WHERE table_name = 'transactions'
             """))
             
-            currency_exists = result.fetchone() is not None
+            existing_columns = {row[0] for row in result.fetchall()}
             
-            if not currency_exists:
+            # Check and add currency column
+            if 'currency' not in existing_columns:
                 logger.info("Adding missing currency column to transactions table...")
                 await conn.execute(text("""
                     ALTER TABLE transactions 
                     ADD COLUMN currency VARCHAR(3) NOT NULL DEFAULT 'CAD'
                 """))
-                await conn.commit()
                 logger.info("Successfully added currency column to transactions table")
             else:
                 logger.debug("currency column already exists in transactions table")
             
-            # Check if 'date' column exists and 'transaction_date' doesn't (need to rename)
-            result = await conn.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'transactions' AND column_name IN ('date', 'transaction_date')
-            """))
-            
-            columns = {row[0] for row in result.fetchall()}
-            
-            if 'date' in columns and 'transaction_date' not in columns:
+            # Check and rename 'date' to 'transaction_date' if needed
+            if 'date' in existing_columns and 'transaction_date' not in existing_columns:
                 logger.info("Renaming 'date' column to 'transaction_date' in transactions table...")
                 # Drop index if it exists
                 try:
@@ -141,12 +133,90 @@ async def ensure_transaction_currency_column() -> None:
                     CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date)
                 """))
                 
-                await conn.commit()
                 logger.info("Successfully renamed 'date' to 'transaction_date' in transactions table")
-            elif 'transaction_date' in columns:
+            elif 'transaction_date' in existing_columns:
                 logger.debug("transaction_date column already exists")
+            
+            # Check and add expected_payment_date column
+            if 'expected_payment_date' not in existing_columns:
+                logger.info("Adding missing expected_payment_date column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN expected_payment_date TIMESTAMP WITH TIME ZONE NULL
+                """))
+                logger.info("Successfully added expected_payment_date column to transactions table")
+            else:
+                logger.debug("expected_payment_date column already exists")
+            
+            # Check and add payment_date column
+            if 'payment_date' not in existing_columns:
+                logger.info("Adding missing payment_date column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN payment_date TIMESTAMP WITH TIME ZONE NULL
+                """))
+                logger.info("Successfully added payment_date column to transactions table")
+            else:
+                logger.debug("payment_date column already exists")
+            
+            # Check and add tax_amount column
+            if 'tax_amount' not in existing_columns:
+                logger.info("Adding missing tax_amount column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN tax_amount NUMERIC(10, 2) NULL DEFAULT 0
+                """))
+                logger.info("Successfully added tax_amount column to transactions table")
+            else:
+                logger.debug("tax_amount column already exists")
+            
+            # Check and add client_id column
+            if 'client_id' not in existing_columns:
+                logger.info("Adding missing client_id column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN client_id INTEGER NULL
+                """))
+                logger.info("Successfully added client_id column to transactions table")
+            else:
+                logger.debug("client_id column already exists")
+            
+            # Check and add client_name column
+            if 'client_name' not in existing_columns:
+                logger.info("Adding missing client_name column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN client_name VARCHAR(200) NULL
+                """))
+                logger.info("Successfully added client_name column to transactions table")
+            else:
+                logger.debug("client_name column already exists")
+            
+            # Check and add supplier_id column
+            if 'supplier_id' not in existing_columns:
+                logger.info("Adding missing supplier_id column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN supplier_id INTEGER NULL
+                """))
+                logger.info("Successfully added supplier_id column to transactions table")
+            else:
+                logger.debug("supplier_id column already exists")
+            
+            # Check and add supplier_name column
+            if 'supplier_name' not in existing_columns:
+                logger.info("Adding missing supplier_name column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN supplier_name VARCHAR(200) NULL
+                """))
+                logger.info("Successfully added supplier_name column to transactions table")
+            else:
+                logger.debug("supplier_name column already exists")
+            
+            await conn.commit()
                 
     except Exception as e:
-        logger.error(f"Error ensuring transaction currency column: {e}", exc_info=True)
+        logger.error(f"Error ensuring transaction columns: {e}", exc_info=True)
         # Don't raise - allow app to start even if migration fails
         # The error will be caught when trying to use the column
