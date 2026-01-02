@@ -13,7 +13,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -1073,6 +1073,42 @@ async def google_oauth_callback(
             
             await db.commit()
             await db.refresh(user)
+            
+            # Accept pending invitation if one exists for this email
+            try:
+                from app.models import Invitation
+                from app.services.invitation_service import InvitationService
+                invitation_service = InvitationService(db)
+                
+                # Find pending invitation for this email
+                invitation_result = await db.execute(
+                    select(Invitation).where(
+                        and_(
+                            Invitation.email == email,
+                            Invitation.status == "pending"
+                        )
+                    ).order_by(Invitation.created_at.desc())
+                )
+                pending_invitation = invitation_result.scalar_one_or_none()
+                
+                if pending_invitation:
+                    logger.info(f"Found pending invitation for {email}, accepting automatically via Google OAuth")
+                    try:
+                        # Accept the invitation using the token
+                        accepted_invitation = await invitation_service.accept_invitation(
+                            token=pending_invitation.token,
+                            user_id=user.id
+                        )
+                        if accepted_invitation:
+                            logger.info(f"Successfully accepted invitation {pending_invitation.id} for user {user.id}")
+                        else:
+                            logger.warning(f"Failed to accept invitation {pending_invitation.id} for user {user.id}")
+                    except Exception as e:
+                        # Log error but don't fail the OAuth flow
+                        logger.error(f"Error accepting invitation during Google OAuth: {e}", exc_info=True)
+            except Exception as e:
+                # Log error but don't fail the OAuth flow
+                logger.error(f"Error checking for pending invitations during Google OAuth: {e}", exc_info=True)
             
             # Create JWT token (use email as subject, consistent with login endpoint)
             access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
