@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, Download, FileText, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, Download, X, CheckCircle, AlertCircle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui';

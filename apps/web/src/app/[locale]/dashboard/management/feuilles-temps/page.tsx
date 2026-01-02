@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import Drawer from '@/components/ui/Drawer';
@@ -18,17 +18,14 @@ import {
   Building,
   Edit,
   Trash2,
-  Eye,
   X,
-  FileText,
   Briefcase
 } from 'lucide-react';
-import { Button, Card, Input, Loading, Badge, Textarea, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Textarea, Select, useToast } from '@/components/ui';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpdate } from '@/lib/api/time-entries';
 import { projectsAPI } from '@/lib/api/projects';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
-import type { ProjectTask } from '@/lib/api/project-tasks';
 import { clientsAPI } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 
@@ -80,14 +77,14 @@ export default function FeuillesTempsPage() {
   const [formData, setFormData] = useState<TimeEntryCreate>({
     description: '',
     duration: 0,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10),
     task_id: null,
     project_id: null,
     client_id: null,
   });
 
   // Fetch time entries with filters
-  const { data: timeEntriesData, isLoading: timeEntriesLoading, refetch } = useInfiniteQuery({
+  const { data: timeEntriesData, isLoading: timeEntriesLoading } = useInfiniteQuery({
     queryKey: ['time-entries', 'infinite', startDate, endDate],
     queryFn: ({ pageParam = 0 }) => {
       const params: any = { skip: pageParam, limit: 100 };
@@ -165,7 +162,7 @@ export default function FeuillesTempsPage() {
     setFormData({
       description: '',
       duration: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10),
       task_id: null,
       project_id: null,
       client_id: null,
@@ -179,10 +176,11 @@ export default function FeuillesTempsPage() {
 
   const handleEdit = (entry: TimeEntry) => {
     setSelectedEntry(entry);
+    const dateStr = new Date(entry.date).toISOString().split('T')[0] || new Date(entry.date).toISOString().substring(0, 10);
     setFormData({
       description: entry.description || '',
       duration: entry.duration,
-      date: new Date(entry.date).toISOString().split('T')[0],
+      date: dateStr,
       task_id: entry.task_id || null,
       project_id: entry.project_id || null,
       client_id: entry.client_id || null,

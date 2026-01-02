@@ -17,14 +17,26 @@ import {
   Settings,
   Calendar,
   Building2,
-  User
+  User,
+  Edit,
+  Eye,
+  Search,
+  X,
+  FileText,
+  Filter,
+  Download,
+  Upload,
+  GripVertical,
+  MoreVertical
 } from 'lucide-react';
-import { Badge, Button, Loading, Alert, Card } from '@/components/ui';
-import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
-import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
+import { Badge, Button, Loading, Alert, Card, Input, Select, Modal, Drawer, Textarea, useToast } from '@/components/ui';
+import { pipelinesAPI, type Pipeline, type PipelineUpdate, type PipelineStageCreate } from '@/lib/api/pipelines';
+import { opportunitiesAPI, type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
 import Link from 'next/link';
+import PipelineForm from '@/components/commercial/PipelineForm';
+import OpportunityForm from '@/components/commercial/OpportunityForm';
+import { useMemo } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -40,7 +52,19 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 // Opportunity Card Component for Kanban
-function OpportunityKanbanCard({ opportunity, isDragging }: { opportunity: Opportunity; isDragging?: boolean }) {
+function OpportunityKanbanCard({ 
+  opportunity, 
+  isDragging,
+  onView,
+  onEdit,
+  onDelete,
+}: { 
+  opportunity: Opportunity; 
+  isDragging?: boolean;
+  onView?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}) {
   const {
     attributes,
     listeners,
@@ -81,10 +105,59 @@ function OpportunityKanbanCard({ opportunity, isDragging }: { opportunity: Oppor
       {...listeners}
       className="cursor-grab active:cursor-grabbing touch-none"
     >
-      <Card className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-md transition-all duration-200 group mb-2">
+      <Card className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-md transition-all duration-200 group mb-2 relative">
+        {/* Actions on hover */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
+          {onView && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onView();
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <Eye className="w-3 h-3" />
+            </Button>
+          )}
+          {onEdit && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <Edit className="w-3 h-3" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+
         {/* Header */}
-        <div className="mb-2">
-          <h4 className="font-semibold text-sm mb-0.5 group-hover:text-[#523DC9] transition-colors line-clamp-1">
+        <div className="mb-2 pr-8">
+          <h4 
+            className="font-semibold text-sm mb-0.5 group-hover:text-[#523DC9] transition-colors line-clamp-1 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              onView?.();
+            }}
+          >
             {opportunity.name}
           </h4>
           {opportunity.company_name && (
@@ -94,6 +167,13 @@ function OpportunityKanbanCard({ opportunity, isDragging }: { opportunity: Oppor
             </div>
           )}
         </div>
+
+        {/* Description */}
+        {opportunity.description && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+            {opportunity.description}
+          </p>
+        )}
 
         {/* Value & Probability */}
         <div className="flex items-center justify-between mb-2">
@@ -126,6 +206,14 @@ function OpportunityKanbanCard({ opportunity, isDragging }: { opportunity: Oppor
             <span className="line-clamp-1">{opportunity.contact_names.join(', ')}</span>
           </div>
         )}
+
+        {/* Assigned to */}
+        {opportunity.assigned_to_name && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500 mt-1">
+            <User className="w-3 h-3 flex-shrink-0" />
+            <span className="line-clamp-1">{opportunity.assigned_to_name}</span>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -141,6 +229,22 @@ export default function PipelineDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'kanban' | 'opportunities' | 'stages'>('kanban');
   const [activeOpportunity, setActiveOpportunity] = useState<Opportunity | null>(null);
+  
+  // Modals and Drawers
+  const [showEditPipelineModal, setShowEditPipelineModal] = useState(false);
+  const [showCreateOpportunityModal, setShowCreateOpportunityModal] = useState(false);
+  const [showEditOpportunityModal, setShowEditOpportunityModal] = useState(false);
+  const [showOpportunityDetailDrawer, setShowOpportunityDetailDrawer] = useState(false);
+  const [showEditStagesModal, setShowEditStagesModal] = useState(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  
+  // Filters and search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [stageFilter, setStageFilter] = useState<string>('all');
+  const [companyFilter, setCompanyFilter] = useState<string>('all');
+  const [minAmount, setMinAmount] = useState<string>('');
+  const [maxAmount, setMaxAmount] = useState<string>('');
 
   const pipelineId = params?.id ? String(params.id) : null;
   const locale = params?.locale as string || 'fr';
@@ -176,13 +280,7 @@ export default function PipelineDetailPage() {
       setPipeline(pipelineData);
 
       // Load opportunities for this pipeline
-      try {
-        const oppsData = await opportunitiesAPI.list(0, 100, { pipeline_id: pipelineId });
-        setOpportunities(Array.isArray(oppsData) ? oppsData : []);
-      } catch (err) {
-        console.error('Error loading opportunities:', err);
-        setOpportunities([]);
-      }
+      await loadOpportunities();
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors du chargement du pipeline');
@@ -194,6 +292,43 @@ export default function PipelineDetailPage() {
       setLoading(false);
     }
   };
+
+  const loadOpportunities = async () => {
+    if (!pipelineId) return;
+    
+    try {
+      const filters: any = { pipeline_id: pipelineId };
+      if (statusFilter !== 'all') filters.status = statusFilter;
+      if (stageFilter !== 'all') filters.stage_id = stageFilter;
+      if (companyFilter !== 'all') filters.company_id = parseInt(companyFilter);
+      if (searchQuery) filters.search = searchQuery;
+      
+      const oppsData = await opportunitiesAPI.list(0, 1000, filters);
+      let filteredOpps = Array.isArray(oppsData) ? oppsData : [];
+      
+      // Filter by amount range
+      if (minAmount || maxAmount) {
+        filteredOpps = filteredOpps.filter(opp => {
+          const amount = opp.amount || 0;
+          if (minAmount && amount < parseFloat(minAmount)) return false;
+          if (maxAmount && amount > parseFloat(maxAmount)) return false;
+          return true;
+        });
+      }
+      
+      setOpportunities(filteredOpps);
+    } catch (err) {
+      console.error('Error loading opportunities:', err);
+      setOpportunities([]);
+    }
+  };
+
+  useEffect(() => {
+    if (pipelineId && !loading) {
+      loadOpportunities();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipelineId, searchQuery, statusFilter, stageFilter, companyFilter, minAmount, maxAmount]);
 
   const handleDelete = async () => {
     if (!pipeline || !confirm('Êtes-vous sûr de vouloir supprimer ce pipeline ?')) return;
@@ -209,6 +344,158 @@ export default function PipelineDetailPage() {
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleUpdatePipeline = async (data: PipelineUpdate) => {
+    if (!pipeline) return;
+    
+    try {
+      await pipelinesAPI.update(pipeline.id, data);
+      await loadData();
+      setShowEditPipelineModal(false);
+      showToast({
+        message: 'Pipeline modifié avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification',
+        type: 'error',
+      });
+      throw err;
+    }
+  };
+
+  const handleCreateOpportunity = async (data: OpportunityCreate) => {
+    if (!pipelineId) return;
+    
+    try {
+      await opportunitiesAPI.create({
+        ...data,
+        pipeline_id: pipelineId,
+        stage_id: data.stage_id || pipeline?.stages?.[0]?.id || null,
+      });
+      await loadOpportunities();
+      setShowCreateOpportunityModal(false);
+      showToast({
+        message: 'Opportunité créée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création',
+        type: 'error',
+      });
+      throw err;
+    }
+  };
+
+  const handleUpdateOpportunity = async (data: OpportunityUpdate) => {
+    if (!selectedOpportunity) return;
+    
+    try {
+      await opportunitiesAPI.update(selectedOpportunity.id, data);
+      await loadOpportunities();
+      setShowEditOpportunityModal(false);
+      setSelectedOpportunity(null);
+      showToast({
+        message: 'Opportunité modifiée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification',
+        type: 'error',
+      });
+      throw err;
+    }
+  };
+
+  const handleDeleteOpportunity = async (opportunity: Opportunity) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'opportunité "${opportunity.name}" ?`)) return;
+    
+    try {
+      await opportunitiesAPI.delete(opportunity.id);
+      await loadOpportunities();
+      showToast({
+        message: 'Opportunité supprimée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleViewOpportunity = async (opportunity: Opportunity) => {
+    try {
+      const fullOpp = await opportunitiesAPI.get(opportunity.id);
+      setSelectedOpportunity(fullOpp);
+      setShowOpportunityDetailDrawer(true);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleEditOpportunity = (opportunity: Opportunity) => {
+    setSelectedOpportunity(opportunity);
+    setShowEditOpportunityModal(true);
+  };
+
+  const handleUpdateStages = async (stages: PipelineStageCreate[]) => {
+    if (!pipeline) return;
+    
+    try {
+      // Update pipeline with new stages
+      // Note: This requires updating the entire pipeline with stages
+      // Since there's no individual stage endpoints, we'll need to recreate stages
+      // For now, we'll show a message that this requires backend support
+      showToast({
+        message: 'La gestion des stages nécessite une mise à jour complète du pipeline. Fonctionnalité à venir.',
+        type: 'info',
+      });
+      setShowEditStagesModal(false);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleExportOpportunities = async () => {
+    try {
+      const blob = await opportunitiesAPI.export();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `opportunities-${pipelineId}-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      showToast({
+        message: 'Export réussi',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'export',
         type: 'error',
       });
     }
@@ -303,10 +590,26 @@ export default function PipelineDetailPage() {
   const weightedValue = opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0);
 
   // Group opportunities by stage for kanban
-  const opportunitiesByStage = (pipeline?.stages || []).reduce((acc, stage) => {
-    acc[stage.id] = opportunities.filter(opp => opp.stage_id === stage.id);
-    return acc;
-  }, {} as Record<string, Opportunity[]>);
+  const opportunitiesByStage = useMemo(() => {
+    return (pipeline?.stages || []).reduce((acc, stage) => {
+      acc[stage.id] = opportunities.filter(opp => opp.stage_id === stage.id);
+      return acc;
+    }, {} as Record<string, Opportunity[]>);
+  }, [pipeline?.stages, opportunities]);
+
+  // Get unique companies for filter
+  const uniqueCompanies = useMemo(() => {
+    const companies = new Set<string>();
+    opportunities.forEach(opp => {
+      if (opp.company_id && opp.company_name) {
+        companies.add(`${opp.company_id}:${opp.company_name}`);
+      }
+    });
+    return Array.from(companies).map(c => {
+      const [id, name] = c.split(':');
+      return { id, name };
+    });
+  }, [opportunities]);
 
   if (loading) {
     return (
@@ -391,12 +694,21 @@ export default function PipelineDetailPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link href={`/${locale}/dashboard/commercial/opportunites?pipeline=${pipeline.id}`}>
-                  <Button className="bg-white text-[#523DC9] hover:bg-white/90">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nouvelle opportunité
-                  </Button>
-                </Link>
+                <Button 
+                  className="bg-white text-[#523DC9] hover:bg-white/90"
+                  onClick={() => setShowCreateOpportunityModal(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle opportunité
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="text-white border-white/30 hover:bg-white/10" 
+                  onClick={() => setShowEditPipelineModal(true)}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Modifier
+                </Button>
                 <Button variant="outline" className="text-white border-white/30 hover:bg-white/10" onClick={handleDelete}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -520,14 +832,33 @@ export default function PipelineDetailPage() {
 
                       return (
                         <div key={stage.id} className="flex-shrink-0 w-[260px]">
-                          <div className="glass-card rounded-lg border border-[#A7A2CF]/20 p-3 h-full flex flex-col">
+                          <div 
+                            className="glass-card rounded-lg border p-3 h-full flex flex-col"
+                            style={{ 
+                              borderColor: stage.color ? `${stage.color}40` : '#A7A2CF20',
+                              backgroundColor: stage.color ? `${stage.color}05` : undefined
+                            }}
+                          >
                             {/* Stage Header */}
                             <div className="mb-3">
                               <div className="flex items-center justify-between mb-1">
-                                <h3 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                                <h3 
+                                  className="font-bold text-sm" 
+                                  style={{ 
+                                    fontFamily: 'Space Grotesk, sans-serif',
+                                    color: stage.color || undefined
+                                  }}
+                                >
                                   {stage.name}
                                 </h3>
-                                <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30 text-xs">
+                                <Badge 
+                                  className="text-xs"
+                                  style={{
+                                    backgroundColor: stage.color ? `${stage.color}20` : undefined,
+                                    borderColor: stage.color ? `${stage.color}40` : undefined,
+                                    color: stage.color || undefined
+                                  }}
+                                >
                                   {stageOpps.length}
                                 </Badge>
                               </div>
@@ -544,7 +875,13 @@ export default function PipelineDetailPage() {
                             >
                               <div className="flex-1 space-y-2 min-h-[200px]">
                                 {stageOpps.map((opp) => (
-                                  <OpportunityKanbanCard key={opp.id} opportunity={opp} />
+                                  <OpportunityKanbanCard 
+                                    key={opp.id} 
+                                    opportunity={opp}
+                                    onView={() => handleViewOpportunity(opp)}
+                                    onEdit={() => handleEditOpportunity(opp)}
+                                    onDelete={() => handleDeleteOpportunity(opp)}
+                                  />
                                 ))}
                               </div>
                             </SortableContext>
@@ -605,69 +942,209 @@ export default function PipelineDetailPage() {
                   <h3 className="text-lg font-semibold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Opportunités ({opportunities.length})
                   </h3>
-                  <Link href={`/${locale}/dashboard/commercial/opportunites?pipeline=${pipeline.id}`}>
-                    <Button size="sm" className="hover-nukleo">
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={handleExportOpportunities}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Exporter
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => setShowCreateOpportunityModal(true)}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Nouvelle opportunité
                     </Button>
-                  </Link>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="mb-6 space-y-4 p-4 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Rechercher..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+
+                    {/* Status Filter */}
+                    <Select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      options={[
+                        { value: 'all', label: 'Tous les statuts' },
+                        { value: 'open', label: 'Ouverte' },
+                        { value: 'qualified', label: 'Qualifiée' },
+                        { value: 'proposal', label: 'Proposition' },
+                        { value: 'negotiation', label: 'Négociation' },
+                        { value: 'won', label: 'Gagnée' },
+                        { value: 'lost', label: 'Perdue' },
+                        { value: 'cancelled', label: 'Annulée' },
+                      ]}
+                    />
+
+                    {/* Stage Filter */}
+                    <Select
+                      value={stageFilter}
+                      onChange={(e) => setStageFilter(e.target.value)}
+                      options={[
+                        { value: 'all', label: 'Toutes les étapes' },
+                        ...(pipeline?.stages || []).map(s => ({ value: s.id, label: s.name }))
+                      ]}
+                    />
+
+                    {/* Company Filter */}
+                    <Select
+                      value={companyFilter}
+                      onChange={(e) => setCompanyFilter(e.target.value)}
+                      options={[
+                        { value: 'all', label: 'Toutes les entreprises' },
+                        ...uniqueCompanies.map(c => ({ value: c.id, label: c.name }))
+                      ]}
+                    />
+                  </div>
+
+                  {/* Amount Range */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      type="number"
+                      placeholder="Montant minimum"
+                      value={minAmount}
+                      onChange={(e) => setMinAmount(e.target.value)}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Montant maximum"
+                      value={maxAmount}
+                      onChange={(e) => setMaxAmount(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Clear Filters */}
+                  {(searchQuery || statusFilter !== 'all' || stageFilter !== 'all' || companyFilter !== 'all' || minAmount || maxAmount) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setStatusFilter('all');
+                        setStageFilter('all');
+                        setCompanyFilter('all');
+                        setMinAmount('');
+                        setMaxAmount('');
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Réinitialiser les filtres
+                    </Button>
+                  )}
                 </div>
                 
                 {opportunities.length > 0 ? (
                   <div className="space-y-3">
                     {opportunities.map((opp) => (
-                      <Link key={opp.id} href={`/${locale}/dashboard/commercial/opportunites/${opp.id}`}>
-                        <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h4>
-                              {opp.company_name && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                  <Building2 className="w-4 h-4" />
-                                  <span>{opp.company_name}</span>
-                                </div>
-                              )}
-                            </div>
-                            <Badge className={getOpportunityStageColor(opp.stage_name)}>
-                              {opp.stage_name || 'Non défini'}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium text-gray-900 dark:text-white">
-                                {formatCurrency(opp.amount || 0)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <TrendingUp className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-600 dark:text-gray-400">
-                                {opp.probability || 0}%
-                              </span>
-                            </div>
-                            {opp.expected_close_date && (
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4 text-gray-400" />
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {formatDate(opp.expected_close_date)}
-                                </span>
+                      <div 
+                        key={opp.id} 
+                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer group"
+                        onClick={() => handleViewOpportunity(opp)}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h4>
+                            {opp.description && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">
+                                {opp.description}
+                              </p>
+                            )}
+                            {opp.company_name && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <Building2 className="w-4 h-4" />
+                                <span>{opp.company_name}</span>
                               </div>
                             )}
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className={getOpportunityStageColor(opp.stage_name)}>
+                              {opp.stage_name || 'Non défini'}
+                            </Badge>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditOpportunity(opp)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteOpportunity(opp)}
+                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                      </Link>
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {formatCurrency(opp.amount || 0)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {opp.probability || 0}%
+                            </span>
+                          </div>
+                          {opp.expected_close_date && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-600 dark:text-gray-400">
+                                {formatDate(opp.expected_close_date)}
+                              </span>
+                            </div>
+                          )}
+                          {opp.assigned_to_name && (
+                            <div className="flex items-center gap-1">
+                              <User className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-600 dark:text-gray-400">
+                                {opp.assigned_to_name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-12">
                     <Target className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune opportunité dans ce pipeline</p>
-                    <Link href={`/${locale}/dashboard/commercial/opportunites?pipeline=${pipeline.id}`}>
-                      <Button size="sm" className="hover-nukleo">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      {searchQuery || statusFilter !== 'all' || stageFilter !== 'all' || companyFilter !== 'all' || minAmount || maxAmount
+                        ? 'Aucune opportunité ne correspond aux filtres'
+                        : 'Aucune opportunité dans ce pipeline'}
+                    </p>
+                    {!(searchQuery || statusFilter !== 'all' || stageFilter !== 'all' || companyFilter !== 'all' || minAmount || maxAmount) && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => setShowCreateOpportunityModal(true)}
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Créer une opportunité
                       </Button>
-                    </Link>
+                    )}
                   </div>
                 )}
               </div>
@@ -679,29 +1156,62 @@ export default function PipelineDetailPage() {
                   <h3 className="text-lg font-semibold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Étapes du pipeline ({pipeline.stages?.length || 0})
                   </h3>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowEditStagesModal(true)}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Gérer les étapes
+                  </Button>
                 </div>
                 
                 {pipeline.stages && pipeline.stages.length > 0 ? (
                   <div className="space-y-3">
                     {pipeline.stages
                       .sort((a, b) => (a.order || 0) - (b.order || 0))
-                      .map((stage, index) => (
-                        <div key={stage.id} className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#523DC9]/10 flex items-center justify-center text-[#523DC9] font-bold">
-                              {index + 1}
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
-                              {stage.description && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {stage.description}
-                                </p>
-                              )}
+                      .map((stage, index) => {
+                        const stageOpps = opportunitiesByStage[stage.id] || [];
+                        const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+                        
+                        return (
+                          <div 
+                            key={stage.id} 
+                            className="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                            style={{
+                              borderLeftColor: stage.color || undefined,
+                              borderLeftWidth: stage.color ? '4px' : undefined
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white"
+                                style={{ backgroundColor: stage.color || '#523DC9' }}
+                              >
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                  <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
+                                  <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30 text-xs">
+                                    {stageOpps.length} opportunité{stageOpps.length > 1 ? 's' : ''}
+                                  </Badge>
+                                  {stageValue > 0 && (
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                      {formatCurrency(stageValue)}
+                                    </span>
+                                  )}
+                                </div>
+                                {stage.description && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    {stage.description}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 ) : (
                   <div className="text-center py-12">
@@ -728,6 +1238,336 @@ export default function PipelineDetailPage() {
           </div>
         )}
       </MotionDiv>
+
+      {/* Edit Pipeline Modal */}
+      <Modal
+        isOpen={showEditPipelineModal}
+        onClose={() => setShowEditPipelineModal(false)}
+        title="Modifier le pipeline"
+        size="lg"
+      >
+        <PipelineForm
+          pipeline={pipeline}
+          onSubmit={handleUpdatePipeline}
+          onCancel={() => setShowEditPipelineModal(false)}
+          loading={false}
+        />
+      </Modal>
+
+      {/* Create Opportunity Modal */}
+      <Modal
+        isOpen={showCreateOpportunityModal}
+        onClose={() => setShowCreateOpportunityModal(false)}
+        title="Nouvelle opportunité"
+        size="lg"
+      >
+        <OpportunityForm
+          opportunity={null}
+          onSubmit={handleCreateOpportunity}
+          onCancel={() => setShowCreateOpportunityModal(false)}
+          loading={false}
+        />
+      </Modal>
+
+      {/* Edit Opportunity Modal */}
+      <Modal
+        isOpen={showEditOpportunityModal}
+        onClose={() => {
+          setShowEditOpportunityModal(false);
+          setSelectedOpportunity(null);
+        }}
+        title="Modifier l'opportunité"
+        size="lg"
+      >
+        {selectedOpportunity && (
+          <OpportunityForm
+            opportunity={selectedOpportunity}
+            onSubmit={handleUpdateOpportunity}
+            onCancel={() => {
+              setShowEditOpportunityModal(false);
+              setSelectedOpportunity(null);
+            }}
+            loading={false}
+          />
+        )}
+      </Modal>
+
+      {/* Opportunity Detail Drawer */}
+      <Drawer
+        isOpen={showOpportunityDetailDrawer}
+        onClose={() => {
+          setShowOpportunityDetailDrawer(false);
+          setSelectedOpportunity(null);
+        }}
+        title={selectedOpportunity?.name || 'Détails de l\'opportunité'}
+        position="right"
+        size="lg"
+      >
+        {selectedOpportunity ? (
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                Montant
+              </h4>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                {formatCurrency(selectedOpportunity.amount || 0)}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Probabilité
+                </h4>
+                <p className="text-gray-900 dark:text-white">
+                  {selectedOpportunity.probability || 0}%
+                </p>
+              </div>
+
+              {selectedOpportunity.status && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Statut
+                  </h4>
+                  <Badge className={getOpportunityStageColor(selectedOpportunity.status)}>
+                    {selectedOpportunity.status}
+                  </Badge>
+                </div>
+              )}
+
+              {selectedOpportunity.expected_close_date && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Date de fermeture prévue
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {formatDate(selectedOpportunity.expected_close_date)}
+                  </p>
+                </div>
+              )}
+
+              {selectedOpportunity.stage_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Étape
+                  </h4>
+                  <Badge className={getOpportunityStageColor(selectedOpportunity.stage_name)}>
+                    {selectedOpportunity.stage_name}
+                  </Badge>
+                </div>
+              )}
+
+              {selectedOpportunity.company_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Entreprise
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedOpportunity.company_name}
+                  </p>
+                </div>
+              )}
+
+              {selectedOpportunity.assigned_to_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Assigné à
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedOpportunity.assigned_to_name}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {selectedOpportunity.description && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Description
+                </h4>
+                <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {selectedOpportunity.description}
+                </p>
+              </div>
+            )}
+
+            {selectedOpportunity.notes && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Notes
+                </h4>
+                <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {selectedOpportunity.notes}
+                </p>
+              </div>
+            )}
+
+            {selectedOpportunity.contact_names && selectedOpportunity.contact_names.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Contacts
+                </h4>
+                <div className="space-y-1">
+                  {selectedOpportunity.contact_names.map((name, idx) => (
+                    <p key={idx} className="text-gray-900 dark:text-white">
+                      {name}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedOpportunity.segment && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Segment
+                </h4>
+                <p className="text-gray-900 dark:text-white">
+                  {selectedOpportunity.segment}
+                </p>
+              </div>
+            )}
+
+            {selectedOpportunity.region && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Région
+                </h4>
+                <p className="text-gray-900 dark:text-white">
+                  {selectedOpportunity.region}
+                </p>
+              </div>
+            )}
+
+            {selectedOpportunity.service_offer_link && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Lien offre de service
+                </h4>
+                <a 
+                  href={selectedOpportunity.service_offer_link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[#523DC9] hover:underline"
+                >
+                  {selectedOpportunity.service_offer_link}
+                </a>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                {selectedOpportunity.opened_at && (
+                  <p>
+                    Ouverte le {formatDate(selectedOpportunity.opened_at)}
+                  </p>
+                )}
+                {selectedOpportunity.closed_at && (
+                  <p>
+                    Fermée le {formatDate(selectedOpportunity.closed_at)}
+                  </p>
+                )}
+                <p>
+                  Créée le {formatDate(selectedOpportunity.created_at)}
+                </p>
+                {selectedOpportunity.updated_at !== selectedOpportunity.created_at && (
+                  <p>
+                    Modifiée le {formatDate(selectedOpportunity.updated_at)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowOpportunityDetailDrawer(false);
+                  handleEditOpportunity(selectedOpportunity);
+                }}
+                className="flex-1"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Modifier
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowOpportunityDetailDrawer(false);
+                  handleDeleteOpportunity(selectedOpportunity);
+                }}
+                className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Loading />
+        )}
+      </Drawer>
+
+      {/* Edit Stages Modal */}
+      <Modal
+        isOpen={showEditStagesModal}
+        onClose={() => setShowEditStagesModal(false)}
+        title="Gérer les étapes"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <Alert variant="info">
+            La modification des étapes nécessite une mise à jour complète du pipeline. 
+            Pour modifier les étapes, veuillez utiliser le formulaire de modification du pipeline.
+          </Alert>
+          <div className="space-y-3">
+            {pipeline?.stages?.sort((a, b) => (a.order || 0) - (b.order || 0)).map((stage, index) => (
+              <div 
+                key={stage.id} 
+                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                style={{
+                  borderLeftColor: stage.color || undefined,
+                  borderLeftWidth: stage.color ? '4px' : undefined
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white"
+                    style={{ backgroundColor: stage.color || '#523DC9' }}
+                  >
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
+                    {stage.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {stage.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditStagesModal(false);
+                setShowEditPipelineModal(true);
+              }}
+            >
+              Modifier via le pipeline
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditStagesModal(false)}
+            >
+              Fermer
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </PageContainer>
   );
 }
