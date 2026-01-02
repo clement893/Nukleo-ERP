@@ -72,30 +72,39 @@ const formatRelativeTime = (dateString: string) => {
   return date.toLocaleDateString('fr-FR');
 };
 
-// Déterminer le rôle basé sur l'ID (simulation)
+// Déterminer le rôle basé sur le poste
 const determineRole = (employee: Employee): 'admin' | 'manager' | 'user' => {
-  // Simuler des rôles basés sur l'ID
-  if (employee.id % 10 === 0) return 'admin';
-  if (employee.id % 5 === 0) return 'manager';
+  const position = employee.position?.toLowerCase() || '';
+  
+  // Admin keywords
+  if (position.includes('directeur') || position.includes('ceo') || 
+      position.includes('cto') || position.includes('admin')) {
+    return 'admin';
+  }
+  
+  // Manager keywords
+  if (position.includes('manager') || position.includes('chef') || 
+      position.includes('lead') || position.includes('responsable')) {
+    return 'manager';
+  }
+  
   return 'user';
 };
 
 // Déterminer le statut basé sur l'ID (simulation)
 const determineStatus = (employee: Employee): 'active' | 'inactive' | 'suspended' => {
-  // Simuler quelques utilisateurs inactifs (5% des employés)
-  if (employee.id % 20 === 0) return 'inactive';
-  
-  // Simuler quelques utilisateurs suspendus (2% des employés)
-  if (employee.id % 50 === 0) return 'suspended';
-  
+  // 95% actifs, 3% inactifs, 2% suspendus
+  const rand = employee.id % 100;
+  if (rand >= 98) return 'suspended';
+  if (rand >= 95) return 'inactive';
   return 'active';
 };
 
 // Générer une date de dernière connexion simulée
-const generateLastLogin = (): string => {
+const generateLastLogin = (employeeId: number): string => {
   const now = new Date();
-  const randomDaysAgo = Math.floor(Math.random() * 7);
-  const randomHoursAgo = Math.floor(Math.random() * 24);
+  const randomDaysAgo = (employeeId % 7);
+  const randomHoursAgo = (employeeId % 24);
   const lastLogin = new Date(now.getTime() - (randomDaysAgo * 24 * 60 * 60 * 1000) - (randomHoursAgo * 60 * 60 * 1000));
   return lastLogin.toISOString();
 };
@@ -126,10 +135,10 @@ export default function AdminUsersPage() {
           email: emp.email!,
           role: determineRole(emp),
           status: determineStatus(emp),
-          lastLogin: generateLastLogin(),
+          lastLogin: generateLastLogin(emp.id),
           createdAt: emp.hire_date || emp.created_at,
-          department: undefined,
-          position: undefined
+          department: emp.department || undefined,
+          position: emp.position || undefined
         }));
       
       setUsers(convertedUsers);
@@ -150,17 +159,17 @@ export default function AdminUsersPage() {
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (user.department && user.department.toLowerCase().includes(searchQuery.toLowerCase()));
+    
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    
     return matchesSearch && matchesRole && matchesStatus;
   });
 
   const stats = {
     total: users.length,
-    admins: users.filter(u => u.role === 'admin').length,
-    managers: users.filter(u => u.role === 'manager').length,
     active: users.filter(u => u.status === 'active').length,
-    inactive: users.filter(u => u.status === 'inactive').length,
+    admins: users.filter(u => u.role === 'admin').length,
     suspended: users.filter(u => u.status === 'suspended').length
   };
 
@@ -184,6 +193,7 @@ export default function AdminUsersPage() {
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
           }} />
+          
           <div className="relative px-8 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -194,7 +204,7 @@ export default function AdminUsersPage() {
                   <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Gestion des Utilisateurs
                   </h1>
-                  <p className="text-white/80 text-sm">Gérer les utilisateurs et leurs permissions</p>
+                  <p className="text-white/80 text-sm">Gérez les comptes et permissions utilisateurs</p>
                 </div>
               </div>
               <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
@@ -205,65 +215,61 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                <Users className="w-5 h-5 text-blue-600" />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                <Users className="w-5 h-5 text-purple-600" />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total utilisateurs</div>
-            </div>
-            <div className="text-2xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.total}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              {stats.admins} admin • {stats.managers} managers
+              <div>
+                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.total}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Total Utilisateurs</div>
+              </div>
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center gap-3 mb-3">
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
-                <Shield className="w-5 h-5 text-green-600" />
+                <Users className="w-5 h-5 text-green-600" />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Actifs</div>
-            </div>
-            <div className="text-2xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.active}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              {((stats.active / stats.total) * 100).toFixed(0)}% du total
+              <div>
+                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.active}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Actifs</div>
+              </div>
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
-                <Lock className="w-5 h-5 text-orange-600" />
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <Shield className="w-5 h-5 text-blue-600" />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Inactifs</div>
-            </div>
-            <div className="text-2xl font-bold mb-1 text-orange-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.inactive}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              Nécessitent attention
+              <div>
+                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.admins}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Administrateurs</div>
+              </div>
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center gap-3 mb-3">
+          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <Lock className="w-5 h-5 text-red-600" />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Suspendus</div>
-            </div>
-            <div className="text-2xl font-bold mb-1 text-red-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.suspended}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              Accès restreint
+              <div>
+                <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {stats.suspended}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Suspendus</div>
+              </div>
             </div>
           </Card>
         </div>
@@ -272,25 +278,25 @@ export default function AdminUsersPage() {
         <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Rechercher par nom, email ou département..."
+                placeholder="Rechercher par nom ou email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2">
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
               >
                 <option value="all">Tous les rôles</option>
-                <option value="admin">Admins</option>
-                <option value="manager">Managers</option>
-                <option value="user">Utilisateurs</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="user">Utilisateur</option>
               </select>
               <select
                 value={statusFilter}
@@ -298,85 +304,97 @@ export default function AdminUsersPage() {
                 className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
               >
                 <option value="all">Tous les statuts</option>
-                <option value="active">Actifs</option>
-                <option value="inactive">Inactifs</option>
-                <option value="suspended">Suspendus</option>
+                <option value="active">Actif</option>
+                <option value="inactive">Inactif</option>
+                <option value="suspended">Suspendu</option>
               </select>
             </div>
           </div>
         </Card>
 
-        {/* Users Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredUsers.map((user) => (
-            <Card key={user.id} className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full ${getAvatarColor(user.name)} flex items-center justify-center text-white font-bold`}>
-                    {getInitials(user.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{user.name}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.position || 'Non spécifié'}</div>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" className="p-1 h-auto">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600 dark:text-gray-400 truncate">{user.email}</span>
-                </div>
-                {user.department && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Shield className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600 dark:text-gray-400 truncate">{user.department}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {formatRelativeTime(user.lastLogin)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 mb-4">
-                <Badge className={`${roleConfig[user.role].color} border text-xs`}>
-                  {roleConfig[user.role].label}
-                </Badge>
-                <Badge className={`${statusConfig[user.status].color} border text-xs`}>
-                  {statusConfig[user.status].label}
-                </Badge>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Edit className="w-3 h-3 mr-1" />
-                  Modifier
-                </Button>
-                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {filteredUsers.length === 0 && (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Aucun utilisateur trouvé</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
-                ? 'Essayez de modifier vos filtres de recherche'
-                : 'Créez votre premier utilisateur pour commencer'}
-            </p>
-          </Card>
-        )}
+        {/* Users Table */}
+        <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Utilisateur
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Rôle
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Dernière connexion
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Date création
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full ${getAvatarColor(user.name)} flex items-center justify-center text-white font-semibold text-sm`}>
+                          {getInitials(user.name)}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {user.name}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                            <Mail className="w-3 h-3" />
+                            {user.email}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={`${roleConfig[user.role].color} border`}>
+                        {roleConfig[user.role].label}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={`${statusConfig[user.status].color} border`}>
+                        {statusConfig[user.status].label}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      {formatRelativeTime(user.lastLogin)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button size="sm" variant="ghost" className="hover:bg-blue-500/10 hover:text-blue-600">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="hover:bg-red-500/10 hover:text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="hover:bg-gray-500/10">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </MotionDiv>
     </PageContainer>
   );
