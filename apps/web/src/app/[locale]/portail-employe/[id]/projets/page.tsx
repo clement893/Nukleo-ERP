@@ -1,288 +1,230 @@
 'use client';
 
-import { Briefcase, Users, Calendar, DollarSign, TrendingUp, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Card, Badge } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { Briefcase, Users, DollarSign, Clock, Loader2, CheckCircle } from 'lucide-react';
+import { Card } from '@/components/ui';
+import { projectsAPI } from '@/lib/api';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
 
-export default function MesProjetsPage() {
-  const projects = [
-    {
-      id: 1,
-      name: 'Projet Alpha - Refonte ERP',
-      client: 'TechCorp Inc.',
-      status: 'active',
-      progress: 65,
-      budget: 150000,
-      spent: 97500,
-      startDate: '2025-11-01',
-      endDate: '2026-02-28',
-      team: ['Ricardo W.', 'Marie D.', 'Jean M.', 'Sophie T.'],
-      myRole: 'Lead Developer',
-      myHours: 156,
-      totalHours: 450,
-      tasks: { total: 24, completed: 16, inProgress: 5, todo: 3 },
-      priority: 'high',
-      description: 'Refonte complète du système ERP avec nouvelles fonctionnalités'
-    },
-    {
-      id: 2,
-      name: 'Projet Beta - Application Mobile',
-      client: 'StartupXYZ',
-      status: 'active',
-      progress: 40,
-      budget: 80000,
-      spent: 32000,
-      startDate: '2025-12-15',
-      endDate: '2026-03-15',
-      team: ['Ricardo W.', 'Omar K.', 'Hind B.'],
-      myRole: 'Senior Developer',
-      myHours: 89,
-      totalHours: 280,
-      tasks: { total: 18, completed: 7, inProgress: 6, todo: 5 },
-      priority: 'medium',
-      description: 'Développement application mobile iOS/Android avec React Native'
-    },
-    {
-      id: 3,
-      name: 'Projet Gamma - Site E-commerce',
-      client: 'Fashion Store',
-      status: 'active',
-      progress: 85,
-      budget: 60000,
-      spent: 51000,
-      startDate: '2025-10-01',
-      endDate: '2026-01-15',
-      team: ['Ricardo W.', 'Sarah L.', 'Alexei P.'],
-      myRole: 'Full Stack Developer',
-      myHours: 124,
-      totalHours: 380,
-      tasks: { total: 20, completed: 17, inProgress: 2, todo: 1 },
-      priority: 'high',
-      description: 'Plateforme e-commerce complète avec paiement intégré'
-    },
-    {
-      id: 4,
-      name: 'Projet Delta - Dashboard Analytics',
-      client: 'DataViz Corp',
-      status: 'planning',
-      progress: 10,
-      budget: 45000,
-      spent: 4500,
-      startDate: '2026-01-20',
-      endDate: '2026-04-30',
-      team: ['Ricardo W.', 'Timothé R.'],
-      myRole: 'Tech Lead',
-      myHours: 12,
-      totalHours: 200,
-      tasks: { total: 15, completed: 1, inProgress: 2, todo: 12 },
-      priority: 'low',
-      description: 'Dashboard analytics avec visualisations temps réel'
-    },
-    {
-      id: 5,
-      name: 'Projet Epsilon - API Gateway',
-      client: 'MicroServices Ltd',
-      status: 'completed',
-      progress: 100,
-      budget: 95000,
-      spent: 92000,
-      startDate: '2025-08-01',
-      endDate: '2025-12-20',
-      team: ['Ricardo W.', 'Jean-François L.', 'Marie-Claire B.'],
-      myRole: 'Backend Lead',
-      myHours: 198,
-      totalHours: 520,
-      tasks: { total: 28, completed: 28, inProgress: 0, todo: 0 },
-      priority: 'high',
-      description: 'Gateway API avec authentification et rate limiting'
-    },
-  ];
+export default function MesProjets() {
+  const params = useParams();
+  const employeeId = parseInt(params?.id as string);
+  
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
 
-  const stats = {
-    active: projects.filter(p => p.status === 'active').length,
-    planning: projects.filter(p => p.status === 'planning').length,
-    completed: projects.filter(p => p.status === 'completed').length,
-    totalHours: projects.reduce((sum, p) => sum + p.myHours, 0),
+  useEffect(() => {
+    if (employeeId) {
+      loadData();
+    }
+  }, [employeeId]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [projectsData, tasksData] = await Promise.all([
+        projectsAPI.list(),
+        projectTasksAPI.list({ assignee_id: employeeId }),
+      ]);
+      
+      const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+      
+      // Filter projects where employee has tasks
+      const myProjects = projectsList.filter(p => 
+        tasksData.some(t => t.project_id === p.id)
+      );
+      
+      setProjects(myProjects);
+      setTasks(tasksData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getProjectTasks = (projectId: number) => {
+    return tasks.filter(t => t.project_id === projectId);
+  };
+
+  const getProjectProgress = (projectId: number) => {
+    const projectTasks = getProjectTasks(projectId);
+    if (projectTasks.length === 0) return 0;
+    const completed = projectTasks.filter(t => t.status === 'done').length;
+    return Math.round((completed / projectTasks.length) * 100);
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">Actif</Badge>;
-      case 'planning':
-        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Planification</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Terminé</Badge>;
-      default:
-        return <Badge className="bg-gray-500/10 text-gray-600 border-gray-500/30">Inconnu</Badge>;
-    }
+    const badges = {
+      planning: 'bg-gray-100 text-gray-700',
+      in_progress: 'bg-blue-100 text-blue-700',
+      on_hold: 'bg-orange-100 text-orange-700',
+      completed: 'bg-green-100 text-green-700',
+      cancelled: 'bg-red-100 text-red-700',
+    };
+    return badges[status as keyof typeof badges] || badges.planning;
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/30">Haute</Badge>;
-      case 'medium':
-        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Moyenne</Badge>;
-      case 'low':
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Basse</Badge>;
-      default:
-        return null;
-    }
+  const getStatusLabel = (status: string) => {
+    const labels = {
+      planning: 'Planification',
+      in_progress: 'En cours',
+      on_hold: 'En pause',
+      completed: 'Terminé',
+      cancelled: 'Annulé',
+    };
+    return labels[status as keyof typeof labels] || status;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="relative overflow-hidden rounded-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
-          backgroundSize: '200px 200px'
-        }} />
         <div className="relative p-8">
           <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Mes Projets
           </h1>
-          <p className="text-white/80 text-lg">Suivez vos projets et votre contribution</p>
+          <p className="text-white/80 text-lg">Suivez l'avancement de vos projets</p>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-2">
-            <Briefcase className="w-5 h-5 text-blue-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Projets actifs</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <Briefcase className="w-6 h-6 text-blue-600" />
+            </div>
           </div>
-          <div className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{stats.active}</div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {projects.length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Projets actifs</div>
         </Card>
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-2">
-            <Calendar className="w-5 h-5 text-yellow-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">En planification</span>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+              <CheckCircle className="w-6 h-6 text-purple-600" />
+            </div>
           </div>
-          <div className="text-3xl font-bold text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{stats.planning}</div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {tasks.length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Tâches assignées</div>
         </Card>
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-2">
-            <CheckCircle2 className="w-5 h-5 text-green-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Terminés</span>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+              <Clock className="w-6 h-6 text-green-600" />
+            </div>
           </div>
-          <div className="text-3xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{stats.completed}</div>
-        </Card>
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-5 h-5 text-purple-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Mes heures</span>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {tasks.filter(t => t.status === 'in_progress').length}
           </div>
-          <div className="text-3xl font-bold text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{stats.totalHours}h</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">En cours</div>
         </Card>
       </div>
 
-      {/* Projects List */}
-      <div className="space-y-4">
-        {projects.map((project) => (
-          <Card key={project.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:shadow-lg transition-all">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {projects.map((project) => {
+          const projectTasks = getProjectTasks(project.id);
+          const progress = getProjectProgress(project.id);
+          
+          return (
+            <Card key={project.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {project.name}
                   </h3>
-                  {getStatusBadge(project.status)}
-                  {getPriorityBadge(project.priority)}
+                  {project.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                      {project.description}
+                    </p>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{project.description}</p>
-                <p className="text-sm text-gray-500">Client: {project.client}</p>
+                <span className={`text-xs px-3 py-1 rounded-full ${getStatusBadge(project.status)}`}>
+                  {getStatusLabel(project.status)}
+                </span>
               </div>
-            </div>
 
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-gray-600 dark:text-gray-400">Progression</span>
-                <span className="font-bold text-[#523DC9]">{project.progress}%</span>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Progression</span>
+                  <span className="text-sm font-bold text-[#523DC9]">{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-[#523DC9] to-[#5F2B75] transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-[#523DC9] to-[#5F2B75] transition-all"
-                  style={{ width: `${project.progress}%` }}
-                />
-              </div>
-            </div>
 
-            {/* Project Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-600" />
-                <div>
-                  <p className="text-xs text-gray-500">Budget</p>
-                  <p className="text-sm font-semibold">{formatCurrency(project.budget)}</p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {project.budget && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {project.budget.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {projectTasks.length} tâches
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-orange-600" />
-                <div>
-                  <p className="text-xs text-gray-500">Dépensé</p>
-                  <p className="text-sm font-semibold">{formatCurrency(project.spent)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <div>
-                  <p className="text-xs text-gray-500">Mes heures</p>
-                  <p className="text-sm font-semibold">{project.myHours}h / {project.totalHours}h</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-purple-600" />
-                <div>
-                  <p className="text-xs text-gray-500">Équipe</p>
-                  <p className="text-sm font-semibold">{project.team.length} membres</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Tasks Summary */}
-            <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <span className="text-sm">{project.tasks.completed} terminées</span>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    ✅ {projectTasks.filter(t => t.status === 'done').length} terminées
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    🔄 {projectTasks.filter(t => t.status === 'in_progress').length} en cours
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    📋 {projectTasks.filter(t => t.status === 'todo').length} à faire
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <span className="text-sm">{project.tasks.inProgress} en cours</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-gray-600" />
-                <span className="text-sm">{project.tasks.todo} à faire</span>
-              </div>
-            </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div>
-                <p className="text-xs text-gray-500">Mon rôle</p>
-                <p className="text-sm font-semibold text-[#523DC9]">{project.myRole}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500">Période</p>
-                <p className="text-sm font-semibold">
-                  {new Date(project.startDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - {new Date(project.endDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
-                </p>
-              </div>
-            </div>
-          </Card>
-        ))}
+              {(project.start_date || project.end_date) && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                  {project.start_date && (
+                    <span>Début: {new Date(project.start_date).toLocaleDateString('fr-FR')}</span>
+                  )}
+                  {project.start_date && project.end_date && <span className="mx-2">•</span>}
+                  {project.end_date && (
+                    <span>Fin: {new Date(project.end_date).toLocaleDateString('fr-FR')}</span>
+                  )}
+                </div>
+              )}
+            </Card>
+          );
+        })}
       </div>
+
+      {projects.length === 0 && (
+        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Briefcase className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 dark:text-gray-400">Aucun projet assigné</p>
+        </Card>
+      )}
     </div>
   );
 }
