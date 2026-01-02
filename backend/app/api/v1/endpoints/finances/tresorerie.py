@@ -897,8 +897,8 @@ async def get_treasury_stats(
         query = select(Transaction).where(
             and_(
                 Transaction.user_id == current_user.id,
-                Transaction.date >= start_date,
-                Transaction.date <= end_date,
+                Transaction.transaction_date >= start_date,
+                Transaction.transaction_date <= end_date,
                 cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
@@ -991,8 +991,8 @@ async def get_treasury_stats(
         projected_query = select(Transaction).where(
             and_(
                 Transaction.user_id == current_user.id,
-                Transaction.date > end_date,
-                Transaction.date <= projected_date,
+                Transaction.transaction_date > end_date,
+                Transaction.transaction_date <= projected_date,
                 cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
@@ -1012,8 +1012,8 @@ async def get_treasury_stats(
         prev_query = select(Transaction).where(
             and_(
                 Transaction.user_id == current_user.id,
-                Transaction.date >= prev_start_date,
-                Transaction.date < start_date,
+                Transaction.transaction_date >= prev_start_date,
+                Transaction.transaction_date < start_date,
                 cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
