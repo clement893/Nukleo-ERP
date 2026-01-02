@@ -367,7 +367,7 @@ export default function EntreprisesPage() {
                     </div>
                     {/* Badge en overlay */}
                     <div className="absolute top-3 right-3">
-                      <Badge className={`${company.is_client ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30'}`}>
+                      <Badge className={`${company.is_client ? 'bg-secondary-500/10 text-secondary-500 border border-secondary-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}`}>
                         {company.is_client ? 'Client' : 'Prospect'}
                       </Badge>
                     </div>
@@ -478,8 +478,8 @@ export default function EntreprisesPage() {
                           }}
                         />
                       ) : null}
-                      <div className={`w-10 h-10 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
-                        <Building2 className="w-5 h-5 text-[#523DC9]" />
+                      <div className={`w-10 h-10 rounded-lg bg-primary-500/10 border border-primary-500/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
+                        <Building2 className="w-5 h-5 text-primary-500" />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
@@ -487,7 +487,7 @@ export default function EntreprisesPage() {
                           {[company.description, company.city, company.country].filter(Boolean).map(s => String(s).substring(0, 30)).join(' • ')}
                         </p>
                       </div>
-                      <Badge className={company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}>
+                      <Badge className={company.is_client ? 'bg-secondary-500/10 text-secondary-500' : 'bg-warning-500/10 text-warning-500'}>
                         {company.is_client ? 'Client' : 'Prospect'}
                       </Badge>
                       <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -575,7 +575,7 @@ export default function EntreprisesPage() {
                           {companyDetails.description && (
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{companyDetails.description}</p>
                           )}
-                          <Badge className={companyDetails.is_client ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30'}>
+                          <Badge className={companyDetails.is_client ? 'bg-secondary-500/10 text-secondary-500 border border-secondary-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}>
                             {companyDetails.is_client ? 'Client' : 'Prospect'}
                           </Badge>
                         </div>
@@ -604,7 +604,7 @@ export default function EntreprisesPage() {
                               href={companyDetails.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-[#523DC9] hover:underline"
+                              className="text-sm text-primary-500 hover:underline"
                             >
                               {companyDetails.website}
                             </a>

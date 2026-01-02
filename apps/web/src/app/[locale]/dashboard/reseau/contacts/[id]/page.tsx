@@ -255,13 +255,13 @@ export default function ContactDetailPage() {
                   onClick={() => setActiveTab(tab.key as any)}
                   className={`px-6 py-3 font-medium transition-all relative ${
                     activeTab === tab.key
-                      ? 'text-[#523DC9]'
+                      ? 'text-primary-500'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {tab.label}
                   {activeTab === tab.key && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-nukleo-gradient" />
                   )}
                 </button>
               ))}
@@ -274,7 +274,7 @@ export default function ContactDetailPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Informations de contact */}
                 <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Informations de contact
                   </h3>
                   <div className="space-y-4">
@@ -283,7 +283,7 @@ export default function ContactDetailPage() {
                         <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
                         <div>
                           <p className="text-sm text-muted-foreground">Email</p>
-                          <a href={`mailto:${contact.email}`} className="text-foreground hover:text-[#523DC9] transition-colors">
+                          <a href={`mailto:${contact.email}`} className="text-foreground hover:text-primary-500 transition-colors">
                             {contact.email}
                           </a>
                         </div>
@@ -294,7 +294,7 @@ export default function ContactDetailPage() {
                         <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
                         <div>
                           <p className="text-sm text-muted-foreground">Téléphone</p>
-                          <a href={`tel:${contact.phone}`} className="text-foreground hover:text-[#523DC9] transition-colors">
+                          <a href={`tel:${contact.phone}`} className="text-foreground hover:text-primary-500 transition-colors">
                             {contact.phone}
                           </a>
                         </div>
@@ -326,7 +326,7 @@ export default function ContactDetailPage() {
 
                 {/* Notes */}
                 <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     Notes
                   </h3>
                   <p className="text-foreground/80 leading-relaxed">
@@ -348,7 +348,7 @@ export default function ContactDetailPage() {
 
             {activeTab === 'activities' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   Activités récentes
                 </h3>
                 <div className="text-center py-12 text-muted-foreground">
@@ -360,7 +360,7 @@ export default function ContactDetailPage() {
 
             {activeTab === 'opportunities' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   Opportunités
                 </h3>
                 <div className="text-center py-12 text-muted-foreground">
@@ -372,7 +372,7 @@ export default function ContactDetailPage() {
 
             {activeTab === 'documents' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   Documents
                 </h3>
                 <div className="text-center py-12 text-muted-foreground">
@@ -389,7 +389,7 @@ export default function ContactDetailPage() {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={handleEdit}
-          className="w-14 h-14 bg-gradient-to-br from-[#523DC9] to-[#5F2B75] rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
+          className="w-14 h-14 bg-nukleo-gradient rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
           aria-label="Modifier le contact"
           title="Modifier le contact"
         >

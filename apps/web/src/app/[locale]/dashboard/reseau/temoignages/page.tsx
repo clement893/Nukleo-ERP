@@ -300,7 +300,7 @@ function TemoignagesContent() {
     <PageContainer maxWidth="full" className="flex flex-col h-full">
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -314,7 +314,7 @@ function TemoignagesContent() {
               <Text variant="body" className="text-white/80 text-lg">Gérez les témoignages clients</Text>
             </div>
             <Button 
-              className="bg-white text-[#523DC9] hover:bg-white/90" 
+              className="bg-white text-primary-500 hover:bg-white/90" 
               aria-label="Créer un nouveau témoignage"
               onClick={() => setShowCreateModal(true)}
             >
@@ -329,8 +329,8 @@ function TemoignagesContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <MessageSquare className="w-6 h-6 text-[#523DC9]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <MessageSquare className="w-6 h-6 text-primary-500" aria-hidden="true" />
               </div>
             </div>
             <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -341,8 +341,8 @@ function TemoignagesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <CheckCircle2 className="w-6 h-6 text-secondary-500" aria-hidden="true" />
               </div>
             </div>
             <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -353,8 +353,8 @@ function TemoignagesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Clock className="w-6 h-6 text-[#F59E0B]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <Clock className="w-6 h-6 text-warning-500" aria-hidden="true" />
               </div>
             </div>
             <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -365,8 +365,8 @@ function TemoignagesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <TrendingUp className="w-6 h-6 text-[#F59E0B]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <TrendingUp className="w-6 h-6 text-warning-500" aria-hidden="true" />
               </div>
             </div>
             <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -434,16 +434,36 @@ function TemoignagesContent() {
               return (
                 <div
                   key={testimonial.id}
-                  className="glass-card p-lg rounded-xl border border-border hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 group relative"
+                  className="glass-card p-lg rounded-xl border border-border hover:scale-105 hover:border-primary-500/40 transition-all duration-200 group relative flex flex-col"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {/* En-tête compact avec titre, statut et actions */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold mb-1 group-hover:text-primary-500 transition-colors truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {testimonial.title || 'Sans titre'}
                       </h3>
+                      {/* Informations compactes en une ligne */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                        {testimonial.contact_name && (
+                          <span className="truncate flex items-center gap-1">
+                            <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                            {testimonial.contact_name}
+                          </span>
+                        )}
+                        {testimonial.company_name && (
+                          <span className="truncate flex items-center gap-1">
+                            <Building2 className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                            {testimonial.company_name}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 flex-shrink-0">
+                          <Calendar className="w-3 h-3" aria-hidden="true" />
+                          {new Date(testimonial.created_at).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex gap-2 items-start flex-shrink-0">
-                      <Badge className={getStatusColor(status)}>
+                    <div className="flex gap-1.5 items-start flex-shrink-0 ml-2">
+                      <Badge className={`${getStatusColor(status)} text-xs px-1.5 py-0.5`}>
                         {getStatusLabel(status)}
                       </Badge>
                       {hasBoth && (
@@ -452,83 +472,68 @@ function TemoignagesContent() {
                             e.stopPropagation();
                             toggleLanguage(testimonial.id);
                           }}
-                          className="p-1.5 rounded-md hover:bg-[#523DC9]/10 hover:border-[#523DC9]/30 border border-transparent transition-all flex items-center gap-1"
+                          className="p-1 rounded hover:bg-primary-500/10 hover:border-primary-500/30 border border-transparent transition-all flex items-center gap-0.5"
                           aria-label={`Changer la langue (actuellement ${displayLang.toUpperCase()})`}
                           title={`Basculer entre FR et EN`}
                         >
-                          <Languages className="w-3.5 h-3.5 text-[#523DC9]" />
-                          <span className="text-xs font-medium text-[#523DC9]">
+                          <Languages className="w-3 h-3 text-primary-500" />
+                          <span className="text-[10px] font-medium text-primary-500">
                             {displayLang === 'fr' ? 'EN' : 'FR'}
                           </span>
                         </button>
                       )}
                       {!hasBoth && displayLang && (
-                        <Badge variant="default" className="text-xs">
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
                           {displayLang.toUpperCase()}
                         </Badge>
                       )}
+                      <div className="flex gap-0.5">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800" 
+                          aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEdit(testimonial);
+                          }}
+                          title="Éditer"
+                        >
+                          <Edit className="w-3 h-3" aria-hidden="true" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400" 
+                          aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDelete(testimonial);
+                          }}
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-3 h-3" aria-hidden="true" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
-                  <Text variant="small" className="text-muted-foreground mb-4 line-clamp-3">
-                    {content}
-                  </Text>
-
-                  <div className="space-y-2 mb-4 pt-4 border-t border-border">
-                    {testimonial.contact_name && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-                        <span className="truncate">{testimonial.contact_name}</span>
-                      </div>
-                    )}
-                    {testimonial.company_name && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Building2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-                        <span className="truncate">{testimonial.company_name}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-                      <span>{new Date(testimonial.created_at).toLocaleDateString('fr-FR')}</span>
-                    </div>
+                  {/* Témoignage complet visible */}
+                  <div className="flex-1 mt-2 mb-2">
+                    <Text variant="small" className="text-muted-foreground leading-relaxed">
+                      {content}
+                    </Text>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-gray-100 dark:hover:bg-gray-800" 
-                        aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEdit(testimonial);
-                        }}
-                        title="Éditer"
-                      >
-                        <Edit className="w-3.5 h-3.5" aria-hidden="true" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400" 
-                        aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDelete(testimonial);
-                        }}
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </Button>
-                    </div>
-                    {hasBoth && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">
-                        <Languages className="w-3 h-3" />
+                  {/* Footer optionnel pour indicateur bilingue */}
+                  {hasBoth && (
+                    <div className="flex items-center justify-end pt-2 border-t border-border mt-auto">
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">
+                        <Languages className="w-2.5 h-2.5" />
                         <span>FR/EN</span>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

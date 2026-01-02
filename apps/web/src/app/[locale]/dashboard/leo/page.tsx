@@ -317,13 +317,13 @@ export default function LeoPage() {
   const getSuggestionColor = (color: string) => {
     switch (color) {
       case 'purple':
-        return 'bg-[#523DC9]/10 border-[#523DC9]/30 text-[#523DC9] hover:bg-[#523DC9]/20';
+        return 'bg-primary-500/10 border-primary-500/30 text-primary-500 hover:bg-primary-500/20';
       case 'blue':
-        return 'bg-[#3B82F6]/10 border-[#3B82F6]/30 text-[#3B82F6] hover:bg-[#3B82F6]/20';
+        return 'bg-primary-500/10 border-primary-500/30 text-primary-500 hover:bg-primary-500/20';
       case 'green':
-        return 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981] hover:bg-[#10B981]/20';
+        return 'bg-secondary-500/10 border-secondary-500/30 text-secondary-500 hover:bg-secondary-500/20';
       case 'orange':
-        return 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/20';
+        return 'bg-warning-500/10 border-warning-500/30 text-warning-500 hover:bg-warning-500/20';
       default:
         return 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200';
     }
@@ -342,7 +342,7 @@ export default function LeoPage() {
     <div className="relative flex flex-col h-[calc(100vh-3.5rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden -mx-4 sm:-mx-6 md:-mx-8 lg:-mx-10 xl:-mx-12 2xl:-mx-16 -my-4 sm:-my-6 md:-my-8 2xl:-my-10 bg-background">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
           backgroundSize: '200px 200px'
@@ -355,7 +355,7 @@ export default function LeoPage() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h1 className="text-2xl font-black text-white font-nukleo">
                   Leo
                 </h1>
                 <p className="text-white/80 text-sm">Votre assistant IA intelligent</p>
@@ -388,7 +388,7 @@ export default function LeoPage() {
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-col">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
               <Button 
-                className="w-full bg-[#523DC9] hover:bg-[#523DC9]/90 text-white"
+                className="w-full bg-primary-500 hover:bg-primary-600 text-white"
                 onClick={handleNewConversation}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -418,7 +418,7 @@ export default function LeoPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {conversationsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#523DC9]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
                 </div>
               ) : filteredConversations.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
@@ -429,7 +429,7 @@ export default function LeoPage() {
                   {filteredConversations.map((conv) => (
                     <div key={conv.id} className="relative group">
                       {editingConversationId === conv.id ? (
-                        <div className="w-full p-3 rounded-lg bg-white dark:bg-gray-800 border border-[#523DC9]/30">
+                        <div className="w-full p-3 rounded-lg bg-white dark:bg-gray-800 border border-primary-500/30">
                           <Input
                             value={editingTitle}
                             onChange={(e) => setEditingTitle(e.target.value)}
@@ -462,8 +462,8 @@ export default function LeoPage() {
                           onClick={() => setActiveConversation(conv.id)}
                           className={`w-full p-3 rounded-lg text-left transition-all ${
                             activeConversation === conv.id
-                              ? 'bg-[#523DC9]/10 border border-[#523DC9]/30'
-                              : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30'
+                              ? 'bg-primary-500/10 border border-primary-500/30'
+                              : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary-500/30'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-1">
@@ -557,12 +557,12 @@ export default function LeoPage() {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
-                <div className="p-4 rounded-2xl bg-[#523DC9]/10 border border-[#523DC9]/30 mb-4">
-                  <Sparkles className="w-12 h-12 text-[#523DC9]" />
+                <div className="p-4 rounded-2xl bg-primary-500/10 border border-primary-500/30 mb-4">
+                  <Sparkles className="w-12 h-12 text-primary-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   Bonjour ! Je suis Leo
@@ -620,8 +620,8 @@ export default function LeoPage() {
                       <div className={`max-w-2xl ${msg.role === 'user' ? 'ml-12' : 'mr-12'}`}>
                         {msg.role === 'assistant' && (
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="p-1.5 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                              <Sparkles className="w-4 h-4 text-[#523DC9]" />
+                            <div className="p-1.5 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                              <Sparkles className="w-4 h-4 text-primary-500" />
                             </div>
                             <span className="text-sm font-semibold text-gray-900 dark:text-white">Leo</span>
                             <span className="text-xs text-gray-500 dark:text-gray-500">{formatTime(msg.created_at)}</span>
@@ -636,8 +636,8 @@ export default function LeoPage() {
                         <div className={`relative group ${msg.role === 'user' ? '' : ''}`}>
                           <div className={`p-4 rounded-2xl ${
                             msg.role === 'user'
-                              ? 'bg-[#523DC9] text-white'
-                              : 'glass-card border border-[#A7A2CF]/20'
+                              ? 'bg-primary-500 text-white'
+                              : 'glass-card border border-nukleo-lavender/20'
                           }`}>
                             <p className={`text-sm leading-relaxed whitespace-pre-line ${
                               msg.role === 'user' ? 'text-white' : 'text-gray-900 dark:text-white'
@@ -703,14 +703,14 @@ export default function LeoPage() {
                   <div className="flex justify-start">
                     <div className="max-w-2xl mr-12">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="p-1.5 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                          <Sparkles className="w-4 h-4 text-[#523DC9]" />
+                        <div className="p-1.5 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                          <Sparkles className="w-4 h-4 text-primary-500" />
                         </div>
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">Leo</span>
                       </div>
-                      <div className="glass-card border border-[#A7A2CF]/20 p-4 rounded-2xl">
+                      <div className="glass-card border border-nukleo-lavender/20 p-4 rounded-2xl">
                         <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-[#523DC9]" />
+                          <Loader2 className="w-4 h-4 animate-spin text-primary-500" />
                           <span className="text-sm text-gray-600 dark:text-gray-400">Leo réfléchit...</span>
                         </div>
                       </div>
@@ -747,7 +747,7 @@ export default function LeoPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Posez une question à Leo..."
-                    className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#523DC9]/50 focus:border-[#523DC9]"
+                    className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !sendMessageMutation.isPending) {
                         handleSend();
@@ -758,7 +758,7 @@ export default function LeoPage() {
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <Button
                       size="sm"
-                      className="bg-[#523DC9] hover:bg-[#523DC9]/90 text-white rounded-lg"
+                      className="bg-primary-500 hover:bg-primary-600 text-white rounded-lg"
                       disabled={!message.trim() || sendMessageMutation.isPending}
                       onClick={handleSend}
                     >
