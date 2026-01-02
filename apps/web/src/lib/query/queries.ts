@@ -15,6 +15,7 @@ import {
 import { teamsAPI as teamsAPIClient } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { employeesAPI } from '@/lib/api/employees';
+import { onboardingAPI } from '@/lib/api/onboarding';
 import { extractApiData } from '@/lib/api/utils';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 
@@ -55,6 +56,13 @@ export const queryKeys = {
     all: ['employees'] as const,
     list: (filters?: { team_id?: number }) => ['employees', 'list', filters] as const,
     detail: (id: number) => ['employees', id] as const,
+  },
+  onboarding: {
+    steps: ['onboarding', 'steps'] as const,
+    progress: ['onboarding', 'progress'] as const,
+    employeeProgress: (employeeId: number) => ['onboarding', 'employee', employeeId, 'progress'] as const,
+    employeeSteps: (employeeId: number) => ['onboarding', 'employee', employeeId, 'steps'] as const,
+    employeesList: (filters?: { team_id?: number }) => ['onboarding', 'employees', filters] as const,
   },
   invitations: {
     all: (params?: { status?: string }) => ['invitations', params] as const,

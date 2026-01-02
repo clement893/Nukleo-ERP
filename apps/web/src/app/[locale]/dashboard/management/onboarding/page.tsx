@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -18,27 +19,32 @@ import {
   FileText,
   BookOpen,
   Laptop,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
-import { Badge, Button, Card, Input, Loading } from '@/components/ui';
+import { Badge, Button, Card, Input, Loading, Modal, Select, useToast } from '@/components/ui';
 import { useInfiniteEmployees } from '@/lib/query/employees';
+import { 
+  useEmployeesOnboarding, 
+  useEmployeeOnboardingSteps,
+  useInitializeEmployeeOnboarding,
+  useCompleteEmployeeOnboardingStep,
+  useOnboardingSteps
+} from '@/lib/query/queries';
+import { useTeams } from '@/lib/query/queries';
 import type { Employee } from '@/lib/api/employees';
+import type { OnboardingStep } from '@/lib/api/onboarding';
+import { handleApiError } from '@/lib/errors/api';
 
 type OnboardingStatus = 'pending' | 'in_progress' | 'completed';
-
-interface OnboardingTask {
-  id: number;
-  title: string;
-  completed: boolean;
-}
 
 interface OnboardingProcess {
   employee: Employee;
   status: OnboardingStatus;
   progress: number;
-  tasks: OnboardingTask[];
-  mentor: string;
-  startDate: string;
+  steps: OnboardingStep[];
+  completedSteps: string[];
+  startDate: string | null;
 }
 
 const statusConfig = {
@@ -62,15 +68,6 @@ const statusConfig = {
   },
 };
 
-// Standard onboarding tasks
-const standardTasks: OnboardingTask[] = [
-  { id: 1, title: 'Signature du contrat', completed: false },
-  { id: 2, title: 'Configuration email', completed: false },
-  { id: 3, title: 'Accès aux outils', completed: false },
-  { id: 4, title: 'Formation sécurité', completed: false },
-  { id: 5, title: 'Rencontre équipe', completed: false },
-];
-
 // Generate avatar color
 const getAvatarColor = (name: string) => {
   const colors = [
@@ -81,65 +78,76 @@ const getAvatarColor = (name: string) => {
   return colors[index] || 'bg-gray-500';
 };
 
-// Simulate onboarding status based on hire date
-const getOnboardingStatus = (hireDate: string): { status: OnboardingStatus, progress: number, tasks: OnboardingTask[] } => {
-  const hire = new Date(hireDate);
-  const now = new Date();
-  const daysSinceHire = Math.floor((now.getTime() - hire.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (daysSinceHire < 0) {
-    // Future hire date - pending
-    return { status: 'pending', progress: 0, tasks: standardTasks };
-  } else if (daysSinceHire < 30) {
-    // Within first 30 days - in progress
-    const progress = Math.min(100, Math.floor((daysSinceHire / 30) * 100));
-    const completedCount = Math.floor((progress / 100) * standardTasks.length);
-    const tasks = standardTasks.map((task, index) => ({
-      ...task,
-      completed: index < completedCount
-    }));
-    return { status: 'in_progress', progress, tasks };
-  } else {
-    // More than 30 days - completed
-    const tasks = standardTasks.map(task => ({ ...task, completed: true }));
-    return { status: 'completed', progress: 100, tasks };
-  }
+// Map progress to status
+const getStatusFromProgress = (progress: number, isCompleted: boolean): OnboardingStatus => {
+  if (isCompleted) return 'completed';
+  if (progress === 0) return 'pending';
+  return 'in_progress';
 };
 
 export default function OnboardingPage() {
+  const router = useRouter();
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [teamFilter, setTeamFilter] = useState<number | 'all'>('all');
+  const [showNewProcessModal, setShowNewProcessModal] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const [showResourcesModal, setShowResourcesModal] = useState<'documents' | 'formations' | 'tools' | null>(null);
 
   // Fetch employees
-  const { data: employeesData, isLoading } = useInfiniteEmployees(1000);
+  const { data: employeesData, isLoading: employeesLoading } = useInfiniteEmployees(1000);
   const employees = useMemo(() => employeesData?.pages.flat() || [], [employeesData]);
 
-  // Create onboarding processes from employees
+  // Fetch teams for filter
+  const { data: teamsData } = useTeams();
+  const teams = teamsData || [];
+
+  // Fetch onboarding data
+  const { data: onboardingData, isLoading: onboardingLoading, refetch: refetchOnboarding } = useEmployeesOnboarding({
+    team_id: teamFilter !== 'all' ? teamFilter : undefined,
+  });
+
+  // Fetch onboarding steps (for new process modal)
+  const { data: onboardingSteps } = useOnboardingSteps();
+
+  // Mutations
+  const initializeMutation = useInitializeEmployeeOnboarding();
+  const completeStepMutation = useCompleteEmployeeOnboardingStep();
+
+  // Create onboarding processes from employees and onboarding data
   const onboardingProcesses = useMemo((): OnboardingProcess[] => {
+    if (!onboardingData || !employees.length) return [];
+
+    // Create a map of employee_id -> onboarding progress
+    const onboardingMap = new Map(
+      onboardingData.map(item => [item.employee_id, item])
+    );
+
     return employees
       .filter((emp: Employee) => emp.hire_date) // Only employees with hire date
       .map((emp: Employee) => {
-        const { status, progress, tasks } = getOnboardingStatus(emp.hire_date!);
-        // Pick a random mentor from other employees
-        const otherEmployees = employees.filter((e: Employee) => e.id !== emp.id && e.first_name && e.last_name);
-        const mentor = otherEmployees.length > 0 
-          ? (() => {
-              const mentorEmp = otherEmployees[Math.floor(Math.random() * otherEmployees.length)];
-              return mentorEmp ? `${mentorEmp.first_name} ${mentorEmp.last_name}` : 'Non assigné';
-            })()
-          : 'Non assigné';
+        const onboardingItem = onboardingMap.get(emp.id);
+        const progress = onboardingItem?.progress.progress_percentage || 0;
+        const isCompleted = onboardingItem?.progress.is_completed || false;
+        const completedSteps = onboardingItem?.progress.completed_count || 0;
+        const totalSteps = onboardingItem?.progress.total_count || 0;
         
         return {
           employee: emp,
-          status,
-          progress,
-          tasks,
-          mentor,
-          startDate: emp.hire_date!
+          status: getStatusFromProgress(progress, isCompleted),
+          progress: Math.round(progress),
+          steps: [], // Will be loaded per employee if needed
+          completedSteps: [], // Will be loaded per employee if needed
+          startDate: emp.hire_date,
         };
       })
-      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  }, [employees]);
+      .sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      });
+  }, [employees, onboardingData]);
 
   // Filter onboarding processes
   const filteredProcesses = useMemo(() => {
@@ -150,9 +158,11 @@ export default function OnboardingPage() {
       
       const matchesStatus = statusFilter === 'all' || process.status === statusFilter;
       
-      return matchesSearch && matchesStatus;
+      const matchesTeam = teamFilter === 'all' || process.employee.team_id === teamFilter;
+      
+      return matchesSearch && matchesStatus && matchesTeam;
     });
-  }, [onboardingProcesses, searchQuery, statusFilter]);
+  }, [onboardingProcesses, searchQuery, statusFilter, teamFilter]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -166,6 +176,67 @@ export default function OnboardingPage() {
     
     return { total, pending, inProgress, completed, avgProgress };
   }, [onboardingProcesses]);
+
+  const isLoading = employeesLoading || onboardingLoading;
+
+  // Handle new process creation
+  const handleCreateNewProcess = async () => {
+    if (!selectedEmployeeId) {
+      showToast({
+        message: 'Veuillez sélectionner un employé',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      await initializeMutation.mutateAsync(selectedEmployeeId);
+      showToast({
+        message: 'Processus d\'onboarding initialisé avec succès',
+        type: 'success',
+      });
+      setShowNewProcessModal(false);
+      setSelectedEmployeeId(null);
+      refetchOnboarding();
+    } catch (error) {
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'initialisation du processus',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle step completion
+  const handleCompleteStep = async (employeeId: number, stepKey: string) => {
+    try {
+      await completeStepMutation.mutateAsync({ employeeId, stepKey });
+      showToast({
+        message: 'Tâche marquée comme complétée',
+        type: 'success',
+      });
+      refetchOnboarding();
+    } catch (error) {
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors de la mise à jour',
+        type: 'error',
+      });
+    }
+  };
+
+  // Get employees without onboarding
+  const employeesWithoutOnboarding = useMemo(() => {
+    if (!onboardingData) return employees.filter((emp: Employee) => emp.hire_date && emp.user_id);
+    
+    const employeesWithOnboarding = new Set(onboardingData.map(item => item.employee_id));
+    return employees.filter(
+      (emp: Employee) => 
+        emp.hire_date && 
+        emp.user_id && 
+        !employeesWithOnboarding.has(emp.id)
+    );
+  }, [employees, onboardingData]);
 
   if (isLoading) {
     return (
@@ -197,7 +268,7 @@ export default function OnboardingPage() {
             </div>
             <Button 
               className="bg-white text-[#523DC9] hover:bg-white/90"
-              onClick={() => {}}
+              onClick={() => setShowNewProcessModal(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
               Nouveau processus
@@ -282,6 +353,19 @@ export default function OnboardingPage() {
             </div>
             
             <div className="flex gap-2 flex-wrap">
+              <Select
+                value={teamFilter.toString()}
+                onChange={(e) => setTeamFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                className="min-w-[150px]"
+                options={[
+                  { label: 'Toutes les équipes', value: 'all' },
+                  ...teams.map((team) => ({
+                    label: team.name,
+                    value: team.id.toString(),
+                  })),
+                ]}
+              />
+              
               <Button 
                 variant={statusFilter === 'all' ? 'primary' : 'outline'}
                 onClick={() => setStatusFilter('all')}
@@ -322,7 +406,7 @@ export default function OnboardingPage() {
               Aucun processus trouvé
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchQuery || statusFilter !== 'all'
+              {searchQuery || statusFilter !== 'all' || teamFilter !== 'all'
                 ? 'Essayez de modifier vos filtres' 
                 : 'Créez votre premier processus d\'onboarding'}
             </p>
@@ -334,83 +418,22 @@ export default function OnboardingPage() {
               const initials = `${process.employee.first_name?.[0] || ''}${process.employee.last_name?.[0] || ''}`.toUpperCase();
               const avatarColor = getAvatarColor(fullName);
               const statusInfo = statusConfig[process.status];
-              const completedTasks = process.tasks.filter(t => t.completed).length;
+              const onboardingItem = onboardingData?.find(item => item.employee_id === process.employee.id);
+              const completedCount = onboardingItem?.progress.completed_count || 0;
+              const totalCount = onboardingItem?.progress.total_count || 0;
               
               return (
-                <Card 
+                <OnboardingProcessCard
                   key={process.employee.id}
-                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200"
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-14 h-14 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
-                      {initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                          {fullName}
-                        </h3>
-                        <Badge className={`${statusInfo.color} border flex-shrink-0`}>
-                          {statusInfo.label}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        Employé
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Progression
-                      </span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        {process.progress}%
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817] transition-all duration-500"
-                        style={{ width: `${process.progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tasks Checklist */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Tâches ({completedTasks}/{process.tasks.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {process.tasks.map((task) => (
-                        <div key={task.id} className="flex items-center gap-2">
-                          {task.completed ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
-                          )}
-                          <span className={`text-sm ${task.completed ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>
-                            {task.title}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Footer Info */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <User className="w-4 h-4" />
-                      <span>Mentor: {process.mentor}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                      <span>{new Date(process.startDate).toLocaleDateString('fr-CA')}</span>
-                    </div>
-                  </div>
-                </Card>
+                  process={process}
+                  fullName={fullName}
+                  initials={initials}
+                  avatarColor={avatarColor}
+                  statusInfo={statusInfo}
+                  completedCount={completedCount}
+                  totalCount={totalCount}
+                  onCompleteStep={(stepKey) => handleCompleteStep(process.employee.id, stepKey)}
+                />
               );
             })}
           </div>
@@ -428,7 +451,12 @@ export default function OnboardingPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Guides, politiques et procédures
             </p>
-            <Button variant="outline" size="sm" className="w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => setShowResourcesModal('documents')}
+            >
               Voir les documents
             </Button>
           </Card>
@@ -443,7 +471,12 @@ export default function OnboardingPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Cours et modules de formation
             </p>
-            <Button variant="outline" size="sm" className="w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => setShowResourcesModal('formations')}
+            >
               Voir les formations
             </Button>
           </Card>
@@ -458,12 +491,243 @@ export default function OnboardingPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Logiciels et accès nécessaires
             </p>
-            <Button variant="outline" size="sm" className="w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => setShowResourcesModal('tools')}
+            >
               Voir les outils
             </Button>
           </Card>
         </div>
       </MotionDiv>
+
+      {/* New Process Modal */}
+      {showNewProcessModal && (
+        <Modal
+          isOpen={showNewProcessModal}
+          onClose={() => {
+            setShowNewProcessModal(false);
+            setSelectedEmployeeId(null);
+          }}
+          title="Nouveau processus d'onboarding"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Sélectionner un employé
+              </label>
+              <Select
+                value={selectedEmployeeId?.toString() || ''}
+                onChange={(e) => setSelectedEmployeeId(e.target.value ? parseInt(e.target.value) : null)}
+                placeholder="-- Sélectionner un employé --"
+                options={[
+                  { label: '-- Sélectionner un employé --', value: '' },
+                  ...employeesWithoutOnboarding.map((emp: Employee) => ({
+                    label: `${emp.first_name} ${emp.last_name}${emp.email ? ` (${emp.email})` : ''}`,
+                    value: emp.id.toString(),
+                  })),
+                ]}
+              />
+              {employeesWithoutOnboarding.length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Tous les employés avec une date d'embauche ont déjà un processus d'onboarding.
+                </p>
+              )}
+            </div>
+            
+            {onboardingSteps && onboardingSteps.length > 0 && (
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Étapes d'onboarding qui seront créées :
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                  {onboardingSteps.map((step) => (
+                    <li key={step.id}>{step.title}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowNewProcessModal(false);
+                  setSelectedEmployeeId(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreateNewProcess}
+                disabled={!selectedEmployeeId || initializeMutation.isPending}
+              >
+                {initializeMutation.isPending ? 'Création...' : 'Créer le processus'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Resources Modal */}
+      {showResourcesModal && (
+        <Modal
+          isOpen={!!showResourcesModal}
+          onClose={() => setShowResourcesModal(null)}
+          title={
+            showResourcesModal === 'documents' ? 'Documents' :
+            showResourcesModal === 'formations' ? 'Formations' :
+            'Outils'
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-gray-600 dark:text-gray-400">
+              {showResourcesModal === 'documents' && 'Les documents d\'onboarding seront disponibles ici.'}
+              {showResourcesModal === 'formations' && 'Les formations d\'onboarding seront disponibles ici.'}
+              {showResourcesModal === 'tools' && 'Les outils d\'onboarding seront disponibles ici.'}
+            </p>
+            <p className="text-sm text-gray-500">
+              Cette fonctionnalité sera implémentée prochainement.
+            </p>
+            <div className="flex justify-end pt-4">
+              <Button onClick={() => setShowResourcesModal(null)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </PageContainer>
+  );
+}
+
+// Separate component for process card to handle step loading
+function OnboardingProcessCard({
+  process,
+  fullName,
+  initials,
+  avatarColor,
+  statusInfo,
+  completedCount,
+  totalCount,
+  onCompleteStep,
+}: {
+  process: OnboardingProcess;
+  fullName: string;
+  initials: string;
+  avatarColor: string;
+  statusInfo: typeof statusConfig[keyof typeof statusConfig];
+  completedCount: number;
+  totalCount: number;
+  onCompleteStep: (stepKey: string) => void;
+}) {
+  const [showSteps, setShowSteps] = useState(false);
+  const { data: steps, isLoading: stepsLoading } = useEmployeeOnboardingSteps(
+    process.employee.id,
+    showSteps && !!process.employee.user_id
+  );
+
+  return (
+    <Card 
+      className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200"
+    >
+      <div className="flex items-start gap-4 mb-4">
+        <div className={`w-14 h-14 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
+          {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+              {fullName}
+            </h3>
+            <Badge className={`${statusInfo.color} border flex-shrink-0`}>
+              {statusInfo.label}
+            </Badge>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Employé
+          </p>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Progression
+          </span>
+          <span className="text-sm font-bold text-gray-900 dark:text-white">
+            {process.progress}%
+          </span>
+        </div>
+        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817] transition-all duration-500"
+            style={{ width: `${process.progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Tasks Checklist */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Tâches ({completedCount}/{totalCount})
+          </h4>
+          {totalCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSteps(!showSteps)}
+            >
+              {showSteps ? 'Masquer' : 'Voir les détails'}
+            </Button>
+          )}
+        </div>
+        
+        {showSteps && steps && steps.length > 0 ? (
+          <div className="space-y-2">
+            {steps.map((step, index) => {
+              // Steps are ordered, so if completedCount is 3, first 3 steps are completed
+              const isCompleted = index < completedCount;
+              return (
+                <div key={step.id} className="flex items-center gap-2">
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <button
+                      onClick={() => !isCompleted && onCompleteStep(step.key)}
+                      className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0 hover:border-blue-500 transition-colors cursor-pointer"
+                      title="Marquer comme complété"
+                    />
+                  )}
+                  <span className={`text-sm flex-1 ${isCompleted ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {step.title}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : showSteps && stepsLoading ? (
+          <Loading />
+        ) : totalCount === 0 ? (
+          <p className="text-sm text-gray-500">Aucune tâche d'onboarding configurée</p>
+        ) : null}
+      </div>
+
+      {/* Footer Info */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700 text-sm">
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-4 h-4" />
+          <span>
+            {process.startDate 
+              ? new Date(process.startDate).toLocaleDateString('fr-CA')
+              : 'Date non définie'}
+          </span>
+        </div>
+      </div>
+    </Card>
   );
 }

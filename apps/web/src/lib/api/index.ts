@@ -121,6 +121,10 @@ export { projectsAPI } from './projects';
 // Re-export management module API (unified)
 export { managementAPI, teamsAPI, employeesAPI } from './management';
 
+// Re-export onboarding API
+export { onboardingAPI } from './onboarding';
+export type { OnboardingStep, OnboardingProgress, EmployeeOnboardingItem } from './onboarding';
+
 // Re-export agenda module API (unified)
 export { agendaModuleAPI } from './agenda-unified';
 export type {
