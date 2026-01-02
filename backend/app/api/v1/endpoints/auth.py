@@ -956,39 +956,120 @@ async def google_oauth_callback(
             first_name = name_parts[0] if len(name_parts) > 0 else ""
             last_name = name_parts[1] if len(name_parts) > 1 else ""
             
-            # Check if user exists
-            result = await db.execute(
-                select(User).where(User.email == email)
-            )
-            user = result.scalar_one_or_none()
-            is_new_user = user is None
+            # Check if email is @nukleo (employee email)
+            is_nukleo_employee = email.endswith("@nukleo.com") if email else False
+            employee = None
+            user = None
+            is_new_user = False
             
-            # Create or update user
-            if user:
-                # Update existing user
-                user.first_name = first_name or user.first_name
-                user.last_name = last_name or user.last_name
-                # Mark as active if not already
-                if not user.is_active:
-                    user.is_active = True
-            else:
-                # Create new user
-                # Generate a random password since Google OAuth users don't have passwords
-                # Bcrypt has a 72-byte limit, so we use token_hex(32) which generates 64 hex characters (64 bytes)
-                # This is safely under the 72-byte limit
-                import secrets
-                random_password = secrets.token_hex(32)  # 32 bytes * 2 = 64 hex characters = 64 bytes (safe)
-                logger.debug(f"Generated password for Google OAuth user: {len(random_password)} chars, {len(random_password.encode('utf-8'))} bytes")
-                hashed_password = get_password_hash(random_password)
-                
-                user = User(
-                    email=email,
-                    hashed_password=hashed_password,
-                    first_name=first_name,
-                    last_name=last_name,
-                    is_active=True,
+            if is_nukleo_employee:
+                # For @nukleo employees, find the Employee record and link to User
+                logger.info(f"Google OAuth for @nukleo employee: {email}")
+                employee_result = await db.execute(
+                    select(Employee).where(Employee.email == email)
                 )
-                db.add(user)
+                employee = employee_result.scalar_one_or_none()
+                
+                if employee:
+                    logger.info(f"Found employee record for {email}, employee_id: {employee.id}")
+                    # If employee already has a user_id, use that user
+                    if employee.user_id:
+                        user_result = await db.execute(
+                            select(User).where(User.id == employee.user_id)
+                        )
+                        user = user_result.scalar_one_or_none()
+                        if user:
+                            logger.info(f"Using existing user {user.id} for employee {employee.id}")
+                            # Update user info from Google
+                            user.first_name = first_name or user.first_name or employee.first_name
+                            user.last_name = last_name or user.last_name or employee.last_name
+                            if picture:
+                                user.avatar = picture
+                            if not user.is_active:
+                                user.is_active = True
+                        else:
+                            logger.warning(f"Employee {employee.id} has user_id {employee.user_id} but user not found")
+                            # Create new user and link to employee
+                            import secrets
+                            random_password = secrets.token_hex(32)
+                            hashed_password = get_password_hash(random_password)
+                            user = User(
+                                email=email,
+                                hashed_password=hashed_password,
+                                first_name=first_name or employee.first_name,
+                                last_name=last_name or employee.last_name,
+                                avatar=picture,
+                                is_active=True,
+                            )
+                            db.add(user)
+                            await db.flush()  # Flush to get user.id
+                            employee.user_id = user.id
+                            is_new_user = True
+                            logger.info(f"Created new user {user.id} and linked to employee {employee.id}")
+                    else:
+                        # Employee exists but no user_id - create user and link
+                        logger.info(f"Employee {employee.id} has no user_id, creating new user")
+                        import secrets
+                        random_password = secrets.token_hex(32)
+                        hashed_password = get_password_hash(random_password)
+                        user = User(
+                            email=email,
+                            hashed_password=hashed_password,
+                            first_name=first_name or employee.first_name,
+                            last_name=last_name or employee.last_name,
+                            avatar=picture,
+                            is_active=True,
+                        )
+                        db.add(user)
+                        await db.flush()  # Flush to get user.id
+                        employee.user_id = user.id
+                        is_new_user = True
+                        logger.info(f"Created new user {user.id} and linked to employee {employee.id}")
+                else:
+                    # Email is @nukleo but no employee record found
+                    logger.warning(f"Email {email} is @nukleo but no employee record found")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Aucun compte employé trouvé pour cet email. Veuillez contacter l'administrateur."
+                    )
+            else:
+                # Regular user (not @nukleo) - use existing logic
+                # Check if user exists
+                result = await db.execute(
+                    select(User).where(User.email == email)
+                )
+                user = result.scalar_one_or_none()
+                is_new_user = user is None
+                
+                # Create or update user
+                if user:
+                    # Update existing user
+                    user.first_name = first_name or user.first_name
+                    user.last_name = last_name or user.last_name
+                    if picture:
+                        user.avatar = picture
+                    # Mark as active if not already
+                    if not user.is_active:
+                        user.is_active = True
+                else:
+                    # Create new user
+                    # Generate a random password since Google OAuth users don't have passwords
+                    # Bcrypt has a 72-byte limit, so we use token_hex(32) which generates 64 hex characters (64 bytes)
+                    # This is safely under the 72-byte limit
+                    import secrets
+                    random_password = secrets.token_hex(32)  # 32 bytes * 2 = 64 hex characters = 64 bytes (safe)
+                    logger.debug(f"Generated password for Google OAuth user: {len(random_password)} chars, {len(random_password.encode('utf-8'))} bytes")
+                    hashed_password = get_password_hash(random_password)
+                    
+                    user = User(
+                        email=email,
+                        hashed_password=hashed_password,
+                        first_name=first_name,
+                        last_name=last_name,
+                        avatar=picture,
+                        is_active=True,
+                    )
+                    db.add(user)
             
             await db.commit()
             await db.refresh(user)
@@ -1021,10 +1102,13 @@ async def google_oauth_callback(
                 # Don't fail the request if audit logging fails
                 logger.error(f"Failed to log Google OAuth authentication event: {e}", exc_info=True)
             
-            # Determine frontend redirect URL
-            # If state is already a full URL (starts with http), use it directly
-            # Otherwise, construct the URL from state or use FRONTEND_URL from settings
+            # Determine frontend redirect URL based on user role
+            # For @nukleo employees: redirect to employee portal unless admin/superadmin
+            # For admin/superadmin: redirect to ERP dashboard
+            # For regular users: use state or default callback
             import os
+            from app.dependencies import is_admin_or_superadmin
+            
             # Get frontend URL from settings (CORS_ORIGINS first item) or environment variable
             frontend_base = None
             if settings.CORS_ORIGINS and isinstance(settings.CORS_ORIGINS, list) and len(settings.CORS_ORIGINS) > 0:
@@ -1046,13 +1130,29 @@ async def google_oauth_callback(
             logger.info(f"Final frontend base URL: {frontend_base}, state: {state}")
             
             # Default locale for next-intl (usually 'en' or 'fr')
-            # This ensures the redirect goes to the correct localized route
             default_locale = os.getenv("DEFAULT_LOCALE", "fr")
             
+            # Check if user is admin or superadmin (for @nukleo employees)
+            has_erp_access = False
+            if is_nukleo_employee and user:
+                has_erp_access = await is_admin_or_superadmin(user, db)
+                logger.info(f"Employee {email} has ERP access: {has_erp_access}")
+            
+            # Determine redirect URL
             if state and state.startswith(("http://", "https://")):
                 # State is already a full URL, use it directly
                 frontend_url = state.rstrip("/")
                 redirect_url = f"{frontend_url}?token={jwt_token}&type=google"
+            elif is_nukleo_employee:
+                # @nukleo employee - redirect to employee portal or ERP dashboard based on role
+                if has_erp_access:
+                    # Admin/superadmin - redirect to ERP dashboard
+                    redirect_url = f"{frontend_base}/{default_locale}/dashboard?token={jwt_token}&type=google"
+                    logger.info(f"Redirecting @nukleo employee {email} (admin/superadmin) to ERP dashboard")
+                else:
+                    # Regular employee - redirect to employee portal
+                    redirect_url = f"{frontend_base}/{default_locale}/portail-employe?token={jwt_token}&type=google"
+                    logger.info(f"Redirecting @nukleo employee {email} to employee portal")
             elif state:
                 # State is a relative path (e.g., "/auth/callback")
                 # Ensure it starts with / and doesn't end with /

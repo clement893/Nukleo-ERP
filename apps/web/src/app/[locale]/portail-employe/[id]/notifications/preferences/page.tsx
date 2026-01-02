@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { NotificationSettings } from '@/components/settings';
@@ -21,7 +22,7 @@ export default function EmployeeNotificationPreferencesPage() {
 
   useEffect(() => {
     if (!employeeId) {
-      router.push(`/${locale}/portail-employe`);
+      router.push(`/portail-employe`);
       return;
     }
 
@@ -56,8 +57,8 @@ export default function EmployeeNotificationPreferencesPage() {
         title={t('title') || 'Préférences de Notifications'}
         description={t('description') || 'Gérez vos préférences de notifications'}
         breadcrumbs={[
-          { label: 'Portail Employé', href: `/${locale}/portail-employe/${employeeId}/dashboard` },
-          { label: 'Notifications', href: `/${locale}/portail-employe/${employeeId}/notifications` },
+          { label: 'Portail Employé', href: `/portail-employe/${employeeId}/dashboard` },
+          { label: 'Notifications', href: `/portail-employe/${employeeId}/notifications` },
           { label: 'Préférences' },
         ]}
       />
@@ -66,7 +67,7 @@ export default function EmployeeNotificationPreferencesPage() {
         {/* Back Button */}
         <Button
           variant="outline"
-          onClick={() => router.push(`/${locale}/portail-employe/${employeeId}/notifications`)}
+          onClick={() => router.push(`/portail-employe/${employeeId}/notifications`)}
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
