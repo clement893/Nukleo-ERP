@@ -9,11 +9,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Tabs from '@/components/ui/Tabs';
-import { Card } from '@/components/ui/Card';
+import Card from '@/components/ui/Card';
 import { ScheduledTasksList } from './ScheduledTasksList';
 import { AutomationRulesList } from './AutomationRulesList';
 import { AutomationTemplates } from './AutomationTemplates';
-import { automationAPI, type ScheduledTask, type AutomationRule } from '@/lib/api/automation';
+import { automationAPI } from '@/lib/api/automation';
 import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errors';
@@ -192,7 +192,7 @@ export default function AutomationSettings() {
                   isLoading={tasksLoading}
                   error={tasksError}
                   onCreate={createTaskMutation.mutate}
-                  onUpdate={updateTaskMutation.mutate}
+                  onUpdate={(id, data) => updateTaskMutation.mutate({ id, data })}
                   onDelete={deleteTaskMutation.mutate}
                   onToggle={toggleTaskMutation.mutate}
                 />
@@ -208,9 +208,9 @@ export default function AutomationSettings() {
                   isLoading={rulesLoading}
                   error={rulesError}
                   onCreate={createRuleMutation.mutate}
-                  onUpdate={updateRuleMutation.mutate}
+                  onUpdate={(id, data) => updateRuleMutation.mutate({ id, data })}
                   onDelete={deleteRuleMutation.mutate}
-                  onToggle={toggleRuleMutation.mutate}
+                  onToggle={(id, enabled) => toggleRuleMutation.mutate({ id, enabled })}
                 />
               ),
             },

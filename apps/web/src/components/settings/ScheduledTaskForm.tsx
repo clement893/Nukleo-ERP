@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button, Card, Input, Select, Modal } from '@/components/ui';
+import { Button, Input, Select, Modal } from '@/components/ui';
 import type { ScheduledTask, CreateScheduledTaskRequest } from '@/lib/api/automation';
 
 export interface ScheduledTaskFormProps {

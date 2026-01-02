@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button, Card, Input, Select, Modal } from '@/components/ui';
+import { Button, Input, Select, Modal } from '@/components/ui';
 import type { AutomationRule, CreateAutomationRuleRequest } from '@/lib/api/automation';
 
 export interface AutomationRuleFormProps {
@@ -91,7 +91,7 @@ export function AutomationRuleForm({ rule, onSave, onCancel }: AutomationRuleFor
 
   const updateAction = (index: number, type: string) => {
     const newActions = [...formData.actions];
-    newActions[index] = { ...newActions[index], type };
+    newActions[index] = { ...newActions[index], type, config: newActions[index].config || {} };
     setFormData({ ...formData, actions: newActions });
   };
 

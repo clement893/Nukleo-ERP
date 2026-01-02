@@ -11,7 +11,6 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { AutomationSettings } from '@/components/settings';

@@ -165,10 +165,10 @@ export const automationAPI = {
     const url = `/v1/scheduled-tasks${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiClient.get<ScheduledTask[]>(url);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to fetch scheduled tasks: no data returned');
     }
-    return Array.isArray(response) ? response : [];
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   /**
@@ -176,10 +176,10 @@ export const automationAPI = {
    */
   getScheduledTask: async (taskId: number): Promise<ScheduledTask> => {
     const response = await apiClient.get<ScheduledTask>(`/v1/scheduled-tasks/${taskId}`);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to fetch scheduled task: no data returned');
     }
-    return response;
+    return response.data;
   },
 
   /**
@@ -187,10 +187,10 @@ export const automationAPI = {
    */
   createScheduledTask: async (task: CreateScheduledTaskRequest): Promise<ScheduledTask> => {
     const response = await apiClient.post<ScheduledTask>('/v1/scheduled-tasks', task);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to create scheduled task: no data returned');
     }
-    return response;
+    return response.data;
   },
 
   /**
@@ -198,10 +198,10 @@ export const automationAPI = {
    */
   updateScheduledTask: async (taskId: number, task: UpdateScheduledTaskRequest): Promise<ScheduledTask> => {
     const response = await apiClient.put<ScheduledTask>(`/v1/scheduled-tasks/${taskId}`, task);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to update scheduled task: no data returned');
     }
-    return response;
+    return response.data;
   },
 
   /**
@@ -223,10 +223,10 @@ export const automationAPI = {
    */
   toggleScheduledTask: async (taskId: number): Promise<ScheduledTask> => {
     const response = await apiClient.put<ScheduledTask>(`/v1/content/schedule/${taskId}/toggle`);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to toggle scheduled task: no data returned');
     }
-    return response;
+    return response.data;
   },
 
   /**
@@ -234,10 +234,10 @@ export const automationAPI = {
    */
   getTaskLogs: async (taskId: number, limit: number = 50): Promise<ExecutionLog[]> => {
     const response = await apiClient.get<ExecutionLog[]>(`/v1/scheduled-tasks/${taskId}/logs?limit=${limit}`);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to fetch task logs: no data returned');
     }
-    return Array.isArray(response) ? response : [];
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   /**
@@ -247,10 +247,10 @@ export const automationAPI = {
   getAutomationRules: async (): Promise<AutomationRule[]> => {
     try {
       const response = await apiClient.get<AutomationRule[]>('/v1/automation-rules');
-      if (!response) {
+      if (!response || !response.data) {
         return [];
       }
-      return Array.isArray(response) ? response : [];
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       // If endpoint doesn't exist yet, return empty array
       console.warn('Automation rules endpoint not available yet');
@@ -263,10 +263,10 @@ export const automationAPI = {
    */
   getAutomationRule: async (ruleId: string): Promise<AutomationRule> => {
     const response = await apiClient.get<AutomationRule>(`/v1/automation-rules/${ruleId}`);
-    if (!response) {
+    if (!response || !response.data) {
       throw new Error('Failed to fetch automation rule: no data returned');
     }
-    return response;
+    return response.data;
   },
 
   /**
@@ -275,10 +275,10 @@ export const automationAPI = {
   createAutomationRule: async (rule: CreateAutomationRuleRequest): Promise<AutomationRule> => {
     try {
       const response = await apiClient.post<AutomationRule>('/v1/automation-rules', rule);
-      if (!response) {
+      if (!response || !response.data) {
         throw new Error('Failed to create automation rule: no data returned');
       }
-      return response;
+      return response.data;
     } catch (error) {
       // If endpoint doesn't exist yet, throw a helpful error
       throw new Error('Automation rules endpoint not available yet. Please use scheduled tasks for now.');
@@ -291,10 +291,10 @@ export const automationAPI = {
   updateAutomationRule: async (ruleId: string, rule: UpdateAutomationRuleRequest): Promise<AutomationRule> => {
     try {
       const response = await apiClient.put<AutomationRule>(`/v1/automation-rules/${ruleId}`, rule);
-      if (!response) {
+      if (!response || !response.data) {
         throw new Error('Failed to update automation rule: no data returned');
       }
-      return response;
+      return response.data;
     } catch (error) {
       throw new Error('Automation rules endpoint not available yet. Please use scheduled tasks for now.');
     }
@@ -317,10 +317,10 @@ export const automationAPI = {
   toggleAutomationRule: async (ruleId: string, enabled: boolean): Promise<AutomationRule> => {
     try {
       const response = await apiClient.put<AutomationRule>(`/v1/automation-rules/${ruleId}/toggle`, { enabled });
-      if (!response) {
+      if (!response || !response.data) {
         throw new Error('Failed to toggle automation rule: no data returned');
       }
-      return response;
+      return response.data;
     } catch (error) {
       throw new Error('Automation rules endpoint not available yet.');
     }

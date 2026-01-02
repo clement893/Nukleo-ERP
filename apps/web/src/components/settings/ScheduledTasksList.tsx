@@ -7,8 +7,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, Badge, Input, Select, Switch, useToast } from '@/components/ui';
-import { Plus, Search, Filter, Clock, Trash2, Edit2, Play, Pause, Loader2 } from 'lucide-react';
+import { Button, Card, Badge, Input, Select, Switch } from '@/components/ui';
+import { Plus, Search, Clock, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { ScheduledTaskForm } from './ScheduledTaskForm';
 import type { ScheduledTask, CreateScheduledTaskRequest, UpdateScheduledTaskRequest } from '@/lib/api/automation';
 
@@ -36,7 +36,6 @@ export function ScheduledTasksList({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const { showToast } = useToast();
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -187,7 +186,7 @@ export function ScheduledTasksList({
                       <Badge variant={getStatusBadge(task.status)}>
                         {getStatusLabel(task.status)}
                       </Badge>
-                      <Badge variant="outline">{getTypeLabel(task.task_type)}</Badge>
+                      <Badge variant="default">{getTypeLabel(task.task_type)}</Badge>
                     </div>
                     {task.description && (
                       <p className="text-sm text-muted-foreground mb-4">{task.description}</p>

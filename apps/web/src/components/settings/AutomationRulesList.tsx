@@ -34,7 +34,6 @@ export function AutomationRulesList({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { showToast } = useToast();
 
   const filteredRules = rules.filter((rule) => {
     return rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
