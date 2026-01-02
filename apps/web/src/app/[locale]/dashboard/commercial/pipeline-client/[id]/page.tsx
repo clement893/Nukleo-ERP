@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -64,7 +64,7 @@ function DroppableStageColumn({
   className = '',
 }: { 
   stageId: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -610,16 +610,20 @@ export default function PipelineDetailPage() {
     const { active, over } = event;
     setActiveOpportunity(null);
 
-    if (!over || active.id === over.id) return;
+    if (!over) return;
 
     const opportunityId = active.id as string;
     const newStageId = over.id as string;
 
-    // Find the opportunity and new stage
+    // Check if dropped on the same stage (no change needed)
     const opportunity = opportunities.find(o => o.id === opportunityId);
-    const newStage = pipeline?.stages?.find(s => s.id === newStageId);
+    if (!opportunity || opportunity.stage_id === newStageId) {
+      return;
+    }
 
-    if (!opportunity || !newStage) return;
+    // Find the new stage
+    const newStage = pipeline?.stages?.find(s => s.id === newStageId);
+    if (!newStage) return;
 
     // Optimistic update
     setOpportunities(prev =>
@@ -1000,68 +1004,79 @@ export default function PipelineDetailPage() {
 
                       return (
                         <div key={stage.id} className="flex-shrink-0 w-[260px]">
-                          <div 
-                            className="glass-card rounded-lg border p-3 h-full flex flex-col"
-                            style={{ 
-                              borderColor: stage.color ? `${stage.color}40` : '#A7A2CF20',
-                              backgroundColor: stage.color ? `${stage.color}05` : undefined
-                            }}
-                          >
-                            {/* Stage Header */}
-                            <div className="mb-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <h3 
-                                  className="font-bold text-sm" 
-                                  style={{ 
-                                    fontFamily: 'Space Grotesk, sans-serif',
-                                    color: stage.color || undefined
-                                  }}
-                                >
-                                  {stage.name}
-                                </h3>
-                                <Badge 
-                                  className="text-xs"
-                                  style={{
-                                    backgroundColor: stage.color ? `${stage.color}20` : undefined,
-                                    borderColor: stage.color ? `${stage.color}40` : undefined,
-                                    color: stage.color || undefined
-                                  }}
-                                >
-                                  {stageOpps.length}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-600 dark:text-gray-400">
-                                {formatCurrency(stageValue)}
-                              </p>
-                            </div>
-
-                            {/* Droppable Area */}
-                            <SortableContext
-                              items={stageOpps.map(o => o.id)}
-                              strategy={verticalListSortingStrategy}
-                              id={stage.id}
+                          <DroppableStageColumn stageId={stage.id}>
+                            <div 
+                              className="glass-card rounded-lg border p-3 h-full flex flex-col"
+                              style={{ 
+                                borderColor: stage.color ? `${stage.color}40` : '#A7A2CF20',
+                                backgroundColor: stage.color ? `${stage.color}05` : undefined
+                              }}
                             >
-                              <div className="flex-1 space-y-2 min-h-[200px]">
-                                {stageOpps.map((opp) => (
-                                  <OpportunityKanbanCard 
-                                    key={opp.id} 
-                                    opportunity={opp}
-                                    onView={() => handleViewOpportunity(opp)}
-                                    onEdit={() => handleEditOpportunity(opp)}
-                                    onDelete={() => handleDeleteOpportunity(opp)}
-                                  />
-                                ))}
+                              {/* Stage Header */}
+                              <div className="mb-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h3 
+                                    className="font-bold text-sm" 
+                                    style={{ 
+                                      fontFamily: 'Space Grotesk, sans-serif',
+                                      color: stage.color || undefined
+                                    }}
+                                  >
+                                    {stage.name}
+                                  </h3>
+                                  <Badge 
+                                    className="text-xs"
+                                    style={{
+                                      backgroundColor: stage.color ? `${stage.color}20` : undefined,
+                                      borderColor: stage.color ? `${stage.color}40` : undefined,
+                                      color: stage.color || undefined
+                                    }}
+                                  >
+                                    {stageOpps.length}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">
+                                  {formatCurrency(stageValue)}
+                                </p>
                               </div>
-                            </SortableContext>
-                          </div>
+
+                              {/* Droppable Area */}
+                              <SortableContext
+                                items={stageOpps.map(o => o.id)}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                <div className="flex-1 min-h-[200px]">
+                                  {stageOpps.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {stageOpps.map((opp) => (
+                                        <OpportunityKanbanCard 
+                                          key={opp.id} 
+                                          opportunity={opp}
+                                          onView={() => handleViewOpportunity(opp)}
+                                          onEdit={() => handleEditOpportunity(opp)}
+                                          onDelete={() => handleDeleteOpportunity(opp)}
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center h-[200px] text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                      Glissez une opportunité ici
+                                    </div>
+                                  )}
+                                </div>
+                              </SortableContext>
+                            </div>
+                          </DroppableStageColumn>
                         </div>
                       );
                     })}
                 </div>
 
-                <DragOverlay>
+                <DragOverlay dropAnimation={null}>
                   {activeOpportunity ? (
-                    <OpportunityKanbanCard opportunity={activeOpportunity} isDragging />
+                    <div className="w-[260px]">
+                      <OpportunityKanbanCard opportunity={activeOpportunity} isDragging />
+                    </div>
                   ) : null}
                 </DragOverlay>
               </DndContext>
