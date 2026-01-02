@@ -253,7 +253,7 @@ export default function DepensesPage() {
       amount: parseFloat(expense.amount),
       currency: expense.currency,
       category: expense.category || null,
-      transaction_date: expense.transaction_date ? expense.transaction_date.split('T')[0] : new Date().toISOString().split('T')[0] as string,
+      transaction_date: (expense.transaction_date ? expense.transaction_date.split('T')[0] : new Date().toISOString().split('T')[0]) || '',
       payment_date: expense.payment_date ? expense.payment_date.split('T')[0] : null,
       status: expense.status,
       supplier_id: expense.supplier_id || null,
