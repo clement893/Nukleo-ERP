@@ -186,8 +186,8 @@ export default function EntreprisesPage() {
   };
 
   if (isLoading) {
-    return (
-      <PageContainer>
+  return (
+    <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
           <Loading />
         </div>

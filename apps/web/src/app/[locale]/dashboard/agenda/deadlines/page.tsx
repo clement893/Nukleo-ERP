@@ -119,7 +119,7 @@ export default function DeadlinesPage() {
   const isLoading = projectsLoading || tasksLoading;
 
   return (
-    <PageContainer>
+    <PageContainer maxWidth="full">
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">

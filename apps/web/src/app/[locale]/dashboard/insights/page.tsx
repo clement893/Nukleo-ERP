@@ -89,7 +89,7 @@ export default function DashboardInsightsPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <PageContainer>
+        <PageContainer maxWidth="full">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loading />
           </div>
@@ -100,7 +100,7 @@ export default function DashboardInsightsPage() {
 
   return (
     <ProtectedRoute>
-      <PageContainer>
+      <PageContainer maxWidth="full">
         <PageHeader
           title={t('title') || 'Business Insights'}
           description={t('description') || 'Key business metrics and trends'}

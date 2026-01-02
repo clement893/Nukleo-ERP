@@ -231,7 +231,7 @@ export default function DashboardReportsPage() {
   if (isLoading && savedReports.length === 0) {
     return (
       <ProtectedRoute>
-        <PageContainer>
+        <PageContainer maxWidth="full">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loading />
           </div>
@@ -242,7 +242,7 @@ export default function DashboardReportsPage() {
 
   return (
     <ProtectedRoute>
-      <PageContainer>
+      <PageContainer maxWidth="full">
         <PageHeader
           title={t('title') || 'Reports'}
           description={t('description') || 'Create and view custom reports'}

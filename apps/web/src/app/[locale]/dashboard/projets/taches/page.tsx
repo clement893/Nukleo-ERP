@@ -454,7 +454,7 @@ export default function TachesPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer maxWidth="full">
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">

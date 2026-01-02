@@ -318,7 +318,7 @@ export default function LeoPage() {
   };
 
   return (
-    <PageContainer className="flex flex-col h-full">
+    <PageContainer maxWidth="full" className="flex flex-col h-full">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />

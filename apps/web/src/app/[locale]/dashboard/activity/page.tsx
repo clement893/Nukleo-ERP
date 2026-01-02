@@ -105,7 +105,7 @@ export default function DashboardActivityPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <PageContainer>
+        <PageContainer maxWidth="full">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loading />
           </div>
@@ -116,7 +116,7 @@ export default function DashboardActivityPage() {
 
   return (
     <ProtectedRoute>
-      <PageContainer>
+      <PageContainer maxWidth="full">
         <PageHeader
           title={t('title') || 'Activity Feed'}
           description={t('description') || 'View recent activities across the platform'}

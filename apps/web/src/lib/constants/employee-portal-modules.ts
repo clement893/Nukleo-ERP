@@ -18,6 +18,55 @@ export interface EmployeePortalModule {
 }
 
 /**
+ * Transforme un chemin de module en chemin pour le portail employé
+ * Convertit les chemins /dashboard/* en /portail-employe/[id]/modules/*
+ */
+export function getEmployeePortalModulePath(
+  employeeId: number,
+  modulePath: string,
+  locale: string = 'fr'
+): string {
+  // Si le chemin commence par /dashboard, le transformer en /portail-employe/[id]/modules
+  if (modulePath.startsWith('/dashboard')) {
+    const pathWithoutDashboard = modulePath.replace('/dashboard', '');
+    // Si c'est juste /dashboard, rediriger vers le dashboard du portail
+    if (pathWithoutDashboard === '' || pathWithoutDashboard === '/') {
+      return `/${locale}/portail-employe/${employeeId}/dashboard`;
+    }
+    return `/${locale}/portail-employe/${employeeId}/modules${pathWithoutDashboard}`;
+  }
+  
+  // Si le chemin commence par /admin, le transformer en /portail-employe/[id]/admin
+  if (modulePath.startsWith('/admin')) {
+    const pathWithoutAdmin = modulePath.replace('/admin', '');
+    return `/${locale}/portail-employe/${employeeId}/admin${pathWithoutAdmin}`;
+  }
+  
+  // Si le chemin commence par /settings, le transformer en /portail-employe/[id]/settings
+  if (modulePath.startsWith('/settings')) {
+    const pathWithoutSettings = modulePath.replace('/settings', '');
+    return `/${locale}/portail-employe/${employeeId}/settings${pathWithoutSettings}`;
+  }
+  
+  // Pour les autres chemins, ajouter le préfixe portail-employe
+  return `/${locale}/portail-employe/${employeeId}${modulePath}`;
+}
+
+/**
+ * Configuration des modules avec transformation dynamique pour le portail employé
+ */
+export function getEmployeePortalModules(employeeId: number, locale: string = 'fr'): EmployeePortalModule[] {
+  return EMPLOYEE_PORTAL_MODULES.map(module => ({
+    ...module,
+    basePath: getEmployeePortalModulePath(employeeId, module.basePath, locale),
+    subPages: module.subPages?.map(subPage => ({
+      ...subPage,
+      path: getEmployeePortalModulePath(employeeId, subPage.path, locale),
+    })),
+  }));
+}
+
+/**
  * Available ERP modules for employee portal
  */
 export const EMPLOYEE_PORTAL_MODULES: EmployeePortalModule[] = [

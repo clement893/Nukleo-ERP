@@ -26,8 +26,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
-import { useState } from 'react';
-import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
+import { useState, useMemo } from 'react';
+import { EMPLOYEE_PORTAL_MODULES, getEmployeePortalModules } from '@/lib/constants/employee-portal-modules';
 import * as Icons from 'lucide-react';
 
 interface EmployeePortalNavigationProps {
@@ -154,18 +154,26 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
     return currentSection === itemPath;
   };
 
-  // Get enabled ERP modules
+  // Get enabled ERP modules with transformed paths for employee portal
   // IMPORTANT: Ne pas bypasser les permissions même si l'utilisateur est admin
   // car on veut voir le portail tel que l'employé le voit avec ses permissions
-  const enabledModules = EMPLOYEE_PORTAL_MODULES.filter((module) => {
+  const enabledModules = useMemo(() => {
     // Si on charge encore les permissions, ne rien afficher pour éviter les flashs
-    if (permissionsLoading) return false;
+    if (permissionsLoading) return [];
     
-    // Vérifier les permissions de l'employé (pas de l'utilisateur connecté)
-    const hasAccess = hasModuleAccess(module.id);
+    // Filtrer les modules selon les permissions
+    const filtered = EMPLOYEE_PORTAL_MODULES.filter((module) => {
+      // Vérifier les permissions de l'employé (pas de l'utilisateur connecté)
+      const hasAccess = hasModuleAccess(module.id);
+      return hasAccess;
+    });
     
-    return hasAccess;
-  });
+    // Transformer les chemins pour le portail employé
+    return getEmployeePortalModules(employeeId, locale).filter((module) => {
+      const originalModule = EMPLOYEE_PORTAL_MODULES.find(m => m.id === module.id);
+      return originalModule && hasModuleAccess(originalModule.id);
+    });
+  }, [employeeId, locale, permissionsLoading, hasModuleAccess]);
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules(prev => {
@@ -250,6 +258,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                   const Icon = getIcon(module.icon);
                   const isExpanded = expandedModules.has(module.id);
                   const hasSubPages = module.subPages && module.subPages.length > 0;
+                  // Utiliser le pathname transformé pour vérifier si le module est actif
                   const isModuleActive = pathname === module.basePath || pathname.startsWith(module.basePath + '/');
 
                   return (

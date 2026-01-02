@@ -95,8 +95,8 @@ function PipelinesListContent() {
   }, [pipelines]);
 
   if (loading) {
-    return (
-      <PageContainer>
+  return (
+    <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-64">
           <Loading size="lg" />
         </div>

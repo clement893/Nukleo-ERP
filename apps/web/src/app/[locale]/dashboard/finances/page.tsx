@@ -256,20 +256,20 @@ export default function FinancesPage() {
 
   if (loading) {
     return (
-      <PageContainer>
+      <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </PageContainer>
     );
   }
 
   return (
-    <PageContainer>
+    <PageContainer maxWidth="full">
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -291,7 +291,7 @@ export default function FinancesPage() {
 
         {/* Main Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
                 <TrendingUp className="w-5 h-5 text-green-600" />
@@ -314,7 +314,7 @@ export default function FinancesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <TrendingDown className="w-5 h-5 text-red-600" />
@@ -337,7 +337,7 @@ export default function FinancesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <Wallet className="w-5 h-5 text-blue-600" />
@@ -360,7 +360,7 @@ export default function FinancesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
                 <FileText className="w-5 h-5 text-purple-600" />
@@ -387,7 +387,7 @@ export default function FinancesPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Link href="/fr/dashboard/finances/tresorerie">
-            <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer group">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 group-hover:bg-purple-500/20 transition-all">
                   <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -396,13 +396,13 @@ export default function FinancesPage() {
                   <h3 className="font-semibold mb-1">Trésorerie</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Suivi du cashflow</p>
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-all" />
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
               </div>
             </Card>
           </Link>
 
           <Link href="/fr/dashboard/finances/facturations">
-            <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer group">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 group-hover:bg-blue-500/20 transition-all">
                   <FileText className="w-6 h-6 text-blue-600" />
@@ -411,13 +411,13 @@ export default function FinancesPage() {
                   <h3 className="font-semibold mb-1">Facturations</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Gérer les factures</p>
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-all" />
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
               </div>
             </Card>
           </Link>
 
           <Link href="/fr/dashboard/finances/rapport">
-            <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer group">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30 group-hover:bg-green-500/20 transition-all">
                   <TrendingUp className="w-6 h-6 text-green-600" />
@@ -426,13 +426,13 @@ export default function FinancesPage() {
                   <h3 className="font-semibold mb-1">Rapports</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Analyses financières</p>
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-all" />
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
               </div>
             </Card>
           </Link>
 
           <Link href="/fr/dashboard/finances/compte-depenses">
-            <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer group">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 group-hover:bg-orange-500/20 transition-all">
                   <CreditCard className="w-6 h-6 text-orange-600" />
@@ -441,7 +441,7 @@ export default function FinancesPage() {
                   <h3 className="font-semibold mb-1">Dépenses</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Comptes de dépenses</p>
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-all" />
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
               </div>
             </Card>
           </Link>
@@ -449,7 +449,7 @@ export default function FinancesPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Recent Transactions */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Transactions récentes
@@ -484,7 +484,7 @@ export default function FinancesPage() {
           </Card>
 
           {/* Invoices by Status */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Factures par statut
             </h3>

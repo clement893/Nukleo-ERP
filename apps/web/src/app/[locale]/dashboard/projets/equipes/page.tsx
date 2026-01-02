@@ -216,8 +216,8 @@ function EquipesContent() {
   };
 
   if (loading && !teams.length) {
-    return (
-      <PageContainer>
+  return (
+    <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
           <Loading />
         </div>

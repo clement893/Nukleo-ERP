@@ -457,7 +457,7 @@ export default function MesDepenses() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -465,7 +465,7 @@ export default function MesDepenses() {
   return (
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
         <div className="relative p-8">
           <div className="flex items-center justify-between">
             <div>
@@ -488,7 +488,7 @@ export default function MesDepenses() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
               <DollarSign className="w-5 h-5 text-blue-600" />
@@ -500,7 +500,7 @@ export default function MesDepenses() {
           <div className="text-xs text-gray-600 dark:text-gray-400">Total demandé</div>
         </Card>
 
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
               <CheckCircle className="w-5 h-5 text-green-600" />
@@ -512,7 +512,7 @@ export default function MesDepenses() {
           <div className="text-xs text-gray-600 dark:text-gray-400">Approuvé</div>
         </Card>
 
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <Clock className="w-5 h-5 text-yellow-600" />
@@ -524,7 +524,7 @@ export default function MesDepenses() {
           <div className="text-xs text-gray-600 dark:text-gray-400">En attente</div>
         </Card>
 
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
               <FileText className="w-5 h-5 text-purple-600" />
@@ -546,7 +546,7 @@ export default function MesDepenses() {
               onClick={() => setStatusFilter(status as any)}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
                 statusFilter === status
-                  ? 'bg-[#523DC9] text-white'
+                  ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -562,11 +562,11 @@ export default function MesDepenses() {
           const Icon = badge.icon;
           
           return (
-            <Card key={expense.id} className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+            <Card key={expense.id} className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/40 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <FileText className="w-4 h-4 text-[#523DC9]" />
+                    <FileText className="w-4 h-4 text-primary-500" />
                     <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {expense.title}
                     </h3>
@@ -726,7 +726,7 @@ export default function MesDepenses() {
                   {expense.status === 'needs_clarification' && !isAdmin && (
                     <Button 
                       size="sm" 
-                      className="bg-[#523DC9] hover:bg-[#5F2B75] text-white text-xs px-2 py-1 h-auto"
+                      className="bg-primary-500 hover:bg-nukleo-violet text-white text-xs px-2 py-1 h-auto"
                       onClick={() => {
                         setSelectedExpense(expense);
                         setShowRespondModal(true);
@@ -755,7 +755,7 @@ export default function MesDepenses() {
         })}
 
         {expenses.length === 0 && (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun compte de dépenses</p>
             <Button 

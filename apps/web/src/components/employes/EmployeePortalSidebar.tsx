@@ -19,7 +19,7 @@ import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
 import { clsx } from 'clsx';
 import { ChevronDown, Search, X, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
-import { EMPLOYEE_PORTAL_MODULES } from '@/lib/constants/employee-portal-modules';
+import { EMPLOYEE_PORTAL_MODULES, getEmployeePortalModules } from '@/lib/constants/employee-portal-modules';
 import * as Icons from 'lucide-react';
 import {
   CheckSquare,
@@ -153,11 +153,19 @@ export default function EmployeePortalSidebar({
     return currentSection === itemPath;
   };
 
-  // Get enabled ERP modules
+  // Get enabled ERP modules with transformed paths for employee portal
   const enabledModules = useMemo(() => {
-    if (permissionsLoading) return [];
-    return EMPLOYEE_PORTAL_MODULES.filter((module) => hasModuleAccess(module.id));
-  }, [permissionsLoading, hasModuleAccess]);
+    if (permissionsLoading || !employeeId) return [];
+    
+    // Filtrer les modules selon les permissions
+    const filtered = EMPLOYEE_PORTAL_MODULES.filter((module) => hasModuleAccess(module.id));
+    
+    // Transformer les chemins pour le portail employé
+    return getEmployeePortalModules(employeeId, locale).filter((module) => {
+      const originalModule = EMPLOYEE_PORTAL_MODULES.find(m => m.id === module.id);
+      return originalModule && hasModuleAccess(originalModule.id);
+    });
+  }, [employeeId, locale, permissionsLoading, hasModuleAccess]);
 
   const toggleModule = (moduleId: string) => {
     setOpenModules((prev) => {

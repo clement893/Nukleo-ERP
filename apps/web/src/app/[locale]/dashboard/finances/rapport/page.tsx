@@ -94,7 +94,7 @@ export default function RapportPage() {
 
   if (loading) {
     return (
-      <PageContainer>
+      <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
           <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
         </div>
@@ -118,7 +118,7 @@ export default function RapportPage() {
     : '0.0';
 
   return (
-    <PageContainer>
+    <PageContainer maxWidth="full">
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">

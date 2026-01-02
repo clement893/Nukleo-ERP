@@ -333,8 +333,8 @@ export default function EmployeesPage() {
   const hasActiveFilters = statusFilter !== 'all' || departmentFilter !== 'all' || typeFilter !== 'all' || searchQuery;
 
   if (isLoading) {
-    return (
-      <PageContainer>
+  return (
+    <PageContainer maxWidth="full">
         <div className="flex items-center justify-center h-96">
           <Loading />
         </div>

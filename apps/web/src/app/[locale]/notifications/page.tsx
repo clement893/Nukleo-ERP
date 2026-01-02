@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { NotificationList } from '@/components/settings';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button } from '@/components/ui';
 import { Bell, Settings, Filter } from 'lucide-react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuthStore } from '@/lib/store';
@@ -19,7 +19,6 @@ export default function NotificationsPage() {
   const t = useTranslations('notifications');
   const { isAuthenticated } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -37,7 +36,6 @@ export default function NotificationsPage() {
 
   const loadNotifications = async () => {
     try {
-      setLoading(true);
       const response = await notificationsAPI.getNotifications({
         read: filter === 'all' ? undefined : filter === 'read',
         notification_type: typeFilter as any || undefined,
@@ -52,8 +50,6 @@ export default function NotificationsPage() {
         message: 'Impossible de charger les notifications',
         type: 'error'
       });
-    } finally {
-      setLoading(false);
     }
   };
 

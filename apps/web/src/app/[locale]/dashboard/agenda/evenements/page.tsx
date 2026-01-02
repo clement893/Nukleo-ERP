@@ -496,7 +496,7 @@ function EvenementsContent() {
   const displayEvent = eventDetail || selectedEvent;
 
   return (
-    <PageContainer>
+    <PageContainer maxWidth="full">
       <MotionDiv variant="slideUp" duration="normal" className="space-y-4">
         <PageHeader
           title="Événements"

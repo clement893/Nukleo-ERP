@@ -210,7 +210,7 @@ export default function NotificationDrawer({
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={() => router.push('/settings/notifications')}
                   title="Paramètres"
                 >
@@ -218,7 +218,7 @@ export default function NotificationDrawer({
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={onClose}
                   title="Fermer"
                 >
@@ -362,7 +362,7 @@ export default function NotificationDrawer({
                           </span>
                           {notification.action_url && (
                             <Badge
-                              variant="outline"
+                              variant="default"
                               className="text-[10px]"
                             >
                               {notification.action_label || 'Voir'}
