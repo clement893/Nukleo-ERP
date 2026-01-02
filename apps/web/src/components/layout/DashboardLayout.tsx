@@ -100,10 +100,10 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Desktop Header with Toggle Button (when collapsed) */}
-        {sidebarCollapsed && (
-          <header className="hidden md:block fixed top-0 left-0 right-0 z-30 glass-navbar h-16">
-            <div className="px-4 py-3 flex items-center justify-between">
+        {/* Desktop Header */}
+        <header className="hidden md:block fixed top-0 left-0 right-0 z-30 glass-navbar h-16" style={{ left: sidebarCollapsed ? 0 : '256px' }}>
+          <div className="px-4 py-3 flex items-center justify-between h-full">
+            {sidebarCollapsed ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -113,12 +113,14 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
               >
                 <Menu className="w-5 h-5" />
               </Button>
-              <div className="flex items-center gap-3">
-                <NotificationBellConnected />
-              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
+            <div className="flex items-center gap-3">
+              <NotificationBellConnected />
             </div>
-          </header>
-        )}
+          </div>
+        </header>
 
         {/* Quick Actions FAB */}
         <QuickActions />
@@ -128,7 +130,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           key={pathname} 
           className={clsx(
             "flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16 py-4 sm:py-6 md:py-8 2xl:py-10 bg-background transition-all duration-300",
-            sidebarCollapsed ? "md:mt-16" : "mt-14 md:mt-0"
+            sidebarCollapsed ? "md:mt-16" : "mt-14 md:mt-16"
           )}
         >
           <PageTransition>

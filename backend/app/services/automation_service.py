@@ -320,6 +320,35 @@ async def handle_opportunity_stage_change(
                 
                 logger.info(f"Automation rule '{rule.name}' executed successfully")
                 
+                # Send WebSocket notification to user about automation trigger
+                try:
+                    from app.api.v1.endpoints.websocket import manager
+                    from app.models.user import User
+                    
+                    # Get user to send notification to
+                    user_result = await db.execute(select(User).where(User.id == rule.user_id))
+                    user = user_result.scalar_one_or_none()
+                    
+                    if user:
+                        # Send WebSocket notification
+                        notification_data = {
+                            "type": "automation_triggered",
+                            "data": {
+                                "rule_id": rule.id,
+                                "rule_name": rule.name,
+                                "trigger_event": rule.trigger_event,
+                                "success": all_succeeded,
+                                "opportunity_name": opportunity.name if 'opportunity' in context else None,
+                                "pipeline_name": pipeline_name,
+                                "stage_name": stage_name,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                        }
+                        await manager.send_personal_message(notification_data, str(user.id))
+                except Exception as ws_error:
+                    # Don't fail automation if WebSocket fails
+                    logger.warning(f"Failed to send WebSocket notification for automation: {ws_error}")
+                
             except Exception as rule_error:
                 logger.error(f"Error executing automation rule {rule.id}: {rule_error}", exc_info=True)
                 # Log the error

@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ThemeToggleWithIcon } from '@/components/ui/ThemeToggle';
 import { getNavigationConfig, type NavigationItem, type NavigationGroup } from '@/lib/navigation';
+import NotificationBellConnected from '@/components/notifications/NotificationBellConnected';
 import { clsx } from 'clsx';
 import { ChevronDown, Search, X, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -422,6 +423,7 @@ export default function Sidebar({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBellConnected />
               <ThemeToggleWithIcon />
               <Button
                 variant="primary"
