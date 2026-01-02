@@ -88,9 +88,9 @@ export const employeesAPI = {
         },
       });
       
-      // apiClient.get returns ApiResponse<T>
+      // apiClient.get returns ApiResponse<T> which contains response.data
       // FastAPI endpoint returns List[EmployeeSchema] directly
-      // So response.data should be the array, or response itself if FastAPI returns directly
+      // extractApiData should handle both cases
       const data = extractApiData<Employee[] | { items: Employee[] }>(response);
       
       // Handle different response formats
@@ -99,14 +99,6 @@ export const employeesAPI = {
       }
       if (data && typeof data === 'object' && 'items' in data) {
         return (data as { items: Employee[] }).items;
-      }
-      
-      // Fallback: if response.data is directly an array (FastAPI direct return)
-      if (response && typeof response === 'object' && 'data' in response) {
-        const responseData = (response as any).data;
-        if (Array.isArray(responseData)) {
-          return responseData;
-        }
       }
       
       return [];
