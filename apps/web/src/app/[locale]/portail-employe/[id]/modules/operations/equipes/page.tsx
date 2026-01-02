@@ -6,10 +6,10 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { Loading } from '@/components/ui';
 
-const TeamsPageContent = dynamic(
+const TeamsPageContent = dynamicImport(
   () => import('@/app/[locale]/dashboard/projets/equipes/page'),
   { 
     ssr: false,

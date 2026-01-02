@@ -1016,7 +1016,7 @@ export default function SoumissionsPage() {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1 ml-8">
                             <div className="flex items-center gap-2 mb-2">
-                              <FileText className="w-5 h-5 text-[#523DC9]" />
+                              <FileText className="w-5 h-5 text-primary-500" />
                               <span className="font-bold text-lg text-gray-900 dark:text-white">
                                 {quote.quote_number}
                               </span>
@@ -1101,7 +1101,7 @@ export default function SoumissionsPage() {
                 <div className="space-y-2">
                   {/* Select all header */}
                   {filteredQuotes.length > 0 && (
-                    <div className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 flex items-center gap-3">
+                    <div className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 flex items-center gap-3">
                       <button
                         onClick={toggleSelectAllQuotes}
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
@@ -1122,7 +1122,7 @@ export default function SoumissionsPage() {
                   {filteredQuotes.map((quote) => (
                     <Card 
                       key={quote.id} 
-                      className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer group relative"
+                      className="glass-card p-4 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/30 transition-all cursor-pointer group relative"
                     >
                       <div
                         onClick={(e: React.MouseEvent) => {
@@ -1151,7 +1151,7 @@ export default function SoumissionsPage() {
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <FileText className="w-4 h-4 text-[#523DC9]" />
+                              <FileText className="w-4 h-4 text-primary-500" />
                               <span className="font-bold text-gray-900 dark:text-white">
                                 {quote.quote_number}
                               </span>
@@ -1286,7 +1286,7 @@ export default function SoumissionsPage() {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1 ml-8">
                           <div className="flex items-center gap-2 mb-2">
-                            <FileCheck className="w-5 h-5 text-[#523DC9]" />
+                            <FileCheck className="w-5 h-5 text-primary-500" />
                             <span className="font-bold text-lg text-gray-900 dark:text-white">
                               {submission.submission_number}
                             </span>
@@ -1380,7 +1380,7 @@ export default function SoumissionsPage() {
                 <div className="space-y-2">
                   {/* Select all header */}
                   {filteredSubmissions.length > 0 && (
-                    <div className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 flex items-center gap-3">
+                    <div className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 flex items-center gap-3">
                       <button
                         onClick={toggleSelectAllSubmissions}
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
@@ -1401,7 +1401,7 @@ export default function SoumissionsPage() {
                   {filteredSubmissions.map((submission) => (
                     <Card 
                       key={submission.id} 
-                      className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer group relative"
+                      className="glass-card p-4 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/30 transition-all cursor-pointer group relative"
                     >
                       <div
                         onClick={(e: React.MouseEvent) => {

@@ -16,7 +16,7 @@ export function useEmployeePortalRouteGuard() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuthStore();
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
+  const employeeId = params?.id ? parseInt(String(params.id)) : undefined;
   const locale = (params?.locale as string) || 'fr';
   const { hasModuleAccess } = useEmployeePortalPermissions({ employeeId });
   

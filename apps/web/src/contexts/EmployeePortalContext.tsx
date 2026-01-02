@@ -21,7 +21,7 @@ const EmployeePortalContext = createContext<EmployeePortalContextValue | null>(n
 
 export function EmployeePortalProvider({ children }: { children: ReactNode }) {
   const params = useParams();
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
+  const employeeId = params?.id ? parseInt(String(params.id)) : undefined;
   const locale = (params?.locale as string) || 'fr';
   const permissions = useEmployeePortalPermissions({ employeeId });
   

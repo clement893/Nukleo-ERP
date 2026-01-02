@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { NotificationList } from '@/components/settings';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button } from '@/components/ui';
 import { Bell, Settings, Filter } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { notificationsAPI } from '@/lib/api/notifications';
@@ -20,9 +20,7 @@ export default function EmployeeNotificationsPage() {
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
   const locale = (params?.locale as string) || 'fr';
   const t = useTranslations('notifications');
-  const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -43,7 +41,7 @@ export default function EmployeeNotificationsPage() {
   const loadEmployee = async () => {
     try {
       if (!employeeId) return;
-      const emp = await employeesAPI.getEmployee(employeeId);
+      const emp = await employeesAPI.get(employeeId);
       setEmployee(emp);
     } catch (error) {
       logger.error('Failed to load employee', error);
@@ -54,7 +52,6 @@ export default function EmployeeNotificationsPage() {
     if (!employee?.user_id) return;
     
     try {
-      setLoading(true);
       const response = await notificationsAPI.getNotifications({
         read: filter === 'all' ? undefined : filter === 'read',
         notification_type: typeFilter as any || undefined,
@@ -69,8 +66,6 @@ export default function EmployeeNotificationsPage() {
         message: 'Impossible de charger les notifications',
         type: 'error'
       });
-    } finally {
-      setLoading(false);
     }
   };
 

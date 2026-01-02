@@ -6,10 +6,10 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { Loading } from '@/components/ui';
 
-const ManagementPageContent = dynamic(
+const ManagementPageContent = dynamicImport(
   () => import('@/app/[locale]/dashboard/management/page'),
   { 
     ssr: false,

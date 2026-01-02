@@ -18,7 +18,6 @@ export default function EmployeeNotificationPreferencesPage() {
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
   const locale = (params?.locale as string) || 'fr';
   const t = useTranslations('settings.notifications');
-  const { user } = useAuthStore();
   const [employee, setEmployee] = useState<{ user_id?: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +34,7 @@ export default function EmployeeNotificationPreferencesPage() {
     try {
       if (!employeeId) return;
       setLoading(true);
-      const emp = await employeesAPI.getEmployee(employeeId);
+      const emp = await employeesAPI.get(employeeId);
       setEmployee(emp);
     } catch (error) {
       logger.error('Failed to load employee', error);
