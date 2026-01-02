@@ -161,17 +161,15 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
     // Si on charge encore les permissions, ne rien afficher pour éviter les flashs
     if (permissionsLoading) return [];
     
-    // Filtrer les modules selon les permissions, puis transformer les chemins
-    const filtered = EMPLOYEE_PORTAL_MODULES.filter((module) => {
-      // Vérifier les permissions de l'employé (pas de l'utilisateur connecté)
-      const hasAccess = hasModuleAccess(module.id);
-      return hasAccess;
-    });
-    
-    // Transformer les chemins pour le portail employé uniquement pour les modules autorisés
+    // Transformer les chemins pour le portail employé et filtrer selon les permissions
     const allTransformed = getEmployeePortalModules(employeeId, locale);
+    const authorizedModuleIds = new Set(
+      EMPLOYEE_PORTAL_MODULES
+        .filter((module) => hasModuleAccess(module.id))
+        .map(m => m.id)
+    );
     return allTransformed.filter((module) => {
-      return filtered.some(m => m.id === module.id);
+      return authorizedModuleIds.has(module.id);
     });
   }, [employeeId, locale, permissionsLoading, hasModuleAccess]);
 
