@@ -59,8 +59,8 @@ export const clientsAPI = {
         return (data as { items: Client[] }).items;
       }
       return [];
-    } catch (error: any) {
-      console.error('[ClientsAPI] Error in list():', error);
+    } catch (error: unknown) {
+      logger.error('[ClientsAPI] Error in list()', error);
       throw error;
     }
   },

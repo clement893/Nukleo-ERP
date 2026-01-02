@@ -212,7 +212,7 @@ export const contactsAPI = {
       if (response.status >= 400) {
         // Try to parse blob as JSON error
         const text = await (response.data as Blob).text();
-        let errorData: any;
+        let errorData: unknown;
         try {
           errorData = JSON.parse(text);
         } catch (parseError) {
@@ -239,12 +239,13 @@ export const contactsAPI = {
       }
       
       return response.data as Blob;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If error response is a blob, convert it to JSON first
-      if (error.response?.data instanceof Blob) {
+      const axiosError = error as { response?: { data?: Blob } };
+      if (axiosError.response?.data instanceof Blob) {
         try {
-          const text = await error.response.data.text();
-          let errorData: any;
+          const text = await axiosError.response.data.text();
+          let errorData: unknown;
           try {
             errorData = JSON.parse(text);
           } catch (parseError) {

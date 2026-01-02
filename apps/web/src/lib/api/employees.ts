@@ -248,7 +248,7 @@ export const employeesAPI = {
       
       if (response.status >= 400) {
         const text = await (response.data as Blob).text();
-        let errorData: any;
+        let errorData: unknown;
         try {
           errorData = JSON.parse(text);
         } catch (parseError) {
@@ -273,11 +273,12 @@ export const employeesAPI = {
       }
       
       return response.data as Blob;
-    } catch (error: any) {
-      if (error.response?.data instanceof Blob) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: Blob } };
+      if (axiosError.response?.data instanceof Blob) {
         try {
-          const text = await error.response.data.text();
-          let errorData: any;
+          const text = await axiosError.response.data.text();
+          let errorData: unknown;
           try {
             errorData = JSON.parse(text);
           } catch (parseError) {
