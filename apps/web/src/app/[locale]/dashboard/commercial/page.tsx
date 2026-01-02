@@ -95,7 +95,7 @@ export default function CommercialPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -113,7 +113,7 @@ export default function CommercialPage() {
               </div>
               <div className="flex gap-2">
                 <Link href="/dashboard/commercial/opportunites">
-                  <Button className="bg-white text-[#523DC9] hover:bg-white/90">
+                  <Button className="bg-white text-primary-500 hover:bg-white/90">
                     <Target className="w-4 h-4 mr-2" />
                     Opportunités
                   </Button>
@@ -131,10 +131,10 @@ export default function CommercialPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Target className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Target className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -146,7 +146,7 @@ export default function CommercialPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <TrendingUp className="w-6 h-6 text-[#10B981]" />
@@ -161,7 +161,7 @@ export default function CommercialPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <FileText className="w-6 h-6 text-[#F59E0B]" />
@@ -176,7 +176,7 @@ export default function CommercialPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <Briefcase className="w-6 h-6 text-[#3B82F6]" />
@@ -196,10 +196,10 @@ export default function CommercialPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Top Opportunities */}
           <div className="lg:col-span-2">
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Opportunités prioritaires</h3>
-                <Badge className="bg-[#523DC9]/10 text-[#523DC9]">{topOpportunities.length}</Badge>
+                <Badge className="bg-primary-500/10 text-primary-500">{topOpportunities.length}</Badge>
               </div>
               <div className="space-y-3">
                 {topOpportunities.length === 0 ? (
@@ -225,7 +225,7 @@ export default function CommercialPage() {
                           </div>
                         </div>
                         {opp.stage_name && (
-                          <Badge className="bg-[#523DC9]/10 text-[#523DC9]">{opp.stage_name}</Badge>
+                          <Badge className="bg-primary-500/10 text-primary-500">{opp.stage_name}</Badge>
                         )}
                       </div>
                     </Link>
@@ -237,7 +237,7 @@ export default function CommercialPage() {
 
           {/* Right Column - Quick Actions */}
           <div className="space-y-6">
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h3>
               <div className="space-y-3">
                 <Link href="/dashboard/commercial/opportunites">

@@ -704,18 +704,24 @@ async def logout(
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
     current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> UserResponse:
     """
     Get current user information
     
     Args:
         current_user: Current authenticated user
+        db: Database session
     
     Returns:
         User information
     """
     try:
         logger.info(f"Getting user info for: {current_user.email}")
+        # Check if user is admin (requires DB query)
+        from app.dependencies import is_admin_or_superadmin
+        user_is_admin = await is_admin_or_superadmin(current_user, db)
+        
         # Convert User model to UserResponse schema
         # This ensures relations are not loaded unnecessarily and prevents lazy loading issues
         return UserResponse(
@@ -725,6 +731,7 @@ async def get_current_user_info(
             last_name=current_user.last_name,
             avatar=getattr(current_user, 'avatar', None),
             is_active=current_user.is_active,
+            is_admin=user_is_admin,
             # theme_preference is deprecated but kept for API compatibility
             theme_preference=getattr(current_user, 'theme_preference', None) or 'system',
             created_at=current_user.created_at.isoformat() if current_user.created_at else "",

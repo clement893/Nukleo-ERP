@@ -471,7 +471,7 @@ function OpportunitiesContent() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
                 <Target className="w-6 h-6 text-primary-500" />
@@ -483,7 +483,7 @@ function OpportunitiesContent() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Opportunités actives</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <DollarSign className="w-6 h-6 text-[#10B981]" />
@@ -495,7 +495,7 @@ function OpportunitiesContent() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
@@ -507,7 +507,7 @@ function OpportunitiesContent() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur pondérée</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <Clock className="w-6 h-6 text-[#3B82F6]" />
@@ -764,7 +764,7 @@ function OpportunitiesContent() {
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                 >
                   {selectedOpportunities.size === filteredOpportunities.length ? (
-                    <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                    <CheckSquare className="w-5 h-5 text-primary-500" />
                   ) : (
                     <Square className="w-5 h-5 text-gray-400" />
                   )}

@@ -323,7 +323,7 @@ export default function ProjetsPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -354,7 +354,7 @@ export default function ProjetsPage() {
                 Exporter
               </Button>
               <Button 
-                className="bg-white text-[#523DC9] hover:bg-white/90"
+                className="bg-white text-primary-500 hover:bg-white/90"
                 onClick={() => setShowCreateModal(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -366,10 +366,10 @@ export default function ProjetsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Briefcase className="w-5 h-5 text-[#523DC9]" />
+              <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Briefcase className="w-5 h-5 text-primary-500" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -380,7 +380,7 @@ export default function ProjetsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <TrendingUp className="w-5 h-5 text-[#3B82F6]" />
@@ -394,7 +394,7 @@ export default function ProjetsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
@@ -408,7 +408,7 @@ export default function ProjetsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-gray-500/10 border border-gray-500/30">
                 <Archive className="w-5 h-5 text-gray-600" />
@@ -422,7 +422,7 @@ export default function ProjetsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <DollarSign className="w-5 h-5 text-[#F59E0B]" />
@@ -436,7 +436,7 @@ export default function ProjetsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
                 <DollarSign className="w-5 h-5 text-[#EF4444]" />
@@ -452,7 +452,7 @@ export default function ProjetsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="flex-1 w-full relative">
@@ -573,7 +573,7 @@ export default function ProjetsPage() {
 
         {/* Projects Grid/List */}
         {filteredAndSortedProjects.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Aucun projet trouvé
@@ -606,7 +606,7 @@ export default function ProjetsPage() {
               return (
                 <Card 
                   key={project.id}
-                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
                   onClick={() => handleView(project.id)}
                 >
                   <div className="flex items-start justify-between mb-4">
@@ -667,7 +667,7 @@ export default function ProjetsPage() {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-[#523DC9] to-[#6B1817] h-2 rounded-full transition-all duration-300"
+                        className="bg-gradient-to-r from-primary-500 to-nukleo-crimson h-2 rounded-full transition-all duration-300"
                         style={{ width: `${Math.max(progress, 0)}%` }}
                       />
                     </div>
@@ -739,7 +739,7 @@ export default function ProjetsPage() {
             })}
           </div>
         ) : (
-          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+          <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -747,7 +747,7 @@ export default function ProjetsPage() {
                     <th className="p-3 text-left">
                       <button
                         onClick={() => handleSort('name')}
-                        className="flex items-center gap-1 hover:text-[#523DC9]"
+                        className="flex items-center gap-1 hover:text-primary-500"
                       >
                         Nom
                         {sortField === 'name' ? (
@@ -760,7 +760,7 @@ export default function ProjetsPage() {
                     <th className="p-3 text-left">
                       <button
                         onClick={() => handleSort('client_name')}
-                        className="flex items-center gap-1 hover:text-[#523DC9]"
+                        className="flex items-center gap-1 hover:text-primary-500"
                       >
                         Client
                         {sortField === 'client_name' ? (
@@ -773,7 +773,7 @@ export default function ProjetsPage() {
                     <th className="p-3 text-left">
                       <button
                         onClick={() => handleSort('status')}
-                        className="flex items-center gap-1 hover:text-[#523DC9]"
+                        className="flex items-center gap-1 hover:text-primary-500"
                       >
                         Statut
                         {sortField === 'status' ? (
@@ -786,7 +786,7 @@ export default function ProjetsPage() {
                     <th className="p-3 text-left">
                       <button
                         onClick={() => handleSort('etape')}
-                        className="flex items-center gap-1 hover:text-[#523DC9]"
+                        className="flex items-center gap-1 hover:text-primary-500"
                       >
                         Étape
                         {sortField === 'etape' ? (
@@ -799,7 +799,7 @@ export default function ProjetsPage() {
                     <th className="p-3 text-left">
                       <button
                         onClick={() => handleSort('budget')}
-                        className="flex items-center gap-1 hover:text-[#523DC9]"
+                        className="flex items-center gap-1 hover:text-primary-500"
                       >
                         Budget
                         {sortField === 'budget' ? (

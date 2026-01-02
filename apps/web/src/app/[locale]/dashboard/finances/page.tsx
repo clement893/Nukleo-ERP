@@ -385,7 +385,7 @@ export default function FinancesPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
           <Link href="/fr/dashboard/finances/tresorerie">
             <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
@@ -431,7 +431,7 @@ export default function FinancesPage() {
             </Card>
           </Link>
 
-          <Link href="/fr/dashboard/finances/compte-depenses">
+          <Link href="/fr/dashboard/finances/depenses">
             <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 group-hover:bg-orange-500/20 transition-all">
@@ -439,7 +439,21 @@ export default function FinancesPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">Dépenses</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Comptes de dépenses</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Gestion des dépenses et fournisseurs</p>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
+              </div>
+            </Card>
+          </Link>
+          <Link href="/fr/dashboard/finances/compte-depenses">
+            <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer group">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 group-hover:bg-purple-500/20 transition-all">
+                  <FileText className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Comptes de dépenses</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Notes de frais employés</p>
                 </div>
                 <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-all" />
               </div>

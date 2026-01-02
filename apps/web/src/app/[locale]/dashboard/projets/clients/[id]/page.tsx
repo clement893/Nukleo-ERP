@@ -156,8 +156,8 @@ export default function ClientDetailPage() {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
               {/* Logo plus grand (56x56 = 224px) */}
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-2xl opacity-20 blur-lg" />
-                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-[#A7A2CF]/30 shadow-xl bg-white flex items-center justify-center">
+                <div className="absolute inset-0 bg-nukleo-gradient rounded-2xl opacity-20 blur-lg" />
+                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-nukleo-lavender/30 shadow-xl bg-white flex items-center justify-center">
                   <ClientAvatar client={client} size="xl" className="w-full h-full" />
                 </div>
               </div>

@@ -238,7 +238,7 @@ function EquipesContent() {
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
           {/* Aurora Borealis Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           
           {/* Grain Texture Overlay */}
           <div className="absolute inset-0 opacity-20" style={{
@@ -272,8 +272,8 @@ function EquipesContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Users className="w-6 h-6 text-[#523DC9]" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Users className="w-6 h-6 text-primary-500" aria-hidden="true" />
               </div>
               <Badge variant="info">{teams.length} équipes</Badge>
             </div>
@@ -351,7 +351,7 @@ function EquipesContent() {
                   <div className="flex items-center gap-3">
                     <div className="text-4xl" aria-hidden="true">{teamInfo?.icon || '👥'}</div>
                     <div>
-                      <Heading level={3} className="group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <Heading level={3} className="group-hover:text-primary-500 transition-colors font-nukleo">
                         {team.name}
                       </Heading>
                       <Text variant="small" className="text-muted-foreground">
@@ -388,7 +388,7 @@ function EquipesContent() {
                 <div className="mb-3">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <Text variant="small" className="text-muted-foreground">Progression</Text>
-                    <span className="font-bold text-[#523DC9]">{completionRate}%</span>
+                    <span className="font-bold text-primary-500">{completionRate}%</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div 

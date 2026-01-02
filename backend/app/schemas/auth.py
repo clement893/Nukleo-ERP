@@ -150,6 +150,7 @@ class UserResponse(BaseModel):
     last_name: Optional[str] = None
     avatar: Optional[str] = None
     is_active: bool
+    is_admin: bool = Field(default=False, description="Whether the user has admin role")
     # DEPRECATED: theme_preference is kept for API compatibility only
     # Theme management is now handled globally via the theme system
     theme_preference: str = Field(

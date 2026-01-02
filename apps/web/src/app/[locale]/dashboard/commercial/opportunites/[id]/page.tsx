@@ -168,15 +168,15 @@ export default function OpportunityDetailPage() {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* Icon */}
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-2xl opacity-20 blur-lg" />
-                <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] flex items-center justify-center shadow-xl">
+                <div className="absolute inset-0 bg-nukleo-gradient rounded-2xl opacity-20 blur-lg" />
+                <div className="relative w-24 h-24 rounded-2xl bg-nukleo-gradient flex items-center justify-center shadow-xl">
                   <Target className="w-12 h-12 text-white" />
                 </div>
               </div>
               
               {/* Infos */}
               <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold text-[#523DC9] mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h1 className="text-4xl md:text-5xl font-bold text-primary-500 mb-3 font-nukleo">
                   {opportunity.name}
                 </h1>
                 {opportunity.description && (
@@ -235,13 +235,13 @@ export default function OpportunityDetailPage() {
                   onClick={() => setActiveTab(tab.key as any)}
                   className={`px-6 py-3 font-medium transition-all relative ${
                     activeTab === tab.key
-                      ? 'text-[#523DC9]'
+                      ? 'text-primary-500'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {tab.label}
                   {activeTab === tab.key && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-nukleo-gradient" />
                   )}
                 </button>
               ))}
@@ -254,7 +254,7 @@ export default function OpportunityDetailPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Informations */}
                 <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                     Informations
                   </h3>
                   <div className="space-y-4">
@@ -300,15 +300,15 @@ export default function OpportunityDetailPage() {
 
                 {/* Contacts */}
                 <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                     Contacts ({opportunity.contact_names?.length || 0})
                   </h3>
                   {opportunity.contact_names && opportunity.contact_names.length > 0 ? (
                     <div className="space-y-3">
                       {opportunity.contact_names.map((name, index) => (
                         <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                          <div className="w-10 h-10 rounded-full bg-[#523DC9]/10 flex items-center justify-center">
-                            <User className="w-5 h-5 text-[#523DC9]" />
+                          <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center">
+                            <User className="w-5 h-5 text-primary-500" />
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{name}</p>
@@ -327,7 +327,7 @@ export default function OpportunityDetailPage() {
                 {/* Description */}
                 {opportunity.description && (
                   <Card className="glass-card p-6 lg:col-span-2">
-                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                       Description
                     </h3>
                     <p className="text-foreground/80 leading-relaxed">{opportunity.description}</p>
@@ -338,7 +338,7 @@ export default function OpportunityDetailPage() {
 
             {activeTab === 'activities' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Activités récentes
                 </h3>
                 <div className="text-center py-12 text-muted-foreground">
@@ -350,7 +350,7 @@ export default function OpportunityDetailPage() {
 
             {activeTab === 'documents' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Documents
                 </h3>
                 <div className="text-center py-12 text-muted-foreground">
@@ -362,7 +362,7 @@ export default function OpportunityDetailPage() {
 
             {activeTab === 'notes' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Notes
                 </h3>
                 {opportunity.notes ? (

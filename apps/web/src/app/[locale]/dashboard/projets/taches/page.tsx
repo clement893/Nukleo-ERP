@@ -458,7 +458,7 @@ export default function TachesPage() {
       <MotionDiv variant="slideUp" duration="normal">
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative mb-6 overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -539,7 +539,7 @@ export default function TachesPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-gray-500/10 border border-gray-500/30">
                 <CheckSquare className="w-5 h-5 text-gray-600" />
@@ -553,7 +553,7 @@ export default function TachesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-gray-500/10 border border-gray-500/30">
                 <Circle className="w-5 h-5 text-gray-600" />
@@ -567,7 +567,7 @@ export default function TachesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <Play className="w-5 h-5 text-blue-600" />
@@ -581,7 +581,7 @@ export default function TachesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <Ban className="w-5 h-5 text-red-600" />
@@ -595,7 +595,7 @@ export default function TachesPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -611,7 +611,7 @@ export default function TachesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
           <div className="flex flex-col gap-4">
             {/* Top row: Search and View Mode */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -745,7 +745,7 @@ export default function TachesPage() {
 
         {/* Tasks */}
         {filteredTasks.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <CheckSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Aucune tâche trouvée
@@ -763,7 +763,7 @@ export default function TachesPage() {
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {groupName}
                     </h2>
-                    <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+                    <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30">
                       {groupTasks.length}
                     </Badge>
                   </div>
@@ -795,15 +795,15 @@ export default function TachesPage() {
                           key={task.id} 
                           className={`glass-card p-3 rounded-lg border transition-all cursor-pointer ${
                             isSelected 
-                              ? 'border-[#523DC9] bg-[#523DC9]/5' 
-                              : 'border-[#A7A2CF]/20 hover:border-[#523DC9]/30'
+                              ? 'border-primary-500 bg-primary-500/5' 
+                              : 'border-nukleo-lavender/20 hover:border-primary-500/30'
                           }`}
                           onClick={() => handleView(task.id)}
                         >
                           <div className="flex items-center gap-3">
                             <div onClick={(e) => { e.stopPropagation(); toggleTaskSelection(task.id); }}>
                               {isSelected ? (
-                                <CheckSquareIcon className="w-4 h-4 text-[#523DC9]" />
+                                <CheckSquareIcon className="w-4 h-4 text-primary-500" />
                               ) : (
                                 <Square className="w-4 h-4 text-gray-400" />
                               )}
@@ -875,7 +875,7 @@ export default function TachesPage() {
                       if (!task) return null;
                       const StatusIcon = statusConfig[task.status].icon;
                       return (
-                        <Card className={`glass-card p-3 rounded-lg border border-[#A7A2CF]/20 ${isDragged ? 'opacity-50' : ''}`}>
+                        <Card className={`glass-card p-3 rounded-lg border border-nukleo-lavender/20 ${isDragged ? 'opacity-50' : ''}`}>
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <Badge className={`${statusConfig[task.status].color} text-xs px-1.5 py-0.5`}>
                               <StatusIcon className="w-3 h-3 mr-1" />
@@ -913,7 +913,7 @@ export default function TachesPage() {
                       return (
                         <Card 
                           key={task.id} 
-                          className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer"
+                          className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/30 transition-all cursor-pointer"
                           onClick={() => handleView(task.id)}
                         >
                           <div className="flex items-start justify-between gap-2 mb-2">

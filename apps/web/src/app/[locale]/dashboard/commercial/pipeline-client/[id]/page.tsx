@@ -109,7 +109,7 @@ function OpportunityKanbanCard({
       {...listeners}
       className="cursor-grab active:cursor-grabbing touch-none"
     >
-      <Card className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-md transition-all duration-200 group mb-2 relative">
+      <Card className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group mb-2 relative">
         {/* Actions on hover */}
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
           {onView && (
@@ -156,7 +156,7 @@ function OpportunityKanbanCard({
         {/* Header */}
         <div className="mb-2 pr-8">
           <h4 
-            className="font-semibold text-sm mb-0.5 group-hover:text-[#523DC9] transition-colors line-clamp-1 cursor-pointer"
+            className="font-semibold text-sm mb-0.5 group-hover:text-primary-500 transition-colors line-clamp-1 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               onView?.();
@@ -788,7 +788,7 @@ export default function PipelineDetailPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header with Aurora Borealis Gradient */}
         <div className="relative rounded-2xl overflow-hidden px-6 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -825,7 +825,7 @@ export default function PipelineDetailPage() {
               </div>
               <div className="flex gap-2">
                 <Button 
-                  className="bg-white text-[#523DC9] hover:bg-white/90"
+                  className="bg-white text-primary-500 hover:bg-white/90"
                   onClick={() => setShowCreateOpportunityModal(true)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -849,7 +849,7 @@ export default function PipelineDetailPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <DollarSign className="w-6 h-6 text-[#10B981]" />
@@ -861,10 +861,10 @@ export default function PipelineDetailPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Target className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Target className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -873,7 +873,7 @@ export default function PipelineDetailPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Opportunités</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
@@ -885,7 +885,7 @@ export default function PipelineDetailPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur pondérée</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <Settings className="w-6 h-6 text-[#3B82F6]" />
@@ -899,14 +899,14 @@ export default function PipelineDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+        <div className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('kanban')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'kanban'
-                    ? 'border-b-2 border-[#523DC9] text-[#523DC9]'
+                    ? 'border-b-2 border-primary-500 text-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -916,7 +916,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('overview')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'overview'
-                    ? 'border-b-2 border-[#523DC9] text-[#523DC9]'
+                    ? 'border-b-2 border-primary-500 text-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -926,7 +926,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('opportunities')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'opportunities'
-                    ? 'border-b-2 border-[#523DC9] text-[#523DC9]'
+                    ? 'border-b-2 border-primary-500 text-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -936,7 +936,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('stages')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'stages'
-                    ? 'border-b-2 border-[#523DC9] text-[#523DC9]'
+                    ? 'border-b-2 border-primary-500 text-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -1032,7 +1032,7 @@ export default function PipelineDetailPage() {
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                     Informations
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1059,7 +1059,7 @@ export default function PipelineDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Funnel Chart - Opportunities by Stage */}
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                       Distribution par étape
                     </h3>
                     {pipeline.stages && pipeline.stages.length > 0 ? (
@@ -1081,7 +1081,7 @@ export default function PipelineDetailPage() {
 
                   {/* Value by Stage Chart */}
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                       Valeur par étape
                     </h3>
                     {pipeline.stages && pipeline.stages.length > 0 ? (
@@ -1109,7 +1109,7 @@ export default function PipelineDetailPage() {
                 {/* Conversion Rates */}
                 {pipeline.stages && pipeline.stages.length > 1 && (
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                       Taux de conversion entre étapes
                     </h3>
                     <div className="space-y-3">
@@ -1142,7 +1142,7 @@ export default function PipelineDetailPage() {
                                 <span className="text-sm text-gray-600 dark:text-gray-400">
                                   {currentCount} → {nextCount}
                                 </span>
-                                <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+                                <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30">
                                   {conversionRate}%
                                 </Badge>
                               </div>
@@ -1156,7 +1156,7 @@ export default function PipelineDetailPage() {
                 {/* Stage Statistics */}
                 {pipeline.stages && pipeline.stages.length > 0 && (
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                       Statistiques détaillées par étape
                     </h3>
                     <div className="space-y-4">
@@ -1181,7 +1181,7 @@ export default function PipelineDetailPage() {
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
-                                <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+                                <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30">
                                   {stageOpps.length} opportunité{stageOpps.length > 1 ? 's' : ''}
                                 </Badge>
                               </div>
@@ -1214,7 +1214,7 @@ export default function PipelineDetailPage() {
 
                 {pipeline.description && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                       Description
                     </h3>
                     <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pipeline.description}</p>
@@ -1226,7 +1226,7 @@ export default function PipelineDetailPage() {
             {activeTab === 'opportunities' && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold text-primary-500 font-nukleo">
                     Opportunités ({filteredAndSortedOpportunities.length})
                   </h3>
                   <div className="flex gap-2">
@@ -1473,7 +1473,7 @@ export default function PipelineDetailPage() {
                             <th className="p-3 text-left">
                               <button
                                 onClick={() => handleSort('name')}
-                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                                className="flex items-center gap-1 hover:text-primary-500"
                               >
                                 Nom
                                 {sortField === 'name' ? (
@@ -1489,7 +1489,7 @@ export default function PipelineDetailPage() {
                             <th className="p-3 text-left">
                               <button
                                 onClick={() => handleSort('amount')}
-                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                                className="flex items-center gap-1 hover:text-primary-500"
                               >
                                 Montant
                                 {sortField === 'amount' ? (
@@ -1502,7 +1502,7 @@ export default function PipelineDetailPage() {
                             <th className="p-3 text-left">
                               <button
                                 onClick={() => handleSort('probability')}
-                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                                className="flex items-center gap-1 hover:text-primary-500"
                               >
                                 Probabilité
                                 {sortField === 'probability' ? (
@@ -1515,7 +1515,7 @@ export default function PipelineDetailPage() {
                             <th className="p-3 text-left">
                               <button
                                 onClick={() => handleSort('expected_close_date')}
-                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                                className="flex items-center gap-1 hover:text-primary-500"
                               >
                                 Date de fermeture
                                 {sortField === 'expected_close_date' ? (
@@ -1528,7 +1528,7 @@ export default function PipelineDetailPage() {
                             <th className="p-3 text-left">
                               <button
                                 onClick={() => handleSort('stage_name')}
-                                className="flex items-center gap-1 hover:text-[#523DC9]"
+                                className="flex items-center gap-1 hover:text-primary-500"
                               >
                                 Étape
                                 {sortField === 'stage_name' ? (
@@ -1565,7 +1565,7 @@ export default function PipelineDetailPage() {
                               <td className="p-3">
                                 <button
                                   onClick={() => handleViewOpportunity(opp)}
-                                  className="text-left font-medium text-[#523DC9] hover:underline"
+                                  className="text-left font-medium text-primary-500 hover:underline"
                                 >
                                   {opp.name}
                                 </button>
@@ -1641,7 +1641,7 @@ export default function PipelineDetailPage() {
             {activeTab === 'stages' && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold text-primary-500 font-nukleo">
                     Étapes du pipeline ({pipeline.stages?.length || 0})
                   </h3>
                   <Button 
@@ -1681,7 +1681,7 @@ export default function PipelineDetailPage() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-1">
                                   <h4 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
-                                  <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30 text-xs">
+                                  <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30 text-xs">
                                     {stageOpps.length} opportunité{stageOpps.length > 1 ? 's' : ''}
                                   </Badge>
                                   {stageValue > 0 && (
@@ -1714,7 +1714,7 @@ export default function PipelineDetailPage() {
 
         {/* Metadata */}
         {(pipeline.created_at || pipeline.updated_at) && (
-          <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-sm text-gray-600 dark:text-gray-400">
               {pipeline.created_at && (
                 <span>Créé le: {formatDate(pipeline.created_at)}</span>
@@ -1936,7 +1936,7 @@ export default function PipelineDetailPage() {
                   href={selectedOpportunity.service_offer_link} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-[#523DC9] hover:underline"
+                  className="text-primary-500 hover:underline"
                 >
                   {selectedOpportunity.service_offer_link}
                 </a>

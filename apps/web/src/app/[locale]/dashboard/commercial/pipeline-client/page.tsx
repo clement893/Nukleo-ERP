@@ -134,7 +134,7 @@ function PipelinesListContent() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
                 <Layers className="w-6 h-6 text-primary-500" />
@@ -146,7 +146,7 @@ function PipelinesListContent() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Pipelines actifs</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <Target className="w-6 h-6 text-[#10B981]" />
@@ -158,7 +158,7 @@ function PipelinesListContent() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Opportunités totales</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <BarChart3 className="w-6 h-6 text-[#F59E0B]" />
@@ -170,7 +170,7 @@ function PipelinesListContent() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Étapes totales</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <TrendingUp className="w-6 h-6 text-[#3B82F6]" />
@@ -185,7 +185,7 @@ function PipelinesListContent() {
 
         {/* Pipelines Grid */}
         {pipelines.length === 0 ? (
-          <div className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <div className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Aucun pipeline trouvé
@@ -203,13 +203,13 @@ function PipelinesListContent() {
             {pipelines.map((pipeline) => (
               <div
                 key={pipeline.id}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
                 onClick={() => handleOpenPipeline(pipeline.id)}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-500 transition-colors font-nukleo">
                       {pipeline.name}
                     </h3>
                     {pipeline.description && (
@@ -219,7 +219,7 @@ function PipelinesListContent() {
                     )}
                   </div>
                   {pipeline.is_default && (
-                    <Badge className="bg-[#523DC9]/10 text-[#523DC9] border border-[#523DC9]/30 ml-2">
+                    <Badge className="bg-primary-500/10 text-primary-500 border border-primary-500/30 ml-2">
                       Par défaut
                     </Badge>
                   )}
