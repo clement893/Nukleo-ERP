@@ -89,9 +89,6 @@ export default function FinancesPage() {
       // Dernier jour du mois actuel
       const lastDayThisMonth = new Date(currentYear, currentMonth + 1, 0);
       
-      // Dernier jour du mois dernier
-      const lastDayLastMonth = new Date(currentYear, currentMonth, 0);
-      
       // Charger les transactions et factures
       const [allTransactions, invoicesResponse] = await Promise.all([
         transactionsAPI.list({ limit: 10000 }),

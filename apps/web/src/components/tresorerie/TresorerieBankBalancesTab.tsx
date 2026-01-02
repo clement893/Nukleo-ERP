@@ -154,23 +154,6 @@ export default function TresorerieBankBalancesTab() {
     setShowCreateModal(true);
   };
 
-  const openCreateModalForBank = (bankName: string) => {
-    const bank = PREDEFINED_BANKS.find(b => b.name === bankName);
-    resetForm();
-    setSelectedBank(bankName);
-    setFormData({
-      name: bankName,
-      account_type: bank?.type || 'checking',
-      bank_name: bankName,
-      account_number: null,
-      initial_balance: 0,
-      currency: 'CAD',
-      is_active: true,
-      notes: null
-    });
-    setShowCreateModal(true);
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-CA', {
       style: 'currency',

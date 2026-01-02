@@ -5,7 +5,7 @@ import { Card, Button, Badge, Input, Select, Textarea, Modal, Switch } from '@/c
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   CreditCard, Plus, Edit, Trash2, 
-  Loader2, RefreshCw, AlertTriangle, Check, X
+  Loader2, RefreshCw, Check, X
 } from 'lucide-react';
 import { tresorerieAPI, type BankAccount, type BankAccountCreate } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
@@ -233,7 +233,6 @@ export default function TresorerieDebtsCapacityTab() {
 
   const handleUsedSave = async (accountId: number) => {
     try {
-      const newUsed = parseFloat(editingUsedValue) || 0;
       const account = accounts.find(a => a.id === accountId);
       if (!account) return;
 
@@ -643,7 +642,6 @@ export default function TresorerieDebtsCapacityTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {otherDebtAccounts.map((account) => {
               const currentBalance = account.current_balance ?? account.initial_balance ?? 0;
-              const isNegative = currentBalance < 0;
               return (
                 <Card
                   key={account.id}
