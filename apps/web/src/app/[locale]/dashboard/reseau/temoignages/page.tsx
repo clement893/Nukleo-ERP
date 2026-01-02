@@ -53,7 +53,18 @@ function TemoignagesContent() {
   
   // États pour les listes de contacts et entreprises
   const [allCompanies, setAllCompanies] = useState<Array<{ id: number; name: string }>>([]);
-  const [allContacts, setAllContacts] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
+  const [allContacts, setAllContacts] = useState<Array<{ id: number; first_name: string; last_name: string; photo_url?: string | null }>>([]);
+  
+  // Mapping contact_id -> photo_url pour accès rapide
+  const contactPhotos = useMemo(() => {
+    const map: Record<number, string | null> = {};
+    allContacts.forEach(contact => {
+      if (contact.id) {
+        map[contact.id] = contact.photo_url || null;
+      }
+    });
+    return map;
+  }, [allContacts]);
 
   useEffect(() => {
     loadTestimonials();
@@ -80,10 +91,15 @@ function TemoignagesContent() {
     try {
       const [companiesData, contactsData] = await Promise.all([
         companiesAPI.list(0, 1000),
-        contactsAPI.list(0, 1000, true), // skipPhotoUrls pour éviter les timeouts
+        contactsAPI.list(0, 1000, false), // Inclure les photos pour les témoignages
       ]);
       setAllCompanies(companiesData.map(c => ({ id: c.id, name: c.name || '' })));
-      setAllContacts(contactsData.map(c => ({ id: c.id, first_name: c.first_name, last_name: c.last_name })));
+      setAllContacts(contactsData.map(c => ({ 
+        id: c.id, 
+        first_name: c.first_name, 
+        last_name: c.last_name,
+        photo_url: c.photo_url || null
+      })));
     } catch (err) {
       logger.error('Error loading companies/contacts', err);
       // Ne pas bloquer l'affichage si ça échoue
@@ -341,7 +357,7 @@ function TemoignagesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-success-500/10 border border-secondary-500/30">
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
                 <CheckCircle2 className="w-6 h-6 text-success-500" aria-hidden="true" />
               </div>
             </div>
@@ -439,9 +455,28 @@ function TemoignagesContent() {
                   {/* En-tête compact avec titre, statut et actions */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold mb-1 group-hover:text-primary-500 transition-colors truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                        {testimonial.title || 'Sans titre'}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        {/* Photo du contact */}
+                        {testimonial.contact_id && contactPhotos[testimonial.contact_id] ? (
+                          <img
+                            src={contactPhotos[testimonial.contact_id]!}
+                            alt={testimonial.contact_name || 'Contact'}
+                            className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-border"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-8 h-8 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center flex-shrink-0 ${testimonial.contact_id && contactPhotos[testimonial.contact_id] ? 'hidden' : ''}`}>
+                          <User className="w-4 h-4 text-primary-500" />
+                        </div>
+                        <h3 className="text-sm font-semibold group-hover:text-primary-500 transition-colors truncate flex-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                          {testimonial.title || 'Sans titre'}
+                        </h3>
+                      </div>
                       {/* Informations compactes en une ligne */}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                         {testimonial.contact_name && (
