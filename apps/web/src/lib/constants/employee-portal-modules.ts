@@ -68,29 +68,9 @@ export function getEmployeePortalModules(employeeId: number, locale: string = 'f
 
 /**
  * Available ERP modules for employee portal
+ * Note: Les chemins sont transformés par getEmployeePortalModulePath() pour correspondre aux routes réelles
  */
 export const EMPLOYEE_PORTAL_MODULES: EmployeePortalModule[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    description: 'Tableau de bord principal',
-    icon: 'LayoutDashboard',
-    basePath: '/dashboard',
-  },
-  {
-    id: 'leo',
-    label: 'Leo',
-    description: 'Assistant IA',
-    icon: 'Sparkles',
-    basePath: '/dashboard/leo',
-  },
-  {
-    id: 'ai',
-    label: 'AI',
-    description: 'Outils d\'intelligence artificielle',
-    icon: 'Bot',
-    basePath: '/dashboard/ai',
-  },
   {
     id: 'commercial',
     label: 'Module Commercial',
@@ -122,12 +102,12 @@ export const EMPLOYEE_PORTAL_MODULES: EmployeePortalModule[] = [
     label: 'Modules Opérations',
     description: 'Gestion des projets et opérations',
     icon: 'FolderOpen',
-    basePath: '/dashboard/projets',
+    basePath: '/dashboard/operations',
     subPages: [
-      { name: 'Accueil', path: '/dashboard/projets' },
-      { name: 'Projets', path: '/dashboard/projets/projets' },
-      { name: 'Clients', path: '/dashboard/projets/clients' },
-      { name: 'Équipes', path: '/dashboard/projets/equipes' },
+      { name: 'Accueil', path: '/dashboard/operations' },
+      { name: 'Projets', path: '/dashboard/operations/projets' },
+      { name: 'Clients', path: '/dashboard/operations/clients' },
+      { name: 'Équipes', path: '/dashboard/operations/equipes' },
     ],
   },
   {
@@ -154,7 +134,6 @@ export const EMPLOYEE_PORTAL_MODULES: EmployeePortalModule[] = [
     subPages: [
       { name: 'Calendrier', path: '/dashboard/agenda/calendrier' },
       { name: 'Événements', path: '/dashboard/agenda/evenements' },
-      { name: 'Deadlines', path: '/dashboard/agenda/deadlines' },
     ],
   },
   {
@@ -165,43 +144,6 @@ export const EMPLOYEE_PORTAL_MODULES: EmployeePortalModule[] = [
     basePath: '/dashboard/finances',
     subPages: [
       { name: 'Accueil', path: '/dashboard/finances' },
-      { name: 'Facturations', path: '/dashboard/finances/facturations' },
-      { name: 'Rapport', path: '/dashboard/finances/rapport' },
-      { name: 'Compte de dépenses', path: '/dashboard/finances/compte-depenses' },
-    ],
-  },
-  {
-    id: 'gestion',
-    label: 'Gestion',
-    description: 'Gestion des utilisateurs et équipes',
-    icon: 'Users',
-    basePath: '/admin',
-    subPages: [
-      { name: 'Utilisateurs', path: '/admin/users' },
-      { name: 'Équipes', path: '/admin/teams' },
-    ],
-  },
-  {
-    id: 'contenu',
-    label: 'Contenu',
-    description: 'Gestion du contenu et médias',
-    icon: 'FolderKanban',
-    basePath: '/admin',
-    subPages: [
-      { name: 'Pages', path: '/admin/pages' },
-      { name: 'Articles', path: '/admin/articles' },
-      { name: 'Médias', path: '/admin/media' },
-    ],
-  },
-  {
-    id: 'settings',
-    label: 'Paramètres',
-    description: 'Configuration et paramètres système',
-    icon: 'Settings',
-    basePath: '/settings',
-    subPages: [
-      { name: 'Profil', path: '/settings/profile' },
-      { name: 'Sécurité', path: '/settings/security' },
     ],
   },
 ];

@@ -229,7 +229,7 @@ export default function AdminContent() {
               }
             />
             <ServiceTestCard
-              href="/erp/dashboard"
+              href="/dashboard"
               title="ERP Portal"
               description="Test ERP Portal - Manage orders, invoices, clients, inventory, and reports"
               color="primary"
