@@ -8,7 +8,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, Download, Plus, Loader2, Upload, X, CheckCircle2, AlertCircle,
   RefreshCw, LayoutDashboard, Calendar, FileText, BarChart3, Building2, Tag, Bell,
-  AlertTriangle
+  AlertTriangle, CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import Tabs, { TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
@@ -22,6 +22,8 @@ import TresorerieAnalyticsTab from '@/components/tresorerie/TresorerieAnalyticsT
 import TresorerieAccountsTab from '@/components/tresorerie/TresorerieAccountsTab';
 import TresorerieCategoriesTab from '@/components/tresorerie/TresorerieCategoriesTab';
 import TresorerieAlertsTab from '@/components/tresorerie/TresorerieAlertsTab';
+import TresorerieBankBalancesTab from '@/components/tresorerie/TresorerieBankBalancesTab';
+import TresorerieDebtsCapacityTab from '@/components/tresorerie/TresorerieDebtsCapacityTab';
 
 interface SoldeHebdomadaire {
   semaine: string;
@@ -257,6 +259,14 @@ export default function TresoreriePage() {
               <Building2 className="w-4 h-4 mr-2" />
               Comptes
             </Tab>
+            <Tab value="bank-balances">
+              <Wallet className="w-4 h-4 mr-2" />
+              Soldes Bancaires
+            </Tab>
+            <Tab value="debts-capacity">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Dettes & Capacité
+            </Tab>
             <Tab value="categories">
               <Tag className="w-4 h-4 mr-2" />
               Catégories
@@ -296,6 +306,14 @@ export default function TresoreriePage() {
 
             <TabPanel value="accounts">
               <TresorerieAccountsTab />
+            </TabPanel>
+
+            <TabPanel value="bank-balances">
+              <TresorerieBankBalancesTab />
+            </TabPanel>
+
+            <TabPanel value="debts-capacity">
+              <TresorerieDebtsCapacityTab />
             </TabPanel>
 
             <TabPanel value="categories">
