@@ -186,7 +186,7 @@ export default function CalendrierPage() {
           title: '☀️ Vacances d\'été',
           date: dateStr,
           type: 'summer',
-          color: '#F59E0B'
+          color: 'var(--color-warning-500)'
         });
       }
 
@@ -201,7 +201,7 @@ export default function CalendrierPage() {
             type: 'project',
             description: project.description || undefined,
             priority: 'high',
-            color: '#523DC9'
+            color: 'var(--color-primary-500)'
           });
         }
 
@@ -215,7 +215,7 @@ export default function CalendrierPage() {
             type: 'deadline',
             description: project.description || undefined,
             priority: 'urgent',
-            color: '#6B1817'
+            color: 'var(--color-danger-700)'
           });
         }
       });
@@ -235,7 +235,7 @@ export default function CalendrierPage() {
             type: 'vacation',
             description: vacation.reason || 'Vacances',
             priority: vacation.status === 'approved' ? 'low' : 'medium',
-            color: vacation.status === 'approved' ? '#10B981' : '#F59E0B'
+            color: vacation.status === 'approved' ? 'var(--color-secondary-500)' : 'var(--color-warning-500)'
           });
         }
       });
@@ -254,7 +254,7 @@ export default function CalendrierPage() {
                 title: `🎂 ${emp.first_name} ${emp.last_name}${age > 0 ? ` (${age} ans)` : ''}`,
                 date: dateStr,
                 type: 'birthday',
-                color: '#EC4899'
+                color: 'var(--color-primary-400)'
               });
             }
           }
@@ -276,7 +276,7 @@ export default function CalendrierPage() {
                   title: `🎉 ${emp.first_name} ${emp.last_name}${yearsOfService > 0 ? ` (${yearsOfService} an${yearsOfService > 1 ? 's' : ''} de service)` : ' (Nouvel employé)'}`,
                   date: dateStr,
                   type: 'hiredate',
-                  color: '#06B6D4'
+                  color: 'var(--color-info-500)'
                 });
               }
             }
@@ -287,11 +287,11 @@ export default function CalendrierPage() {
       // Événements généraux
       apiEvents.forEach((event) => {
         const eventColors: Record<string, string> = {
-          meeting: '#3B82F6',
-          appointment: '#8B5CF6',
-          reminder: '#EC4899',
-          holiday: '#EF4444',
-          other: '#6B7280',
+          meeting: 'var(--color-primary-500)',
+          appointment: 'var(--color-primary-400)',
+          reminder: 'var(--color-primary-400)',
+          holiday: 'var(--color-danger-500)',
+          other: 'var(--color-gray-500)',
         };
         calendarEvents.push({
           id: `event-${event.id}`,
@@ -299,7 +299,7 @@ export default function CalendrierPage() {
           date: event.date,
           type: 'event',
           description: event.description,
-          color: eventColors[event.type] || '#6B7280'
+          color: eventColors[event.type] || 'var(--color-gray-500)'
         });
       });
 
@@ -324,7 +324,7 @@ export default function CalendrierPage() {
           type: 'timesheet',
           description: `${uniqueEmployees.size} employé(s)`,
           priority: 'medium',
-          color: '#8B5CF6'
+          color: 'var(--color-primary-400)'
         });
       });
 
@@ -363,15 +363,15 @@ export default function CalendrierPage() {
         icon: Plane
       },
       project: {
-        bg: 'bg-[#523DC9]/10',
-        text: 'text-[#523DC9]',
-        border: 'border-[#523DC9]/30',
+        bg: 'bg-primary-500/10',
+        text: 'text-primary-500',
+        border: 'border-primary-500/30',
         icon: Briefcase
       },
       deadline: {
-        bg: 'bg-[#6B1817]/10',
-        text: 'text-[#6B1817]',
-        border: 'border-[#6B1817]/30',
+        bg: 'bg-danger-700/10',
+        text: 'text-danger-700',
+        border: 'border-danger-700/30',
         icon: AlertCircle
       },
       birthday: {
@@ -424,16 +424,16 @@ export default function CalendrierPage() {
     };
 
     return [
-      { id: 'all' as EventType, label: 'Tous', icon: CalendarIcon, count: counts.all, color: '#523DC9' },
-      { id: 'holiday' as EventType, label: 'Jours fériés', icon: Star, count: counts.holiday, color: '#EF4444' },
-      { id: 'vacation' as EventType, label: 'Vacances', icon: Plane, count: counts.vacation, color: '#10B981' },
-      { id: 'project' as EventType, label: 'Projets', icon: Briefcase, count: counts.project, color: '#523DC9' },
-      { id: 'deadline' as EventType, label: 'Deadlines', icon: AlertCircle, count: counts.deadline, color: '#6B1817' },
-      { id: 'birthday' as EventType, label: 'Anniversaires', icon: Cake, count: counts.birthday, color: '#EC4899' },
-      { id: 'hiredate' as EventType, label: 'Dates embauche', icon: Users, count: counts.hiredate, color: '#06B6D4' },
-      { id: 'event' as EventType, label: 'Événements', icon: CheckCircle2, count: counts.event, color: '#3B82F6' },
-      { id: 'summer' as EventType, label: 'Vacances été', icon: Sun, count: counts.summer, color: '#F59E0B' },
-      { id: 'timesheet' as EventType, label: 'Feuilles temps', icon: Clock, count: counts.timesheet, color: '#8B5CF6' },
+      { id: 'all' as EventType, label: 'Tous', icon: CalendarIcon, count: counts.all, color: 'var(--color-primary-500)' },
+      { id: 'holiday' as EventType, label: 'Jours fériés', icon: Star, count: counts.holiday, color: 'var(--color-danger-500)' },
+      { id: 'vacation' as EventType, label: 'Vacances', icon: Plane, count: counts.vacation, color: 'var(--color-secondary-500)' },
+      { id: 'project' as EventType, label: 'Projets', icon: Briefcase, count: counts.project, color: 'var(--color-primary-500)' },
+      { id: 'deadline' as EventType, label: 'Deadlines', icon: AlertCircle, count: counts.deadline, color: 'var(--color-danger-700)' },
+      { id: 'birthday' as EventType, label: 'Anniversaires', icon: Cake, count: counts.birthday, color: 'var(--color-primary-400)' },
+      { id: 'hiredate' as EventType, label: 'Dates embauche', icon: Users, count: counts.hiredate, color: 'var(--color-info-500)' },
+      { id: 'event' as EventType, label: 'Événements', icon: CheckCircle2, count: counts.event, color: 'var(--color-primary-500)' },
+      { id: 'summer' as EventType, label: 'Vacances été', icon: Sun, count: counts.summer, color: 'var(--color-warning-500)' },
+      { id: 'timesheet' as EventType, label: 'Feuilles temps', icon: Clock, count: counts.timesheet, color: 'var(--color-primary-400)' },
     ];
   }, [events]);
 
@@ -544,7 +544,7 @@ export default function CalendrierPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -553,7 +553,7 @@ export default function CalendrierPage() {
     <div className="space-y-6">
       {/* Hero Header */}
       <div className="relative mb-8 rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
           backgroundSize: '200px 200px'
@@ -562,7 +562,7 @@ export default function CalendrierPage() {
         <div className="relative p-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h1 className="text-4xl font-black text-white mb-2 font-nukleo">
                 Calendrier
               </h1>
               <p className="text-white/80 text-lg">
@@ -644,7 +644,7 @@ export default function CalendrierPage() {
       </div>
 
       {/* Quickfilters */}
-      <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+      <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
         <div className="flex flex-wrap gap-2">
           {quickFilters.map((filter) => {
             const isActive = activeFilters.has(filter.id);
@@ -655,7 +655,7 @@ export default function CalendrierPage() {
                 onClick={() => toggleFilter(filter.id)}
                 className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
                   isActive
-                    ? 'bg-[#523DC9] text-white shadow-lg'
+                    ? 'bg-primary-500 text-white shadow-lg'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
                 }`}
               >
@@ -686,7 +686,7 @@ export default function CalendrierPage() {
             </button>
             
             <div className="text-center min-w-[200px]">
-              <h2 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h2 className="text-xl font-bold font-nukleo">
                 {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
               </h2>
             </div>
@@ -700,7 +700,7 @@ export default function CalendrierPage() {
             
             <button
               onClick={goToToday}
-              className="px-4 py-2 rounded-lg bg-[#523DC9] text-white hover:bg-[#523DC9]/90 transition-colors"
+              className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors"
             >
               Aujourd'hui
             </button>
@@ -731,22 +731,22 @@ export default function CalendrierPage() {
                   !date
                     ? 'bg-gray-50 dark:bg-gray-900/50 border-transparent'
                     : isCurrentDay
-                    ? 'bg-[#523DC9]/10 border-[#523DC9] ring-2 ring-[#523DC9]/30'
+                    ? 'bg-primary-500/10 border-primary-500 ring-2 ring-primary-500/30'
                     : isCurrentMonth
-                    ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/50 hover:shadow-md'
+                    ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-primary-500/50 hover:shadow-md'
                     : 'bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 opacity-50'
                 }`}
               >
                 {date && (
                   <>
                     <div className={`text-sm font-semibold mb-2 ${
-                      isCurrentDay ? 'text-[#523DC9]' : 'text-gray-700 dark:text-gray-300'
+                      isCurrentDay ? 'text-primary-500' : 'text-gray-700 dark:text-gray-300'
                     }`}>
                       {date.getDate()}
                     </div>
                     <div className="space-y-1">
                       {dayEvents.slice(0, 3).map(event => {
-                        const eventColor = event.color || '#6B7280';
+                        const eventColor = event.color || 'var(--color-gray-500)';
                         return (
                           <div
                             key={event.id}
@@ -777,7 +777,7 @@ export default function CalendrierPage() {
       </div>
 
       {/* Legend */}
-      <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+      <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
         <h3 className="text-sm font-semibold mb-3">Légende</h3>
         <div className="flex flex-wrap gap-4">
           {quickFilters.filter(f => f.id !== 'all').map((filter) => {
