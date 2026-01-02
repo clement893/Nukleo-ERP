@@ -16,6 +16,7 @@ import {
   MessageSquare,
   CheckSquare,
   Briefcase,
+  Puzzle,
 } from 'lucide-react';
 
 import type { WidgetDefinition, WidgetType } from './types';
@@ -41,6 +42,7 @@ import {
   WorkloadChartWidget,
   UserProfileWidget,
   NotificationsWidget,
+  CustomWidget,
 } from "@/components/dashboard/widgets";
 
 
@@ -298,6 +300,20 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     default_size: { w: 3, h: 2 },
     min_size: { w: 2, h: 2 },
     max_size: { w: 6, h: 4 },
+    configurable: true,
+  },
+  
+  // ========== CUSTOM ==========
+  'custom': {
+    id: 'custom',
+    name: 'Widget Personnalisé',
+    description: 'Widget personnalisé créé par l\'utilisateur',
+    category: 'system',
+    icon: Puzzle,
+    component: CustomWidget,
+    default_size: { w: 4, h: 2 },
+    min_size: { w: 2, h: 2 },
+    max_size: { w: 12, h: 6 },
     configurable: true,
   },
 };
