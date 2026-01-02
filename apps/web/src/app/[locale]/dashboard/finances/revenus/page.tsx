@@ -48,11 +48,15 @@ export default function RevenusPage() {
     type: 'revenue',
     description: '',
     amount: '',
+    tax_amount: null,
     currency: 'CAD',
     category: null,
     transaction_date: new Date().toISOString().split('T')[0],
+    expected_payment_date: null,
     payment_date: null,
     status: 'pending',
+    client_id: null,
+    client_name: null,
     invoice_number: null,
     notes: null,
   });
@@ -94,7 +98,9 @@ export default function RevenusPage() {
       const transactionData: TransactionCreate = {
         ...formData,
         amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+        tax_amount: formData.tax_amount ? (typeof formData.tax_amount === 'string' ? parseFloat(formData.tax_amount) : formData.tax_amount) : null,
         transaction_date: new Date(formData.transaction_date).toISOString(),
+        expected_payment_date: formData.expected_payment_date ? new Date(formData.expected_payment_date).toISOString() : null,
         payment_date: formData.payment_date ? new Date(formData.payment_date).toISOString() : null,
       };
 
@@ -125,11 +131,15 @@ export default function RevenusPage() {
       const updateData: TransactionUpdate = {
         description: formData.description,
         amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+        tax_amount: formData.tax_amount ? (typeof formData.tax_amount === 'string' ? parseFloat(formData.tax_amount) : formData.tax_amount) : null,
         currency: formData.currency,
         category: formData.category,
         transaction_date: new Date(formData.transaction_date).toISOString(),
+        expected_payment_date: formData.expected_payment_date ? new Date(formData.expected_payment_date).toISOString() : null,
         payment_date: formData.payment_date ? new Date(formData.payment_date).toISOString() : null,
         status: formData.status,
+        client_id: formData.client_id,
+        client_name: formData.client_name,
         invoice_number: formData.invoice_number,
         notes: formData.notes,
       };
@@ -179,11 +189,15 @@ export default function RevenusPage() {
       type: 'revenue',
       description: transaction.description,
       amount: parseFloat(transaction.amount),
+      tax_amount: transaction.tax_amount ? parseFloat(transaction.tax_amount) : null,
       currency: transaction.currency,
       category: transaction.category || null,
       transaction_date: transaction.transaction_date.split('T')[0],
+      expected_payment_date: transaction.expected_payment_date ? transaction.expected_payment_date.split('T')[0] : null,
       payment_date: transaction.payment_date ? transaction.payment_date.split('T')[0] : null,
       status: transaction.status,
+      client_id: transaction.client_id || null,
+      client_name: transaction.client_name || null,
       invoice_number: transaction.invoice_number || null,
       notes: transaction.notes || null,
     });
@@ -195,11 +209,15 @@ export default function RevenusPage() {
       type: 'revenue',
       description: '',
       amount: '',
+      tax_amount: null,
       currency: 'CAD',
       category: null,
       transaction_date: new Date().toISOString().split('T')[0],
+      expected_payment_date: null,
       payment_date: null,
       status: 'pending',
+      client_id: null,
+      client_name: null,
       invoice_number: null,
       notes: null,
     });
@@ -416,17 +434,29 @@ export default function RevenusPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                        <span>{formatDate(transaction.transaction_date)}</span>
+                        <span>Émis: {formatDate(transaction.transaction_date)}</span>
+                        {transaction.client_name && (
+                          <>
+                            <span>•</span>
+                            <span>{transaction.client_name}</span>
+                          </>
+                        )}
                         {transaction.invoice_number && (
                           <>
                             <span>•</span>
                             <span className="font-mono">{transaction.invoice_number}</span>
                           </>
                         )}
+                        {transaction.expected_payment_date && (
+                          <>
+                            <span>•</span>
+                            <span>Prévu: {formatDate(transaction.expected_payment_date)}</span>
+                          </>
+                        )}
                         {transaction.payment_date && (
                           <>
                             <span>•</span>
-                            <span>Payé le: {formatDate(transaction.payment_date)}</span>
+                            <span>Reçu: {formatDate(transaction.payment_date)}</span>
                           </>
                         )}
                       </div>
@@ -434,8 +464,15 @@ export default function RevenusPage() {
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <div className="text-xl font-bold text-green-600">
-                          {formatCurrency(transaction.amount)}
+                          {formatCurrency(
+                            parseFloat(transaction.amount) + (transaction.tax_amount ? parseFloat(transaction.tax_amount) : 0)
+                          )}
                         </div>
+                        {transaction.tax_amount && parseFloat(transaction.tax_amount) > 0 && (
+                          <div className="text-xs text-gray-500">
+                            HT: {formatCurrency(transaction.amount)} + Taxes: {formatCurrency(transaction.tax_amount)}
+                          </div>
+                        )}
                         <div className="text-xs text-gray-500">{transaction.currency}</div>
                       </div>
                       <div className="flex gap-2">
@@ -484,7 +521,7 @@ export default function RevenusPage() {
             
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Montant *"
+                label="Montant HT *"
                 type="number"
                 step="0.01"
                 min="0"
@@ -493,6 +530,18 @@ export default function RevenusPage() {
                 placeholder="0.00"
                 required
               />
+              <Input
+                label="Montant des taxes"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.tax_amount || ''}
+                onChange={(e) => setFormData({ ...formData, tax_amount: e.target.value || null })}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <Select
                 label="Devise"
                 value={formData.currency}
@@ -503,23 +552,47 @@ export default function RevenusPage() {
                   { label: 'EUR', value: 'EUR' },
                 ]}
               />
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Montant total TTC
+                </label>
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm font-semibold">
+                  {formatCurrency(
+                    (typeof formData.amount === 'string' ? parseFloat(formData.amount) || 0 : formData.amount || 0) +
+                    (formData.tax_amount ? (typeof formData.tax_amount === 'string' ? parseFloat(formData.tax_amount) || 0 : formData.tax_amount || 0) : 0)
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Input
-                label="Date de transaction *"
+                label="Date d'émission *"
                 type="date"
                 value={formData.transaction_date}
                 onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
                 required
               />
               <Input
-                label="Date de paiement"
+                label="Date de réception prévue"
+                type="date"
+                value={formData.expected_payment_date || ''}
+                onChange={(e) => setFormData({ ...formData, expected_payment_date: e.target.value || null })}
+              />
+              <Input
+                label="Date de réception réelle"
                 type="date"
                 value={formData.payment_date || ''}
                 onChange={(e) => setFormData({ ...formData, payment_date: e.target.value || null })}
               />
             </div>
+
+            <Input
+              label="Client"
+              value={formData.client_name || ''}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value || null })}
+              placeholder="Nom du client"
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <Select
@@ -597,7 +670,7 @@ export default function RevenusPage() {
             
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Montant *"
+                label="Montant HT *"
                 type="number"
                 step="0.01"
                 min="0"
@@ -606,6 +679,18 @@ export default function RevenusPage() {
                 placeholder="0.00"
                 required
               />
+              <Input
+                label="Montant des taxes"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.tax_amount || ''}
+                onChange={(e) => setFormData({ ...formData, tax_amount: e.target.value || null })}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <Select
                 label="Devise"
                 value={formData.currency}
@@ -616,23 +701,47 @@ export default function RevenusPage() {
                   { label: 'EUR', value: 'EUR' },
                 ]}
               />
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Montant total TTC
+                </label>
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm font-semibold">
+                  {formatCurrency(
+                    (typeof formData.amount === 'string' ? parseFloat(formData.amount) || 0 : formData.amount || 0) +
+                    (formData.tax_amount ? (typeof formData.tax_amount === 'string' ? parseFloat(formData.tax_amount) || 0 : formData.tax_amount || 0) : 0)
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Input
-                label="Date de transaction *"
+                label="Date d'émission *"
                 type="date"
                 value={formData.transaction_date}
                 onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
                 required
               />
               <Input
-                label="Date de paiement"
+                label="Date de réception prévue"
+                type="date"
+                value={formData.expected_payment_date || ''}
+                onChange={(e) => setFormData({ ...formData, expected_payment_date: e.target.value || null })}
+              />
+              <Input
+                label="Date de réception réelle"
                 type="date"
                 value={formData.payment_date || ''}
                 onChange={(e) => setFormData({ ...formData, payment_date: e.target.value || null })}
               />
             </div>
+
+            <Input
+              label="Client"
+              value={formData.client_name || ''}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value || null })}
+              placeholder="Nom du client"
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <Select

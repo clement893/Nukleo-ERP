@@ -15,18 +15,22 @@ export interface Transaction {
   type: TransactionType;
   description: string;
   amount: string; // Decimal as string
+  tax_amount?: string | null; // Decimal as string - Montant des taxes
   currency: string;
   category?: string | null;
-  transaction_date: string; // ISO date string
-  payment_date?: string | null; // ISO date string
+  transaction_date: string; // ISO date string - Date d'émission
+  expected_payment_date?: string | null; // ISO date string - Date de réception prévue
+  payment_date?: string | null; // ISO date string - Date de réception réelle
   status: TransactionStatus;
-  supplier_id?: number | null;
-  supplier_name?: string | null;
+  client_id?: number | null; // Pour les revenus
+  client_name?: string | null; // Nom du client
+  supplier_id?: number | null; // Pour les dépenses
+  supplier_name?: string | null; // Nom du fournisseur
   invoice_number?: string | null;
   notes?: string | null;
   is_recurring: string; // "true" or "false"
   recurring_id?: number | null;
-  metadata?: string | null;
+  transaction_metadata?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,35 +39,43 @@ export interface TransactionCreate {
   type: TransactionType;
   description: string;
   amount: number | string;
+  tax_amount?: number | string | null; // Montant des taxes
   currency?: string;
   category?: string | null;
-  transaction_date: string; // ISO date string
-  payment_date?: string | null; // ISO date string
+  transaction_date: string; // ISO date string - Date d'émission
+  expected_payment_date?: string | null; // ISO date string - Date de réception prévue
+  payment_date?: string | null; // ISO date string - Date de réception réelle
   status?: TransactionStatus;
-  supplier_id?: number | null;
-  supplier_name?: string | null;
+  client_id?: number | null; // Pour les revenus
+  client_name?: string | null; // Nom du client
+  supplier_id?: number | null; // Pour les dépenses
+  supplier_name?: string | null; // Nom du fournisseur
   invoice_number?: string | null;
   notes?: string | null;
   is_recurring?: string;
   recurring_id?: number | null;
-  metadata?: string | null;
+  transaction_metadata?: string | null;
 }
 
 export interface TransactionUpdate {
   description?: string;
   amount?: number | string;
+  tax_amount?: number | string | null;
   currency?: string;
   category?: string | null;
   transaction_date?: string;
+  expected_payment_date?: string | null;
   payment_date?: string | null;
   status?: TransactionStatus;
+  client_id?: number | null;
+  client_name?: string | null;
   supplier_id?: number | null;
   supplier_name?: string | null;
   invoice_number?: string | null;
   notes?: string | null;
   is_recurring?: string;
   recurring_id?: number | null;
-  metadata?: string | null;
+  transaction_metadata?: string | null;
 }
 
 export interface TransactionSummary {

@@ -43,21 +43,25 @@ class Transaction(Base):
     type = Column(SQLEnum(TransactionType), nullable=False, index=True)  # revenue or expense
     description = Column(String(500), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
+    tax_amount = Column(Numeric(10, 2), nullable=True, default=0)  # Tax amount (GST, QST, etc.)
     currency = Column(String(3), default="CAD", nullable=False)
     
     # Categorization
     category = Column(String(100), nullable=True, index=True)  # e.g., "Sales", "Marketing", "Office Supplies"
     
     # Dates
-    transaction_date = Column(DateTime(timezone=True), nullable=False, index=True)
-    payment_date = Column(DateTime(timezone=True), nullable=True)  # When actually paid/received
+    transaction_date = Column(DateTime(timezone=True), nullable=False, index=True)  # Date d'émission
+    expected_payment_date = Column(DateTime(timezone=True), nullable=True)  # Date de réception prévue
+    payment_date = Column(DateTime(timezone=True), nullable=True)  # Date de réception réelle
     
     # Status
     status = Column(SQLEnum(TransactionStatus), default=TransactionStatus.PENDING, nullable=False, index=True)
     
     # Additional info
+    client_id = Column(Integer, nullable=True)  # For revenues, link to client
+    client_name = Column(String(200), nullable=True)  # Denormalized client name for quick access
     supplier_id = Column(Integer, nullable=True)  # For expenses, link to supplier
-    supplier_name = Column(String(200), nullable=True)  # Denormalized for quick access
+    supplier_name = Column(String(200), nullable=True)  # Denormalized supplier name for quick access
     invoice_number = Column(String(100), nullable=True)
     notes = Column(Text, nullable=True)
     

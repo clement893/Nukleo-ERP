@@ -15,13 +15,17 @@ class TransactionBase(BaseModel):
     """Base transaction schema"""
     description: str = Field(..., min_length=1, max_length=500)
     amount: Decimal = Field(..., gt=0)
+    tax_amount: Optional[Decimal] = Field(None, ge=0)  # Montant des taxes
     currency: str = Field(default="CAD", max_length=3)
     category: Optional[str] = Field(None, max_length=100)
-    transaction_date: datetime
-    payment_date: Optional[datetime] = None
+    transaction_date: datetime  # Date d'émission
+    expected_payment_date: Optional[datetime] = None  # Date de réception prévue
+    payment_date: Optional[datetime] = None  # Date de réception réelle
     status: TransactionStatus = TransactionStatus.PENDING
-    supplier_id: Optional[int] = None
-    supplier_name: Optional[str] = Field(None, max_length=200)
+    client_id: Optional[int] = None  # Pour les revenus
+    client_name: Optional[str] = Field(None, max_length=200)  # Nom du client
+    supplier_id: Optional[int] = None  # Pour les dépenses
+    supplier_name: Optional[str] = Field(None, max_length=200)  # Nom du fournisseur
     invoice_number: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
     is_recurring: str = Field(default="false")
@@ -38,11 +42,15 @@ class TransactionUpdate(BaseModel):
     """Schema for updating a transaction"""
     description: Optional[str] = Field(None, min_length=1, max_length=500)
     amount: Optional[Decimal] = Field(None, gt=0)
+    tax_amount: Optional[Decimal] = Field(None, ge=0)
     currency: Optional[str] = Field(None, max_length=3)
     category: Optional[str] = Field(None, max_length=100)
     transaction_date: Optional[datetime] = None
+    expected_payment_date: Optional[datetime] = None
     payment_date: Optional[datetime] = None
     status: Optional[TransactionStatus] = None
+    client_id: Optional[int] = None
+    client_name: Optional[str] = Field(None, max_length=200)
     supplier_id: Optional[int] = None
     supplier_name: Optional[str] = Field(None, max_length=200)
     invoice_number: Optional[str] = Field(None, max_length=100)
