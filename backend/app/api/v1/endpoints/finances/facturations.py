@@ -17,6 +17,7 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.finance_invoice import FinanceInvoice, FinanceInvoicePayment, FinanceInvoiceStatus
 from app.models.project import Project
+from app.models.transaction import Transaction, TransactionStatus, TransactionType
 from app.schemas.finance_invoice import (
     FinanceInvoiceCreate,
     FinanceInvoiceUpdate,
@@ -315,6 +316,51 @@ async def create_facturation(
     db.add(invoice)
     await db.commit()
     await db.refresh(invoice)
+    
+    # Create corresponding revenue transaction
+    try:
+        client_data = invoice_data.client_data if isinstance(invoice_data.client_data, dict) else {}
+        client_name = client_data.get('name', '') or ''
+        
+        # Convert dates to datetime objects
+        if isinstance(invoice_data.issue_date, datetime):
+            issue_datetime = invoice_data.issue_date
+        elif isinstance(invoice_data.issue_date, str):
+            # Handle ISO format strings
+            issue_datetime = datetime.fromisoformat(invoice_data.issue_date.replace('Z', '+00:00'))
+        else:
+            issue_datetime = datetime.now()
+        
+        if isinstance(invoice_data.due_date, datetime):
+            due_datetime = invoice_data.due_date
+        elif isinstance(invoice_data.due_date, str):
+            # Handle ISO format strings
+            due_datetime = datetime.fromisoformat(invoice_data.due_date.replace('Z', '+00:00'))
+        else:
+            due_datetime = None
+        
+        transaction = Transaction(
+            user_id=current_user.id,
+            type=TransactionType.REVENUE,
+            description=f"Facture {invoice_number} - {client_name}",
+            amount=total,
+            tax_amount=tax_amount,
+            currency='CAD',
+            category='Ventes',
+            transaction_date=issue_datetime,
+            expected_payment_date=due_datetime,
+            status=TransactionStatus.PENDING,
+            client_name=client_name,
+            invoice_number=invoice_number,
+            notes=f"Facture créée automatiquement depuis la facturation {invoice_number}",
+        )
+        db.add(transaction)
+        await db.commit()
+        await db.refresh(transaction)
+        logger.info(f"Created revenue transaction {transaction.id} for invoice {invoice_number}")
+    except Exception as e:
+        # Log error but don't fail invoice creation
+        logger.error(f"Failed to create revenue transaction for invoice {invoice_number}: {e}", exc_info=True)
     
     # Return response
     invoice_response_data = {
