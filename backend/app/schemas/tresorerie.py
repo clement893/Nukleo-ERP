@@ -111,7 +111,7 @@ class TransactionBase(BaseModel):
     description: str = Field(..., min_length=1, max_length=500, description="Description", strip_whitespace=True)
     notes: Optional[str] = Field(None, description="Additional notes")
     category_id: Optional[int] = Field(None, description="Category ID")
-    status: TransactionStatus = Field(default=TransactionStatus.CONFIRMED, description="Transaction status")
+    status: TransactionStatus = Field(default=TransactionStatus.PENDING, description="Transaction status")
     invoice_id: Optional[int] = Field(None, description="Related invoice ID")
     expense_account_id: Optional[int] = Field(None, description="Related expense account ID")
     project_id: Optional[int] = Field(None, description="Related project ID")

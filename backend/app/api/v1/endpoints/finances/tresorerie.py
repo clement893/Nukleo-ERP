@@ -1862,13 +1862,13 @@ async def import_transactions(
                         })
                 
                 status_str = get_field_value(row_data, ['status', 'statut', 'etat', 'state'])
-                transaction_status = TransactionStatus.CONFIRMED
+                transaction_status = TransactionStatus.PENDING
                 if status_str:
                     status_lower = str(status_str).lower()
                     if status_lower in ['pending', 'en_attente', 'pending']:
                         transaction_status = TransactionStatus.PENDING
-                    elif status_lower in ['projected', 'projete', 'projeté']:
-                        transaction_status = TransactionStatus.PROJECTED
+                    elif status_lower in ['paid', 'paye', 'payé', 'confirmed', 'confirme', 'confirmé']:
+                        transaction_status = TransactionStatus.PAID
                     elif status_lower in ['cancelled', 'annule', 'annulé']:
                         transaction_status = TransactionStatus.CANCELLED
                 
