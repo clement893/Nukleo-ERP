@@ -82,7 +82,7 @@ async function fetchWidgetData(dataSource: any) {
     return result;
 }
 
-export function CustomWidget({ config, globalFilters }: WidgetProps) {
+export function CustomWidget({ config }: WidgetProps) {
   const [widgetData, setWidgetData] = useState<CustomWidgetData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
