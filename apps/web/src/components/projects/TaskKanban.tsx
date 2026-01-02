@@ -451,7 +451,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                 {columnTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="glass-card p-4 rounded-xl cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                    className="glass-card p-4 rounded-xl cursor-pointer hover:scale-[1.02] transition-all duration-200"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                     onClick={(e: React.MouseEvent) => {
@@ -462,7 +462,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                       handleOpenTaskDetails(task);
                     }}
                   >
-                    <Card className="border-0 shadow-none p-0">
+                    <Card className="border-0 shadow-none p-0 bg-transparent">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2 flex-1">
                         <GripVertical className="w-4 h-4 text-muted-foreground" />
