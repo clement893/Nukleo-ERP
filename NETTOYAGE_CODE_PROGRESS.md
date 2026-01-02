@@ -10,7 +10,7 @@
 | Batch | Description | Statut | Fichiers | Progression |
 |-------|-------------|--------|----------|-------------|
 | **Batch 1** | Suppression fichiers backup/old | ✅ Terminé | 36 fichiers | 100% |
-| **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 8% |
+| **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 14% |
 | **Batch 3** | Correction `any` error handling | ⏳ En attente | ~60 fichiers | 0% |
 | **Batch 4** | Optimisation hooks React | ⏳ En attente | ~50 fichiers | 0% |
 | **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
@@ -43,7 +43,7 @@
 
 **Fichiers ciblés:** ~100 fichiers avec console.log en production
 
-**Fichiers traités:** 8/100
+**Fichiers traités:** 14/100
 - ✅ `apps/web/src/app/[locale]/dashboard/finances/compte-depenses/page.tsx` (3 console.error)
 - ✅ `apps/web/src/app/[locale]/dashboard/projets/clients/page.tsx` (3 console.error)
 - ✅ `apps/web/src/app/[locale]/dashboard/commercial/pipeline-client/[id]/page.tsx` (1 console.error)
@@ -52,6 +52,12 @@
 - ✅ `apps/web/src/app/[locale]/dashboard/commercial/temoignages/page.tsx` (1 console.error)
 - ✅ `apps/web/src/app/[locale]/dashboard/reseau/temoignages/page.tsx` (1 console.error)
 - ✅ `apps/web/src/app/[locale]/dashboard/admin/users/page.tsx` (1 console.error)
+- ✅ `apps/web/src/app/[locale]/dashboard/finances/tresorerie/page.tsx` (1 console.error)
+- ✅ `apps/web/src/app/[locale]/dashboard/finances/rapport/page.tsx` (1 console.error)
+- ✅ `apps/web/src/app/[locale]/dashboard/finances/page.tsx` (1 console.error)
+- ✅ `apps/web/src/app/[locale]/dashboard/projects/[id]/page.tsx` (2 console.warn)
+- ✅ `apps/web/src/app/[locale]/dashboard/projets/[id]/page.tsx` (1 console.warn)
+- ✅ `apps/web/src/app/[locale]/dashboard/page.tsx` (3 console.error)
 
 **Statut:** 🟡 En cours  
 **Dernière mise à jour:** 2025-01-27
@@ -92,7 +98,7 @@
 
 - **Fichiers traités:** 44/274 (16%)
 - **Lignes modifiées:** ~16,600 supprimées, ~250 modifiées
-- **Erreurs corrigées:** 14 console.log/error/warn remplacés
+- **Erreurs corrigées:** 23 console.log/error/warn remplacés
 - **Temps écoulé:** ~15 min
 
 ---
