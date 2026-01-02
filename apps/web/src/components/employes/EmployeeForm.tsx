@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Employee, EmployeeCreate, EmployeeUpdate } from '@/lib/api/employees';
-import { teamsAPI } from '@/lib/api/teams';
-import { mediaAPI } from '@/lib/api/media';
-import { extractApiData } from '@/lib/api/utils';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
-import { Upload, X, UserCircle } from 'lucide-react';
 import { useToast } from '@/components/ui';
-import { validateCapacityHoursPerWeek } from '@/lib/utils/capacity-validation';
+import { teamsAPI, type Team } from '@/lib/api/teams';
+import { handleApiError } from '@/lib/errors/api';
 
 interface EmployeeFormProps {
   employee?: Employee | null;
@@ -19,6 +17,20 @@ interface EmployeeFormProps {
   loading?: boolean;
 }
 
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Actif' },
+  { value: 'inactive', label: 'Inactif' },
+  { value: 'on_leave', label: 'En congé' },
+  { value: 'terminated', label: 'Terminé' },
+];
+
+const EMPLOYEE_TYPE_OPTIONS = [
+  { value: 'full_time', label: 'Temps plein' },
+  { value: 'part_time', label: 'Temps partiel' },
+  { value: 'contractor', label: 'Contractuel' },
+  { value: 'intern', label: 'Stagiaire' },
+];
+
 export default function EmployeeForm({
   employee,
   onSubmit,
@@ -26,11 +38,9 @@ export default function EmployeeForm({
   loading = false,
 }: EmployeeFormProps) {
   const { showToast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(employee?.photo_url || null);
-  const [teams, setTeams] = useState<Array<{ id: number; name: string }>>([]);
-  const [loadingTeams, setLoadingTeams] = useState(true);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  
   const [formData, setFormData] = useState<EmployeeCreate>({
     first_name: employee?.first_name || '',
     last_name: employee?.last_name || '',
@@ -38,127 +48,46 @@ export default function EmployeeForm({
     phone: employee?.phone || null,
     linkedin: employee?.linkedin || null,
     photo_url: employee?.photo_url || null,
+    photo_filename: employee?.photo_filename || null,
     hire_date: employee?.hire_date || null,
     birthday: employee?.birthday || null,
     capacity_hours_per_week: employee?.capacity_hours_per_week || 35,
     team_id: employee?.team_id || null,
+    status: employee?.status || 'active',
+    department: employee?.department || null,
+    job_title: employee?.job_title || null,
+    employee_type: employee?.employee_type || 'full_time',
+    employee_number: employee?.employee_number || null,
+    salary: employee?.salary || null,
+    hourly_rate: employee?.hourly_rate || null,
+    address: employee?.address || null,
+    city: employee?.city || null,
+    postal_code: employee?.postal_code || null,
+    country: employee?.country || null,
+    notes: employee?.notes || null,
+    termination_date: employee?.termination_date || null,
+    manager_id: employee?.manager_id || null,
   });
-  
-  // Load teams
+
   useEffect(() => {
-    const loadTeams = async () => {
+    const loadData = async () => {
       try {
-        setLoadingTeams(true);
-        const response = await teamsAPI.list(0, 100);
-        const teamsData = extractApiData(response);
-        if (teamsData?.teams) {
-          setTeams(teamsData.teams.map((team: any) => ({ id: team.id, name: team.name })));
-        }
-      } catch (error) {
-        console.error('Error loading teams:', error);
+        setLoadingData(true);
+        const teamsResponse = await teamsAPI.list(0, 1000);
+        const teamsData = teamsResponse.data?.teams || [];
+        setTeams(teamsData);
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({
+          message: appError.message || 'Erreur lors du chargement des données',
+          type: 'error',
+        });
       } finally {
-        setLoadingTeams(false);
+        setLoadingData(false);
       }
     };
-    loadTeams();
+    loadData();
   }, []);
-  
-  useEffect(() => {
-    if (employee?.photo_url) {
-      setPreviewUrl(employee.photo_url);
-    } else if (!employee) {
-      setPreviewUrl(null);
-    }
-  }, [employee?.photo_url, employee]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl && previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      showToast({
-        message: 'Veuillez sélectionner une image',
-        type: 'error',
-      });
-      return;
-    }
-
-    const localPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(localPreviewUrl);
-
-    setUploadingPhoto(true);
-    try {
-      const uploadedMedia = await mediaAPI.upload(file, {
-        folder: 'employees/photos',
-        is_public: true,
-      });
-      
-      // Always save file_key (S3 key) instead of file_path (presigned URL that expires)
-      // The backend will regenerate presigned URLs when needed
-      // According to MediaResponse schema: file_key is the S3 key, file_path might be presigned URL or key
-      const photoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
-      if (!photoUrlToSave) {
-        throw new Error('Neither file_key nor file_path returned from upload');
-      }
-      
-      URL.revokeObjectURL(localPreviewUrl);
-      
-      // Use file_path for preview if it's a presigned URL (starts with http)
-      // Otherwise, use file_key if available, or file_path as fallback
-      // The backend will regenerate presigned URLs when loading the employee
-      const previewUrl = uploadedMedia.file_path?.startsWith('http') 
-        ? uploadedMedia.file_path 
-        : (uploadedMedia.file_key || uploadedMedia.file_path);
-      
-      setPreviewUrl(previewUrl);
-      
-      // Update formData with the S3 key (not the presigned URL)
-      // The backend expects the S3 key in photo_url field
-      const updatedFormData = { ...formData, photo_url: photoUrlToSave };
-      setFormData(updatedFormData);
-      
-      // Log for debugging
-      console.log('Photo uploaded:', {
-        file_key: uploadedMedia.file_key,
-        file_path: uploadedMedia.file_path,
-        photoUrlToSave,
-        previewUrl,
-      });
-      
-      showToast({
-        message: 'Photo uploadée avec succès. N\'oubliez pas d\'enregistrer les modifications.',
-        type: 'success',
-      });
-    } catch (error) {
-      URL.revokeObjectURL(localPreviewUrl);
-      setPreviewUrl(null);
-      showToast({
-        message: 'Erreur lors de l\'upload de la photo',
-        type: 'error',
-      });
-    } finally {
-      setUploadingPhoto(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    if (previewUrl && previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
-    setFormData({ ...formData, photo_url: null });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,172 +99,233 @@ export default function EmployeeForm({
       });
       return;
     }
-    
-    // Validate capacity hours per week
-    if (formData.capacity_hours_per_week !== null && formData.capacity_hours_per_week !== undefined) {
-      const validation = validateCapacityHoursPerWeek(formData.capacity_hours_per_week);
-      if (!validation.valid) {
-        showToast({
-          message: validation.error || 'Capacité hebdomadaire invalide',
-          type: 'error',
-        });
-        return;
-      }
-    }
 
     await onSubmit(formData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Photo */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Photo
-        </label>
-        <div className="flex items-center gap-4">
-          {previewUrl ? (
-            <div className="relative">
-              <img
-                src={previewUrl}
-                alt="Employee photo"
-                className="w-20 h-20 rounded-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={handleRemovePhoto}
-                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-              <UserCircle className="w-10 h-10 text-muted-foreground" />
-            </div>
-          )}
-          <div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingPhoto}
-            >
-              <Upload className="w-4 h-4 mr-1.5" />
-              {uploadingPhoto ? 'Upload...' : previewUrl ? 'Changer' : 'Ajouter'}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Prénom et Nom */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Prénom *"
           value={formData.first_name}
           onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
           required
-          fullWidth
+          disabled={loading}
         />
+
         <Input
           label="Nom *"
           value={formData.last_name}
           onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
           required
-          fullWidth
+          disabled={loading}
         />
+
+        <Input
+          label="Email"
+          type="email"
+          value={formData.email || ''}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Téléphone"
+          value={formData.phone || ''}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="LinkedIn"
+          type="url"
+          value={formData.linkedin || ''}
+          onChange={(e) => setFormData({ ...formData, linkedin: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Numéro d'employé"
+          value={formData.employee_number || ''}
+          onChange={(e) => setFormData({ ...formData, employee_number: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Titre du poste"
+          value={formData.job_title || ''}
+          onChange={(e) => setFormData({ ...formData, job_title: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Département"
+          value={formData.department || ''}
+          onChange={(e) => setFormData({ ...formData, department: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Select
+          label="Statut"
+          value={formData.status || 'active'}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+          options={STATUS_OPTIONS}
+          disabled={loading || loadingData}
+        />
+
+        <Select
+          label="Type d'employé"
+          value={formData.employee_type || 'full_time'}
+          onChange={(e) => setFormData({ ...formData, employee_type: e.target.value as any })}
+          options={EMPLOYEE_TYPE_OPTIONS}
+          disabled={loading || loadingData}
+        />
+
+        <Select
+          label="Équipe"
+          value={formData.team_id?.toString() || ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              team_id: e.target.value ? parseInt(e.target.value) : null,
+            })
+          }
+          options={[
+            { value: '', label: 'Aucune équipe' },
+            ...teams.map(t => ({ value: t.id.toString(), label: t.name }))
+          ]}
+          disabled={loading || loadingData}
+        />
+
+        <Input
+          label="Capacité (heures/semaine)"
+          type="number"
+          step="0.5"
+          value={formData.capacity_hours_per_week?.toString() || '35'}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              capacity_hours_per_week: e.target.value ? parseFloat(e.target.value) : 35,
+            })
+          }
+          disabled={loading}
+        />
+
+        <Input
+          label="Salaire ($)"
+          type="number"
+          step="0.01"
+          value={formData.salary?.toString() || ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              salary: e.target.value ? parseFloat(e.target.value) : null,
+            })
+          }
+          disabled={loading}
+        />
+
+        <Input
+          label="Taux horaire ($)"
+          type="number"
+          step="0.01"
+          value={formData.hourly_rate?.toString() || ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              hourly_rate: e.target.value ? parseFloat(e.target.value) : null,
+            })
+          }
+          disabled={loading}
+        />
+
+        <Input
+          label="Date d'embauche"
+          type="date"
+          value={formData.hire_date ? new Date(formData.hire_date).toISOString().split('T')[0] : ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              hire_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+            })
+          }
+          disabled={loading}
+        />
+
+        <Input
+          label="Date de naissance"
+          type="date"
+          value={formData.birthday ? new Date(formData.birthday).toISOString().split('T')[0] : ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              birthday: e.target.value ? new Date(e.target.value).toISOString() : null,
+            })
+          }
+          disabled={loading}
+        />
+
+        <Input
+          label="Date de fin d'emploi"
+          type="date"
+          value={formData.termination_date ? new Date(formData.termination_date).toISOString().split('T')[0] : ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              termination_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+            })
+          }
+          disabled={loading}
+        />
+
+        <div className="md:col-span-2">
+          <Input
+            label="Adresse"
+            value={formData.address || ''}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value || null })}
+            disabled={loading}
+          />
+        </div>
+
+        <Input
+          label="Ville"
+          value={formData.city || ''}
+          onChange={(e) => setFormData({ ...formData, city: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Code postal"
+          value={formData.postal_code || ''}
+          onChange={(e) => setFormData({ ...formData, postal_code: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Pays"
+          value={formData.country || ''}
+          onChange={(e) => setFormData({ ...formData, country: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <div className="md:col-span-2">
+          <Textarea
+            label="Notes"
+            value={formData.notes || ''}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value || null })}
+            rows={4}
+            disabled={loading}
+          />
+        </div>
       </div>
 
-      {/* Email */}
-      <Input
-        label="Courriel"
-        type="email"
-        value={formData.email || ''}
-        onChange={(e) => setFormData({ ...formData, email: e.target.value || null })}
-        fullWidth
-      />
-
-      {/* Téléphone */}
-      <Input
-        label="Téléphone"
-        type="tel"
-        value={formData.phone || ''}
-        onChange={(e) => setFormData({ ...formData, phone: e.target.value || null })}
-        fullWidth
-      />
-
-      {/* LinkedIn */}
-      <Input
-        label="LinkedIn"
-        type="url"
-        value={formData.linkedin || ''}
-        onChange={(e) => setFormData({ ...formData, linkedin: e.target.value || null })}
-        placeholder="https://linkedin.com/in/..."
-        fullWidth
-      />
-
-      {/* Date d'embauche */}
-      <Input
-        label="Date d'embauche"
-        type="date"
-        value={formData.hire_date || ''}
-        onChange={(e) => setFormData({ ...formData, hire_date: e.target.value || null })}
-        fullWidth
-      />
-
-      {/* Anniversaire */}
-      <Input
-        label="Anniversaire"
-        type="date"
-        value={formData.birthday || ''}
-        onChange={(e) => setFormData({ ...formData, birthday: e.target.value || null })}
-        fullWidth
-      />
-
-      {/* Capacité hebdomadaire */}
-      <Input
-        label="Capacité hebdomadaire (heures)"
-        type="number"
-        step="0.5"
-        min="0"
-        max="168"
-        value={formData.capacity_hours_per_week || 35}
-        onChange={(e) => setFormData({ 
-          ...formData, 
-          capacity_hours_per_week: e.target.value ? parseFloat(e.target.value) : 35 
-        })}
-        fullWidth
-        helperText="Nombre d'heures de travail par semaine (défaut: 35h)"
-      />
-
-      {/* Équipe */}
-      <Select
-        label="Équipe"
-        value={formData.team_id?.toString() || ''}
-        onChange={(e) => setFormData({ ...formData, team_id: e.target.value ? parseInt(e.target.value) : null })}
-        options={[
-          { value: '', label: 'Aucune équipe' },
-          ...teams.map(team => ({ value: team.id.toString(), label: team.name })),
-        ]}
-        disabled={loadingTeams}
-        fullWidth
-      />
-
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+      <div className="flex justify-end gap-2 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
           Annuler
         </Button>
-        <Button type="submit" size="sm" loading={loading}>
-          {employee ? 'Enregistrer' : 'Créer'}
+        <Button type="submit" disabled={loading}>
+          {loading ? 'Enregistrement...' : employee ? 'Modifier' : 'Créer'}
         </Button>
       </div>
     </form>

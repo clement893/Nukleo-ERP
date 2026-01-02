@@ -20,6 +20,22 @@ export interface Employee {
   capacity_hours_per_week?: number | null; // Capacity in hours per week (default: 35)
   user_id?: number | null; // Linked user ID
   team_id?: number | null; // Team ID
+  // Extended fields (may be available from backend)
+  status?: 'active' | 'inactive' | 'on_leave' | 'terminated' | null;
+  department?: string | null;
+  job_title?: string | null;
+  employee_type?: 'full_time' | 'part_time' | 'contractor' | 'intern' | null;
+  employee_number?: string | null;
+  salary?: number | null;
+  hourly_rate?: number | null;
+  address?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  notes?: string | null;
+  termination_date?: string | null;
+  manager_id?: number | null;
+  team_name?: string | null; // Team name from relationship
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +52,21 @@ export interface EmployeeCreate {
   birthday?: string | null; // ISO date string (YYYY-MM-DD)
   capacity_hours_per_week?: number | null; // Capacity in hours per week (default: 35)
   team_id?: number | null; // Team ID
+  // Extended fields
+  status?: 'active' | 'inactive' | 'on_leave' | 'terminated' | null;
+  department?: string | null;
+  job_title?: string | null;
+  employee_type?: 'full_time' | 'part_time' | 'contractor' | 'intern' | null;
+  employee_number?: string | null;
+  salary?: number | null;
+  hourly_rate?: number | null;
+  address?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  notes?: string | null;
+  termination_date?: string | null;
+  manager_id?: number | null;
 }
 
 export interface EmployeeUpdate extends Partial<EmployeeCreate> {}
