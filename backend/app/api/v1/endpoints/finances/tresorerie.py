@@ -5,7 +5,7 @@ API endpoints for treasury management (cashflow, transactions, bank accounts)
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, cast, String
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -76,14 +76,14 @@ async def list_bank_accounts(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "entry",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "exit",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             
@@ -169,14 +169,14 @@ async def get_bank_account(
             and_(
                 Transaction.bank_account_id == account.id,
                 Transaction.type == "entry",
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
             and_(
                 Transaction.bank_account_id == account.id,
                 Transaction.type == "exit",
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         
@@ -241,14 +241,14 @@ async def update_bank_account(
             and_(
                 Transaction.bank_account_id == account.id,
                 Transaction.type == "entry",
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
             and_(
                 Transaction.bank_account_id == account.id,
                 Transaction.type == "exit",
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         
@@ -587,14 +587,14 @@ async def create_transaction(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "entry",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "exit",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             
@@ -772,12 +772,13 @@ async def get_weekly_cashflow(
             date_to = date_from + timedelta(weeks=12)
         
         # Build query for transactions
+        # Cast enum to string for comparison to avoid PostgreSQL type mismatch
         query = select(Transaction).where(
             and_(
                 Transaction.user_id == current_user.id,
                 Transaction.date >= date_from,
                 Transaction.date <= date_to,
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         
@@ -892,12 +893,13 @@ async def get_treasury_stats(
         start_date = end_date - timedelta(days=period_days)
         
         # Build query
+        # Cast enum to string for comparison to avoid PostgreSQL type mismatch
         query = select(Transaction).where(
             and_(
                 Transaction.user_id == current_user.id,
                 Transaction.date >= start_date,
                 Transaction.date <= end_date,
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         
@@ -934,14 +936,14 @@ async def get_treasury_stats(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "entry",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "exit",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             
@@ -965,14 +967,14 @@ async def get_treasury_stats(
                     and_(
                         Transaction.bank_account_id == account.id,
                         Transaction.type == "entry",
-                        Transaction.status != TransactionStatus.CANCELLED
+                        cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                     )
                 )
                 exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
                     and_(
                         Transaction.bank_account_id == account.id,
                         Transaction.type == "exit",
-                        Transaction.status != TransactionStatus.CANCELLED
+                        cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                     )
                 )
                 
@@ -991,7 +993,7 @@ async def get_treasury_stats(
                 Transaction.user_id == current_user.id,
                 Transaction.date > end_date,
                 Transaction.date <= projected_date,
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         
@@ -1012,7 +1014,7 @@ async def get_treasury_stats(
                 Transaction.user_id == current_user.id,
                 Transaction.date >= prev_start_date,
                 Transaction.date < start_date,
-                Transaction.status != TransactionStatus.CANCELLED
+                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
             )
         )
         
@@ -1508,14 +1510,14 @@ async def get_treasury_alerts(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "entry",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
                 and_(
                     Transaction.bank_account_id == account.id,
                     Transaction.type == "exit",
-                    Transaction.status != TransactionStatus.CANCELLED
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
                 )
             )
             
