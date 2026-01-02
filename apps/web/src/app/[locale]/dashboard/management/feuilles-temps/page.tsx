@@ -3,25 +3,34 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
+import Drawer from '@/components/ui/Drawer';
+import Modal from '@/components/ui/Modal';
 import { 
   Clock, 
-  CheckCircle2,
-  AlertCircle,
-  XCircle,
   Plus,
   Search,
   Calendar,
   TrendingUp,
   User,
-  Building
+  Building,
+  Edit,
+  Trash2,
+  Eye,
+  X,
+  FileText,
+  Briefcase
 } from 'lucide-react';
-import { Button, Card, Input, Loading } from '@/components/ui';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
-import { useInfiniteEmployees } from '@/lib/query/employees';
+import { Button, Card, Input, Loading, Badge, Textarea, Select, useToast } from '@/components/ui';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpdate } from '@/lib/api/time-entries';
+import { projectsAPI } from '@/lib/api/projects';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
+import type { ProjectTask } from '@/lib/api/project-tasks';
+import { clientsAPI } from '@/lib/api/clients';
+import { handleApiError } from '@/lib/errors/api';
 
 type ViewMode = 'employee' | 'client' | 'week';
 
@@ -43,24 +52,180 @@ const getWeekStart = (date: Date) => {
   return new Date(d.setDate(diff));
 };
 
+// Format duration from seconds to hours:minutes
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  return `${minutes}m`;
+};
+
 export default function FeuillesTempsPage() {
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('employee');
   const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  
+  // Modal and Drawer states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailDrawer, setShowDetailDrawer] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+  
+  // Form data
+  const [formData, setFormData] = useState<TimeEntryCreate>({
+    description: '',
+    duration: 0,
+    date: new Date().toISOString().split('T')[0],
+    task_id: null,
+    project_id: null,
+    client_id: null,
+  });
 
-  // Fetch time entries
-  const { data: timeEntriesData, isLoading: timeEntriesLoading } = useInfiniteQuery({
-    queryKey: ['time-entries', 'infinite'],
-    queryFn: ({ pageParam = 0 }) => timeEntriesAPI.list({ skip: pageParam, limit: 1000 }),
+  // Fetch time entries with filters
+  const { data: timeEntriesData, isLoading: timeEntriesLoading, refetch } = useInfiniteQuery({
+    queryKey: ['time-entries', 'infinite', startDate, endDate],
+    queryFn: ({ pageParam = 0 }) => {
+      const params: any = { skip: pageParam, limit: 100 };
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
+      return timeEntriesAPI.list(params);
+    },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < 1000) return undefined;
-      return allPages.length * 1000;
+      if (lastPage.length < 100) return undefined;
+      return allPages.length * 100;
     },
     initialPageParam: 0,
   });
   const timeEntries = useMemo(() => timeEntriesData?.pages.flat() || [], [timeEntriesData]);
 
-  // Fetch employees (only for loading state)
-  const { isLoading: employeesLoading } = useInfiniteEmployees(1000);
+  // Fetch projects, tasks, and clients for forms
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects-for-time-entry'],
+    queryFn: () => projectsAPI.list(0, 1000),
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks-for-time-entry'],
+    queryFn: () => projectTasksAPI.list({ skip: 0, limit: 1000 }),
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients-for-time-entry'],
+    queryFn: () => clientsAPI.list(0, 1000),
+  });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (data: TimeEntryCreate) => timeEntriesAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+      setShowCreateModal(false);
+      resetForm();
+      showToast({ message: 'Entrée créée avec succès', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la création', type: 'error' });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: TimeEntryUpdate }) => timeEntriesAPI.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+      setShowEditModal(false);
+      setSelectedEntry(null);
+      resetForm();
+      showToast({ message: 'Entrée modifiée avec succès', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la modification', type: 'error' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => timeEntriesAPI.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+      showToast({ message: 'Entrée supprimée avec succès', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la suppression', type: 'error' });
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      description: '',
+      duration: 0,
+      date: new Date().toISOString().split('T')[0],
+      task_id: null,
+      project_id: null,
+      client_id: null,
+    });
+  };
+
+  const handleCreate = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const handleEdit = (entry: TimeEntry) => {
+    setSelectedEntry(entry);
+    setFormData({
+      description: entry.description || '',
+      duration: entry.duration,
+      date: new Date(entry.date).toISOString().split('T')[0],
+      task_id: entry.task_id || null,
+      project_id: entry.project_id || null,
+      client_id: entry.client_id || null,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleView = async (entry: TimeEntry) => {
+    try {
+      const fullEntry = await timeEntriesAPI.get(entry.id);
+      setSelectedEntry(fullEntry);
+      setShowDetailDrawer(true);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors du chargement', type: 'error' });
+    }
+  };
+
+  const handleDelete = async (entry: TimeEntry) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer cette entrée de ${formatDuration(entry.duration)} ?`)) {
+      return;
+    }
+    deleteMutation.mutate(entry.id);
+  };
+
+  const handleSubmit = () => {
+    if (formData.duration <= 0) {
+      showToast({ message: 'La durée doit être supérieure à 0', type: 'error' });
+      return;
+    }
+
+    if (selectedEntry) {
+      updateMutation.mutate({ id: selectedEntry.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  // Convert duration from hours to seconds for form
+  const durationHours = formData.duration / 3600;
+  const setDurationHours = (hours: number) => {
+    setFormData({ ...formData, duration: Math.round(hours * 3600) });
+  };
 
   // Group time entries by employee
   const entriesByEmployee = useMemo(() => {
@@ -119,37 +284,33 @@ export default function FeuillesTempsPage() {
     return Object.values(grouped).sort((a, b) => b.weekStart.getTime() - a.weekStart.getTime());
   }, [timeEntries]);
 
-  // Calculate stats
+  // Calculate stats (removed mock status counts)
   const stats = useMemo(() => {
     const total = timeEntries.length;
     const totalHours = timeEntries.reduce((sum: number, entry: TimeEntry) => sum + (entry.duration / 3600), 0);
     const avgHours = total > 0 ? (totalHours / total).toFixed(1) : '0.0';
     
-    // Mock status counts (no status in TimeEntry)
-    const approved = Math.floor(total * 0.6);
-    const pending = Math.floor(total * 0.3);
-    const rejected = total - approved - pending;
-    
-    return { total, approved, pending, rejected, avgHours };
+    return { total, totalHours, avgHours };
   }, [timeEntries]);
 
   // Filter data based on search
   const filteredData = useMemo(() => {
+    let data;
     if (viewMode === 'employee') {
-      return entriesByEmployee.filter(group => 
+      data = entriesByEmployee.filter(group => 
         !searchQuery || group.userName.toLowerCase().includes(searchQuery.toLowerCase())
       );
     } else if (viewMode === 'client') {
-      return entriesByClient.filter(group => 
+      data = entriesByClient.filter(group => 
         !searchQuery || group.clientName.toLowerCase().includes(searchQuery.toLowerCase())
       );
     } else {
-      return entriesByWeek;
+      data = entriesByWeek;
     }
+    return data;
   }, [viewMode, entriesByEmployee, entriesByClient, entriesByWeek, searchQuery]);
 
-
-  const isLoading = timeEntriesLoading || employeesLoading;
+  const isLoading = timeEntriesLoading;
 
   if (isLoading) {
     return (
@@ -181,7 +342,7 @@ export default function FeuillesTempsPage() {
             </div>
             <Button 
               className="bg-white text-[#523DC9] hover:bg-white/90"
-              onClick={() => {}}
+              onClick={handleCreate}
             >
               <Plus className="w-4 h-4 mr-2" />
               Nouvelle entrée
@@ -190,7 +351,7 @@ export default function FeuillesTempsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
@@ -205,44 +366,20 @@ export default function FeuillesTempsPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.approved}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Approuvées</div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <AlertCircle className="w-6 h-6 text-[#F59E0B]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.pending}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">En Attente</div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
-                <XCircle className="w-6 h-6 text-[#EF4444]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.rejected}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Rejetées</div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <TrendingUp className="w-6 h-6 text-[#3B82F6]" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {stats.totalHours.toFixed(1)}h
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Heures Totales</div>
+          </Card>
+
+          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+                <Clock className="w-6 h-6 text-[#10B981]" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -254,42 +391,85 @@ export default function FeuillesTempsPage() {
 
         {/* Filters */}
         <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex-1 w-full relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder={`Rechercher ${viewMode === 'employee' ? 'un employé' : viewMode === 'client' ? 'un client' : 'une semaine'}...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="flex-1 w-full relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  placeholder={`Rechercher ${viewMode === 'employee' ? 'un employé' : viewMode === 'client' ? 'un client' : 'une semaine'}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant={viewMode === 'employee' ? 'primary' : 'outline'}
+                  onClick={() => setViewMode('employee')}
+                  size="sm"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Par Employé
+                </Button>
+                <Button 
+                  variant={viewMode === 'client' ? 'primary' : 'outline'}
+                  onClick={() => setViewMode('client')}
+                  size="sm"
+                >
+                  <Building className="w-4 h-4 mr-2" />
+                  Par Client
+                </Button>
+                <Button 
+                  variant={viewMode === 'week' ? 'primary' : 'outline'}
+                  onClick={() => setViewMode('week')}
+                  size="sm"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Par Semaine
+                </Button>
+              </div>
             </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                variant={viewMode === 'employee' ? 'primary' : 'outline'}
-                onClick={() => setViewMode('employee')}
-                size="sm"
-              >
-                <User className="w-4 h-4 mr-2" />
-                Par Employé
-              </Button>
-              <Button 
-                variant={viewMode === 'client' ? 'primary' : 'outline'}
-                onClick={() => setViewMode('client')}
-                size="sm"
-              >
-                <Building className="w-4 h-4 mr-2" />
-                Par Client
-              </Button>
-              <Button 
-                variant={viewMode === 'week' ? 'primary' : 'outline'}
-                onClick={() => setViewMode('week')}
-                size="sm"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Par Semaine
-              </Button>
+
+            {/* Date Filters */}
+            <div className="flex flex-col md:flex-row gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Date de début
+                </label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Date de fin
+                </label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Réinitialiser
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -302,8 +482,14 @@ export default function FeuillesTempsPage() {
               Aucune entrée trouvée
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchQuery ? 'Essayez de modifier votre recherche' : 'Créez votre première entrée de temps'}
+              {searchQuery || startDate || endDate ? 'Essayez de modifier vos filtres' : 'Créez votre première entrée de temps'}
             </p>
+            {!searchQuery && !startDate && !endDate && (
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Créer une entrée
+              </Button>
+            )}
           </Card>
         ) : (
           <div className="space-y-4">
@@ -316,7 +502,7 @@ export default function FeuillesTempsPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{group.userName}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{group.entries.length} entrées</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{group.entries.length} entrée{group.entries.length > 1 ? 's' : ''}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -326,28 +512,58 @@ export default function FeuillesTempsPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {group.entries.slice(0, 4).map((entry: TimeEntry) => (
-                    <div key={entry.id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {(entry.duration / 3600).toFixed(1)}h
-                        </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {group.entries.slice(0, 8).map((entry: TimeEntry) => (
+                    <div 
+                      key={entry.id} 
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
+                      onClick={() => handleView(entry)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {formatDuration(entry.duration)}
+                          </span>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(entry)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(entry)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                        {new Date(entry.date).toLocaleDateString('fr-CA')}
+                        {new Date(entry.date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
                       </p>
-                      {entry.project_name && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {entry.project_name}
+                      {entry.task_title && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mb-1 flex items-center gap-1">
+                          <Briefcase className="w-3 h-3" />
+                          {entry.task_title}
+                        </p>
+                      )}
+                      {entry.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                          {entry.description}
                         </p>
                       )}
                     </div>
                   ))}
-                  {group.entries.length > 4 && (
+                  {group.entries.length > 8 && (
                     <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                      <span className="text-sm text-gray-500">+{group.entries.length - 4} autres</span>
+                      <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
                     </div>
                   )}
                 </div>
@@ -363,7 +579,7 @@ export default function FeuillesTempsPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{group.clientName}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{group.entries.length} entrées</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{group.entries.length} entrée{group.entries.length > 1 ? 's' : ''}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -373,28 +589,58 @@ export default function FeuillesTempsPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {group.entries.slice(0, 4).map((entry: TimeEntry) => (
-                    <div key={entry.id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {(entry.duration / 3600).toFixed(1)}h
-                        </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {group.entries.slice(0, 8).map((entry: TimeEntry) => (
+                    <div 
+                      key={entry.id} 
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
+                      onClick={() => handleView(entry)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {formatDuration(entry.duration)}
+                          </span>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(entry)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(entry)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                         {entry.user_name || 'Employé'}
                       </p>
-                      {entry.project_name && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {entry.project_name}
+                      {entry.task_title && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mb-1 flex items-center gap-1">
+                          <Briefcase className="w-3 h-3" />
+                          {entry.task_title}
+                        </p>
+                      )}
+                      {entry.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                          {entry.description}
                         </p>
                       )}
                     </div>
                   ))}
-                  {group.entries.length > 4 && (
+                  {group.entries.length > 8 && (
                     <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                      <span className="text-sm text-gray-500">+{group.entries.length - 4} autres</span>
+                      <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
                     </div>
                   )}
                 </div>
@@ -421,31 +667,61 @@ export default function FeuillesTempsPage() {
                     <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {group.totalHours.toFixed(1)}h
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{group.entries.length} entrées</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{group.entries.length} entrée{group.entries.length > 1 ? 's' : ''}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {group.entries.slice(0, 4).map((entry: TimeEntry) => (
-                    <div key={entry.id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {(entry.duration / 3600).toFixed(1)}h
-                        </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {group.entries.slice(0, 8).map((entry: TimeEntry) => (
+                    <div 
+                      key={entry.id} 
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
+                      onClick={() => handleView(entry)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {formatDuration(entry.duration)}
+                          </span>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(entry)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(entry)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                         {entry.user_name || 'Employé'}
                       </p>
-                      {entry.project_name && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {entry.project_name}
+                      {entry.task_title && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mb-1 flex items-center gap-1">
+                          <Briefcase className="w-3 h-3" />
+                          {entry.task_title}
+                        </p>
+                      )}
+                      {entry.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                          {entry.description}
                         </p>
                       )}
                     </div>
                   ))}
-                  {group.entries.length > 4 && (
+                  {group.entries.length > 8 && (
                     <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                      <span className="text-sm text-gray-500">+{group.entries.length - 4} autres</span>
+                      <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
                     </div>
                   )}
                 </div>
@@ -454,6 +730,281 @@ export default function FeuillesTempsPage() {
           </div>
         )}
       </MotionDiv>
+
+      {/* Create/Edit Modal */}
+      <Modal
+        isOpen={showCreateModal || showEditModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setShowEditModal(false);
+          setSelectedEntry(null);
+          resetForm();
+        }}
+        title={selectedEntry ? 'Modifier l\'entrée' : 'Nouvelle entrée'}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Date *
+            </label>
+            <Input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Durée (heures) *
+            </label>
+            <Input
+              type="number"
+              step="0.25"
+              min="0"
+              value={durationHours}
+              onChange={(e) => setDurationHours(parseFloat(e.target.value) || 0)}
+              placeholder="Ex: 2.5"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {formatDuration(formData.duration)}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description
+            </label>
+            <Textarea
+              value={formData.description || ''}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Description du travail effectué..."
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Client (optionnel)
+            </label>
+            <Select
+              value={formData.client_id?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, client_id: e.target.value ? parseInt(e.target.value) : null })}
+              options={[
+                { value: '', label: 'Aucun client' },
+                ...clients.map(c => ({ value: c.id.toString(), label: c.company_name }))
+              ]}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Projet (optionnel)
+            </label>
+            <Select
+              value={formData.project_id?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
+              options={[
+                { value: '', label: 'Aucun projet' },
+                ...projects.map(p => ({ value: p.id.toString(), label: p.name }))
+              ]}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tâche (optionnel)
+            </label>
+            <Select
+              value={formData.task_id?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, task_id: e.target.value ? parseInt(e.target.value) : null })}
+              options={[
+                { value: '', label: 'Aucune tâche' },
+                ...tasks
+                  .filter(t => !formData.project_id || t.project_id === formData.project_id)
+                  .map(t => ({ value: t.id.toString(), label: t.title }))
+              ]}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateModal(false);
+                setShowEditModal(false);
+                setSelectedEntry(null);
+                resetForm();
+              }}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={createMutation.isPending || updateMutation.isPending}
+            >
+              {selectedEntry ? 'Modifier' : 'Créer'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Detail Drawer */}
+      <Drawer
+        isOpen={showDetailDrawer}
+        onClose={() => {
+          setShowDetailDrawer(false);
+          setSelectedEntry(null);
+        }}
+        title="Détails de l'entrée"
+        position="right"
+        size="lg"
+      >
+        {selectedEntry ? (
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                Durée
+              </h4>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                {formatDuration(selectedEntry.duration)}
+              </p>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                Date
+              </h4>
+              <p className="text-gray-900 dark:text-white">
+                {new Date(selectedEntry.date).toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
+
+            {selectedEntry.description && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Description
+                </h4>
+                <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {selectedEntry.description}
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              {selectedEntry.user_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Employé
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedEntry.user_name}
+                  </p>
+                  {selectedEntry.user_email && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {selectedEntry.user_email}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedEntry.client_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Client
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedEntry.client_name}
+                  </p>
+                </div>
+              )}
+
+              {selectedEntry.project_name && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Projet
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedEntry.project_name}
+                  </p>
+                </div>
+              )}
+
+              {selectedEntry.task_title && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Tâche
+                  </h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedEntry.task_title}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <p>
+                  Créée le {new Date(selectedEntry.created_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+                {selectedEntry.updated_at !== selectedEntry.created_at && (
+                  <p>
+                    Modifiée le {new Date(selectedEntry.updated_at).toLocaleDateString('fr-FR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDetailDrawer(false);
+                  handleEdit(selectedEntry);
+                }}
+                className="flex-1"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Modifier
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDetailDrawer(false);
+                  handleDelete(selectedEntry);
+                }}
+                className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Loading />
+        )}
+      </Drawer>
     </PageContainer>
   );
 }
