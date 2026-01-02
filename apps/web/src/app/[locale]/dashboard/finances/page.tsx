@@ -75,42 +75,69 @@ export default function FinancesPage() {
     try {
       setLoading(true);
       
-      // Charger les données des APIs
-      const [projects, , employees] = await Promise.all([
-        projectsAPI.list(0, 1000),
-        timeEntriesAPI.list({ limit: 1000 }),
-        employeesAPI.list(0, 1000)
+      // Calculer les dates pour ce mois et le mois dernier
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      
+      // Premier jour du mois actuel
+      const firstDayThisMonth = new Date(currentYear, currentMonth, 1);
+      const firstDayThisMonthISO = firstDayThisMonth.toISOString().split('T')[0];
+      
+      // Premier jour du mois dernier
+      const firstDayLastMonth = new Date(currentYear, currentMonth - 1, 1);
+      const firstDayLastMonthISO = firstDayLastMonth.toISOString().split('T')[0];
+      
+      // Dernier jour du mois actuel
+      const lastDayThisMonth = new Date(currentYear, currentMonth + 1, 0);
+      const lastDayThisMonthISO = lastDayThisMonth.toISOString().split('T')[0];
+      
+      // Dernier jour du mois dernier
+      const lastDayLastMonth = new Date(currentYear, currentMonth, 0);
+      const lastDayLastMonthISO = lastDayLastMonth.toISOString().split('T')[0];
+      
+      // Charger les transactions et factures
+      const [allTransactions, invoices] = await Promise.all([
+        transactionsAPI.list({ limit: 10000 }),
+        facturationsAPI.list({ limit: 1000 })
       ]);
 
-      // Calculer les revenus depuis les budgets des projets
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+      // Filtrer les transactions pour ce mois et le mois dernier
+      const transactionsThisMonth = allTransactions.filter(t => {
+        const txDate = new Date(t.transaction_date);
+        return txDate >= firstDayThisMonth && txDate <= lastDayThisMonth;
+      });
+
+      const transactionsLastMonth = allTransactions.filter(t => {
+        const txDate = new Date(t.transaction_date);
+        return txDate >= firstDayLastMonth && txDate < firstDayThisMonth;
+      });
+
+      // Calculer les revenus
+      const revenueThisMonth = transactionsThisMonth
+        .filter(t => t.type === 'revenue')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
       
-      const projectsThisMonth = projects.filter(p => {
-        const createdDate = new Date(p.created_at);
-        return createdDate.getMonth() === currentMonth && 
-               createdDate.getFullYear() === currentYear;
-      });
-
-      const projectsLastMonth = projects.filter(p => {
-        const createdDate = new Date(p.created_at);
-        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-        return createdDate.getMonth() === lastMonth && 
-               createdDate.getFullYear() === lastMonthYear;
-      });
-
-      const revenueThisMonth = projectsThisMonth.reduce((sum, p) => sum + (p.budget || 0), 0);
-      const revenueLastMonth = projectsLastMonth.reduce((sum, p) => sum + (p.budget || 0), 0);
+      const revenueLastMonth = transactionsLastMonth
+        .filter(t => t.type === 'revenue')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
       const revenueChange = revenueLastMonth > 0 
         ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 
         : 0;
 
-      // Calculer les dépenses (salaires estimés)
-      const avgSalaryPerEmployee = 5000; // Estimation
-      const expensesThisMonth = employees.length * avgSalaryPerEmployee;
-      const expensesLastMonth = expensesThisMonth * 0.95; // Simulation
-      const expensesChange = ((expensesThisMonth - expensesLastMonth) / expensesLastMonth) * 100;
+      // Calculer les dépenses
+      const expensesThisMonth = transactionsThisMonth
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      const expensesLastMonth = transactionsLastMonth
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      const expensesChange = expensesLastMonth > 0
+        ? ((expensesThisMonth - expensesLastMonth) / expensesLastMonth) * 100
+        : 0;
 
       // Calculer le profit
       const profitThisMonth = revenueThisMonth - expensesThisMonth;
@@ -119,9 +146,16 @@ export default function FinancesPage() {
         ? ((profitThisMonth - profitLastMonth) / Math.abs(profitLastMonth)) * 100
         : 0;
 
-      // Nombre de factures (projets actifs avec budget)
-      const invoicesThisMonth = projectsThisMonth.filter(p => p.budget && p.budget > 0).length;
-      const invoicesLastMonth = projectsLastMonth.filter(p => p.budget && p.budget > 0).length;
+      // Compter les factures
+      const invoicesThisMonth = invoices.filter(inv => {
+        const invDate = new Date(inv.issue_date);
+        return invDate >= firstDayThisMonth && invDate <= lastDayThisMonth;
+      }).length;
+      
+      const invoicesLastMonth = invoices.filter(inv => {
+        const invDate = new Date(inv.issue_date);
+        return invDate >= firstDayLastMonth && invDate < firstDayThisMonth;
+      }).length;
 
       setStats({
         revenue: revenueThisMonth,
@@ -134,108 +168,91 @@ export default function FinancesPage() {
         invoicesChange: invoicesThisMonth - invoicesLastMonth
       });
 
-      // Générer les transactions récentes depuis les projets
-      const transactions: Transaction[] = projectsThisMonth
-        .filter(p => p.budget && p.budget > 0)
-        .slice(0, 4)
-        .map((p) => ({
-          id: `${p.id}`,
-          type: 'in' as const,
-          description: `Paiement projet: ${p.name}`,
-          amount: p.budget || 0,
-          date: p.created_at,
-          category: 'Ventes'
+      // Transactions récentes (6 plus récentes)
+      const recentAPITransactions = allTransactions
+        .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+        .slice(0, 6)
+        .map((t): Transaction => ({
+          id: `${t.id}`,
+          type: t.type === 'revenue' ? 'in' : 'out',
+          description: t.description,
+          amount: t.type === 'revenue' ? parseFloat(t.amount) : -parseFloat(t.amount),
+          date: t.transaction_date,
+          category: t.category || 'Autre'
         }));
 
-      // Ajouter des dépenses simulées
-      transactions.push({
-        id: 'salary-1',
-        type: 'out',
-        description: `Salaires ${new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`,
-        amount: -expensesThisMonth,
-        date: new Date().toISOString(),
-        category: 'Salaires'
-      });
+      setRecentTransactions(recentAPITransactions);
 
-      transactions.push({
-        id: 'infra-1',
-        type: 'out',
-        description: 'Infrastructure cloud et serveurs',
-        amount: -15000,
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        category: 'Infrastructure'
-      });
-
-      setRecentTransactions(transactions.slice(0, 6));
-
-      // Statuts des factures (basé sur les projets)
-      const activeProjects = projects.filter(p => p.status === 'ACTIVE' && p.budget);
-      const completedProjects = projects.filter(p => p.status === 'COMPLETED' && p.budget);
-      const archivedProjects = projects.filter(p => p.status === 'ARCHIVED' && p.budget);
+      // Statuts des factures
+      const paidInvoices = invoices.filter(inv => inv.status === 'paid');
+      const pendingInvoices = invoices.filter(inv => inv.status === 'sent' || inv.status === 'partial');
+      const overdueInvoices = invoices.filter(inv => inv.status === 'overdue');
 
       setInvoicesByStatus([
         { 
           status: 'paid', 
           label: 'Payées', 
-          count: completedProjects.length, 
-          amount: completedProjects.reduce((sum, p) => sum + (p.budget || 0), 0), 
+          count: paidInvoices.length, 
+          amount: paidInvoices.reduce((sum, inv) => sum + inv.total, 0), 
           color: 'bg-green-500' 
         },
         { 
           status: 'pending', 
           label: 'En attente', 
-          count: activeProjects.length, 
-          amount: activeProjects.reduce((sum, p) => sum + (p.budget || 0), 0), 
+          count: pendingInvoices.length, 
+          amount: pendingInvoices.reduce((sum, inv) => sum + inv.amount_due, 0), 
           color: 'bg-orange-500' 
         },
         { 
           status: 'overdue', 
           label: 'En retard', 
-          count: archivedProjects.length, 
-          amount: archivedProjects.reduce((sum, p) => sum + (p.budget || 0), 0), 
+          count: overdueInvoices.length, 
+          amount: overdueInvoices.reduce((sum, inv) => sum + inv.amount_due, 0), 
           color: 'bg-red-500' 
         }
       ]);
 
-      // Catégories de dépenses
-      const totalExpenses = expensesThisMonth + 15000 + 8000 + 5000 + 3000;
-      setExpensesByCategory([
-        { 
-          category: 'Salaires', 
-          amount: expensesThisMonth, 
-          percentage: (expensesThisMonth / totalExpenses) * 100, 
-          icon: Users, 
-          color: 'bg-purple-500' 
-        },
-        { 
-          category: 'Infrastructure', 
-          amount: 15000, 
-          percentage: (15000 / totalExpenses) * 100, 
-          icon: Building, 
-          color: 'bg-blue-500' 
-        },
-        { 
-          category: 'Marketing', 
-          amount: 8000, 
-          percentage: (8000 / totalExpenses) * 100, 
-          icon: TrendingUp, 
-          color: 'bg-orange-500' 
-        },
-        { 
-          category: 'Fournitures', 
-          amount: 5000, 
-          percentage: (5000 / totalExpenses) * 100, 
-          icon: Package, 
-          color: 'bg-green-500' 
-        },
-        { 
-          category: 'Services', 
-          amount: 3000, 
-          percentage: (3000 / totalExpenses) * 100, 
-          icon: Zap, 
-          color: 'bg-cyan-500' 
-        }
-      ]);
+      // Catégories de dépenses (basées sur les transactions réelles)
+      const expenseTransactions = allTransactions.filter(t => t.type === 'expense');
+      const categoryMap = new Map<string, number>();
+      
+      expenseTransactions.forEach(t => {
+        const category = t.category || 'Autre';
+        const amount = parseFloat(t.amount);
+        categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
+      });
+
+      const totalExpenses = Array.from(categoryMap.values()).reduce((sum, amt) => sum + amt, 0);
+      
+      // Mapper les catégories avec leurs icônes
+      const categoryIcons: Record<string, any> = {
+        'Salaires': Users,
+        'Infrastructure': Building,
+        'Marketing': TrendingUp,
+        'Fournitures': Package,
+        'Services': Zap,
+      };
+      
+      const categoryColors: Record<string, string> = {
+        'Salaires': 'bg-purple-500',
+        'Infrastructure': 'bg-blue-500',
+        'Marketing': 'bg-orange-500',
+        'Fournitures': 'bg-green-500',
+        'Services': 'bg-cyan-500',
+      };
+
+      const expensesByCategoryArray = Array.from(categoryMap.entries())
+        .map(([category, amount]) => ({
+          category,
+          amount,
+          percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0,
+          icon: categoryIcons[category] || Package,
+          color: categoryColors[category] || 'bg-gray-500'
+        }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5); // Top 5 catégories
+
+      setExpensesByCategory(expensesByCategoryArray);
 
     } catch (error) {
       console.error('Erreur lors du chargement des données financières:', error);
