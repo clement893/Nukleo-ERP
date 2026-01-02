@@ -9,7 +9,7 @@ import {
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
   AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
   Building2, Loader2, Upload, X, CheckCircle2, AlertCircle,
-  Filter, RefreshCw, ArrowUp, ArrowDown, Users, Package, Zap, CreditCard
+  Filter, RefreshCw, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats, type TransactionCategory } from '@/lib/api/tresorerie';
@@ -119,7 +119,6 @@ export default function TresoreriePage() {
   }
 
   const soldeAvecMarge = soldeActuel * 0.8; // 20% de marge
-  const projection30j = stats?.projected_balance_30d || soldesHebdo[4]?.solde || soldeActuel;
   
   const variation = stats?.variation_percent ? Number(stats.variation_percent) : (soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0);
   const alerteNiveau = soldeAvecMarge < 50000 ? 'rouge' : soldeAvecMarge < 100000 ? 'orange' : 'vert';

@@ -6,7 +6,7 @@ import { type VacationRequest, type VacationRequestCreate } from '@/lib/api/vaca
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Badge, Button } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
+import { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
@@ -135,10 +135,6 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
 
   const approvedRequests = useMemo(() => {
     return requests.filter(req => req.status === 'approved');
-  }, [requests]);
-
-  const rejectedRequests = useMemo(() => {
-    return requests.filter(req => req.status === 'rejected');
   }, [requests]);
 
   // Table columns

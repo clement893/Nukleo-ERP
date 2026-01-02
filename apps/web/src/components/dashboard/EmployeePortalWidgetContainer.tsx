@@ -4,7 +4,6 @@
  * Conteneur pour un widget individuel dans le portail employé
  */
 
-import { useState } from 'react';
 import { RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEmployeePortalDashboardStore } from '@/lib/dashboard/employeePortalStore';
@@ -85,7 +84,6 @@ export function EmployeePortalWidgetContainer({ widgetLayout, isEditMode }: Empl
 
   const handleConfigChange = (newConfig: any) => {
     updateWidget(widgetLayout.id, { config: newConfig });
-    setIsConfigOpen(false);
   };
 
   return (

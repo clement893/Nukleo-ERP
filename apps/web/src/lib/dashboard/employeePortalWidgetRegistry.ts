@@ -121,14 +121,14 @@ export const employeePortalWidgetRegistry: Record<string, Omit<WidgetDefinition,
  * Obtenir un widget par son type
  */
 export function getEmployeePortalWidget(type: string): WidgetDefinition | undefined {
-  return employeePortalWidgetRegistry[type];
+  return employeePortalWidgetRegistry[type] as WidgetDefinition | undefined;
 }
 
 /**
  * Obtenir tous les widgets d'une catégorie
  */
 export function getEmployeePortalWidgetsByCategory(category: string): WidgetDefinition[] {
-  return Object.values(employeePortalWidgetRegistry).filter(w => w.category === category);
+  return Object.values(employeePortalWidgetRegistry).filter(w => w.category === category) as WidgetDefinition[];
 }
 
 /**

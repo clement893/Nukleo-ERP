@@ -1252,7 +1252,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
   const loadProjects = async () => {
     try {
       const data = await projectsAPI.list();
-      const projectsList = Array.isArray(data) ? data : (data?.data || []);
+      const projectsList = Array.isArray(data) ? data : [];
       setProjects(projectsList);
     } catch (err) {
       // Ignore errors for projects
@@ -1325,73 +1325,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
     setTaskDetails(null);
   };
 
-  const columns: Column<ProjectTask>[] = [
-    {
-      key: 'title',
-      label: 'Titre',
-      sortable: true,
-      render: (value, task) => (
-        <div>
-          <div className="font-medium">{String(value)}</div>
-          {task.description && (
-            <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {task.description}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'Statut',
-      sortable: true,
-      render: (value) => {
-        const status = value as ProjectTask['status'];
-        const Icon = statusIcons[status];
-        return (
-          <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4" />
-            <span>{statusLabels[status]}</span>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'priority',
-      label: 'Priorité',
-      sortable: true,
-      render: (value) => {
-        const priority = value as ProjectTask['priority'];
-        const priorityColors = {
-          low: 'text-primary-600 bg-primary-100 dark:bg-primary-900/30',
-          medium: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30',
-          high: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30',
-          urgent: 'text-red-600 bg-red-100 dark:bg-red-900/30',
-        };
-        return (
-          <span className={`px-2 py-1 text-xs rounded-full ${priorityColors[priority]}`}>
-            {priorityLabels[priority]}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'due_date',
-      label: 'Échéance',
-      sortable: true,
-      render: (value) => {
-        if (!value) return <span className="text-muted-foreground">-</span>;
-        const date = new Date(String(value));
-        const now = new Date();
-        const isOverdue = date < now;
-        return (
-          <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
-            {date.toLocaleDateString('fr-FR')}
-          </span>
-        );
-      },
-    },
-  ];
+  // Columns definition removed - not currently used in the component
 
   if (loading) {
     return (
