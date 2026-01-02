@@ -255,28 +255,37 @@ export default function EntreprisesPage() {
             {filteredCompanies.map((company) => (
               <Card 
                 key={company.id}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer"
+                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer relative overflow-hidden"
                 onClick={() => handleView(company.id)}
               >
-                <div className="mb-4">
-                  <div className="flex items-center gap-3 mb-3">
+                {/* Logo Section - Fixed positioning */}
+                <div className="mb-4 relative">
+                  <div className="flex items-center gap-3 mb-3 relative">
                     {company.logo_url ? (
-                      <img 
-                        src={company.logo_url} 
-                        alt={`${company.name} logo`}
-                        className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
-                          if (fallback) fallback.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className={`logo-fallback w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
-                      <Building2 className="w-6 h-6 text-[#523DC9]" />
-                    </div>
+                      <div className="relative w-12 h-12 flex-shrink-0">
+                        <img 
+                          src={company.logo_url} 
+                          alt={`${company.name} logo`}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement?.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="logo-fallback hidden absolute inset-0 w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center">
+                          <Building2 className="w-6 h-6 text-[#523DC9]" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-6 h-6 text-[#523DC9]" />
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Title and Badge Section - Fixed layout */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 dark:text-white truncate">{company.name}</h3>
@@ -284,31 +293,33 @@ export default function EntreprisesPage() {
                         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{company.description}</p>
                       )}
                     </div>
-                    <Badge className={`flex-shrink-0 ${company.is_client ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}`}>
+                    <Badge className={`flex-shrink-0 ml-2 ${company.is_client ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30'}`}>
                       {company.is_client ? 'Client' : 'Prospect'}
                     </Badge>
                   </div>
                 </div>
 
+                {/* Info Section */}
                 <div className="space-y-2 mb-4">
                   {(company.city || company.country) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4" />
-                      <span>{[company.city, company.country].filter(Boolean).join(', ')}</span>
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{[company.city, company.country].filter(Boolean).join(', ')}</span>
                     </div>
                   )}
                   {company.website && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Globe className="w-4 h-4" />
-                      <span>{company.website}</span>
+                      <Globe className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{company.website}</span>
                     </div>
                   )}
                 </div>
 
+                {/* Footer Section */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex gap-4 text-sm">
                     <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <Users className="w-4 h-4" />
+                      <Users className="w-4 h-4 flex-shrink-0" />
                       <span>{company.contacts_count || 0}</span>
                     </div>
                   </div>
