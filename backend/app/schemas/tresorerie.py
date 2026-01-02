@@ -191,3 +191,43 @@ class TreasuryStats(BaseModel):
     current_balance: Decimal = Field(..., description="Current balance")
     projected_balance_30d: Optional[Decimal] = Field(None, description="Projected balance in 30 days")
     variation_percent: Optional[Decimal] = Field(None, description="Variation percentage vs previous period")
+
+
+# ==================== Forecast Schemas ====================
+
+class InvoiceToBill(BaseModel):
+    """Invoice to bill (for forecast)"""
+    id: int
+    invoice_number: Optional[str]
+    amount_due: Decimal
+    due_date: Optional[datetime]
+    status: str
+    probability: Decimal = Field(..., description="Payment probability (0-100)")
+    days_until_due: Optional[int] = Field(None, description="Days until due date")
+    is_overdue: bool = Field(default=False, description="Is invoice overdue")
+
+
+class RevenueForecast(BaseModel):
+    """Revenue forecast by week"""
+    week_start: datetime
+    week_end: datetime
+    confirmed_amount: Decimal = Field(default=0, description="Confirmed revenue")
+    probable_amount: Decimal = Field(default=0, description="Probable revenue (weighted)")
+    projected_amount: Decimal = Field(default=0, description="Projected revenue")
+    invoices_count: int = Field(default=0, description="Number of invoices")
+
+
+class ForecastResponse(BaseModel):
+    """Detailed forecast response"""
+    revenue_forecast: List[RevenueForecast] = Field(..., description="Revenue forecast by week")
+    invoices_to_bill: List[InvoiceToBill] = Field(..., description="Invoices to bill")
+    total_confirmed: Decimal = Field(default=0, description="Total confirmed revenue")
+    total_probable: Decimal = Field(default=0, description="Total probable revenue")
+    total_projected: Decimal = Field(default=0, description="Total projected revenue")
+
+
+class AlertResponse(BaseModel):
+    """Alert response"""
+    overdue_invoices: List[InvoiceToBill] = Field(default_factory=list, description="Overdue invoices")
+    low_balance_accounts: List[dict] = Field(default_factory=list, description="Accounts with low balance")
+    upcoming_due_dates: List[InvoiceToBill] = Field(default_factory=list, description="Invoices due soon")

@@ -33,6 +33,10 @@ from app.schemas.tresorerie import (
     CashflowWeek,
     CashflowResponse,
     TreasuryStats,
+    InvoiceToBill,
+    RevenueForecast,
+    ForecastResponse,
+    AlertResponse,
 )
 
 router = APIRouter(prefix="/finances/tresorerie", tags=["finances-tresorerie"])
@@ -1080,4 +1084,397 @@ async def get_expenses_for_treasury(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error getting expenses"
+        )
+
+
+# ==================== Forecast Endpoints ====================
+
+@router.get("/forecast/invoices-to-bill", response_model=List[InvoiceToBill])
+async def get_invoices_to_bill(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    include_draft: bool = Query(True, description="Include draft invoices"),
+    include_open: bool = Query(True, description="Include open invoices"),
+    days_ahead: int = Query(90, ge=1, le=365, description="Look ahead days"),
+):
+    """Get invoices that need to be billed (DRAFT or OPEN status)"""
+    try:
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        future_date = today + timedelta(days=days_ahead)
+        
+        query = select(Invoice).where(Invoice.user_id == current_user.id)
+        
+        # Build status filter
+        statuses = []
+        if include_draft:
+            statuses.append(InvoiceStatus.DRAFT)
+        if include_open:
+            statuses.append(InvoiceStatus.OPEN)
+        
+        if not statuses:
+            return []
+        
+        query = query.where(Invoice.status.in_(statuses))
+        
+        # Filter by due date if exists, or created date
+        query = query.where(
+            or_(
+                Invoice.due_date.is_(None),
+                Invoice.due_date <= future_date
+            )
+        )
+        
+        query = query.order_by(Invoice.due_date.asc().nulls_last())
+        
+        result = await db.execute(query)
+        invoices = result.scalars().all()
+        
+        invoices_to_bill = []
+        for inv in invoices:
+            # Calculate probability based on status
+            # DRAFT = 50% (not sent yet)
+            # OPEN = 80% (sent, likely to be paid)
+            probability = Decimal(50) if inv.status == InvoiceStatus.DRAFT else Decimal(80)
+            
+            # Calculate days until due
+            days_until_due = None
+            is_overdue = False
+            if inv.due_date:
+                delta = (inv.due_date.date() - today.date()).days
+                days_until_due = delta
+                is_overdue = delta < 0
+            
+            invoices_to_bill.append(InvoiceToBill(
+                id=inv.id,
+                invoice_number=inv.invoice_number,
+                amount_due=inv.amount_due,
+                due_date=inv.due_date,
+                status=inv.status.value,
+                probability=probability,
+                days_until_due=days_until_due,
+                is_overdue=is_overdue
+            ))
+        
+        return invoices_to_bill
+    except Exception as e:
+        logger.error(f"Error getting invoices to bill: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting invoices to bill"
+        )
+
+
+@router.get("/forecast/detailed", response_model=ForecastResponse)
+async def get_detailed_forecast(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    bank_account_id: Optional[int] = Query(None, description="Filter by bank account"),
+    weeks: int = Query(12, ge=1, le=52, description="Number of weeks to forecast"),
+):
+    """Get detailed forecast including invoices to bill"""
+    try:
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = today + timedelta(weeks=weeks)
+        
+        # Get invoices to bill
+        invoices_query = select(Invoice).where(
+            and_(
+                Invoice.user_id == current_user.id,
+                Invoice.status.in_([InvoiceStatus.DRAFT, InvoiceStatus.OPEN]),
+                or_(
+                    Invoice.due_date.is_(None),
+                    Invoice.due_date <= end_date
+                )
+            )
+        )
+        invoices_result = await db.execute(invoices_query)
+        invoices = invoices_result.scalars().all()
+        
+        # Process invoices
+        invoices_to_bill = []
+        for inv in invoices:
+            probability = Decimal(50) if inv.status == InvoiceStatus.DRAFT else Decimal(80)
+            days_until_due = None
+            is_overdue = False
+            if inv.due_date:
+                delta = (inv.due_date.date() - today.date()).days
+                days_until_due = delta
+                is_overdue = delta < 0
+            
+            invoices_to_bill.append(InvoiceToBill(
+                id=inv.id,
+                invoice_number=inv.invoice_number,
+                amount_due=inv.amount_due,
+                due_date=inv.due_date,
+                status=inv.status.value,
+                probability=probability,
+                days_until_due=days_until_due,
+                is_overdue=is_overdue
+            ))
+        
+        # Group invoices by week for revenue forecast
+        weeks_data = {}
+        current_date = today
+        
+        while current_date <= end_date:
+            week_start = current_date - timedelta(days=current_date.weekday())
+            week_end = week_start + timedelta(days=6)
+            
+            week_key = week_start.isoformat()
+            if week_key not in weeks_data:
+                weeks_data[week_key] = {
+                    "week_start": week_start,
+                    "week_end": week_end,
+                    "confirmed_amount": Decimal(0),
+                    "probable_amount": Decimal(0),
+                    "projected_amount": Decimal(0),
+                    "invoices_count": 0
+                }
+            
+            current_date = week_end + timedelta(days=1)
+        
+        # Distribute invoices across weeks
+        for inv_bill in invoices_to_bill:
+            # Determine which week this invoice belongs to
+            invoice_date = inv_bill.due_date if inv_bill.due_date else today + timedelta(days=30)  # Default to 30 days if no due date
+            
+            week_start = invoice_date - timedelta(days=invoice_date.weekday())
+            week_key = week_start.isoformat()
+            
+            if week_key in weeks_data:
+                week_data = weeks_data[week_key]
+                week_data["invoices_count"] += 1
+                
+                # Add to confirmed if probability > 90%
+                if inv_bill.probability >= 90:
+                    week_data["confirmed_amount"] += inv_bill.amount_due
+                # Add weighted amount to probable
+                probable_weight = inv_bill.probability / 100
+                week_data["probable_amount"] += inv_bill.amount_due * probable_weight
+                # Add full amount to projected
+                week_data["projected_amount"] += inv_bill.amount_due
+        
+        # Convert to response format
+        revenue_forecast = [
+            RevenueForecast(**week_data)
+            for week_key in sorted(weeks_data.keys())
+            for week_data in [weeks_data[week_key]]
+        ]
+        
+        # Calculate totals
+        total_confirmed = sum(w.confirmed_amount for w in revenue_forecast)
+        total_probable = sum(w.probable_amount for w in revenue_forecast)
+        total_projected = sum(w.projected_amount for w in revenue_forecast)
+        
+        return ForecastResponse(
+            revenue_forecast=revenue_forecast,
+            invoices_to_bill=invoices_to_bill,
+            total_confirmed=total_confirmed,
+            total_probable=total_probable,
+            total_projected=total_projected
+        )
+    except Exception as e:
+        logger.error(f"Error getting detailed forecast: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting detailed forecast"
+        )
+
+
+@router.get("/forecast/revenue", response_model=List[RevenueForecast])
+async def get_revenue_forecast(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    weeks: int = Query(12, ge=1, le=52, description="Number of weeks to forecast"),
+):
+    """Get revenue forecast by week based on invoices to bill"""
+    try:
+        # Reuse the logic from get_detailed_forecast
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = today + timedelta(weeks=weeks)
+        
+        # Get invoices to bill
+        invoices_query = select(Invoice).where(
+            and_(
+                Invoice.user_id == current_user.id,
+                Invoice.status.in_([InvoiceStatus.DRAFT, InvoiceStatus.OPEN]),
+                or_(
+                    Invoice.due_date.is_(None),
+                    Invoice.due_date <= end_date
+                )
+            )
+        )
+        invoices_result = await db.execute(invoices_query)
+        invoices = invoices_result.scalars().all()
+        
+        # Group invoices by week for revenue forecast
+        weeks_data = {}
+        current_date = today
+        
+        while current_date <= end_date:
+            week_start = current_date - timedelta(days=current_date.weekday())
+            week_end = week_start + timedelta(days=6)
+            
+            week_key = week_start.isoformat()
+            if week_key not in weeks_data:
+                weeks_data[week_key] = {
+                    "week_start": week_start,
+                    "week_end": week_end,
+                    "confirmed_amount": Decimal(0),
+                    "probable_amount": Decimal(0),
+                    "projected_amount": Decimal(0),
+                    "invoices_count": 0
+                }
+            
+            current_date = week_end + timedelta(days=1)
+        
+        # Distribute invoices across weeks
+        for inv in invoices:
+            probability = Decimal(50) if inv.status == InvoiceStatus.DRAFT else Decimal(80)
+            invoice_date = inv.due_date if inv.due_date else today + timedelta(days=30)
+            
+            week_start = invoice_date - timedelta(days=invoice_date.weekday())
+            week_key = week_start.isoformat()
+            
+            if week_key in weeks_data:
+                week_data = weeks_data[week_key]
+                week_data["invoices_count"] += 1
+                
+                if probability >= 90:
+                    week_data["confirmed_amount"] += inv.amount_due
+                
+                probable_weight = probability / 100
+                week_data["probable_amount"] += inv.amount_due * probable_weight
+                week_data["projected_amount"] += inv.amount_due
+        
+        # Convert to response format
+        revenue_forecast = [
+            RevenueForecast(**week_data)
+            for week_key in sorted(weeks_data.keys())
+            for week_data in [weeks_data[week_key]]
+        ]
+        
+        return revenue_forecast
+    except Exception as e:
+        logger.error(f"Error getting revenue forecast: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting revenue forecast"
+        )
+
+
+@router.get("/alerts", response_model=AlertResponse)
+async def get_treasury_alerts(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    low_balance_threshold: Decimal = Query(50000, description="Low balance threshold"),
+    days_ahead: int = Query(7, ge=1, le=30, description="Days ahead for upcoming due dates"),
+):
+    """Get treasury alerts (overdue invoices, low balance, upcoming due dates)"""
+    try:
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        future_date = today + timedelta(days=days_ahead)
+        
+        # Get overdue invoices
+        overdue_query = select(Invoice).where(
+            and_(
+                Invoice.user_id == current_user.id,
+                Invoice.status.in_([InvoiceStatus.DRAFT, InvoiceStatus.OPEN]),
+                Invoice.due_date.isnot(None),
+                Invoice.due_date < today
+            )
+        )
+        overdue_result = await db.execute(overdue_query)
+        overdue_invoices_list = overdue_result.scalars().all()
+        
+        overdue_invoices = []
+        for inv in overdue_invoices_list:
+            delta = (inv.due_date.date() - today.date()).days
+            overdue_invoices.append(InvoiceToBill(
+                id=inv.id,
+                invoice_number=inv.invoice_number,
+                amount_due=inv.amount_due,
+                due_date=inv.due_date,
+                status=inv.status.value,
+                probability=Decimal(80) if inv.status == InvoiceStatus.OPEN else Decimal(50),
+                days_until_due=delta,
+                is_overdue=True
+            ))
+        
+        # Get upcoming due dates
+        upcoming_query = select(Invoice).where(
+            and_(
+                Invoice.user_id == current_user.id,
+                Invoice.status.in_([InvoiceStatus.DRAFT, InvoiceStatus.OPEN]),
+                Invoice.due_date.isnot(None),
+                Invoice.due_date >= today,
+                Invoice.due_date <= future_date
+            )
+        )
+        upcoming_result = await db.execute(upcoming_query)
+        upcoming_invoices_list = upcoming_result.scalars().all()
+        
+        upcoming_due_dates = []
+        for inv in upcoming_invoices_list:
+            delta = (inv.due_date.date() - today.date()).days
+            upcoming_due_dates.append(InvoiceToBill(
+                id=inv.id,
+                invoice_number=inv.invoice_number,
+                amount_due=inv.amount_due,
+                due_date=inv.due_date,
+                status=inv.status.value,
+                probability=Decimal(80) if inv.status == InvoiceStatus.OPEN else Decimal(50),
+                days_until_due=delta,
+                is_overdue=False
+            ))
+        
+        # Get low balance accounts
+        accounts_query = select(BankAccount).where(BankAccount.user_id == current_user.id)
+        accounts_result = await db.execute(accounts_query)
+        accounts = accounts_result.scalars().all()
+        
+        low_balance_accounts = []
+        for account in accounts:
+            # Calculate current balance
+            entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+                and_(
+                    Transaction.bank_account_id == account.id,
+                    Transaction.type == "entry",
+                    Transaction.status != TransactionStatus.CANCELLED
+                )
+            )
+            exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+                and_(
+                    Transaction.bank_account_id == account.id,
+                    Transaction.type == "exit",
+                    Transaction.status != TransactionStatus.CANCELLED
+                )
+            )
+            
+            entries_result = await db.execute(entries_query)
+            exits_result = await db.execute(exits_query)
+            
+            entries_sum = entries_result.scalar() or Decimal(0)
+            exits_sum = exits_result.scalar() or Decimal(0)
+            
+            current_balance = account.initial_balance + entries_sum - exits_sum
+            
+            if current_balance < low_balance_threshold:
+                low_balance_accounts.append({
+                    "id": account.id,
+                    "name": account.name,
+                    "current_balance": float(current_balance),
+                    "threshold": float(low_balance_threshold)
+                })
+        
+        return AlertResponse(
+            overdue_invoices=overdue_invoices,
+            low_balance_accounts=low_balance_accounts,
+            upcoming_due_dates=upcoming_due_dates
+        )
+    except Exception as e:
+        logger.error(f"Error getting treasury alerts: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting treasury alerts"
         )
