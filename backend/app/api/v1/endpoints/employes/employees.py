@@ -148,6 +148,7 @@ async def list_employees(
     """
     Get list of employees
     """
+    logger.info(f"Listing employees for user {current_user.id}, skip={skip}, limit={limit}")
     # Handle case where columns might not exist yet (migration not applied)
     # Try normal query first, fallback to explicit column selection if columns are missing
     employees = []
@@ -155,6 +156,7 @@ async def list_employees(
         query = select(Employee).order_by(Employee.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(query)
         employees = result.scalars().all()
+        logger.info(f"Found {len(employees)} employees in database")
     except Exception as e:
         # Check if it's a transaction error (asyncpg wraps it in OperationalError)
         error_str = str(e).lower()
@@ -257,31 +259,9 @@ async def list_employees(
     
     employee_list = []
     for employee in employees:
-        photo_url = regenerate_photo_url(employee.photo_url, employee.id)
-        employee_dict = {
-            "id": employee.id,
-            "first_name": employee.first_name,
-            "last_name": employee.last_name,
-            "email": employee.email,
-            "phone": employee.phone,
-            "linkedin": employee.linkedin,
-            "photo_url": photo_url,
-            "photo_filename": getattr(employee, 'photo_filename', None),
-            "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
-            "birthday": employee.birthday.isoformat() if employee.birthday else None,
-            "user_id": getattr(employee, 'user_id', None),
-            "team_id": getattr(employee, 'team_id', None),
-            "capacity_hours_per_week": getattr(employee, 'capacity_hours_per_week', None),
-            "employee_number": getattr(employee, 'employee_number', None),
-            "created_at": employee.created_at,
-            "updated_at": employee.updated_at,
-        }
         try:
-            employee_list.append(EmployeeSchema(**employee_dict))
-        except Exception as schema_error:
-            logger.warning(f"Error creating EmployeeSchema for employee {employee.id}: {schema_error}")
-            # Try without optional fields that might not be in schema
-            employee_dict_minimal = {
+            photo_url = regenerate_photo_url(employee.photo_url, employee.id)
+            employee_dict = {
                 "id": employee.id,
                 "first_name": employee.first_name,
                 "last_name": employee.last_name,
@@ -292,12 +272,63 @@ async def list_employees(
                 "photo_filename": getattr(employee, 'photo_filename', None),
                 "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
                 "birthday": employee.birthday.isoformat() if employee.birthday else None,
+                "user_id": getattr(employee, 'user_id', None),
+                "team_id": getattr(employee, 'team_id', None),
+                "capacity_hours_per_week": getattr(employee, 'capacity_hours_per_week', None),
                 "employee_number": getattr(employee, 'employee_number', None),
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             }
-            employee_list.append(EmployeeSchema(**employee_dict_minimal))
+            # Try to get extended fields if they exist
+            extended_fields = {
+                "status": getattr(employee, 'status', None),
+                "department": getattr(employee, 'department', None),
+                "job_title": getattr(employee, 'job_title', None),
+                "employee_type": getattr(employee, 'employee_type', None),
+                "salary": getattr(employee, 'salary', None),
+                "hourly_rate": getattr(employee, 'hourly_rate', None),
+                "address": getattr(employee, 'address', None),
+                "city": getattr(employee, 'city', None),
+                "postal_code": getattr(employee, 'postal_code', None),
+                "country": getattr(employee, 'country', None),
+                "notes": getattr(employee, 'notes', None),
+                "termination_date": getattr(employee, 'termination_date', None),
+                "manager_id": getattr(employee, 'manager_id', None),
+            }
+            # Only add extended fields if they're not None
+            for key, value in extended_fields.items():
+                if value is not None:
+                    employee_dict[key] = value
+            
+            try:
+                employee_schema = EmployeeSchema(**employee_dict)
+                employee_list.append(employee_schema)
+            except Exception as schema_error:
+                logger.warning(f"Error creating EmployeeSchema for employee {employee.id}: {schema_error}")
+                # Try without optional fields that might not be in schema
+                employee_dict_minimal = {
+                    "id": employee.id,
+                    "first_name": employee.first_name,
+                    "last_name": employee.last_name,
+                    "email": employee.email,
+                    "phone": employee.phone,
+                    "linkedin": employee.linkedin,
+                    "photo_url": photo_url,
+                    "photo_filename": getattr(employee, 'photo_filename', None),
+                    "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
+                    "birthday": employee.birthday.isoformat() if employee.birthday else None,
+                    "employee_number": getattr(employee, 'employee_number', None),
+                    "created_at": employee.created_at,
+                    "updated_at": employee.updated_at,
+                }
+                employee_schema = EmployeeSchema(**employee_dict_minimal)
+                employee_list.append(employee_schema)
+        except Exception as emp_error:
+            logger.error(f"Error processing employee {getattr(employee, 'id', 'unknown')}: {emp_error}", exc_info=True)
+            # Skip this employee and continue
+            continue
     
+    logger.info(f"Returning {len(employee_list)} employees to client")
     return employee_list
 
 
