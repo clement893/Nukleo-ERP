@@ -1,4 +1,13 @@
-"""add currency column to transactions and rename date to transaction_date if needed
+"""add currency column to transactions, rename date to transaction_date, and add missing columns
+
+This migration:
+- Adds currency column if missing
+- Renames 'date' column to 'transaction_date' if needed
+- Adds invoice_number column (required by Transaction model)
+- Adds expected_payment_date column
+- Adds client_id and client_name columns
+- Adds tax_amount column
+- Adds category_id column
 
 Revision ID: 073
 Revises: 072
@@ -19,7 +28,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Add currency column to transactions table and rename date to transaction_date if needed"""
+    """Add currency column, rename date to transaction_date, and add missing columns to transactions table"""
     bind = op.get_bind()
     inspector = inspect(bind)
     
@@ -50,10 +59,53 @@ def upgrade() -> None:
             'transactions',
             sa.Column('currency', sa.String(length=3), nullable=False, server_default='CAD')
         )
+    
+    # Add invoice_number column if it doesn't exist
+    # This column is required by the Transaction model but may be missing from older schema versions
+    if 'invoice_number' not in columns:
+        op.add_column(
+            'transactions',
+            sa.Column('invoice_number', sa.String(length=100), nullable=True)
+        )
+    
+    # Add expected_payment_date column if it doesn't exist
+    if 'expected_payment_date' not in columns:
+        op.add_column(
+            'transactions',
+            sa.Column('expected_payment_date', sa.DateTime(timezone=True), nullable=True)
+        )
+    
+    # Add client_id column if it doesn't exist
+    if 'client_id' not in columns:
+        op.add_column(
+            'transactions',
+            sa.Column('client_id', sa.Integer(), nullable=True)
+        )
+    
+    # Add client_name column if it doesn't exist
+    if 'client_name' not in columns:
+        op.add_column(
+            'transactions',
+            sa.Column('client_name', sa.String(length=200), nullable=True)
+        )
+    
+    # Add tax_amount column if it doesn't exist (may be missing from older versions)
+    if 'tax_amount' not in columns:
+        op.add_column(
+            'transactions',
+            sa.Column('tax_amount', sa.Numeric(precision=10, scale=2), nullable=True, server_default='0')
+        )
+    
+    # Add category_id column if it doesn't exist (replaces old 'category' string column)
+    if 'category_id' not in columns:
+        op.add_column(
+            'transactions',
+            sa.Column('category_id', sa.Integer(), nullable=True)
+        )
 
 
 def downgrade() -> None:
-    """Remove currency column and rename transaction_date back to date"""
+    """Remove columns added by this migration and rename transaction_date back to date"""
     bind = op.get_bind()
     inspector = inspect(bind)
     
@@ -67,6 +119,20 @@ def downgrade() -> None:
     # Drop currency column if it exists
     if 'currency' in columns:
         op.drop_column('transactions', 'currency')
+    
+    # Drop columns added by this migration if they exist
+    if 'invoice_number' in columns:
+        op.drop_column('transactions', 'invoice_number')
+    if 'expected_payment_date' in columns:
+        op.drop_column('transactions', 'expected_payment_date')
+    if 'client_id' in columns:
+        op.drop_column('transactions', 'client_id')
+    if 'client_name' in columns:
+        op.drop_column('transactions', 'client_name')
+    if 'tax_amount' in columns:
+        op.drop_column('transactions', 'tax_amount')
+    if 'category_id' in columns:
+        op.drop_column('transactions', 'category_id')
     
     # Rename transaction_date back to date if transaction_date exists and date doesn't
     if 'transaction_date' in columns and 'date' not in columns:

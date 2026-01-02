@@ -237,14 +237,84 @@ export const transactionsAPI = {
    * Download import template
    */
   downloadTemplate: async (format: 'zip' | 'csv' | 'excel' = 'zip'): Promise<Blob> => {
-    const response = await apiClient.get(`/v1/finances/transactions/import/template?format=${format}`, {
-      responseType: 'blob',
-    });
-    
-    if (!response.data || (response.data as Blob).size === 0) {
-      throw new Error('Download failed: empty response');
+    try {
+      // Use axios directly to handle blob responses properly
+      const axios = (await import('axios')).default;
+      const { getApiUrl } = await import('@/lib/api');
+      const { TokenStorage } = await import('../../auth/tokenStorage');
+      
+      const baseURL = getApiUrl().replace(/\/$/, '').replace(/\/api$/, '');
+      const token = TokenStorage.getToken();
+      
+      const response = await axios.get(
+        `${baseURL}/api/v1/finances/transactions/import/template?format=${format}`,
+        {
+          responseType: 'blob',
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          withCredentials: true,
+        }
+      );
+      
+      if (response.status >= 400) {
+        // Try to parse blob as JSON error
+        const text = await (response.data as Blob).text();
+        let errorData: unknown;
+        try {
+          errorData = JSON.parse(text);
+        } catch (parseError) {
+          // If not JSON, create error object with text
+          errorData = { detail: text || 'Download failed' };
+        }
+        
+        // Create AxiosError-like object
+        const axiosError = {
+          response: {
+            status: response.status,
+            statusText: response.statusText,
+            data: errorData,
+            headers: response.headers,
+            config: response.config,
+          },
+          config: response.config,
+          isAxiosError: true,
+          name: 'AxiosError',
+          message: `Request failed with status code ${response.status}`,
+        };
+        
+        throw axiosError;
+      }
+      
+      if (!response.data || (response.data as Blob).size === 0) {
+        throw new Error('Download failed: empty response');
+      }
+      
+      return response.data as Blob;
+    } catch (error: unknown) {
+      // If error response is a blob, convert it to JSON first
+      const axiosError = error as { response?: { data?: Blob } };
+      if (axiosError.response?.data instanceof Blob) {
+        try {
+          const text = await axiosError.response.data.text();
+          let errorData: unknown;
+          try {
+            errorData = JSON.parse(text);
+          } catch (parseError) {
+            // If not JSON, create error object with text
+            errorData = { detail: text || 'Download failed' };
+          }
+          // Replace blob with parsed JSON
+          (error as { response: { data: unknown } }).response.data = errorData;
+        } catch (blobError) {
+          // If we can't read the blob, use a generic error
+          (error as { response: { data: unknown } }).response.data = { detail: 'Download failed' };
+        }
+      }
+      
+      // Re-throw with proper error handling
+      const { handleApiError } = await import('../../errors/api');
+      throw handleApiError(error);
     }
-    
-    return response.data as Blob;
   },
 };

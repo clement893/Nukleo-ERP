@@ -1,15 +1,21 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import { Employee } from '@/lib/api/employees';
+import { mediaAPI } from '@/lib/api/media';
+import { employeesAPI } from '@/lib/api/employees';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { UserCircle, Mail, Phone, Linkedin, Calendar, Edit, Trash2, FileText, Plane, Clock, ExternalLink } from 'lucide-react';
+import { UserCircle, Mail, Phone, Linkedin, Calendar, Edit, Trash2, FileText, Plane, Clock, ExternalLink, Upload, X } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useToast } from '@/components/ui';
+import { handleApiError } from '@/lib/errors/api';
 
 interface EmployeeDetailProps {
   employee: Employee;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPhotoUpdate?: (updatedEmployee: Employee) => void;
   className?: string;
 }
 
@@ -17,29 +23,181 @@ export default function EmployeeDetail({
   employee,
   onEdit,
   onDelete,
+  onPhotoUpdate,
   className,
 }: EmployeeDetailProps) {
+  const { showToast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(employee.photo_url || null);
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showToast({
+        message: 'Veuillez sélectionner une image',
+        type: 'error',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast({
+        message: 'La taille de l\'image doit être inférieure à 5MB',
+        type: 'error',
+      });
+      return;
+    }
+
+    // Create local preview immediately
+    const localPreviewUrl = URL.createObjectURL(file);
+    setPreviewUrl(localPreviewUrl);
+
+    setUploadingPhoto(true);
+    try {
+      const uploadedMedia = await mediaAPI.upload(file, {
+        folder: 'employees/photos',
+        is_public: true,
+      });
+      
+      // Save file_key if available, otherwise use file_path (URL)
+      // The backend will regenerate presigned URLs when needed
+      const photoUrlToSave = uploadedMedia.file_key || uploadedMedia.file_path;
+      
+      // Update employee with new photo
+      const updatedEmployee = await employeesAPI.update(employee.id, {
+        photo_url: photoUrlToSave,
+        photo_filename: uploadedMedia.filename,
+      });
+      
+      // Revoke the local preview URL and use the server URL
+      URL.revokeObjectURL(localPreviewUrl);
+      setPreviewUrl(updatedEmployee.photo_url);
+      
+      // Notify parent component to refresh
+      if (onPhotoUpdate) {
+        onPhotoUpdate(updatedEmployee);
+      }
+      
+      showToast({
+        message: 'Photo uploadée avec succès',
+        type: 'success',
+      });
+    } catch (error) {
+      // Revert preview on error
+      URL.revokeObjectURL(localPreviewUrl);
+      setPreviewUrl(employee.photo_url);
+      
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'upload de la photo',
+        type: 'error',
+      });
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer la photo de cet employé ?')) {
+      return;
+    }
+
+    try {
+      const updatedEmployee = await employeesAPI.update(employee.id, {
+        photo_url: null,
+        photo_filename: null,
+      });
+      
+      setPreviewUrl(null);
+      
+      // Notify parent component to refresh
+      if (onPhotoUpdate) {
+        onPhotoUpdate(updatedEmployee);
+      }
+      
+      showToast({
+        message: 'Photo supprimée avec succès',
+        type: 'success',
+      });
+    } catch (error) {
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression de la photo',
+        type: 'error',
+      });
+    }
+  };
   
   return (
     <div className={clsx('space-y-4', className)}>
       {/* Header avec photo */}
       <Card>
         <div className="flex items-start gap-6 p-6">
-          {employee.photo_url ? (
-            <img
-              src={employee.photo_url}
-              alt={`${employee.first_name} ${employee.last_name}`}
-              className="w-24 h-24 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+          <div className="relative">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={`${employee.first_name} ${employee.last_name}`}
+                className="w-24 h-24 rounded-full object-cover"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div className={`w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center ${previewUrl ? 'hidden' : ''}`}>
               <UserCircle className="w-12 h-12 text-primary-600 dark:text-primary-400" />
             </div>
-          )}
+            <div className="absolute -bottom-2 -right-2 flex gap-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                id={`photo-upload-${employee.id}`}
+                disabled={uploadingPhoto}
+              />
+              <label
+                htmlFor={`photo-upload-${employee.id}`}
+                className={clsx(
+                  'cursor-pointer p-2 rounded-full bg-primary-500 text-white hover:bg-primary-600 transition-colors',
+                  uploadingPhoto && 'opacity-50 cursor-not-allowed'
+                )}
+                title="Changer la photo"
+              >
+                <Upload className="w-4 h-4" />
+              </label>
+              {previewUrl && (
+                <button
+                  onClick={handleRemovePhoto}
+                  className="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  title="Supprimer la photo"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-foreground mb-2">
               {employee.first_name} {employee.last_name}
             </h2>
+            {uploadingPhoto && (
+              <p className="text-sm text-muted-foreground mb-2">Upload en cours...</p>
+            )}
             <div className="flex gap-2">
               {onEdit && (
                 <Button variant="outline" size="sm" onClick={onEdit}>

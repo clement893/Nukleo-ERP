@@ -239,6 +239,9 @@ export default function EmployeeDetailPage() {
                     employee={employee}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onPhotoUpdate={(updatedEmployee) => {
+                      setEmployee(updatedEmployee);
+                    }}
                   />
                 </TabPanel>
                 <TabPanel value="permissions">
