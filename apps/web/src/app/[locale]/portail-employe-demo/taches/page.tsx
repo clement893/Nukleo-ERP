@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckSquare, Circle, CheckCircle2, Clock, Filter, Plus } from 'lucide-react';
-import { Card, Badge, Button } from '@/components/ui';
+import { Circle, CheckCircle2, Clock, Filter } from 'lucide-react';
+import { Card, Badge } from '@/components/ui';
 
 export default function MesTachesPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');

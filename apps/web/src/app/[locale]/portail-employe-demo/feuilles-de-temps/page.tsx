@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Clock, Calendar, Plus, Save } from 'lucide-react';
+import { Clock, Calendar, Save } from 'lucide-react';
 import { Card, Button, Badge } from '@/components/ui';
 
 export default function MesFeuillesDeTempsPage() {
-  const [selectedWeek, setSelectedWeek] = useState('2026-01-01');
 
   const timeEntries = [
     { day: 'Lundi 30 Déc', project: 'Projet Alpha', hours: 8, tasks: 'Développement API', status: 'saved' },

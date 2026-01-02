@@ -7,7 +7,6 @@ import {
   AlertCircle, 
   TrendingUp,
   Calendar,
-  DollarSign,
   Award
 } from 'lucide-react';
 import { Card } from '@/components/ui';

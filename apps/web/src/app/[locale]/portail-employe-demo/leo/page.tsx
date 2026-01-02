@@ -5,7 +5,7 @@ import { Card, Button } from '@/components/ui';
 import { useState } from 'react';
 
 export default function MonLeoPage() {
-  const [messages, setMessages] = useState([
+  const [messages] = useState([
     { role: 'assistant', content: 'Bonjour Ricardo ! Je suis Leo, votre assistant IA personnel. Comment puis-je vous aider aujourd\'hui ?' },
     { role: 'user', content: 'Quels sont mes projets en cours ?' },
     { role: 'assistant', content: 'Vous avez 3 projets actifs : Projet Alpha (65%), Projet Beta (40%) et Projet Gamma (85%). Souhaitez-vous plus de détails sur l\'un d\'eux ?' },

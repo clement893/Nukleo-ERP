@@ -1,6 +1,6 @@
 'use client';
 
-import { DollarSign, Receipt, Upload, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { DollarSign, Receipt, Upload, CheckCircle2, Clock } from 'lucide-react';
 import { Card, Badge, Button } from '@/components/ui';
 
 export default function MesDepensesPage() {
