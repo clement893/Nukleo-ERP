@@ -86,6 +86,8 @@ export function CustomWidget({ config, globalFilters }: WidgetProps) {
   const [widgetData, setWidgetData] = useState<CustomWidgetData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<any[] | null>(null);
+  const [chartLoading, setChartLoading] = useState(false);
 
   // Récupérer le widget personnalisé depuis l'API
   useEffect(() => {
@@ -124,12 +126,57 @@ export function CustomWidget({ config, globalFilters }: WidgetProps) {
         }
 
         setWidgetData({ widget, data });
+
+        // Pour les widgets chart, charger les données séparément si nécessaire
+        if (widget.type === 'chart' && widget.data_source && widget.data_source.type === 'api' && !data) {
+          loadChartData(widget.data_source);
+        } else if (widget.type === 'chart' && data) {
+          // Utiliser les données déjà chargées
+          if (Array.isArray(data)) {
+            setChartData(data);
+          } else if (data && typeof data === 'object') {
+            const arrayData = data.data || data.items || [data];
+            setChartData(Array.isArray(arrayData) ? arrayData : [arrayData]);
+          }
+        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load custom widget';
         setError(errorMessage);
         logger.error('Error loading custom widget', err);
       } finally {
         setIsLoading(false);
+      }
+    };
+
+    const loadChartData = async (dataSource: any) => {
+      try {
+        setChartLoading(true);
+        let fetchedData = await fetchWidgetData(dataSource);
+        
+        // Appliquer la transformation si fournie
+        if (dataSource.transform && fetchedData) {
+          try {
+            const transformFn = new Function('data', dataSource.transform);
+            fetchedData = transformFn(fetchedData);
+          } catch (transformErr) {
+            logger.warn('Error applying data transformation', transformErr);
+          }
+        }
+        
+        // S'assurer que les données sont un tableau
+        if (Array.isArray(fetchedData)) {
+          setChartData(fetchedData);
+        } else if (fetchedData && typeof fetchedData === 'object') {
+          const arrayData = fetchedData.data || fetchedData.items || [fetchedData];
+          setChartData(Array.isArray(arrayData) ? arrayData : [arrayData]);
+        } else {
+          setChartData([]);
+        }
+      } catch (err) {
+        logger.warn('Error fetching chart data', err);
+        setChartData([]);
+      } finally {
+        setChartLoading(false);
       }
     };
 
@@ -341,7 +388,18 @@ export function CustomWidget({ config, globalFilters }: WidgetProps) {
 
     case 'chart':
       // Rendu de graphique avec Recharts
-      if (!data || !Array.isArray(data) || data.length === 0) {
+      if (chartLoading) {
+        return (
+          <div className="h-full flex items-center justify-center" style={style}>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          </div>
+        );
+      }
+
+      // Utiliser chartData si disponible, sinon data
+      const dataToUse = chartData || (Array.isArray(data) ? data : []);
+      
+      if (!dataToUse || !Array.isArray(dataToUse) || dataToUse.length === 0) {
         return (
           <div className="h-full flex items-center justify-center" style={style}>
             <p className="text-sm text-gray-500">Aucune donnée disponible</p>
@@ -356,13 +414,13 @@ export function CustomWidget({ config, globalFilters }: WidgetProps) {
 
       // Préparer les données pour le graphique
       const preparedChartData = useMemo(() => {
-        if (!Array.isArray(chartData)) return [];
-        return chartData.map((item: any) => ({
+        if (!Array.isArray(dataToUse)) return [];
+        return dataToUse.map((item: any) => ({
           ...item,
           [xKey]: item[xKey] || item.name || item.month || item.date || '',
           [yKey]: item[yKey] !== undefined ? item[yKey] : item.value || item.count || 0,
         }));
-      }, [chartData, xKey, yKey]);
+      }, [dataToUse, xKey, yKey]);
 
       // Couleurs par défaut
       const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
