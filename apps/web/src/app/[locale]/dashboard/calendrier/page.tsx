@@ -285,7 +285,7 @@ export default function CalendrierPage() {
       }
 
       // Événements généraux
-      apiEvents.forEach((event: any) => {
+      apiEvents.forEach((event) => {
         const eventColors: Record<string, string> = {
           meeting: '#3B82F6',
           appointment: '#8B5CF6',
@@ -343,7 +343,7 @@ export default function CalendrierPage() {
 
   // Get event colors based on type
   const getEventColors = (type: EventType) => {
-    const colors: Record<EventType, { bg: string; text: string; border: string; icon: any }> = {
+    const colors: Record<EventType, { bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }> }> = {
       all: {
         bg: 'bg-gray-500/10',
         text: 'text-gray-600 dark:text-gray-400',

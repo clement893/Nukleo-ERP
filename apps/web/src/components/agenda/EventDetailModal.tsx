@@ -10,7 +10,7 @@ interface EventDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   event: CalendarEvent | null;
-  onEdit: (id: number, data: any) => Promise<void>;
+  onEdit: (id: number, data: { title?: string; description?: string; date?: string; type?: string }) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   editing?: boolean;
   loading?: boolean;
@@ -40,7 +40,7 @@ export default function EventDetailModal({
 
   if (!event) return null;
 
-  const handleEdit = async (data: any) => {
+  const handleEdit = async (data: { title?: string; description?: string; date?: string; type?: string }) => {
     await onEdit(event.id, data);
     setIsEditing(false);
   };

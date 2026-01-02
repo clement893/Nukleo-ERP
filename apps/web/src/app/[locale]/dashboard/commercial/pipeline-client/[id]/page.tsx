@@ -308,7 +308,7 @@ export default function PipelineDetailPage() {
     if (!pipelineId) return;
     
     try {
-      const filters: any = { pipeline_id: pipelineId };
+      const filters: Record<string, string | number> = { pipeline_id: pipelineId };
       if (statusFilter !== 'all') filters.status = statusFilter;
       if (stageFilter !== 'all') filters.stage_id = stageFilter;
       if (companyFilter !== 'all') filters.company_id = parseInt(companyFilter);
@@ -705,8 +705,8 @@ export default function PipelineDetailPage() {
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | number | undefined;
+      let bValue: string | number | undefined;
 
       switch (sortField) {
         case 'name':

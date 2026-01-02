@@ -155,7 +155,7 @@ function CalendrierContent() {
       // Événements
       try {
         const apiEvents = await agendaAPI.list();
-        apiEvents.forEach((event: any) => {
+        apiEvents.forEach((event) => {
           allEvents.push({
             id: `event-${event.id}`,
             title: event.title,

@@ -80,16 +80,17 @@ export default function OpportunityForm({
         setContacts(contactsData);
         
         // Extract users from response
-        let usersData: any[] = [];
+        type UserData = { id: number | string; first_name?: string; last_name?: string; email?: string };
+        let usersData: UserData[] = [];
         if (Array.isArray(usersResponse?.data)) {
           usersData = usersResponse.data;
-        } else if (usersResponse?.data?.items) {
-          usersData = usersResponse.data.items;
-        } else if (usersResponse?.data?.data) {
-          usersData = Array.isArray(usersResponse.data.data) ? usersResponse.data.data : [];
+        } else if (usersResponse?.data && typeof usersResponse.data === 'object' && 'items' in usersResponse.data) {
+          usersData = Array.isArray((usersResponse.data as { items: UserData[] }).items) ? (usersResponse.data as { items: UserData[] }).items : [];
+        } else if (usersResponse?.data && typeof usersResponse.data === 'object' && 'data' in usersResponse.data) {
+          usersData = Array.isArray((usersResponse.data as { data: UserData[] }).data) ? (usersResponse.data as { data: UserData[] }).data : [];
         }
         
-        setUsers(usersData.map((u: any) => {
+        setUsers(usersData.map((u: UserData) => {
           const userId = typeof u.id === 'string' ? parseInt(u.id) : (u.id || 0);
           return {
             id: userId,

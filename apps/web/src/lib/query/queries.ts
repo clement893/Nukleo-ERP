@@ -365,7 +365,7 @@ export function useUpdateProjectTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<{ title: string; description: string; status: string; priority: string; team_id: number; project_id: number; assigned_to_id: number; due_date: string; estimated_hours: number }> }) =>
       projectTasksAPI.update(id, data),
     onSuccess: (updatedTask) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projectTasks.lists() });
