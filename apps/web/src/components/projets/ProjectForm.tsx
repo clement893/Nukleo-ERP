@@ -1,25 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Project, ProjectCreate, ProjectUpdate } from '@/lib/api/projects';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui';
+import { companiesAPI, type Company } from '@/lib/api/companies';
+import { handleApiError } from '@/lib/errors/api';
 
 interface ProjectFormProps {
   project?: Project | null;
   onSubmit: (data: ProjectCreate | ProjectUpdate) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
-  companies?: Array<{ id: number; name: string }>;
-  employees?: Array<{ id: number; first_name: string; last_name: string }>;
 }
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Actif' },
+  { value: 'COMPLETED', label: 'Terminé' },
   { value: 'ARCHIVED', label: 'Archivé' },
-  { value: 'COMPLETED', label: 'Complété' },
+  { value: 'ON_HOLD', label: 'En pause' },
 ];
 
 export default function ProjectForm({
@@ -27,28 +29,48 @@ export default function ProjectForm({
   onSubmit,
   onCancel,
   loading = false,
-  companies = [],
-  employees = [],
 }: ProjectFormProps) {
   const { showToast } = useToast();
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  
   const [formData, setFormData] = useState<ProjectCreate>({
     name: project?.name || '',
     description: project?.description || null,
     status: project?.status || 'ACTIVE',
     client_id: project?.client_id || null,
-    client_name: project?.client_name || null,
-    responsable_id: project?.responsable_id || null,
+    equipe: project?.equipe || null,
+    etape: project?.etape || null,
+    annee_realisation: project?.annee_realisation || null,
+    contact: project?.contact || null,
+    budget: project?.budget || null,
+    proposal_url: project?.proposal_url || null,
+    drive_url: project?.drive_url || null,
+    slack_url: project?.slack_url || null,
+    echeancier_url: project?.echeancier_url || null,
     start_date: project?.start_date || null,
     end_date: project?.end_date || null,
     deadline: project?.deadline || null,
   });
-  
-  // Track company name input separately for better UX
-  const [companyNameInput, setCompanyNameInput] = useState<string>(
-    project?.client_name || project?.client_id 
-      ? companies.find(c => c.id === project?.client_id)?.name || ''
-      : ''
-  );
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingData(true);
+        const companiesData = await companiesAPI.list(0, 1000);
+        setCompanies(companiesData);
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({
+          message: appError.message || 'Erreur lors du chargement des données',
+          type: 'error',
+        });
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,137 +88,173 @@ export default function ProjectForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Nom du projet */}
-      <Input
-        label="Nom du projet *"
-        value={formData.name}
-        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        required
-        fullWidth
-      />
-
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Description
-        </label>
-        <textarea
-          value={formData.description || ''}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-          rows={4}
-        />
-      </div>
-
-      {/* Statut */}
-      <Select
-        label="Statut"
-        value={formData.status || 'ACTIVE'}
-        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'ACTIVE' | 'ARCHIVED' | 'COMPLETED' })}
-        options={STATUS_OPTIONS}
-        fullWidth
-      />
-
-      {/* Client */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Client
-        </label>
-        {companies.length > 0 ? (
-          <Select
-            value={formData.client_id?.toString() || ''}
-            onChange={(e) => {
-              const selectedId = e.target.value ? parseInt(e.target.value) : null;
-              const selectedCompany = companies.find(c => c.id === selectedId);
-              setFormData({
-                ...formData,
-                client_id: selectedId,
-                client_name: selectedCompany?.name || null,
-              });
-              setCompanyNameInput(selectedCompany?.name || '');
-            }}
-            options={[
-              { value: '', label: 'Aucun' },
-              ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
-            ]}
-            fullWidth
-          />
-        ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
           <Input
-            label=""
-            value={companyNameInput}
-            onChange={(e) => {
-              const name = e.target.value || '';
-              setCompanyNameInput(name);
-              setFormData({
-                ...formData,
-                client_id: null,
-                client_name: name || null,
-              });
-            }}
-            placeholder="Nom du client (sera automatiquement lié si elle existe)"
-            fullWidth
+            label="Nom du projet *"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+            disabled={loading}
           />
-        )}
-        {companyNameInput && !formData.client_id && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Le client sera automatiquement lié si l'entreprise existe dans la base de données.
-          </p>
-        )}
-      </div>
+        </div>
 
-      {/* Responsable */}
-      {employees.length > 0 && (
+        <div className="md:col-span-2">
+          <Textarea
+            label="Description"
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
+            rows={3}
+            disabled={loading}
+          />
+        </div>
+
         <Select
-          label="Responsable"
-          value={formData.responsable_id?.toString() || ''}
-          onChange={(e) => setFormData({
-            ...formData,
-            responsable_id: e.target.value ? parseInt(e.target.value) : null,
-          })}
-          options={[
-            { value: '', label: 'Aucun' },
-            ...employees.map(e => ({ 
-              value: e.id.toString(), 
-              label: `${e.first_name} ${e.last_name}` 
-            })),
-          ]}
-          fullWidth
+          label="Statut"
+          value={formData.status || 'ACTIVE'}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+          options={STATUS_OPTIONS}
+          disabled={loading || loadingData}
         />
-      )}
 
-      {/* Dates du projet */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Select
+          label="Client"
+          value={formData.client_id?.toString() || ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              client_id: e.target.value ? parseInt(e.target.value) : null,
+            })
+          }
+          options={[
+            { value: '', label: 'Aucun client' },
+            ...companies.map(c => ({ value: c.id.toString(), label: c.name }))
+          ]}
+          disabled={loading || loadingData}
+        />
+
+        <Input
+          label="Équipe"
+          value={formData.equipe || ''}
+          onChange={(e) => setFormData({ ...formData, equipe: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Étape"
+          value={formData.etape || ''}
+          onChange={(e) => setFormData({ ...formData, etape: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Année de réalisation"
+          value={formData.annee_realisation || ''}
+          onChange={(e) => setFormData({ ...formData, annee_realisation: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Contact"
+          value={formData.contact || ''}
+          onChange={(e) => setFormData({ ...formData, contact: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Budget ($)"
+          type="number"
+          step="0.01"
+          value={formData.budget?.toString() || ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              budget: e.target.value ? parseFloat(e.target.value) : null,
+            })
+          }
+          disabled={loading}
+        />
+
         <Input
           label="Date de début"
           type="date"
           value={formData.start_date ? new Date(formData.start_date).toISOString().split('T')[0] : ''}
-          onChange={(e) => setFormData({ ...formData, start_date: e.target.value || null })}
-          fullWidth
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              start_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+            })
+          }
+          disabled={loading}
         />
+
         <Input
-          label="Date de fin prévue"
+          label="Date de fin"
           type="date"
           value={formData.end_date ? new Date(formData.end_date).toISOString().split('T')[0] : ''}
-          onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
-          fullWidth
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              end_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+            })
+          }
+          disabled={loading}
         />
+
         <Input
           label="Deadline"
           type="date"
           value={formData.deadline ? new Date(formData.deadline).toISOString().split('T')[0] : ''}
-          onChange={(e) => setFormData({ ...formData, deadline: e.target.value || null })}
-          fullWidth
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              deadline: e.target.value ? new Date(e.target.value).toISOString() : null,
+            })
+          }
+          disabled={loading}
+        />
+
+        <div className="md:col-span-2">
+          <Input
+            label="Lien proposition"
+            type="url"
+            value={formData.proposal_url || ''}
+            onChange={(e) => setFormData({ ...formData, proposal_url: e.target.value || null })}
+            disabled={loading}
+          />
+        </div>
+
+        <Input
+          label="Lien Drive"
+          type="url"
+          value={formData.drive_url || ''}
+          onChange={(e) => setFormData({ ...formData, drive_url: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Lien Slack"
+          type="url"
+          value={formData.slack_url || ''}
+          onChange={(e) => setFormData({ ...formData, slack_url: e.target.value || null })}
+          disabled={loading}
+        />
+
+        <Input
+          label="Lien échéancier"
+          type="url"
+          value={formData.echeancier_url || ''}
+          onChange={(e) => setFormData({ ...formData, echeancier_url: e.target.value || null })}
+          disabled={loading}
         />
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+      <div className="flex justify-end gap-2 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
           Annuler
         </Button>
-        <Button type="submit" size="sm" loading={loading}>
-          {project ? 'Enregistrer' : 'Créer'}
+        <Button type="submit" disabled={loading}>
+          {loading ? 'Enregistrement...' : project ? 'Modifier' : 'Créer'}
         </Button>
       </div>
     </form>
