@@ -15,7 +15,6 @@ import {
 import { teamsAPI as teamsAPIClient } from '@/lib/api/teams';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { employeesAPI } from '@/lib/api/employees';
-import { onboardingAPI } from '@/lib/api/onboarding';
 import { facturationsAPI } from '@/lib/api/finances/facturations';
 import { extractApiData } from '@/lib/api/utils';
 import { TokenStorage } from '@/lib/auth/tokenStorage';

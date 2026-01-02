@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Modal, Button, Badge } from '@/components/ui';
-import { Clock, MapPin, User, Edit, Trash2, X } from 'lucide-react';
+import { Clock, MapPin, User, Edit, Trash2 } from 'lucide-react';
 import type { CalendarEvent } from '@/lib/api/agenda';
 import CalendarEventForm from './CalendarEventForm';
 
@@ -78,7 +78,7 @@ export default function EventDetailModal({
           onClose();
         }}
         title="Modifier l'événement"
-        size="large"
+        size="lg"
       >
         <CalendarEventForm
           event={event}
@@ -95,7 +95,7 @@ export default function EventDetailModal({
       isOpen={isOpen}
       onClose={onClose}
       title={event.title}
-      size="medium"
+      size="md"
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
