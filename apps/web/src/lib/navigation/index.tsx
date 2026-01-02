@@ -202,11 +202,6 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             href: '/dashboard/management/vacances',
             icon: <Calendar className="w-5 h-5" />,
           },
-          {
-            name: 'Comptes de dépenses',
-            href: '/dashboard/management/compte-depenses',
-            icon: <Receipt className="w-5 h-5" />,
-          },
         ],
         collapsible: true,
         defaultOpen: false,

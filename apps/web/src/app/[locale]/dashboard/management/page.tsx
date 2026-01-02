@@ -12,7 +12,6 @@ import {
   Clock, 
   Plane,
   Calendar,
-  DollarSign,
   Eye,
   ArrowRight
 } from 'lucide-react';
@@ -70,16 +69,12 @@ export default function ManagementPage() {
     // Pending items
     const pendingVacations = vacations.filter((v: any) => v.status === 'pending').length;
 
-    // Mock expenses data (no API available)
-    const totalExpenses = 0;
-
     return {
       totalEmployees,
       activeEmployees,
       onVacation,
       avgHours,
       pendingVacations,
-      totalExpenses
     };
   }, [employees, vacations, timeEntries]);
 
@@ -188,21 +183,6 @@ export default function ManagementPage() {
               {stats.pendingVacations} en attente
             </div>
           </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <DollarSign className="w-6 h-6 text-[#10B981]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              ${stats.totalExpenses}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Dépenses totales</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Ce mois
-            </div>
-          </Card>
         </div>
 
         {/* Quick Actions */}
@@ -250,22 +230,6 @@ export default function ManagementPage() {
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Vacances</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Demandes de congés</p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-colors" />
-            </div>
-          </Card>
-
-          <Card 
-            className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
-            onClick={() => router.push('/dashboard/management/compte-depenses')}
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30 group-hover:bg-[#10B981]/20 transition-colors">
-                <DollarSign className="w-6 h-6 text-[#10B981]" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Dépenses</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Comptes de dépenses</p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-colors" />
             </div>
