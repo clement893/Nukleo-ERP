@@ -9,7 +9,7 @@ import {
   TrendingDown, FileText, Upload, Download, 
   Building2, Repeat, Receipt, Search,
   Plus, Edit, Eye, CheckCircle, XCircle, Clock,
-  Info, Trash2
+  Info, Trash2, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Textarea, useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
@@ -98,9 +98,10 @@ export default function DepensesPage() {
   const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Upload
+  // Upload/Import
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
 
   // Form state
   const [formData, setFormData] = useState<TransactionCreate>({
@@ -281,7 +282,31 @@ export default function DepensesPage() {
     });
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await transactionsAPI.downloadTemplate('zip');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'template_import_depenses.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showToast({ 
+        message: 'Modèle téléchargé avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors du téléchargement', 
+        type: 'error' 
+      });
+    }
+  };
+  
+  const handleDownloadTemplateOld = () => {
     // Create Excel template
     const templateData = [
       ['Description', 'Montant', 'Devise', 'Date', 'Catégorie', 'Fournisseur', 'Statut', 'Numéro facture', 'Notes'],
@@ -336,22 +361,26 @@ export default function DepensesPage() {
 
     try {
       setUploading(true);
-      // TODO: Implement Excel import for expenses
-      // For now, show a message
-      showToast({
-        message: 'Import Excel à venir prochainement',
-        type: 'info',
-      });
+      const result = await transactionsAPI.import(uploadFile, false);
+      setImportResult(result);
       
-      setShowUploadModal(false);
-      setUploadFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (result.success && result.created_count > 0) {
+        await loadData();
+        showToast({
+          message: `${result.created_count} transaction(s) importée(s) avec succès`,
+          type: 'success',
+        });
+      } else if (result.error_count > 0) {
+        showToast({
+          message: `${result.error_count} erreur(s) lors de l'import`,
+          type: 'error',
+        });
       }
     } catch (error) {
       logger.error('Error uploading file', error);
+      const appError = handleApiError(error);
       showToast({
-        message: 'Erreur lors de l\'import du fichier',
+        message: appError.message || 'Erreur lors de l\'import du fichier',
         type: 'error',
       });
     } finally {
