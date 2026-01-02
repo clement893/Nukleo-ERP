@@ -10,6 +10,7 @@ import { clientsAPI } from '@/lib/api/clients';
 import { projectTasksAPI, type ProjectTask, type ProjectTaskCreate } from '@/lib/api/project-tasks';
 import { teamsAPI } from '@/lib/api/teams';
 import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import { 
   Calendar, 
   Clock, 
@@ -249,7 +250,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       setClients(clientsData || []);
       setTasks(tasksData || []);
     } catch (err) {
-      console.error('Error loading reference data:', err);
+      logger.error('Error loading reference data', err);
     }
   };
 
@@ -263,7 +264,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
       const status = await timeEntriesAPI.getTimerStatus();
       setTimerStatus(status);
     } catch (err) {
-      console.error('Error loading timer status:', err);
+      logger.error('Error loading timer status', err);
       // Set inactive status on error so timer section still shows
       setTimerStatus({ active: false });
     }
@@ -334,7 +335,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
               teamId = teamsData[0].id;
             }
           } catch (err) {
-            console.error('Error loading teams:', err);
+            logger.error('Error loading teams', err);
           }
         }
 
@@ -478,7 +479,7 @@ export default function EmployeePortalTimeSheets({ employeeId }: EmployeePortalT
               teamId = teamsData[0].id;
             }
           } catch (err) {
-            console.error('Error loading teams:', err);
+            logger.error('Error loading teams', err);
           }
         }
 

@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { notificationsAPI } from '@/lib/api/notifications';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 
 export function NotificationsWidget({ }: WidgetProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -28,7 +29,7 @@ export function NotificationsWidget({ }: WidgetProps) {
         setNotifications(notifsData.notifications || []);
         setUnreadCount(unread);
       } catch (error) {
-        console.error('Error loading notifications:', error);
+        logger.error('Error loading notifications', error);
         setNotifications([]);
         setUnreadCount(0);
       } finally {

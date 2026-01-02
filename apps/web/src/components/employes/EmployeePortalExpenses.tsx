@@ -14,6 +14,7 @@ import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatu
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee } from '@/lib/api/employees';
 import { useSubmitExpenseAccount, useUpdateExpenseAccount, useDeleteExpenseAccount, useRespondClarification } from '@/lib/query/expenseAccounts';
+import { logger } from '@/lib/logger';
 
 interface EmployeePortalExpensesProps {
   employee: Employee;
@@ -52,7 +53,7 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
         last_name: emp.last_name,
       })));
     } catch (err) {
-      console.error('Failed to load employees:', err);
+      logger.error('Failed to load employees', err);
       // Don't show error, just use empty list
       setEmployees([]);
     }
@@ -195,7 +196,7 @@ export default function EmployeePortalExpenses({ employee }: EmployeePortalExpen
         await loadExpenses();
       } catch (loadErr) {
         // Ignorer les erreurs de rechargement, les données seront mises à jour par React Query
-        console.warn('Error reloading expenses after submit:', loadErr);
+        logger.warn('Error reloading expenses after submit', loadErr);
       }
     } catch (err) {
       const appError = handleApiError(err);

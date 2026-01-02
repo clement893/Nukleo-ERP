@@ -9,6 +9,7 @@ import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import { employeesAPI } from '@/lib/api/employees';
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 export function EmployeesCountWidget({ }: WidgetProps) {
   const [count, setCount] = useState(0);
@@ -35,7 +36,7 @@ export function EmployeesCountWidget({ }: WidgetProps) {
         
         setPreviousCount(previousPeriodEmployees.length);
       } catch (error) {
-        console.error('Error loading employees:', error);
+        logger.error('Error loading employees', error);
         setCount(0);
         setPreviousCount(0);
       } finally {

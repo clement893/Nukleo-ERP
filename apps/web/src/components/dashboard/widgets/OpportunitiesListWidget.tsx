@@ -10,6 +10,7 @@ import type { WidgetProps } from '@/lib/dashboard/types';
 import Link from 'next/link';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
+import { logger } from '@/lib/logger';
 
 export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
@@ -25,7 +26,7 @@ export function OpportunitiesListWidget({ config, globalFilters }: WidgetProps) 
   // Handle error state - show empty state instead of error message
   // The hook now returns fallback empty data instead of throwing errors
   if (error) {
-    console.warn('OpportunitiesListWidget error:', error);
+    logger.warn('OpportunitiesListWidget error', error);
   }
 
   const opportunities = data?.opportunities || [];

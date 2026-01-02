@@ -7,6 +7,7 @@
 import { Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWidgetData } from '@/hooks/dashboard/useWidgetData';
 import type { WidgetProps } from '@/lib/dashboard/types';
+import { logger } from '@/lib/logger';
 
 export function ClientsCountWidget({ config, globalFilters }: WidgetProps) {
   const { data, isLoading, error } = useWidgetData({
@@ -26,7 +27,7 @@ export function ClientsCountWidget({ config, globalFilters }: WidgetProps) {
   // Handle error state - show zero count instead of error message
   // The hook now returns fallback empty data instead of throwing errors
   if (error) {
-    console.warn('ClientsCountWidget error:', error);
+    logger.warn('ClientsCountWidget error', error);
   }
 
   // Use count (total clients) to match the clients page which shows all clients

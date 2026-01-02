@@ -10,6 +10,7 @@ import { teamsAPI, type Team } from '@/lib/api/teams';
 import { extractApiData } from '@/lib/api/utils';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import { Card, Loading, Alert } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -104,7 +105,7 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
           }
         } catch (err) {
           // Project might not exist, ignore error
-          console.debug('Project not found:', err);
+          logger.debug('Project not found', err);
         }
       }
 
@@ -118,7 +119,7 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
           }
         } catch (err) {
           // Team might not exist, ignore error
-          console.debug('Team not found:', err);
+          logger.debug('Team not found', err);
         }
       }
 
@@ -126,7 +127,7 @@ function TaskInfoTab({ taskDetails }: { taskDetails: ProjectTask }) {
       // as it's not critical and would require additional API calls
         } catch (err) {
           // Ignore errors for additional info
-          console.debug('Error loading additional info:', err);
+          logger.debug('Error loading additional info', err);
         }
   };
 
