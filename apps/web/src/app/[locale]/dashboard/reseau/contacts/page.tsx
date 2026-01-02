@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
 import { 
@@ -85,6 +85,9 @@ export default function ContactsPage() {
   const [contactDetails, setContactDetails] = useState<Contact | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
+  
+  // Infinite scroll ref
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // API Hooks
   const { 
@@ -115,6 +118,29 @@ export default function ContactsPage() {
       setContactDetails(contactDetailData);
     }
   }, [contactDetailData]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage && hasNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   // Flatten contacts from pages
   const contacts = useMemo(() => {
@@ -725,7 +751,12 @@ export default function ContactsPage() {
 
       {/* Results Count */}
       <div className="mb-4 text-muted-accessible">
-        {filteredContacts.length} contact{filteredContacts.length > 1 ? 's' : ''} trouvé{filteredContacts.length > 1 ? 's' : ''}
+        {searchQuery || filterType !== 'all' || cityFilter !== 'all' || roleFilter !== 'all' || tagFilter !== 'all'
+          ? `${filteredContacts.length} contact${filteredContacts.length > 1 ? 's' : ''} trouvé${filteredContacts.length > 1 ? 's' : ''}`
+          : totalCount !== undefined
+            ? `${totalCount} contact${totalCount > 1 ? 's' : ''} au total`
+            : `${filteredContacts.length} contact${filteredContacts.length > 1 ? 's' : ''} chargé${filteredContacts.length > 1 ? 's' : ''}`
+        }
       </div>
 
       {/* Gallery View */}
@@ -1019,17 +1050,15 @@ export default function ContactsPage() {
         />
       )}
 
-      {/* Load More */}
+      {/* Infinite scroll trigger */}
       {hasNextPage && (
-        <div className="mt-6 text-center">
-            <button
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="glass-button px-6 py-3 rounded-xl text-primary-600 hover:bg-primary-500/10 transition-all"
-              aria-label="Charger plus de contacts"
-            >
-              {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}
-            </button>
+        <div ref={loadMoreRef} className="flex justify-center pt-4 pb-8 min-h-[100px]">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+              <span>Chargement...</span>
+            </div>
+          )}
         </div>
       )}
 
