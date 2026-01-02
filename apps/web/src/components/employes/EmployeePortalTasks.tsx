@@ -13,13 +13,12 @@ import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
 import { Card, Loading, Alert } from '@/components/ui';
 import Button from '@/components/ui/Button';
-import DataTable, { type Column } from '@/components/ui/DataTable';
 import Tabs, { type Tab } from '@/components/ui/Tabs';
 import Avatar from '@/components/ui/Avatar';
 import Drawer from '@/components/ui/Drawer';
 import { useAuthStore } from '@/lib/store';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, Plus, ExternalLink, Users, UserPlus } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, Plus, ExternalLink, Users, UserPlus, Search } from 'lucide-react';
 import { FileText, Image, File, Download } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
@@ -1408,34 +1407,190 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
     );
   }
 
+  // Calculate statistics
+  const todoTasks = tasks.filter(t => t.status === 'todo' || t.status === 'to_transfer').length;
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+  const doneTasks = tasks.filter(t => t.status === 'completed').length;
+
+  const getStatusBadge = (status: string) => {
+    const badges = {
+      todo: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+      review: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+      completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+      blocked: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+      to_transfer: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    };
+    return badges[status as keyof typeof badges] || badges.todo;
+  };
+
+  const getStatusLabel = (status: string) => {
+    return statusLabels[status as keyof typeof statusLabels] || status;
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const badges = {
+      low: 'bg-gray-100 text-gray-600',
+      medium: 'bg-orange-100 text-orange-600',
+      high: 'bg-red-100 text-red-600',
+      urgent: 'bg-red-200 text-red-800',
+    };
+    return badges[priority as keyof typeof badges] || badges.medium;
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    return priorityLabels[priority as keyof typeof priorityLabels] || priority;
+  };
+
   return (
-    <div className="space-y-4 mt-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">
-          Mes tâches ({tasks.length})
-        </h3>
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <CheckSquare className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {tasks.length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Total des tâches</div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+              <Clock className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {inProgressTasks}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">En cours</div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
+              <AlertCircle className="w-6 h-6 text-gray-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {todoTasks}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">À faire</div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+              <CheckSquare className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {doneTasks}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Terminées</div>
+        </Card>
       </div>
 
-      {tasks.length === 0 ? (
-        <Card>
-          <div className="py-8 text-center text-muted-foreground">
-            <CheckSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Aucune tâche assignée</p>
+      {/* Filters */}
+      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher une tâche..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+            />
           </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setStatusFilter('all')}
+              className={statusFilter === 'all' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+            >
+              Toutes
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('todo')}
+              className={statusFilter === 'todo' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+            >
+              À faire
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('in_progress')}
+              className={statusFilter === 'in_progress' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+            >
+              En cours
+            </Button>
+            <Button
+              onClick={() => setStatusFilter('completed')}
+              className={statusFilter === 'completed' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+            >
+              Terminées
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Tasks List */}
+      {tasks.length === 0 ? (
+        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <CheckSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 dark:text-gray-400">Aucune tâche assignée</p>
+        </Card>
+      ) : filteredTasks.length === 0 ? (
+        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <CheckSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 dark:text-gray-400">Aucune tâche trouvée</p>
         </Card>
       ) : (
-        <Card>
-          <DataTable<Record<string, unknown>>
-            data={tasks as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-            searchable={false}
-            emptyMessage="Aucune tâche trouvée"
-            onRowClick={(row) => {
-              handleTaskClick(row as unknown as ProjectTask);
-            }}
-          />
-        </Card>
+        <div className="grid grid-cols-1 gap-4">
+          {filteredTasks.map((task) => (
+            <Card 
+              key={task.id} 
+              className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all cursor-pointer"
+              onClick={() => handleTaskClick(task)}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    {task.title}
+                  </h3>
+                  {task.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{task.description}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <span className={`text-xs px-3 py-1 rounded-full ${getStatusBadge(task.status)}`}>
+                    {getStatusLabel(task.status)}
+                  </span>
+                  {task.priority && (
+                    <span className={`text-xs px-3 py-1 rounded-full ${getPriorityBadge(task.priority)}`}>
+                      {getPriorityLabel(task.priority)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                {task.project_id && getProjectName(task.project_id) && (
+                  <span>📁 {getProjectName(task.project_id)}</span>
+                )}
+                {task.estimated_hours && (
+                  <span>⏱️ {task.estimated_hours}h estimées</span>
+                )}
+                {task.due_date && (
+                  <span>📅 Échéance: {new Date(task.due_date).toLocaleDateString('fr-FR')}</span>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Drawer de détails de la tâche (style Asana) */}
