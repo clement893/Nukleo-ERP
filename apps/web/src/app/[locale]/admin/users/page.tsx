@@ -2,176 +2,315 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Users, Plus, Search, Shield, Mail, Calendar, MoreVertical, Edit, Trash2, Lock, Loader2 } from 'lucide-react';
-import { Badge, Button, Card, Input } from '@/components/ui';
-import { employeesAPI, type Employee } from '@/lib/api/employees';
+import Modal from '@/components/ui/Modal';
+import Drawer from '@/components/ui/Drawer';
+import { 
+  Users, Plus, Search, Shield, Mail, Calendar, MoreVertical, Edit, Trash2, Lock, Loader2,
+  Eye, Settings, UserPlus, X, CheckCircle2, XCircle, Clock
+} from 'lucide-react';
+import { Badge, Button, Card, Input, Select, Textarea, Loading } from '@/components/ui';
 import { useToast } from '@/lib/toast';
+import { usersAPI } from '@/lib/api';
+import { employeesAPI } from '@/lib/api/employees';
+import { useUserRoles } from '@/hooks/useRBAC';
+import UserRolesEditor from '@/components/admin/UserRolesEditor';
+import UserPermissionsEditor from '@/components/admin/UserPermissionsEditor';
+import EmployeePortalPermissionsEditor from '@/components/admin/EmployeePortalPermissionsEditor';
+import { handleApiError } from '@/lib/errors/api';
+import { apiClient } from '@/lib/api';
 
 interface User {
   id: number;
-  name: string;
   email: string;
-  role: 'admin' | 'manager' | 'user';
-  status: 'active' | 'inactive' | 'suspended';
-  lastLogin: string;
-  createdAt: string;
-  department?: string;
-  position?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  is_active: boolean;
+  is_verified?: boolean;
+  created_at: string;
+  updated_at?: string;
+  employee?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email?: string | null;
+  };
 }
 
-const roleConfig = {
-  admin: { label: 'Admin', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' },
-  manager: { label: 'Manager', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
-  user: { label: 'Utilisateur', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30' }
-};
+interface PaginatedUsersResponse {
+  items: User[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
 
 const statusConfig = {
-  active: { label: 'Actif', color: 'bg-green-500/10 text-green-600 border-green-500/30' },
-  inactive: { label: 'Inactif', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30' },
-  suspended: { label: 'Suspendu', color: 'bg-red-500/10 text-red-600 border-red-500/30' }
+  active: { label: 'Actif', color: 'bg-green-500/10 text-green-600 border-green-500/30', icon: CheckCircle2 },
+  inactive: { label: 'Inactif', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', icon: XCircle },
 };
 
 const getAvatarColor = (name: string) => {
   const colors = [
-    'bg-blue-500',
-    'bg-purple-500',
-    'bg-green-500',
-    'bg-orange-500',
-    'bg-pink-500',
-    'bg-cyan-500',
-    'bg-indigo-500',
-    'bg-red-500'
+    'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500',
+    'bg-pink-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-red-500'
   ];
   const index = name.charCodeAt(0) % colors.length;
   return colors[index];
 };
 
-const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+const getInitials = (user: User) => {
+  if (user.first_name && user.last_name) {
+    const first = user.first_name[0] || '';
+    const last = user.last_name[0] || '';
+    return `${first}${last}`.toUpperCase();
+  }
+  if (user.email) {
+    return user.email[0]?.toUpperCase() || 'U';
+  }
+  return 'U';
 };
 
-const formatRelativeTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `Il y a ${diffMins} min`;
-  if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays < 7) return `Il y a ${diffDays}j`;
-  return date.toLocaleDateString('fr-FR');
+const getUserDisplayName = (user: User) => {
+  if (user.first_name && user.last_name) {
+    return `${user.first_name} ${user.last_name}`;
+  }
+  return user.email;
 };
 
-// Déterminer le rôle basé sur l'ID (simulation)
-const determineRole = (employee: Employee): 'admin' | 'manager' | 'user' => {
-  // Simuler les rôles basés sur l'ID : 5% admin, 15% manager, 80% user
-  const roleValue = employee.id % 100;
-  if (roleValue < 5) return 'admin';
-  if (roleValue < 20) return 'manager';
-  return 'user';
-};
 
-// Déterminer le statut basé sur l'ID (simulation)
-const determineStatus = (employee: Employee): 'active' | 'inactive' | 'suspended' => {
-  // 95% actifs, 3% inactifs, 2% suspendus
-  const rand = employee.id % 100;
-  if (rand >= 98) return 'suspended';
-  if (rand >= 95) return 'inactive';
-  return 'active';
-};
+// Component to display user roles
+function UserRolesDisplay({ userId }: { userId: number }) {
+  const { roles, loading } = useUserRoles(userId);
 
-// Générer une date de dernière connexion simulée
-const generateLastLogin = (employeeId: number): string => {
-  const now = new Date();
-  const randomDaysAgo = (employeeId % 7);
-  const randomHoursAgo = (employeeId % 24);
-  const lastLogin = new Date(now.getTime() - (randomDaysAgo * 24 * 60 * 60 * 1000) - (randomHoursAgo * 60 * 60 * 1000));
-  return lastLogin.toISOString();
-};
+  if (loading) {
+    return <span className="text-xs text-gray-500">Chargement...</span>;
+  }
+
+  if (roles.length === 0) {
+    return <span className="text-xs text-gray-500">Aucun rôle</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.slice(0, 2).map((role) => (
+        <Badge key={role.id} className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+          {role.name}
+        </Badge>
+      ))}
+      {roles.length > 2 && (
+        <Badge className="text-xs bg-gray-500/10 text-gray-600 border-gray-500/30">
+          +{roles.length - 2}
+        </Badge>
+      )}
+    </div>
+  );
+}
 
 export default function AdminUsersPage() {
-  const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(50);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDetailDrawer, setShowDetailDrawer] = useState(false);
+  const [showRolesModal, setShowRolesModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [showPortalPermissionsModal, setShowPortalPermissionsModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const employees = await employeesAPI.list(0, 1000);
-      
-      // Convertir les employés en utilisateurs
-      const convertedUsers: User[] = employees
-        .filter(emp => emp.email) // Only include employees with email
-        .map(emp => ({
-          id: emp.id,
-          name: `${emp.first_name} ${emp.last_name}`,
-          email: emp.email!,
-          role: determineRole(emp),
-          status: determineStatus(emp),
-          lastLogin: generateLastLogin(emp.id),
-          createdAt: emp.hire_date || emp.created_at,
-          department: undefined, // Department not available in Employee interface
-          position: undefined // Position not available in Employee interface
-        }));
-      
-      setUsers(convertedUsers);
-    } catch (error) {
-      console.error('Erreur lors du chargement des utilisateurs:', error);
-      showToast({
-        title: 'Erreur',
-        message: 'Impossible de charger les utilisateurs',
-        type: 'error'
-      });
-    } finally {
-      setLoading(false);
+  // Form data
+  const [formData, setFormData] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    password: '',
+    is_active: true,
+  });
+
+  // Fetch users with API
+  const { data, isLoading } = useQuery<PaginatedUsersResponse>({
+    queryKey: ['users', page, pageSize, searchQuery, statusFilter],
+    queryFn: async () => {
+      const params: any = {
+        page,
+        page_size: pageSize,
+      };
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+      if (statusFilter !== 'all') {
+        params.is_active = statusFilter === 'active';
+      }
+      const response = await apiClient.get('/v1/users', { params });
+      return response.data;
+    },
+  });
+
+
+  // Mutations
+  const createUserMutation = useMutation({
+    mutationFn: (data: typeof formData) => usersAPI.createUser(data),
+    onSuccess: () => {
+      showToast({ message: 'Utilisateur créé avec succès', type: 'success' });
+      setShowCreateModal(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error) => {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors de la création', type: 'error' });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: Partial<typeof formData> }) =>
+      usersAPI.updateUser(userId, data),
+    onSuccess: () => {
+      showToast({ message: 'Utilisateur modifié avec succès', type: 'success' });
+      setShowEditModal(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error) => {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors de la modification', type: 'error' });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: string) => usersAPI.deleteUser(userId),
+    onSuccess: () => {
+      showToast({ message: 'Utilisateur supprimé avec succès', type: 'success' });
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error) => {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors de la suppression', type: 'error' });
+    },
+  });
+
+  const sendInvitationMutation = useMutation({
+    mutationFn: (userId: string | number) => usersAPI.sendInvitation(userId),
+    onSuccess: () => {
+      showToast({ message: 'Invitation envoyée avec succès', type: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error) => {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors de l\'envoi de l\'invitation', type: 'error' });
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      first_name: '',
+      last_name: '',
+      password: '',
+      is_active: true,
+    });
+    setSelectedUser(null);
+  };
+
+  const handleCreate = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const handleEdit = (user: User) => {
+    setSelectedUser(user);
+    setFormData({
+      email: user.email,
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      password: '',
+      is_active: user.is_active,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDelete = (user: User) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleView = (user: User) => {
+    setSelectedUser(user);
+    setShowDetailDrawer(true);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.email) {
+      showToast({ message: 'L\'email est requis', type: 'error' });
+      return;
+    }
+
+    if (selectedUser) {
+      // Update
+      const updateData: any = {
+        email: formData.email,
+        first_name: formData.first_name || undefined,
+        last_name: formData.last_name || undefined,
+        is_active: formData.is_active,
+      };
+      if (formData.password) {
+        updateData.password = formData.password;
+      }
+      updateUserMutation.mutate({ userId: String(selectedUser.id), data: updateData });
+    } else {
+      // Create
+      if (!formData.password) {
+        showToast({ message: 'Le mot de passe est requis pour créer un utilisateur', type: 'error' });
+        return;
+      }
+      createUserMutation.mutate(formData);
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = !searchQuery ||
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.department && user.department.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
-  const stats = {
-    total: users.length,
-    active: users.filter(u => u.status === 'active').length,
-    admins: users.filter(u => u.role === 'admin').length,
-    suspended: users.filter(u => u.status === 'suspended').length
+  const handleConfirmDelete = () => {
+    if (selectedUser) {
+      deleteUserMutation.mutate(String(selectedUser.id));
+    }
   };
 
-  if (loading) {
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const users = data?.items || [];
+    return {
+      total: data?.total || 0,
+      active: users.filter(u => u.is_active).length,
+      inactive: users.filter(u => !u.is_active).length,
+      verified: users.filter(u => u.is_verified).length,
+    };
+  }, [data]);
+
+  // Use searchQuery directly in query - it will be debounced by React Query
+
+  if (isLoading && !data) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loading />
         </div>
       </PageContainer>
     );
   }
+
+  const users = data?.items || [];
+  const totalPages = data?.total_pages || 1;
 
   return (
     <PageContainer>
@@ -197,7 +336,10 @@ export default function AdminUsersPage() {
                   <p className="text-white/80 text-sm">Gérez les comptes et permissions utilisateurs</p>
                 </div>
               </div>
-              <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+              <Button 
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                onClick={handleCreate}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvel utilisateur
               </Button>
@@ -224,7 +366,7 @@ export default function AdminUsersPage() {
           <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
-                <Users className="w-5 h-5 text-green-600" />
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
               </div>
               <div>
                 <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -237,28 +379,28 @@ export default function AdminUsersPage() {
 
           <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                <Shield className="w-5 h-5 text-blue-600" />
+              <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                <XCircle className="w-5 h-5 text-orange-600" />
               </div>
               <div>
                 <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  {stats.admins}
+                  {stats.inactive}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Administrateurs</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Inactifs</div>
               </div>
             </div>
           </Card>
 
           <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
-                <Lock className="w-5 h-5 text-red-600" />
+              <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <Shield className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <div className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  {stats.suspended}
+                  {stats.verified}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Suspendus</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Vérifiés</div>
               </div>
             </div>
           </Card>
@@ -273,31 +415,26 @@ export default function AdminUsersPage() {
                 type="text"
                 placeholder="Rechercher par nom ou email..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
                 className="pl-10"
               />
             </div>
             <div className="flex gap-2">
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              >
-                <option value="all">Tous les rôles</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="user">Utilisateur</option>
-              </select>
-              <select
+              <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="active">Actif</option>
-                <option value="inactive">Inactif</option>
-                <option value="suspended">Suspendu</option>
-              </select>
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: 'all', label: 'Tous les statuts' },
+                  { value: 'active', label: 'Actif' },
+                  { value: 'inactive', label: 'Inactif' },
+                ]}
+              />
             </div>
           </div>
         </Card>
@@ -312,13 +449,13 @@ export default function AdminUsersPage() {
                     Utilisateur
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Rôle
+                    Rôles
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Statut
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Dernière connexion
+                    Employé
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Date création
@@ -329,63 +466,426 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full ${getAvatarColor(user.name)} flex items-center justify-center text-white font-semibold text-sm`}>
-                          {getInitials(user.name)}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900 dark:text-white">
-                            {user.name}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {user.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={`${roleConfig[user.role].color} border`}>
-                        {roleConfig[user.role].label}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={`${statusConfig[user.status].color} border`}>
-                        {statusConfig[user.status].label}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {formatRelativeTime(user.lastLogin)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(user.createdAt).toLocaleDateString('fr-FR')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button size="sm" variant="ghost" className="hover:bg-blue-500/10 hover:text-blue-600">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="hover:bg-red-500/10 hover:text-red-600">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="hover:bg-gray-500/10">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </div>
+                {users.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      Aucun utilisateur trouvé
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  users.map((user) => {
+                    const displayName = getUserDisplayName(user);
+                    const statusInfo = statusConfig[user.is_active ? 'active' : 'inactive'];
+                    const StatusIcon = statusInfo.icon;
+
+                    return (
+                      <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full ${getAvatarColor(displayName)} flex items-center justify-center text-white font-semibold text-sm`}>
+                              {getInitials(user)}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900 dark:text-white">
+                                {displayName}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {user.email}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <UserRolesDisplay userId={user.id} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge className={`${statusInfo.color} border flex items-center gap-1`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {statusInfo.label}
+                          </Badge>
+                          {user.is_verified && (
+                            <Badge className="ml-2 bg-blue-500/10 text-blue-600 border-blue-500/30 text-xs">
+                              Vérifié
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.employee ? (
+                            <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                              {user.employee.first_name} {user.employee.last_name}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-gray-500">Aucun</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="hover:bg-blue-500/10 hover:text-blue-600"
+                              onClick={() => handleView(user)}
+                              title="Voir détails"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="hover:bg-blue-500/10 hover:text-blue-600"
+                              onClick={() => handleEdit(user)}
+                              title="Modifier"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="hover:bg-red-500/10 hover:text-red-600"
+                              onClick={() => handleDelete(user)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="hover:bg-gray-500/10"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowRolesModal(true);
+                              }}
+                              title="Gérer les rôles"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page} sur {totalPages} ({stats.total} utilisateurs)
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Suivant
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </MotionDiv>
+
+      {/* Create/Edit Modal */}
+      <Modal
+        isOpen={showCreateModal || showEditModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setShowEditModal(false);
+          resetForm();
+        }}
+        title={selectedUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email *
+            </label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+              disabled={!!selectedUser}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Prénom
+              </label>
+              <Input
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nom
+              </label>
+              <Input
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {!selectedUser && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Mot de passe *
+              </label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            </div>
+          )}
+
+          {selectedUser && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nouveau mot de passe (laisser vide pour ne pas changer)
+              </label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              className="rounded border-gray-300"
+            />
+            <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">
+              Compte actif
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateModal(false);
+                setShowEditModal(false);
+                resetForm();
+              }}
+              disabled={createUserMutation.isPending || updateUserMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={createUserMutation.isPending || updateUserMutation.isPending}
+            >
+              {selectedUser ? 'Modifier' : 'Créer'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
+        title="Confirmer la suppression"
+        size="md"
+      >
+        <p className="mb-4">
+          Êtes-vous sûr de vouloir supprimer l'utilisateur{' '}
+          <strong>{selectedUser?.email}</strong> ?
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowDeleteModal(false);
+              setSelectedUser(null);
+            }}
+            disabled={deleteUserMutation.isPending}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDelete}
+            loading={deleteUserMutation.isPending}
+          >
+            Supprimer
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Detail Drawer */}
+      <Drawer
+        isOpen={showDetailDrawer}
+        onClose={() => {
+          setShowDetailDrawer(false);
+          setSelectedUser(null);
+        }}
+        title="Détails de l'utilisateur"
+        position="right"
+        size="lg"
+      >
+        {selectedUser ? (
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                Informations
+              </h4>
+              <div className="space-y-2">
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                {selectedUser.first_name && <p><strong>Prénom:</strong> {selectedUser.first_name}</p>}
+                {selectedUser.last_name && <p><strong>Nom:</strong> {selectedUser.last_name}</p>}
+                <p><strong>Statut:</strong> {selectedUser.is_active ? 'Actif' : 'Inactif'}</p>
+                {selectedUser.is_verified && <p><strong>Vérifié:</strong> Oui</p>}
+                {selectedUser.employee && (
+                  <p><strong>Employé lié:</strong> {selectedUser.employee.first_name} {selectedUser.employee.last_name}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                Rôles
+              </h4>
+              <UserRolesDisplay userId={selectedUser.id} />
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDetailDrawer(false);
+                  handleEdit(selectedUser);
+                }}
+                className="flex-1"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Modifier
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDetailDrawer(false);
+                  setShowRolesModal(true);
+                }}
+                className="flex-1"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Rôles
+              </Button>
+              {!selectedUser.is_active && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    sendInvitationMutation.mutate(selectedUser.id);
+                  }}
+                  disabled={sendInvitationMutation.isPending}
+                  className="flex-1"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Envoyer invitation
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <Loading />
+        )}
+      </Drawer>
+
+      {/* Roles Modal */}
+      <Modal
+        isOpen={showRolesModal}
+        onClose={() => {
+          setShowRolesModal(false);
+          setSelectedUser(null);
+        }}
+        title={`Gérer les rôles - ${selectedUser?.email}`}
+        size="lg"
+      >
+        {selectedUser && (
+          <UserRolesEditor
+            userId={selectedUser.id}
+            onUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['users'] });
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Permissions Modal */}
+      <Modal
+        isOpen={showPermissionsModal}
+        onClose={() => {
+          setShowPermissionsModal(false);
+          setSelectedUser(null);
+        }}
+        title={`Gérer les permissions - ${selectedUser?.email}`}
+        size="lg"
+      >
+        {selectedUser && (
+          <UserPermissionsEditor
+            userId={selectedUser.id}
+            onUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['users'] });
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Portal Permissions Modal */}
+      <Modal
+        isOpen={showPortalPermissionsModal}
+        onClose={() => {
+          setShowPortalPermissionsModal(false);
+          setSelectedUser(null);
+        }}
+        title={`Permissions du portail employé - ${selectedUser?.email}`}
+        size="lg"
+      >
+        {selectedUser && (
+          <EmployeePortalPermissionsEditor
+            userId={selectedUser.id}
+            onUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['users'] });
+            }}
+          />
+        )}
+      </Modal>
     </PageContainer>
   );
 }
