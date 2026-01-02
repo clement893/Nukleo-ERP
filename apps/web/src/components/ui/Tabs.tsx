@@ -134,8 +134,8 @@ export default function Tabs({
     const classes = variantClasses[variant];
 
     return (
-      <div className={clsx('w-full', className)}>
-        <div className={clsx('flex', classes.container)}>
+      <div className={clsx('w-full flex flex-col h-full', className)}>
+        <div className={clsx('flex overflow-x-auto tabs-hide-scrollbar', classes.container)}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -145,15 +145,15 @@ export default function Tabs({
               className={clsx(
                 classes.tab(activeTab === tab.id),
                 tab.disabled && 'opacity-50 cursor-not-allowed',
-                'flex items-center gap-2'
+                'flex items-center gap-2 flex-shrink-0 whitespace-nowrap'
               )}
             >
-              {tab.icon && <span>{tab.icon}</span>}
-              <span>{tab.label}</span>
+              {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
+              <span className="text-xs">{tab.label}</span>
               {tab.badge && (
                 <span
                   className={clsx(
-                    'ml-1 px-2 py-0.5 text-xs rounded-full',
+                    'ml-1 px-2 py-0.5 text-xs rounded-full flex-shrink-0',
                     activeTab === tab.id
                       ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'
                       : 'bg-muted text-muted-foreground'
@@ -166,7 +166,7 @@ export default function Tabs({
           ))}
         </div>
 
-        <div className="mt-4">{activeTabContent}</div>
+        <div className="mt-4 flex-1 overflow-y-auto">{activeTabContent}</div>
       </div>
     );
   }

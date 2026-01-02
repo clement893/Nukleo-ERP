@@ -110,13 +110,28 @@ export default function TachesPage() {
   const [employees, setEmployees] = useState<Array<{ id: number; name: string }>>([]);
 
   // Fetch tasks with filters
-  const { data, isLoading, error } = useInfiniteProjectTasks(100, {
+  const { data, isLoading, error, refetch } = useInfiniteProjectTasks(100, {
     team_id: teamFilter || undefined,
     project_id: projectFilter || undefined,
     assignee_id: assigneeFilter || undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
   });
   const tasks = useMemo(() => data?.pages.flat() || [], [data]);
+  
+  // Handle error and prevent infinite loop - only show once
+  const [errorShown, setErrorShown] = useState(false);
+  useEffect(() => {
+    if (error && !errorShown) {
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des données',
+        type: 'error',
+      });
+      setErrorShown(true);
+    } else if (!error && errorShown) {
+      setErrorShown(false);
+    }
+  }, [error, errorShown, showToast]);
 
   // Mutations
   const createTaskMutation = useCreateProjectTask();
@@ -443,15 +458,8 @@ export default function TachesPage() {
     );
   }
 
-  if (error) {
-    return (
-      <PageContainer>
-        <div className="text-center py-12">
-          <p className="text-red-600">Erreur lors du chargement des tâches</p>
-        </div>
-      </PageContainer>
-    );
-  }
+  // Don't block the UI on error, show tasks if available
+  // Error is already handled in useEffect with toast
 
   return (
     <PageContainer maxWidth="full">
@@ -1022,10 +1030,11 @@ export default function TachesPage() {
         ) : taskDetails ? (
           <div className="h-full flex flex-col">
             <Tabs
+              className="flex flex-col h-full"
               tabs={[
                 {
                   id: 'info',
-                  label: 'Informations',
+                  label: 'Infos',
                   icon: <Info className="w-4 h-4" />,
                   content: (
                     <div className="space-y-6 py-4">
@@ -1150,7 +1159,7 @@ export default function TachesPage() {
                 },
                 {
                   id: 'attachments',
-                  label: 'Documents',
+                  label: 'Docs',
                   icon: <Paperclip className="w-4 h-4" />,
                   content: (
                     <div className="py-4">

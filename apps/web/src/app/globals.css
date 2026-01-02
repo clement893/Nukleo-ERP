@@ -263,6 +263,16 @@ body {
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* Hide horizontal scrollbar for tabs */
+.tabs-hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.tabs-hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 /* Subtle horizontal scrollbar */
 .overflow-x-auto {
   scrollbar-width: thin; /* Firefox - thin scrollbar */
