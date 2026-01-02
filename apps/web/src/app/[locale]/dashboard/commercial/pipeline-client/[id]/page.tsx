@@ -53,6 +53,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
+import { offsetFromPointer } from '@dnd-kit/modifiers';
 
 // Droppable Stage Column Component
 function DroppableStageColumn({ 
@@ -941,7 +942,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('kanban')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'kanban'
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-white bg-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -951,7 +952,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('overview')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'overview'
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-white bg-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -961,7 +962,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('opportunities')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'opportunities'
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-white bg-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -971,7 +972,7 @@ export default function PipelineDetailPage() {
                 onClick={() => setActiveTab('stages')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'stages'
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-white bg-primary-500'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -985,6 +986,7 @@ export default function PipelineDetailPage() {
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
+                modifiers={[offsetFromPointer()]}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               >
