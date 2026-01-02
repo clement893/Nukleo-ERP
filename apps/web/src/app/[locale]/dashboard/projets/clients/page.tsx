@@ -42,7 +42,10 @@ import {
   Info,
   MessageSquare,
   Paperclip,
-  Globe
+  Globe,
+  MapPin,
+  Eye,
+  FolderOpen
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -859,154 +862,141 @@ function ClientsContent() {
             )}
           </Card>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
             {filteredClients.map((client) => {
               const logoUrl = getClientLogo(client);
               const projects = getClientProjects(client.id);
               const contactsCount = getClientContactsCount(client.id);
-              const isDropdownOpen = statusDropdownOpen[client.id] || false;
               const isSelected = selectedClients.has(client.id);
               
               return (
-                <div
+                <Card
                   key={client.id}
-                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-primary-500/40 transition-all duration-200 relative"
+                  className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer group relative"
+                  onClick={() => handleView(client.id)}
                 >
                   {/* Selection checkbox */}
-                  <div className="absolute top-4 left-4 z-10">
-                    <button
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelection(client.id);
-                      }}
-                    >
-                      {isSelected ? (
-                        <CheckSquare className="w-5 h-5 text-primary-500" />
-                      ) : (
-                        <Square className="w-5 h-5 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Logo + Actions */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3 ml-8">
-                      {logoUrl ? (
-                        <img 
-                          src={logoUrl} 
-                          alt={`${client.company_name} logo`}
-                          className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
-                            if (fallback) fallback.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`logo-fallback ${logoUrl ? 'hidden' : ''}`}>
-                        <ClientAvatar client={client} size="lg" />
+                  {isSelected && (
+                    <div className="absolute top-3 left-3 z-10">
+                      <div className="p-1 bg-primary-500 rounded">
+                        <CheckSquare className="w-4 h-4 text-white" />
                       </div>
                     </div>
-                    
-                    {/* Action Dropdown */}
-                    <div className="relative action-dropdown-container">
-                      <Dropdown
-                        trigger={
-                          <button
-                            onClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              setActionDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
+                  )}
+                  
+                  <div className="flex flex-col">
+                    {/* Logo Section - Photo rectangulaire en hauteur comme les entreprises */}
+                    <div className="relative">
+                      <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                        {logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            alt={`${client.company_name} logo`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
                             }}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                          </button>
-                        }
-                        items={[
-                          {
-                            label: 'Voir les détails',
-                            onClick: () => handleView(client.id),
-                            icon: <ExternalLink className="w-4 h-4" />,
-                          },
-                          {
-                            label: 'Modifier',
-                            onClick: () => handleEdit(client),
-                            icon: <Edit className="w-4 h-4" />,
-                          },
-                          {
-                            label: 'Dupliquer',
-                            onClick: () => handleDuplicate(client),
-                            icon: <Copy className="w-4 h-4" />,
-                          },
-                          { divider: true },
-                          {
-                            label: 'Supprimer',
-                            onClick: () => handleDelete(client),
-                            icon: <Trash2 className="w-4 h-4" />,
-                            variant: 'danger',
-                          },
-                        ]}
-                        position="bottom"
-                      />
+                          />
+                        ) : null}
+                        <div className="logo-fallback hidden w-full h-full flex items-center justify-center">
+                          <div className="text-6xl font-bold text-gray-400">
+                            {client.company_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Badge de statut en overlay */}
+                      <div className="absolute top-3 right-3">
+                        <Badge className={getStatusColor(client.status || 'ACTIVE')}>
+                          {getStatusLabel(client.status || 'ACTIVE')}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Contenu de la carte */}
+                    <div className="p-4 space-y-3">
+                      <div>
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                          {client.company_name}
+                        </h3>
+                        {client.type && (
+                          <p className="text-sm text-muted-accessible line-clamp-2 mt-1">{client.type}</p>
+                        )}
+                      </div>
+
+                      {/* Informations clés */}
+                      <div className="space-y-2.5">
+                        {client.portal_url && (
+                          <div className="flex items-center gap-2 text-sm text-muted-accessible group/portal">
+                            <Globe className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate flex-1">Portail client</span>
+                            <a
+                              href={client.portal_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="opacity-0 group-hover/portal:opacity-100 text-primary hover:text-primary-600 transition-all"
+                              title="Ouvrir le portail"
+                              aria-label={`Ouvrir le portail de ${client.company_name}`}
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-sm text-muted-accessible">
+                          <FolderOpen className="w-4 h-4 flex-shrink-0" />
+                          <span>{projects.length} projet{projects.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-accessible">
+                          <Users className="w-4 h-4 flex-shrink-0" />
+                          <span>{contactsCount} contact{contactsCount !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="grid grid-cols-3 gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleView(client.id)}
+                          className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                          aria-label={`Voir les détails de ${client.company_name}`}
+                          title="Voir"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(client)}
+                          className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                          aria-label={`Modifier ${client.company_name}`}
+                          title="Modifier"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(client)}
+                          className="glass-badge p-2 rounded-lg hover:bg-red-500/10 hover:text-red-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                          aria-label={`Supprimer ${client.company_name}`}
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                    
-                  {/* Status Dropdown */}
-                  <div className="relative status-dropdown-container mb-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setStatusDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
-                      }}
-                      className="relative"
-                    >
-                      <Badge className={`${getStatusColor(client.status || 'ACTIVE')} cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1`}>
-                        {getStatusLabel(client.status || 'ACTIVE')}
-                        <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                      </Badge>
-                    </button>
-                    
-                    {isDropdownOpen && (
-                      <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                        {statusOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStatusChange(client, option.value);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
-                              client.status === option.value ? 'bg-gray-50 dark:bg-gray-700/50' : ''
-                            }`}
-                          >
-                            <span>{option.label}</span>
-                            {client.status === option.value && (
-                              <Check className="w-4 h-4 text-primary-500" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Nom + Type */}
-                  <div onClick={() => handleView(client.id)} className="cursor-pointer">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {client.company_name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      {client.type || 'Client'}
-                    </p>
-                  </div>
-
-                  {/* Projects List */}
-                  {projects.length > 0 && (
-                    <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">Projets :</p>
-                      <div className="space-y-1">
-                        {projects.slice(0, 3).map((project) => (
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
                           <div 
                             key={project.id}
                             className="text-sm text-gray-700 dark:text-gray-300 truncate flex items-center gap-1"

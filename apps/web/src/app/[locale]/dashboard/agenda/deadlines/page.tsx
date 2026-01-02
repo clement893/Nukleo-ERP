@@ -204,7 +204,7 @@ export default function DeadlinesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
           <div className="flex flex-col gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -255,11 +255,11 @@ export default function DeadlinesPage() {
 
         {/* Deadlines List */}
         {isLoading ? (
-          <Card className="glass-card p-8 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-8 rounded-xl border border-nukleo-lavender/20 text-center">
             <div className="text-gray-600 dark:text-gray-400">Chargement des échéances...</div>
           </Card>
         ) : filteredDeadlines.length === 0 ? (
-          <Card className="glass-card p-8 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-8 rounded-xl border border-nukleo-lavender/20 text-center">
             <div className="text-gray-600 dark:text-gray-400">Aucune échéance trouvée</div>
           </Card>
         ) : (

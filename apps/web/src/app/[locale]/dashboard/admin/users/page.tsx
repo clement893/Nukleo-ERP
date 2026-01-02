@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
                 <Users className="w-5 h-5 text-purple-600" />
@@ -222,7 +222,7 @@ export default function AdminUsersPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
                 <Users className="w-5 h-5 text-green-600" />
@@ -236,7 +236,7 @@ export default function AdminUsersPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <Shield className="w-5 h-5 text-blue-600" />
@@ -250,7 +250,7 @@ export default function AdminUsersPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <Lock className="w-5 h-5 text-red-600" />
@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
         </Card>
 
         {/* Users Table */}
-        <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+        <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
