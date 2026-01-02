@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import Drawer from '@/components/ui/Drawer';
@@ -19,15 +19,24 @@ import {
   Edit,
   Trash2,
   X,
-  Briefcase
+  Briefcase,
+  Play,
+  Pause,
+  Square,
+  Download,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { Button, Card, Input, Loading, Textarea, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Textarea, Select, useToast, Badge } from '@/components/ui';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpdate } from '@/lib/api/time-entries';
+import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpdate, type TimerStatus } from '@/lib/api/time-entries';
 import { projectsAPI } from '@/lib/api/projects';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { clientsAPI } from '@/lib/api/clients';
+import { usersAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
+import { apiClient } from '@/lib/api/client';
+import { extractApiData } from '@/lib/api/utils';
 
 type ViewMode = 'employee' | 'client' | 'week';
 
@@ -67,6 +76,19 @@ export default function FeuillesTempsPage() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   
+  // New filters
+  const [filterUserId, setFilterUserId] = useState<number | null>(null);
+  const [filterProjectId, setFilterProjectId] = useState<number | null>(null);
+  const [filterTaskId, setFilterTaskId] = useState<number | null>(null);
+  
+  // Timer state
+  const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
+  const [timerElapsed, setTimerElapsed] = useState<number>(0);
+  const [showTimerWidget, setShowTimerWidget] = useState(false);
+  
+  // Expanded groups
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  
   // Modal and Drawer states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -84,12 +106,15 @@ export default function FeuillesTempsPage() {
   });
 
   // Fetch time entries with filters
-  const { data: timeEntriesData, isLoading: timeEntriesLoading } = useInfiniteQuery({
-    queryKey: ['time-entries', 'infinite', startDate, endDate],
+  const { data: timeEntriesData, isLoading: timeEntriesLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ['time-entries', 'infinite', startDate, endDate, filterUserId, filterProjectId, filterTaskId],
     queryFn: ({ pageParam = 0 }) => {
       const params: any = { skip: pageParam, limit: 100 };
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
+      if (filterUserId) params.user_id = filterUserId;
+      if (filterProjectId) params.project_id = filterProjectId;
+      if (filterTaskId) params.task_id = filterTaskId;
       return timeEntriesAPI.list(params);
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -115,6 +140,28 @@ export default function FeuillesTempsPage() {
     queryKey: ['clients-for-time-entry'],
     queryFn: () => clientsAPI.list(0, 1000),
   });
+
+  // Fetch users for filter
+  const { data: usersData } = useQuery({
+    queryKey: ['users-for-time-entry'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get('/v1/users', { params: { page: 1, page_size: 1000 } });
+        const data = extractApiData<{ items?: Array<{ id: number; first_name?: string; last_name?: string; email: string }> }>(response);
+        if (data && 'items' in data && Array.isArray(data.items)) {
+          return data.items.map(u => ({
+            id: u.id,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+            email: u.email
+          }));
+        }
+        return [];
+      } catch {
+        return [];
+      }
+    },
+  });
+  const users = useMemo(() => usersData || [], [usersData]);
 
   // Mutations
   const createMutation = useMutation({
@@ -157,6 +204,106 @@ export default function FeuillesTempsPage() {
       showToast({ message: appError.message || 'Erreur lors de la suppression', type: 'error' });
     },
   });
+
+  // Timer mutations
+  const startTimerMutation = useMutation({
+    mutationFn: ({ taskId, description }: { taskId: number; description?: string }) => 
+      timeEntriesAPI.startTimer(taskId, description),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['timer-status'] });
+      loadTimerStatus();
+      showToast({ message: 'Timer démarré', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors du démarrage du timer', type: 'error' });
+    },
+  });
+
+  const stopTimerMutation = useMutation({
+    mutationFn: (description?: string) => timeEntriesAPI.stopTimer(description),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['timer-status'] });
+      setTimerStatus(null);
+      setTimerElapsed(0);
+      setShowTimerWidget(false);
+      showToast({ message: 'Timer arrêté et entrée créée', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de l\'arrêt du timer', type: 'error' });
+    },
+  });
+
+  const pauseTimerMutation = useMutation({
+    mutationFn: () => timeEntriesAPI.pauseTimer(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['timer-status'] });
+      loadTimerStatus();
+      showToast({ message: 'Timer mis en pause', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la pause', type: 'error' });
+    },
+  });
+
+  const resumeTimerMutation = useMutation({
+    mutationFn: () => timeEntriesAPI.resumeTimer(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['timer-status'] });
+      loadTimerStatus();
+      showToast({ message: 'Timer repris', type: 'success' });
+    },
+    onError: (err) => {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de la reprise', type: 'error' });
+    },
+  });
+
+  // Load timer status
+  const loadTimerStatus = useCallback(async () => {
+    try {
+      const status = await timeEntriesAPI.getTimerStatus();
+      setTimerStatus(status);
+      if (status.active) {
+        setShowTimerWidget(true);
+        setTimerElapsed(status.elapsed_seconds || 0);
+      }
+    } catch (err) {
+      // Silent fail - timer might not be available
+    }
+  }, []);
+
+  // Timer status query
+  useQuery({
+    queryKey: ['timer-status'],
+    queryFn: loadTimerStatus,
+    refetchInterval: timerStatus?.active && !timerStatus?.paused ? 1000 : false,
+  });
+
+  // Update timer elapsed every second when active
+  useEffect(() => {
+    if (timerStatus?.active && !timerStatus?.paused) {
+      const interval = setInterval(async () => {
+        try {
+          const status = await timeEntriesAPI.getTimerStatus();
+          setTimerElapsed(status.elapsed_seconds || 0);
+        } catch {
+          // Silent fail
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (timerStatus?.paused) {
+      setTimerElapsed(timerStatus.accumulated_seconds || 0);
+    }
+  }, [timerStatus?.active, timerStatus?.paused]);
+
+  // Load timer status on mount
+  useEffect(() => {
+    loadTimerStatus();
+  }, [loadTimerStatus]);
 
   const resetForm = () => {
     setFormData({
@@ -207,9 +354,34 @@ export default function FeuillesTempsPage() {
   };
 
   const handleSubmit = () => {
+    // Validation améliorée
     if (formData.duration <= 0) {
       showToast({ message: 'La durée doit être supérieure à 0', type: 'error' });
       return;
+    }
+
+    const entryDate = new Date(formData.date);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    if (entryDate > today) {
+      showToast({ message: 'La date ne peut pas être dans le futur', type: 'error' });
+      return;
+    }
+
+    const hours = formData.duration / 3600;
+    if (hours > 24) {
+      showToast({ message: 'La durée ne peut pas dépasser 24 heures', type: 'error' });
+      return;
+    }
+
+    // Validation des relations
+    if (formData.task_id && formData.project_id) {
+      const selectedTask = tasks.find(t => t.id === formData.task_id);
+      if (selectedTask && selectedTask.project_id !== formData.project_id) {
+        showToast({ message: 'La tâche sélectionnée n\'appartient pas au projet sélectionné', type: 'error' });
+        return;
+      }
     }
 
     if (selectedEntry) {
@@ -217,6 +389,61 @@ export default function FeuillesTempsPage() {
     } else {
       createMutation.mutate(formData);
     }
+  };
+
+  // Export functions
+  const handleExportCSV = () => {
+    const headers = ['Date', 'Durée (h)', 'Employé', 'Client', 'Projet', 'Tâche', 'Description'];
+    const rows = filteredData.flatMap((group: any) => 
+      group.entries.map((entry: TimeEntry) => [
+        new Date(entry.date).toLocaleDateString('fr-FR'),
+        (entry.duration / 3600).toFixed(2),
+        entry.user_name || '',
+        entry.client_name || '',
+        entry.project_name || '',
+        entry.task_title || '',
+        entry.description || ''
+      ])
+    );
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `feuilles-temps-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    showToast({ message: 'Export CSV réussi', type: 'success' });
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      // Simple CSV export for now (can be enhanced with Excel library)
+      handleExportCSV();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ message: appError.message || 'Erreur lors de l\'export', type: 'error' });
+    }
+  };
+
+  // Toggle group expansion
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
   };
 
   // Convert duration from hours to seconds for form
@@ -291,19 +518,45 @@ export default function FeuillesTempsPage() {
     return { total, totalHours, avgHours };
   }, [timeEntries]);
 
-  // Filter data based on search
+  // Filter data based on search (amélioré pour rechercher dans descriptions, tâches, projets)
   const filteredData = useMemo(() => {
     let data;
     if (viewMode === 'employee') {
-      data = entriesByEmployee.filter(group => 
-        !searchQuery || group.userName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      data = entriesByEmployee.filter(group => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return group.userName.toLowerCase().includes(query) ||
+          group.entries.some((entry: TimeEntry) =>
+            entry.description?.toLowerCase().includes(query) ||
+            entry.task_title?.toLowerCase().includes(query) ||
+            entry.project_name?.toLowerCase().includes(query) ||
+            entry.client_name?.toLowerCase().includes(query)
+          );
+      });
     } else if (viewMode === 'client') {
-      data = entriesByClient.filter(group => 
-        !searchQuery || group.clientName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      data = entriesByClient.filter(group => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return group.clientName.toLowerCase().includes(query) ||
+          group.entries.some((entry: TimeEntry) =>
+            entry.description?.toLowerCase().includes(query) ||
+            entry.task_title?.toLowerCase().includes(query) ||
+            entry.project_name?.toLowerCase().includes(query) ||
+            entry.user_name?.toLowerCase().includes(query)
+          );
+      });
     } else {
-      data = entriesByWeek;
+      data = entriesByWeek.filter(group => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return group.entries.some((entry: TimeEntry) =>
+          entry.description?.toLowerCase().includes(query) ||
+          entry.task_title?.toLowerCase().includes(query) ||
+          entry.project_name?.toLowerCase().includes(query) ||
+          entry.client_name?.toLowerCase().includes(query) ||
+          entry.user_name?.toLowerCase().includes(query)
+        );
+      });
     }
     return data;
   }, [viewMode, entriesByEmployee, entriesByClient, entriesByWeek, searchQuery]);
@@ -347,6 +600,71 @@ export default function FeuillesTempsPage() {
             </Button>
           </div>
         </div>
+
+        {/* Timer Widget */}
+        {showTimerWidget && timerStatus && (
+          <Card className="glass-card p-4 rounded-xl border-2 border-[#523DC9] bg-gradient-to-r from-[#523DC9]/10 to-[#5F2B75]/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-lg bg-[#523DC9] text-white">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Timer actif</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    {formatDuration(timerElapsed)}
+                  </div>
+                  {timerStatus.task_id && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Tâche: {tasks.find(t => t.id === timerStatus.task_id)?.title || `#${timerStatus.task_id}`}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {timerStatus.paused ? (
+                  <Button
+                    size="sm"
+                    onClick={() => resumeTimerMutation.mutate()}
+                    disabled={resumeTimerMutation.isPending}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Reprendre
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => pauseTimerMutation.mutate()}
+                    disabled={pauseTimerMutation.isPending}
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    Pause
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => {
+                    const description = timerStatus.description || prompt('Description (optionnel):') || undefined;
+                    stopTimerMutation.mutate(description);
+                  }}
+                  disabled={stopTimerMutation.isPending}
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  Arrêter
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowTimerWidget(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -453,22 +771,84 @@ export default function FeuillesTempsPage() {
                   className="w-full"
                 />
               </div>
-              {(startDate || endDate) && (
-                <div className="flex items-end">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Employé
+                </label>
+                <Select
+                  value={filterUserId?.toString() || ''}
+                  onChange={(e) => setFilterUserId(e.target.value ? parseInt(e.target.value) : null)}
+                  options={[
+                    { value: '', label: 'Tous les employés' },
+                    ...users.map(u => ({ value: u.id.toString(), label: u.name }))
+                  ]}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Projet
+                </label>
+                <Select
+                  value={filterProjectId?.toString() || ''}
+                  onChange={(e) => setFilterProjectId(e.target.value ? parseInt(e.target.value) : null)}
+                  options={[
+                    { value: '', label: 'Tous les projets' },
+                    ...projects.map(p => ({ value: p.id.toString(), label: p.name }))
+                  ]}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Tâche
+                </label>
+                <Select
+                  value={filterTaskId?.toString() || ''}
+                  onChange={(e) => setFilterTaskId(e.target.value ? parseInt(e.target.value) : null)}
+                  options={[
+                    { value: '', label: 'Toutes les tâches' },
+                    ...tasks
+                      .filter(t => !filterProjectId || t.project_id === filterProjectId)
+                      .map(t => ({ value: t.id.toString(), label: t.title }))
+                  ]}
+                />
+              </div>
+            </div>
+            {(startDate || endDate || filterUserId || filterProjectId || filterTaskId) && (
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setFilterUserId(null);
+                    setFilterProjectId(null);
+                    setFilterTaskId(null);
+                  }}
+                  size="sm"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Réinitialiser les filtres
+                </Button>
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setStartDate('');
-                      setEndDate('');
-                    }}
+                    onClick={handleExportCSV}
                     size="sm"
                   >
-                    <X className="w-4 h-4 mr-2" />
-                    Réinitialiser
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportExcel}
+                    size="sm"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter Excel
                   </Button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -588,7 +968,7 @@ export default function FeuillesTempsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {group.entries.slice(0, 8).map((entry: TimeEntry) => (
+                  {(expandedGroups.has(`client-${group.clientName}`) ? group.entries : group.entries.slice(0, 8)).map((entry: TimeEntry) => (
                     <div 
                       key={entry.id} 
                       className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
@@ -637,8 +1017,21 @@ export default function FeuillesTempsPage() {
                     </div>
                   ))}
                   {group.entries.length > 8 && (
-                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                      <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
+                    <div 
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => toggleGroup(`client-${group.clientName}`)}
+                    >
+                      {expandedGroups.has(`client-${group.clientName}`) ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 mr-2 text-gray-500" />
+                          <span className="text-sm text-gray-500">Voir moins</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 mr-2 text-gray-500" />
+                          <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -669,7 +1062,7 @@ export default function FeuillesTempsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {group.entries.slice(0, 8).map((entry: TimeEntry) => (
+                  {(expandedGroups.has(`week-${group.weekInfo.year}-W${group.weekInfo.week}`) ? group.entries : group.entries.slice(0, 8)).map((entry: TimeEntry) => (
                     <div 
                       key={entry.id} 
                       className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
@@ -718,13 +1111,40 @@ export default function FeuillesTempsPage() {
                     </div>
                   ))}
                   {group.entries.length > 8 && (
-                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                      <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
+                    <div 
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => toggleGroup(`week-${group.weekInfo.year}-W${group.weekInfo.week}`)}
+                    >
+                      {expandedGroups.has(`week-${group.weekInfo.year}-W${group.weekInfo.week}`) ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 mr-2 text-gray-500" />
+                          <span className="text-sm text-gray-500">Voir moins</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 mr-2 text-gray-500" />
+                          <span className="text-sm text-gray-500">+{group.entries.length - 8} autres</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
               </Card>
             ))}
+            
+            {/* Pagination - Load More Button */}
+            {hasNextPage && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  loading={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? 'Chargement...' : `Charger plus (${timeEntries.length} entrées chargées)`}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </MotionDiv>
@@ -804,7 +1224,18 @@ export default function FeuillesTempsPage() {
             </label>
             <Select
               value={formData.project_id?.toString() || ''}
-              onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
+              onChange={(e) => {
+                const newProjectId = e.target.value ? parseInt(e.target.value) : null;
+                // Réinitialiser la tâche si elle n'appartient pas au nouveau projet
+                let newTaskId = formData.task_id;
+                if (newProjectId && formData.task_id) {
+                  const selectedTask = tasks.find(t => t.id === formData.task_id);
+                  if (selectedTask && selectedTask.project_id !== newProjectId) {
+                    newTaskId = null;
+                  }
+                }
+                setFormData({ ...formData, project_id: newProjectId, task_id: newTaskId });
+              }}
               options={[
                 { value: '', label: 'Aucun projet' },
                 ...projects.map(p => ({ value: p.id.toString(), label: p.name }))
@@ -828,25 +1259,45 @@ export default function FeuillesTempsPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCreateModal(false);
-                setShowEditModal(false);
-                setSelectedEntry(null);
-                resetForm();
-              }}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              loading={createMutation.isPending || updateMutation.isPending}
-            >
-              {selectedEntry ? 'Modifier' : 'Créer'}
-            </Button>
+          <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            {!selectedEntry && formData.task_id && !timerStatus?.active && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  startTimerMutation.mutate({ 
+                    taskId: formData.task_id!, 
+                    description: formData.description || undefined 
+                  });
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                disabled={startTimerMutation.isPending}
+                className="text-[#523DC9] border-[#523DC9] hover:bg-[#523DC9]/10"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Démarrer le timer
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setShowEditModal(false);
+                  setSelectedEntry(null);
+                  resetForm();
+                }}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                loading={createMutation.isPending || updateMutation.isPending}
+              >
+                {selectedEntry ? 'Modifier' : 'Créer'}
+              </Button>
+            </div>
           </div>
         </div>
       </Modal>
