@@ -121,12 +121,33 @@ function CallbackContent() {
           tokenMatches: storedToken === accessToken
         });
         
-        logger.info('Redirecting to dashboard');
+        // Determine redirect URL based on role parameter or user role
+        const roleParam = searchParams.get('role');
+        const redirectParam = searchParams.get('redirect');
+        let redirectPath = '/dashboard'; // Default to dashboard
+        
+        // Check role parameter from URL (set by backend)
+        if (roleParam === 'employee') {
+          // Regular employee - redirect to employee portal
+          redirectPath = '/portail-employe';
+          logger.info('Redirecting to employee portal based on role parameter');
+        } else if (roleParam === 'admin' || userForStore.is_admin) {
+          // Admin/superadmin - redirect to ERP dashboard
+          redirectPath = redirectParam || '/dashboard';
+          logger.info('Redirecting to ERP dashboard (admin/superadmin)');
+        } else if (redirectParam) {
+          // Use redirect parameter if provided
+          redirectPath = redirectParam;
+          logger.info('Redirecting to custom path from redirect parameter');
+        } else {
+          // Default to dashboard
+          logger.info('Redirecting to dashboard (default)');
+        }
         
         // Small delay to ensure store is updated
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        router.push('/dashboard');
+        router.push(redirectPath);
       } else {
         throw new Error('No user data received');
       }

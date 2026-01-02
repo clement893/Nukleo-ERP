@@ -4,7 +4,7 @@ Authentication Endpoints
 
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import httpx
 import bcrypt
@@ -1138,35 +1138,43 @@ async def google_oauth_callback(
                 has_erp_access = await is_admin_or_superadmin(user, db)
                 logger.info(f"Employee {email} has ERP access: {has_erp_access}")
             
-            # Determine redirect URL
+            # Always redirect to /auth/callback - the frontend will handle role-based redirection
+            # This ensures the token is properly processed by the callback handler
             if state and state.startswith(("http://", "https://")):
-                # State is already a full URL, use it directly
-                frontend_url = state.rstrip("/")
-                redirect_url = f"{frontend_url}?token={jwt_token}&type=google"
-            elif is_nukleo_employee:
-                # @nukleo employee - redirect to employee portal or ERP dashboard based on role
-                if has_erp_access:
-                    # Admin/superadmin - redirect to ERP dashboard
-                    redirect_url = f"{frontend_base}/{default_locale}/dashboard?token={jwt_token}&type=google"
-                    logger.info(f"Redirecting @nukleo employee {email} (admin/superadmin) to ERP dashboard")
+                # State is already a full URL, but we still want to use callback for consistency
+                # Extract the path from the state URL if it's a frontend URL
+                parsed_state = urlparse(state)
+                if parsed_state.netloc and parsed_state.netloc in frontend_base:
+                    # State is a frontend URL, use callback
+                    redirect_url = f"{frontend_base}/{default_locale}/auth/callback?token={jwt_token}&type=google"
                 else:
-                    # Regular employee - redirect to employee portal
-                    redirect_url = f"{frontend_base}/{default_locale}/portail-employe?token={jwt_token}&type=google"
-                    logger.info(f"Redirecting @nukleo employee {email} to employee portal")
+                    # State is a different domain, use it directly
+                    redirect_url = f"{state}?token={jwt_token}&type=google"
             elif state:
                 # State is a relative path (e.g., "/auth/callback")
                 # Ensure it starts with / and doesn't end with /
                 state_path = state if state.startswith("/") else f"/{state}"
                 state_path = state_path.rstrip("/")
                 
-                # If state doesn't include locale, add it for next-intl compatibility
-                if not state_path.startswith(f"/{default_locale}/"):
-                    redirect_url = f"{frontend_base}/{default_locale}{state_path}?token={jwt_token}&type=google"
+                # If state is already /auth/callback, use it directly
+                if state_path.endswith("/auth/callback") or state_path == "/auth/callback":
+                    if not state_path.startswith(f"/{default_locale}/"):
+                        redirect_url = f"{frontend_base}/{default_locale}{state_path}?token={jwt_token}&type=google"
+                    else:
+                        redirect_url = f"{frontend_base}{state_path}?token={jwt_token}&type=google"
                 else:
-                    redirect_url = f"{frontend_base}{state_path}?token={jwt_token}&type=google"
+                    # Redirect to callback, which will handle the final redirect
+                    redirect_url = f"{frontend_base}/{default_locale}/auth/callback?token={jwt_token}&type=google&redirect={state_path}"
             else:
                 # No state provided, use default callback URL with locale
                 redirect_url = f"{frontend_base}/{default_locale}/auth/callback?token={jwt_token}&type=google"
+            
+            # Add role information to redirect URL for frontend to use
+            if is_nukleo_employee:
+                if has_erp_access:
+                    redirect_url += "&role=admin"
+                else:
+                    redirect_url += "&role=employee"
             
             logger.info(f"Google OAuth successful for user {email}, redirecting to {redirect_url}")
             
