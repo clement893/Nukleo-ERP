@@ -26,9 +26,24 @@ import { useInfiniteReseauTestimonials } from '@/lib/query/reseau-testimonials';
 
 export default function ReseauPage() {
   // Fetch data - using high limit to load all items
-  const { data: contactsData, isLoading: loadingContacts } = useInfiniteReseauContacts(10000);
-  const { data: companiesData, isLoading: loadingCompanies } = useInfiniteCompanies(10000);
-  const { data: testimonialsData, isLoading: loadingTestimonials } = useInfiniteReseauTestimonials(10000);
+  const { 
+    data: contactsData, 
+    isLoading: loadingContacts, 
+    error: contactsError,
+    refetch: refetchContacts 
+  } = useInfiniteReseauContacts(10000);
+  const { 
+    data: companiesData, 
+    isLoading: loadingCompanies,
+    error: companiesError,
+    refetch: refetchCompanies 
+  } = useInfiniteCompanies(10000);
+  const { 
+    data: testimonialsData, 
+    isLoading: loadingTestimonials,
+    error: testimonialsError,
+    refetch: refetchTestimonials 
+  } = useInfiniteReseauTestimonials(10000);
 
   // Flatten data
   const contacts = useMemo(() => contactsData?.pages.flat() || [], [contactsData]);
@@ -36,6 +51,7 @@ export default function ReseauPage() {
   const testimonials = useMemo(() => testimonialsData?.pages.flat() || [], [testimonialsData]);
 
   const loading = loadingContacts || loadingCompanies || loadingTestimonials;
+  const hasError = contactsError || companiesError || testimonialsError;
 
   // Calculate growth statistics (30 days)
   const stats = useMemo(() => {
@@ -243,6 +259,49 @@ export default function ReseauPage() {
     );
   }
 
+  // Handle errors
+  if (hasError) {
+    const errorMessages: string[] = [];
+    if (contactsError) errorMessages.push('Erreur lors du chargement des contacts');
+    if (companiesError) errorMessages.push('Erreur lors du chargement des entreprises');
+    if (testimonialsError) errorMessages.push('Erreur lors du chargement des témoignages');
+
+    return (
+      <PageContainer maxWidth="full">
+        <div className="flex flex-col items-center justify-center h-96 space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Erreur de chargement
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {errorMessages.join(', ')}
+            </p>
+            <div className="flex gap-2 justify-center">
+              {contactsError && (
+                <Button onClick={() => refetchContacts()} variant="outline" size="sm">
+                  Réessayer contacts
+                </Button>
+              )}
+              {companiesError && (
+                <Button onClick={() => refetchCompanies()} variant="outline" size="sm">
+                  Réessayer entreprises
+                </Button>
+              )}
+              {testimonialsError && (
+                <Button onClick={() => refetchTestimonials()} variant="outline" size="sm">
+                  Réessayer témoignages
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Check if all data is empty (no error, just no data)
+  const isEmpty = !loading && !hasError && contacts.length === 0 && companies.length === 0 && testimonials.length === 0;
+
   return (
     <PageContainer maxWidth="full" className="flex flex-col h-full">
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
@@ -359,6 +418,43 @@ export default function ReseauPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Contacts/Entreprise</div>
           </Card>
         </div>
+
+        {/* Empty State Message */}
+        {isEmpty && (
+          <Card className="glass-card p-8 rounded-xl border border-nukleo-lavender/20">
+            <div className="text-center">
+              <div className="mb-4">
+                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Aucune donnée réseau disponible
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Commencez par ajouter des contacts, entreprises ou témoignages pour voir les statistiques ici.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Link href="/dashboard/reseau/contacts">
+                    <Button variant="outline" className="hover-nukleo">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Ajouter un contact
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/reseau/entreprises">
+                    <Button variant="outline" className="hover-nukleo">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter une entreprise
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/reseau/temoignages">
+                    <Button variant="outline" className="hover-nukleo">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Ajouter un témoignage
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Evolution Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

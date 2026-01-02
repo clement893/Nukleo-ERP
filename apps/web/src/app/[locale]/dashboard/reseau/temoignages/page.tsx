@@ -106,7 +106,7 @@ function TemoignagesContent() {
     try {
       const [companiesData, contactsData] = await Promise.all([
         companiesAPI.list(0, 1000),
-        contactsAPI.list(0, 1000, false), // Inclure les photos pour les témoignages
+        contactsAPI.list(0, 1000, true), // Charger sans photos pour éviter le timeout
       ]);
       setAllCompanies(companiesData.map(c => ({ id: c.id, name: c.name || '' })));
       setAllContacts(contactsData.map(c => ({ 
@@ -120,6 +120,51 @@ function TemoignagesContent() {
       // Ne pas bloquer l'affichage si ça échoue
     }
   };
+
+  // Charger les photos pour les contacts utilisés dans les témoignages
+  useEffect(() => {
+    if (testimonials.length === 0 || allContacts.length === 0) return;
+    
+    const loadPhotosForTestimonialContacts = async () => {
+      // Récupérer les IDs des contacts utilisés dans les témoignages
+      const testimonialContactIds = new Set(
+        testimonials
+          .map(t => t.contact_id)
+          .filter((id): id is number => id !== null && id !== undefined)
+      );
+      
+      // Identifier les contacts qui n'ont pas de photo mais sont utilisés dans les témoignages
+      const contactsToLoad = allContacts.filter(
+        c => testimonialContactIds.has(c.id) && !c.photo_url
+      );
+      
+      if (contactsToLoad.length === 0) return;
+      
+      // Charger les photos individuellement pour ces contacts
+      const photoPromises = contactsToLoad.map(async (contact) => {
+        try {
+          const fullContact = await contactsAPI.get(contact.id);
+          if (fullContact.photo_url) {
+            setAllContacts(prev => 
+              prev.map(c => c.id === contact.id 
+                ? { ...c, photo_url: fullContact.photo_url } 
+                : c
+              )
+            );
+          }
+        } catch (err) {
+          // Ignorer les erreurs pour ne pas bloquer
+          logger.debug(`Failed to load photo for contact ${contact.id}`, err);
+        }
+      });
+      
+      await Promise.all(photoPromises);
+    };
+    
+    // Charger les photos en arrière-plan après un court délai
+    const timeoutId = setTimeout(loadPhotosForTestimonialContacts, 500);
+    return () => clearTimeout(timeoutId);
+  }, [testimonials, allContacts]);
 
   // Handler pour créer un témoignage
   const handleCreate = async () => {
@@ -479,21 +524,23 @@ function TemoignagesContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {/* Photo du contact - plus grande et visible */}
-                        {contactPhoto ? (
-                          <img
-                            src={contactPhoto}
-                            alt={contactName || 'Contact'}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-border"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.remove('hidden');
-                            }}
-                          />
-                        ) : null}
-                        <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center flex-shrink-0 ${contactPhoto ? 'hidden' : ''}`}>
-                          <User className="w-5 h-5 text-primary-500" />
+                        <div className="relative w-10 h-10 flex-shrink-0">
+                          {contactPhoto ? (
+                            <img
+                              src={contactPhoto}
+                              alt={contactName || 'Contact'}
+                              className="w-10 h-10 rounded-full object-cover border border-border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.parentElement?.querySelector('.photo-fallback') as HTMLElement;
+                                if (fallback) fallback.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center photo-fallback ${contactPhoto ? 'hidden absolute inset-0' : ''}`}>
+                            <User className="w-5 h-5 text-primary-500" />
+                          </div>
                         </div>
                         <h3 className="text-sm font-semibold group-hover:text-primary-500 transition-colors truncate flex-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                           {testimonial.title || 'Sans titre'}

@@ -650,7 +650,7 @@ export default function ProjetsPage() {
             )}
           </Card>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {filteredAndSortedProjects.map((project: Project) => {
               const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
               const progress = calculateProgress(project);
@@ -661,254 +661,125 @@ export default function ProjetsPage() {
               return (
                 <Card 
                   key={project.id}
-                  className={`glass-card p-6 rounded-xl border transition-all duration-200 cursor-pointer group ${
+                  className={`glass-card p-4 rounded-lg border transition-all duration-200 cursor-pointer group relative overflow-hidden ${
                     deadlineAlert?.label === 'En retard' 
-                      ? 'border-danger-500/30 hover:border-danger-500/50' 
+                      ? 'border-danger-500/30 hover:border-danger-500/50 hover:shadow-lg hover:shadow-danger-500/10' 
                       : deadlineAlert?.label === 'Échéance proche'
-                      ? 'border-warning-500/30 hover:border-warning-500/50'
-                      : 'border-nukleo-lavender/20 hover:border-primary-500/40'
-                  } hover:scale-[1.01]`}
+                      ? 'border-warning-500/30 hover:border-warning-500/50 hover:shadow-lg hover:shadow-warning-500/10'
+                      : 'border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-lg hover:shadow-primary-500/10'
+                  } hover:scale-[1.02]`}
                   onClick={() => handleView(project.id)}
                 >
-                  {/* Icons en haut de la carte */}
-                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                    {project.client_name && (
-                      <Users className="w-5 h-5 text-white drop-shadow-lg" />
-                    )}
-                    {project.responsable_name && (
-                      <UserCircle className="w-5 h-5 text-white drop-shadow-lg" />
-                    )}
-                    {project.equipe && (
-                      <Target className="w-5 h-5 text-white drop-shadow-lg" />
-                    )}
-                    {project.etape && (
-                      <FileText className="w-5 h-5 text-white drop-shadow-lg" />
-                    )}
-                  </div>
+                  {/* Status indicator bar */}
+                  <div className={`absolute top-0 left-0 right-0 h-1 ${
+                    project.status === 'ACTIVE' ? 'bg-primary-500' :
+                    project.status === 'COMPLETED' ? 'bg-success-500' :
+                    project.status === 'ARCHIVED' ? 'bg-gray-500' :
+                    'bg-warning-500'
+                  }`} />
 
-                  {/* Header avec statut et deadline alert */}
-                  <div className="flex items-start justify-between mb-4 gap-2">
+                  {/* Header compact */}
+                  <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-primary-500 transition-colors">
                         {project.name}
                       </h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={`${statusInfo.color} border`}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge className={`${statusInfo.color} border text-xs px-1.5 py-0.5`}>
                           {statusInfo.label}
                         </Badge>
                         {deadlineAlert && (
-                          <Badge className={`${deadlineAlert.color} border text-xs`}>
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            {deadlineAlert.label}
-                            {deadlineAlert.days !== undefined && ` (${deadlineAlert.days}j)`}
-                          </Badge>
-                        )}
-                        {project.temoignage_status && (
-                          <Badge className="bg-success-500/10 text-success-500 border-success-500/30 text-xs">
-                            Témoignage: {project.temoignage_status}
-                          </Badge>
-                        )}
-                        {project.portfolio_status && (
-                          <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30 text-xs">
-                            Portfolio: {project.portfolio_status}
+                          <Badge className={`${deadlineAlert.color} border text-xs px-1.5 py-0.5`}>
+                            <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                            {deadlineAlert.days !== undefined && `${deadlineAlert.days}j`}
                           </Badge>
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Description */}
-                  {project.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
-                      {project.description}
-                    </p>
-                  )}
-
-                  {/* Informations principales */}
-                  <div className="space-y-2 mb-4">
-                    {project.client_name && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Client:</span>
-                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.client_name}</span>
-                      </div>
-                    )}
-                    {project.responsable_name && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Responsable:</span>
-                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.responsable_name}</span>
-                      </div>
-                    )}
-                    {project.equipe && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Équipe:</span>
-                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.equipe}</span>
-                      </div>
-                    )}
-                    {project.etape && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Étape:</span>
-                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.etape}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Dates */}
-                  {(project.start_date || project.end_date || project.deadline || project.annee_realisation) && (
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700 mb-4">
-                      <div className="space-y-1.5">
-                        {project.deadline && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-gray-500 dark:text-gray-500">Échéance:</span>
-                            <span className="text-gray-700 dark:text-gray-300 font-medium">{formatDate(project.deadline)}</span>
-                          </div>
-                        )}
-                        {project.start_date && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-gray-500 dark:text-gray-500">Début:</span>
-                            <span className="text-gray-700 dark:text-gray-300">{formatDate(project.start_date)}</span>
-                          </div>
-                        )}
-                        {project.end_date && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-gray-500 dark:text-gray-500">Fin:</span>
-                            <span className="text-gray-700 dark:text-gray-300">{formatDate(project.end_date)}</span>
-                          </div>
-                        )}
-                        {project.annee_realisation && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-gray-500 dark:text-gray-500">Année:</span>
-                            <span className="text-gray-700 dark:text-gray-300">{project.annee_realisation}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Progression</span>
-                      <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                        {progress > 0 ? `${progress}%` : 'Non calculé'}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                      {progress > 0 ? (
-                        <div
-                          className={`${getProgressColor(progress)} h-2.5 rounded-full transition-all duration-300`}
-                          style={{ width: `${Math.max(Math.min(progress, 100), 0)}%` }}
-                        />
-                      ) : (
-                        <div className="w-full h-2.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Budget Info avec visualisation */}
-                  {budget > 0 && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mb-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Budget total</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(budget)}</span>
-                        </div>
-                        {spent > 0 && (
-                          <>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600 dark:text-gray-400">Dépensé</span>
-                              <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(spent)}</span>
-                            </div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden mt-2">
-                              <div
-                                className={`${getBudgetColor(spent, budget)} h-2 rounded-full transition-all duration-300`}
-                                style={{ width: `${Math.min((spent / budget) * 100, 100)}%` }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
-                              <span>{Math.round((spent / budget) * 100)}% du budget utilisé</span>
-                              <span>{formatCurrency(budget - spent)} restant</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Links externes */}
-                  {(project.proposal_url || project.drive_url || project.slack_url || project.echeancier_url) && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mb-4">
-                      <div className="flex flex-wrap gap-2">
-                        {project.proposal_url && (
-                          <a href={project.proposal_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs hover:bg-blue-500/20 transition-colors">
-                              <LinkIcon className="w-3 h-3 mr-1" />
-                              Proposition
-                            </Badge>
-                          </a>
-                        )}
-                        {project.drive_url && (
-                          <a href={project.drive_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 text-xs hover:bg-green-500/20 transition-colors">
-                              <LinkIcon className="w-3 h-3 mr-1" />
-                              Drive
-                            </Badge>
-                          </a>
-                        )}
-                        {project.slack_url && (
-                          <a href={project.slack_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 text-xs hover:bg-purple-500/20 transition-colors">
-                              <LinkIcon className="w-3 h-3 mr-1" />
-                              Slack
-                            </Badge>
-                          </a>
-                        )}
-                        {project.echeancier_url && (
-                          <a href={project.echeancier_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 text-xs hover:bg-orange-500/20 transition-colors">
-                              <LinkIcon className="w-3 h-3 mr-1" />
-                              Échéancier
-                            </Badge>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                    {/* Actions compactes */}
+                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         size="sm" 
                         variant="ghost" 
                         onClick={() => handleView(project.id)}
-                        className="h-8 w-8 p-0"
-                        title="Voir le projet"
+                        className="h-7 w-7 p-0"
+                        title="Voir"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" />
                       </Button>
                       <Button 
                         size="sm" 
                         variant="ghost" 
                         onClick={() => handleEdit(project)}
-                        className="h-8 w-8 p-0"
-                        title="Modifier le projet"
+                        className="h-7 w-7 p-0"
+                        title="Modifier"
                       >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => handleDelete(project.id)}
-                        className="h-8 w-8 p-0 text-danger-500 hover:text-danger-600 hover:bg-danger-500/10"
-                        title="Supprimer le projet"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Informations essentielles compactes */}
+                  <div className="space-y-1.5 mb-3">
+                    {project.client_name && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <Users className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{project.client_name}</span>
+                      </div>
+                    )}
+                    {project.etape && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <Target className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{project.etape}</span>
+                      </div>
+                    )}
+                    {project.deadline && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <Clock className="w-3 h-3 flex-shrink-0" />
+                        <span>{formatDate(project.deadline)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress Bar compacte */}
+                  {progress > 0 && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-500">Progression</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`${getProgressColor(progress)} h-1.5 rounded-full transition-all duration-300`}
+                          style={{ width: `${Math.max(Math.min(progress, 100), 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Budget compact */}
+                  {budget > 0 && (
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+                        <DollarSign className="w-3 h-3" />
+                        <span>Budget</span>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">{formatCurrency(budget)}</span>
+                    </div>
+                  )}
+
+                  {/* Badges supplémentaires au hover */}
+                  <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 flex-wrap max-w-[60%]">
+                    {project.temoignage_status && (
+                      <Badge className="bg-success-500/10 text-success-500 border-success-500/30 text-xs px-1.5 py-0.5">
+                        Témoignage
+                      </Badge>
+                    )}
+                    {project.portfolio_status && (
+                      <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30 text-xs px-1.5 py-0.5">
+                        Portfolio
+                      </Badge>
+                    )}
                   </div>
                 </Card>
               );
