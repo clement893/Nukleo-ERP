@@ -94,11 +94,11 @@ export const leoDocumentationAPI = {
    */
   get: async (docId: number): Promise<LeoDocumentation> => {
     const response = await apiClient.get<LeoDocumentation>(`/v1/leo-documentation/${docId}`);
-    const data = extractApiData(response);
+    const data = extractApiData<LeoDocumentation>(response);
     if (!data) {
       throw new Error(`Documentation entry ${docId} not found`);
     }
-    return data;
+    return data as LeoDocumentation;
   },
 
   /**
@@ -106,11 +106,11 @@ export const leoDocumentationAPI = {
    */
   create: async (data: LeoDocumentationCreate): Promise<LeoDocumentation> => {
     const response = await apiClient.post<LeoDocumentation>('/v1/leo-documentation', data);
-    const result = extractApiData(response);
+    const result = extractApiData<LeoDocumentation>(response);
     if (!result) {
       throw new Error('Failed to create documentation: no data returned');
     }
-    return result;
+    return result as LeoDocumentation;
   },
 
   /**
@@ -118,11 +118,11 @@ export const leoDocumentationAPI = {
    */
   update: async (docId: number, data: LeoDocumentationUpdate): Promise<LeoDocumentation> => {
     const response = await apiClient.put<LeoDocumentation>(`/v1/leo-documentation/${docId}`, data);
-    const result = extractApiData(response);
+    const result = extractApiData<LeoDocumentation>(response);
     if (!result) {
       throw new Error('Failed to update documentation: no data returned');
     }
-    return result;
+    return result as LeoDocumentation;
   },
 
   /**

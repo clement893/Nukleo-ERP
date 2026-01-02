@@ -218,14 +218,14 @@ function TeamProjectManagementContent() {
   
   // Load tasks for this team
   const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useProjectTasks({
-    team_id: team?.id,
-    enabled: !!team?.id,
+    team_id: team && typeof team === 'object' && 'id' in team ? (team as { id: number }).id : undefined,
+    enabled: !!(team && typeof team === 'object' && 'id' in team),
   });
   
   // Load employees for this team
   const { data: employeesData = [], isLoading: employeesLoading } = useEmployees({
-    team_id: team?.id,
-    enabled: !!team?.id,
+    team_id: team && typeof team === 'object' && 'id' in team ? (team as { id: number }).id : undefined,
+    enabled: !!(team && typeof team === 'object' && 'id' in team),
   });
   
   const loading = teamLoading || tasksLoading || employeesLoading;
@@ -470,7 +470,7 @@ function TeamProjectManagementContent() {
                 </div>
                 <div>
                   <h1 className="text-4xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    {team.name}
+                    {team && typeof team === 'object' && 'name' in team ? (team as { name: string }).name : 'Équipe'}
                   </h1>
                   <p className="text-white/80 text-lg">{employees.length} membres • {tasks.length} tâches</p>
                 </div>

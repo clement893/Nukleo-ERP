@@ -23,10 +23,10 @@ export const insightsAPI = {
    */
   get: async (): Promise<InsightsResponse> => {
     const response = await apiClient.get<InsightsResponse>('/v1/insights');
-    const data = extractApiData(response);
+    const data = extractApiData<InsightsResponse>(response);
     if (!data) {
       throw new Error('Failed to load insights: no data returned');
     }
-    return data;
+    return data as InsightsResponse;
   },
 };

@@ -80,11 +80,11 @@ export const postsAPI = {
    */
   getBySlug: async (slug: string): Promise<BlogPost> => {
     const response = await apiClient.get<BlogPost>(`/v1/posts/${slug}`);
-    const data = extractApiData(response);
+    const data = extractApiData<BlogPost>(response);
     if (!data) {
       throw new Error(`Post not found: ${slug}`);
     }
-    return data;
+    return data as BlogPost;
   },
 
   /**
@@ -105,11 +105,11 @@ export const postsAPI = {
    */
   create: async (data: PostCreate): Promise<BlogPost> => {
     const response = await apiClient.post<BlogPost>('/v1/posts', data);
-    const result = extractApiData(response);
+    const result = extractApiData<BlogPost>(response);
     if (!result) {
       throw new Error('Failed to create post: no data returned');
     }
-    return result;
+    return result as BlogPost;
   },
 
   /**
@@ -117,11 +117,11 @@ export const postsAPI = {
    */
   update: async (id: number, data: PostUpdate): Promise<BlogPost> => {
     const response = await apiClient.put<BlogPost>(`/v1/posts/${id}`, data);
-    const result = extractApiData(response);
+    const result = extractApiData<BlogPost>(response);
     if (!result) {
       throw new Error('Failed to update post: no data returned');
     }
-    return result;
+    return result as BlogPost;
   },
 
   /**

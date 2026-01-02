@@ -78,11 +78,11 @@ export const leoAgentAPI = {
    */
   getConversation: async (conversationId: number): Promise<LeoConversation> => {
     const response = await apiClient.get<LeoConversation>(`/v1/ai/leo/conversations/${conversationId}`);
-    const data = extractApiData(response);
+    const data = extractApiData<LeoConversation>(response);
     if (!data) {
       throw new Error(`Conversation ${conversationId} not found`);
     }
-    return data;
+    return data as LeoConversation;
   },
 
   /**
@@ -100,11 +100,11 @@ export const leoAgentAPI = {
    */
   query: async (request: LeoQueryRequest): Promise<LeoQueryResponse> => {
     const response = await apiClient.post<LeoQueryResponse>('/v1/ai/leo/query', request);
-    const result = extractApiData(response);
+    const result = extractApiData<LeoQueryResponse>(response);
     if (!result) {
       throw new Error('Failed to get response from Leo: no data returned');
     }
-    return result;
+    return result as LeoQueryResponse;
   },
 
   /**
@@ -118,11 +118,11 @@ export const leoAgentAPI = {
       `/v1/ai/leo/conversations/${conversationId}`,
       updateData
     );
-    const data = extractApiData(response);
+    const data = extractApiData<LeoConversation>(response);
     if (!data) {
       throw new Error(`Failed to update conversation ${conversationId}`);
     }
-    return data;
+    return data as LeoConversation;
   },
 
   /**

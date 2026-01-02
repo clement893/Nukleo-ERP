@@ -212,11 +212,25 @@ export const transactionsAPI = {
       },
     });
     
-    const data = extractApiData(response);
+    const data = extractApiData<{
+      success: boolean;
+      created_count: number;
+      error_count: number;
+      errors: Array<{ row: number; data: unknown; error: string }>;
+      warnings?: Array<{ row: number; type: string; message: string }>;
+      transactions?: Transaction[];
+    }>(response);
     if (!data) {
       throw new Error('Failed to import transactions: no data returned');
     }
-    return data;
+    return data as {
+      success: boolean;
+      created_count: number;
+      error_count: number;
+      errors: Array<{ row: number; data: unknown; error: string }>;
+      warnings?: Array<{ row: number; type: string; message: string }>;
+      transactions?: Transaction[];
+    };
   },
 
   /**

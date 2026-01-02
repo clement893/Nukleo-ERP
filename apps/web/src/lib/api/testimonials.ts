@@ -169,9 +169,18 @@ export const testimonialsAPI = {
       },
     });
     
-    const data = extractApiData(response);
+    const data = extractApiData<{
+      total_rows: number;
+      valid_rows: number;
+      invalid_rows: number;
+      errors: any[];
+      warnings: any[];
+      logos_uploaded: number;
+      import_id: string;
+      data: Testimonial[];
+    }>(response);
     
-    return data || {
+    return (data || {
       total_rows: 0,
       valid_rows: 0,
       invalid_rows: 0,
@@ -180,6 +189,15 @@ export const testimonialsAPI = {
       logos_uploaded: 0,
       import_id: importId || '',
       data: [],
+    }) as {
+      total_rows: number;
+      valid_rows: number;
+      invalid_rows: number;
+      errors: any[];
+      warnings: any[];
+      logos_uploaded: number;
+      import_id: string;
+      data: Testimonial[];
     };
   },
 

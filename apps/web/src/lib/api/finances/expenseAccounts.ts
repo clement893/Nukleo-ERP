@@ -329,10 +329,34 @@ export const expenseAccountsAPI = {
         },
       }
     );
-    const data = extractApiData(response);
+    const data = extractApiData<{
+      success: boolean;
+      message: string;
+      attachment: {
+        file_key: string;
+        url: string;
+        filename: string;
+        size: number;
+        content_type: string;
+        uploaded_at: string;
+        uploaded_by: number;
+      };
+    }>(response);
     if (!data || !data.success) {
       throw new Error('Failed to upload attachment: no data returned');
     }
-    return data;
+    return data as {
+      success: boolean;
+      message: string;
+      attachment: {
+        file_key: string;
+        url: string;
+        filename: string;
+        size: number;
+        content_type: string;
+        uploaded_at: string;
+        uploaded_by: number;
+      };
+    };
   },
 };

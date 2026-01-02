@@ -107,6 +107,16 @@ export async function fetchOpportunitiesStats(): Promise<{
     avg_probability: number;
   }>('/v1/commercial/opportunities/stats');
   
-  const data = extractApiData(response);
-  return data;
+  const data = extractApiData<{
+    total: number;
+    by_stage: Record<string, number>;
+    total_amount: number;
+    avg_probability: number;
+  }>(response);
+  return data as {
+    total: number;
+    by_stage: Record<string, number>;
+    total_amount: number;
+    avg_probability: number;
+  };
 }

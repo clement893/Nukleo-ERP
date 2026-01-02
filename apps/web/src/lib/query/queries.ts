@@ -264,12 +264,12 @@ export function useCreateTeam() {
   return useMutation({
     mutationFn: async (data: { name: string; slug: string; description?: string }) => {
       const response = await teamsAPIClient.create(data);
-      return extractApiData(response);
+      return extractApiData<{ id: number; name: string; slug: string; description?: string }>(response) as { id: number; name: string; slug: string; description?: string };
     },
     onSuccess: (newTeam) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
-      if (newTeam?.slug) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.teams.bySlug(newTeam.slug) });
+      if (newTeam && typeof newTeam === 'object' && 'slug' in newTeam && newTeam.slug) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.teams.bySlug(newTeam.slug as string) });
       }
     },
   });

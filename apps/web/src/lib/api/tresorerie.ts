@@ -179,29 +179,29 @@ export const tresorerieAPI = {
 
   getBankAccount: async (id: number): Promise<BankAccount> => {
     const response = await apiClient.get<BankAccount>(`/v1/finances/tresorerie/accounts/${id}`);
-    const data = extractApiData(response);
+    const data = extractApiData<BankAccount>(response);
     if (!data) {
       throw new Error(`Bank account not found: ${id}`);
     }
-    return data;
+    return data as BankAccount;
   },
 
   createBankAccount: async (data: BankAccountCreate): Promise<BankAccount> => {
     const response = await apiClient.post<BankAccount>('/v1/finances/tresorerie/accounts', data);
-    const result = extractApiData(response);
+    const result = extractApiData<BankAccount>(response);
     if (!result) {
       throw new Error('Failed to create bank account: no data returned');
     }
-    return result;
+    return result as BankAccount;
   },
 
   updateBankAccount: async (id: number, data: BankAccountUpdate): Promise<BankAccount> => {
     const response = await apiClient.put<BankAccount>(`/v1/finances/tresorerie/accounts/${id}`, data);
-    const result = extractApiData(response);
+    const result = extractApiData<BankAccount>(response);
     if (!result) {
       throw new Error('Failed to update bank account: no data returned');
     }
-    return result;
+    return result as BankAccount;
   },
 
   deleteBankAccount: async (id: number): Promise<void> => {
@@ -218,20 +218,20 @@ export const tresorerieAPI = {
 
   createCategory: async (data: TransactionCategoryCreate): Promise<TransactionCategory> => {
     const response = await apiClient.post<TransactionCategory>('/v1/finances/tresorerie/categories', data);
-    const result = extractApiData(response);
+    const result = extractApiData<TransactionCategory>(response);
     if (!result) {
       throw new Error('Failed to create category: no data returned');
     }
-    return result;
+    return result as TransactionCategory;
   },
 
   updateCategory: async (id: number, data: TransactionCategoryUpdate): Promise<TransactionCategory> => {
     const response = await apiClient.put<TransactionCategory>(`/v1/finances/tresorerie/categories/${id}`, data);
-    const result = extractApiData(response);
+    const result = extractApiData<TransactionCategory>(response);
     if (!result) {
       throw new Error('Failed to update category: no data returned');
     }
-    return result;
+    return result as TransactionCategory;
   },
 
   deleteCategory: async (id: number): Promise<void> => {
@@ -257,29 +257,29 @@ export const tresorerieAPI = {
 
   getTransaction: async (id: number): Promise<Transaction> => {
     const response = await apiClient.get<Transaction>(`/v1/finances/tresorerie/transactions/${id}`);
-    const data = extractApiData(response);
+    const data = extractApiData<Transaction>(response);
     if (!data) {
       throw new Error(`Transaction not found: ${id}`);
     }
-    return data;
+    return data as Transaction;
   },
 
   createTransaction: async (data: TransactionCreate): Promise<Transaction> => {
     const response = await apiClient.post<Transaction>('/v1/finances/tresorerie/transactions', data);
-    const result = extractApiData(response);
+    const result = extractApiData<Transaction>(response);
     if (!result) {
       throw new Error('Failed to create transaction: no data returned');
     }
-    return result;
+    return result as Transaction;
   },
 
   updateTransaction: async (id: number, data: TransactionUpdate): Promise<Transaction> => {
     const response = await apiClient.put<Transaction>(`/v1/finances/tresorerie/transactions/${id}`, data);
-    const result = extractApiData(response);
+    const result = extractApiData<Transaction>(response);
     if (!result) {
       throw new Error('Failed to update transaction: no data returned');
     }
-    return result;
+    return result as Transaction;
   },
 
   deleteTransaction: async (id: number): Promise<void> => {
@@ -295,11 +295,11 @@ export const tresorerieAPI = {
     const response = await apiClient.get<CashflowResponse>('/v1/finances/tresorerie/cashflow/weekly', {
       params,
     });
-    const data = extractApiData(response);
+    const data = extractApiData<CashflowResponse>(response);
     if (!data) {
       throw new Error('Failed to get cashflow');
     }
-    return data;
+    return data as CashflowResponse;
   },
 
   getStats: async (params?: {
@@ -309,11 +309,11 @@ export const tresorerieAPI = {
     const response = await apiClient.get<TreasuryStats>('/v1/finances/tresorerie/stats', {
       params,
     });
-    const data = extractApiData(response);
+    const data = extractApiData<TreasuryStats>(response);
     if (!data) {
       throw new Error('Failed to get stats');
     }
-    return data;
+    return data as TreasuryStats;
   },
 
   // Forecast
@@ -335,11 +335,11 @@ export const tresorerieAPI = {
     const response = await apiClient.get<ForecastResponse>('/v1/finances/tresorerie/forecast/detailed', {
       params,
     });
-    const data = extractApiData(response);
+    const data = extractApiData<ForecastResponse>(response);
     if (!data) {
       throw new Error('Failed to get forecast');
     }
-    return data;
+    return data as ForecastResponse;
   },
 
   getRevenueForecast: async (params?: {
@@ -358,11 +358,11 @@ export const tresorerieAPI = {
     const response = await apiClient.get<AlertResponse>('/v1/finances/tresorerie/alerts', {
       params,
     });
-    const data = extractApiData(response);
+    const data = extractApiData<AlertResponse>(response);
     if (!data) {
       throw new Error('Failed to get alerts');
     }
-    return data;
+    return data as AlertResponse;
   },
 
   // Integration
@@ -446,8 +446,26 @@ export const tresorerieAPI = {
       },
     });
 
-    const data = extractApiData(response);
-    if (!data) {
+    const data = extractApiData<{
+      success?: boolean;
+      total_rows: number;
+      valid_rows: number;
+      invalid_rows: number;
+      created_count?: number;
+      errors?: Array<{ row: any; error: string }>;
+      warnings?: Array<{ row: any; warning: string }>;
+      instructions?: string;
+      transactions?: Array<{
+        id: number;
+        type: string;
+        amount: number;
+        date: string;
+        description: string;
+      }>;
+      dry_run?: boolean;
+      preview?: any[];
+    }>(response);
+    if (!data || typeof data !== 'object') {
       throw new Error('Failed to import transactions');
     }
     return {
