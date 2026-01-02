@@ -705,6 +705,32 @@ async def create_payment(
     await db.commit()
     await db.refresh(payment)
     
+    # Update corresponding revenue transaction
+    try:
+        transaction_result = await db.execute(
+            select(Transaction)
+            .where(Transaction.invoice_number == invoice.invoice_number)
+            .where(Transaction.user_id == current_user.id)
+            .where(Transaction.type == TransactionType.REVENUE)
+        )
+        transaction = transaction_result.scalar_one_or_none()
+        
+        if transaction:
+            # Update transaction status based on payment
+            if invoice.amount_paid >= invoice.total:
+                transaction.status = TransactionStatus.PAID
+                transaction.payment_date = payment_data.payment_date
+            elif invoice.amount_paid > 0:
+                # Partial payment - keep as pending but update notes
+                transaction.notes = f"Facture {invoice.invoice_number} - Paiement partiel: {invoice.amount_paid} / {invoice.total}"
+            
+            await db.commit()
+            await db.refresh(transaction)
+            logger.info(f"Updated revenue transaction {transaction.id} for invoice {invoice.invoice_number}")
+    except Exception as e:
+        # Log error but don't fail payment creation
+        logger.error(f"Failed to update revenue transaction for invoice {invoice.invoice_number}: {e}", exc_info=True)
+    
     # Create notification for invoice payment
     try:
         # Check if invoice is fully paid
