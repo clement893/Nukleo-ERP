@@ -5,11 +5,14 @@ import asyncio
 import sys
 import os
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add parent directory (backend) and root directory to path
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+root_dir = os.path.dirname(backend_dir)
+sys.path.insert(0, backend_dir)
+sys.path.insert(0, root_dir)
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import async_session_maker
+from app.core.database import AsyncSessionLocal
 from sqlalchemy import select
 from app.core.logging import logger
 
@@ -121,7 +124,7 @@ async def find_employee_by_name(db: AsyncSession, full_name: str) -> Employee | 
 
 async def update_employees():
     """Update employees with their numbers and teams"""
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         try:
             # Get unique team names
             team_names = set()
