@@ -1236,10 +1236,53 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
   const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
   const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [filteredTasks, setFilteredTasks] = useState<ProjectTask[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     loadTasks();
+    loadProjects();
   }, [employeeId]);
+
+  useEffect(() => {
+    filterTasks();
+  }, [tasks, statusFilter, searchQuery]);
+
+  const loadProjects = async () => {
+    try {
+      const data = await projectsAPI.list();
+      const projectsList = Array.isArray(data) ? data : (data?.data || []);
+      setProjects(projectsList);
+    } catch (err) {
+      // Ignore errors for projects
+      logger.debug('Failed to load projects', err);
+    }
+  };
+
+  const filterTasks = () => {
+    let filtered = tasks;
+    
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(t => t.status === statusFilter);
+    }
+    
+    if (searchQuery) {
+      filtered = filtered.filter(t => 
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+    
+    setFilteredTasks(filtered);
+  };
+
+  const getProjectName = (projectId: number | null | undefined): string => {
+    if (!projectId) return '';
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || '';
+  };
 
   const loadTasks = async () => {
     try {

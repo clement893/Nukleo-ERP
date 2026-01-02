@@ -231,53 +231,61 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
     );
   }
 
+  // Calculate statistics
+  const totalDays = useMemo(() => {
+    return requests.reduce((sum, v) => {
+      return sum + calculateDays(v.start_date, v.end_date);
+    }, 0);
+  }, [requests]);
+
+  const approvedDays = useMemo(() => {
+    return approvedRequests.reduce((sum, v) => {
+      return sum + calculateDays(v.start_date, v.end_date);
+    }, 0);
+  }, [approvedRequests]);
+
+  const getStatusBadge = (status: string) => {
+    const badges = {
+      pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+      approved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+      rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    };
+    return badges[status as keyof typeof badges] || badges.pending;
+  };
+
+  const getStatusIcon = (status: string) => {
+    if (status === 'approved') return <CheckCircle className="w-4 h-4" />;
+    if (status === 'rejected') return <XCircle className="w-4 h-4" />;
+    return <Clock className="w-4 h-4" />;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header with create button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Mes demandes de vacances</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gérez vos demandes de vacances
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nouvelle demande
-        </Button>
-      </div>
-
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">En attente</p>
-              <p className="text-2xl font-bold mt-1">{pendingRequests.length}</p>
-            </div>
-            <Clock className="w-8 h-8 text-yellow-500" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {totalDays}
           </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Total demandé</div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Approuvées</p>
-              <p className="text-2xl font-bold mt-1">{approvedRequests.length}</p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="text-3xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {approvedDays}
           </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Jours approuvés</div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Rejetées</p>
-              <p className="text-2xl font-bold mt-1">{rejectedRequests.length}</p>
-            </div>
-            <XCircle className="w-8 h-8 text-red-500" />
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="text-3xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {pendingRequests.length}
           </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
+        </Card>
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="text-3xl font-bold mb-1 text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {25 - approvedDays}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Jours disponibles</div>
         </Card>
       </div>
 
@@ -287,12 +295,11 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
           <Loading />
         </div>
       ) : requests.length === 0 ? (
-        <Card className="p-8 text-center">
-          <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Aucune demande de vacances</p>
+        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune demande de vacances</p>
           <Button
-            variant="outline"
-            className="mt-4"
+            className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
             onClick={() => setShowCreateModal(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -300,13 +307,50 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
           </Button>
         </Card>
       ) : (
-        <Card>
-          <DataTable
-            data={requests as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            pagination={false}
-          />
-        </Card>
+        <div className="space-y-4">
+          {requests.map((vacation) => {
+            const start = new Date(vacation.start_date);
+            const end = new Date(vacation.end_date);
+            const days = calculateDays(vacation.start_date, vacation.end_date);
+            
+            return (
+              <Card key={vacation.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Calendar className="w-5 h-5 text-[#523DC9]" />
+                      <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                        {vacation.reason || 'Vacances'}
+                      </h3>
+                      <span className={`flex items-center gap-1 text-xs px-3 py-1 rounded-full ${getStatusBadge(vacation.status)}`}>
+                        {getStatusIcon(vacation.status)}
+                        {vacation.status === 'approved' ? 'Approuvé' : vacation.status === 'rejected' ? 'Refusé' : 'En attente'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      Du {start.toLocaleDateString('fr-FR')} au {end.toLocaleDateString('fr-FR')} • {days} jour{days > 1 ? 's' : ''}
+                    </div>
+                    {vacation.rejection_reason && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{vacation.rejection_reason}</p>
+                    )}
+                  </div>
+                  {vacation.status === 'pending' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(vacation)}
+                      disabled={deleteMutation.isPending}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Supprimer
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       {/* Create Modal */}
@@ -323,6 +367,31 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
         }}
         title="Nouvelle demande de vacances"
         size="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateModal(false);
+                setFormData({
+                  employee_id: employee.id,
+                  start_date: '',
+                  end_date: '',
+                  reason: '',
+                });
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleCreate}
+              disabled={createMutation.isPending || !formData.start_date || !formData.end_date}
+              className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+            >
+              {createMutation.isPending ? 'Création...' : 'Créer la demande'}
+            </Button>
+          </div>
+        }
       >
         <div className="space-y-4">
           <div>
@@ -369,28 +438,6 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCreateModal(false);
-                setFormData({
-                  employee_id: employee.id,
-                  start_date: '',
-                  end_date: '',
-                  reason: '',
-                });
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending || !formData.start_date || !formData.end_date}
-            >
-              {createMutation.isPending ? 'Création...' : 'Créer la demande'}
-            </Button>
-          </div>
         </div>
       </Modal>
     </div>
