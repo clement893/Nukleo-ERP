@@ -27,11 +27,13 @@ import {
   useSetUnderReview,
 } from '@/lib/query/expenseAccounts';
 import { handleApiError } from '@/lib/errors/api';
+import { useAuthStore } from '@/lib/store';
 
 export default function MesDepenses() {
   const searchParams = useSearchParams();
   const employeeIdParam = searchParams.get('employee_id');
   const employeeId = employeeIdParam ? parseInt(employeeIdParam) : undefined;
+  const { user } = useAuthStore();
   const { showToast } = useToast();
   
   const [loading, setLoading] = useState(true);

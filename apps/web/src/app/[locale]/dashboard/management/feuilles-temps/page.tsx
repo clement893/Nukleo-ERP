@@ -27,7 +27,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { Button, Card, Input, Loading, Textarea, Select, useToast, Badge } from '@/components/ui';
+import { Button, Card, Input, Loading, Textarea, Select, useToast } from '@/components/ui';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpdate, type TimerStatus } from '@/lib/api/time-entries';
 import { projectsAPI } from '@/lib/api/projects';

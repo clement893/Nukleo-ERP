@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, Award, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 

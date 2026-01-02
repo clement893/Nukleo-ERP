@@ -190,7 +190,7 @@ export default function EventDetailModal({
             </h4>
             <div className="flex flex-wrap gap-2">
               {event.attendees.map((attendee, index) => (
-                <Badge key={index} variant="outline">
+                <Badge key={index} variant="default">
                   {attendee}
                 </Badge>
               ))}

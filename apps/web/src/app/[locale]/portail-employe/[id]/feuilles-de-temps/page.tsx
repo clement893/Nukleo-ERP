@@ -124,7 +124,7 @@ export default function MesFeuillesDeTemps() {
 
       <div className="space-y-4">
         {Object.entries(groupedByDate).sort(([a], [b]) => b.localeCompare(a)).map(([date, entries]) => {
-          const dayTotal = entries.reduce((sum, e) => sum + ((e.duration || 0) / 3600), 0);
+          const dayTotal = (entries as TimeEntry[]).reduce((sum: number, e: TimeEntry) => sum + ((e.duration || 0) / 3600), 0);
           
           return (
             <Card key={date} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
@@ -139,17 +139,17 @@ export default function MesFeuillesDeTemps() {
               </div>
 
               <div className="space-y-3">
-                {entries.map((entry: TimeEntry) => (
+                {(entries as TimeEntry[]).map((entry: TimeEntry) => (
                   <div key={entry.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <div className="flex-1">
-                      <div className="font-medium mb-1">{getProjectName(entry.project_id)}</div>
+                      <div className="font-medium mb-1">{getProjectName(entry.project_id || 0)}</div>
                       {entry.description && (
                         <p className="text-sm text-gray-600 dark:text-gray-400">{entry.description}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="font-bold text-blue-600">{entry.hours}h</span>
+                      <span className="font-bold text-blue-600">{((entry.duration || 0) / 3600).toFixed(1)}h</span>
                     </div>
                   </div>
                 ))}
