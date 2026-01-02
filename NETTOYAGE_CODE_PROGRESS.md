@@ -11,7 +11,7 @@
 |-------|-------------|--------|----------|-------------|
 | **Batch 1** | Suppression fichiers backup/old | ✅ Terminé | 36 fichiers | 100% |
 | **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
-| **Batch 3** | Correction `any` error handling | 🟡 En cours | ~60 fichiers | 5% |
+| **Batch 3** | Correction `any` error handling | ✅ Terminé | 3 fichiers | 100% |
 | **Batch 4** | Optimisation hooks React | ⏳ En attente | ~50 fichiers | 0% |
 | **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
 
@@ -77,12 +77,17 @@
 
 **Fichiers ciblés:** ~60 fichiers
 
-**Fichiers identifiés avec `any` explicite:** 3 fichiers
-- `apps/web/src/app/[locale]/dashboard/leo/page.tsx`
-- `apps/web/src/app/[locale]/dashboard/projets/equipes/page.tsx`
-- `apps/web/src/app/[locale]/dashboard/tresorerie-demo/page.tsx`
+**Fichiers traités:** 3/3 fichiers
+- ✅ `apps/web/src/app/[locale]/dashboard/leo/page.tsx` (1 `any` corrigé)
+- ✅ `apps/web/src/app/[locale]/dashboard/projets/equipes/page.tsx` (1 `any` corrigé avec type guard)
+- ✅ `apps/web/src/app/[locale]/dashboard/tresorerie-demo/page.tsx` (2 `any` corrigés avec instanceof check)
 
-**Statut:** 🟡 En cours  
+**Actions effectuées:**
+- ✅ Remplacement de `error: any` par `error: unknown`
+- ✅ Ajout de type guards appropriés (`instanceof Error`, type assertions pour Axios)
+- ✅ Utilisation correcte de `handleApiError` avec `unknown`
+
+**Statut:** ✅ Terminé  
 **Dernière mise à jour:** 2025-01-27
 
 ---
@@ -109,9 +114,9 @@
 
 ## 📈 Métriques
 
-- **Fichiers traités:** 44/274 (16%)
-- **Lignes modifiées:** ~16,600 supprimées, ~250 modifiées
-- **Erreurs corrigées:** 35 console.log/error/warn/debug remplacés
+- **Fichiers traités:** 47/274 (17%)
+- **Lignes modifiées:** ~16,600 supprimées, ~270 modifiées
+- **Erreurs corrigées:** 35 console.log remplacés, 4 `any` corrigés
 - **Temps écoulé:** ~15 min
 
 ---
