@@ -670,6 +670,22 @@ export default function ProjetsPage() {
                   } hover:scale-[1.01]`}
                   onClick={() => handleView(project.id)}
                 >
+                  {/* Icons en haut de la carte */}
+                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    {project.client_name && (
+                      <Users className="w-5 h-5 text-white drop-shadow-lg" />
+                    )}
+                    {project.responsable_name && (
+                      <UserCircle className="w-5 h-5 text-white drop-shadow-lg" />
+                    )}
+                    {project.equipe && (
+                      <Target className="w-5 h-5 text-white drop-shadow-lg" />
+                    )}
+                    {project.etape && (
+                      <FileText className="w-5 h-5 text-white drop-shadow-lg" />
+                    )}
+                  </div>
+
                   {/* Header avec statut et deadline alert */}
                   <div className="flex items-start justify-between mb-4 gap-2">
                     <div className="flex-1 min-w-0">
@@ -712,28 +728,24 @@ export default function ProjetsPage() {
                   <div className="space-y-2 mb-4">
                     {project.client_name && (
                       <div className="flex items-center gap-2 text-sm">
-                        <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="text-gray-700 dark:text-gray-300 font-medium">Client:</span>
                         <span className="text-gray-600 dark:text-gray-400 truncate">{project.client_name}</span>
                       </div>
                     )}
                     {project.responsable_name && (
                       <div className="flex items-center gap-2 text-sm">
-                        <UserCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="text-gray-700 dark:text-gray-300 font-medium">Responsable:</span>
                         <span className="text-gray-600 dark:text-gray-400 truncate">{project.responsable_name}</span>
                       </div>
                     )}
                     {project.equipe && (
                       <div className="flex items-center gap-2 text-sm">
-                        <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="text-gray-700 dark:text-gray-300 font-medium">Équipe:</span>
                         <span className="text-gray-600 dark:text-gray-400 truncate">{project.equipe}</span>
                       </div>
                     )}
                     {project.etape && (
                       <div className="flex items-center gap-2 text-sm">
-                        <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="text-gray-700 dark:text-gray-300 font-medium">Étape:</span>
                         <span className="text-gray-600 dark:text-gray-400 truncate">{project.etape}</span>
                       </div>
