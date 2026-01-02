@@ -918,9 +918,9 @@ export default function PipelineDetailPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(totalValue)}
+              {formatCurrency(totalValueEnCours)}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale (en cours)</div>
           </div>
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
@@ -930,9 +930,9 @@ export default function PipelineDetailPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {opportunities.length}
+              {activeOpportunities.length}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Opportunités</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{activeOpportunities.length} opportunité{activeOpportunities.length > 1 ? 's' : ''} ACTIVE{activeOpportunities.length > 1 ? 'S' : ''}</div>
           </div>
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
@@ -942,9 +942,9 @@ export default function PipelineDetailPage() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(weightedValue)}
+              {formatCurrency(totalClosedWon)}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur pondérée</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total Closed won</div>
           </div>
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
