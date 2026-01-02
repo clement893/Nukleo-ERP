@@ -178,16 +178,16 @@ function OpportunitiesContent() {
   }, [filteredOpportunities]);
 
   // Format currency
-  const formatCurrency = (value: number) => {
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('fr-CA', {
       style: 'currency',
       currency: 'CAD',
       minimumFractionDigits: 0,
     }).format(value);
-  };
+  }, []);
 
   // Get stage color
-  const getStageColor = (stage: string) => {
+  const getStageColor = useCallback((stage: string) => {
     switch (stage) {
       case 'Découverte': return 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400';
       case 'Qualification': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
