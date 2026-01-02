@@ -751,6 +751,12 @@ function ProjectDetailContent() {
             )}
           </Card>
         )}
+
+        {activeTab === 'deadlines' && (
+          <Card className="glass-card p-6">
+            <ProjectDeadlines projectId={projectId} />
+          </Card>
+        )}
       </Container>
     </div>
   );
