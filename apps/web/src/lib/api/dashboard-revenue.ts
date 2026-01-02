@@ -41,47 +41,35 @@ export async function fetchDashboardRevenue(params?: {
     const response = await apiClient.get(
       `/v1/finances/revenue?period=${period}&months=${months}`
     );
-    return response.data as RevenueResponse;
-  } catch (error) {
-    console.warn('Revenue endpoint not available, generating sample data');
     
-    // Fallback: Generate sample data based on current date
-    const data: RevenueDataPoint[] = [];
-    const now = new Date();
-    
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date(now);
-      date.setMonth(date.getMonth() - i);
-      
-      const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-      const monthIndex = date.getMonth();
-      const monthName = monthNames[monthIndex] || 'Jan';
-      
-      // Generate realistic revenue data with some variation
-      const baseRevenue = 50000;
-      const variation = Math.random() * 30000 - 10000;
-      const trend = (months - i) * 2000; // Slight upward trend
-      
-      const dateStr = date.toISOString().split('T')[0] || '';
-      
-      data.push({
-        month: monthName,
-        value: Math.round(baseRevenue + variation + trend),
-        date: dateStr,
-      });
+    // Handle different response formats
+    let data: RevenueResponse;
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      // Response is already in the correct format
+      data = response.data as RevenueResponse;
+    } else if (response.data && typeof response.data === 'object') {
+      // Response might be wrapped
+      data = response.data as RevenueResponse;
+    } else {
+      // Fallback if structure is unexpected
+      throw new Error('Unexpected response format from revenue endpoint');
     }
     
-    const total = data.reduce((sum, point) => sum + point.value, 0);
-    const lastMonth = data[data.length - 1]?.value || 0;
-    const previousMonth = data[data.length - 2]?.value || 0;
-    const growth = previousMonth > 0 
-      ? ((lastMonth - previousMonth) / previousMonth) * 100 
-      : 0;
+    // Validate data structure
+    if (!data.data || !Array.isArray(data.data)) {
+      throw new Error('Invalid data structure from revenue endpoint');
+    }
     
+    return data;
+  } catch (error) {
+    console.error('Error fetching revenue data:', error);
+    // Don't generate sample data - return empty data instead
+    // The backend endpoint already handles fallback data generation
+    // If the backend returns sample data, it will be displayed, but we won't generate more here
     return {
-      data,
-      total,
-      growth: Math.round(growth * 10) / 10,
+      data: [],
+      total: 0,
+      growth: 0,
       period,
     };
   }

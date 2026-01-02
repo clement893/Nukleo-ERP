@@ -35,7 +35,21 @@ export async function fetchClientsStats(params?: {
     // Use the same endpoint as the clients page: /v1/projects/clients
     // This endpoint returns clients from the clients table with type='company'
     const clientsResponse = await apiClient.get('/v1/projects/clients?limit=10000');
-    const clientsData = clientsResponse.data as any[] | undefined;
+    
+    // Handle different response formats
+    let clientsData: any[] | undefined;
+    if (Array.isArray(clientsResponse.data)) {
+      clientsData = clientsResponse.data;
+    } else if (clientsResponse.data && typeof clientsResponse.data === 'object' && 'items' in clientsResponse.data) {
+      clientsData = clientsResponse.data.items;
+    } else if (clientsResponse.data && typeof clientsResponse.data === 'object' && 'data' in clientsResponse.data) {
+      // Some APIs wrap data in a 'data' field
+      const wrappedData = clientsResponse.data.data;
+      clientsData = Array.isArray(wrappedData) ? wrappedData : [];
+    } else {
+      clientsData = [];
+    }
+    
     const clients = Array.isArray(clientsData) ? clientsData : [];
     
     if (!clients || clients.length === 0) {
