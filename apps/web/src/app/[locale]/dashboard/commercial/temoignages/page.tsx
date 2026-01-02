@@ -15,6 +15,7 @@ import { contactsAPI } from '@/lib/api/contacts';
 import { companiesAPI } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import SearchBar from '@/components/ui/SearchBar';
 import { 
   Plus, 
@@ -97,7 +98,7 @@ function TemoignagesContent() {
         setAllCompanies(companiesData.map(c => ({ id: c.id, name: c.name || '' })));
         setAllContacts(contactsData.map(c => ({ id: c.id, first_name: c.first_name, last_name: c.last_name })));
       } catch (err) {
-        console.error('Error loading companies/contacts:', err);
+        logger.error('Error loading companies/contacts', err);
       }
     };
     loadData();

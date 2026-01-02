@@ -9,6 +9,7 @@ import { Users, Plus, Search, Shield, Mail, Calendar, MoreVertical, Edit, Trash2
 import { Badge, Button, Card, Input } from '@/components/ui';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { useToast } from '@/lib/toast';
+import { logger } from '@/lib/logger';
 
 interface User {
   id: number;
@@ -133,7 +134,7 @@ export default function AdminUsersPage() {
       
       setUsers(convertedUsers);
     } catch (error) {
-      console.error('Erreur lors du chargement des utilisateurs:', error);
+      logger.error('Erreur lors du chargement des utilisateurs', error);
       showToast({
         title: 'Erreur',
         message: 'Impossible de charger les utilisateurs',

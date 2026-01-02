@@ -11,6 +11,7 @@ import { Badge, Button, Loading, Alert, Input, Text, Select, Textarea } from '@/
 import { useToast } from '@/components/ui';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import { handleApiError } from '@/lib/errors/api';
+import { logger } from '@/lib/logger';
 import { reseauTestimonialsAPI, type Testimonial, type TestimonialCreate } from '@/lib/api/reseau-testimonials';
 import { contactsAPI } from '@/lib/api/contacts';
 import { companiesAPI } from '@/lib/api/companies';
@@ -84,7 +85,7 @@ function TemoignagesContent() {
       setAllCompanies(companiesData.map(c => ({ id: c.id, name: c.name || '' })));
       setAllContacts(contactsData.map(c => ({ id: c.id, first_name: c.first_name, last_name: c.last_name })));
     } catch (err) {
-      console.error('Error loading companies/contacts:', err);
+      logger.error('Error loading companies/contacts', err);
       // Ne pas bloquer l'affichage si ça échoue
     }
   };

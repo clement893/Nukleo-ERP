@@ -23,6 +23,7 @@ import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { agendaAPI } from '@/lib/api/agenda';
 import { useToast } from '@/lib/toast';
+import { logger } from '@/lib/logger';
 
 type EventType = 'all' | 'holiday' | 'vacation' | 'project' | 'deadline' | 'birthday' | 'hiredate' | 'event' | 'summer' | 'timesheet';
 
@@ -329,7 +330,7 @@ export default function CalendrierPage() {
 
       setEvents(calendarEvents);
     } catch (error) {
-      console.error('Erreur lors du chargement du calendrier:', error);
+      logger.error('Erreur lors du chargement du calendrier', error);
       showToast({
         title: 'Erreur',
         message: 'Impossible de charger les données du calendrier',

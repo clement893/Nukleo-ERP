@@ -22,6 +22,7 @@ import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 
 type ViewMode = 'month' | 'week' | 'day';
 type FilterType = 'all' | 'holidays' | 'summer' | 'vacations' | 'deadlines' | 'events' | 'birthdays' | 'hiredates';
@@ -148,7 +149,7 @@ function CalendrierContent() {
           }
         });
       } catch (err) {
-        console.warn('Could not load vacations:', err);
+        logger.warn('Could not load vacations', err);
       }
       
       // Événements
@@ -164,7 +165,7 @@ function CalendrierContent() {
           });
         });
       } catch (err) {
-        console.warn('Could not load events:', err);
+        logger.warn('Could not load events', err);
       }
       
       // Employés pour anniversaires et dates d'embauche
@@ -192,7 +193,7 @@ function CalendrierContent() {
           }
         });
       } catch (err) {
-        console.warn('Could not load employees:', err);
+        logger.warn('Could not load employees', err);
       }
       
       setEvents(allEvents);
