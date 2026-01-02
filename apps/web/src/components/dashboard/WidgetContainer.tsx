@@ -19,7 +19,7 @@ interface WidgetContainerProps {
 }
 
 // Widget Error Fallback Component
-function WidgetErrorFallback({ error, widgetType }: { error: Error | null; widgetType: string }) {
+function WidgetErrorFallback({ error, widgetType }: { error: Error; widgetType: string }) {
   // Log error for debugging
   console.error(`Widget error for ${widgetType}:`, error);
   
