@@ -508,7 +508,7 @@ export default function FinancesPage() {
         </div>
 
         {/* Expenses by Category */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Dépenses par catégorie
           </h3>

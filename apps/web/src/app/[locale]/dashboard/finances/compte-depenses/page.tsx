@@ -537,7 +537,7 @@ export default function MesDepenses() {
         </Card>
       </div>
 
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtrer :</span>
           {['all', 'draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'].map((status) => (

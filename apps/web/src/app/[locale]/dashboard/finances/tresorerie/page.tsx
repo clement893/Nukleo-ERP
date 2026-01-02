@@ -525,7 +525,7 @@ export default function TresoreriePage() {
 
                 {importing && !importResult && (
                   <div className="text-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#523DC9]" />
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary-500" />
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                       Validation du fichier...
                     </p>
