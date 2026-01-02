@@ -6,7 +6,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui';
 
 interface InvoiceFormProps {
@@ -72,13 +72,19 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
     const item = { ...newLineItems[index] };
     
     if (field === 'quantity' || field === 'unitPrice') {
-      item[field] = Number(value) || 0;
-      item.total = calculateLineItemTotal(item.quantity, item.unitPrice);
+      const numValue = Number(value) || 0;
+      item[field] = numValue;
+      item.total = calculateLineItemTotal(item.quantity ?? 0, item.unitPrice ?? 0);
     } else {
       item[field] = value;
     }
     
-    newLineItems[index] = item;
+    // Ensure id is always a string
+    if (!item.id) {
+      item.id = String(Date.now() + index);
+    }
+    
+    newLineItems[index] = item as InvoiceLineItem;
     setFormData({ ...formData, line_items: newLineItems });
   };
 

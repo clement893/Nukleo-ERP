@@ -170,7 +170,7 @@ export default function AdminUsersPage() {
     queryFn: async () => {
       // Try to fetch all invitations (for superadmins) first
       try {
-        const response = await invitationsAPI.list({ status: 'pending', all_invitations: true });
+        const response = await invitationsAPI.list({ status: 'pending', all_invitations: true } as { status?: string; organization_id?: string; email?: string; all_invitations?: boolean });
         // Handle both array and object with items property
         const data = response.data;
         if (Array.isArray(data)) {

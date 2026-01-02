@@ -24,6 +24,7 @@ import { PageTransition } from '@/components/navigation/PageTransition';
 import { usePrefetchRoutes } from '@/hooks/usePrefetchRoutes';
 import { Menu } from 'lucide-react';
 import { clsx } from 'clsx';
+import NotificationBellConnected from '@/components/notifications/NotificationBellConnected';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -93,14 +94,16 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
               <Menu className="w-5 h-5" />
             </Button>
             <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-            <div className="w-10" /> {/* Spacer for centering */}
+            <div className="flex items-center gap-2">
+              <NotificationBellConnected />
+            </div>
           </div>
         </header>
 
         {/* Desktop Header with Toggle Button (when collapsed) */}
         {sidebarCollapsed && (
           <header className="hidden md:block fixed top-0 left-0 right-0 z-30 glass-navbar h-16">
-            <div className="px-4 py-3 flex items-center">
+            <div className="px-4 py-3 flex items-center justify-between">
               <Button
                 variant="ghost"
                 size="sm"
@@ -110,6 +113,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
               >
                 <Menu className="w-5 h-5" />
               </Button>
+              <div className="flex items-center gap-3">
+                <NotificationBellConnected />
+              </div>
             </div>
           </header>
         )}

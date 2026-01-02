@@ -21,7 +21,7 @@ import {
 import { projectsAPI } from '@/lib/api/projects';
 import { useQuery } from '@tanstack/react-query';
 import InvoiceForm from '@/components/finances/InvoiceForm';
-import { facturationsAPI, type FinanceInvoiceCreate } from '@/lib/api/finances/facturations';
+import { type FinanceInvoiceCreate, type FinanceInvoiceUpdate } from '@/lib/api/finances/facturations';
 import { handleApiError } from '@/lib/errors/api';
 
 const statusConfig = {
@@ -715,9 +715,9 @@ export default function FacturationsPage() {
         >
           <InvoiceForm
             invoice={null}
-            onSubmit={async (data: FinanceInvoiceCreate) => {
+            onSubmit={async (data: FinanceInvoiceCreate | FinanceInvoiceUpdate) => {
               try {
-                await createMutation.mutateAsync(data);
+                await createMutation.mutateAsync(data as FinanceInvoiceCreate);
                 showToast({
                   message: 'Facture créée avec succès',
                   type: 'success',

@@ -16,7 +16,6 @@ import {
   Search,
   LayoutGrid,
   List as ListIcon,
-  Calendar,
   Users,
   Target,
   DollarSign,
@@ -29,9 +28,6 @@ import {
   ArrowUp,
   ArrowDown,
   X,
-  Link as LinkIcon,
-  FileText,
-  UserCircle,
   AlertCircle,
   Clock
 } from 'lucide-react';
@@ -83,15 +79,6 @@ const getProgressColor = (progress: number): string => {
   if (progress >= 80) return 'bg-success-500';
   if (progress >= 50) return 'bg-warning-500';
   return 'bg-danger-500';
-};
-
-// Helper function to get budget color
-const getBudgetColor = (spent: number, budget: number): string => {
-  if (budget === 0) return 'bg-gray-500';
-  const ratio = (spent / budget) * 100;
-  if (ratio >= 100) return 'bg-danger-500';
-  if (ratio >= 80) return 'bg-warning-500';
-  return 'bg-success-500';
 };
 
 export default function ProjetsPage() {
@@ -655,7 +642,6 @@ export default function ProjetsPage() {
               const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
               const progress = calculateProgress(project);
               const budget = project.budget || 0;
-              const spent = 0; // TODO: Calculate from time entries and expenses
               const deadlineAlert = getDeadlineAlert(project.deadline);
               
               return (
