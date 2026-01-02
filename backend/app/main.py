@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.core.cache import init_cache, close_cache
-from app.core.migrations import ensure_theme_preference_column, ensure_avatar_column
+from app.core.migrations import ensure_theme_preference_column, ensure_avatar_column, ensure_transaction_currency_column
 from app.core.exceptions import AppException
 from app.core.error_handler import (
     app_exception_handler,

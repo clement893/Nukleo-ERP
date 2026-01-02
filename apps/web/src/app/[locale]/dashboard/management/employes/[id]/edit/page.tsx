@@ -149,7 +149,7 @@ export default function EmployeeEditPage() {
         breadcrumbs={[
           { label: 'Dashboard', href: `/${locale}/dashboard` },
           { label: 'Module Management', href: `/${locale}/dashboard/management` },
-          { label: 'Employés', href: `/${locale}/dashboard/management/employes` },
+          { label: 'Employés', href: `/dashboard/management/employes` },
           { label: employee.first_name + ' ' + employee.last_name, href: `/dashboard/management/employes/${employee.id}` },
           { label: 'Modification' },
         ]}

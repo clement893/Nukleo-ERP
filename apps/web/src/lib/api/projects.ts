@@ -61,6 +61,19 @@ export interface ProjectCreate {
 
 export interface ProjectUpdate extends Partial<ProjectCreate> {}
 
+export interface ProjectEmployee {
+  id: number;
+  employee_id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  job_title?: string | null;
+  photo_url?: string | null;
+  role?: string | null;
+  assigned_at?: string | null;
+}
+
 /**
  * Projects API client
  */

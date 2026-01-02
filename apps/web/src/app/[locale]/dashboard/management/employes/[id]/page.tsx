@@ -206,9 +206,9 @@ export default function EmployeeDetailPage() {
           </div>
         }
         breadcrumbs={[
-          { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-          { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-          { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
+          { label: 'Dashboard', href: `/dashboard` },
+          { label: 'Module Management', href: `/dashboard/management` },
+          { label: 'Employés', href: `/dashboard/management/employes` },
           { label: `${employee.first_name} ${employee.last_name}` },
         ]}
       />

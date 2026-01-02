@@ -79,8 +79,6 @@ type SortDirection = 'asc' | 'desc';
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const params = useParams();
-  const locale = params.locale as string || 'fr';
   const { showToast } = useToast();
   
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
