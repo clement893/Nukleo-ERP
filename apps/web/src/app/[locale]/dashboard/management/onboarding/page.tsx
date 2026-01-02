@@ -404,8 +404,9 @@ export default function OnboardingPage() {
             </p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredProcesses.map((process) => {
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredProcesses.slice(0, 20).map((process) => {
               const fullName = `${process.employee.first_name} ${process.employee.last_name}`;
               const initials = `${process.employee.first_name?.[0] || ''}${process.employee.last_name?.[0] || ''}`.toUpperCase();
               const avatarColor = getAvatarColor(fullName);
@@ -427,8 +428,18 @@ export default function OnboardingPage() {
                   onCompleteStep={(stepKey) => handleCompleteStep(process.employee.id, stepKey)}
                 />
               );
-            })}
-          </div>
+              })}
+            </div>
+            
+            {/* Show message if more processes available */}
+            {filteredProcesses.length > 20 && (
+              <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 text-center mt-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Affichage de 20 processus sur {filteredProcesses.length}. Utilisez les filtres pour affiner votre recherche.
+                </p>
+              </Card>
+            )}
+          </>
         )}
 
         {/* Resources Section */}
