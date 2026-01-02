@@ -28,6 +28,7 @@ import {
 } from '@/lib/query/expenseAccounts';
 import { handleApiError } from '@/lib/errors/api';
 import { useAuthStore } from '@/lib/store';
+import { logger } from '@/lib/logger';
 
 export default function MesDepenses() {
   const searchParams = useSearchParams();
@@ -84,12 +85,13 @@ export default function MesDepenses() {
     if (!user?.id) return;
     try {
       const allEmployees = await employeesAPI.list(0, 1000);
-      const currentEmployee = allEmployees.find(emp => emp.user_id === user.id);
+      const userIdNumber = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      const currentEmployee = allEmployees.find(emp => emp.user_id !== null && emp.user_id !== undefined && emp.user_id === userIdNumber);
       if (currentEmployee) {
         setCurrentEmployeeId(currentEmployee.id);
       }
     } catch (error) {
-      console.error('Error loading current employee:', error);
+      logger.error('Error loading current employee', error);
     }
   };
 
@@ -102,7 +104,7 @@ export default function MesDepenses() {
         last_name: emp.last_name,
       })));
     } catch (err) {
-      console.error('Failed to load employees:', err);
+      logger.error('Failed to load employees', err);
       setEmployees([]);
     }
   };
@@ -118,7 +120,7 @@ export default function MesDepenses() {
       );
       setExpenses(data);
     } catch (error) {
-      console.error('Error loading expenses:', error);
+      logger.error('Error loading expenses', error);
       const appError = handleApiError(error);
       showToast({
         message: appError.message || 'Erreur lors du chargement des comptes de dépenses',
