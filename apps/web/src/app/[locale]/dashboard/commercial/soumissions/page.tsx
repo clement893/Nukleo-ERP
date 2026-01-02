@@ -226,7 +226,7 @@ export default function SoumissionsPage() {
   }, [loadingMore, hasMore, activeTab, fetchNextQuotes, fetchNextSubmissions]);
   
   // Handlers
-  const handleCreateQuote = async (data: QuoteCreate | QuoteUpdate) => {
+  const handleCreateQuote = useCallback(async (data: QuoteCreate | QuoteUpdate) => {
     try {
       await createQuoteMutation.mutateAsync(data as QuoteCreate);
       setShowCreateQuoteModal(false);
@@ -241,9 +241,9 @@ export default function SoumissionsPage() {
         type: 'error',
       });
     }
-  };
+  }, [createQuoteMutation, showToast]);
   
-  const handleUpdateQuote = async (id: number, data: QuoteUpdate) => {
+  const handleUpdateQuote = useCallback(async (id: number, data: QuoteUpdate) => {
     try {
       await updateQuoteMutation.mutateAsync({ id, data });
       setShowEditQuoteModal(false);
@@ -259,9 +259,9 @@ export default function SoumissionsPage() {
         type: 'error',
       });
     }
-  };
+  }, [updateQuoteMutation, showToast]);
   
-  const handleDeleteQuote = async (quoteId: number, quoteTitle?: string) => {
+  const handleDeleteQuote = useCallback(async (quoteId: number, quoteTitle?: string) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer le devis "${quoteTitle || quoteId}" ?\n\nCette action est irréversible.`)) {
       return;
     }
@@ -279,9 +279,9 @@ export default function SoumissionsPage() {
         type: 'error',
       });
     }
-  };
+  }, [deleteQuoteMutation, showToast]);
   
-  const handleCreateSubmission = async (submissionData: SubmissionCreate) => {
+  const handleCreateSubmission = useCallback(async (submissionData: SubmissionCreate) => {
     try {
       await createSubmissionMutation.mutateAsync(submissionData);
       setShowCreateSubmissionModal(false);
@@ -297,9 +297,9 @@ export default function SoumissionsPage() {
       });
       throw err;
     }
-  };
+  }, [createSubmissionMutation, showToast]);
   
-  const handleUpdateSubmission = async (id: number, data: SubmissionUpdate) => {
+  const handleUpdateSubmission = useCallback(async (id: number, data: SubmissionUpdate) => {
     try {
       await updateSubmissionMutation.mutateAsync({ id, data });
       setShowEditSubmissionModal(false);
@@ -315,9 +315,9 @@ export default function SoumissionsPage() {
         type: 'error',
       });
     }
-  };
+  }, [updateSubmissionMutation, showToast]);
   
-  const handleDeleteSubmission = async (submissionId: number, submissionTitle?: string) => {
+  const handleDeleteSubmission = useCallback(async (submissionId: number, submissionTitle?: string) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la soumission "${submissionTitle || submissionId}" ?\n\nCette action est irréversible.`)) {
       return;
     }
@@ -335,9 +335,9 @@ export default function SoumissionsPage() {
         type: 'error',
       });
     }
-  };
+  }, [deleteSubmissionMutation, showToast]);
   
-  const handleSaveDraftSubmission = async (submissionData: SubmissionCreate) => {
+  const handleSaveDraftSubmission = useCallback(async (submissionData: SubmissionCreate) => {
     try {
       const draftData = { ...submissionData, status: 'draft' };
       await createSubmissionMutation.mutateAsync(draftData);
@@ -353,7 +353,7 @@ export default function SoumissionsPage() {
       });
       throw err;
     }
-  };
+  }, [createSubmissionMutation, showToast]);
   
   // Duplicate handlers
   const handleDuplicateQuote = async (quote: Quote) => {

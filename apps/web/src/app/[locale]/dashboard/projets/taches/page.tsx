@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import Drawer from '@/components/ui/Drawer';
@@ -223,7 +223,7 @@ export default function TachesPage() {
   }, [filteredTasks, groupBy]);
 
   // Handlers
-  const handleCreate = async (data: ProjectTaskCreate | ProjectTaskUpdate) => {
+  const handleCreate = useCallback(async (data: ProjectTaskCreate | ProjectTaskUpdate) => {
     try {
       // Ensure required fields for creation
       const createData: ProjectTaskCreate = {
