@@ -166,6 +166,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             paddingBottom: paddingY,
             fontSize,
             borderRadius,
+            maxHeight: '200px',
+            overflowY: 'auto',
           }}
           {...props}
         >
