@@ -132,7 +132,7 @@ export async function fetchClientsStats(params?: {
       previous_active_count: previousActiveCount,
     };
   } catch (error) {
-    console.error('Error fetching clients stats from /v1/projects/clients:', error);
+    console.error('[fetchClientsStats] Error fetching clients stats from /v1/projects/clients:', error);
     // Return zero values on error
     return {
       count: 0,
