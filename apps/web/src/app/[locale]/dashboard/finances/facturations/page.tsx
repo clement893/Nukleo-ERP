@@ -233,7 +233,7 @@ export default function FacturationsPage() {
                     <FileText className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h1 className="text-3xl font-black text-white mb-1 font-nukleo">
                       {selectedInvoice.invoice_number}
                     </h1>
                     <p className="text-white/80 text-sm">{projectName}</p>
@@ -351,7 +351,7 @@ export default function FacturationsPage() {
               <div className="space-y-3">
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Montant total</div>
-                  <div className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="text-xl font-bold font-nukleo">
                     {formatCurrency(Number(selectedInvoice.total))}
                   </div>
                 </div>
@@ -614,7 +614,7 @@ export default function FacturationsPage() {
             return (
               <Card 
                 key={invoice.id} 
-                className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer"
+                className="glass-card p-5 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500 transition-all cursor-pointer"
                 onClick={() => handleViewInvoice(invoice.id)}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -657,7 +657,7 @@ export default function FacturationsPage() {
         </div>
 
         {filteredInvoices.length === 0 && (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Aucune facture trouvée</h3>
             <p className="text-gray-600 dark:text-gray-400">

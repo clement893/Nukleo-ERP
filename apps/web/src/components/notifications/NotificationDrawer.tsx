@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
-import { X, Bell, Check, Trash2, Filter, Settings, CheckCircle2 } from 'lucide-react';
+import { X, Bell, Check, Trash2, Settings, CheckCircle2 } from 'lucide-react';
 import { Button, Badge, Input } from '@/components/ui';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { NotificationUI } from '@/types/notification';

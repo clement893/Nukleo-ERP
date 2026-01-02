@@ -19,7 +19,7 @@ export default function EmployeePortalModulesLayout({
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
+  const employeeId = params?.id ? parseInt(String(params.id)) : undefined;
   const locale = (params?.locale as string) || 'fr';
   const { hasModuleAccess, loading } = useEmployeePortalPermissions({ employeeId });
   const [isAuthorized, setIsAuthorized] = useState(false);

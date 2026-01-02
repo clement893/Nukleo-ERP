@@ -164,10 +164,7 @@ export default function EmployeePortalSidebar({
   const enabledModules = useMemo(() => {
     if (permissionsLoading || !employeeId) return [];
     
-    // Filtrer les modules selon les permissions
-    const filtered = EMPLOYEE_PORTAL_MODULES.filter((module) => hasModuleAccess(module.id));
-    
-    // Transformer les chemins pour le portail employé
+    // Transformer les chemins pour le portail employé et filtrer selon les permissions
     return getEmployeePortalModules(employeeId, locale).filter((module) => {
       const originalModule = EMPLOYEE_PORTAL_MODULES.find(m => m.id === module.id);
       return originalModule && hasModuleAccess(originalModule.id);
