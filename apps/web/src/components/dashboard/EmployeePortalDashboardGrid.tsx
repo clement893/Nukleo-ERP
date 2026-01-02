@@ -26,7 +26,7 @@ export function EmployeePortalDashboardGrid({ className = '' }: EmployeePortalDa
   } = useEmployeePortalDashboardStore();
 
   const activeConfig = getActiveConfig();
-  const [, setWidth] = useState(1200);
+  const [width, setWidth] = useState(1200);
 
   // Measure container width for Responsive component
   useEffect(() => {
@@ -113,6 +113,7 @@ export function EmployeePortalDashboardGrid({ className = '' }: EmployeePortalDa
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
         rowHeight={100}
+        width={width}
         onLayoutChange={handleLayoutChange}
         margin={[16, 16]}
         containerPadding={[0, 0]}

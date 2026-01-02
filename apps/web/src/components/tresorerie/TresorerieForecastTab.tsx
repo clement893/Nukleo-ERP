@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Calendar, AlertTriangle, DollarSign, Loader2 } from 'lucide-react';
-import { tresorerieAPI, type InvoiceToBill, type RevenueForecast, type ForecastResponse, type Transaction } from '@/lib/api/tresorerie';
+import { Calendar, AlertTriangle, DollarSign, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { tresorerieAPI, type InvoiceToBill, type RevenueForecast, type Transaction } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
 import ForecastChart from './ForecastChart';
@@ -153,7 +153,7 @@ export default function TresorerieForecastTab() {
 
     // Ajouter les transactions d'entrée futures
     upcomingTransactions
-      .filter(t => t.type === 'entry')
+      .filter(t => t.type === 'entry' && t.status !== 'cancelled')
       .forEach(t => {
         revenues.push({
           id: t.id,
@@ -161,7 +161,7 @@ export default function TresorerieForecastTab() {
           type: 'entry',
           amount: Number(t.amount),
           description: t.description,
-          status: t.status,
+          status: t.status === 'cancelled' ? 'pending' : t.status as 'pending' | 'confirmed' | 'projected',
         });
       });
 

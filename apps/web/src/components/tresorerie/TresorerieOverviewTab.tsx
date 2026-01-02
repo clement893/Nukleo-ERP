@@ -37,8 +37,6 @@ export default function TresorerieOverviewTab({
   categories,
   selectedPeriod,
   onPeriodChange,
-  onRefresh,
-  onExport,
 }: TresorerieOverviewTabProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-CA', {

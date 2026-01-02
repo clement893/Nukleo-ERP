@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, Button, Select } from '@/components/ui';
 import Chart, { type ChartDataPoint } from '@/components/ui/Chart';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, Loader2, Download, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Loader2, Download, Calendar } from 'lucide-react';
 import { tresorerieAPI, type Transaction, type CashflowWeek, type TreasuryStats, type TransactionCategory } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
@@ -100,13 +100,15 @@ export default function TresorerieAnalyticsTab() {
       .slice(-6) // 6 derniers mois
       .map(([monthKey]) => {
         const data = monthlyData[monthKey];
+        if (!data) return null;
         const date = new Date(monthKey + '-01');
         return {
           month: new Intl.DateTimeFormat('fr-CA', { month: 'short' }).format(date),
           entries: data.entries,
           exits: data.exits
         };
-      });
+      })
+      .filter((item): item is { month: string; entries: number; exits: number } => item !== null);
   }, [transactions]);
 
   const categoryDistributionData = useMemo(() => {
@@ -129,7 +131,7 @@ export default function TresorerieAnalyticsTab() {
     return Object.values(categoryTotals)
       .sort((a, b) => b.total - a.total)
       .slice(0, 10)
-      .map((cat, index) => ({
+      .map((cat) => ({
         label: cat.name,
         value: cat.total,
         color: cat.type === 'entry' ? '#10B981' : '#EF4444'
@@ -306,10 +308,10 @@ export default function TresorerieAnalyticsTab() {
         </h3>
         {entriesVsExitsData.length > 0 ? (
           <div className="space-y-4">
-            {entriesVsExitsData.map((month, index) => {
+            {entriesVsExitsData.map((month) => {
               const maxValue = Math.max(month.entries, month.exits);
               return (
-                <div key={index} className="space-y-2">
+                <div key={month.month} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{month.month}</span>
                     <div className="flex items-center gap-4 text-xs">
@@ -358,7 +360,7 @@ export default function TresorerieAnalyticsTab() {
         {entriesVsExitsData.length > 0 ? (
           <Chart
             type="area"
-            data={entriesVsExitsData.map((month, index) => ({
+            data={entriesVsExitsData.map((month) => ({
               label: month.month,
               value: month.entries - month.exits,
               color: (month.entries - month.exits) >= 0 ? '#10B981' : '#EF4444'

@@ -5,9 +5,9 @@ import { Card, Button, Badge, Input, Select, Textarea, Modal, Switch } from '@/c
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Building2, Plus, Edit, Trash2, Wallet, CreditCard, 
-  TrendingUp, AlertTriangle, Loader2, RefreshCw
+  AlertTriangle, Loader2, RefreshCw
 } from 'lucide-react';
-import { tresorerieAPI, type BankAccount, type BankAccountCreate, type BankAccountUpdate, type Transaction } from '@/lib/api/tresorerie';
+import { tresorerieAPI, type BankAccount, type BankAccountCreate, type Transaction } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
 
@@ -424,7 +424,7 @@ export default function TresorerieAccountsTab() {
             <label className="flex items-center gap-2">
               <Switch
                 checked={formData.is_active ?? true}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               />
               <span className="text-sm font-medium">Compte actif</span>
             </label>

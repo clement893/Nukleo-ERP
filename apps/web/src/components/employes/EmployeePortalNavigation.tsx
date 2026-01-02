@@ -188,7 +188,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
     const className = clsx(
       'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
       active
-        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+        ? 'bg-nukleo-gradient/10 text-primary-500 dark:text-nukleo-lavender backdrop-blur-sm border border-primary-500/20'
         : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
     );
 
@@ -196,14 +196,14 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
       <Link key={item.id} href={href} className={className}>
         {/* Active indicator */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-nukleo-gradient rounded-r-full" />
         )}
         
         {/* Icon with subtle background */}
         <span className={clsx(
           "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
           active 
-            ? "bg-[#523DC9]/10 text-[#523DC9]" 
+            ? "bg-primary-500/10 text-primary-500" 
             : "text-current opacity-70 group-hover:opacity-100"
         )}>
           <Icon className="w-5 h-5" />
@@ -261,7 +261,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                             className={clsx(
                               'group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
                               isModuleActive
-                                ? 'bg-[#523DC9]/5 text-[#523DC9] dark:text-[#A7A2CF]'
+                                ? 'bg-primary-500/5 text-primary-500 dark:text-nukleo-lavender'
                                 : 'text-foreground/80 hover:bg-muted/50 hover:text-foreground'
                             )}
                             aria-expanded={isExpanded}
@@ -270,7 +270,7 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                               <span className={clsx(
                                 "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
                                 isModuleActive 
-                                  ? "bg-[#523DC9]/10 text-[#523DC9]" 
+                                  ? "bg-primary-500/10 text-primary-500" 
                                   : "text-current opacity-70 group-hover:opacity-100"
                               )}>
                                 <Icon className="w-5 h-5" />
@@ -298,12 +298,12 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                                     className={clsx(
                                       'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                                       isSubPageActive
-                                        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+                                        ? 'bg-nukleo-gradient/10 text-primary-500 dark:text-nukleo-lavender backdrop-blur-sm border border-primary-500/20'
                                         : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
                                     )}
                                   >
                                     {isSubPageActive && (
-                                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+                                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-nukleo-gradient rounded-r-full" />
                                     )}
                                     <span className="truncate">{subPage.name}</span>
                                   </Link>
@@ -318,17 +318,17 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
                           className={clsx(
                             'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                             isModuleActive
-                              ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+                              ? 'bg-nukleo-gradient/10 text-primary-500 dark:text-nukleo-lavender backdrop-blur-sm border border-primary-500/20'
                               : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
                           )}
                         >
                           {isModuleActive && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-nukleo-gradient rounded-r-full" />
                           )}
                           <span className={clsx(
                             "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
                             isModuleActive 
-                              ? "bg-[#523DC9]/10 text-[#523DC9]" 
+                              ? "bg-primary-500/10 text-primary-500" 
                               : "text-current opacity-70 group-hover:opacity-100"
                           )}>
                             <Icon className="w-5 h-5" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Input, Select, Textarea, Button } from '@/components/ui';
-import { Calendar, DollarSign, FileText } from 'lucide-react';
+import { Calendar, DollarSign } from 'lucide-react';
 import type { TransactionCreate, TransactionUpdate, BankAccount, TransactionCategory } from '@/lib/api/tresorerie';
 
 interface TransactionFormProps {
@@ -49,8 +49,8 @@ export default function TransactionForm({
         bank_account_id: transaction.bank_account_id,
         type: transaction.type,
         amount: transaction.amount,
-        date: transaction.date.split('T')[0],
-        description: transaction.description,
+        date: transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        description: transaction.description || '',
         notes: transaction.notes || null,
         category_id: transaction.category_id || null,
         status: transaction.status,

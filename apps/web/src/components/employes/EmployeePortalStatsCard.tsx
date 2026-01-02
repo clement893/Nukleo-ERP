@@ -47,7 +47,7 @@ export default function EmployeePortalStatsCard({
   valueColor = 'default',
 }: EmployeePortalStatsCardProps) {
   return (
-    <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+    <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
       {icon && (
         <div className="flex items-center gap-3 mb-3">
           <div className={`p-3 rounded-lg border ${iconColorClasses[iconColor]}`}>
@@ -55,7 +55,7 @@ export default function EmployeePortalStatsCard({
           </div>
         </div>
       )}
-      <div className={`text-3xl font-bold mb-1 ${valueColorClasses[valueColor]}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <div className={`text-3xl font-bold mb-1 font-nukleo ${valueColorClasses[valueColor]}`}>
         {value}
       </div>
       <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>

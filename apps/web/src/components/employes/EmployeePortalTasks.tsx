@@ -1408,7 +1408,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
       </div>
 
       {/* Filters */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -1423,25 +1423,25 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
           <div className="flex gap-2">
             <Button
               onClick={() => setStatusFilter('all')}
-              className={statusFilter === 'all' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+              className={statusFilter === 'all' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
             >
               Toutes
             </Button>
             <Button
               onClick={() => setStatusFilter('todo')}
-              className={statusFilter === 'todo' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+              className={statusFilter === 'todo' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
             >
               À faire
             </Button>
             <Button
               onClick={() => setStatusFilter('in_progress')}
-              className={statusFilter === 'in_progress' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+              className={statusFilter === 'in_progress' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
             >
               En cours
             </Button>
             <Button
               onClick={() => setStatusFilter('completed')}
-              className={statusFilter === 'completed' ? 'bg-[#523DC9] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
+              className={statusFilter === 'completed' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}
             >
               Terminées
             </Button>
@@ -1469,7 +1469,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-bold mb-2 font-nukleo">
                     {task.title}
                   </h3>
                   {task.description && (

@@ -220,7 +220,7 @@ export default function EmployeePortalSidebar({
     const className = clsx(
       'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
       active
-        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+        ? 'bg-nukleo-gradient/10 text-primary-500 dark:text-nukleo-lavender backdrop-blur-sm border border-primary-500/20'
         : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
     );
 
@@ -228,7 +228,7 @@ export default function EmployeePortalSidebar({
       <Link key={item.id} href={href} className={className}>
         {/* Active indicator */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-nukleo-gradient rounded-r-full" />
         )}
 
         {/* Icon with subtle background */}
@@ -236,7 +236,7 @@ export default function EmployeePortalSidebar({
           className={clsx(
             'w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200',
             active
-              ? 'bg-[#523DC9]/10 text-[#523DC9]'
+              ? 'bg-primary-500/10 text-primary-500'
               : 'text-current opacity-70 group-hover:opacity-100'
           )}
         >
@@ -265,7 +265,7 @@ export default function EmployeePortalSidebar({
             className={clsx(
               'group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
               isModuleActive
-                ? 'bg-[#523DC9]/5 text-[#523DC9] dark:text-[#A7A2CF]'
+                ? 'bg-primary-500/5 text-primary-500 dark:text-nukleo-lavender'
                 : 'text-foreground/80 hover:bg-muted/50 hover:text-foreground'
             )}
             aria-expanded={isExpanded}
@@ -275,7 +275,7 @@ export default function EmployeePortalSidebar({
                 className={clsx(
                   'w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200',
                   isModuleActive
-                    ? 'bg-[#523DC9]/10 text-[#523DC9]'
+                    ? 'bg-primary-500/10 text-primary-500'
                     : 'text-current opacity-70 group-hover:opacity-100'
                 )}
               >
@@ -309,12 +309,12 @@ export default function EmployeePortalSidebar({
                     className={clsx(
                       'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                       isSubPageActive
-                        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+                        ? 'bg-nukleo-gradient/10 text-primary-500 dark:text-nukleo-lavender backdrop-blur-sm border border-primary-500/20'
                         : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
                     )}
                   >
                     {isSubPageActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-nukleo-gradient rounded-r-full" />
                     )}
                     <span className="truncate">{subPage.name}</span>
                   </Link>
@@ -332,7 +332,7 @@ export default function EmployeePortalSidebar({
           className={clsx(
             'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
             isModuleActive
-              ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+              ? 'bg-nukleo-gradient/10 text-primary-500 dark:text-nukleo-lavender backdrop-blur-sm border border-primary-500/20'
               : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
           )}
         >
@@ -343,7 +343,7 @@ export default function EmployeePortalSidebar({
             className={clsx(
               'w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200',
               isModuleActive
-                ? 'bg-[#523DC9]/10 text-[#523DC9]'
+                ? 'bg-primary-500/10 text-primary-500'
                 : 'text-current opacity-70 group-hover:opacity-100'
             )}
           >
@@ -384,7 +384,7 @@ export default function EmployeePortalSidebar({
           )}
         >
           {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-10" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-10" />
           <div
             className="absolute inset-0 opacity-5"
             style={{
@@ -397,10 +397,10 @@ export default function EmployeePortalSidebar({
           {!collapsed && (
             <div className="relative flex items-center gap-3">
               <Link href={`/${locale}/portail-employe/${employeeId}/dashboard`} className="flex items-center gap-3 group">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] flex items-center justify-center shadow-lg">
+                <div className="w-11 h-11 rounded-xl bg-nukleo-gradient flex items-center justify-center shadow-lg">
                   <span
                     className="text-white font-black text-xl"
-                    style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+                    className="font-nukleo"
                   >
                     N
                   </span>
@@ -408,7 +408,7 @@ export default function EmployeePortalSidebar({
                 <div className="flex flex-col">
                   <span
                     className="text-base font-black text-foreground"
-                    style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+                    className="font-nukleo"
                   >
                     Mon Portail Employé
                   </span>
@@ -499,7 +499,7 @@ export default function EmployeePortalSidebar({
         {!collapsed && (
           <div className="border-t border-border/50 p-3 flex-shrink-0 space-y-2 bg-muted/20 backdrop-blur-sm">
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] flex items-center justify-center flex-shrink-0 shadow-md">
+              <div className="w-9 h-9 rounded-full bg-nukleo-gradient flex items-center justify-center flex-shrink-0 shadow-md">
                 <span className="text-white text-sm font-bold">
                   {user?.email?.[0]?.toUpperCase() || 'U'}
                 </span>
@@ -517,7 +517,7 @@ export default function EmployeePortalSidebar({
                 variant="primary"
                 size="sm"
                 onClick={logout}
-                className="flex-1 text-xs bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817] hover:opacity-90 transition-opacity"
+                className="flex-1 text-xs bg-nukleo-gradient hover:opacity-90 transition-opacity"
               >
                 <LogOut className="w-3.5 h-3.5 mr-1.5" />
                 Déconnexion

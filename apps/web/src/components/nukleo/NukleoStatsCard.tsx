@@ -21,7 +21,7 @@ export default function NukleoStatsCard({
   trend
 }: NukleoStatsCardProps) {
   return (
-    <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 transition-transform duration-200">
+    <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform duration-200">
       <div className="flex items-center justify-between mb-3">
         <div className={`p-3 rounded-lg ${iconBgColor} border ${iconColor.replace('text-', 'border-')}/30`}>
           <Icon className={`w-6 h-6 ${iconColor}`} />
@@ -32,10 +32,7 @@ export default function NukleoStatsCard({
           </div>
         )}
       </div>
-      <div 
-        className="text-3xl font-bold text-gray-900 dark:text-white mb-1" 
-        style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-      >
+      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
         {value}
       </div>
       <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>

@@ -60,21 +60,22 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
     setCurrentDate(new Date());
   };
 
-  const { daysInMonth, startingDayOfWeek, firstDay, lastDay } = getDaysInMonth(currentDate);
+  const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
   const today = new Date();
   const isCurrentMonth = currentDate.getMonth() === today.getMonth() && 
                          currentDate.getFullYear() === today.getFullYear();
 
   // Grouper les transactions par date
-  const transactionsByDate = transactions.reduce((acc, t) => {
+  const transactionsByDate = transactions.reduce((acc: Record<string, { entries: CalendarTransaction[]; exits: CalendarTransaction[] }>, t) => {
     const dateKey = t.date.split('T')[0];
+    if (!dateKey) return acc;
     if (!acc[dateKey]) {
       acc[dateKey] = { entries: [], exits: [] };
     }
     if (t.type === 'entry') {
-      acc[dateKey].entries.push(t);
+      acc[dateKey]!.entries.push(t);
     } else {
-      acc[dateKey].exits.push(t);
+      acc[dateKey]!.exits.push(t);
     }
     return acc;
   }, {} as Record<string, { entries: CalendarTransaction[]; exits: CalendarTransaction[] }>);
@@ -92,8 +93,8 @@ export default function CalendarView({ transactions, className }: CalendarViewPr
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateKey = date.toISOString().split('T')[0];
     const dayTransactions = transactionsByDate[dateKey] || { entries: [], exits: [] };
-    const totalEntries = dayTransactions.entries.reduce((sum, t) => sum + t.amount, 0);
-    const totalExits = dayTransactions.exits.reduce((sum, t) => sum + t.amount, 0);
+    const totalEntries = dayTransactions.entries.reduce((sum: number, t: CalendarTransaction) => sum + t.amount, 0);
+    const totalExits = dayTransactions.exits.reduce((sum: number, t: CalendarTransaction) => sum + t.amount, 0);
     const isToday = isCurrentMonth && day === today.getDate();
 
     days.push({

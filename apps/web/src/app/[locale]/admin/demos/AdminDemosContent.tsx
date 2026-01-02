@@ -460,10 +460,11 @@ export default function AdminDemosContent() {
   const groupedPages = useMemo(() => {
     const groups: Record<string, DemoPage[]> = {};
     filteredPages.forEach(page => {
-      if (!groups[page.category]) {
-        groups[page.category] = [];
+      const category = page.category || 'Uncategorized';
+      if (!groups[category]) {
+        groups[category] = [];
       }
-      groups[page.category].push(page);
+      groups[category].push(page);
     });
     return groups;
   }, [filteredPages]);

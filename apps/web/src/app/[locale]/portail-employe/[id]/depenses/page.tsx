@@ -305,7 +305,7 @@ export default function MesDepenses() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -356,7 +356,7 @@ export default function MesDepenses() {
         />
       </div>
 
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtrer :</span>
           {['all', 'draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'].map((status) => (
@@ -365,7 +365,7 @@ export default function MesDepenses() {
               onClick={() => setStatusFilter(status as any)}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
                 statusFilter === status
-                  ? 'bg-[#523DC9] text-white'
+                  ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -385,8 +385,8 @@ export default function MesDepenses() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <FileText className="w-5 h-5 text-[#523DC9]" />
-                    <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <FileText className="w-5 h-5 text-primary-500" />
+                    <h3 className="text-lg font-bold font-nukleo">
                       {expense.title}
                     </h3>
                     <Badge className={`${badge.class} flex items-center gap-1 text-xs`}>

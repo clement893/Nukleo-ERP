@@ -90,6 +90,15 @@ const config: Config = {
           900: 'var(--color-info-900, #164e63)',
           950: 'var(--color-info-950, #083344)',
         },
+        // Nukleo brand colors - Uses CSS variables from nukleo-theme.css
+        nukleo: {
+          purple: 'var(--nukleo-purple, #523DC9)',
+          violet: 'var(--nukleo-violet, #5F2B75)',
+          crimson: 'var(--nukleo-crimson, #6B1817)',
+          lavender: 'var(--nukleo-lavender, #A7A2CF)',
+          dark: 'var(--nukleo-dark, #291919)',
+          light: 'var(--nukleo-light, #F5F3FF)',
+        },
         // Success colors - Uses CSS variables with fallbacks for theme support
         success: {
           50: 'var(--color-success-50, #f0fdf4)',

@@ -22,11 +22,11 @@ export default function EmployeePortalHeader({
 }: EmployeePortalHeaderProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+      <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
       <div className="relative p-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h1 className="text-4xl font-black text-white mb-2 font-nukleo">
               {title}
             </h1>
             {description && (

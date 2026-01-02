@@ -4,8 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, Button, Badge, Input, Select, Modal } from '@/components/ui';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  FileText, Plus, Search, Filter, Download, RefreshCw, 
-  ArrowUpDown, Eye, Edit, Trash2, Copy, Calendar, DollarSign, Building2
+  FileText, Plus, Search, Download, RefreshCw, 
+  ArrowUpDown, Eye, Edit, Calendar, Building2
 } from 'lucide-react';
 import { tresorerieAPI, type Transaction, type BankAccount, type TransactionCategory, type TransactionCreate, type TransactionUpdate } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
@@ -533,7 +533,7 @@ export default function TresorerieTransactionsTab() {
           transaction={editingTransaction || undefined}
           bankAccounts={bankAccounts}
           categories={categories}
-          onSubmit={editingTransaction ? handleUpdate : handleCreate}
+          onSubmit={editingTransaction ? handleUpdate : (data) => handleCreate(data as TransactionCreate)}
           onCancel={() => {
             setShowCreateModal(false);
             setEditingTransaction(null);

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, Badge, Button } from '@/components/ui';
-import { X, Calendar, DollarSign, Building2, FileText, Edit, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, DollarSign, Building2, FileText, Edit, Trash2, Copy } from 'lucide-react';
 import type { Transaction, BankAccount, TransactionCategory } from '@/lib/api/tresorerie';
 
 interface TransactionDrawerProps {

@@ -16,7 +16,7 @@ export default function NukleoPageHeader({
   return (
     <div className={`relative rounded-2xl overflow-hidden -mt-4 -mx-4 px-4 ${compact ? 'pt-4 pb-5' : 'pt-6 pb-8'}`}>
       {/* Gradient Aurora Borealis */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+      <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
       
       {/* Texture Grain */}
       <div 
@@ -31,8 +31,7 @@ export default function NukleoPageHeader({
       <div className="relative flex items-center justify-between">
         <div>
           <h1 
-            className={`font-black text-white mb-2 ${compact ? 'text-3xl' : 'text-5xl'}`}
-            style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            className={`font-black text-white mb-2 font-nukleo ${compact ? 'text-3xl' : 'text-5xl'}`}
           >
             {title}
           </h1>

@@ -217,7 +217,7 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <Calendar className="w-5 h-5 text-[#523DC9]" />
+                      <Calendar className="w-5 h-5 text-primary-500" />
                       <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {vacation.reason || 'Vacances'}
                       </h3>
@@ -285,7 +285,7 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
             <Button
               onClick={handleCreate}
               disabled={createMutation.isPending || !formData.start_date || !formData.end_date}
-              className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+              className="bg-primary-500 hover:bg-primary-600 text-white"
             >
               {createMutation.isPending ? 'Création...' : 'Créer la demande'}
             </Button>

@@ -27,15 +27,15 @@ export default function EmployeePortalEmptyState({
   action,
 }: EmployeePortalEmptyStateProps) {
   return (
-    <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+    <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
       <Icon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-      <p className="text-gray-600 dark:text-gray-400 mb-4">{title}</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-4 font-nukleo">{title}</p>
       {description && (
         <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">{description}</p>
       )}
       {action && (
         <Button
-          className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+          className="bg-primary-500 hover:bg-primary-600 text-white"
           onClick={action.onClick}
         >
           {action.label}

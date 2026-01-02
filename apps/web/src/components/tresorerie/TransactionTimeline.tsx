@@ -80,19 +80,20 @@ export default function TransactionTimeline({
     let groupKey: string;
 
     if (groupBy === 'day') {
-      groupKey = t.date.split('T')[0];
+      groupKey = t.date.split('T')[0] || '';
     } else if (groupBy === 'week') {
       const weekStart = new Date(date);
       weekStart.setDate(date.getDate() - date.getDay());
-      groupKey = weekStart.toISOString().split('T')[0];
+      groupKey = weekStart.toISOString().split('T')[0] || '';
     } else {
       groupKey = `${date.getFullYear()}-${date.getMonth()}`;
     }
 
+    if (!groupKey) return acc;
     if (!acc[groupKey]) {
       acc[groupKey] = [];
     }
-    acc[groupKey].push(t);
+    acc[groupKey]!.push(t);
     return acc;
   }, {} as Record<string, TimelineTransaction[]>);
 
@@ -174,7 +175,6 @@ export default function TransactionTimeline({
           sortedGroups.map(([groupKey, groupTransactions]) => {
             const groupTotal = groupTransactions.reduce((sum, t) => sum + t.amount, 0);
             const isExpanded = expandedGroups.has(groupKey);
-            const isFuture = new Date(groupKey) >= new Date();
 
             return (
               <div
