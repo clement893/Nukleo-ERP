@@ -27,7 +27,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  closestCenter,
+  useDroppable,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -107,6 +108,25 @@ function TaskCard({ task, isDragging }: { task: ProjectTask; isDragging?: boolea
   );
 }
 
+// Drop Zone Component for sections
+function DropZone({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) {
+  const { setNodeRef, isOver } = useDroppable({ 
+    id,
+    data: {
+      type: 'section',
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className || ''} ${isOver ? 'ring-2 ring-[#523DC9] bg-[#523DC9]/5 transition-all' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
+
 // Employee Card Component
 function EmployeeCard({ 
   employee, 
@@ -115,19 +135,13 @@ function EmployeeCard({
   employee: Employee; 
   task?: ProjectTask | null;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isOver,
-  } = useSortable({ id: `employee-${employee.id}` });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const { setNodeRef, isOver } = useDroppable({ 
+    id: `employee-${employee.id}`,
+    data: {
+      type: 'employee',
+      employeeId: employee.id,
+    },
+  });
 
   const getInitials = (name: string) => {
     return name
@@ -154,12 +168,9 @@ function EmployeeCard({
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
       className={`glass-card p-4 rounded-xl border transition-all ${
         isOver 
-          ? 'border-[#523DC9] bg-[#523DC9]/5 scale-105' 
+          ? 'border-[#523DC9] bg-[#523DC9]/5 scale-105 ring-2 ring-[#523DC9]' 
           : 'border-[#A7A2CF]/20'
       }`}
     >
@@ -220,11 +231,11 @@ function TeamProjectManagementContent() {
   const loading = teamLoading || tasksLoading || employeesLoading;
   const error = teamError ? handleApiError(teamError).message : null;
 
-  // Drag & Drop sensors
+  // Drag & Drop sensors - improved for better touch and mouse support
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3,
+        distance: 5, // Increased from 3 to prevent accidental drags
       },
     })
   );
@@ -294,7 +305,13 @@ function TeamProjectManagementContent() {
     const { active, over } = event;
     setActiveTask(null);
 
-    if (!over || active.id === over.id) return;
+    if (!over) {
+      // Dropped outside any drop zone, cancel
+      return;
+    }
+
+    // If dropped on the same item, do nothing
+    if (active.id === over.id) return;
 
     const taskId = parseInt(active.id as string);
     const task = tasks.find(t => t.id === taskId);
@@ -304,17 +321,19 @@ function TeamProjectManagementContent() {
     let newAssigneeId: number | null = task.assignee_id ?? null;
 
     // Déterminer la nouvelle destination
-    if (over.id === 'shelf') {
+    const overId = over.id.toString();
+    
+    if (overId === 'shelf') {
       newStatus = 'todo';
       newAssigneeId = null;
-    } else if (over.id === 'storage') {
+    } else if (overId === 'storage') {
       newStatus = 'blocked';
       newAssigneeId = null;
-    } else if (over.id === 'checkout') {
+    } else if (overId === 'checkout') {
       newStatus = 'to_transfer';
       newAssigneeId = null;
-    } else if (over.id.toString().startsWith('employee-')) {
-      const employeeId = parseInt(over.id.toString().replace('employee-', ''));
+    } else if (overId.startsWith('employee-')) {
+      const employeeId = parseInt(overId.replace('employee-', ''));
       const employee = employees.find(e => e.id === employeeId);
       
       if (!employee) {
@@ -337,6 +356,29 @@ function TeamProjectManagementContent() {
       newStatus = 'in_progress';
       // Use employee.id (not user_id) because API expects employee_assignee_id
       newAssigneeId = employeeId;
+    } else {
+      // Dropped on another task or unknown zone, check if it's a valid task ID
+      const droppedOnTaskId = parseInt(overId);
+      if (!isNaN(droppedOnTaskId)) {
+        // Dropped on another task - find which section it belongs to
+        const droppedOnTask = tasks.find(t => t.id === droppedOnTaskId);
+        if (droppedOnTask) {
+          // Use the same status as the task we dropped on
+          newStatus = droppedOnTask.status;
+          newAssigneeId = droppedOnTask.assignee_id ?? null;
+        } else {
+          // Unknown drop target, cancel
+          return;
+        }
+      } else {
+        // Unknown drop target, cancel
+        return;
+      }
+    }
+
+    // Don't update if nothing changed
+    if (newStatus === task.status && newAssigneeId === (task.assignee_id ?? null)) {
+      return;
     }
 
     // Update on server using React Query mutation (no optimistic update to avoid ID mismatch)
@@ -454,7 +496,7 @@ function TeamProjectManagementContent() {
         {viewMode === 'board' && (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
@@ -463,20 +505,15 @@ function TeamProjectManagementContent() {
               <h2 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 👥 Équipe ({employees.length})
               </h2>
-              <SortableContext
-                items={employees.map(e => `employee-${e.id}`)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {employees.map((employee) => (
-                    <EmployeeCard
-                      key={employee.id}
-                      employee={employee}
-                      task={employee.currentTask}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {employees.map((employee) => (
+                  <EmployeeCard
+                    key={employee.id}
+                    employee={employee}
+                    task={employee.currentTask}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Task Sections */}
@@ -492,23 +529,24 @@ function TeamProjectManagementContent() {
                     {shelfTasks.length}
                   </Badge>
                 </div>
-                <SortableContext
-                  items={shelfTasks.map(t => t.id.toString())}
-                  strategy={verticalListSortingStrategy}
-                  id="shelf"
-                >
-                  <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
-                    {shelfTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} />
-                    ))}
-                    {shelfTasks.length === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Aucune tâche à faire</p>
-                      </div>
-                    )}
-                  </div>
-                </SortableContext>
+                <DropZone id="shelf" className="min-h-[400px]">
+                  <SortableContext
+                    items={shelfTasks.map(t => t.id.toString())}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
+                      {shelfTasks.map((task) => (
+                        <TaskCard key={task.id} task={task} />
+                      ))}
+                      {shelfTasks.length === 0 && (
+                        <div className="text-center py-12 text-gray-400">
+                          <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Aucune tâche à faire</p>
+                        </div>
+                      )}
+                    </div>
+                  </SortableContext>
+                </DropZone>
               </div>
 
               {/* Le Storage */}
@@ -522,23 +560,24 @@ function TeamProjectManagementContent() {
                     {storageTasks.length}
                   </Badge>
                 </div>
-                <SortableContext
-                  items={storageTasks.map(t => t.id.toString())}
-                  strategy={verticalListSortingStrategy}
-                  id="storage"
-                >
-                  <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
-                    {storageTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} />
-                    ))}
-                    {storageTasks.length === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <Lock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Aucune tâche bloquée</p>
-                      </div>
-                    )}
-                  </div>
-                </SortableContext>
+                <DropZone id="storage" className="min-h-[400px]">
+                  <SortableContext
+                    items={storageTasks.map(t => t.id.toString())}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
+                      {storageTasks.map((task) => (
+                        <TaskCard key={task.id} task={task} />
+                      ))}
+                      {storageTasks.length === 0 && (
+                        <div className="text-center py-12 text-gray-400">
+                          <Lock className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Aucune tâche bloquée</p>
+                        </div>
+                      )}
+                    </div>
+                  </SortableContext>
+                </DropZone>
               </div>
 
               {/* Le Checkout */}
@@ -552,23 +591,24 @@ function TeamProjectManagementContent() {
                     {checkoutTasks.length}
                   </Badge>
                 </div>
-                <SortableContext
-                  items={checkoutTasks.map(t => t.id.toString())}
-                  strategy={verticalListSortingStrategy}
-                  id="checkout"
-                >
-                  <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
-                    {checkoutTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} />
-                    ))}
-                    {checkoutTasks.length === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Aucune tâche à passer</p>
-                      </div>
-                    )}
-                  </div>
-                </SortableContext>
+                <DropZone id="checkout" className="min-h-[400px]">
+                  <SortableContext
+                    items={checkoutTasks.map(t => t.id.toString())}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
+                      {checkoutTasks.map((task) => (
+                        <TaskCard key={task.id} task={task} />
+                      ))}
+                      {checkoutTasks.length === 0 && (
+                        <div className="text-center py-12 text-gray-400">
+                          <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Aucune tâche à passer</p>
+                        </div>
+                      )}
+                    </div>
+                  </SortableContext>
+                </DropZone>
               </div>
             </div>
 
