@@ -17,8 +17,6 @@ import {
   Settings,
   Calendar,
   Building2,
-  Mail,
-  Phone,
   User
 } from 'lucide-react';
 import { Badge, Button, Loading, Alert, Card } from '@/components/ui';
@@ -122,10 +120,10 @@ function OpportunityKanbanCard({ opportunity, isDragging }: { opportunity: Oppor
         )}
 
         {/* Contact */}
-        {opportunity.contact_name && (
+        {opportunity.contact_names && opportunity.contact_names.length > 0 && (
           <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mt-1">
             <User className="w-3 h-3 flex-shrink-0" />
-            <span className="line-clamp-1">{opportunity.contact_name}</span>
+            <span className="line-clamp-1">{opportunity.contact_names.join(', ')}</span>
           </div>
         )}
       </Card>
