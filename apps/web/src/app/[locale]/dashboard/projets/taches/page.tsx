@@ -110,7 +110,7 @@ export default function TachesPage() {
   const [employees, setEmployees] = useState<Array<{ id: number; name: string }>>([]);
 
   // Fetch tasks with filters
-  const { data, isLoading, error, refetch } = useInfiniteProjectTasks(100, {
+  const { data, isLoading, error } = useInfiniteProjectTasks(100, {
     team_id: teamFilter || undefined,
     project_id: projectFilter || undefined,
     assignee_id: assigneeFilter || undefined,
