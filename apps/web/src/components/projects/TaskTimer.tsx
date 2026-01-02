@@ -109,24 +109,34 @@ export default function TaskTimer({ taskId, onTimeTracked }: TaskTimerProps) {
   const isActive = timerStatus?.active && timerStatus.task_id === taskId;
 
   return (
-    <div className="flex items-center gap-2">
-      {isActive && (
-        <Badge variant="default" className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {formatTime(elapsedSeconds)}
-        </Badge>
-      )}
+    <div className="space-y-3">
       {isActive ? (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleStop}
-          loading={loading}
-          className="text-red-600 hover:text-red-700"
-        >
-          <Square className="w-4 h-4 mr-1" />
-          Arrêter
-        </Button>
+        <div className="p-4 rounded-lg border-2 border-primary-500/30 bg-primary-500/5 dark:bg-primary-500/10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
+              <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
+                Timer démarré
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleStop}
+              loading={loading}
+              className="text-red-600 hover:text-red-700 border-red-500/30 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <Square className="w-4 h-4 mr-1" />
+              STOP
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            <span className="text-2xl font-bold text-gray-900 dark:text-white font-mono">
+              {formatTime(elapsedSeconds)}
+            </span>
+          </div>
+        </div>
       ) : (
         <Button
           size="sm"
@@ -134,9 +144,10 @@ export default function TaskTimer({ taskId, onTimeTracked }: TaskTimerProps) {
           onClick={handleStart}
           loading={loading}
           disabled={timerStatus?.active && timerStatus.task_id !== taskId}
+          className="w-full"
         >
-          <Play className="w-4 h-4 mr-1" />
-          Démarrer
+          <Play className="w-4 h-4 mr-2" />
+          Démarrer le timer
         </Button>
       )}
     </div>
