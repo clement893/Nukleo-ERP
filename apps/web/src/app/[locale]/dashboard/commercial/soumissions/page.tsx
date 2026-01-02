@@ -1555,7 +1555,7 @@ export default function SoumissionsPage() {
             setSelectedQuote(null);
           }}
           title="Modifier le devis"
-          size="xl"
+          size="full"
         >
           {selectedQuote && (
             <QuoteForm
