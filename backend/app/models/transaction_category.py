@@ -54,7 +54,8 @@ class TransactionCategory(Base):
     # Relationships
     user = relationship("User", backref="transaction_categories")
     parent = relationship("TransactionCategory", remote_side=[id], backref="children")
-    transactions = relationship("Transaction", back_populates="category")
+    # Note: Transaction relationship removed to avoid mapper initialization error
+    # Transactions are accessed via Transaction.category_id directly
 
     def __repr__(self) -> str:
         return f"<TransactionCategory(id={self.id}, name={self.name}, type={self.type})>"
