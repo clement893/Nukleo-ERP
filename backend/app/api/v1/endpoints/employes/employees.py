@@ -272,6 +272,7 @@ async def list_employees(
             "user_id": getattr(employee, 'user_id', None),
             "team_id": getattr(employee, 'team_id', None),
             "capacity_hours_per_week": getattr(employee, 'capacity_hours_per_week', None),
+            "employee_number": getattr(employee, 'employee_number', None),
             "created_at": employee.created_at,
             "updated_at": employee.updated_at,
         }
@@ -291,6 +292,7 @@ async def list_employees(
                 "photo_filename": getattr(employee, 'photo_filename', None),
                 "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
                 "birthday": employee.birthday.isoformat() if employee.birthday else None,
+                "employee_number": getattr(employee, 'employee_number', None),
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             }
@@ -385,6 +387,7 @@ async def get_employee(
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
         "user_id": getattr(employee, 'user_id', None),
         "team_id": getattr(employee, 'team_id', None),
+        "employee_number": getattr(employee, 'employee_number', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -412,6 +415,7 @@ async def create_employee(
         photo_filename=getattr(employee_data, 'photo_filename', None),
         hire_date=employee_data.hire_date,
         birthday=employee_data.birthday,
+        employee_number=getattr(employee_data, 'employee_number', None),
         team_id=getattr(employee_data, 'team_id', None),
     )
     
@@ -434,6 +438,7 @@ async def create_employee(
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
         "user_id": getattr(employee, 'user_id', None),
         "team_id": getattr(employee, 'team_id', None),
+        "employee_number": getattr(employee, 'employee_number', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -486,6 +491,7 @@ async def update_employee(
         "birthday": employee.birthday.isoformat() if employee.birthday else None,
         "user_id": getattr(employee, 'user_id', None),
         "team_id": getattr(employee, 'team_id', None),
+        "employee_number": getattr(employee, 'employee_number', None),
         "created_at": employee.created_at,
         "updated_at": employee.updated_at,
     }
@@ -1072,6 +1078,7 @@ async def import_employees(
                 "hire_date": employee.hire_date.isoformat() if employee.hire_date else None,
                 "birthday": employee.birthday.isoformat() if employee.birthday else None,
                 "user_id": getattr(employee, 'user_id', None),
+                "employee_number": getattr(employee, 'employee_number', None),
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             }

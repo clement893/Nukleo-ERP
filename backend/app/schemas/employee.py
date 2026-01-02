@@ -20,6 +20,7 @@ class EmployeeBase(BaseModel):
     hire_date: Optional[date] = Field(None, description="Hire date")
     birthday: Optional[date] = Field(None, description="Birthday")
     capacity_hours_per_week: Optional[float] = Field(35.0, ge=0, le=168, description="Capacity in hours per week (default: 35)")
+    employee_number: Optional[str] = Field(None, max_length=50, description="Employee number")
     team_id: Optional[int] = Field(None, description="Team ID")
     
     @field_validator('first_name', 'last_name')
@@ -56,6 +57,7 @@ class EmployeeUpdate(BaseModel):
     hire_date: Optional[date] = Field(None, description="Hire date")
     birthday: Optional[date] = Field(None, description="Birthday")
     capacity_hours_per_week: Optional[float] = Field(None, ge=0, le=168, description="Capacity in hours per week")
+    employee_number: Optional[str] = Field(None, max_length=50, description="Employee number")
     team_id: Optional[int] = Field(None, description="Team ID")
 
 

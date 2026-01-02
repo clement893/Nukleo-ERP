@@ -27,7 +27,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { Button, Card, Input, Loading, Textarea, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Textarea, Select, useToast, Badge } from '@/components/ui';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpdate, type TimerStatus } from '@/lib/api/time-entries';
 import { projectsAPI } from '@/lib/api/projects';
@@ -84,6 +84,21 @@ export default function FeuillesTempsPage() {
   const [timerStatus, setTimerStatus] = useState<TimerStatus | null>(null);
   const [timerElapsed, setTimerElapsed] = useState<number>(0);
   const [showTimerWidget, setShowTimerWidget] = useState(false);
+  
+  // Active timers state
+  const [activeTimers, setActiveTimers] = useState<Array<{
+    user_id: number;
+    user_name: string;
+    user_email: string;
+    task_id?: number;
+    task_title?: string | null;
+    project_name?: string | null;
+    start_time: string;
+    elapsed_seconds: number;
+    accumulated_seconds: number;
+    description?: string | null;
+    paused: boolean;
+  }>>([]);
   
   // Expanded groups
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -324,13 +339,14 @@ export default function FeuillesTempsPage() {
       const interval = setInterval(loadActiveTimers, 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [viewMode]);
 
   // Update elapsed time for active timers every second
   useEffect(() => {
     if (viewMode === 'active-timers' && activeTimers.length > 0) {
       const interval = setInterval(() => {
-        setActiveTimers(prev => prev.map(timer => {
+        setActiveTimers((prev: typeof activeTimers) => prev.map((timer) => {
           if (timer.paused) {
             return timer;
           }
@@ -342,6 +358,7 @@ export default function FeuillesTempsPage() {
       }, 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [viewMode, activeTimers]);
 
   const resetForm = () => {

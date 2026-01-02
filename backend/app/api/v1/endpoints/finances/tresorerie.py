@@ -17,7 +17,7 @@ from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.bank_account import BankAccount, BankAccountType
-from app.models.transaction import Transaction, TransactionStatus
+from app.models.transaction import Transaction, TransactionStatus, TransactionType
 from app.models.transaction_category import TransactionCategory, TransactionType
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.expense_account import ExpenseAccount, ExpenseAccountStatus
@@ -836,14 +836,19 @@ async def get_weekly_cashflow(
         
         # Process transactions
         for transaction in transactions:
-            transaction_date = transaction.date
+            transaction_date = transaction.transaction_date
+            if not transaction_date:
+                logger.warning(f"Transaction {transaction.id} has no transaction_date, skipping")
+                continue
             week_start = transaction_date - timedelta(days=transaction_date.weekday())
             week_key = week_start.isoformat()
             
             if week_key in weeks_data:
-                if transaction.type == "entry":
+                # Transaction.type is an enum: TransactionType.REVENUE or TransactionType.EXPENSE
+                # Map to entry/exit for cashflow calculation
+                if transaction.type == TransactionType.REVENUE:
                     weeks_data[week_key]["entries"] += transaction.amount
-                else:
+                elif transaction.type == TransactionType.EXPENSE:
                     weeks_data[week_key]["exits"] += transaction.amount
         
         # Calculate balances
@@ -1924,7 +1929,7 @@ async def import_transactions(
                     "id": t.id,
                     "type": t.type,
                     "amount": float(t.amount),
-                    "date": t.date.isoformat(),
+                    "date": t.transaction_date.isoformat() if t.transaction_date else None,
                     "description": t.description
                 }
                 for t in created_transactions[:10]  # Return first 10
