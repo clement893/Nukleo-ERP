@@ -114,7 +114,6 @@ export function EmployeePortalDashboardGrid({ className = '' }: EmployeePortalDa
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
         rowHeight={100}
         onLayoutChange={handleLayoutChange}
-        draggableHandle=".widget-drag-handle"
         compactType="vertical"
         margin={[16, 16]}
         containerPadding={[0, 0]}

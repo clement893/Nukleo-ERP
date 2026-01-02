@@ -6,7 +6,6 @@ import { type VacationRequest, type VacationRequestCreate } from '@/lib/api/vaca
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { Card, Loading, Alert, Badge, Button } from '@/components/ui';
-import { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
@@ -137,87 +136,7 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
     return requests.filter(req => req.status === 'approved');
   }, [requests]);
 
-  // Table columns
-  const columns: Column<VacationRequest>[] = [
-    {
-      key: 'dates',
-      label: 'Période',
-      sortable: false,
-      render: (_value, request) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">{formatDate(request.start_date)}</div>
-            <div className="text-sm text-muted-foreground">
-              jusqu'au {formatDate(request.end_date)}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {calculateDays(request.start_date, request.end_date)} jour(s)
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'Statut',
-      sortable: true,
-      render: (value) => {
-        const status = String(value);
-        const statusConfig = {
-          pending: { label: 'En attente', color: 'bg-yellow-500 hover:bg-yellow-600', icon: Clock },
-          approved: { label: 'Approuvée', color: 'bg-green-500 hover:bg-green-600', icon: CheckCircle },
-          rejected: { label: 'Rejetée', color: 'bg-red-500 hover:bg-red-600', icon: XCircle },
-          cancelled: { label: 'Annulée', color: 'bg-gray-500 hover:bg-gray-600', icon: XCircle },
-        };
-        const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-        const Icon = config.icon;
-        
-        return (
-          <Badge variant="default" className={`${config.color} text-white flex items-center gap-1 w-fit`}>
-            <Icon className="w-3 h-3" />
-            {config.label}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: 'reason',
-      label: 'Raison',
-      sortable: false,
-      render: (value) => (
-        <div className="text-sm text-muted-foreground">
-          {value ? String(value) : '-'}
-        </div>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      sortable: false,
-      render: (_value, request) => (
-        <div className="flex items-center gap-2">
-          {request.status === 'pending' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDelete(request)}
-              disabled={deleteMutation.isPending}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              Supprimer
-            </Button>
-          )}
-          {request.status === 'rejected' && request.rejection_reason && (
-            <div className="text-xs text-muted-foreground max-w-xs" title={request.rejection_reason}>
-              Raison: {request.rejection_reason}
-            </div>
-          )}
-        </div>
-      ),
-    },
-  ];
+  // Vacation requests are rendered manually below, not using DataTable
 
   if (error) {
     return (

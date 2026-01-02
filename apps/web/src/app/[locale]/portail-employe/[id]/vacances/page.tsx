@@ -66,15 +66,10 @@ export default function MesVacances() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
-        <div className="relative p-8">
-          <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Mes Vacances
-          </h1>
-          <p className="text-white/80 text-lg">Gérez vos demandes de congés</p>
-        </div>
-      </div>
+      <EmployeePortalHeader
+        title="Mes Vacances"
+        description="Gérez vos demandes de congés"
+      />
 
       <EmployeePortalVacations employee={employee} />
     </div>

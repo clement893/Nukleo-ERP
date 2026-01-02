@@ -6,15 +6,21 @@ import { useEffect, useState, useRef } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
-  AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
-  Building2, Loader2, Upload, X, CheckCircle2, AlertCircle,
-  Filter, RefreshCw, ArrowUp, ArrowDown
+  Wallet, Download, Plus, Loader2, Upload, X, CheckCircle2, AlertCircle,
+  RefreshCw, LayoutDashboard, Calendar, FileText, BarChart3, Building2, Tag, Bell
 } from 'lucide-react';
-import { Badge, Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
+import Tabs, { TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
 import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats, type TransactionCategory } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
+import TresorerieOverviewTab from '@/components/tresorerie/TresorerieOverviewTab';
+import TresorerieForecastTab from '@/components/tresorerie/TresorerieForecastTab';
+import TresorerieTransactionsTab from '@/components/tresorerie/TresorerieTransactionsTab';
+import TresorerieAnalyticsTab from '@/components/tresorerie/TresorerieAnalyticsTab';
+import TresorerieAccountsTab from '@/components/tresorerie/TresorerieAccountsTab';
+import TresorerieCategoriesTab from '@/components/tresorerie/TresorerieCategoriesTab';
+import TresorerieAlertsTab from '@/components/tresorerie/TresorerieAlertsTab';
 
 interface SoldeHebdomadaire {
   semaine: string;
@@ -298,8 +304,87 @@ export default function TresoreriePage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+        {/* Tabs System */}
+        <Tabs defaultTab="overview" className="mt-6">
+          <TabList className="flex-wrap border-b border-gray-200 dark:border-gray-700">
+            <Tab value="overview">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Vue d'ensemble
+            </Tab>
+            <Tab value="forecast">
+              <Calendar className="w-4 h-4 mr-2" />
+              Prévisions
+            </Tab>
+            <Tab value="transactions">
+              <FileText className="w-4 h-4 mr-2" />
+              Transactions
+            </Tab>
+            <Tab value="analytics">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analyse
+            </Tab>
+            <Tab value="accounts">
+              <Building2 className="w-4 h-4 mr-2" />
+              Comptes
+            </Tab>
+            <Tab value="categories">
+              <Tag className="w-4 h-4 mr-2" />
+              Catégories
+            </Tab>
+            <Tab value="alerts">
+              <Bell className="w-4 h-4 mr-2" />
+              Alertes
+            </Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel value="overview">
+              <TresorerieOverviewTab
+                soldeActuel={soldeActuel}
+                stats={stats}
+                soldesHebdo={soldesHebdo.map((week: CashflowWeek) => ({
+                  semaine: week.week_start,
+                  entrees: Number(week.entries),
+                  sorties: Number(week.exits),
+                  solde: Number(week.balance),
+                  projete: week.is_projected
+                }))}
+                transactions={transactions}
+                categories={categories}
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+                onRefresh={loadTresorerie}
+                onExport={handleExport}
+              />
+            </TabPanel>
+
+            <TabPanel value="forecast">
+              <TresorerieForecastTab />
+            </TabPanel>
+
+            <TabPanel value="transactions">
+              <TresorerieTransactionsTab />
+            </TabPanel>
+
+            <TabPanel value="analytics">
+              <TresorerieAnalyticsTab />
+            </TabPanel>
+
+            <TabPanel value="accounts">
+              <TresorerieAccountsTab />
+            </TabPanel>
+
+            <TabPanel value="categories">
+              <TresorerieCategoriesTab />
+            </TabPanel>
+
+            <TabPanel value="alerts">
+              <TresorerieAlertsTab />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+
+        {/* Old Content removed - Now in OverviewTab component */}
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
