@@ -105,9 +105,11 @@ export default function CommercialPage() {
       }))
       .sort((a: any, b: any) => {
         // Sort by priority (high > medium > low)
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        if (priorityOrder[a.actionNeeded.priority] !== priorityOrder[b.actionNeeded.priority]) {
-          return priorityOrder[b.actionNeeded.priority] - priorityOrder[a.actionNeeded.priority];
+        const priorityOrder: Record<'high' | 'medium' | 'low', number> = { high: 3, medium: 2, low: 1 };
+        const aPriority = priorityOrder[a.actionNeeded.priority as 'high' | 'medium' | 'low'];
+        const bPriority = priorityOrder[b.actionNeeded.priority as 'high' | 'medium' | 'low'];
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority;
         }
         // Then by deadline (sooner first)
         if (a.daysUntilDeadline !== null && b.daysUntilDeadline !== null) {
@@ -269,8 +271,8 @@ export default function CommercialPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <FileText className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <FileText className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -284,8 +286,8 @@ export default function CommercialPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Briefcase className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Briefcase className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -313,8 +315,8 @@ export default function CommercialPage() {
                 {opportunitiesNeedingAction.length > 0 && (
                   <Badge className={`${
                     opportunitiesNeedingAction.some((opp: any) => opp.actionNeeded.priority === 'high')
-                      ? 'bg-[#EF4444] text-white'
-                      : 'bg-[#F59E0B] text-white'
+                      ? 'bg-danger-500 text-white'
+                      : 'bg-warning-500 text-white'
                   }`}>
                     {opportunitiesNeedingAction.length}
                   </Badge>
@@ -330,13 +332,13 @@ export default function CommercialPage() {
                 ) : (
                   opportunitiesNeedingAction.map((opp: any) => {
                     const priorityColors = {
-                      high: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30',
-                      medium: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30',
-                      low: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
+                      high: 'bg-danger-500/10 text-danger-500 border-danger-500/30',
+                      medium: 'bg-warning-500/10 text-warning-500 border-warning-500/30',
+                      low: 'bg-primary-500/10 text-primary-500 border-primary-500/30',
                     };
                     const deadlineColors = {
-                      urgent: 'bg-[#EF4444]/10 text-[#EF4444]',
-                      warning: 'bg-[#F59E0B]/10 text-[#F59E0B]',
+                      urgent: 'bg-danger-500/10 text-danger-500',
+                      warning: 'bg-warning-500/10 text-warning-500',
                       normal: 'bg-gray-500/10 text-gray-500',
                     };
                     const getDeadlineColor = (days: number | null) => {
@@ -349,7 +351,7 @@ export default function CommercialPage() {
                     return (
                       <div
                         key={opp.id}
-                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all"
+                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/30 transition-all"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
@@ -359,7 +361,7 @@ export default function CommercialPage() {
                                   {opp.name}
                                 </h4>
                               </Link>
-                              <Badge className={`${priorityColors[opp.actionNeeded.priority]} border text-xs`}>
+                              <Badge className={`${priorityColors[opp.actionNeeded.priority as 'high' | 'medium' | 'low']} border text-xs`}>
                                 {opp.actionNeeded.label}
                               </Badge>
                             </div>
@@ -384,7 +386,7 @@ export default function CommercialPage() {
                             </div>
                           </div>
                           <div className="text-right ml-4">
-                            <div className="text-lg font-bold text-[#10B981]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                            <div className="text-lg font-bold text-secondary-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                               {formatCurrency(opp.amount || 0)}
                             </div>
                             {opp.probability && (
