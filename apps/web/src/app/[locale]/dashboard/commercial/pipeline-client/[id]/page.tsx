@@ -1148,12 +1148,16 @@ export default function PipelineDetailPage() {
                         data={(pipeline.stages || [])
                           .sort((a, b) => (a.order || 0) - (b.order || 0))
                           .map(stage => {
+                            // Get computed primary color for charts (libraries need hex value)
+                            const primaryColor = typeof window !== 'undefined' 
+                              ? getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim() || '#523DC9'
+                              : '#523DC9';
                             const stageOpps = opportunitiesByStage[stage.id] || [];
                             const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
                             return {
                               label: stage.name || '',
                               value: stageValue,
-                              color: stage.color || '#523DC9',
+                              color: stage.color || primaryColor,
                             };
                           })}
                         height={250}
@@ -1188,7 +1192,7 @@ export default function PipelineDetailPage() {
                               <div className="flex items-center gap-3">
                                 <div 
                                   className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: stage.color || '#523DC9' }}
+                                  style={{ backgroundColor: stage.color || 'var(--color-primary-500)' }}
                                 />
                                 <span className="font-medium">{stage.name}</span>
                                 <span className="text-gray-400">→</span>
@@ -1436,7 +1440,7 @@ export default function PipelineDetailPage() {
                       {filteredAndSortedOpportunities.map((opp) => (
                         <div 
                           key={opp.id} 
-                          className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer group"
+                          className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/30 transition-all cursor-pointer group"
                           onClick={() => handleViewOpportunity(opp)}
                         >
                           <div className="flex items-start justify-between mb-2">
@@ -1732,7 +1736,7 @@ export default function PipelineDetailPage() {
                             <div className="flex items-center gap-3">
                               <div 
                                 className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white"
-                                style={{ backgroundColor: stage.color || '#523DC9' }}
+                                style={{ backgroundColor: stage.color || 'var(--color-primary-500)' }}
                               >
                                 {index + 1}
                               </div>
