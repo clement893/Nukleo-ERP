@@ -300,4 +300,35 @@ export const projectsAPI = {
     const { downloadProjectZipTemplate } = await import('@/lib/utils/generateProjectTemplate');
     await downloadProjectZipTemplate();
   },
+
+  /**
+   * Get employees assigned to a project
+   */
+  getEmployees: async (projectId: number): Promise<ProjectEmployee[]> => {
+    const response = await apiClient.get<ProjectEmployee[]>(`/v1/projects/${projectId}/employees`);
+    return extractApiData<ProjectEmployee[]>(response);
+  },
+
+  /**
+   * Assign an employee to a project
+   */
+  assignEmployee: async (projectId: number, employeeId: number, role?: string): Promise<ProjectEmployee> => {
+    const params: Record<string, string> = {};
+    if (role) {
+      params.role = role;
+    }
+    const response = await apiClient.post<ProjectEmployee>(
+      `/v1/projects/${projectId}/employees/${employeeId}`,
+      null,
+      { params }
+    );
+    return extractApiData<ProjectEmployee>(response);
+  },
+
+  /**
+   * Remove an employee from a project
+   */
+  removeEmployee: async (projectId: number, employeeId: number): Promise<void> => {
+    await apiClient.delete(`/v1/projects/${projectId}/employees/${employeeId}`);
+  },
 };

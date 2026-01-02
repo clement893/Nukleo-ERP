@@ -36,9 +36,10 @@ import ProjectComments from '@/components/projects/ProjectComments';
 import ProjectGantt from '@/components/projects/ProjectGantt';
 import ProjectStatistics from '@/components/projects/ProjectStatistics';
 import ProjectDeadlines from '@/components/projects/ProjectDeadlines';
+import ProjectEmployees from '@/components/projects/ProjectEmployees';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 
-type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables' | 'files' | 'comments' | 'gantt' | 'statistics' | 'deadlines';
+type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables' | 'files' | 'comments' | 'gantt' | 'statistics' | 'deadlines' | 'employees';
 
 function ProjectDetailContent() {
   const router = useRouter();
@@ -404,6 +405,21 @@ function ProjectDetailContent() {
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
             </button>
+
+            <button
+              onClick={() => setActiveTab('employees')}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                activeTab === 'employees'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Users className="w-4 h-4 inline mr-2" />
+              Employés
+              {activeTab === 'employees' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -756,6 +772,10 @@ function ProjectDetailContent() {
           <Card className="glass-card p-6">
             <ProjectDeadlines projectId={projectId} />
           </Card>
+        )}
+
+        {activeTab === 'employees' && (
+          <ProjectEmployees projectId={projectId} />
         )}
       </Container>
     </div>

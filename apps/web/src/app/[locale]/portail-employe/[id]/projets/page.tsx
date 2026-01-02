@@ -31,9 +31,23 @@ export default function MesProjets() {
       
       const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
       
-      // Filter projects where employee has tasks
+      // Get all projects where employee is assigned (via project_employees table)
+      const assignedProjectIds = new Set<number>();
+      for (const project of projectsList) {
+        try {
+          const employees = await projectsAPI.getEmployees(project.id);
+          if (employees.some((emp: any) => emp.employee_id === employeeId || emp.user_id === employeeId)) {
+            assignedProjectIds.add(project.id);
+          }
+        } catch (err) {
+          // Silently fail if we can't get employees for a project
+          console.warn(`Could not get employees for project ${project.id}:`, err);
+        }
+      }
+      
+      // Filter projects where employee is assigned OR has tasks
       const myProjects = projectsList.filter((p: any) => 
-        tasksData.some((t: any) => t.project_id === p.id)
+        assignedProjectIds.has(p.id) || tasksData.some((t: any) => t.project_id === p.id)
       );
       
       setProjects(myProjects);
