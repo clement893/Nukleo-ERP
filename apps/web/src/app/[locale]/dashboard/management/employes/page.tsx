@@ -347,7 +347,7 @@ export default function EmployeesPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -378,7 +378,7 @@ export default function EmployeesPage() {
                 Exporter
               </Button>
               <Button 
-                className="bg-white text-[#523DC9] hover:bg-white/90"
+                className="bg-white text-primary-500 hover:bg-white/90"
                 onClick={() => setShowCreateModal(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -390,10 +390,10 @@ export default function EmployeesPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Users className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Users className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -402,7 +402,7 @@ export default function EmployeesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Employés</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <UserCheck className="w-6 h-6 text-[#10B981]" />
@@ -414,7 +414,7 @@ export default function EmployeesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Actifs</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <Plane className="w-6 h-6 text-[#F59E0B]" />
@@ -426,7 +426,7 @@ export default function EmployeesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">En Congé</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <DollarSign className="w-6 h-6 text-[#3B82F6]" />
@@ -440,7 +440,7 @@ export default function EmployeesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="flex-1 w-full relative">
@@ -562,7 +562,7 @@ export default function EmployeesPage() {
 
         {/* Employees Grid/List/Table */}
         {filteredEmployees.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Aucun employé trouvé
@@ -602,7 +602,7 @@ export default function EmployeesPage() {
               return (
                 <Card 
                   key={employee.id}
-                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 group"
+                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200 group"
                 >
                   <div className="flex flex-col items-center text-center mb-4">
                     {employee.photo_url ? (
@@ -708,7 +708,7 @@ export default function EmployeesPage() {
             })}
           </div>
         ) : viewMode === 'list' ? (
-          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+          <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredEmployees.map((employee: Employee) => {
                 const initials = `${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase();
@@ -820,7 +820,7 @@ export default function EmployeesPage() {
             </div>
           </Card>
         ) : (
-          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+          <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-800/50">
@@ -1020,8 +1020,8 @@ export default function EmployeesPage() {
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-lg file:border-0
                 file:text-sm file:font-semibold
-                file:bg-[#523DC9] file:text-white
-                hover:file:bg-[#523DC9]/90
+                file:bg-primary-500 file:text-white
+                hover:file:bg-primary-500/90
                 file:cursor-pointer"
             />
           </div>

@@ -456,7 +456,7 @@ function TeamProjectManagementContent() {
       <MotionDiv variant="slideUp" duration="normal" className="space-y-6">
         {/* Header */}
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -478,13 +478,13 @@ function TeamProjectManagementContent() {
               <div className="flex gap-2">
                 <Button
                   onClick={() => setViewMode('board')}
-                  className={viewMode === 'board' ? 'bg-white text-[#523DC9]' : 'bg-white/20 text-white border-white/30'}
+                  className={viewMode === 'board' ? 'bg-white text-primary-500' : 'bg-white/20 text-white border-white/30'}
                 >
                   Board
                 </Button>
                 <Button
                   onClick={() => setViewMode('capacity')}
-                  className={viewMode === 'capacity' ? 'bg-white text-[#523DC9]' : 'bg-white/20 text-white border-white/30'}
+                  className={viewMode === 'capacity' ? 'bg-white text-primary-500' : 'bg-white/20 text-white border-white/30'}
                 >
                   Capacité
                 </Button>
@@ -534,7 +534,7 @@ function TeamProjectManagementContent() {
                     items={shelfTasks.map(t => t.id.toString())}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
+                    <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 min-h-[400px]">
                       {shelfTasks.map((task) => (
                         <TaskCard key={task.id} task={task} />
                       ))}
@@ -565,7 +565,7 @@ function TeamProjectManagementContent() {
                     items={storageTasks.map(t => t.id.toString())}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
+                    <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 min-h-[400px]">
                       {storageTasks.map((task) => (
                         <TaskCard key={task.id} task={task} />
                       ))}
@@ -596,7 +596,7 @@ function TeamProjectManagementContent() {
                     items={checkoutTasks.map(t => t.id.toString())}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 min-h-[400px]">
+                    <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 min-h-[400px]">
                       {checkoutTasks.map((task) => (
                         <TaskCard key={task.id} task={task} />
                       ))}
@@ -628,7 +628,7 @@ function TeamProjectManagementContent() {
             
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
                     <Clock className="w-6 h-6 text-blue-600" />
@@ -640,7 +640,7 @@ function TeamProjectManagementContent() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">Capacité totale / semaine</div>
               </Card>
 
-              <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
                     <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -652,7 +652,7 @@ function TeamProjectManagementContent() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">Heures utilisées</div>
               </Card>
 
-              <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
                     <CheckCircle className="w-6 h-6 text-green-600" />
@@ -664,7 +664,7 @@ function TeamProjectManagementContent() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">Heures disponibles</div>
               </Card>
 
-              <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
                     <AlertCircle className="w-6 h-6 text-purple-600" />
@@ -678,7 +678,7 @@ function TeamProjectManagementContent() {
             </div>
 
             {/* Capacity Bar */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Utilisation de la capacité
               </h3>
@@ -698,7 +698,7 @@ function TeamProjectManagementContent() {
             </Card>
 
             {/* Employee Capacity */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Capacité par employé
               </h3>
@@ -748,7 +748,7 @@ function TeamProjectManagementContent() {
               Timeline des tâches
             </h2>
             
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <div className="space-y-4">
                 {tasks
                   .filter(t => t.created_at)

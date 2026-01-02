@@ -163,7 +163,7 @@ export default function TaskDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Description
               </h2>
@@ -180,7 +180,7 @@ export default function TaskDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Details */}
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Détails
               </h2>

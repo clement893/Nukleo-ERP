@@ -3,13 +3,13 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react';
-import { PageContainer, PageHeader } from '@/components/layout';
+import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  DollarSign, TrendingDown, FileText, Upload, Download, 
-  Building2, Repeat, Receipt, Calendar, Filter, Search,
-  Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock,
-  AlertCircle, FileSpreadsheet, Info
+  TrendingDown, FileText, Upload, Download, 
+  Building2, Repeat, Receipt, Calendar, Search,
+  Plus, Edit, Eye, CheckCircle, XCircle, Clock,
+  AlertCircle, Info
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
@@ -80,7 +80,6 @@ export default function DepensesPage() {
   
   // State
   const [activeTab, setActiveTab] = useState('expenses');
-  const [loading, setLoading] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
@@ -89,16 +88,11 @@ export default function DepensesPage() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'projected'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+  const [categoryFilter] = useState<string>('all');
+  const [dateRange] = useState<{ start?: string; end?: string }>({});
   
   // Modals
-  const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [showSupplierModal, setShowSupplierModal] = useState(false);
-  const [showRecurringModal, setShowRecurringModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Expense | Supplier | RecurringExpense | Invoice | null>(null);
   
   // Upload
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -106,11 +100,10 @@ export default function DepensesPage() {
 
   useEffect(() => {
     loadData();
-  }, [activeTab, statusFilter, categoryFilter, dateRange]);
+  }, [activeTab, statusFilter]);
 
   const loadData = async () => {
     try {
-      setLoading(true);
       // TODO: Load from API
       // For now, using mock data
       setExpenses([]);
@@ -123,8 +116,6 @@ export default function DepensesPage() {
         message: 'Erreur lors du chargement des données',
         type: 'error',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -405,7 +396,13 @@ export default function DepensesPage() {
                     </select>
                     <Button
                       variant="primary"
-                      onClick={() => setShowExpenseModal(true)}
+                      onClick={() => {
+                        // TODO: Open expense modal
+                        showToast({
+                          message: 'Fonctionnalité à venir',
+                          type: 'info',
+                        });
+                      }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Nouvelle dépense
@@ -420,7 +417,13 @@ export default function DepensesPage() {
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune dépense trouvée</p>
                       <Button
                         variant="primary"
-                        onClick={() => setShowExpenseModal(true)}
+                        onClick={() => {
+                          // TODO: Open expense modal
+                          showToast({
+                            message: 'Fonctionnalité à venir',
+                            type: 'info',
+                          });
+                        }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Ajouter une dépense
@@ -478,8 +481,11 @@ export default function DepensesPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedItem(expense);
-                                  setShowExpenseModal(true);
+                                  // TODO: Open expense details
+                                  showToast({
+                                    message: 'Fonctionnalité à venir',
+                                    type: 'info',
+                                  });
                                 }}
                               >
                                 <Eye className="w-4 h-4" />
@@ -501,7 +507,13 @@ export default function DepensesPage() {
                   <h2 className="text-xl font-bold font-nukleo">Fournisseurs</h2>
                   <Button
                     variant="primary"
-                    onClick={() => setShowSupplierModal(true)}
+                    onClick={() => {
+                      // TODO: Open supplier modal
+                      showToast({
+                        message: 'Fonctionnalité à venir',
+                        type: 'info',
+                      });
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Nouveau fournisseur
@@ -515,7 +527,13 @@ export default function DepensesPage() {
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun fournisseur</p>
                       <Button
                         variant="primary"
-                        onClick={() => setShowSupplierModal(true)}
+                        onClick={() => {
+                          // TODO: Open supplier modal
+                          showToast({
+                            message: 'Fonctionnalité à venir',
+                            type: 'info',
+                          });
+                        }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Ajouter un fournisseur
@@ -554,8 +572,11 @@ export default function DepensesPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setSelectedItem(supplier);
-                                setShowSupplierModal(true);
+                                // TODO: Open supplier edit modal
+                                showToast({
+                                  message: 'Fonctionnalité à venir',
+                                  type: 'info',
+                                });
                               }}
                             >
                               <Edit className="w-4 h-4" />
@@ -576,7 +597,13 @@ export default function DepensesPage() {
                   <h2 className="text-xl font-bold font-nukleo">Dépenses récurrentes</h2>
                   <Button
                     variant="primary"
-                    onClick={() => setShowRecurringModal(true)}
+                    onClick={() => {
+                      // TODO: Open recurring expense modal
+                      showToast({
+                        message: 'Fonctionnalité à venir',
+                        type: 'info',
+                      });
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Nouvelle dépense récurrente
@@ -590,7 +617,13 @@ export default function DepensesPage() {
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune dépense récurrente</p>
                       <Button
                         variant="primary"
-                        onClick={() => setShowRecurringModal(true)}
+                        onClick={() => {
+                          // TODO: Open recurring expense modal
+                          showToast({
+                            message: 'Fonctionnalité à venir',
+                            type: 'info',
+                          });
+                        }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Ajouter une dépense récurrente
@@ -639,8 +672,11 @@ export default function DepensesPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setSelectedItem(recurring);
-                                setShowRecurringModal(true);
+                                // TODO: Open recurring expense edit modal
+                                showToast({
+                                  message: 'Fonctionnalité à venir',
+                                  type: 'info',
+                                });
                               }}
                             >
                               <Edit className="w-4 h-4" />
@@ -661,7 +697,13 @@ export default function DepensesPage() {
                   <h2 className="text-xl font-bold font-nukleo">Factures reçues</h2>
                   <Button
                     variant="primary"
-                    onClick={() => setShowInvoiceModal(true)}
+                    onClick={() => {
+                      // TODO: Open invoice modal
+                      showToast({
+                        message: 'Fonctionnalité à venir',
+                        type: 'info',
+                      });
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Nouvelle facture
@@ -675,7 +717,13 @@ export default function DepensesPage() {
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune facture</p>
                       <Button
                         variant="primary"
-                        onClick={() => setShowInvoiceModal(true)}
+                        onClick={() => {
+                          // TODO: Open invoice modal
+                          showToast({
+                            message: 'Fonctionnalité à venir',
+                            type: 'info',
+                          });
+                        }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Ajouter une facture
@@ -719,8 +767,11 @@ export default function DepensesPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedItem(invoice);
-                                  setShowInvoiceModal(true);
+                                  // TODO: Open invoice details
+                                  showToast({
+                                    message: 'Fonctionnalité à venir',
+                                    type: 'info',
+                                  });
                                 }}
                               >
                                 <Eye className="w-4 h-4" />
