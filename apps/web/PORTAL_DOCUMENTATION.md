@@ -163,24 +163,38 @@ const ticket = await clientPortalAPI.createTicket({
 
 ### Overview
 
-The Employee Portal (ERP) allows employees to:
-- Manage all orders
-- Manage inventory
-- Manage clients
-- Manage invoices
-- View reports
-- Access all ERP modules
+The Employee Portal allows employees to:
+- Access their personal dashboard
+- View and manage their tasks, projects, timesheets
+- Access ERP modules based on their permissions
+- View and manage notifications
+- Access personalized features (Leo AI, deadlines, expenses, vacations)
 
 ### Routes
 
-All employee portal routes are prefixed with `/erp`:
+All employee portal routes are prefixed with `/portail-employe/[id]`:
 
-- `/erp/dashboard` - ERP dashboard
-- `/erp/orders` - Order management
-- `/erp/inventory` - Inventory management
-- `/erp/clients` - Client management
-- `/erp/invoices` - Invoice management
-- `/erp/reports` - Reports and analytics
+**Base Pages** (Always accessible to authenticated employees):
+- `/portail-employe/[id]/dashboard` - Employee dashboard
+- `/portail-employe/[id]/taches` - My tasks
+- `/portail-employe/[id]/projets` - My projects
+- `/portail-employe/[id]/feuilles-de-temps` - My timesheets
+- `/portail-employe/[id]/leo` - Leo AI assistant
+- `/portail-employe/[id]/deadlines` - My deadlines
+- `/portail-employe/[id]/depenses` - My expense accounts
+- `/portail-employe/[id]/vacances` - My vacations
+- `/portail-employe/[id]/profil` - My profile
+- `/portail-employe/[id]/notifications` - My notifications
+
+**ERP Modules** (Require specific permissions):
+- `/portail-employe/[id]/modules/commercial` - Commercial module
+- `/portail-employe/[id]/modules/reseau` - Network module
+- `/portail-employe/[id]/modules/operations` - Operations module
+- `/portail-employe/[id]/modules/management` - Management module
+- `/portail-employe/[id]/modules/agenda` - Agenda module
+- `/portail-employe/[id]/modules/finances` - Finances module
+
+**Note**: The `/erp/*` routes mentioned in older documentation refer to a different system. The current employee portal uses `/portail-employe/[id]/*` routes.
 
 ### Permissions Required
 

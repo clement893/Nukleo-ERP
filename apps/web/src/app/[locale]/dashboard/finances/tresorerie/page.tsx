@@ -167,7 +167,7 @@ export default function TresoreriePage() {
                   <Wallet className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h1 className="text-3xl font-black text-white mb-1 font-nukleo">
                     Trésorerie
                   </h1>
                   <p className="text-white/80 text-sm">Suivez votre flux de trésorerie en temps réel</p>
@@ -315,7 +315,7 @@ export default function TresoreriePage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h2 className="text-2xl font-bold font-nukleo">
                   Importer des Transactions
                 </h2>
                 <Button

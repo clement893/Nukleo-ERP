@@ -521,7 +521,7 @@ export default function FacturationsPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Payé</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-green-600 font-nukleo">
               {formatCurrency(stats.paid)}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -536,7 +536,7 @@ export default function FacturationsPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-orange-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-orange-600 font-nukleo">
               {formatCurrency(stats.pending)}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -551,7 +551,7 @@ export default function FacturationsPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">En retard</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-red-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-red-600 font-nukleo">
               {formatCurrency(stats.overdue)}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -641,7 +641,7 @@ export default function FacturationsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <div className="text-xl font-bold mb-1 font-nukleo">
                       {formatCurrency(Number(invoice.total))}
                     </div>
                     {Number(invoice.amount_due) > 0 && (

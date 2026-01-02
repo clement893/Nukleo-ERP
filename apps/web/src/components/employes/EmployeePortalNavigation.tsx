@@ -24,6 +24,7 @@ import {
   Plane,
   LayoutDashboard,
   ChevronDown,
+  Bell,
 } from 'lucide-react';
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
 import { useState, useMemo } from 'react';
@@ -106,6 +107,13 @@ const BASE_PAGES: NavItem[] = [
     label: 'Mon profil',
     path: 'profil',
     icon: User,
+    isBasePage: true,
+  },
+  {
+    id: 'notifications',
+    label: 'Mes notifications',
+    path: 'notifications',
+    icon: Bell,
     isBasePage: true,
   },
 ];

@@ -280,7 +280,7 @@ export default function FinancesPage() {
                 <DollarSign className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h1 className="text-3xl font-black text-white mb-1 font-nukleo">
                   Finances
                 </h1>
                 <p className="text-white/80 text-sm">Vue d'ensemble de votre santé financière</p>
@@ -298,7 +298,7 @@ export default function FinancesPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Revenus</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-green-600 font-nukleo">
               {formatCurrency(stats.revenue)}
             </div>
             <div className="flex items-center gap-1 text-xs">
@@ -321,7 +321,7 @@ export default function FinancesPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Dépenses</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-red-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-red-600 font-nukleo">
               {formatCurrency(stats.expenses)}
             </div>
             <div className="flex items-center gap-1 text-xs">
@@ -344,7 +344,7 @@ export default function FinancesPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Profit</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-blue-600 font-nukleo">
               {formatCurrency(stats.profit)}
             </div>
             <div className="flex items-center gap-1 text-xs">
@@ -367,7 +367,7 @@ export default function FinancesPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Factures</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 text-purple-600 font-nukleo">
               {stats.invoices}
             </div>
             <div className="flex items-center gap-1 text-xs">
@@ -451,7 +451,7 @@ export default function FinancesPage() {
           {/* Recent Transactions */}
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h3 className="font-semibold font-nukleo">
                 Transactions récentes
               </h3>
             </div>
@@ -485,7 +485,7 @@ export default function FinancesPage() {
 
           {/* Invoices by Status */}
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h3 className="font-semibold mb-4 font-nukleo">
               Factures par statut
             </h3>
             <div className="space-y-4">

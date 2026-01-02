@@ -134,7 +134,7 @@ export default function RapportPage() {
                   <BarChart3 className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h1 className="text-3xl font-black text-white mb-1 font-nukleo">
                     Rapports Financiers
                   </h1>
                   <p className="text-white/80 text-sm">Analyses et tendances financières</p>
@@ -157,7 +157,7 @@ export default function RapportPage() {
                 {Number(revenueGrowth) >= 0 ? '+' : ''}{revenueGrowth}%
               </Badge>
             </div>
-            <div className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold mb-2 font-nukleo">
               {formatCurrency(currentMonth?.revenue ?? 0)}
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
@@ -177,7 +177,7 @@ export default function RapportPage() {
                 {Number(expensesGrowth) >= 0 ? '+' : ''}{expensesGrowth}%
               </Badge>
             </div>
-            <div className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold mb-2 font-nukleo">
               {formatCurrency(currentMonth?.expenses ?? 0)}
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
@@ -195,7 +195,7 @@ export default function RapportPage() {
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Profit Net</h3>
               <TrendingUp className={`w-5 h-5 ${(currentMonth?.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
             </div>
-            <div className={`text-3xl font-bold mb-2 ${(currentMonth?.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className={`text-3xl font-bold mb-2 font-nukleo ${(currentMonth?.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(currentMonth?.profit ?? 0)}
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
@@ -211,7 +211,7 @@ export default function RapportPage() {
 
         {/* Monthly Evolution */}
         <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6">
-          <h2 className="text-xl font-bold mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h2 className="text-xl font-bold mb-6 font-nukleo">
             Évolution Mensuelle
           </h2>
           <div className="space-y-6">
@@ -268,7 +268,7 @@ export default function RapportPage() {
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h3 className="font-semibold mb-4 font-nukleo">
               Performance sur 6 mois
             </h3>
             <div className="space-y-3">
@@ -294,7 +294,7 @@ export default function RapportPage() {
           </Card>
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h3 className="font-semibold mb-4 font-nukleo">
               Projets par mois
             </h3>
             <div className="space-y-3">

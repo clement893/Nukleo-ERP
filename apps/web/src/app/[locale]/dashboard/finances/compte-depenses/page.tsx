@@ -469,7 +469,7 @@ export default function MesDepenses() {
         <div className="relative p-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h1 className="text-4xl font-black text-white mb-2 font-nukleo">
                 {isAdmin ? 'Gestion des comptes de dépenses' : 'Mes Comptes de Dépenses'}
               </h1>
               <p className="text-white/80 text-lg">
@@ -494,7 +494,7 @@ export default function MesDepenses() {
               <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
           </div>
-          <div className="text-2xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 font-nukleo">
             {formatCurrency(totalAmount.toString(), expenses[0]?.currency || 'CAD')}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Total demandé</div>
@@ -506,7 +506,7 @@ export default function MesDepenses() {
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-green-600 font-nukleo">
             {formatCurrency(approvedAmount.toString(), expenses[0]?.currency || 'CAD')}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Approuvé</div>
@@ -518,7 +518,7 @@ export default function MesDepenses() {
               <Clock className="w-5 h-5 text-yellow-600" />
             </div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-yellow-600 font-nukleo">
             {pendingCount}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">En attente</div>
@@ -530,7 +530,7 @@ export default function MesDepenses() {
               <FileText className="w-5 h-5 text-purple-600" />
             </div>
           </div>
-          <div className="text-2xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-purple-600 font-nukleo">
             {expenses.length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Total comptes</div>
@@ -567,7 +567,7 @@ export default function MesDepenses() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <FileText className="w-4 h-4 text-primary-500" />
-                    <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <h3 className="text-base font-bold font-nukleo">
                       {expense.title}
                     </h3>
                     <Badge className={`${badge.class} flex items-center gap-1 text-xs`}>
@@ -602,7 +602,7 @@ export default function MesDepenses() {
                 <div className="flex flex-col items-end gap-2 ml-4">
                   <div className="flex items-center gap-1">
                     <DollarSign className="w-5 h-5 text-green-600" />
-                    <span className="text-xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <span className="text-xl font-bold text-green-600 font-nukleo">
                       {formatCurrency(expense.total_amount, expense.currency)}
                     </span>
                   </div>

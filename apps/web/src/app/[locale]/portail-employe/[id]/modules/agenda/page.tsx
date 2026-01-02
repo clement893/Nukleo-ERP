@@ -6,10 +6,10 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { Loading } from '@/components/ui';
 
-const AgendaPageContent = dynamic(
+const AgendaPageContent = dynamicImport(
   () => import('@/app/[locale]/dashboard/agenda/page'),
   { 
     ssr: false,
