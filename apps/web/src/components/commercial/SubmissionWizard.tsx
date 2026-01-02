@@ -71,6 +71,7 @@ interface SubmissionWizardProps {
   onSaveDraft?: (data: SubmissionCreate) => Promise<Submission | void>;
   loading?: boolean;
   initialData?: SubmissionWizardData;
+  mode?: 'modal' | 'page'; // Nouveau prop pour le mode
 }
 
 const STEPS = [
@@ -89,6 +90,7 @@ export default function SubmissionWizard({
   onSaveDraft,
   loading = false,
   initialData,
+  mode = 'modal', // Par défaut modal pour rétrocompatibilité
 }: SubmissionWizardProps) {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
@@ -140,6 +142,74 @@ export default function SubmissionWizard({
     };
     loadCompanies();
   }, [showToast]);
+
+  // Sauvegarde automatique du brouillon (uniquement en mode page)
+  useEffect(() => {
+    if (mode !== 'page' || !onSaveDraft) return;
+
+    const AUTO_SAVE_INTERVAL = 30000; // 30 secondes
+    const STORAGE_KEY = 'submission_wizard_draft';
+
+    // Sauvegarder dans localStorage à chaque changement
+    const saveToLocalStorage = () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          data: formData,
+          timestamp: new Date().toISOString(),
+        }));
+      } catch (error) {
+        // Ignorer les erreurs de localStorage (quota, etc.)
+      }
+    };
+
+    // Sauvegarder automatiquement toutes les 30 secondes
+    const autoSaveInterval = setInterval(() => {
+      // Ne sauvegarder que si au moins un champ est rempli
+      if (formData.coverTitle || formData.context || formData.introduction) {
+        saveToLocalStorage();
+      }
+    }, AUTO_SAVE_INTERVAL);
+
+    // Sauvegarder immédiatement lors des changements (debounced)
+    const timeoutId = setTimeout(() => {
+      if (formData.coverTitle || formData.context || formData.introduction) {
+        saveToLocalStorage();
+      }
+    }, 2000); // Attendre 2 secondes après le dernier changement
+
+    return () => {
+      clearInterval(autoSaveInterval);
+      clearTimeout(timeoutId);
+    };
+  }, [formData, mode, onSaveDraft]);
+
+  // Restaurer le brouillon depuis localStorage au montage (uniquement en mode page)
+  useEffect(() => {
+    if (mode !== 'page' || initialData) return; // Ne pas restaurer si on a déjà des données initiales
+
+    try {
+      const STORAGE_KEY = 'submission_wizard_draft';
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Vérifier que les données ne sont pas trop anciennes (max 7 jours)
+        const savedDate = new Date(parsed.timestamp);
+        const daysDiff = (Date.now() - savedDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysDiff < 7 && parsed.data) {
+          setFormData(parsed.data);
+          showToast({
+            message: 'Brouillon restauré automatiquement',
+            type: 'info',
+          });
+        } else {
+          // Supprimer les données trop anciennes
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch (error) {
+      // Ignorer les erreurs de parsing
+    }
+  }, [mode, initialData, showToast]);
 
   const updateFormData = (updates: Partial<SubmissionWizardData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -271,6 +341,16 @@ export default function SubmissionWizard({
     try {
       const submissionData = prepareSubmissionData();
       await onSaveDraft(submissionData);
+      
+      // Nettoyer le localStorage après sauvegarde réussie
+      if (mode === 'page') {
+        try {
+          localStorage.removeItem('submission_wizard_draft');
+        } catch (error) {
+          // Ignorer les erreurs
+        }
+      }
+      
       showToast({
         message: 'Brouillon sauvegardé avec succès',
         type: 'success',
@@ -314,6 +394,15 @@ export default function SubmissionWizard({
     submissionData.status = 'draft'; // Keep as draft initially
 
     const createdSubmission = await onSubmit(submissionData);
+    
+    // Nettoyer le localStorage après création réussie
+    if (mode === 'page') {
+      try {
+        localStorage.removeItem('submission_wizard_draft');
+      } catch (error) {
+        // Ignorer les erreurs
+      }
+    }
     
     // Offer to download PDF after creation
     if (createdSubmission && typeof createdSubmission === 'object' && 'id' in createdSubmission) {
@@ -391,91 +480,134 @@ export default function SubmissionWizard({
     }
   };
 
+  const isPageMode = mode === 'page';
+
   return (
-    <div className="space-y-6 w-full flex flex-col h-full">
+    <div className={`w-full flex flex-col ${isPageMode ? 'h-full' : 'space-y-6'}`}>
       {/* Progress Steps */}
-      <div className="flex items-center justify-between border-b border-border pb-4 flex-shrink-0">
-        {STEPS.map((step, index) => {
-          const StepIcon = step.icon;
-          const isActive = index === currentStep;
-          const isCompleted = index < currentStep;
-          
-          return (
-            <div key={step.id} className="flex items-center flex-1">
-              <div 
-                className="flex flex-col items-center flex-1 cursor-pointer group"
-                onClick={() => goToStep(index)}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                    isActive
-                      ? 'border-primary bg-primary text-white'
-                      : isCompleted
-                      ? 'border-primary bg-primary text-white group-hover:scale-110'
-                      : 'border-border bg-background text-muted-foreground group-hover:border-primary group-hover:bg-primary/10'
-                  }`}
+      <div className={`flex items-center justify-between border-b border-border pb-4 flex-shrink-0 ${
+        isPageMode ? 'mb-6' : ''
+      } overflow-x-auto`}>
+        <div className="flex items-center w-full min-w-max">
+          {STEPS.map((step, index) => {
+            const StepIcon = step.icon;
+            const isActive = index === currentStep;
+            const isCompleted = index < currentStep;
+            
+            return (
+              <div key={step.id} className="flex items-center flex-shrink-0">
+                <div 
+                  className="flex flex-col items-center cursor-pointer group px-1"
+                  onClick={() => goToStep(index)}
                 >
-                  {isCompleted ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <StepIcon className="w-5 h-5" />
-                  )}
+                  <div
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                      isActive
+                        ? 'border-primary bg-primary text-white'
+                        : isCompleted
+                        ? 'border-primary bg-primary text-white group-hover:scale-110'
+                        : 'border-border bg-background text-muted-foreground group-hover:border-primary group-hover:bg-primary/10'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                    ) : (
+                      <StepIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    )}
+                  </div>
+                  <span
+                    className={`mt-2 text-xs text-center transition-colors whitespace-nowrap ${
+                      isActive ? 'text-primary font-medium' : 'text-muted-foreground group-hover:text-primary'
+                    }`}
+                  >
+                    {step.label}
+                  </span>
                 </div>
-                <span
-                  className={`mt-2 text-xs text-center transition-colors ${
-                    isActive ? 'text-primary font-medium' : 'text-muted-foreground group-hover:text-primary'
-                  }`}
-                >
-                  {step.label}
-                </span>
+                {index < STEPS.length - 1 && (
+                  <div
+                    className={`h-0.5 flex-1 mx-1 sm:mx-2 min-w-[20px] ${
+                      isCompleted ? 'bg-primary' : 'bg-border'
+                    }`}
+                  />
+                )}
               </div>
-              {index < STEPS.length - 1 && (
-                <div
-                  className={`h-0.5 flex-1 mx-2 ${
-                    isCompleted ? 'bg-primary' : 'bg-border'
-                  }`}
-                />
-              )}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Content Area - Layout différent selon le mode */}
+      {isPageMode ? (
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
+          {/* Step Content - Zone principale */}
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 overflow-y-auto pr-0 lg:pr-4">
+              {renderStep()}
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* Step Content */}
-      <div className="min-h-[400px] flex-1 overflow-y-auto">
-        {renderStep()}
-      </div>
+          {/* Leo Assistant - Sidebar droite en mode page (caché sur mobile, visible sur desktop) */}
+          <div className="hidden lg:block w-80 flex-shrink-0 border-l border-border pl-6">
+            <div className="sticky top-6">
+              <LeoAssistant
+                context={getStepContext()}
+                onTextGenerated={handleTextGenerated}
+              />
+            </div>
+          </div>
+          
+          {/* Leo Assistant - Version mobile (en bas, collapsible) */}
+          <div className="lg:hidden flex-shrink-0 border-t border-border pt-4">
+            <LeoAssistant
+              context={getStepContext()}
+              onTextGenerated={handleTextGenerated}
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Step Content */}
+          <div className="min-h-[400px] flex-1 overflow-y-auto">
+            {renderStep()}
+          </div>
 
-      {/* Leo Assistant */}
-      <div className="flex-shrink-0">
-        <LeoAssistant
-          context={getStepContext()}
-          onTextGenerated={handleTextGenerated}
-        />
-      </div>
+          {/* Leo Assistant */}
+          <div className="flex-shrink-0">
+            <LeoAssistant
+              context={getStepContext()}
+              onTextGenerated={handleTextGenerated}
+            />
+          </div>
+        </>
+      )}
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-border relative z-10 bg-background flex-shrink-0">
+      <div className={`flex flex-col sm:flex-row justify-between gap-2 sm:gap-0 pt-4 border-t border-border relative z-10 bg-background flex-shrink-0 ${
+        isPageMode ? 'mt-6' : ''
+      }`}>
         <Button
           type="button"
           variant="outline"
           onClick={currentStep === 0 ? onCancel : prevStep}
           disabled={loading}
+          className="w-full sm:w-auto"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           {currentStep === 0 ? 'Annuler' : 'Précédent'}
         </Button>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           {onSaveDraft && (
             <Button
               type="button"
               variant="outline"
               onClick={handleSaveDraft}
               disabled={loading}
+              className="flex-1 sm:flex-initial"
             >
               <Save className="w-4 h-4 mr-2" />
-              Sauvegarder le brouillon
+              <span className="hidden sm:inline">Sauvegarder le brouillon</span>
+              <span className="sm:hidden">Brouillon</span>
             </Button>
           )}
           {currentStep < STEPS.length - 1 ? (
@@ -483,6 +615,7 @@ export default function SubmissionWizard({
               type="button"
               onClick={nextStep}
               disabled={loading}
+              className="flex-1 sm:flex-initial"
             >
               Suivant
               <ChevronRight className="w-4 h-4 ml-2" />
@@ -492,6 +625,7 @@ export default function SubmissionWizard({
               type="button"
               onClick={handleSubmit}
               loading={loading}
+              className="flex-1 sm:flex-initial"
             >
               Créer la soumission
             </Button>

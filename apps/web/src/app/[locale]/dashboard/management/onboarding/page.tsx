@@ -245,7 +245,7 @@ export default function OnboardingPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
               <p className="text-white/80 text-lg">Suivez l'intégration de vos nouveaux employés</p>
             </div>
             <Button 
-              className="bg-white text-[#523DC9] hover:bg-white/90"
+              className="bg-white text-primary-500 hover:bg-white/90"
               onClick={() => setShowNewProcessModal(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -270,10 +270,10 @@ export default function OnboardingPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <UserPlus className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <UserPlus className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -282,7 +282,7 @@ export default function OnboardingPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Onboardings</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
                 <Clock className="w-6 h-6 text-gray-600" />
@@ -294,10 +294,10 @@ export default function OnboardingPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">En Attente</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <AlertCircle className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <AlertCircle className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -306,10 +306,10 @@ export default function OnboardingPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">En Cours</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <CheckCircle2 className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -318,10 +318,10 @@ export default function OnboardingPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Terminés</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <TrendingUp className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -332,7 +332,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 w-full relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -392,7 +392,7 @@ export default function OnboardingPage() {
 
         {/* Onboarding Processes */}
         {filteredProcesses.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Aucun processus trouvé
@@ -433,10 +433,10 @@ export default function OnboardingPage() {
 
         {/* Resources Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <FileText className="w-6 h-6 text-[#3B82F6]" />
+                <FileText className="w-6 h-6 text-primary-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Documents</h3>
             </div>
@@ -453,10 +453,10 @@ export default function OnboardingPage() {
             </Button>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <BookOpen className="w-6 h-6 text-[#10B981]" />
+                <BookOpen className="w-6 h-6 text-secondary-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Formations</h3>
             </div>
@@ -473,10 +473,10 @@ export default function OnboardingPage() {
             </Button>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Laptop className="w-6 h-6 text-[#F59E0B]" />
+                <Laptop className="w-6 h-6 text-warning-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Outils</h3>
             </div>
@@ -624,7 +624,7 @@ function OnboardingProcessCard({
 
   return (
     <Card 
-      className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200"
+      className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200"
     >
       <div className="flex items-start gap-4 mb-4">
         <div className={`w-14 h-14 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
@@ -657,7 +657,7 @@ function OnboardingProcessCard({
         </div>
         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817] transition-all duration-500"
+            className="h-full bg-nukleo-gradient transition-all duration-500"
             style={{ width: `${process.progress}%` }}
           />
         </div>

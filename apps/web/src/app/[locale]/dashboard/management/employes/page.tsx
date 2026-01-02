@@ -404,8 +404,8 @@ export default function EmployeesPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <UserCheck className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <UserCheck className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -416,8 +416,8 @@ export default function EmployeesPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Plane className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <Plane className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -428,8 +428,8 @@ export default function EmployeesPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <DollarSign className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <DollarSign className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>

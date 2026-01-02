@@ -78,7 +78,7 @@ export default function SoumissionsPage() {
   
   // Modals
   const [showCreateQuoteModal, setShowCreateQuoteModal] = useState(false);
-  const [showCreateSubmissionModal, setShowCreateSubmissionModal] = useState(false);
+  // showCreateSubmissionModal retiré - maintenant géré par navigation vers page dédiée
   const [showEditQuoteModal, setShowEditQuoteModal] = useState(false);
   const [showEditSubmissionModal, setShowEditSubmissionModal] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -756,7 +756,14 @@ export default function SoumissionsPage() {
                 />
                 <Button 
                   className="bg-white text-primary-500 hover:bg-white/90"
-                  onClick={() => activeTab === 'quotes' ? setShowCreateQuoteModal(true) : setShowCreateSubmissionModal(true)}
+                  onClick={() => {
+                    if (activeTab === 'quotes') {
+                      setShowCreateQuoteModal(true);
+                    } else {
+                      // Navigation vers la page pleine pour créer une soumission
+                      router.push('/dashboard/commercial/soumissions/nouvelle');
+                    }
+                  }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   {activeTab === 'quotes' ? 'Nouveau devis' : 'Nouvelle soumission'}
@@ -1570,20 +1577,7 @@ export default function SoumissionsPage() {
           )}
         </Modal>
 
-        {/* Create Submission Modal */}
-        <Modal
-          isOpen={showCreateSubmissionModal}
-          onClose={() => setShowCreateSubmissionModal(false)}
-          title="Créer une soumission"
-          size="full"
-        >
-          <SubmissionWizard
-            onSubmit={handleCreateSubmission}
-            onCancel={() => setShowCreateSubmissionModal(false)}
-            onSaveDraft={handleSaveDraftSubmission}
-            loading={createSubmissionMutation.isPending}
-          />
-        </Modal>
+        {/* Create Submission Modal - Retiré, maintenant géré par la page dédiée */}
 
         {/* Edit Submission Modal */}
         <Modal

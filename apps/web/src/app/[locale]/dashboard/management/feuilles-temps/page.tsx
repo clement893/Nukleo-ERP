@@ -578,7 +578,7 @@ export default function FeuillesTempsPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -592,7 +592,7 @@ export default function FeuillesTempsPage() {
               <p className="text-white/80 text-lg">Suivez et gérez les heures de travail</p>
             </div>
             <Button 
-              className="bg-white text-[#523DC9] hover:bg-white/90"
+              className="bg-white text-primary-500 hover:bg-white/90"
               onClick={handleCreate}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -603,10 +603,10 @@ export default function FeuillesTempsPage() {
 
         {/* Timer Widget */}
         {showTimerWidget && timerStatus && (
-          <Card className="glass-card p-4 rounded-xl border-2 border-[#523DC9] bg-gradient-to-r from-[#523DC9]/10 to-[#5F2B75]/10">
+          <Card className="glass-card p-4 rounded-xl border-2 border-primary-500 bg-nukleo-gradient/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-[#523DC9] text-white">
+                <div className="p-3 rounded-lg bg-primary-500 text-white">
                   <Clock className="w-6 h-6" />
                 </div>
                 <div>
@@ -668,7 +668,7 @@ export default function FeuillesTempsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
                 <Clock className="w-6 h-6 text-gray-600" />
@@ -680,10 +680,10 @@ export default function FeuillesTempsPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Entrées</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <TrendingUp className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <TrendingUp className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -692,10 +692,10 @@ export default function FeuillesTempsPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Heures Totales</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <Clock className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <Clock className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -706,7 +706,7 @@ export default function FeuillesTempsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="flex-1 w-full relative">
@@ -854,7 +854,7 @@ export default function FeuillesTempsPage() {
 
         {/* Time Entries Display */}
         {filteredData.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Aucune entrée trouvée
@@ -872,10 +872,10 @@ export default function FeuillesTempsPage() {
         ) : (
           <div className="space-y-4">
             {viewMode === 'employee' && entriesByEmployee.map((group: any) => (
-              <Card key={group.userId} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card key={group.userId} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-[#523DC9] flex items-center justify-center text-white font-semibold">
+                    <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold">
                       {group.userName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                     </div>
                     <div>
@@ -894,7 +894,7 @@ export default function FeuillesTempsPage() {
                   {group.entries.slice(0, 8).map((entry: TimeEntry) => (
                     <div 
                       key={entry.id} 
-                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/40 transition-all cursor-pointer group"
                       onClick={() => handleView(entry)}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -949,11 +949,11 @@ export default function FeuillesTempsPage() {
             ))}
 
             {viewMode === 'client' && entriesByClient.map((group: any) => (
-              <Card key={group.clientName} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card key={group.clientName} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                      <Building className="w-6 h-6 text-[#10B981]" />
+                    <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                      <Building className="w-6 h-6 text-secondary-500" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{group.clientName}</h3>
@@ -971,7 +971,7 @@ export default function FeuillesTempsPage() {
                   {(expandedGroups.has(`client-${group.clientName}`) ? group.entries : group.entries.slice(0, 8)).map((entry: TimeEntry) => (
                     <div 
                       key={entry.id} 
-                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/40 transition-all cursor-pointer group"
                       onClick={() => handleView(entry)}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -1039,11 +1039,11 @@ export default function FeuillesTempsPage() {
             ))}
 
             {viewMode === 'week' && entriesByWeek.map((group: any) => (
-              <Card key={`${group.weekInfo.year}-W${group.weekInfo.week}`} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <Card key={`${group.weekInfo.year}-W${group.weekInfo.week}`} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                      <Calendar className="w-6 h-6 text-[#3B82F6]" />
+                    <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                      <Calendar className="w-6 h-6 text-primary-500" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1065,7 +1065,7 @@ export default function FeuillesTempsPage() {
                   {(expandedGroups.has(`week-${group.weekInfo.year}-W${group.weekInfo.week}`) ? group.entries : group.entries.slice(0, 8)).map((entry: TimeEntry) => (
                     <div 
                       key={entry.id} 
-                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/40 transition-all cursor-pointer group"
+                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/40 transition-all cursor-pointer group"
                       onClick={() => handleView(entry)}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -1272,7 +1272,7 @@ export default function FeuillesTempsPage() {
                   resetForm();
                 }}
                 disabled={startTimerMutation.isPending}
-                className="text-[#523DC9] border-[#523DC9] hover:bg-[#523DC9]/10"
+                className="text-primary-500 border-primary-500 hover:bg-primary-500/10"
               >
                 <Play className="w-4 h-4 mr-2" />
                 Démarrer le timer

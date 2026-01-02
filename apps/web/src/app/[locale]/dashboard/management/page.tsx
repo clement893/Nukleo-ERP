@@ -121,7 +121,7 @@ export default function ManagementPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -139,10 +139,10 @@ export default function ManagementPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Users className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Users className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -154,10 +154,10 @@ export default function ManagementPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Clock className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Clock className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -169,10 +169,10 @@ export default function ManagementPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Plane className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <Plane className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -188,50 +188,50 @@ export default function ManagementPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card 
-            className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
             onClick={() => router.push('/dashboard/management/employes')}
           >
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 group-hover:bg-[#523DC9]/20 transition-colors">
-                <Users className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30 group-hover:bg-primary-500/20 transition-colors">
+                <Users className="w-6 h-6 text-primary-500" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Employés</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Gérer les employés</p>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-colors" />
+              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
             </div>
           </Card>
 
           <Card 
-            className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
             onClick={() => router.push('/dashboard/management/feuilles-temps')}
           >
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30 group-hover:bg-[#3B82F6]/20 transition-colors">
-                <Clock className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30 group-hover:bg-primary-500/20 transition-colors">
+                <Clock className="w-6 h-6 text-primary-500" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Feuilles de temps</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Suivi du temps</p>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-colors" />
+              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
             </div>
           </Card>
 
           <Card 
-            className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
             onClick={() => router.push('/dashboard/management/vacances')}
           >
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 group-hover:bg-[#F59E0B]/20 transition-colors">
-                <Plane className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30 group-hover:bg-warning-500/20 transition-colors">
+                <Plane className="w-6 h-6 text-warning-500" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Vacances</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Demandes de congés</p>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-colors" />
+              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
             </div>
           </Card>
         </div>
@@ -239,7 +239,7 @@ export default function ManagementPage() {
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Employees */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Employés actifs</h3>
               <Button 
@@ -260,7 +260,7 @@ export default function ManagementPage() {
                   const initials = `${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase();
                   return (
                     <div key={employee.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <div className="w-10 h-10 rounded-full bg-[#523DC9] flex items-center justify-center text-white font-semibold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold text-sm">
                         {initials}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -282,7 +282,7 @@ export default function ManagementPage() {
           </Card>
 
           {/* Pending Vacations */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Demandes en attente</h3>
               <Button 
@@ -322,7 +322,7 @@ export default function ManagementPage() {
           </Card>
 
           {/* Upcoming Vacations Calendar */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Vacances à venir</h3>
               <Button 
