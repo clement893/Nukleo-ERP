@@ -3,8 +3,8 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useMemo, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -13,32 +13,23 @@ import {
   CheckSquare,
   Users,
   Building2,
-  TrendingUp,
-  AlertCircle,
-  Clock,
   CheckCircle2,
-  Archive,
-  Target,
-  Plus,
   ArrowRight,
   Calendar,
-  BarChart3,
-  Activity,
-  Zap
+  BarChart3
 } from 'lucide-react';
 import { Badge, Button, Card, Loading } from '@/components/ui';
 import Link from 'next/link';
 import { useInfiniteProjects } from '@/lib/query/projects';
 import { useInfiniteClients } from '@/lib/query/clients';
-import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
+import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { teamsAPI } from '@/lib/api/teams';
 import { projectsAPI, type Project } from '@/lib/api/projects';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#523DC9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 export default function OperationsDashboardPage() {
-  const router = useRouter();
   const params = useParams();
   const locale = params?.locale as string || 'fr';
   
@@ -72,7 +63,7 @@ export default function OperationsDashboardPage() {
     const activeProjects = projects.filter(p => p.status === 'ACTIVE').length;
     const completedProjects = projects.filter(p => p.status === 'COMPLETED').length;
     const archivedProjects = projects.filter(p => p.status === 'ARCHIVED').length;
-    const onHoldProjects = projects.filter(p => p.status === 'ON_HOLD').length;
+    const onHoldProjects = projects.filter(p => (p.status as string) === 'ON_HOLD').length;
     
     const activeTasks = tasks.filter(t => t.status !== 'completed').length;
     const completedTasks = tasks.filter(t => t.status === 'completed').length;
@@ -144,7 +135,7 @@ export default function OperationsDashboardPage() {
         }
         
         // Projects on hold
-        if (p.status === 'ON_HOLD') return true;
+        if ((p.status as string) === 'ON_HOLD') return true;
         
         return false;
       })
@@ -225,28 +216,6 @@ export default function OperationsDashboardPage() {
     ].filter(item => item.value > 0);
   }, [tasks]);
 
-  // Team workload
-  const teamWorkload = useMemo(() => {
-    return teams
-      .filter(t => t.is_active)
-      .map(team => {
-        const teamTasks = tasks.filter(t => t.team_id === team.id && t.status !== 'completed');
-        return {
-          name: team.name,
-          tasks: teamTasks.length,
-          completed: tasks.filter(t => t.team_id === team.id && t.status === 'completed').length,
-        };
-      })
-      .sort((a, b) => b.tasks - a.tasks)
-      .slice(0, 5);
-  }, [teams, tasks]);
-
-  // Format date helper
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return 'Non défini';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
 
   // Get days until deadline
   const getDaysUntilDeadline = (deadline: string | null | undefined): number | null => {
@@ -423,7 +392,7 @@ export default function OperationsDashboardPage() {
                                   Deadline proche
                                 </Badge>
                               )}
-                              {project.status === 'ON_HOLD' && (
+                              {(project.status as string) === 'ON_HOLD' && (
                                 <Badge className="bg-gray-500/10 text-gray-500 border-gray-500/30 border text-xs">
                                   En pause
                                 </Badge>

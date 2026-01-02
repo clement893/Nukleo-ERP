@@ -43,7 +43,6 @@ import {
   MessageSquare,
   Paperclip,
   Globe,
-  MapPin,
   Eye,
   FolderOpen
 } from 'lucide-react';
