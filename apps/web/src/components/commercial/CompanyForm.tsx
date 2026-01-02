@@ -99,7 +99,12 @@ export default function CompanyForm({
       return;
     }
 
-    await onSubmit(formData);
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      // Error is handled by parent component, but we can add additional handling here if needed
+      console.error('Error submitting company form:', error);
+    }
   };
 
   return (

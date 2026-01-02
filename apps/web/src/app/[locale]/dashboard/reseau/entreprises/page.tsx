@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -19,10 +19,9 @@ import {
   List,
   Globe,
   Search,
-  DollarSign
 } from 'lucide-react';
 import { Badge, Button, Card, Loading, Input } from '@/components/ui';
-import { useInfiniteCompanies, useDeleteCompany } from '@/lib/query/companies';
+import { useInfiniteCompanies, useDeleteCompany, useCreateCompany } from '@/lib/query/companies';
 import { useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import CompanyForm from '@/components/commercial/CompanyForm';
@@ -32,49 +31,61 @@ export default function EntreprisesPage() {
   const { showToast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'client' | 'prospect'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Fetch data
-  const { data, isLoading } = useInfiniteCompanies(1000);
-  // data is used in companies useMemo below
+  // Debounce search query to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch data with search filter
+  const { data, isLoading } = useInfiniteCompanies(1000, {
+    search: debouncedSearchQuery || undefined,
+    is_client: filterType === 'all' ? undefined : filterType === 'client',
+  });
   const deleteCompanyMutation = useDeleteCompany();
+  const createCompanyMutation = useCreateCompany();
 
-  // Flatten data
+  // Flatten data - API already filters by search and type
   const companies = useMemo(() => data?.pages.flat() || [], [data]);
-
-  // Filter and search
+  
+  // Additional client-side filtering for type (in case API doesn't handle it properly)
   const filteredCompanies = useMemo(() => {
+    if (filterType === 'all') {
+      return companies;
+    }
     return companies.filter((company) => {
-      const matchesSearch = !searchQuery || 
-        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (company.description && company.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesType = filterType === 'all' || 
-        (filterType === 'client' && company.is_client) ||
-        (filterType === 'prospect' && !company.is_client);
-      
-      return matchesSearch && matchesType;
+      if (filterType === 'client') {
+        return company.is_client;
+      }
+      if (filterType === 'prospect') {
+        return !company.is_client;
+      }
+      return true;
     });
-  }, [companies, searchQuery, filterType]);
+  }, [companies, filterType]);
+  
+  // Get parent companies for form
+  const parentCompanies = useMemo(() => 
+    companies.map(c => ({ id: c.id, name: c.name })),
+    [companies]
+  );
 
   // Calculate stats
   const stats = useMemo(() => {
     const total = companies.length;
     const clients = companies.filter(c => c.is_client).length;
     const prospects = companies.filter(c => !c.is_client).length;
-    const totalRevenue = 0; // Revenue not available in Company interface
     
-    return { total, clients, prospects, totalRevenue };
+    return { total, clients, prospects };
   }, [companies]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) return;
@@ -130,7 +141,7 @@ export default function EntreprisesPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
@@ -165,18 +176,6 @@ export default function EntreprisesPage() {
               {stats.prospects}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Prospects</div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <DollarSign className="w-6 h-6 text-[#3B82F6]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(stats.totalRevenue)}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Revenu total</div>
           </Card>
         </div>
 
@@ -401,11 +400,20 @@ export default function EntreprisesPage() {
           title="Nouvelle entreprise"
         >
           <CompanyForm
-            onSubmit={async () => {
-              setShowCreateModal(false);
-              showToast({ message: 'Entreprise créée avec succès', type: 'success' });
+            onSubmit={async (data) => {
+              try {
+                await createCompanyMutation.mutateAsync(data);
+                setShowCreateModal(false);
+                showToast({ message: 'Entreprise créée avec succès', type: 'success' });
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création';
+                showToast({ message: errorMessage, type: 'error' });
+                throw error; // Re-throw to let form handle it
+              }
             }}
             onCancel={() => setShowCreateModal(false)}
+            loading={createCompanyMutation.isPending}
+            parentCompanies={parentCompanies}
           />
         </Modal>
       )}
