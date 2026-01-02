@@ -228,7 +228,7 @@ export default function NotificationList({
               className={`p-4 rounded-lg border transition-all ${
                 notification.read
                   ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
-                  : 'bg-white dark:bg-gray-800 border-[#523DC9]/30 shadow-sm'
+                  : 'bg-white dark:bg-gray-800 border-primary-500/30 shadow-sm'
               }`}
             >
               <div className="flex items-start gap-3">

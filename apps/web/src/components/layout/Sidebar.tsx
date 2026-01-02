@@ -440,7 +440,7 @@ export default function Sidebar({
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="absolute -right-3 top-20 w-6 h-6 bg-background border-2 border-border/50 rounded-full flex items-center justify-center hover:bg-muted hover:border-[#523DC9]/50 transition-all shadow-md hidden md:flex"
+            className="absolute -right-3 top-20 w-6 h-6 bg-background border-2 border-border/50 rounded-full flex items-center justify-center hover:bg-muted hover:border-primary-500/50 transition-all shadow-md hidden md:flex"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (

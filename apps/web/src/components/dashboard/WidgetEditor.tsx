@@ -284,6 +284,162 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                     </div>
                   )}
 
+                  {formData.type === 'api' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        Configuration API
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Endpoint API"
+                          value={formData.data_source?.endpoint || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              data_source: {
+                                ...formData.data_source,
+                                type: 'api',
+                                endpoint: e.target.value,
+                                method: formData.data_source?.method || 'GET',
+                              },
+                            })
+                          }
+                          placeholder="/v1/projects"
+                        />
+                        <Select
+                          label="Méthode HTTP"
+                          value={formData.data_source?.method || 'GET'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              data_source: {
+                                ...formData.data_source,
+                                type: 'api',
+                                method: e.target.value,
+                                endpoint: formData.data_source?.endpoint || '',
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'GET', label: 'GET' },
+                            { value: 'POST', label: 'POST' },
+                            { value: 'PUT', label: 'PUT' },
+                          ]}
+                        />
+                      </div>
+                      <Input
+                        label="Chemin des données (optionnel)"
+                        value={formData.data_source?.data_path || ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            data_source: {
+                              ...formData.data_source,
+                              type: 'api',
+                              data_path: e.target.value,
+                              endpoint: formData.data_source?.endpoint || '',
+                              method: formData.data_source?.method || 'GET',
+                            },
+                          })
+                        }
+                        placeholder="data.items"
+                        helpText="Ex: data.items pour extraire items depuis {data: {items: [...]}}"
+                      />
+                      <Textarea
+                        label="Template HTML (optionnel)"
+                        value={formData.config.template || ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            config: { ...formData.config, template: e.target.value },
+                          })
+                        }
+                        placeholder='<div><h3>{{name}}</h3><p>{{description}}</p></div>'
+                        rows={6}
+                        className="font-mono text-sm"
+                        helpText="Utilisez {{variable}} pour insérer les valeurs des données"
+                      />
+                    </div>
+                  )}
+
+                  {formData.type === 'chart' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        Configuration Graphique
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Select
+                          label="Type de graphique"
+                          value={formData.config.chart_type || 'line'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              config: { ...formData.config, chart_type: e.target.value },
+                            })
+                          }
+                          options={[
+                            { value: 'line', label: 'Ligne' },
+                            { value: 'bar', label: 'Barres' },
+                            { value: 'area', label: 'Aire' },
+                            { value: 'pie', label: 'Camembert' },
+                          ]}
+                        />
+                        <Input
+                          label="Endpoint API"
+                          value={formData.data_source?.endpoint || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              data_source: {
+                                ...formData.data_source,
+                                type: 'api',
+                                endpoint: e.target.value,
+                                method: 'GET',
+                              },
+                            })
+                          }
+                          placeholder="/v1/finances/revenue"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Axe X (clé)"
+                          value={formData.config.chart_config?.x_axis || 'x'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              config: {
+                                ...formData.config,
+                                chart_config: {
+                                  ...formData.config.chart_config,
+                                  x_axis: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                          placeholder="month"
+                        />
+                        <Input
+                          label="Axe Y (clé)"
+                          value={formData.config.chart_config?.y_axis || 'y'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              config: {
+                                ...formData.config,
+                                chart_config: {
+                                  ...formData.config.chart_config,
+                                  y_axis: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                          placeholder="value"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {formData.type === 'iframe' && (
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -309,6 +465,22 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                       Options
                     </h3>
+                    <Input
+                      label="Intervalle de rafraîchissement (secondes)"
+                      type="number"
+                      value={formData.config.refresh_interval || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          config: {
+                            ...formData.config,
+                            refresh_interval: e.target.value ? parseInt(e.target.value) : undefined,
+                          },
+                        })
+                      }
+                      placeholder="60"
+                      helpText="Laissez vide pour désactiver le rafraîchissement automatique"
+                    />
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -433,10 +605,36 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                       />
                     )}
                     {formData.type === 'api' && (
-                      <p className="text-gray-500">L'aperçu des widgets API sera disponible prochainement</p>
+                      <div>
+                        {formData.data_source?.endpoint ? (
+                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <p className="text-sm text-blue-900 dark:text-blue-100 mb-2">
+                              <strong>Endpoint:</strong> {formData.data_source.endpoint}
+                            </p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              Les données seront chargées depuis cet endpoint lors de l'affichage du widget.
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">Configurez un endpoint API pour voir l'aperçu</p>
+                        )}
+                      </div>
                     )}
                     {formData.type === 'chart' && (
-                      <p className="text-gray-500">L'aperçu des graphiques sera disponible prochainement</p>
+                      <div>
+                        {formData.data_source?.endpoint ? (
+                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <p className="text-sm text-blue-900 dark:text-blue-100 mb-2">
+                              <strong>Type:</strong> {formData.config.chart_type || 'line'}
+                            </p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              Le graphique sera généré à partir des données de l'endpoint.
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">Configurez un endpoint API pour voir l'aperçu</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

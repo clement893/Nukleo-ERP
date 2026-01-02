@@ -72,10 +72,15 @@ export default function TresorerieAnalyticsTab() {
 
   // Préparer les données pour les graphiques
   const balanceEvolutionData = useMemo(() => {
+    // Get computed primary color for charts (libraries need hex value)
+    const primaryColor = typeof window !== 'undefined' 
+      ? getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim() || '#523DC9'
+      : '#523DC9';
+    
     return cashflowData.map((week, index) => ({
       label: `Sem. ${index + 1}`,
       value: Number(week.balance),
-      color: '#523DC9'
+      color: primaryColor
     }));
   }, [cashflowData]);
 
@@ -130,13 +135,21 @@ export default function TresorerieAnalyticsTab() {
       }
     });
 
+    // Get computed colors for charts (libraries need hex values)
+    const successColor = typeof window !== 'undefined'
+      ? getComputedStyle(document.documentElement).getPropertyValue('--color-secondary-500').trim() || '#10B981'
+      : '#10B981';
+    const dangerColor = typeof window !== 'undefined'
+      ? getComputedStyle(document.documentElement).getPropertyValue('--color-danger-500').trim() || '#EF4444'
+      : '#EF4444';
+    
     return Object.values(categoryTotals)
       .sort((a, b) => b.total - a.total)
       .slice(0, 10)
       .map((cat) => ({
         label: cat.name,
         value: cat.total,
-        color: cat.type === 'entry' ? '#10B981' : '#EF4444'
+        color: cat.type === 'entry' ? successColor : dangerColor
       }));
   }, [transactions, categories]);
 
@@ -362,11 +375,21 @@ export default function TresorerieAnalyticsTab() {
         {entriesVsExitsData.length > 0 ? (
           <Chart
             type="area"
-            data={entriesVsExitsData.map((month) => ({
-              label: month.month,
-              value: month.entries - month.exits,
-              color: (month.entries - month.exits) >= 0 ? '#10B981' : '#EF4444'
-            }))}
+            data={entriesVsExitsData.map((month) => {
+              // Get computed colors for charts (libraries need hex values)
+              const successColor = typeof window !== 'undefined'
+                ? getComputedStyle(document.documentElement).getPropertyValue('--color-secondary-500').trim() || '#10B981'
+                : '#10B981';
+              const dangerColor = typeof window !== 'undefined'
+                ? getComputedStyle(document.documentElement).getPropertyValue('--color-danger-500').trim() || '#EF4444'
+                : '#EF4444';
+              
+              return {
+                label: month.month,
+                value: month.entries - month.exits,
+                color: (month.entries - month.exits) >= 0 ? successColor : dangerColor
+              };
+            })}
             height={250}
           />
         ) : (

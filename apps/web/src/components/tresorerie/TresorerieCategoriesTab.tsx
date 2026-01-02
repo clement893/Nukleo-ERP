@@ -211,7 +211,7 @@ export default function TresorerieCategoriesTab() {
                   <div className="flex items-center gap-2">
                     <div
                       className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: category.color || '#523DC9' }}
+                      style={{ backgroundColor: category.color || 'var(--color-primary-500)' }}
                     />
                     <h4 className="font-semibold">{category.name}</h4>
                   </div>
@@ -281,7 +281,7 @@ export default function TresorerieCategoriesTab() {
                   <div className="flex items-center gap-2">
                     <div
                       className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: category.color || '#523DC9' }}
+                      style={{ backgroundColor: category.color || 'var(--color-primary-500)' }}
                     />
                     <h4 className="font-semibold">{category.name}</h4>
                   </div>
@@ -413,14 +413,14 @@ export default function TresorerieCategoriesTab() {
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={formData.color || '#523DC9'}
+                value={formData.color || 'var(--color-primary-500)'}
                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                 className="w-12 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
               />
               <Input
-                value={formData.color || '#523DC9'}
+                value={formData.color || 'var(--color-primary-500)'}
                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                placeholder="#523DC9"
+                placeholder="var(--color-primary-500)"
                 className="flex-1"
               />
             </div>

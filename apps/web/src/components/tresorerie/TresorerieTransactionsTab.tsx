@@ -260,7 +260,7 @@ export default function TresorerieTransactionsTab() {
     return (
       <MotionDiv variant="slideUp" duration="normal">
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#523DC9]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
         </div>
       </MotionDiv>
     );

@@ -344,12 +344,17 @@ export default function CalendarView({ className }: CalendarViewProps) {
       // Calculer pour l'année courante et les 2 années suivantes
       for (let year = currentYear; year <= currentYear + 2; year++) {
         const quebecHolidays = getQuebecHolidays(year);
+        // Get computed danger color for holidays
+        const dangerColor = typeof window !== 'undefined'
+          ? getComputedStyle(document.documentElement).getPropertyValue('--color-danger-500').trim() || '#EF4444'
+          : '#EF4444';
+        
         quebecHolidays.forEach((holiday) => {
           eventsList.push({
             id: `holiday-qc-${holiday.date}`,
             title: holiday.name,
             date: new Date(holiday.date),
-            color: '#EF4444', // Rouge pour les jours fériés
+            color: dangerColor,
           });
         });
       }
@@ -357,23 +362,39 @@ export default function CalendarView({ className }: CalendarViewProps) {
 
     // Vacances d'été (un seul événement avec date de fin)
     if (showSummerVacation) {
+      // Get computed warning color for summer vacation
+      const warningColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-warning-500').trim() || '#F59E0B'
+        : '#F59E0B';
+      
       eventsList.push({
         id: 'summer-vacation',
         title: SUMMER_VACATION.name,
         date: new Date(SUMMER_VACATION.start),
         endDate: new Date(SUMMER_VACATION.end),
-        color: '#F59E0B', // Orange pour les vacances d'été
+        color: warningColor,
       });
     }
 
     // Vacances des employés (événements multi-jours)
     if (showVacations) {
+      // Get computed colors for vacation status
+      const successColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-secondary-500').trim() || '#10B981'
+        : '#10B981';
+      const warningColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-warning-500').trim() || '#F59E0B'
+        : '#F59E0B';
+      const grayColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-gray-500').trim() || '#6B7280'
+        : '#6B7280';
+      
       vacations.forEach((vacation) => {
         const color = vacation.status === 'approved' 
-          ? '#10B981' // Vert pour approuvé
+          ? successColor
           : vacation.status === 'pending'
-          ? '#F59E0B' // Orange pour en attente
-          : '#6B7280'; // Gris pour autres statuts
+          ? warningColor
+          : grayColor;
 
         eventsList.push({
           id: `vacation-${vacation.id}`,
@@ -390,12 +411,26 @@ export default function CalendarView({ className }: CalendarViewProps) {
 
     // Deadlines
     if (showDeadlines) {
+      // Get computed colors for deadline priorities
+      const grayColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-gray-500').trim() || '#6B7280'
+        : '#6B7280';
+      const primaryColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim() || '#3B82F6'
+        : '#3B82F6';
+      const warningColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-warning-500').trim() || '#F59E0B'
+        : '#F59E0B';
+      const dangerColor = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-danger-500').trim() || '#EF4444'
+        : '#EF4444';
+      
       deadlines.forEach((deadline) => {
         const priorityColors = {
-          low: '#6B7280',
-          medium: '#3B82F6',
-          high: '#F59E0B',
-          urgent: '#EF4444',
+          low: grayColor,
+          medium: primaryColor,
+          high: warningColor,
+          urgent: dangerColor,
         };
 
         eventsList.push({
