@@ -10,7 +10,7 @@
 | Batch | Description | Statut | Fichiers | Progression |
 |-------|-------------|--------|----------|-------------|
 | **Batch 1** | Suppression fichiers backup/old | ✅ Terminé | 36 fichiers | 100% |
-| **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 14% |
+| **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
 | **Batch 3** | Correction `any` error handling | ⏳ En attente | ~60 fichiers | 0% |
 | **Batch 4** | Optimisation hooks React | ⏳ En attente | ~50 fichiers | 0% |
 | **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
@@ -43,7 +43,7 @@
 
 **Fichiers ciblés:** ~100 fichiers avec console.log en production
 
-**Fichiers traités:** 14/100
+**Fichiers traités:** 21/100
 - ✅ `apps/web/src/app/[locale]/dashboard/finances/compte-depenses/page.tsx` (3 console.error)
 - ✅ `apps/web/src/app/[locale]/dashboard/projets/clients/page.tsx` (3 console.error)
 - ✅ `apps/web/src/app/[locale]/dashboard/commercial/pipeline-client/[id]/page.tsx` (1 console.error)
@@ -58,6 +58,13 @@
 - ✅ `apps/web/src/app/[locale]/dashboard/projects/[id]/page.tsx` (2 console.warn)
 - ✅ `apps/web/src/app/[locale]/dashboard/projets/[id]/page.tsx` (1 console.warn)
 - ✅ `apps/web/src/app/[locale]/dashboard/page.tsx` (3 console.error)
+- ✅ `apps/web/src/components/employes/EmployeePortalTimeSheets.tsx` (4 console.error)
+- ✅ `apps/web/src/components/employes/EmployeePortalTasks.tsx` (3 console.debug)
+- ✅ `apps/web/src/components/employes/EmployeePortalExpenses.tsx` (1 console.error, 1 console.warn)
+- ✅ `apps/web/src/components/dashboard/widgets/OpportunitiesListWidget.tsx` (1 console.warn)
+- ✅ `apps/web/src/components/dashboard/widgets/ClientsCountWidget.tsx` (1 console.warn)
+- ✅ `apps/web/src/components/dashboard/widgets/EmployeesCountWidget.tsx` (1 console.error)
+- ✅ `apps/web/src/components/dashboard/widgets/NotificationsWidget.tsx` (1 console.error)
 
 **Statut:** 🟡 En cours  
 **Dernière mise à jour:** 2025-01-27
@@ -98,7 +105,7 @@
 
 - **Fichiers traités:** 44/274 (16%)
 - **Lignes modifiées:** ~16,600 supprimées, ~250 modifiées
-- **Erreurs corrigées:** 23 console.log/error/warn remplacés
+- **Erreurs corrigées:** 35 console.log/error/warn/debug remplacés
 - **Temps écoulé:** ~15 min
 
 ---
