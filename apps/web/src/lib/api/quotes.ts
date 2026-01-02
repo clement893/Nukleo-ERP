@@ -23,6 +23,8 @@ export interface Quote {
   quote_number: string;
   company_id: number | null;
   company_name?: string;
+  project_id?: number | null;
+  project_name?: string;
   title: string;
   description: string | null;
   amount: number | null;
@@ -40,6 +42,7 @@ export interface Quote {
 export interface QuoteCreate {
   quote_number?: string;
   company_id?: number | null;
+  project_id?: number | null;
   title: string;
   description?: string | null;
   amount?: number | null;

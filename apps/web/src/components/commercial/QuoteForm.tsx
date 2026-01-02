@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { Quote, QuoteCreate, QuoteUpdate, QuoteLineItem } from '@/lib/api/quotes';
 import { Company, CompanyCreate, CompanyUpdate } from '@/lib/api/companies';
 import { companiesAPI } from '@/lib/api/companies';
+import { projectsAPI, Project } from '@/lib/api/projects';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui';
-import { Building2, Calendar, Plus, Trash2, DollarSign, Clock } from 'lucide-react';
+import { Building2, Calendar, Plus, Trash2, DollarSign, Clock, FolderKanban } from 'lucide-react';
 import CompanyForm from './CompanyForm';
 
 interface QuoteFormProps {
@@ -49,6 +50,8 @@ export default function QuoteForm({
   const { showToast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
   const [creatingCompany, setCreatingCompany] = useState(false);
   const [pricingType, setPricingType] = useState<'fixed' | 'hourly'>(
@@ -61,6 +64,7 @@ export default function QuoteForm({
     title: quote?.title || '',
     description: quote?.description || null,
     company_id: quote?.company_id || null,
+    project_id: quote?.project_id || null,
     amount: quote?.amount || null,
     currency: quote?.currency || 'EUR',
     pricing_type: pricingType,
@@ -86,8 +90,25 @@ export default function QuoteForm({
     }
   };
 
+  // Load projects
+  const loadProjects = async () => {
+    try {
+      setLoadingProjects(true);
+      const data = await projectsAPI.list(0, 1000);
+      setProjects(data);
+    } catch (error) {
+      showToast({
+        message: 'Erreur lors du chargement des projets',
+        type: 'error',
+      });
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
   useEffect(() => {
     loadCompanies();
+    loadProjects();
   }, []);
 
   // Handle create company
@@ -297,6 +318,35 @@ export default function QuoteForm({
             options={[
               { value: '', label: 'Aucun client' },
               ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
+            ]}
+            fullWidth
+          />
+        )}
+      </div>
+
+      {/* Projet */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          <FolderKanban className="w-4 h-4 inline mr-1.5" />
+          Projet
+        </label>
+        {loadingProjects ? (
+          <div className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground">
+            Chargement des projets...
+          </div>
+        ) : (
+          <Select
+            value={formData.project_id?.toString() || ''}
+            onChange={(e) => {
+              const selectedValue = e.target.value;
+              setFormData({
+                ...formData,
+                project_id: selectedValue ? parseInt(selectedValue, 10) : null,
+              });
+            }}
+            options={[
+              { value: '', label: 'Aucun projet' },
+              ...projects.map(p => ({ value: p.id.toString(), label: p.name })),
             ]}
             fullWidth
           />
