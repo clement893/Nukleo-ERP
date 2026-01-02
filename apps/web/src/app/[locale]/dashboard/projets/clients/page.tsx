@@ -61,8 +61,6 @@ function ClientsContent() {
   // State for companies (for logos) and projects
   const [companies, setCompanies] = useState<Company[]>([]);
   const [projectsByClient, setProjectsByClient] = useState<Record<number, Project[]>>({});
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
-  const [loadingProjects, setLoadingProjects] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<Record<number, boolean>>({});
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -76,13 +74,10 @@ function ClientsContent() {
   useEffect(() => {
     const loadCompanies = async () => {
       try {
-        setLoadingCompanies(true);
         const allCompanies = await companiesAPI.list(0, 1000);
         setCompanies(allCompanies);
       } catch (error) {
         console.error('Error loading companies:', error);
-      } finally {
-        setLoadingCompanies(false);
       }
     };
     loadCompanies();
@@ -94,7 +89,6 @@ function ClientsContent() {
       if (clients.length === 0) return;
       
       try {
-        setLoadingProjects(true);
         const projectsMap: Record<number, Project[]> = {};
         
         // Load all projects and group by client_id
@@ -104,15 +98,13 @@ function ClientsContent() {
             if (!projectsMap[project.client_id]) {
               projectsMap[project.client_id] = [];
             }
-            projectsMap[project.client_id].push(project);
+            projectsMap[project.client_id]!.push(project);
           }
         });
         
         setProjectsByClient(projectsMap);
       } catch (error) {
         console.error('Error loading projects:', error);
-      } finally {
-        setLoadingProjects(false);
       }
     };
     loadProjects();

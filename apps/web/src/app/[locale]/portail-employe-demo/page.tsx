@@ -15,10 +15,12 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { Responsive, Layout } from 'react-grid-layout';
+// @ts-expect-error - WidthProvider is not exported as named export, but exists in the package
 import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import 'react-grid-layout/css/styles.css';
 import 'react-grid-layout/css/resizable.css';
 
+// @ts-expect-error - WidthProvider typing issue
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // Widget types
@@ -65,8 +67,10 @@ export default function PortailEmployeDashboard() {
   // Save layouts to localStorage
   const saveLayout = (newLayouts: Layout[]) => {
     const layoutsWithTypes: WidgetLayout[] = newLayouts.map((l: Layout) => {
-      const existing = layouts.find(w => w.i === l.i);
-      return { ...l, type: existing?.type || 'stats' } as WidgetLayout;
+      // Layout from react-grid-layout has i property, but TypeScript types may not reflect it correctly
+      const layoutItem = l as Layout & { i: string };
+      const existing = layouts.find(w => w.i === layoutItem.i);
+      return { ...layoutItem, type: existing?.type || 'stats' } as WidgetLayout;
     });
     setLayouts(layoutsWithTypes);
     localStorage.setItem('portail-dashboard-layout', JSON.stringify(layoutsWithTypes));
