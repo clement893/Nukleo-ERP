@@ -24,7 +24,6 @@ import { useInfiniteProjects } from '@/lib/query/projects';
 import { useInfiniteClients } from '@/lib/query/clients';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { teamsAPI } from '@/lib/api/teams';
-import type { Project } from '@/lib/api/projects';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#523DC9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
@@ -693,7 +692,7 @@ export default function OperationsDashboardPage() {
                   ARCHIVED: { label: 'Archivé', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30' },
                   ON_HOLD: { label: 'En pause', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30' },
                 };
-                const status = statusConfig[project.status as string] || statusConfig.ACTIVE;
+                const status = (statusConfig[project.status as string] ?? statusConfig.ACTIVE) as { label: string; color: string };
                 
                 return (
                   <Link key={project.id} href={`/${locale}/dashboard/projets/projets/${project.id}`}>
