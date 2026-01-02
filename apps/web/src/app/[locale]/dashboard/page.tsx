@@ -26,6 +26,7 @@ import { WidgetLibrary } from '@/components/dashboard/WidgetLibrary';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import QuickActions from '@/components/ui/QuickActions';
 import type { DashboardConfig } from '@/lib/dashboard/types';
+import { logger } from '@/lib/logger';
 
 function DashboardContent() {
   const { configs, addConfig, setActiveConfig, loadFromServer } = useDashboardStore();
@@ -133,7 +134,7 @@ function DashboardContent() {
         addConfig(defaultConfig);
         setActiveConfig(defaultConfig.id);
       } catch (error) {
-        console.error('Error initializing default dashboard config:', error);
+        logger.error('Error initializing default dashboard config', error);
         // Don't crash if default config fails - user can still add widgets manually
       }
     }

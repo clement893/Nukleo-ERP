@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { projectsAPI } from '@/lib/api/projects';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
 import { employeesAPI } from '@/lib/api/employees';
+import { logger } from '@/lib/logger';
 
 interface FinancialStats {
   revenue: number;

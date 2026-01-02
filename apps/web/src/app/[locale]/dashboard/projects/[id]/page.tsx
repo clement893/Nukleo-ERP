@@ -18,6 +18,7 @@ import { projectsAPI, type Project } from '@/lib/api/projects';
 import { companiesAPI } from '@/lib/api/companies';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import {
   ArrowLeft,
   Edit,
@@ -123,7 +124,7 @@ function ProjectDetailContent() {
       const clientsList = Array.isArray(data) ? data : (data as any)?.items || [];
       setClients(clientsList.map((c: any) => ({ id: c.id, name: c.name || c.company_name || '' })));
     } catch (err) {
-      console.warn('Could not load clients:', err);
+      logger.warn('Could not load clients', err);
     } finally {
       setLoadingClients(false);
     }

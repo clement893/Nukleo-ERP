@@ -14,6 +14,7 @@ import { Badge, Button, Card } from '@/components/ui';
 import { projectsAPI } from '@/lib/api/projects';
 import { employeesAPI } from '@/lib/api/employees';
 import { useToast } from '@/lib/toast';
+import { logger } from '@/lib/logger';
 
 interface Transaction {
   id: string;

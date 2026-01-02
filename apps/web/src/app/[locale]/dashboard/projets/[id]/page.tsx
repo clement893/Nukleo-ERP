@@ -12,6 +12,7 @@ import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
 import { projectsAPI, type Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
+import { logger } from '@/lib/logger';
 import {
   ArrowLeft,
   Edit,
