@@ -1,958 +1,284 @@
 'use client';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { DollarSign, Calendar, FileText, Loader2, CheckCircle, Clock, XCircle, AlertCircle, Upload } from 'lucide-react';
+import { Card, Button, Badge } from '@/components/ui';
+import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountStatus } from '@/lib/api/finances/expenseAccounts';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { PageHeader } from '@/components/layout';
-import { Button, Alert, Loading, Textarea } from '@/components/ui';
-import DataTable, { type Column } from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
-import { type ExpenseAccount, type ExpenseAccountCreate, type ExpenseAccountUpdate, type ExpenseAccountStatus, type ExpenseAccountAction } from '@/lib/api/finances/expenseAccounts';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
-import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
-import SearchBar from '@/components/ui/SearchBar';
-import MultiSelect from '@/components/ui/MultiSelect';
-import Select from '@/components/ui/Select';
-import { 
-  Plus, 
-  Edit,
-  Trash2,
-  Send,
-  CheckCircle,
-  XCircle,
-  MessageSquare,
-  Eye,
-} from 'lucide-react';
-import MotionDiv from '@/components/motion/MotionDiv';
-import { useDebounce } from '@/hooks/useDebounce';
-import { 
-  useInfiniteExpenseAccounts, 
-  useCreateExpenseAccount, 
-  useUpdateExpenseAccount, 
-  useDeleteExpenseAccount,
-  useSubmitExpenseAccount,
-  useApproveExpenseAccount,
-  useRejectExpenseAccount,
-  useRequestClarification,
-} from '@/lib/query/expenseAccounts';
-import { employeesAPI, type Employee } from '@/lib/api/employees';
+export default function MesDepenses() {
+  const searchParams = useSearchParams();
+  const employeeIdParam = searchParams.get('employee_id');
+  const employeeId = employeeIdParam ? parseInt(employeeIdParam) : undefined;
+  
+  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<ExpenseAccount[]>([]);
+  const [statusFilter, setStatusFilter] = useState<ExpenseAccountStatus | 'all'>('all');
 
-function CompteDepensesContent() {
-  const { showToast } = useToast();
-  
-  // React Query hooks for expense accounts
-  const {
-    data: expenseAccountsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error: queryError,
-  } = useInfiniteExpenseAccounts(20);
-  
-  // Mutations
-  const createExpenseAccountMutation = useCreateExpenseAccount();
-  const updateExpenseAccountMutation = useUpdateExpenseAccount();
-  const deleteExpenseAccountMutation = useDeleteExpenseAccount();
-  const submitExpenseAccountMutation = useSubmitExpenseAccount();
-  const approveExpenseAccountMutation = useApproveExpenseAccount();
-  const rejectExpenseAccountMutation = useRejectExpenseAccount();
-  const requestClarificationMutation = useRequestClarification();
-  
-  // Flatten pages into single array
-  const expenseAccounts = useMemo(() => {
-    return expenseAccountsData?.pages.flat() || [];
-  }, [expenseAccountsData]);
-  
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [selectedExpenseAccount, setSelectedExpenseAccount] = useState<ExpenseAccount | null>(null);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | 'clarification' | null>(null);
-  const [actionData, setActionData] = useState<ExpenseAccountAction>({ notes: null, rejection_reason: null, clarification_request: null });
-  const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [filterEmployee, setFilterEmployee] = useState<string[]>([]);
-  const [filterMonth, setFilterMonth] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [_showActionsMenu, setShowActionsMenu] = useState<number | null>(null);
-  
-  // Load employees for filters and form
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  
   useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const employeesData = await employeesAPI.list(0, 1000);
-        setEmployees(employeesData);
-      } catch (err) {
-        console.warn('Could not load employees:', err);
-        setEmployees([]);
-      }
+    loadExpenses();
+  }, [employeeId, statusFilter]);
+
+  const loadExpenses = async () => {
+    try {
+      setLoading(true);
+      const data = await expenseAccountsAPI.list(
+        0, 
+        100, 
+        statusFilter === 'all' ? undefined : statusFilter,
+        employeeId
+      );
+      setExpenses(data);
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: ExpenseAccountStatus) => {
+    const badges = {
+      draft: { class: 'bg-gray-100 text-gray-700 border-gray-300', icon: FileText, label: 'Brouillon' },
+      submitted: { class: 'bg-blue-100 text-blue-700 border-blue-300', icon: Clock, label: 'Soumis' },
+      under_review: { class: 'bg-purple-100 text-purple-700 border-purple-300', icon: AlertCircle, label: 'En révision' },
+      approved: { class: 'bg-green-100 text-green-700 border-green-300', icon: CheckCircle, label: 'Approuvé' },
+      rejected: { class: 'bg-red-100 text-red-700 border-red-300', icon: XCircle, label: 'Rejeté' },
+      needs_clarification: { class: 'bg-orange-100 text-orange-700 border-orange-300', icon: AlertCircle, label: 'Clarification requise' },
     };
-    loadEmployees();
-  }, []);
-  
-  // Debounce search query
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
-  // Derived state from React Query
-  const loading = isLoading;
-  const loadingMore = isFetchingNextPage;
-  const hasMore = hasNextPage ?? false;
-  const error = queryError ? handleApiError(queryError).message : null;
+    return badges[status] || badges.draft;
+  };
 
-  const statusOptions: ExpenseAccountStatus[] = ['draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'];
+  const totalAmount = expenses.reduce((sum, e) => sum + parseFloat(e.total_amount || '0'), 0);
+  const approvedAmount = expenses
+    .filter(e => e.status === 'approved')
+    .reduce((sum, e) => sum + parseFloat(e.total_amount || '0'), 0);
+  const pendingCount = expenses.filter(e => 
+    e.status === 'submitted' || e.status === 'under_review'
+  ).length;
 
-  // Generate available months from expense accounts
-  const availableMonths = useMemo(() => {
-    const monthSet = new Set<string>();
-    expenseAccounts.forEach((account) => {
-      const dateStr = account.expense_period_start || account.created_at;
-      const date = new Date(dateStr);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      monthSet.add(monthKey);
-    });
-    
-    // Convert to array and sort (newest first)
-    return Array.from(monthSet)
-      .sort((a, b) => b.localeCompare(a))
-      .map((monthKey) => {
-        const parts = monthKey.split('-');
-        const year = parts[0] || '2024';
-        const month = parts[1] || '01';
-        const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-        const monthLabel = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        const capitalizedLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-        return {
-          value: monthKey,
-          label: capitalizedLabel,
-        };
-      });
-  }, [expenseAccounts]);
-
-  // Load more expense accounts for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchNextPage();
-    }
-  }, [loadingMore, hasMore, fetchNextPage]);
-
-  // Filtered expense accounts with debounced search
-  const filteredExpenseAccounts = useMemo(() => {
-    return expenseAccounts.filter((account) => {
-      // Status filter
-      const matchesStatus = filterStatus.length === 0 || filterStatus.includes(account.status);
-      
-      // Employee filter
-      const matchesEmployee = filterEmployee.length === 0 || 
-        filterEmployee.includes(account.employee_id.toString());
-      
-      // Month filter
-      let matchesMonth = true;
-      if (filterMonth) {
-        const dateStr = account.expense_period_start || account.created_at;
-        const date = new Date(dateStr);
-        const accountMonthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        matchesMonth = accountMonthKey === filterMonth;
-      }
-      
-      // Search filter
-      const matchesSearch = !debouncedSearchQuery || 
-        account.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        account.account_number.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        account.employee_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      
-      return matchesStatus && matchesEmployee && matchesMonth && matchesSearch;
-    });
-  }, [expenseAccounts, filterStatus, filterEmployee, filterMonth, debouncedSearchQuery]);
-  
-  // Group expense accounts by month and employee
-  interface GroupedExpenseAccount {
-    monthKey: string; // Format: "YYYY-MM"
-    monthLabel: string; // Format: "Janvier 2024"
-    employeeId: number;
-    employeeName: string;
-    accounts: ExpenseAccount[];
-    totalAmount: number;
-    currency: string;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+      </div>
+    );
   }
-  
-  const groupedExpenseAccounts = useMemo(() => {
-    const groups = new Map<string, GroupedExpenseAccount>();
-    
-    filteredExpenseAccounts.forEach((account) => {
-      // Get month from expense_period_start or created_at
-      const dateStr = account.expense_period_start || account.created_at;
-      const date = new Date(dateStr);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-      const monthLabelCapitalized = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-      
-      const employeeId = account.employee_id;
-      const employeeName = account.employee_name || `Employé #${employeeId}`;
-      const groupKey = `${monthKey}-${employeeId}`;
-      
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, {
-          monthKey,
-          monthLabel: monthLabelCapitalized,
-          employeeId,
-          employeeName,
-          accounts: [],
-          totalAmount: 0,
-          currency: account.currency || 'EUR',
-        });
-      }
-      
-      const group = groups.get(groupKey)!;
-      group.accounts.push(account);
-      const amount = parseFloat(account.total_amount) || 0;
-      group.totalAmount += amount;
-      // Use the most common currency or first one
-      if (!group.currency || group.currency === 'EUR') {
-        group.currency = account.currency || 'EUR';
-      }
-    });
-    
-    // Sort accounts within each group by date (most recent first)
-    groups.forEach((group) => {
-      group.accounts.sort((a, b) => {
-        const dateA = a.expense_period_start || a.created_at;
-        const dateB = b.expense_period_start || b.created_at;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      });
-    });
-    
-    // Sort groups: most recent month first, then by employee name
-    return Array.from(groups.values()).sort((a, b) => {
-      if (a.monthKey !== b.monthKey) {
-        return b.monthKey.localeCompare(a.monthKey); // Descending (newest first)
-      }
-      return a.employeeName.localeCompare(b.employeeName);
-    });
-  }, [filteredExpenseAccounts]);
-  
-  // Check if any filters are active
-  const hasActiveFilters = !!(filterStatus.length > 0 || filterEmployee.length > 0 || filterMonth || debouncedSearchQuery);
-  
-  // Clear all filters function
-  const clearAllFilters = useCallback(() => {
-    setFilterStatus([]);
-    setFilterEmployee([]);
-    setFilterMonth('');
-    setSearchQuery('');
-  }, []);
-
-  // Handle create
-  const handleCreate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate) => {
-    try {
-      await createExpenseAccountMutation.mutateAsync(data as ExpenseAccountCreate);
-      setShowCreateModal(false);
-      showToast({
-        message: 'Compte de dépenses créé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la création du compte de dépenses',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle update
-  const handleUpdate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate) => {
-    if (!selectedExpenseAccount) return;
-
-    try {
-      await updateExpenseAccountMutation.mutateAsync({
-        id: selectedExpenseAccount.id,
-        data: data as ExpenseAccountUpdate,
-      });
-      setShowEditModal(false);
-      setSelectedExpenseAccount(null);
-      showToast({
-        message: 'Compte de dépenses modifié avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la modification du compte de dépenses',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle delete
-  const handleDelete = async (expenseAccountId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce compte de dépenses ?')) {
-      return;
-    }
-
-    try {
-      await deleteExpenseAccountMutation.mutateAsync(expenseAccountId);
-      showToast({
-        message: 'Compte de dépenses supprimé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la suppression du compte de dépenses',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle submit
-  const handleSubmit = async (expenseAccountId: number) => {
-    try {
-      await submitExpenseAccountMutation.mutateAsync(expenseAccountId);
-      showToast({
-        message: 'Compte de dépenses soumis avec succès',
-        type: 'success',
-      });
-      setShowActionsMenu(null);
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la soumission du compte de dépenses',
-        type: 'error',
-      });
-    }
-  };
-
-  // Handle approve/reject/clarification
-  const handleAction = async () => {
-    if (!selectedExpenseAccount || !actionType) return;
-
-    try {
-      if (actionType === 'approve') {
-        await approveExpenseAccountMutation.mutateAsync({
-          id: selectedExpenseAccount.id,
-          action: actionData,
-        });
-        showToast({
-          message: 'Compte de dépenses approuvé avec succès',
-          type: 'success',
-        });
-      } else if (actionType === 'reject') {
-        if (!actionData.rejection_reason) {
-          showToast({
-            message: 'La raison du rejet est requise',
-            type: 'error',
-          });
-          return;
-        }
-        await rejectExpenseAccountMutation.mutateAsync({
-          id: selectedExpenseAccount.id,
-          action: actionData,
-        });
-        showToast({
-          message: 'Compte de dépenses rejeté',
-          type: 'success',
-        });
-      } else if (actionType === 'clarification') {
-        if (!actionData.clarification_request) {
-          showToast({
-            message: 'La demande de précisions est requise',
-            type: 'error',
-          });
-          return;
-        }
-        await requestClarificationMutation.mutateAsync({
-          id: selectedExpenseAccount.id,
-          action: actionData,
-        });
-        showToast({
-          message: 'Demande de précisions envoyée',
-          type: 'success',
-        });
-      }
-      setShowActionModal(false);
-      setSelectedExpenseAccount(null);
-      setActionType(null);
-      setActionData({ notes: null, rejection_reason: null, clarification_request: null });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de l\'action',
-        type: 'error',
-      });
-    }
-  };
-
-  // Format currency
-  const formatCurrency = (amount: string, currency: string) => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount)) return '-';
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: currency || 'EUR' 
-    }).format(numAmount);
-  };
-
-  // Format date
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-FR');
-  };
-
-  // Open action modal
-  const openActionModal = (account: ExpenseAccount, type: 'approve' | 'reject' | 'clarification') => {
-    setSelectedExpenseAccount(account);
-    setActionType(type);
-    setActionData({ notes: null, rejection_reason: null, clarification_request: null });
-    setShowActionModal(true);
-    setShowActionsMenu(null);
-  };
-
-  // Table columns
-  const columns: Column<ExpenseAccount>[] = [
-    {
-      key: 'account_number',
-      label: 'Numéro',
-      sortable: true,
-      render: (_value, account) => (
-        <div className="flex items-center justify-between group">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={account.account_number}>{account.account_number}</div>
-            <div className="text-sm text-muted-foreground truncate" title={account.title}>{account.title}</div>
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedExpenseAccount(account);
-                setShowViewModal(true);
-              }}
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'employee_name',
-      label: 'Employé',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value ? String(value) : '-'}</span>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'Statut',
-      sortable: true,
-      render: (value) => (
-        <ExpenseAccountStatusBadge status={value as ExpenseAccountStatus} />
-      ),
-    },
-    {
-      key: 'total_amount',
-      label: 'Montant',
-      sortable: true,
-      render: (_value, account) => (
-        <span className="font-medium">{formatCurrency(account.total_amount, account.currency)}</span>
-      ),
-    },
-    {
-      key: 'expense_period_start',
-      label: 'Période',
-      sortable: true,
-      render: (_value, account) => (
-        <div className="text-sm">
-          <div>{formatDate(account.expense_period_start)}</div>
-          {account.expense_period_end && (
-            <div className="text-muted-foreground">→ {formatDate(account.expense_period_end)}</div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'submitted_at',
-      label: 'Soumis le',
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{formatDate(value as string | null)}</span>
-      ),
-    },
-  ];
 
   return (
-    <MotionDiv variant="slideUp" duration="normal" className="space-y-2xl">
-      <PageHeader
-        title="Compte de dépenses"
-        description={`Gérez vos comptes de dépenses${expenseAccounts.length > 0 ? ` - ${expenseAccounts.length} compte${expenseAccounts.length > 1 ? 's' : ''} au total` : ''}`}
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Module Finances', href: '/dashboard/finances' },
-          { label: 'Compte de dépenses' },
-        ]}
-      />
-
-      {/* Toolbar */}
-      <div className="glass-card rounded-xl border border-border p-6">
-        <div className="space-y-3">
-          {/* Expense account count */}
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="relative p-8">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {hasActiveFilters ? (
-                <span>
-                  {filteredExpenseAccounts.length} sur {expenseAccounts.length} compte{expenseAccounts.length > 1 ? 's' : ''}
-                </span>
-              ) : (
-                <span>
-                  {expenseAccounts.length} compte{expenseAccounts.length > 1 ? 's' : ''} au total
-                </span>
-              )}
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Mes Comptes de Dépenses
+              </h1>
+              <p className="text-white/80 text-lg">Gérez vos notes de frais et remboursements</p>
             </div>
-          </div>
-          
-          {/* Search bar */}
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Rechercher par numéro, titre, employé..."
-            className="w-full"
-          />
-          
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Statut */}
-            <MultiSelect
-              options={statusOptions.map((status) => ({
-                label: status === 'draft' ? 'Brouillon' : 
-                       status === 'submitted' ? 'Soumis' :
-                       status === 'under_review' ? 'En révision' :
-                       status === 'approved' ? 'Approuvé' :
-                       status === 'rejected' ? 'Rejeté' :
-                       status === 'needs_clarification' ? 'Précisions requises' : status,
-                value: status,
-              }))}
-              value={filterStatus}
-              onChange={setFilterStatus}
-              placeholder="Filtrer par statut"
-              className="min-w-[180px]"
-            />
-
-            {/* Employé */}
-            {employees.length > 0 && (
-              <MultiSelect
-                options={employees.map((emp) => ({
-                  label: `${emp.first_name} ${emp.last_name}`,
-                  value: emp.id.toString(),
-                }))}
-                value={filterEmployee}
-                onChange={setFilterEmployee}
-                placeholder="Filtrer par employé"
-                className="min-w-[180px]"
-              />
-            )}
-
-            {/* Mois */}
-            {availableMonths.length > 0 && (
-              <Select
-                options={[
-                  { label: 'Tous les mois', value: '' },
-                  ...availableMonths,
-                ]}
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-                placeholder="Filtrer par mois"
-                className="min-w-[200px]"
-              />
-            )}
-
-            {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                Effacer les filtres
-              </Button>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                <Plus className="w-4 h-4 mr-1.5" />
-                Nouveau compte de dépenses
-              </Button>
-            </div>
+            <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+              <Upload className="w-5 h-5 mr-2" />
+              Nouveau compte
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
-      )}
-
-      {/* Content */}
-      {loading && expenseAccounts.length === 0 ? (
-        <div className="glass-card rounded-xl border border-border p-6">
-          <div className="py-12 text-center">
-            <Loading />
-          </div>
-        </div>
-      ) : groupedExpenseAccounts.length === 0 ? (
-        <div className="glass-card rounded-xl border border-border p-6">
-          <div className="py-12 text-center text-muted-foreground">
-            Aucun compte de dépenses trouvé
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {groupedExpenseAccounts.map((group) => (
-            <div key={`${group.monthKey}-${group.employeeId}`} className="glass-card rounded-xl border border-border overflow-hidden">
-              {/* Group Header */}
-              <div className="bg-gradient-to-r from-muted/80 to-muted/50 px-6 py-4 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-bold text-lg">
-                          {group.accounts.length}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">
-                        {group.monthLabel}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {group.employeeName}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total du mois</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">
-                      {formatCurrency(group.totalAmount.toString(), group.currency)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Group Content */}
-              <div className="p-0">
-                <DataTable
-                  data={group.accounts as unknown as Record<string, unknown>[]}
-                  columns={columns as unknown as Column<Record<string, unknown>>[]}
-                  pagination={false}
-                  searchable={false}
-                  filterable={false}
-                  emptyMessage=""
-                  loading={false}
-                  onRowClick={(row) => {
-                    setSelectedExpenseAccount(row as unknown as ExpenseAccount);
-                    setShowViewModal(true);
-                  }}
-                />
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
+          </div>
+          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {totalAmount.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Total demandé</div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {approvedAmount.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Approuvé</div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+              <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {pendingCount}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+              <FileText className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {expenses.length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Total comptes</div>
+        </Card>
+      </div>
+
+      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtrer :</span>
+          {['all', 'draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_clarification'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status as any)}
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                statusFilter === status
+                  ? 'bg-[#523DC9] text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {status === 'all' ? 'Tous' : getStatusBadge(status as ExpenseAccountStatus).label}
+            </button>
           ))}
+        </div>
+      </Card>
+
+      <div className="space-y-4">
+        {expenses.map((expense) => {
+          const badge = getStatusBadge(expense.status);
+          const Icon = badge.icon;
           
-          {/* Load More Button */}
-          {!hasActiveFilters && hasMore && (
-            <div className="flex justify-center pt-4">
-              <Button
-                variant="outline"
-                onClick={loadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? 'Chargement...' : 'Charger plus'}
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Create Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Créer un nouveau compte de dépenses"
-        size="lg"
-      >
-        <ExpenseAccountForm
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreateModal(false)}
-          loading={createExpenseAccountMutation.isPending}
-          employees={employees}
-        />
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal && selectedExpenseAccount !== null}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedExpenseAccount(null);
-        }}
-        title="Modifier le compte de dépenses"
-        size="lg"
-      >
-        {selectedExpenseAccount && (
-          <ExpenseAccountForm
-            expenseAccount={selectedExpenseAccount}
-            onSubmit={handleUpdate}
-            onCancel={() => {
-              setShowEditModal(false);
-              setSelectedExpenseAccount(null);
-            }}
-            loading={updateExpenseAccountMutation.isPending}
-            employees={employees}
-          />
-        )}
-      </Modal>
-
-      {/* View Modal */}
-      <Modal
-        isOpen={showViewModal && selectedExpenseAccount !== null}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelectedExpenseAccount(null);
-        }}
-        title={`Compte de dépenses - ${selectedExpenseAccount?.account_number}`}
-        size="lg"
-      >
-        {selectedExpenseAccount && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Employé</label>
-                <p className="mt-1">{selectedExpenseAccount.employee_name || '-'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Statut</label>
-                <div className="mt-1">
-                  <ExpenseAccountStatusBadge status={selectedExpenseAccount.status} />
+          return (
+            <Card key={expense.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <FileText className="w-5 h-5 text-[#523DC9]" />
+                    <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {expense.title}
+                    </h3>
+                    <Badge className={`${badge.class} flex items-center gap-1 text-xs`}>
+                      <Icon className="w-3 h-3" />
+                      {badge.label}
+                    </Badge>
+                  </div>
+                  {expense.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {expense.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
+                    <span className="font-mono text-xs">{expense.account_number}</span>
+                    {expense.expense_period_start && expense.expense_period_end && (
+                      <>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(expense.expense_period_start).toLocaleDateString('fr-FR')} - {new Date(expense.expense_period_end).toLocaleDateString('fr-FR')}
+                        </div>
+                      </>
+                    )}
+                    {expense.submitted_at && (
+                      <>
+                        <span>•</span>
+                        <span>Soumis le {new Date(expense.submitted_at).toLocaleDateString('fr-FR')}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                    <span className="text-2xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {parseFloat(expense.total_amount).toLocaleString('fr-CA', { style: 'currency', currency: expense.currency })}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Montant total</label>
-                <p className="mt-1 font-medium">{formatCurrency(selectedExpenseAccount.total_amount, selectedExpenseAccount.currency)}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Période</label>
-                <p className="mt-1">
-                  {formatDate(selectedExpenseAccount.expense_period_start)} → {formatDate(selectedExpenseAccount.expense_period_end)}
-                </p>
-              </div>
-              {selectedExpenseAccount.submitted_at && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Soumis le</label>
-                  <p className="mt-1">{formatDate(selectedExpenseAccount.submitted_at)}</p>
+
+              {expense.review_notes && (
+                <div className="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                        Note du réviseur
+                      </div>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">{expense.review_notes}</p>
+                    </div>
+                  </div>
                 </div>
               )}
-              {selectedExpenseAccount.reviewed_at && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Révisé le</label>
-                  <p className="mt-1">{formatDate(selectedExpenseAccount.reviewed_at)}</p>
+
+              {expense.clarification_request && (
+                <div className="mt-4 p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-1">
+                        Clarification requise
+                      </div>
+                      <p className="text-sm text-orange-700 dark:text-orange-300">{expense.clarification_request}</p>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
-            
-            {selectedExpenseAccount.description && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Description</label>
-                <p className="mt-1 text-sm">{selectedExpenseAccount.description}</p>
-              </div>
-            )}
 
-            {selectedExpenseAccount.review_notes && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Notes de révision</label>
-                <p className="mt-1 text-sm">{selectedExpenseAccount.review_notes}</p>
-              </div>
-            )}
-
-            {selectedExpenseAccount.rejection_reason && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Raison du rejet</label>
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{selectedExpenseAccount.rejection_reason}</p>
-              </div>
-            )}
-
-            {selectedExpenseAccount.clarification_request && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Demande de précisions</label>
-                <p className="mt-1 text-sm text-yellow-600 dark:text-yellow-400">{selectedExpenseAccount.clarification_request}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t">
-              {selectedExpenseAccount.status === 'draft' && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowViewModal(false);
-                      setShowEditModal(true);
-                    }}
-                  >
-                    <Edit className="w-4 h-4 mr-1.5" />
-                    Modifier
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleSubmit(selectedExpenseAccount.id)}
-                    disabled={submitExpenseAccountMutation.isPending}
-                  >
-                    <Send className="w-4 h-4 mr-1.5" />
-                    Soumettre
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(selectedExpenseAccount.id)}
-                    disabled={deleteExpenseAccountMutation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1.5" />
-                    Supprimer
-                  </Button>
-                </>
+              {expense.rejection_reason && (
+                <div className="mt-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <div className="flex items-start gap-2">
+                    <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
+                        Raison du rejet
+                      </div>
+                      <p className="text-sm text-red-700 dark:text-red-300">{expense.rejection_reason}</p>
+                    </div>
+                  </div>
+                </div>
               )}
-              {(selectedExpenseAccount.status === 'submitted' || selectedExpenseAccount.status === 'under_review') && (
-                <>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => openActionModal(selectedExpenseAccount, 'approve')}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1.5" />
-                    Approuver
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => openActionModal(selectedExpenseAccount, 'reject')}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <XCircle className="w-4 h-4 mr-1.5" />
-                    Rejeter
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => openActionModal(selectedExpenseAccount, 'clarification')}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-1.5" />
-                    Demander précisions
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
 
-      {/* Action Modal (Approve/Reject/Clarification) */}
-      <Modal
-        isOpen={showActionModal && selectedExpenseAccount !== null && actionType !== null}
-        onClose={() => {
-          setShowActionModal(false);
-          setSelectedExpenseAccount(null);
-          setActionType(null);
-          setActionData({ notes: null, rejection_reason: null, clarification_request: null });
-        }}
-        title={
-          actionType === 'approve' ? 'Approuver le compte de dépenses' :
-          actionType === 'reject' ? 'Rejeter le compte de dépenses' :
-          'Demander des précisions'
-        }
-        size="md"
-      >
-        <div className="space-y-4">
-          {actionType === 'reject' && (
-            <div>
-              <Textarea
-                label="Raison du rejet *"
-                value={actionData.rejection_reason || ''}
-                onChange={(e) => setActionData({ ...actionData, rejection_reason: e.target.value || null })}
-                rows={4}
-                fullWidth
-                placeholder="Expliquez la raison du rejet..."
-              />
-            </div>
-          )}
-          {actionType === 'clarification' && (
-            <div>
-              <Textarea
-                label="Demande de précisions *"
-                value={actionData.clarification_request || ''}
-                onChange={(e) => setActionData({ ...actionData, clarification_request: e.target.value || null })}
-                rows={4}
-                fullWidth
-                placeholder="Quelles informations supplémentaires sont nécessaires ?"
-              />
-            </div>
-          )}
-          <div>
-            <Textarea
-              label="Notes (optionnel)"
-              value={actionData.notes || ''}
-              onChange={(e) => setActionData({ ...actionData, notes: e.target.value || null })}
-              rows={3}
-              fullWidth
-              placeholder="Notes additionnelles..."
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowActionModal(false);
-                setSelectedExpenseAccount(null);
-                setActionType(null);
-                setActionData({ notes: null, rejection_reason: null, clarification_request: null });
-              }}
-            >
-              Annuler
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="text-xs text-gray-500">
+                  Créé le {new Date(expense.created_at).toLocaleDateString('fr-FR')}
+                </div>
+                <div className="flex gap-2">
+                  {expense.status === 'draft' && (
+                    <Button size="sm" variant="outline">Modifier</Button>
+                  )}
+                  {expense.status === 'needs_clarification' && (
+                    <Button size="sm" className="bg-[#523DC9] hover:bg-[#5F2B75] text-white">
+                      Répondre
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline">Détails</Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+
+        {expenses.length === 0 && (
+          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+            <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun compte de dépenses</p>
+            <Button className="bg-[#523DC9] hover:bg-[#5F2B75] text-white">
+              <Upload className="w-4 h-4 mr-2" />
+              Créer votre premier compte
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleAction}
-              className={
-                actionType === 'approve' ? 'bg-green-600 hover:bg-green-700 text-white' :
-                actionType === 'reject' ? 'bg-red-600 hover:bg-red-700 text-white' :
-                'bg-yellow-600 hover:bg-yellow-700 text-white'
-              }
-              disabled={
-                approveExpenseAccountMutation.isPending ||
-                rejectExpenseAccountMutation.isPending ||
-                requestClarificationMutation.isPending ||
-                (actionType === 'reject' && !actionData.rejection_reason) ||
-                (actionType === 'clarification' && !actionData.clarification_request)
-              }
-            >
-              {actionType === 'approve' ? 'Approuver' : actionType === 'reject' ? 'Rejeter' : 'Envoyer la demande'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </MotionDiv>
+          </Card>
+        )}
+      </div>
+    </div>
   );
-}
-
-export default function CompteDepensesPage() {
-  return <CompteDepensesContent />;
 }
