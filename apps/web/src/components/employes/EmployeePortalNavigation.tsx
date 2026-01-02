@@ -180,111 +180,167 @@ export function EmployeePortalNavigation({ employeeId, className }: EmployeePort
     });
   };
 
+  // Render navigation item with Nukleo design
+  const renderNavItem = (item: NavItem) => {
+    const active = isActive(item.path);
+    const href = `/${locale}/portail-employe/${employeeId}${item.path === 'dashboard' ? '/dashboard' : `/${item.path}`}`;
+    const Icon = item.icon;
+
+    const className = clsx(
+      'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+      active
+        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+        : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
+    );
+
+    return (
+      <Link key={item.id} href={href} className={className}>
+        {/* Active indicator */}
+        {active && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+        )}
+        
+        {/* Icon with subtle background */}
+        <span className={clsx(
+          "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
+          active 
+            ? "bg-[#523DC9]/10 text-[#523DC9]" 
+            : "text-current opacity-70 group-hover:opacity-100"
+        )}>
+          <Icon className="w-5 h-5" />
+        </span>
+        
+        {/* Text */}
+        <span className="truncate">{item.label}</span>
+      </Link>
+    );
+  };
+
   return (
     <nav className={clsx('space-y-1', className)}>
       {permissionsLoading ? (
-        <div className="text-sm text-muted-foreground px-3 py-2">
+        <div className="text-center py-8 text-sm text-muted-foreground">
           Chargement des permissions...
         </div>
       ) : (
         <>
           {/* Pages de base - toujours visibles */}
           <div className="mb-4">
-            <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Mon Portail Employé
+            <div className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 opacity-70">
+                <LayoutDashboard className="w-4 h-4" />
+              </span>
+              <span>Mon Portail Employé</span>
             </div>
-            {BASE_PAGES.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              const href = `/${locale}/portail-employe/${employeeId}${item.path === 'dashboard' ? '/dashboard' : `/${item.path}`}`;
-
-              return (
-                <Link
-                  key={item.id}
-                  href={href}
-                  className={clsx(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    active
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+            <div className="space-y-0.5 mt-1 ml-4 border-l-2 border-border/30 pl-3">
+              {BASE_PAGES.map((item) => renderNavItem(item))}
+            </div>
           </div>
 
           {/* Modules ERP - si activés */}
           {enabledModules.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-border">
-              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Modules ERP
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <div className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 opacity-70">
+                  <FolderKanban className="w-4 h-4" />
+                </span>
+                <span>Modules ERP</span>
               </div>
-              {enabledModules.map((module) => {
-                const Icon = getIcon(module.icon);
-                const isExpanded = expandedModules.has(module.id);
-                const hasSubPages = module.subPages && module.subPages.length > 0;
+              <div className="space-y-0.5 ml-4 border-l-2 border-border/30 pl-3">
+                {enabledModules.map((module) => {
+                  const Icon = getIcon(module.icon);
+                  const isExpanded = expandedModules.has(module.id);
+                  const hasSubPages = module.subPages && module.subPages.length > 0;
+                  const isModuleActive = pathname === module.basePath || pathname.startsWith(module.basePath + '/');
 
-                return (
-                  <div key={module.id} className="mb-1">
-                    {hasSubPages ? (
-                      <>
-                        <button
-                          onClick={() => toggleModule(module.id)}
+                  return (
+                    <div key={module.id} className="space-y-1">
+                      {hasSubPages ? (
+                        <>
+                          <button
+                            onClick={() => toggleModule(module.id)}
+                            className={clsx(
+                              'group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                              isModuleActive
+                                ? 'bg-[#523DC9]/5 text-[#523DC9] dark:text-[#A7A2CF]'
+                                : 'text-foreground/80 hover:bg-muted/50 hover:text-foreground'
+                            )}
+                            aria-expanded={isExpanded}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className={clsx(
+                                "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
+                                isModuleActive 
+                                  ? "bg-[#523DC9]/10 text-[#523DC9]" 
+                                  : "text-current opacity-70 group-hover:opacity-100"
+                              )}>
+                                <Icon className="w-5 h-5" />
+                              </span>
+                              <span className="truncate">{module.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-muted text-muted-foreground">
+                                {module.subPages?.length || 0}
+                              </span>
+                              <ChevronDown className={clsx(
+                                'w-4 h-4 transition-transform duration-200',
+                                isExpanded && 'rotate-180'
+                              )} />
+                            </div>
+                          </button>
+                          {isExpanded && (
+                            <div className="space-y-0.5 ml-4 border-l-2 border-border/30 pl-3">
+                              {module.subPages?.map((subPage) => {
+                                const isSubPageActive = pathname === subPage.path || pathname.startsWith(subPage.path + '/');
+                                return (
+                                  <Link
+                                    key={subPage.path}
+                                    href={subPage.path}
+                                    className={clsx(
+                                      'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                                      isSubPageActive
+                                        ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+                                        : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
+                                    )}
+                                  >
+                                    {isSubPageActive && (
+                                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
+                                    )}
+                                    <span className="truncate">{subPage.name}</span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <Link
+                          href={module.basePath}
                           className={clsx(
-                            'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                            'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                            isModuleActive
+                              ? 'bg-gradient-to-r from-[#5F2B75]/10 via-[#523DC9]/10 to-[#6B1817]/10 text-[#523DC9] dark:text-[#A7A2CF] backdrop-blur-sm border border-[#523DC9]/20'
+                              : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground hover:backdrop-blur-sm'
                           )}
                         >
-                          <Icon className="w-5 h-5" />
-                          <span className="flex-1 text-left">{module.label}</span>
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
+                          {isModuleActive && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-r-full" />
                           )}
-                        </button>
-                        {isExpanded && (
-                          <div className="ml-8 mt-1 space-y-1">
-                            {module.subPages?.map((subPage) => {
-                              const isSubPageActive = pathname === subPage.path || pathname.startsWith(subPage.path + '/');
-                              return (
-                                <Link
-                                  key={subPage.path}
-                                  href={subPage.path}
-                                  className={clsx(
-                                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                                    isSubPageActive
-                                      ? 'bg-primary/10 text-primary font-medium'
-                                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                  )}
-                                >
-                                  <span>{subPage.name}</span>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <Link
-                        href={module.basePath}
-                        className={clsx(
-                          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                          pathname === module.basePath || pathname.startsWith(module.basePath + '/')
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        )}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span>{module.label}</span>
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
+                          <span className={clsx(
+                            "w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-md transition-all duration-200",
+                            isModuleActive 
+                              ? "bg-[#523DC9]/10 text-[#523DC9]" 
+                              : "text-current opacity-70 group-hover:opacity-100"
+                          )}>
+                            <Icon className="w-5 h-5" />
+                          </span>
+                          <span className="truncate">{module.label}</span>
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </>
