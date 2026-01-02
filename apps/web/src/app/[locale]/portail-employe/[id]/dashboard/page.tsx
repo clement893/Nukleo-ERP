@@ -18,7 +18,6 @@ import {
 import { Card, Button } from '@/components/ui';
 import { Responsive, Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
-import 'react-grid-layout/css/resizable.css';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { projectsAPI } from '@/lib/api';

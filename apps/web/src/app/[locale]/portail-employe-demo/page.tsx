@@ -16,7 +16,6 @@ import {
 import { Card, Button } from '@/components/ui';
 import { Responsive, Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
-import 'react-grid-layout/css/resizable.css';
 
 // WidthProvider is not available in types, so we use a workaround
 // eslint-disable-next-line @typescript-eslint/no-var-requires
