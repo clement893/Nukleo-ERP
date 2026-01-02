@@ -465,28 +465,6 @@ export default function PipelineDetailPage() {
     setShowEditOpportunityModal(true);
   };
 
-  const handleUpdateStages = async (stages: PipelineStageCreate[]) => {
-    if (!pipeline) return;
-    
-    try {
-      // Update pipeline with new stages
-      // Note: This requires updating the entire pipeline with stages
-      // Since there's no individual stage endpoints, we'll need to recreate stages
-      // For now, we'll show a message that this requires backend support
-      showToast({
-        message: 'La gestion des stages nécessite une mise à jour complète du pipeline. Fonctionnalité à venir.',
-        type: 'info',
-      });
-      setShowEditStagesModal(false);
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la modification',
-        type: 'error',
-      });
-    }
-  };
-
   const handleExportOpportunities = async () => {
     try {
       const blob = await opportunitiesAPI.export();
