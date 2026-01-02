@@ -218,7 +218,7 @@ export default function CommercialPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
@@ -296,62 +296,94 @@ export default function CommercialPage() {
               {stats.submissions.won} gagnées
             </div>
           </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <FileText className="w-6 h-6 text-[#F59E0B]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.quotes.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Devis</div>
-            <div className="text-xs text-gray-500 dark:text-gray-500">
-              {stats.quotes.pending} en attente
-            </div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Briefcase className="w-6 h-6 text-[#3B82F6]" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.submissions.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Soumissions</div>
-            <div className="text-xs text-gray-500 dark:text-gray-500">
-              {stats.submissions.won} gagnées
-            </div>
-          </Card>
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Top Opportunities */}
+          {/* Left Column - Opportunities Needing Action */}
           <div className="lg:col-span-2">
             <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Opportunités prioritaires</h3>
-                <Badge className="bg-primary-500/10 text-primary-500">{topOpportunities.length}</Badge>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Opportunités nécessitant une action</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Opportunités nécessitant une soumission ou un suivi
+                  </p>
+                </div>
+                {opportunitiesNeedingAction.length > 0 && (
+                  <Badge className={`${
+                    opportunitiesNeedingAction.some((opp: any) => opp.actionNeeded.priority === 'high')
+                      ? 'bg-[#EF4444] text-white'
+                      : 'bg-[#F59E0B] text-white'
+                  }`}>
+                    {opportunitiesNeedingAction.length}
+                  </Badge>
+                )}
               </div>
               <div className="space-y-3">
-                {topOpportunities.length === 0 ? (
+                {opportunitiesNeedingAction.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    Aucune opportunité pour le moment
+                    <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-500 opacity-50" />
+                    <p className="font-medium">Aucune action requise</p>
+                    <p className="text-sm mt-1">Toutes vos opportunités sont à jour</p>
                   </div>
                 ) : (
-                  topOpportunities.map((opp) => (
-                    <Link key={opp.id} href={`/dashboard/commercial/opportunites/${opp.id}`}>
-                      <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between mb-2">
+                  opportunitiesNeedingAction.map((opp: any) => {
+                    const priorityColors = {
+                      high: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30',
+                      medium: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30',
+                      low: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
+                    };
+                    const deadlineColors = {
+                      urgent: 'bg-[#EF4444]/10 text-[#EF4444]',
+                      warning: 'bg-[#F59E0B]/10 text-[#F59E0B]',
+                      normal: 'bg-gray-500/10 text-gray-500',
+                    };
+                    const getDeadlineColor = (days: number | null) => {
+                      if (days === null) return deadlineColors.normal;
+                      if (days <= 7) return deadlineColors.urgent;
+                      if (days <= 30) return deadlineColors.warning;
+                      return deadlineColors.normal;
+                    };
+
+                    return (
+                      <div
+                        key={opp.id}
+                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{opp.name}</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{opp.company_name || 'Entreprise non définie'}</p>
+                            <div className="flex items-start gap-2 mb-2">
+                              <Link href={`/dashboard/commercial/opportunites/${opp.id}`}>
+                                <h4 className="font-semibold text-gray-900 dark:text-white hover:text-primary-500 transition-colors">
+                                  {opp.name}
+                                </h4>
+                              </Link>
+                              <Badge className={`${priorityColors[opp.actionNeeded.priority]} border text-xs`}>
+                                {opp.actionNeeded.label}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              {opp.company_name || 'Entreprise non définie'}
+                            </p>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {opp.stage_name && (
+                                <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30">
+                                  {opp.stage_name}
+                                </Badge>
+                              )}
+                              {opp.daysUntilDeadline !== null && (
+                                <Badge className={`${getDeadlineColor(opp.daysUntilDeadline)} border text-xs flex items-center gap-1`}>
+                                  <Clock className="w-3 h-3" />
+                                  {opp.daysUntilDeadline === 0 && "Aujourd'hui"}
+                                  {opp.daysUntilDeadline === 1 && 'Demain'}
+                                  {opp.daysUntilDeadline > 1 && `${opp.daysUntilDeadline} jours`}
+                                  {opp.daysUntilDeadline < 0 && 'Dépassé'}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right ml-4">
                             <div className="text-lg font-bold text-[#10B981]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                               {formatCurrency(opp.amount || 0)}
                             </div>
@@ -360,12 +392,24 @@ export default function CommercialPage() {
                             )}
                           </div>
                         </div>
-                        {opp.stage_name && (
-                          <Badge className="bg-primary-500/10 text-primary-500">{opp.stage_name}</Badge>
-                        )}
+                        <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <Link href={`/dashboard/commercial/opportunites/${opp.id}`}>
+                            <Button variant="outline" size="sm" className="text-xs">
+                              Voir détails
+                            </Button>
+                          </Link>
+                          {opp.actionNeeded.type === 'submission' && opp.company_id && (
+                            <Link href={`/dashboard/commercial/soumissions?company_id=${opp.company_id}&opportunity_id=${opp.id}`}>
+                              <Button size="sm" className="text-xs bg-primary-500 hover:bg-primary-600">
+                                <FileText className="w-3 h-3 mr-1" />
+                                Créer soumission
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                    </Link>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </Card>

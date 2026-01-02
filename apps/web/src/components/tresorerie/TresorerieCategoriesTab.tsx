@@ -21,7 +21,7 @@ export default function TresorerieCategoriesTab() {
     name: '',
     type: 'entry',
     description: null,
-    color: '#523DC9',
+    color: 'var(--color-primary-500)',
     is_active: true
   });
   const { showToast } = useToast();
@@ -119,7 +119,7 @@ export default function TresorerieCategoriesTab() {
       name: '',
       type: 'entry',
       description: null,
-      color: '#523DC9',
+      color: 'var(--color-primary-500)',
       is_active: true
     });
   };
@@ -130,7 +130,7 @@ export default function TresorerieCategoriesTab() {
       name: category.name,
       type: category.type,
       description: category.description,
-      color: category.color || '#523DC9',
+      color: category.color || 'var(--color-primary-500)',
       is_active: category.is_active
     });
     setShowCreateModal(true);
@@ -205,7 +205,7 @@ export default function TresorerieCategoriesTab() {
             {entryCategories.map((category) => (
               <div
                 key={category.id}
-                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9] transition-colors"
+                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -275,7 +275,7 @@ export default function TresorerieCategoriesTab() {
             {exitCategories.map((category) => (
               <div
                 key={category.id}
-                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9] transition-colors"
+                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
