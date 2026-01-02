@@ -306,49 +306,7 @@ export default function DepensesPage() {
     }
   };
   
-  const handleDownloadTemplateOld = () => {
-    // Create Excel template
-    const templateData = [
-      ['Description', 'Montant', 'Devise', 'Date', 'Catégorie', 'Fournisseur', 'Statut', 'Numéro facture', 'Notes'],
-      ['Exemple: Frais de bureau', '150.00', 'EUR', '2025-01-15', 'Fournitures', 'Fournisseur ABC', 'pending', 'FAC-2025-001', 'Notes optionnelles'],
-    ];
 
-    // Convert to CSV for now (Excel would require a library)
-    const csvContent = templateData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'modele_depenses.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showToast({
-      message: 'Modèle téléchargé avec succès',
-      type: 'success',
-    });
-  };
-
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validExtensions = ['.xlsx', '.xls', '.csv'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
-    if (!validExtensions.includes(fileExtension)) {
-      showToast({
-        message: 'Format de fichier non supporté. Utilisez .xlsx, .xls ou .csv',
-        type: 'error',
-      });
-      return;
-    }
-
-    setUploadFile(file);
-  };
 
   const handleUpload = async () => {
     if (!uploadFile) {
@@ -1243,25 +1201,114 @@ export default function DepensesPage() {
           </div>
         </Modal>
 
-        {/* Upload Modal */}
+        {/* Upload/Import Modal */}
         <Modal
           isOpen={showUploadModal}
           onClose={() => {
             setShowUploadModal(false);
             setUploadFile(null);
+            setImportResult(null);
             if (fileInputRef.current) {
               fileInputRef.current.value = '';
             }
           }}
-          title="Importer des dépenses depuis Excel"
+          title="Importer des dépenses"
           size="lg"
-          footer={
-            <>
+        >
+          <div className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Instructions</h3>
+                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                    <li>Téléchargez le modèle pour voir le format attendu</li>
+                    <li>Remplissez le fichier CSV ou Excel avec vos données</li>
+                    <li>Colonnes requises: Type, Description, Montant HT, Date Emission</li>
+                    <li>Colonnes optionnelles: Montant Taxes, Fournisseur, Date Reception Prevue, etc.</li>
+                    <li>Formats acceptés: CSV, Excel (.xlsx, .xls), ou ZIP</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Fichier à importer
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls,.zip"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setUploadFile(file);
+                    setImportResult(null);
+                  }
+                }}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-primary-500 file:text-white
+                  hover:file:bg-primary-600
+                  file:cursor-pointer"
+              />
+            </div>
+
+            {importResult && (
+              <div className={`p-4 rounded-lg border ${
+                importResult.success 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-start gap-3">
+                  {importResult.success ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className={`font-semibold mb-2 ${
+                      importResult.success 
+                        ? 'text-green-900 dark:text-green-100' 
+                        : 'text-red-900 dark:text-red-100'
+                    }`}>
+                      {importResult.success ? 'Import réussi' : 'Erreurs lors de l\'import'}
+                    </h3>
+                    <div className="text-sm space-y-1">
+                      <p className={importResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}>
+                        {importResult.success 
+                          ? `${importResult.created_count} transaction(s) créée(s)`
+                          : `${importResult.error_count} erreur(s) trouvée(s)`
+                        }
+                      </p>
+                      {importResult.errors && importResult.errors.length > 0 && (
+                        <div className="mt-2">
+                          <p className="font-semibold mb-1">Erreurs:</p>
+                          <ul className="list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
+                            {importResult.errors.slice(0, 10).map((error: any, idx: number) => (
+                              <li key={idx} className="text-xs">
+                                Ligne {error.row}: {error.error}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowUploadModal(false);
                   setUploadFile(null);
+                  setImportResult(null);
                   if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                   }
@@ -1277,55 +1324,6 @@ export default function DepensesPage() {
               >
                 {uploading ? 'Import en cours...' : 'Importer'}
               </Button>
-            </>
-          }
-        >
-          <div className="space-y-6">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                    Instructions d'import
-                  </h3>
-                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside">
-                    <li>Le fichier doit contenir une ligne d'en-tête avec les colonnes suivantes :</li>
-                    <li className="ml-4">Description, Montant, Devise, Date, Catégorie, Fournisseur, Statut, Numéro facture, Notes</li>
-                    <li>Les dates doivent être au format YYYY-MM-DD (ex: 2025-01-15)</li>
-                    <li>Les montants doivent être des nombres (ex: 150.00)</li>
-                    <li>Les statuts valides sont : paid, pending, projected, cancelled</li>
-                    <li>Les colonnes Fournisseur, Numéro facture et Notes sont optionnelles</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Sélectionner un fichier Excel (.xlsx, .xls) ou CSV
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileSelect}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600"
-              />
-              {uploadFile && (
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Fichier sélectionné : {uploadFile.name}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <Download className="w-4 h-4" />
-              <button
-                onClick={handleDownloadTemplate}
-                className="text-primary-500 hover:text-primary-600 underline"
-              >
-                Télécharger le modèle Excel
-              </button>
             </div>
           </div>
         </Modal>
