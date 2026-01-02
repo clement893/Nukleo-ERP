@@ -8,6 +8,7 @@
  */
 
 import { apiClient } from './client';
+import { extractApiData } from './utils';
 
 export interface ClientsStatsResponse {
   count: number;
@@ -36,24 +37,25 @@ export async function fetchClientsStats(params?: {
     // This endpoint returns clients from the clients table with type='company'
     const clientsResponse = await apiClient.get('/v1/projects/clients?limit=10000');
     
-    // Handle different response formats
-    let clientsData: any[] | undefined;
-    if (Array.isArray(clientsResponse.data)) {
-      clientsData = clientsResponse.data;
-    } else if (clientsResponse.data && typeof clientsResponse.data === 'object' && 'items' in clientsResponse.data) {
-      clientsData = Array.isArray(clientsResponse.data.items) ? clientsResponse.data.items : undefined;
-    } else if (clientsResponse.data && typeof clientsResponse.data === 'object' && 'data' in clientsResponse.data) {
-      // Some APIs wrap data in a 'data' field
-      const wrappedData = clientsResponse.data.data;
-      clientsData = Array.isArray(wrappedData) ? wrappedData : [];
-    } else {
-      clientsData = [];
-    }
+    // Extract data using the standard utility function
+    const clientsData = extractApiData<any[]>(clientsResponse);
     
+    // Ensure we have an array
     const clients = Array.isArray(clientsData) ? clientsData : [];
     
+    console.log('[fetchClientsStats] Raw response:', {
+      responseType: typeof clientsResponse,
+      hasData: 'data' in clientsResponse,
+      extractedDataType: Array.isArray(clientsData) ? 'array' : typeof clientsData,
+      extractedDataLength: Array.isArray(clientsData) ? clientsData.length : 'N/A',
+      clientsLength: clients.length,
+    });
+    
     if (!clients || clients.length === 0) {
-      console.warn('No clients found from /v1/projects/clients');
+      console.warn('[fetchClientsStats] No clients found from /v1/projects/clients', {
+        clientsData,
+        clientsResponse: clientsResponse?.data,
+      });
       return {
         count: 0,
         growth: 0,
@@ -109,14 +111,15 @@ export async function fetchClientsStats(params?: {
       ? ((activeCount - previousActiveCount) / previousActiveCount) * 100
       : (activeCount > 0 ? 100 : 0); // 100% growth if we went from 0 to activeCount
     
-    console.log('Clients stats calculated from /v1/projects/clients:', {
+    console.log('[fetchClientsStats] Clients stats calculated:', {
+      totalClients: clients.length,
       currentCount,
       previousCount,
       newThisPeriod,
-      growth,
+      growth: `${growth.toFixed(1)}%`,
       activeCount,
       previousActiveCount,
-      activeGrowth,
+      activeGrowth: `${activeGrowth.toFixed(1)}%`,
     });
     
     return {

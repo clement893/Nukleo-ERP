@@ -6,7 +6,8 @@ API endpoints for managing financial transactions (revenues and expenses)
 from fastapi import APIRouter, Depends, Query, HTTPException, status as http_status, File, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func, cast, String
+from sqlalchemy import select, and_, or_, func, cast, String, text
+from sqlalchemy.exc import ProgrammingError, text
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from decimal import Decimal
@@ -64,6 +65,21 @@ async def get_transactions(
         transactions = result.scalars().all()
         
         return [TransactionResponse.model_validate(t) for t in transactions]
+    except ProgrammingError as e:
+        # Check if error is about missing currency column
+        error_str = str(e).lower()
+        if 'currency' in error_str and 'does not exist' in error_str:
+            logger.error(f"Currency column missing in transactions table. Migration 073 needs to be executed: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database schema is out of date. Please run migration 073 to add the currency column to the transactions table."
+            )
+        # Re-raise other programming errors
+        logger.error(f"Database programming error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred"
+        )
     except Exception as e:
         logger.error(f"Error fetching transactions: {e}", exc_info=True)
         raise HTTPException(
