@@ -25,6 +25,7 @@ import { useInfiniteCompanies, useDeleteCompany, useCreateCompany } from '@/lib/
 import { useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import CompanyForm from '@/components/commercial/CompanyForm';
+import { type CompanyCreate } from '@/lib/api/companies';
 
 export default function EntreprisesPage() {
   const router = useRouter();
@@ -402,7 +403,7 @@ export default function EntreprisesPage() {
           <CompanyForm
             onSubmit={async (data) => {
               try {
-                await createCompanyMutation.mutateAsync(data);
+                await createCompanyMutation.mutateAsync(data as CompanyCreate);
                 setShowCreateModal(false);
                 showToast({ message: 'Entreprise créée avec succès', type: 'success' });
               } catch (error) {

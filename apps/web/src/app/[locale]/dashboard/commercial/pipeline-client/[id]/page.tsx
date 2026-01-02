@@ -33,7 +33,7 @@ import {
   Upload
 } from 'lucide-react';
 import { Badge, Button, Loading, Alert, Card, Input, Select, Modal, Drawer, useToast, Chart } from '@/components/ui';
-import { pipelinesAPI, type Pipeline, type PipelineUpdate, type PipelineStageCreate } from '@/lib/api/pipelines';
+import { pipelinesAPI, type Pipeline, type PipelineUpdate } from '@/lib/api/pipelines';
 import { opportunitiesAPI, type Opportunity, type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
 import Link from 'next/link';
@@ -380,7 +380,7 @@ export default function PipelineDetailPage() {
     }
   };
 
-  const handleCreateOpportunity = async (data: OpportunityCreate) => {
+  const handleCreateOpportunity = async (data: OpportunityCreate | OpportunityUpdate) => {
     if (!pipelineId) return;
     
     try {
@@ -388,7 +388,7 @@ export default function PipelineDetailPage() {
         ...data,
         pipeline_id: pipelineId,
         stage_id: data.stage_id || pipeline?.stages?.[0]?.id || null,
-      });
+      } as OpportunityCreate);
       await loadOpportunities();
       setShowCreateOpportunityModal(false);
       showToast({
@@ -1115,7 +1115,7 @@ export default function PipelineDetailPage() {
                       {(pipeline.stages || [])
                         .sort((a, b) => (a.order || 0) - (b.order || 0))
                         .slice(0, -1)
-                        .map((stage, index) => {
+                        .map((stage) => {
                           const currentStageOpps = opportunitiesByStage[stage.id] || [];
                           const nextStage = pipeline.stages?.find(s => s.order === (stage.order || 0) + 1);
                           const nextStageOpps = nextStage ? (opportunitiesByStage[nextStage.id] || []) : [];
@@ -1232,7 +1232,7 @@ export default function PipelineDetailPage() {
                     <div className="flex gap-1 border border-gray-200 dark:border-gray-700 rounded-md">
                       <Button
                         size="sm"
-                        variant={opportunityView === 'list' ? 'default' : 'ghost'}
+                        variant={opportunityView === 'list' ? 'primary' : 'ghost'}
                         onClick={() => setOpportunityView('list')}
                         className="rounded-r-none"
                       >
@@ -1240,7 +1240,7 @@ export default function PipelineDetailPage() {
                       </Button>
                       <Button
                         size="sm"
-                        variant={opportunityView === 'table' ? 'default' : 'ghost'}
+                        variant={opportunityView === 'table' ? 'primary' : 'ghost'}
                         onClick={() => setOpportunityView('table')}
                         className="rounded-l-none"
                       >
@@ -1330,7 +1330,7 @@ export default function PipelineDetailPage() {
                       onChange={(e) => setCompanyFilter(e.target.value)}
                       options={[
                         { value: 'all', label: 'Toutes les entreprises' },
-                        ...uniqueCompanies.map(c => ({ value: c.id, label: c.name }))
+                        ...uniqueCompanies.map(c => ({ value: c.id, label: c.name || 'Sans nom' }))
                       ]}
                     />
                   </div>

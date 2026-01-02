@@ -23,7 +23,7 @@ import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { projectsAPI } from '@/lib/api';
 import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
-import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacation-requests';
+import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 
 // WidthProvider is not available in types, so we use a workaround
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -153,7 +153,7 @@ export default function PortailEmployeDashboard() {
     tasks.some(t => t.project_id === p.id && t.assignee_id === employeeId)
   ).length;
   
-  const hoursThisWeek = timeEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+  const hoursThisWeek = timeEntries.reduce((sum, entry) => sum + ((entry.duration || 0) / 3600), 0);
   
   const upcomingDeadlines = tasks.filter((t: ProjectTask) => {
     if (!t.due_date) return false;

@@ -181,17 +181,16 @@ export default function ProjetsPage() {
     const active = projects.filter((p: Project) => p.status === 'ACTIVE').length;
     const completed = projects.filter((p: Project) => p.status === 'COMPLETED').length;
     const archived = projects.filter((p: Project) => p.status === 'ARCHIVED').length;
-    const onHold = projects.filter((p: Project) => p.status === 'ON_HOLD').length;
     
     const totalBudget = projects.reduce((sum: number, p: Project) => sum + (p.budget || 0), 0);
     // TODO: Calculate spent from time entries and expenses when available
     const totalSpent = 0;
     
-    return { total, active, completed, archived, onHold, totalBudget, totalSpent };
+    return { total, active, completed, archived, totalBudget, totalSpent };
   }, [projects]);
 
   // Calculate progress (placeholder - should come from backend or calculated from tasks)
-  const calculateProgress = (project: Project): number => {
+  const calculateProgress = (_project: Project): number => {
     // TODO: Calculate from completed tasks / total tasks
     // For now, return 0 or a placeholder
     return 0;

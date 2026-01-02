@@ -319,6 +319,78 @@ function ClientsContent() {
     }
   }, [selectedClients, updateClientMutation, showToast]);
   
+  // Debounce search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
+  // Derived state from React Query
+  const loading = isLoading;
+  const loadingMore = isFetchingNextPage;
+  const hasMore = hasNextPage ?? false;
+  const error = queryError ? handleApiError(queryError).message : null;
+
+  // Load more clients for infinite scroll
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchNextPage();
+    }
+  }, [loadingMore, hasMore, fetchNextPage]);
+
+  // Filtered clients with debounced search
+  const filteredClients = useMemo(() => {
+    return clients.filter((client) => {
+      const matchesSearch = !debouncedSearchQuery || 
+        client.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        Nom: client.company_name,
+        Type: client.type || '',
+        Statut: client.status,
+        'Nombre de projets': client.project_count || getClientProjects(client.id).length || 0,
+        'Nombre de contacts': getClientContactsCount(client.id),
+        'Date de création': client.created_at ? new Date(client.created_at).toLocaleDateString('fr-FR') : '',
+      }));
+      
+      if (data.length === 0) {
+        showToast({
+          message: 'Aucune donnée à exporter',
+          type: 'error',
+        });
+        return;
+      }
+      
+      const headers = Object.keys(data[0] || {});
+      const csvRows = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+          const value = row[header as keyof typeof row];
+          if (value === null || value === undefined) return '';
+          return String(value).replace(/"/g, '""');
+        }).join(','))
+      ];
+      const csv = csvRows.join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `clients_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      showToast({
+        message: `Export ${format.toUpperCase()} réussi`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'export',
+        type: 'error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filteredClients, getClientProjects, getClientContactsCount, showToast]);
+  
   // Toggle selection
   const toggleSelection = useCallback((clientId: number) => {
     setSelectedClients(prev => {
@@ -396,9 +468,6 @@ function ClientsContent() {
     }
   }, [filteredClients, getClientProjects, getClientContactsCount, showToast]);
   
-  // Debounce search query
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
   // Derived state from React Query
   const loading = isLoading;
   const loadingMore = isFetchingNextPage;
@@ -411,13 +480,6 @@ function ClientsContent() {
       fetchNextPage();
     }
   }, [loadingMore, hasMore, fetchNextPage]);
-
-  // Filtered clients with debounced search
-  const filteredClients = useMemo(() => {
-    return clients.filter((client) => {
-      const matchesSearch = !debouncedSearchQuery || 
-        client.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        client.type?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       if (selectedType === 'all') return matchesSearch;
       if (selectedType === 'active') return matchesSearch && client.status === 'ACTIVE';
@@ -794,7 +856,6 @@ function ClientsContent() {
               const projects = getClientProjects(client.id);
               const contactsCount = getClientContactsCount(client.id);
               const isDropdownOpen = statusDropdownOpen[client.id] || false;
-              const isActionDropdownOpen = actionDropdownOpen[client.id] || false;
               const isSelected = selectedClients.has(client.id);
               
               return (
