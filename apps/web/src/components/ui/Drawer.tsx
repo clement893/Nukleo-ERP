@@ -6,6 +6,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 
 export interface DrawerProps {
@@ -220,10 +221,11 @@ export default function Drawer({
 
   if (!isOpen) return null;
 
-  return (
+  // Render drawer content using portal to ensure it's always on top
+  const drawerContent = (
     <div
       className={clsx(
-        'fixed inset-0 z-50',
+        'fixed inset-0 z-[9999]',
         overlay && 'bg-black/50 dark:bg-black/70',
         overlayClassName,
         'animate-fade-in'
@@ -284,5 +286,12 @@ export default function Drawer({
       </div>
     </div>
   );
+
+  // Use portal to render drawer at body level, ensuring it's always on top
+  if (typeof window !== 'undefined') {
+    return createPortal(drawerContent, document.body);
+  }
+
+  return drawerContent;
 }
 
