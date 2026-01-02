@@ -307,7 +307,42 @@ function CalendrierContent() {
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    
+    // Ajuster la date selon le viewMode actuel
+    if (viewMode === 'week') {
+      // Aller au lundi de la semaine actuelle
+      const dayOfWeek = today.getDay();
+      const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const monday = new Date(today.getFullYear(), today.getMonth(), diff);
+      setCurrentDate(monday);
+    } else if (viewMode === 'day') {
+      // Aller au jour actuel
+      setCurrentDate(new Date(today));
+    } else {
+      // Vue mois : aller au mois actuel
+      setCurrentDate(new Date(today));
+    }
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    const today = new Date();
+    
+    if (mode === 'day') {
+      // Aller au jour actuel
+      setCurrentDate(new Date(today));
+    } else if (mode === 'week') {
+      // Aller à la semaine actuelle (lundi de la semaine)
+      const dayOfWeek = today.getDay();
+      const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Ajuster pour lundi = 1
+      const monday = new Date(today.getFullYear(), today.getMonth(), diff);
+      setCurrentDate(monday);
+    } else if (mode === 'month') {
+      // Aller au mois actuel
+      setCurrentDate(new Date(today));
+    }
   };
 
   if (loading) {
@@ -417,9 +452,9 @@ function CalendrierContent() {
             <div className="flex items-center gap-3">
               <Button onClick={goToToday} variant="outline">Aujourd'hui</Button>
               <div className="flex gap-2">
-                <Button variant={viewMode === 'month' ? 'primary' : 'outline'} onClick={() => setViewMode('month')}>Mois</Button>
-                <Button variant={viewMode === 'week' ? 'primary' : 'outline'} onClick={() => setViewMode('week')}>Semaine</Button>
-                <Button variant={viewMode === 'day' ? 'primary' : 'outline'} onClick={() => setViewMode('day')}>Jour</Button>
+                <Button variant={viewMode === 'month' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('month')}>Mois</Button>
+                <Button variant={viewMode === 'week' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('week')}>Semaine</Button>
+                <Button variant={viewMode === 'day' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('day')}>Jour</Button>
               </div>
             </div>
           </div>
