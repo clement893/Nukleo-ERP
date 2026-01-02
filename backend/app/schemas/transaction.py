@@ -26,7 +26,7 @@ class TransactionBase(BaseModel):
     notes: Optional[str] = None
     is_recurring: str = Field(default="false")
     recurring_id: Optional[int] = None
-    metadata: Optional[str] = None
+    transaction_metadata: Optional[str] = None
 
 
 class TransactionCreate(TransactionBase):
@@ -49,7 +49,7 @@ class TransactionUpdate(BaseModel):
     notes: Optional[str] = None
     is_recurring: Optional[str] = None
     recurring_id: Optional[int] = None
-    metadata: Optional[str] = None
+    transaction_metadata: Optional[str] = None
 
 
 class TransactionResponse(TransactionBase):

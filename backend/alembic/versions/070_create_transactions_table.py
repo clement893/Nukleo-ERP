@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('is_recurring', sa.String(length=10), nullable=False, server_default='false'),
         sa.Column('recurring_id', sa.Integer(), nullable=True),
-        sa.Column('metadata', sa.Text(), nullable=True),
+        sa.Column('transaction_metadata', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),

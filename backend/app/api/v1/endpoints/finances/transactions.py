@@ -129,7 +129,7 @@ async def create_transaction(
             notes=transaction_data.notes,
             is_recurring=transaction_data.is_recurring,
             recurring_id=transaction_data.recurring_id,
-            metadata=transaction_data.metadata,
+            transaction_metadata=transaction_data.transaction_metadata,
         )
         
         db.add(transaction)

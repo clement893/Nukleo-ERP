@@ -66,7 +66,7 @@ class Transaction(Base):
     recurring_id = Column(Integer, nullable=True)  # Link to recurring transaction template
     
     # Metadata
-    metadata = Column(Text, nullable=True)  # JSON string for additional data
+    transaction_metadata = Column(Text, nullable=True)  # JSON string for additional data
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
