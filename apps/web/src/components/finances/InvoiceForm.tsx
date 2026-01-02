@@ -338,15 +338,19 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
         <div className="space-y-2 pt-6">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Sous-total:</span>
-            <span className="font-semibold">{subtotal.toFixed(2)} $</span>
+            <span className="font-semibold">
+              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(subtotal)}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Taxes ({formData.tax_rate}%):</span>
-            <span className="font-semibold">{tax_amount.toFixed(2)} $</span>
+            <span className="font-semibold">
+              {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(tax_amount)}
+            </span>
           </div>
           <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200 dark:border-gray-700">
             <span>Total:</span>
-            <span>{total.toFixed(2)} $</span>
+            <span>{new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(total)}</span>
           </div>
         </div>
       </div>

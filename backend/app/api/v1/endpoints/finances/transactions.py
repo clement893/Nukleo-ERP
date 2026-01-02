@@ -3,7 +3,7 @@ Finances - Transactions Endpoints
 API endpoints for managing financial transactions (revenues and expenses)
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, Query, HTTPException, status as http_status, File, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func, cast, String
@@ -67,7 +67,7 @@ async def get_transactions(
     except Exception as e:
         logger.error(f"Error fetching transactions: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching transactions"
         )
 

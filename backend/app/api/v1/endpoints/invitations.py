@@ -70,6 +70,8 @@ async def create_invitation(
 async def list_invitations(
     team_id: int = Query(None, description="Filter by team ID"),
     status_filter: str = Query(None, description="Filter by status"),
+    email: str = Query(None, description="Filter by email (superadmin only)"),
+    all_invitations: bool = Query(False, description="Show all invitations (superadmin only)"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -80,11 +82,29 @@ async def list_invitations(
         await require_team_member(team_id, current_user, db)
         invitations = await invitation_service.get_team_invitations(team_id)
     else:
-        # List user's sent invitations
+        # List invitations
         from app.models import Invitation
         from sqlalchemy import select
+        from app.api.v1.endpoints.admin import checkMySuperAdminStatus
         
-        query = select(Invitation).where(Invitation.invited_by_id == current_user.id)
+        # Check if user is superadmin
+        is_superadmin = False
+        try:
+            superadmin_status = await checkMySuperAdminStatus(current_user.id, db)
+            is_superadmin = superadmin_status.get("is_superadmin", False)
+        except Exception:
+            pass
+        
+        # Build query
+        if is_superadmin and (all_invitations or email):
+            # Superadmin can see all invitations or filter by email
+            query = select(Invitation)
+            if email:
+                query = query.where(Invitation.email.ilike(f"%{email}%"))
+        else:
+            # Regular users only see their own invitations
+            query = select(Invitation).where(Invitation.invited_by_id == current_user.id)
+        
         if status_filter:
             query = query.where(Invitation.status == status_filter)
         
