@@ -16,6 +16,7 @@ import { useThemeManager } from '@/components/theme/hooks';
 import { GlobalErrorHandler } from './GlobalErrorHandler';
 import ToastContainer from '@/components/ui/ToastContainer';
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
+import { useAutomationNotifications } from '@/hooks/useAutomationNotifications';
 import { useState, type ReactNode } from 'react';
 
 /**

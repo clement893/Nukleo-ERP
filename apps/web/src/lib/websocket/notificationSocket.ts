@@ -15,15 +15,31 @@ export type NotificationMessage = {
   data: Notification;
 };
 
+export type AutomationTriggeredMessage = {
+  type: 'automation_triggered';
+  data: {
+    rule_id: number;
+    rule_name: string;
+    trigger_event: string;
+    success: boolean;
+    opportunity_name?: string | null;
+    pipeline_name?: string;
+    stage_name?: string;
+    timestamp: string;
+  };
+};
+
 export type WebSocketMessage =
   | { type: 'connected'; message: string; user_id: string | null }
   | { type: 'pong' }
   | { type: 'subscribed'; notification_types: string[] }
   | { type: 'error'; message: string }
-  | NotificationMessage;
+  | NotificationMessage
+  | AutomationTriggeredMessage;
 
 export interface NotificationSocketCallbacks {
   onNotification?: (notification: Notification) => void;
+  onAutomationTriggered?: (data: AutomationTriggeredMessage['data']) => void;
   onConnected?: () => void;
   onDisconnected?: () => void;
   onError?: (error: Error) => void;
@@ -179,6 +195,11 @@ class NotificationSocket {
       case 'notification':
         logger.debug('[WebSocket] Notification received', message.data);
         this.callbacks.onNotification?.(message.data);
+        break;
+
+      case 'automation_triggered':
+        logger.debug('[WebSocket] Automation triggered', message.data);
+        this.callbacks.onAutomationTriggered?.(message.data);
         break;
 
       case 'error':

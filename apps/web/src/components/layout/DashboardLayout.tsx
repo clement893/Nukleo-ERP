@@ -101,7 +101,10 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:block fixed top-0 left-0 right-0 z-30 glass-navbar h-16" style={{ left: sidebarCollapsed ? 0 : '256px' }}>
+        <header className={clsx(
+          "hidden md:block fixed top-0 right-0 z-30 glass-navbar h-16 transition-all duration-300",
+          sidebarCollapsed ? "left-0" : "left-64"
+        )}>
           <div className="px-4 py-3 flex items-center justify-between h-full">
             {sidebarCollapsed ? (
               <Button
