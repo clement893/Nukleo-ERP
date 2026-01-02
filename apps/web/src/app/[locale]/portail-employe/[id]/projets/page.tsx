@@ -29,7 +29,7 @@ export default function MesProjets() {
         projectTasksAPI.list({ assignee_id: employeeId }),
       ]);
       
-      const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+      const projectsList = projectsData || [];
       
       // Get all projects where employee is assigned (via project_employees table)
       const assignedProjectIds = new Set<number>();
