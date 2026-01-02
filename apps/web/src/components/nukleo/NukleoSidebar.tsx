@@ -108,7 +108,7 @@ export function NukleoSidebar({
 
   const getCategoryColor = (name: string) => {
     const colors: Record<string, string> = {
-      'Dashboard': '#523DC9',
+      'Dashboard': 'var(--nukleo-purple)',
       'Commercial': '#3B82F6',
       'Projets': '#10B981',
       'Réseau': '#F59E0B',
