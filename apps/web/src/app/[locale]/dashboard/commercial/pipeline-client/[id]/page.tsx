@@ -53,7 +53,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
-import { offsetFromPointer } from '@dnd-kit/modifiers';
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
 
 // Droppable Stage Column Component
 function DroppableStageColumn({ 
@@ -887,8 +887,8 @@ export default function PipelineDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <DollarSign className="w-6 h-6 text-secondary-500" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <DollarSign className="w-6 h-6 text-success-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -986,7 +986,7 @@ export default function PipelineDetailPage() {
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
-                modifiers={[offsetFromPointer()]}
+                modifiers={[snapCenterToCursor]}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               >
