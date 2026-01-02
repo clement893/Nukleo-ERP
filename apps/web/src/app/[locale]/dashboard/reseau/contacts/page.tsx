@@ -207,10 +207,26 @@ export default function ContactsPage() {
       
       // Only apply circle filters if filterType is not 'all' and not 'favorites'
       if (filterType !== 'all' && filterType !== 'favorites') {
-        if (filterType === 'vip' && !circleTags.includes('vip')) return false;
-        if (filterType === 'clients' && !circleTags.includes('client')) return false;
-        if (filterType === 'prospects' && !circleTags.includes('prospect')) return false;
-        if (filterType === 'partners' && !circleTags.includes('partenaire')) return false;
+        // VIP filter - check for 'vip' in any case variation
+        if (filterType === 'vip') {
+          const hasVip = circleTags.some(tag => tag === 'vip');
+          if (!hasVip) return false;
+        }
+        // Clients filter - check for 'client' or 'clients'
+        if (filterType === 'clients') {
+          const hasClient = circleTags.some(tag => tag === 'client' || tag === 'clients');
+          if (!hasClient) return false;
+        }
+        // Prospects filter
+        if (filterType === 'prospects') {
+          const hasProspect = circleTags.some(tag => tag === 'prospect' || tag === 'prospects');
+          if (!hasProspect) return false;
+        }
+        // Partners filter - check for 'partenaire' or 'partenaires'
+        if (filterType === 'partners') {
+          const hasPartner = circleTags.some(tag => tag === 'partenaire' || tag === 'partenaires');
+          if (!hasPartner) return false;
+        }
       }
 
       // City filter - handle null/undefined safely
@@ -269,19 +285,23 @@ export default function ContactsPage() {
       favorites: contacts.filter(c => favorites.has(c.id)).length,
       vip: contacts.filter(c => {
         if (!c.circle || typeof c.circle !== 'string') return false;
-        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('vip');
+        const tags = c.circle.split(',').map((t: string) => t.trim().toLowerCase());
+        return tags.includes('vip');
       }).length,
       clients: contacts.filter(c => {
         if (!c.circle || typeof c.circle !== 'string') return false;
-        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('client');
+        const tags = c.circle.split(',').map((t: string) => t.trim().toLowerCase());
+        return tags.includes('client') || tags.includes('clients');
       }).length,
       prospects: contacts.filter(c => {
         if (!c.circle || typeof c.circle !== 'string') return false;
-        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('prospect');
+        const tags = c.circle.split(',').map((t: string) => t.trim().toLowerCase());
+        return tags.includes('prospect') || tags.includes('prospects');
       }).length,
       partners: contacts.filter(c => {
         if (!c.circle || typeof c.circle !== 'string') return false;
-        return c.circle.split(',').map((t: string) => t.trim().toLowerCase()).includes('partenaire');
+        const tags = c.circle.split(',').map((t: string) => t.trim().toLowerCase());
+        return tags.includes('partenaire') || tags.includes('partenaires');
       }).length,
     };
   }, [contacts, favorites]);
