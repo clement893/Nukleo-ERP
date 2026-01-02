@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import EmployeePortalTasks from '@/components/employes/EmployeePortalTasks';
+import { EmployeePortalHeader } from '@/components/employes';
 
 export default function MesTaches() {
   const params = useParams();
@@ -17,15 +18,10 @@ export default function MesTaches() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
-        <div className="relative p-8">
-          <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Mes Tâches
-          </h1>
-          <p className="text-white/80 text-lg">Gérez vos tâches et suivez votre progression</p>
-        </div>
-      </div>
+      <EmployeePortalHeader
+        title="Mes Tâches"
+        description="Gérez vos tâches et suivez votre progression"
+      />
 
       <EmployeePortalTasks employeeId={employeeId} />
     </div>

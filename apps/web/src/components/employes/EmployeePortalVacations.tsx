@@ -15,6 +15,7 @@ import {
   useDeleteVacationRequest,
 } from '@/lib/query/vacationRequests';
 import { CheckCircle, XCircle, Clock, Calendar, Plus, Trash2 } from 'lucide-react';
+import { EmployeePortalStatsCard, EmployeePortalContentCard, EmployeePortalEmptyState } from './index';
 
 interface EmployeePortalVacationsProps {
   employee: Employee;
@@ -178,30 +179,25 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {totalDays}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total demandé</div>
-        </Card>
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="text-3xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {approvedDays}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Jours approuvés</div>
-        </Card>
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="text-3xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {pendingRequests.length}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
-        </Card>
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="text-3xl font-bold mb-1 text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {25 - approvedDays}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Jours disponibles</div>
-        </Card>
+        <EmployeePortalStatsCard
+          value={totalDays}
+          label="Total demandé"
+        />
+        <EmployeePortalStatsCard
+          value={approvedDays}
+          label="Jours approuvés"
+          valueColor="green"
+        />
+        <EmployeePortalStatsCard
+          value={pendingRequests.length}
+          label="En attente"
+          valueColor="yellow"
+        />
+        <EmployeePortalStatsCard
+          value={25 - approvedDays}
+          label="Jours disponibles"
+          valueColor="blue"
+        />
       </div>
 
       {/* Requests list */}
@@ -210,17 +206,14 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
           <Loading />
         </div>
       ) : requests.length === 0 ? (
-        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
-          <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune demande de vacances</p>
-          <Button
-            className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Créer une demande
-          </Button>
-        </Card>
+        <EmployeePortalEmptyState
+          icon={Calendar}
+          title="Aucune demande de vacances"
+          action={{
+            label: 'Créer une demande',
+            onClick: () => setShowCreateModal(true),
+          }}
+        />
       ) : (
         <div className="space-y-4">
           {requests.map((vacation) => {
@@ -229,7 +222,7 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
             const days = calculateDays(vacation.start_date, vacation.end_date);
             
             return (
-              <Card key={vacation.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+              <EmployeePortalContentCard key={vacation.id}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -262,7 +255,7 @@ export default function EmployeePortalVacations({ employee }: EmployeePortalVaca
                     </Button>
                   )}
                 </div>
-              </Card>
+              </EmployeePortalContentCard>
             );
           })}
         </div>

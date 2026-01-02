@@ -19,6 +19,7 @@ import Drawer from '@/components/ui/Drawer';
 import { useAuthStore } from '@/lib/store';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckSquare, Clock, AlertCircle, ShoppingCart, CheckCircle, Info, MessageSquare, Paperclip, Send, Edit2, Trash2, Plus, ExternalLink, Users, UserPlus, Search } from 'lucide-react';
+import { EmployeePortalStatsCard, EmployeePortalContentCard, EmployeePortalEmptyState } from './index';
 import { FileText, Image, File, Download } from 'lucide-react';
 
 interface EmployeePortalTasksProps {
@@ -1380,53 +1381,30 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-              <CheckSquare className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {tasks.length}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total des tâches</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
-              <Clock className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {inProgressTasks}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">En cours</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
-              <AlertCircle className="w-6 h-6 text-gray-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {todoTasks}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">À faire</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <CheckSquare className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {doneTasks}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Terminées</div>
-        </Card>
+        <EmployeePortalStatsCard
+          value={tasks.length}
+          label="Total des tâches"
+          icon={<CheckSquare className="w-6 h-6" />}
+          iconColor="blue"
+        />
+        <EmployeePortalStatsCard
+          value={inProgressTasks}
+          label="En cours"
+          icon={<Clock className="w-6 h-6" />}
+          iconColor="orange"
+        />
+        <EmployeePortalStatsCard
+          value={todoTasks}
+          label="À faire"
+          icon={<AlertCircle className="w-6 h-6" />}
+          iconColor="gray"
+        />
+        <EmployeePortalStatsCard
+          value={doneTasks}
+          label="Terminées"
+          icon={<CheckSquare className="w-6 h-6" />}
+          iconColor="green"
+        />
       </div>
 
       {/* Filters */}
@@ -1473,21 +1451,20 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
 
       {/* Tasks List */}
       {tasks.length === 0 ? (
-        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
-          <CheckSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600 dark:text-gray-400">Aucune tâche assignée</p>
-        </Card>
+        <EmployeePortalEmptyState
+          icon={CheckSquare}
+          title="Aucune tâche assignée"
+        />
       ) : filteredTasks.length === 0 ? (
-        <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
-          <CheckSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600 dark:text-gray-400">Aucune tâche trouvée</p>
-        </Card>
+        <EmployeePortalEmptyState
+          icon={CheckSquare}
+          title="Aucune tâche trouvée"
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredTasks.map((task) => (
-            <Card 
-              key={task.id} 
-              className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all cursor-pointer"
+            <EmployeePortalContentCard
+              key={task.id}
               onClick={() => handleTaskClick(task)}
             >
               <div className="flex items-start justify-between mb-3">
@@ -1522,7 +1499,7 @@ export default function EmployeePortalTasks({ employeeId }: EmployeePortalTasksP
                   <span>📅 Échéance: {new Date(task.due_date).toLocaleDateString('fr-FR')}</span>
                 )}
               </div>
-            </Card>
+            </EmployeePortalContentCard>
           ))}
         </div>
       )}

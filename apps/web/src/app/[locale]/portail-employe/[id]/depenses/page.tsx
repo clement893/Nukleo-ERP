@@ -8,6 +8,7 @@ import {
   Eye
 } from 'lucide-react';
 import { Card, Button, Badge } from '@/components/ui';
+import { EmployeePortalHeader, EmployeePortalStatsCard, EmployeePortalContentCard, EmployeePortalEmptyState } from '@/components/employes';
 import Modal from '@/components/ui/Modal';
 import Textarea from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui';
@@ -311,75 +312,48 @@ export default function MesDepenses() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
-        <div className="relative p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Mes Comptes de Dépenses
-              </h1>
-              <p className="text-white/80 text-lg">Gérez vos notes de frais et remboursements</p>
-            </div>
-            <Button 
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <Upload className="w-5 h-5 mr-2" />
-              Nouveau compte
-            </Button>
-          </div>
-        </div>
-      </div>
+      <EmployeePortalHeader
+        title="Mes Comptes de Dépenses"
+        description="Gérez vos notes de frais et remboursements"
+        action={
+          <Button 
+            className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            Nouveau compte
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-              <DollarSign className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {formatCurrency(totalAmount.toString(), expenses[0]?.currency || 'CAD')}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total demandé</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {formatCurrency(approvedAmount.toString(), expenses[0]?.currency || 'CAD')}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Approuvé</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-              <Clock className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {pendingCount}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
-        </Card>
-
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-              <FileText className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {expenses.length}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total comptes</div>
-        </Card>
+        <EmployeePortalStatsCard
+          value={formatCurrency(totalAmount.toString(), expenses[0]?.currency || 'CAD')}
+          label="Total demandé"
+          icon={<DollarSign className="w-6 h-6" />}
+          iconColor="blue"
+        />
+        <EmployeePortalStatsCard
+          value={formatCurrency(approvedAmount.toString(), expenses[0]?.currency || 'CAD')}
+          label="Approuvé"
+          icon={<CheckCircle className="w-6 h-6" />}
+          iconColor="green"
+          valueColor="green"
+        />
+        <EmployeePortalStatsCard
+          value={pendingCount}
+          label="En attente"
+          icon={<Clock className="w-6 h-6" />}
+          iconColor="yellow"
+          valueColor="yellow"
+        />
+        <EmployeePortalStatsCard
+          value={expenses.length}
+          label="Total comptes"
+          icon={<FileText className="w-6 h-6" />}
+          iconColor="purple"
+          valueColor="purple"
+        />
       </div>
 
       <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
@@ -407,7 +381,7 @@ export default function MesDepenses() {
           const Icon = badge.icon;
           
           return (
-            <Card key={expense.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+            <EmployeePortalContentCard key={expense.id}>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -556,22 +530,19 @@ export default function MesDepenses() {
                   </Button>
                 </div>
               </div>
-            </Card>
+            </EmployeePortalContentCard>
           );
         })}
 
         {expenses.length === 0 && (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
-            <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun compte de dépenses</p>
-            <Button 
-              className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Créer votre premier compte
-            </Button>
-          </Card>
+          <EmployeePortalEmptyState
+            icon={FileText}
+            title="Aucun compte de dépenses"
+            action={{
+              label: 'Créer votre premier compte',
+              onClick: () => setShowCreateModal(true),
+            }}
+          />
         )}
       </div>
 

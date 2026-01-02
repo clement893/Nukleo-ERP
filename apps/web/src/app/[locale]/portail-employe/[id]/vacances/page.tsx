@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import EmployeePortalVacations from '@/components/employes/EmployeePortalVacations';
+import { EmployeePortalHeader } from '@/components/employes';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
