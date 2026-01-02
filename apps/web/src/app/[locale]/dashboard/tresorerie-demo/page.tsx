@@ -8,7 +8,7 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
   AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
-  Building2, Users, Loader2
+  Building2, Loader2
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats } from '@/lib/api/tresorerie';
@@ -38,9 +38,16 @@ export default function TresoreriePage() {
     try {
       setLoading(true);
       
+      // Calculer les dates pour les 12 dernières semaines
+      const today = new Date();
+      const twelveWeeksAgo = new Date(today);
+      twelveWeeksAgo.setDate(today.getDate() - (12 * 7));
+      const dateFrom = twelveWeeksAgo.toISOString().split('T')[0];
+      const dateTo = today.toISOString().split('T')[0];
+
       // Charger les données réelles depuis l'API
       const [cashflowData, transactionsData, statsData] = await Promise.all([
-        tresorerieAPI.getWeeklyCashflow({ weeks: 12 }),
+        tresorerieAPI.getWeeklyCashflow({ date_from: dateFrom, date_to: dateTo }),
         tresorerieAPI.listTransactions({ limit: 1000 }),
         tresorerieAPI.getStats({ period_days: 30 })
       ]);
