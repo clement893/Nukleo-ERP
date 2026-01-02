@@ -129,12 +129,13 @@ function OpportunityKanbanCard({
       {...attributes}
       className="mb-2"
     >
-      <Card className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative">
-        {/* Drag Handle */}
+      <Card 
+        {...listeners}
+        className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative cursor-grab active:cursor-grabbing"
+      >
+        {/* Drag Handle - now just visual indicator */}
         <div
-          {...listeners}
-          className="absolute top-2 left-2 w-6 h-6 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
-          onClick={(e) => e.stopPropagation()}
+          className="absolute top-2 left-2 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none"
         >
           <div className="w-4 h-4 flex flex-col gap-0.5 justify-center">
             <div className="w-full h-0.5 bg-gray-400 rounded"></div>
@@ -143,7 +144,11 @@ function OpportunityKanbanCard({
           </div>
         </div>
         {/* Actions on hover */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" 
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {onView && (
             <Button
               size="sm"
@@ -152,6 +157,7 @@ function OpportunityKanbanCard({
                 e.stopPropagation();
                 onView();
               }}
+              onPointerDown={(e) => e.stopPropagation()}
               className="h-6 w-6 p-0"
             >
               <Eye className="w-3 h-3" />
@@ -165,6 +171,7 @@ function OpportunityKanbanCard({
                 e.stopPropagation();
                 onEdit();
               }}
+              onPointerDown={(e) => e.stopPropagation()}
               className="h-6 w-6 p-0"
             >
               <Edit className="w-3 h-3" />
@@ -178,6 +185,7 @@ function OpportunityKanbanCard({
                 e.stopPropagation();
                 onDelete();
               }}
+              onPointerDown={(e) => e.stopPropagation()}
               className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
             >
               <Trash2 className="w-3 h-3" />
@@ -193,6 +201,7 @@ function OpportunityKanbanCard({
               e.stopPropagation();
               onView?.();
             }}
+            onPointerDown={(e) => e.stopPropagation()}
           >
             {opportunity.name}
           </h4>
@@ -683,6 +692,23 @@ export default function PipelineDetailPage() {
   };
 
   // Calculate stats
+  // Filter out closed won and closed lost opportunities for "en cours" calculations
+  const activeOpportunities = opportunities.filter(opp => {
+    const status = opp.status?.toLowerCase() || '';
+    return status !== 'won' && status !== 'lost';
+  });
+  
+  // Calculate total value (en cours) - excluding closed won and closed lost
+  const totalValueEnCours = activeOpportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+  
+  // Calculate total closed won value
+  const closedWonOpportunities = opportunities.filter(opp => {
+    const status = opp.status?.toLowerCase() || '';
+    return status === 'won';
+  });
+  const totalClosedWon = closedWonOpportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+  
+  // Keep old calculations for backward compatibility if needed
   const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
   const weightedValue = opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0);
 
