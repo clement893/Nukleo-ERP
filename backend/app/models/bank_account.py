@@ -60,7 +60,8 @@ class BankAccount(Base):
 
     # Relationships
     user = relationship("User", backref="bank_accounts")
-    transactions = relationship("Transaction", back_populates="bank_account", cascade="all, delete-orphan")
+    # Note: Transaction relationship removed to avoid mapper initialization error
+    # Transactions are accessed via Transaction.bank_account_id directly
 
     def __repr__(self) -> str:
         return f"<BankAccount(id={self.id}, name={self.name}, user_id={self.user_id})>"
