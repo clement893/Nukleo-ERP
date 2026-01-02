@@ -19,7 +19,6 @@ import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
 import { useToast } from '@/lib/toast';
 
-type ViewMode = 'month' | 'week' | 'day';
 type EventType = 'project' | 'deadline' | 'vacation' | 'timesheet' | 'all';
 
 interface CalendarEvent {
@@ -67,10 +66,11 @@ export default function CalendrierPage() {
       // Ajouter les projets (début et fin)
       projects.forEach((project) => {
         if (project.start_date) {
+          const startDateStr = project.start_date.split('T')[0] || project.start_date.substring(0, 10);
           calendarEvents.push({
             id: `project-start-${project.id}`,
             title: `🚀 Début: ${project.name}`,
-            date: project.start_date.split('T')[0],
+            date: startDateStr,
             type: 'project',
             description: project.description || undefined,
             priority: 'high',
@@ -79,10 +79,11 @@ export default function CalendrierPage() {
         }
 
         if (project.end_date) {
+          const endDateStr = project.end_date.split('T')[0] || project.end_date.substring(0, 10);
           calendarEvents.push({
             id: `project-end-${project.id}`,
             title: `🏁 Fin: ${project.name}`,
-            date: project.end_date.split('T')[0],
+            date: endDateStr,
             type: 'deadline',
             description: project.description || undefined,
             priority: 'urgent',
