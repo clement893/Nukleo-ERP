@@ -10,11 +10,11 @@ import Modal from '@/components/ui/Modal';
 import Drawer from '@/components/ui/Drawer';
 import { 
   Users, Plus, Search, Shield, Mail, Calendar, Edit, Trash2,
-  Eye, Settings, UserPlus, CheckCircle2, XCircle
+  Eye, Settings, UserPlus, CheckCircle2, XCircle, Send, Clock
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Select, Loading } from '@/components/ui';
 import { useToast } from '@/lib/toast';
-import { usersAPI } from '@/lib/api';
+import { usersAPI, invitationsAPI } from '@/lib/api';
 import { useUserRoles } from '@/hooks/useRBAC';
 import UserRolesEditor from '@/components/admin/UserRolesEditor';
 import UserPermissionsEditor from '@/components/admin/UserPermissionsEditor';
@@ -45,6 +45,15 @@ interface PaginatedUsersResponse {
   page: number;
   page_size: number;
   total_pages: number;
+}
+
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  invited_at: string;
+  expires_at: string;
 }
 
 const statusConfig = {
@@ -155,6 +164,23 @@ export default function AdminUsersPage() {
     },
   });
 
+  // Fetch pending invitations
+  const { data: invitationsData, isLoading: isLoadingInvitations, refetch: refetchInvitations } = useQuery<Invitation[]>({
+    queryKey: ['pending-invitations'],
+    queryFn: async () => {
+      const response = await invitationsAPI.list({ status: 'pending' });
+      // Handle both array and object with items property
+      const data = response.data;
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (data && typeof data === 'object' && 'items' in data) {
+        return (data as { items: Invitation[] }).items;
+      }
+      return [];
+    },
+  });
+
 
   // Mutations
   const createUserMutation = useMutation({
@@ -209,6 +235,18 @@ export default function AdminUsersPage() {
     onError: (error) => {
       const appError = handleApiError(error);
       showToast({ message: appError.message || 'Erreur lors de l\'envoi de l\'invitation', type: 'error' });
+    },
+  });
+
+  const resendInvitationMutation = useMutation({
+    mutationFn: (invitationId: string) => invitationsAPI.resend(invitationId),
+    onSuccess: () => {
+      showToast({ message: 'Invitation renvoyée avec succès', type: 'success' });
+      refetchInvitations();
+    },
+    onError: (error) => {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors du renvoi de l\'invitation', type: 'error' });
     },
   });
 
@@ -599,6 +637,119 @@ export default function AdminUsersPage() {
                   Suivant
                 </Button>
               </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Pending Invitations Section */}
+        <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 mt-6">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                <Clock className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Invitations en attente
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Gérer les invitations qui n'ont pas encore été acceptées
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {isLoadingInvitations ? (
+            <div className="p-12 text-center">
+              <Loading />
+            </div>
+          ) : !invitationsData || invitationsData.length === 0 ? (
+            <div className="p-12 text-center">
+              <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">
+                Aucune invitation en attente
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      Rôle
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      Date d'invitation
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      Expire le
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {invitationsData.map((invitation) => (
+                    <tr key={invitation.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-400" />
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {invitation.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                          {invitation.role}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(invitation.invited_at).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        {invitation.expires_at ? (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(invitation.expires_at).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resendInvitationMutation.mutate(invitation.id)}
+                          disabled={resendInvitationMutation.isPending}
+                          className="hover:bg-primary-500/10 hover:text-primary-600"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          Renvoyer
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </Card>
