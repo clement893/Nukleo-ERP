@@ -32,10 +32,9 @@ import {
   X,
   Briefcase,
   Building2,
-  MapPin,
   Link as LinkIcon,
 } from 'lucide-react';
-import { Badge, Button, Card, Input, Loading, Modal, Select, Table } from '@/components/ui';
+import { Badge, Button, Card, Input, Loading, Modal, Select } from '@/components/ui';
 import { 
   useInfiniteEmployees, 
   useDeleteEmployee, 
@@ -959,7 +958,7 @@ export default function EmployeesPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Nouvel employé"
-        size="large"
+        size="lg"
       >
         <EmployeeForm
           onSubmit={handleCreate}
@@ -976,7 +975,7 @@ export default function EmployeesPage() {
           setSelectedEmployee(null);
         }}
         title="Modifier l'employé"
-        size="large"
+        size="lg"
       >
         {selectedEmployee && (
           <EmployeeForm

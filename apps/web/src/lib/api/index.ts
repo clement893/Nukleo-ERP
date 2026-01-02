@@ -114,6 +114,16 @@ export type { UserPreferences, PreferenceResponse } from './preferences';
 
 // Re-export finances module API (unified)
 export { financesAPI } from './finances';
+export { facturationsAPI } from './finances/facturations';
+export type {
+  FinanceInvoice,
+  FinanceInvoiceCreate,
+  FinanceInvoiceUpdate,
+  Payment,
+  PaymentCreate,
+  InvoiceLineItem,
+  ClientData,
+} from './finances/facturations';
 
 // Re-export projects module API (unified)
 export { projectsAPI } from './projects';

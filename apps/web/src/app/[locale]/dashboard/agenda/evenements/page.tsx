@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
 import { Button, Alert, Loading, Badge, Modal, Card } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
@@ -58,11 +58,15 @@ function EvenementsContent() {
   
   // Selection
   const [selectedEvents, setSelectedEvents] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(1);
+  const pageSize = 50; // Pagination côté serveur
 
-  // Calculate date filters for server-side filtering
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayString = today.toISOString().split('T')[0];
+  // Calculate date filters for server-side filtering (mémorisé)
+  const todayString = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString().split('T')[0];
+  }, []); // Ne change qu'une fois par jour
 
   // Build API params
   const apiParams = useMemo(() => {
@@ -70,9 +74,11 @@ function EvenementsContent() {
       start_date?: string;
       end_date?: string;
       event_type?: string;
+      skip?: number;
       limit?: number;
     } = {
-      limit: 1000, // Load more for client-side search
+      skip: (page - 1) * pageSize,
+      limit: pageSize,
     };
 
     if (filterDate === 'upcoming') {
@@ -86,7 +92,7 @@ function EvenementsContent() {
     }
 
     return params;
-  }, [filterDate, filterType, todayString]);
+  }, [filterDate, filterType, todayString, page, pageSize]);
 
   // React Query hooks
   const { data: events = [], isLoading, error } = useEvents(apiParams);
@@ -123,8 +129,8 @@ function EvenementsContent() {
     });
   }, [filteredEvents]);
 
-  // Handle create
-  const handleCreate = async (eventData: Omit<DayEvent, 'id'>) => {
+  // Handle create (mémorisé)
+  const handleCreate = useCallback(async (eventData: Omit<DayEvent, 'id'>) => {
     try {
       const eventDate = eventData.date || new Date();
       const dateString: string = eventDate.toISOString().split('T')[0] ?? '';
@@ -154,10 +160,10 @@ function EvenementsContent() {
       });
       throw err;
     }
-  };
+  }, [createEventMutation, showToast]);
 
-  // Handle update
-  const handleUpdate = async (_eventId: string, eventData: Partial<DayEvent>) => {
+  // Handle update (mémorisé)
+  const handleUpdate = useCallback(async (_eventId: string, eventData: Partial<DayEvent>) => {
     if (!selectedEvent) return;
 
     try {
@@ -188,10 +194,10 @@ function EvenementsContent() {
       });
       throw err;
     }
-  };
+  }, [selectedEvent, updateEventMutation, showToast]);
 
-  // Handle delete
-  const handleDelete = async (event: CalendarEvent) => {
+  // Handle delete (mémorisé)
+  const handleDelete = useCallback(async (event: CalendarEvent) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${event.title}" ?`)) {
       return;
     }
@@ -209,46 +215,62 @@ function EvenementsContent() {
         type: 'error',
       });
     }
-  };
+  }, [deleteEventMutation, showToast]);
 
-  // Handle delete selected
-  const handleDeleteSelected = async () => {
+  // Handle delete selected (mémorisé avec batch)
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedEvents.size === 0) return;
     if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedEvents.size} événement(s) ?`)) return;
 
     try {
-      await Promise.all(Array.from(selectedEvents).map(id => deleteEventMutation.mutateAsync(id)));
+      const eventIds = Array.from(selectedEvents);
+      const batchSize = 10; // Limiter à 10 requêtes parallèles
+      
+      // Traiter par batch
+      for (let i = 0; i < eventIds.length; i += batchSize) {
+        const batch = eventIds.slice(i, i + batchSize);
+        await Promise.all(batch.map(id => deleteEventMutation.mutateAsync(id)));
+      }
+      
       showToast({ message: `${selectedEvents.size} événement(s) supprimé(s) avec succès`, type: 'success' });
       setSelectedEvents(new Set());
     } catch (error) {
       showToast({ message: 'Erreur lors de la suppression', type: 'error' });
     }
-  };
+  }, [selectedEvents, deleteEventMutation, showToast]);
 
-  // Handle bulk type change
-  const handleBulkTypeChange = async (newType: string) => {
+  // Handle bulk type change (mémorisé avec batch)
+  const handleBulkTypeChange = useCallback(async (newType: string) => {
     if (selectedEvents.size === 0) return;
 
     try {
-      await Promise.all(
-        Array.from(selectedEvents).map(id => {
-          const event = events.find(e => e.id === id);
-          if (!event) return Promise.resolve();
-          return updateEventMutation.mutateAsync({ 
-            id, 
-            data: { type: newType as CalendarEvent['type'] } 
-          });
-        })
-      );
+      const eventIds = Array.from(selectedEvents);
+      const batchSize = 10; // Limiter à 10 requêtes parallèles
+      
+      // Traiter par batch
+      for (let i = 0; i < eventIds.length; i += batchSize) {
+        const batch = eventIds.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(id => {
+            const event = events.find(e => e.id === id);
+            if (!event) return Promise.resolve();
+            return updateEventMutation.mutateAsync({ 
+              id, 
+              data: { type: newType as CalendarEvent['type'] } 
+            });
+          })
+        );
+      }
+      
       showToast({ message: `${selectedEvents.size} événement(s) mis(e) à jour`, type: 'success' });
       setSelectedEvents(new Set());
     } catch (error) {
       showToast({ message: 'Erreur lors de la mise à jour', type: 'error' });
     }
-  };
+  }, [selectedEvents, events, updateEventMutation, showToast]);
 
-  // Handle duplicate
-  const handleDuplicate = async (event: CalendarEvent) => {
+  // Handle duplicate (mémorisé)
+  const handleDuplicate = useCallback(async (event: CalendarEvent) => {
     try {
       const duplicateData: CalendarEventCreate = {
         title: `${event.title} (copie)`,
@@ -267,10 +289,10 @@ function EvenementsContent() {
       const appError = handleApiError(error);
       showToast({ message: appError.message || 'Erreur lors de la duplication', type: 'error' });
     }
-  };
+  }, [createEventMutation, showToast]);
 
-  // Handle export
-  const handleExport = async (format: 'csv' | 'excel') => {
+  // Handle export (mémorisé)
+  const handleExport = useCallback(async (format: 'csv' | 'excel') => {
     try {
       const headers = ['ID', 'Titre', 'Description', 'Date', 'Date de fin', 'Heure', 'Type', 'Lieu', 'Participants', 'Créé le'];
       const rows = sortedEvents.map(event => [
@@ -308,10 +330,10 @@ function EvenementsContent() {
     } catch (error) {
       showToast({ message: 'Erreur lors de l\'export', type: 'error' });
     }
-  };
+  }, [sortedEvents, showToast]);
 
-  // Toggle selection
-  const toggleEventSelection = (eventId: number) => {
+  // Toggle selection (mémorisé)
+  const toggleEventSelection = useCallback((eventId: number) => {
     const newSelection = new Set(selectedEvents);
     if (newSelection.has(eventId)) {
       newSelection.delete(eventId);
@@ -319,25 +341,25 @@ function EvenementsContent() {
       newSelection.add(eventId);
     }
     setSelectedEvents(newSelection);
-  };
+  }, []);
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = useCallback(() => {
     if (selectedEvents.size === sortedEvents.length && sortedEvents.length > 0) {
       setSelectedEvents(new Set());
     } else {
       setSelectedEvents(new Set(sortedEvents.map(e => e.id)));
     }
-  };
+  }, [sortedEvents]);
 
-  // Handle view details
-  const handleViewDetails = (event: CalendarEvent) => {
+  // Handle view details (mémorisé)
+  const handleViewDetails = useCallback((event: CalendarEvent) => {
     setSelectedEventId(event.id);
     setSelectedEvent(event);
     setShowDetailDrawer(true);
-  };
+  }, []);
 
-  // Format date
-  const formatDate = (dateString: string) => {
+  // Format date (mémorisé)
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
       weekday: 'short',
@@ -345,10 +367,10 @@ function EvenementsContent() {
       month: 'short',
       day: 'numeric',
     });
-  };
+  }, []);
 
-  // Event type labels
-  const eventTypeLabels: Record<string, string> = {
+  // Event type labels (mémorisé)
+  const eventTypeLabels: Record<string, string> = useMemo(() => ({
     meeting: 'Réunion',
     appointment: 'Rendez-vous',
     reminder: 'Rappel',
@@ -356,10 +378,10 @@ function EvenementsContent() {
     vacation: 'Vacances',
     holiday: 'Jour férié',
     other: 'Autre',
-  };
+  }), []);
 
-  // Table columns
-  const columns: Column<CalendarEvent>[] = [
+  // Table columns (mémorisé)
+  const columns: Column<CalendarEvent>[] = useMemo(() => [
     {
       key: 'select',
       label: '',

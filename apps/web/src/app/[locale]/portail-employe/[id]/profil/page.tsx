@@ -66,7 +66,7 @@ export default function MonProfil() {
               <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 {employee.first_name} {employee.last_name}
               </h1>
-              <p className="text-white/80 text-lg">{employee.position || 'Poste non spécifié'}</p>
+              <p className="text-white/80 text-lg">{employee.job_title || 'Poste non spécifié'}</p>
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default function MonProfil() {
               <MapPin className="w-5 h-5 text-[#523DC9]" />
               <div>
                 <p className="text-xs text-gray-500">Localisation</p>
-                <p className="font-medium">{employee.location || 'Non renseignée'}</p>
+                <p className="font-medium">{employee.city || employee.address || 'Non renseignée'}</p>
               </div>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function MonProfil() {
               <Briefcase className="w-5 h-5 text-[#523DC9]" />
               <div>
                 <p className="text-xs text-gray-500">Poste</p>
-                <p className="font-medium">{employee.position || 'Non spécifié'}</p>
+                <p className="font-medium">{employee.job_title || 'Non spécifié'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -135,55 +135,13 @@ export default function MonProfil() {
               <User className="w-5 h-5 text-[#523DC9]" />
               <div>
                 <p className="text-xs text-gray-500">Manager</p>
-                <p className="font-medium">{employee.manager_name || 'Non assigné'}</p>
+                <p className="font-medium">{employee.manager_id ? 'Manager assigné' : 'Non assigné'}</p>
               </div>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Skills */}
-      {employee.skills && employee.skills.length > 0 && (
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Compétences
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {employee.skills.map((skill, index) => (
-              <span
-                key={index}
-                className="px-4 py-2 rounded-full bg-[#523DC9]/10 text-[#523DC9] border border-[#523DC9]/30 font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Certifications */}
-      {employee.certifications && employee.certifications.length > 0 && (
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Certifications
-          </h3>
-          <div className="space-y-3">
-            {employee.certifications.map((cert, index) => (
-              <div key={index} className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                <Award className="w-5 h-5 text-[#523DC9]" />
-                <div className="flex-1">
-                  <p className="font-medium">{cert.name}</p>
-                  {cert.date && (
-                    <p className="text-sm text-gray-500">
-                      Obtenue le {new Date(cert.date).toLocaleDateString('fr-FR')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

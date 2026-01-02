@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckSquare, Clock, AlertCircle, Filter, Search, Loader2 } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, Search, Loader2 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
@@ -12,7 +12,7 @@ export default function MesTaches() {
   const employeeId = parseInt(params?.id as string);
   
   const [loading, setLoading] = useState(true);
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [_employee, setEmployee] = useState<Employee | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<ProjectTask[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -105,7 +105,7 @@ export default function MesTaches() {
 
   const todoTasks = tasks.filter(t => t.status === 'todo').length;
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
-  const doneTasks = tasks.filter(t => t.status === 'done').length;
+  const doneTasks = tasks.filter(t => t.status === 'completed').length;
 
   if (loading) {
     return (
@@ -245,8 +245,8 @@ export default function MesTaches() {
             </div>
             
             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-              {task.project_name && (
-                <span>📁 {task.project_name}</span>
+              {(task as any).project_name && (
+                <span>📁 {(task as any).project_name}</span>
               )}
               {task.estimated_hours && (
                 <span>⏱️ {task.estimated_hours}h estimées</span>

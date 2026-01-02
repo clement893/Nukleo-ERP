@@ -8,24 +8,14 @@
  * - Compte de Dépenses (Expense Accounts)
  */
 
-// Note: Finances endpoints are currently basic/stub implementations
-// This file is prepared for future implementation
+import { facturationsAPI } from './finances/facturations';
 
 /**
  * Unified Finances API
  * Provides access to all financial operations through a single interface
  */
 export const financesAPI = {
-  facturations: {
-    list: async () => {
-      // TODO: Implement when backend is ready
-      return [];
-    },
-    get: async (id: number) => {
-      // TODO: Implement when backend is ready
-      return { id };
-    },
-  },
+  facturations: facturationsAPI,
   rapports: {
     list: async () => {
       // TODO: Implement when backend is ready

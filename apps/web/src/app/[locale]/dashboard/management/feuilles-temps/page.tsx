@@ -33,7 +33,6 @@ import { timeEntriesAPI, type TimeEntry, type TimeEntryCreate, type TimeEntryUpd
 import { projectsAPI } from '@/lib/api/projects';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { clientsAPI } from '@/lib/api/clients';
-import { usersAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
 import { apiClient } from '@/lib/api/client';
 import { extractApiData } from '@/lib/api/utils';
@@ -298,6 +297,7 @@ export default function FeuillesTempsPage() {
     } else if (timerStatus?.paused) {
       setTimerElapsed(timerStatus.accumulated_seconds || 0);
     }
+    return undefined;
   }, [timerStatus?.active, timerStatus?.paused]);
 
   // Load timer status on mount
@@ -408,7 +408,7 @@ export default function FeuillesTempsPage() {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...rows.map(row => row.map((cell: unknown) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });

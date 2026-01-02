@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Calendar, Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
-import { vacationsAPI } from '@/lib/api/vacations';
+import { vacationRequestsAPI } from '@/lib/api/vacationRequests';
 import { employeesAPI } from '@/lib/api/employees';
 
 export default function MesVacances() {
@@ -25,7 +25,7 @@ export default function MesVacances() {
     try {
       setLoading(true);
       const [vacData, empData] = await Promise.all([
-        vacationsAPI.list({ employee_id: employeeId }),
+        vacationRequestsAPI.list({ employee_id: employeeId }),
         employeesAPI.get(employeeId),
       ]);
       setVacations(vacData);

@@ -1330,7 +1330,7 @@ export default function PipelineDetailPage() {
                       onChange={(e) => setCompanyFilter(e.target.value)}
                       options={[
                         { value: 'all', label: 'Toutes les entreprises' },
-                        ...uniqueCompanies.map(c => ({ value: c.id, label: c.name || 'Sans nom' }))
+                        ...uniqueCompanies.map(c => ({ value: c.id || '', label: c.name || 'Sans nom' }))
                       ]}
                     />
                   </div>
