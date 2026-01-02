@@ -125,6 +125,17 @@ export default function AdminContent() {
           </Link>
         </Card>
 
+        <Card title="Pages Démos" className="flex flex-col">
+          <p className="text-muted-foreground mb-4">
+            Liste complète de toutes les pages de démonstration disponibles.
+          </p>
+          <Link href="/admin/demos">
+            <Button variant="primary" className="w-full">
+              Voir les pages démos
+            </Button>
+          </Link>
+        </Card>
+
       </div>
 
       {/* Service Tests Section */}
