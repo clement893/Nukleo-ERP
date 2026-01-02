@@ -403,7 +403,7 @@ export default function FacturationsPage() {
                   </tr>
                   <tr>
                     <td colSpan={3} className="py-3 px-2 text-right font-bold text-lg">Total</td>
-                    <td className="py-3 px-2 text-right font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <td className="py-3 px-2 text-right font-bold text-lg font-nukleo">
                       {formatCurrency(Number(selectedInvoice.total))}
                     </td>
                   </tr>
@@ -506,7 +506,7 @@ export default function FacturationsPage() {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Total facturé</div>
             </div>
-            <div className="text-2xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-2xl font-bold mb-1 font-nukleo">
               {formatCurrency(stats.total)}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400">
