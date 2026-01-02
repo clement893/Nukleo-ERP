@@ -5,7 +5,6 @@
 import { useEffect } from 'react';
 import { connectNotificationSocket, disconnectNotificationSocket } from '@/lib/websocket/notificationSocket';
 import { useToast } from '@/lib/toast';
-import { Zap } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 export function useAutomationNotifications(enabled = true) {
@@ -43,7 +42,6 @@ export function useAutomationNotifications(enabled = true) {
       const toastMethod = data.success ? toast.success : toast.warning;
       toastMethod(message, {
         title: 'Automatisation déclenchée',
-        icon: <Zap className="w-5 h-5" />,
         duration: 6000, // 6 seconds for automation notifications
       });
     };
