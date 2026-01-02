@@ -31,7 +31,11 @@ export default function MesDeadlines() {
       
       const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
       const tasksWithDeadlines = tasksData.filter(t => t.due_date);
-      setTasks(tasksWithDeadlines.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+      setTasks(tasksWithDeadlines.sort((a, b) => {
+        const dateA = a.due_date ? new Date(a.due_date).getTime() : 0;
+        const dateB = b.due_date ? new Date(b.due_date).getTime() : 0;
+        return dateA - dateB;
+      }));
       setProjects(projectsList);
     } catch (error) {
       console.error('Error:', error);

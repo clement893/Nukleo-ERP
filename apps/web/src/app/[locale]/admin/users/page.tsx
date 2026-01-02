@@ -2,20 +2,19 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import Modal from '@/components/ui/Modal';
 import Drawer from '@/components/ui/Drawer';
 import { 
-  Users, Plus, Search, Shield, Mail, Calendar, MoreVertical, Edit, Trash2, Lock, Loader2,
-  Eye, Settings, UserPlus, X, CheckCircle2, XCircle, Clock
+  Users, Plus, Search, Shield, Mail, Calendar, Edit, Trash2,
+  Eye, Settings, UserPlus, CheckCircle2, XCircle
 } from 'lucide-react';
-import { Badge, Button, Card, Input, Select, Textarea, Loading } from '@/components/ui';
+import { Badge, Button, Card, Input, Select, Loading } from '@/components/ui';
 import { useToast } from '@/lib/toast';
 import { usersAPI } from '@/lib/api';
-import { employeesAPI } from '@/lib/api/employees';
 import { useUserRoles } from '@/hooks/useRBAC';
 import UserRolesEditor from '@/components/admin/UserRolesEditor';
 import UserPermissionsEditor from '@/components/admin/UserPermissionsEditor';

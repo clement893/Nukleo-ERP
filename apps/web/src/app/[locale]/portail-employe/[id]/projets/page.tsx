@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Briefcase, Users, DollarSign, Clock, Loader2, CheckCircle } from 'lucide-react';
+import { Briefcase, DollarSign, Clock, Loader2, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { projectsAPI } from '@/lib/api';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
@@ -32,8 +32,8 @@ export default function MesProjets() {
       const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
       
       // Filter projects where employee has tasks
-      const myProjects = projectsList.filter(p => 
-        tasksData.some(t => t.project_id === p.id)
+      const myProjects = projectsList.filter((p: any) => 
+        tasksData.some((t: any) => t.project_id === p.id)
       );
       
       setProjects(myProjects);

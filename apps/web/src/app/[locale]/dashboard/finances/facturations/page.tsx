@@ -17,7 +17,6 @@ import {
   useDeleteFacturation, 
   useSendFacturation 
 } from '@/lib/query/queries';
-import type { FinanceInvoice } from '@/lib/api/finances/facturations';
 import { projectsAPI } from '@/lib/api/projects';
 import { useQuery } from '@tanstack/react-query';
 
@@ -152,14 +151,14 @@ export default function FacturationsPage() {
       await sendMutation.mutateAsync(invoiceId);
       showToast({
         title: 'Facture envoyée',
-        description: 'La facture a été envoyée avec succès.',
-        variant: 'success',
+        message: 'La facture a été envoyée avec succès.',
+        type: 'success',
       });
     } catch (error) {
       showToast({
         title: 'Erreur',
-        description: 'Impossible d\'envoyer la facture.',
-        variant: 'error',
+        message: 'Impossible d\'envoyer la facture.',
+        type: 'error',
       });
     }
   };
@@ -176,8 +175,8 @@ export default function FacturationsPage() {
       await deleteMutation.mutateAsync(invoiceToDelete);
       showToast({
         title: 'Facture supprimée',
-        description: 'La facture a été supprimée avec succès.',
-        variant: 'success',
+        message: 'La facture a été supprimée avec succès.',
+        type: 'success',
       });
       setShowDeleteModal(false);
       setInvoiceToDelete(null);
@@ -187,8 +186,8 @@ export default function FacturationsPage() {
     } catch (error) {
       showToast({
         title: 'Erreur',
-        description: 'Impossible de supprimer la facture.',
-        variant: 'error',
+        message: 'Impossible de supprimer la facture.',
+        type: 'error',
       });
     }
   };

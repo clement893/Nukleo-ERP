@@ -13,7 +13,7 @@ export default function MesVacances() {
   
   const [loading, setLoading] = useState(true);
   const [vacations, setVacations] = useState<any[]>([]);
-  const [employee, setEmployee] = useState<any>(null);
+  const [_employee, setEmployee] = useState<any>(null);
 
   useEffect(() => {
     if (employeeId) {

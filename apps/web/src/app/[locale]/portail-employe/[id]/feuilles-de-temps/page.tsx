@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Clock, Calendar, Loader2, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
-import { timeEntriesAPI } from '@/lib/api/time-entries';
+import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
 import { projectsAPI } from '@/lib/api';
 
 export default function MesFeuillesDeTemps() {
@@ -29,7 +29,7 @@ export default function MesFeuillesDeTemps() {
       startOfWeek.setHours(0, 0, 0, 0);
 
       const [entriesData, projectsData] = await Promise.all([
-        timeEntriesAPI.list({ employee_id: employeeId, start_date: startOfWeek.toISOString().split('T')[0] }),
+        timeEntriesAPI.list({ user_id: employeeId, start_date: startOfWeek.toISOString().split('T')[0] }),
         projectsAPI.list(),
       ]);
       
@@ -48,21 +48,21 @@ export default function MesFeuillesDeTemps() {
     return project?.name || 'Projet inconnu';
   };
 
-  const totalHours = timeEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+  const totalHours = timeEntries.reduce((sum, entry) => sum + ((entry.duration || 0) / 3600), 0);
   const thisWeekHours = timeEntries.filter(e => {
     const entryDate = new Date(e.date);
     const now = new Date();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     return entryDate >= startOfWeek;
-  }).reduce((sum, e) => sum + (e.hours || 0), 0);
+  }).reduce((sum, e) => sum + ((e.duration || 0) / 3600), 0);
 
   const groupedByDate = timeEntries.reduce((acc, entry) => {
     const date = entry.date;
     if (!acc[date]) acc[date] = [];
     acc[date].push(entry);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, TimeEntry[]>);
 
   if (loading) {
     return (
@@ -124,7 +124,7 @@ export default function MesFeuillesDeTemps() {
 
       <div className="space-y-4">
         {Object.entries(groupedByDate).sort(([a], [b]) => b.localeCompare(a)).map(([date, entries]) => {
-          const dayTotal = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+          const dayTotal = entries.reduce((sum, e) => sum + ((e.duration || 0) / 3600), 0);
           
           return (
             <Card key={date} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
@@ -139,7 +139,7 @@ export default function MesFeuillesDeTemps() {
               </div>
 
               <div className="space-y-3">
-                {entries.map((entry) => (
+                {entries.map((entry: TimeEntry) => (
                   <div key={entry.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <div className="flex-1">
                       <div className="font-medium mb-1">{getProjectName(entry.project_id)}</div>

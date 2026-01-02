@@ -6,7 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useMemo, useCallback } from 'react';
 import { PageHeader, PageContainer } from '@/components/layout';
-import { Button, Alert, Loading, Badge, Modal, Card } from '@/components/ui';
+import { Button, Alert, Loading, Badge, Modal } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import SearchBar from '@/components/ui/SearchBar';
 import MotionDiv from '@/components/motion/MotionDiv';

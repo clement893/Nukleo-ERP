@@ -10,7 +10,6 @@ import { useToast } from '@/components/ui';
 import { projectsAPI } from '@/lib/api/projects';
 import { teamsAPI } from '@/lib/api/teams';
 import { employeesAPI } from '@/lib/api/employees';
-import { usersAPI } from '@/lib/api';
 
 interface TaskFormProps {
   task?: ProjectTask | null;

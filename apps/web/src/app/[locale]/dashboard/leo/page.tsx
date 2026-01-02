@@ -26,7 +26,7 @@ import {
   ChevronDown,
   X
 } from 'lucide-react';
-import { Button, Badge, useToast, Input, Select, Modal } from '@/components/ui';
+import { Button, Badge, useToast, Input, Select } from '@/components/ui';
 import { leoAgentAPI, type LeoConversation, type LeoMessage } from '@/lib/api/leo-agent';
 import { handleApiError } from '@/lib/errors/api';
 
@@ -76,7 +76,7 @@ export default function LeoPage() {
   const limit = 20;
 
   // Fetch conversations with pagination
-  const { data: conversationsData, isLoading: conversationsLoading, refetch: refetchConversations } = useQuery({
+  const { data: conversationsData, isLoading: conversationsLoading } = useQuery({
     queryKey: ['leo', 'conversations', skip],
     queryFn: () => leoAgentAPI.listConversations({ skip, limit }),
   });
@@ -658,8 +658,8 @@ export default function LeoPage() {
                               {msg.metadata.usage && typeof msg.metadata.usage === 'object' && (
                                 <div>
                                   <strong>Usage:</strong>{' '}
-                                  {Object.entries(msg.metadata.usage).map(([key, value]) => 
-                                    `${key}: ${value}`
+                                  {Object.entries(msg.metadata.usage as Record<string, unknown>).map(([key, value]) => 
+                                    `${key}: ${String(value)}`
                                   ).join(', ')}
                                 </div>
                               )}
@@ -709,7 +709,6 @@ export default function LeoPage() {
                       { value: 'anthropic', label: 'Anthropic (Claude)' },
                     ]}
                     className="w-48"
-                    size="sm"
                   />
                 </div>
               )}

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { 
   DollarSign, Calendar, FileText, Loader2, CheckCircle, Clock, XCircle, 
   AlertCircle, Upload, Edit, Trash2, Send, Reply, Paperclip, Download,
-  Eye, Sparkles, Plus
+  Eye
 } from 'lucide-react';
 import { Card, Button, Badge } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
@@ -14,8 +14,7 @@ import { useToast } from '@/components/ui';
 import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountStatus, type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/finances/expenseAccounts';
 import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
 import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
-import { employeesAPI, type Employee } from '@/lib/api/employees';
-import { useAuthStore } from '@/lib/store/auth';
+import { employeesAPI } from '@/lib/api/employees';
 import {
   useCreateExpenseAccount,
   useUpdateExpenseAccount,
