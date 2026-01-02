@@ -107,13 +107,16 @@
 
 ---
 
-### Batch 4: Optimisation hooks React
+### Batch 4: Optimisation hooks React 🟡
 
 **Objectif:** Mémoriser handlers et calculs coûteux
 
 **Fichiers ciblés:** ~50 fichiers
 
-**Statut:** ⏳ En attente
+**Note:** Beaucoup de fichiers utilisent déjà `useCallback` et `useMemo`. Recherche des fichiers restants à optimiser.
+
+**Statut:** 🟡 En cours  
+**Dernière mise à jour:** 2025-01-27
 
 ---
 
