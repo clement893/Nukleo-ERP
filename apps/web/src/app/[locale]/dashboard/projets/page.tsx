@@ -24,7 +24,7 @@ import { useInfiniteProjects } from '@/lib/query/projects';
 import { useInfiniteClients } from '@/lib/query/clients';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { teamsAPI } from '@/lib/api/teams';
-import { projectsAPI, type Project } from '@/lib/api/projects';
+import type { Project } from '@/lib/api/projects';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#523DC9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
