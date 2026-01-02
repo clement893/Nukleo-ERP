@@ -227,9 +227,7 @@ export default function EntreprisesPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
-                <Building2 className="w-6 h-6 text-primary-500" />
-              </div>
+              <Building2 className="w-6 h-6 text-gray-400 dark:text-gray-500" />
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.total}
@@ -239,9 +237,7 @@ export default function EntreprisesPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
-                <TrendingUp className="w-6 h-6 text-success-500" />
-              </div>
+              <TrendingUp className="w-6 h-6 text-gray-400 dark:text-gray-500" />
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.clients}
@@ -251,9 +247,7 @@ export default function EntreprisesPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
-                <Users className="w-6 h-6 text-warning-500" />
-              </div>
+              <Users className="w-6 h-6 text-gray-400 dark:text-gray-500" />
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {stats.prospects}
@@ -366,11 +360,13 @@ export default function EntreprisesPage() {
                       </div>
                     </div>
                     {/* Badge en overlay */}
-                    <div className="absolute top-3 right-3">
-                      <Badge className={`${company.is_client ? 'bg-success-500/10 text-success-500 border border-success-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}`}>
-                        {company.is_client ? 'Client' : 'Prospect'}
-                      </Badge>
-                    </div>
+                    {company.is_client && (
+                      <div className="absolute top-3 right-3">
+                        <Badge className="bg-success-500/10 text-success-500 border border-success-500/30">
+                          Client
+                        </Badge>
+                      </div>
+                    )}
                   </div>
 
                   {/* Contenu de la carte */}
@@ -388,20 +384,20 @@ export default function EntreprisesPage() {
                     <div className="space-y-2.5">
                       {(company.city || company.country) && (
                         <div className="flex items-center gap-2 text-sm text-muted-accessible">
-                          <MapPin className="w-4 h-4 flex-shrink-0" />
+                          <MapPin className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                           <span className="truncate">{[company.city, company.country].filter(Boolean).join(', ')}</span>
                         </div>
                       )}
                       {company.website && (
                         <div className="flex items-center gap-2 text-sm text-muted-accessible group/website">
-                          <Globe className="w-4 h-4 flex-shrink-0" />
+                          <Globe className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                           <span className="truncate flex-1">{company.website}</span>
                           <a
                             href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="opacity-0 group-hover/website:opacity-100 text-primary hover:text-primary-600 transition-all"
+                            className="opacity-0 group-hover/website:opacity-100 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all"
                             title="Visiter le site web"
                             aria-label={`Visiter le site web de ${company.name}`}
                           >
@@ -410,7 +406,7 @@ export default function EntreprisesPage() {
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-sm text-muted-accessible">
-                        <Users className="w-4 h-4 flex-shrink-0" />
+                        <Users className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                         <span>{company.contacts_count || 0} contact{company.contacts_count !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
@@ -421,33 +417,33 @@ export default function EntreprisesPage() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleView(company.id)}
-                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
                         aria-label={`Voir les détails de ${company.name}`}
                         title="Voir"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </Button>
                       {company.website && (
                         <a
                           href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
                           aria-label={`Visiter le site web de ${company.name}`}
                           title="Site web"
                         >
-                          <Globe className="w-4 h-4" />
+                          <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         </a>
                       )}
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDelete(company.id)}
-                        className="glass-badge p-2 rounded-lg hover:bg-red-500/10 hover:text-red-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-600 dark:hover:text-red-400 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
                         aria-label={`Supprimer ${company.name}`}
                         title="Supprimer"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </Button>
                     </div>
                   </div>
@@ -487,9 +483,11 @@ export default function EntreprisesPage() {
                           {[company.description, company.city, company.country].filter(Boolean).map(s => String(s).substring(0, 30)).join(' • ')}
                         </p>
                       </div>
-                      <Badge className={company.is_client ? 'bg-success-500/10 text-success-500' : 'bg-warning-500/10 text-warning-500'}>
-                        {company.is_client ? 'Client' : 'Prospect'}
-                      </Badge>
+                      {company.is_client && (
+                        <Badge className="bg-success-500/10 text-success-500">
+                          Client
+                        </Badge>
+                      )}
                       <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
@@ -575,9 +573,11 @@ export default function EntreprisesPage() {
                           {companyDetails.description && (
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{companyDetails.description}</p>
                           )}
-                          <Badge className={companyDetails.is_client ? 'bg-success-500/10 text-success-500 border border-success-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}>
-                            {companyDetails.is_client ? 'Client' : 'Prospect'}
-                          </Badge>
+                          {companyDetails.is_client && (
+                            <Badge className="bg-success-500/10 text-success-500 border border-success-500/30">
+                              Client
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       
@@ -586,7 +586,7 @@ export default function EntreprisesPage() {
                         {(companyDetails.city || companyDetails.country) && (
                           <div>
                             <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                              <MapPin className="w-4 h-4" />
+                              <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                               Localisation
                             </h4>
                             <p className="text-sm text-gray-900 dark:text-white">
@@ -597,7 +597,7 @@ export default function EntreprisesPage() {
                         {companyDetails.website && (
                           <div>
                             <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                              <Globe className="w-4 h-4" />
+                              <Globe className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                               Site web
                             </h4>
                             <a 
@@ -612,7 +612,7 @@ export default function EntreprisesPage() {
                         )}
                         <div>
                           <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                            <Users className="w-4 h-4" />
+                            <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                             Nombre de contacts
                           </h4>
                           <p className="text-sm text-gray-900 dark:text-white">
