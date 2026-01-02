@@ -1,6 +1,5 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { Employee } from '@/lib/api/employees';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -20,8 +19,6 @@ export default function EmployeeDetail({
   onDelete,
   className,
 }: EmployeeDetailProps) {
-  const params = useParams();
-  const locale = (params?.locale as string) || 'fr';
   
   return (
     <div className={clsx('space-y-4', className)}>
