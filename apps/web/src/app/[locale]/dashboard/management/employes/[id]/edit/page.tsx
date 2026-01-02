@@ -22,6 +22,7 @@ export default function EmployeeEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const locale = params?.locale as string;
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
 
   useEffect(() => {

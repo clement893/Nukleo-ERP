@@ -103,7 +103,7 @@ export default function ProjectEmployees({ projectId }: ProjectEmployeesProps) {
     !employees.some(assigned => assigned.employee_id === emp.id) &&
     (searchTerm === '' || 
      `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     emp.email.toLowerCase().includes(searchTerm.toLowerCase()))
+     (emp.email && emp.email.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
   if (loading) {
