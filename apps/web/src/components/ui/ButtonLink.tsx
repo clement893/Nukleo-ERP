@@ -190,10 +190,11 @@ export default function ButtonLink({
     );
   }
 
-  // Use next-intl Link for internal links
+  // Use next-intl Link for internal links with prefetching
   return (
     <Link
       href={href}
+      prefetch={true}
       className={buttonClasses}
     >
       {content}

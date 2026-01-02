@@ -113,6 +113,7 @@ export default function Sidebar({
           {item.href ? (
             <Link
               href={item.href}
+              prefetch={true}
               className="flex items-center flex-1 space-x-3 min-w-0"
             >
               {item.icon && <span className="flex-shrink-0 w-5 h-5">{item.icon}</span>}

@@ -225,7 +225,12 @@ export default function Sidebar({
     }
 
     return (
-      <Link key={item.href} href={item.href} className={className}>
+      <Link 
+        key={item.href} 
+        href={item.href} 
+        prefetch={true}
+        className={className}
+      >
         {content}
       </Link>
     );

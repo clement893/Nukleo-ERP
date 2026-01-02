@@ -19,6 +19,9 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import QuickActions from '@/components/ui/QuickActions';
+import { ProgressBar } from '@/components/navigation/ProgressBar';
+import { PageTransition } from '@/components/navigation/PageTransition';
+import { usePrefetchRoutes } from '@/hooks/usePrefetchRoutes';
 import { Menu } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -35,6 +38,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Prefetch frequently visited routes
+  usePrefetchRoutes();
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -59,6 +65,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation Progress Bar */}
+      <ProgressBar />
+      
       {/* Sidebar - handles mobile/desktop internally and its own overlay */}
       <MemoizedSidebar
         isOpen={mobileMenuOpen}
@@ -115,11 +124,10 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
             "flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16 py-4 sm:py-6 md:py-8 2xl:py-10 bg-background transition-all duration-300",
             sidebarCollapsed ? "md:mt-16" : "mt-14 md:mt-0"
           )}
-          style={{
-            animation: 'fadeInSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
         >
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
       </div>
     </div>
