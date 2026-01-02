@@ -96,6 +96,14 @@ pnpm-lock.yaml.bak
 .DS_Store
 Thumbs.db
 
+# Backup and old files
+*.backup
+*.backup*
+*.old
+*.old-*
+*~.tsx
+*~.ts
+
 # Template-specific files (remove after customization)
 TEMPLATE_SETUP.md
 *.template.md
