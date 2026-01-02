@@ -81,25 +81,6 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
         icon: <Sparkles className="w-5 h-5" />,
         badge: 'AI',
       },
-      // Analyses (collapsible group)
-      {
-        name: 'Analyses',
-        icon: <BarChart3 className="w-5 h-5" />,
-        items: [
-          {
-            name: 'Analytics',
-            href: '/dashboard/analytics',
-            icon: <BarChart3 className="w-5 h-5" />,
-          },
-          {
-            name: 'Insights',
-            href: '/dashboard/insights',
-            icon: <TrendingUp className="w-5 h-5" />,
-          },
-        ],
-        collapsible: true,
-        defaultOpen: false,
-      },
       // Module Commercial (collapsible group)
       {
         name: 'Module Commercial',
