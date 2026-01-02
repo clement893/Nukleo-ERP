@@ -341,14 +341,14 @@ export default function EntreprisesPage() {
                 onClick={() => handleView(company.id)}
               >
                 <div className="flex flex-col">
-                  {/* Logo Section - Photo rectangulaire en hauteur comme les contacts */}
+                  {/* Logo Section - Format horizontal pour les logos */}
                   <div className="relative">
-                    <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                    <div className="w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
                       {company.logo_url ? (
                         <img
                           src={company.logo_url}
                           alt={`${company.name} logo`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           loading="lazy"
                           decoding="async"
                           onError={(e) => {
@@ -360,7 +360,7 @@ export default function EntreprisesPage() {
                         />
                       ) : null}
                       <div className="logo-fallback hidden w-full h-full flex items-center justify-center">
-                        <div className="text-6xl font-bold text-gray-400">
+                        <div className="text-4xl font-bold text-gray-400">
                           {company.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                       </div>
