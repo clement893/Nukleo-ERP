@@ -755,7 +755,7 @@ export default function SoumissionsPage() {
                   position="bottom"
                 />
                 <Button 
-                  className="bg-white text-[#523DC9] hover:bg-white/90"
+                  className="bg-white text-primary-500 hover:bg-white/90"
                   onClick={() => activeTab === 'quotes' ? setShowCreateQuoteModal(true) : setShowCreateSubmissionModal(true)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -775,7 +775,7 @@ export default function SoumissionsPage() {
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               activeTab === 'quotes'
-                ? 'bg-[#523DC9] text-white shadow-lg'
+                ? 'bg-primary-500 text-white shadow-lg'
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -792,7 +792,7 @@ export default function SoumissionsPage() {
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               activeTab === 'submissions'
-                ? 'bg-[#523DC9] text-white shadow-lg'
+                ? 'bg-primary-500 text-white shadow-lg'
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -806,7 +806,7 @@ export default function SoumissionsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
                 <DollarSign className="w-6 h-6 text-[#10B981]" />
@@ -818,10 +818,10 @@ export default function SoumissionsPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Target className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Target className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -830,7 +830,7 @@ export default function SoumissionsPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
                 <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
@@ -844,7 +844,7 @@ export default function SoumissionsPage() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
                 <Clock className="w-6 h-6 text-[#3B82F6]" />
@@ -858,7 +858,7 @@ export default function SoumissionsPage() {
         </div>
 
         {/* Filters */}
-        <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <div className="space-y-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -984,7 +984,7 @@ export default function SoumissionsPage() {
                   {filteredQuotes.map((quote) => (
                     <Card 
                       key={quote.id} 
-                      className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer group relative"
+                      className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/30 transition-all cursor-pointer group relative"
                     >
                       <div
                         onClick={(e: React.MouseEvent) => {
@@ -1006,7 +1006,7 @@ export default function SoumissionsPage() {
                             }}
                           >
                             {selectedQuotes.has(quote.id) ? (
-                              <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                              <CheckSquare className="w-5 h-5 text-primary-500" />
                             ) : (
                               <Square className="w-5 h-5 text-gray-400" />
                             )}
@@ -1143,7 +1143,7 @@ export default function SoumissionsPage() {
                             }}
                           >
                             {selectedQuotes.has(quote.id) ? (
-                              <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                              <CheckSquare className="w-5 h-5 text-primary-500" />
                             ) : (
                               <Square className="w-5 h-5 text-gray-400" />
                             )}
@@ -1253,7 +1253,7 @@ export default function SoumissionsPage() {
                   {filteredSubmissions.map((submission) => (
                     <Card 
                       key={submission.id} 
-                      className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/30 transition-all cursor-pointer group relative"
+                      className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/30 transition-all cursor-pointer group relative"
                       onClick={() => {
                         const locale = window.location.pathname.split('/')[1] || 'fr';
                         router.push(`/${locale}/dashboard/commercial/soumissions/submissions/${submission.id}`);
@@ -1422,7 +1422,7 @@ export default function SoumissionsPage() {
                             }}
                           >
                             {selectedSubmissions.has(submission.id) ? (
-                              <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                              <CheckSquare className="w-5 h-5 text-primary-500" />
                             ) : (
                               <Square className="w-5 h-5 text-gray-400" />
                             )}
