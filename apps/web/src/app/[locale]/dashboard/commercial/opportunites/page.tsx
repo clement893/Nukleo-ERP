@@ -44,6 +44,7 @@ import Dropdown from '@/components/ui/Dropdown';
 import OpportunityImportModal from '@/components/commercial/OpportunityImportModal';
 import { Trash2, Download, Upload, CheckSquare, Square } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 
 
 
@@ -133,7 +134,7 @@ function OpportunitiesContent() {
           setTotalActiveOpportunities(activeCount);
         }
       } catch (err) {
-        console.error('Erreur lors du chargement du total:', err);
+        logger.error('Erreur lors du chargement du total des opportunités actives', err);
         // En cas d'erreur, utiliser le count des opportunités déjà chargées
         if (isMounted) {
           const activeCount = opportunities.filter(opp => {
