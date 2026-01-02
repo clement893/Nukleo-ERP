@@ -305,7 +305,7 @@ function TemoignagesContent() {
                         </button>
                       )}
                       {!hasBoth && displayLang && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="default" className="text-xs">
                           {displayLang.toUpperCase()}
                         </Badge>
                       )}

@@ -14,7 +14,8 @@ import {
   GripVertical
 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
-import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
+import { Responsive, Layout } from 'react-grid-layout';
+import WidthProvider from 'react-grid-layout/lib/components/WidthProvider';
 import 'react-grid-layout/css/styles.css';
 import 'react-grid-layout/css/resizable.css';
 
@@ -23,8 +24,17 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 // Widget types
 type WidgetType = 'stats' | 'tasks' | 'events' | 'activity' | 'performance';
 
-interface WidgetLayout extends Layout {
+interface WidgetLayout {
   i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  minH?: number;
+  maxW?: number;
+  maxH?: number;
+  static?: boolean;
   type: WidgetType;
 }
 
@@ -54,7 +64,7 @@ export default function PortailEmployeDashboard() {
 
   // Save layouts to localStorage
   const saveLayout = (newLayouts: Layout[]) => {
-    const layoutsWithTypes = newLayouts.map(l => {
+    const layoutsWithTypes: WidgetLayout[] = newLayouts.map((l: Layout) => {
       const existing = layouts.find(w => w.i === l.i);
       return { ...l, type: existing?.type || 'stats' } as WidgetLayout;
     });
@@ -347,7 +357,7 @@ export default function PortailEmployeDashboard() {
         rowHeight={100}
         isDraggable={isEditMode}
         isResizable={isEditMode}
-        onLayoutChange={(layout) => {
+        onLayoutChange={(layout: Layout[]) => {
           if (isEditMode) {
             saveLayout(layout);
           }
