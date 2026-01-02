@@ -650,17 +650,17 @@ export default function LeoPage() {
                           <div className="mt-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs">
                             <div className="space-y-1">
                               {msg.metadata.model && (
-                                <div><strong>Modèle:</strong> {String(msg.metadata.model)}</div>
+                                <div><strong>Modèle:</strong> {String(msg.metadata.model) as React.ReactNode}</div>
                               )}
                               {msg.metadata.provider && (
-                                <div><strong>Provider:</strong> {String(msg.metadata.provider)}</div>
+                                <div><strong>Provider:</strong> {String(msg.metadata.provider) as React.ReactNode}</div>
                               )}
                               {msg.metadata.usage && typeof msg.metadata.usage === 'object' && (
                                 <div>
                                   <strong>Usage:</strong>{' '}
                                   {Object.entries(msg.metadata.usage as Record<string, unknown>).map(([key, value]) => 
                                     `${key}: ${String(value)}`
-                                  ).join(', ')}
+                                  ).join(', ') as React.ReactNode}
                                 </div>
                               )}
                             </div>
