@@ -225,18 +225,15 @@ export const automationAPI = {
 
   /**
    * Get all automation rules
-   * Note: This endpoint may need to be created in the backend
    */
   getAutomationRules: async (): Promise<AutomationRule[]> => {
     try {
       const response = await apiClient.get<AutomationRule[]>('/v1/automation-rules');
-      if (!response || !response.data) {
-        return [];
-      }
-      return Array.isArray(response.data) ? response.data : [];
+      const data = extractApiData<AutomationRule[]>(response);
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       // If endpoint doesn't exist yet, return empty array
-      console.warn('Automation rules endpoint not available yet');
+      console.warn('Automation rules endpoint not available yet', error);
       return [];
     }
   },
