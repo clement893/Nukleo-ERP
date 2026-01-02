@@ -227,15 +227,8 @@ export const transactionsAPI = {
       responseType: 'blob',
     });
     
-    if (response.status >= 400) {
-      const text = await (response.data as Blob).text();
-      let errorData: unknown;
-      try {
-        errorData = JSON.parse(text);
-      } catch {
-        errorData = { detail: text || 'Download failed' };
-      }
-      throw new Error((errorData as { detail?: string })?.detail || 'Download failed');
+    if (!response.data || (response.data as Blob).size === 0) {
+      throw new Error('Download failed: empty response');
     }
     
     return response.data as Blob;

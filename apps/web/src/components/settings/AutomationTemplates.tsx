@@ -55,10 +55,8 @@ const templates: Template[] = [
       name: 'Rappel d\'échéance de facture',
       description: 'Envoie un email de rappel 7 jours avant l\'échéance',
       enabled: true,
-      trigger: {
-        event: 'invoice.created',
-        conditions: [],
-      },
+      trigger_event: 'invoice.created',
+      trigger_conditions: {},
       actions: [
         {
           type: 'email.send',
@@ -80,10 +78,8 @@ const templates: Template[] = [
       name: 'Bienvenue nouveau client',
       description: 'Email de bienvenue pour les nouveaux clients',
       enabled: true,
-      trigger: {
-        event: 'client.created',
-        conditions: [],
-      },
+      trigger_event: 'client.created',
+      trigger_conditions: {},
       actions: [
         {
           type: 'email.send',
@@ -104,10 +100,8 @@ const templates: Template[] = [
       name: 'Notification de tâche assignée',
       description: 'Notifie l\'utilisateur lorsqu\'une tâche lui est assignée',
       enabled: true,
-      trigger: {
-        event: 'task.assigned',
-        conditions: [],
-      },
+      trigger_event: 'task.assigned',
+      trigger_conditions: {},
       actions: [
         {
           type: 'notification.send',

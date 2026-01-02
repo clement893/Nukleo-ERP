@@ -287,7 +287,7 @@ export const automationAPI = {
   /**
    * Toggle automation rule enabled/disabled
    */
-  toggleAutomationRule: async (ruleId: string, enabled: boolean): Promise<AutomationRule> => {
+  toggleAutomationRule: async (ruleId: string, _enabled: boolean): Promise<AutomationRule> => {
     const response = await apiClient.post<AutomationRule>(`/v1/automation-rules/${ruleId}/toggle`);
     const data = extractApiData<AutomationRule>(response);
     if (!data) {

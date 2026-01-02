@@ -6,13 +6,12 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  TrendingUp, Plus, Edit, Trash2, Eye, Search, Calendar,
-  DollarSign, Filter, Download, Upload, FileText, AlertCircle, CheckCircle2
+  TrendingUp, Plus, Edit, Trash2, Search, Calendar,
+  DollarSign, Filter, FileText, CheckCircle2
 } from 'lucide-react';
 import { Button, Badge, Input, Select, Modal, Textarea, Loading, useToast } from '@/components/ui';
-import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionType, type TransactionStatus } from '@/lib/api/finances/transactions';
+import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionStatus } from '@/lib/api/finances/transactions';
 import { handleApiError } from '@/lib/errors/api';
-import { logger } from '@/lib/logger';
 
 const CATEGORIES = [
   'Ventes',
@@ -56,7 +55,7 @@ export default function RevenusPage() {
     tax_amount: null,
     currency: 'CAD',
     category: null,
-    transaction_date: new Date().toISOString().split('T')[0],
+    transaction_date: new Date().toISOString().split('T')[0] as string,
     expected_payment_date: null,
     payment_date: null,
     status: 'pending',
@@ -197,7 +196,7 @@ export default function RevenusPage() {
       tax_amount: transaction.tax_amount ? parseFloat(transaction.tax_amount) : null,
       currency: transaction.currency,
       category: transaction.category || null,
-      transaction_date: transaction.transaction_date.split('T')[0],
+      transaction_date: transaction.transaction_date ? transaction.transaction_date.split('T')[0] : new Date().toISOString().split('T')[0],
       expected_payment_date: transaction.expected_payment_date ? transaction.expected_payment_date.split('T')[0] : null,
       payment_date: transaction.payment_date ? transaction.payment_date.split('T')[0] : null,
       status: transaction.status,
@@ -217,7 +216,7 @@ export default function RevenusPage() {
       tax_amount: null,
       currency: 'CAD',
       category: null,
-      transaction_date: new Date().toISOString().split('T')[0],
+      transaction_date: new Date().toISOString().split('T')[0] as string,
       expected_payment_date: null,
       payment_date: null,
       status: 'pending',

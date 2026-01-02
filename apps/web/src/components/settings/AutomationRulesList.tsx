@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, Badge, Input, Switch } from '@/components/ui';
+import { Button, Card, Badge, Input, Switch, useToast } from '@/components/ui';
 import { Plus, Search, Zap, Trash2, Edit2, Loader2, Sparkles } from 'lucide-react';
 import { AutomationRuleForm } from './AutomationRuleForm';
 import { automationAPI, type AutomationRule, type CreateAutomationRuleRequest, type UpdateAutomationRuleRequest } from '@/lib/api/automation';
@@ -31,6 +31,7 @@ export function AutomationRulesList({
   onDelete,
   onToggle,
 }: AutomationRulesListProps) {
+  const { showToast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,9 +214,9 @@ export function AutomationRulesList({
           rule={editingRule}
           onSave={(ruleData) => {
             if (editingRule) {
-              onUpdate(editingRule.id, ruleData);
+              onUpdate(editingRule.id, ruleData as UpdateAutomationRuleRequest);
             } else {
-              onCreate(ruleData);
+              onCreate(ruleData as CreateAutomationRuleRequest);
             }
             setShowCreateModal(false);
             setEditingRule(null);

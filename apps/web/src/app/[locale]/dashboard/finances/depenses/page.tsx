@@ -7,9 +7,9 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   TrendingDown, FileText, Upload, Download, 
-  Building2, Repeat, Receipt, Calendar, Search,
+  Building2, Repeat, Receipt, Search,
   Plus, Edit, Eye, CheckCircle, XCircle, Clock,
-  AlertCircle, Info, Trash2
+  Info, Trash2
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Textarea, useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
@@ -109,7 +109,7 @@ export default function DepensesPage() {
     amount: '',
     currency: 'CAD',
     category: null,
-    transaction_date: new Date().toISOString().split('T')[0],
+    transaction_date: new Date().toISOString().split('T')[0] as string,
     payment_date: null,
     status: 'pending',
     supplier_id: null,
@@ -253,7 +253,7 @@ export default function DepensesPage() {
       amount: parseFloat(expense.amount),
       currency: expense.currency,
       category: expense.category || null,
-      transaction_date: expense.transaction_date.split('T')[0],
+      transaction_date: expense.transaction_date ? expense.transaction_date.split('T')[0] : new Date().toISOString().split('T')[0],
       payment_date: expense.payment_date ? expense.payment_date.split('T')[0] : null,
       status: expense.status,
       supplier_id: expense.supplier_id || null,
@@ -376,6 +376,16 @@ export default function DepensesPage() {
       paid: { label: 'Payé', color: 'bg-green-100 text-green-700 border-green-300', icon: CheckCircle },
       pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: Clock },
       cancelled: { label: 'Annulé', color: 'bg-red-100 text-red-700 border-red-300', icon: XCircle },
+    };
+    return badges[status];
+  };
+
+  const getInvoiceStatusBadge = (status: 'received' | 'paid' | 'overdue' | 'projected') => {
+    const badges = {
+      paid: { label: 'Payé', color: 'bg-green-100 text-green-700 border-green-300', icon: CheckCircle },
+      received: { label: 'Reçue', color: 'bg-blue-100 text-blue-700 border-blue-300', icon: FileText },
+      overdue: { label: 'En retard', color: 'bg-red-100 text-red-700 border-red-300', icon: XCircle },
+      projected: { label: 'Projetée', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: Clock },
     };
     return badges[status];
   };
@@ -907,7 +917,7 @@ export default function DepensesPage() {
                     </div>
                   ) : (
                     invoices.map((invoice) => {
-                      const badge = getStatusBadge(invoice.status);
+                      const badge = getInvoiceStatusBadge(invoice.status);
                       const Icon = badge.icon;
                       return (
                         <div
