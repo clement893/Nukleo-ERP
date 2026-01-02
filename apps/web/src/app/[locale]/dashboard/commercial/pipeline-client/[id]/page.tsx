@@ -913,7 +913,7 @@ export default function PipelineDetailPage() {
                 <DollarSign className="w-6 h-6 text-success-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {formatCurrency(totalValueEnCours)}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale (en cours)</div>
@@ -925,7 +925,7 @@ export default function PipelineDetailPage() {
                 <Target className="w-6 h-6 text-primary-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {activeOpportunities.length}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">{activeOpportunities.length} opportunité{activeOpportunities.length > 1 ? 's' : ''} ACTIVE{activeOpportunities.length > 1 ? 'S' : ''}</div>
@@ -937,7 +937,7 @@ export default function PipelineDetailPage() {
                 <TrendingUp className="w-6 h-6 text-warning-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {formatCurrency(totalClosedWon)}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Closed won</div>
@@ -949,7 +949,7 @@ export default function PipelineDetailPage() {
                 <Settings className="w-6 h-6 text-primary-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
               {pipeline.stages?.length || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Étapes</div>

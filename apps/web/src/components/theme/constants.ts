@@ -9,7 +9,7 @@ import type { SelectOption } from '@/components/ui/Select';
 // These will adapt automatically to light/dark mode
 export const COLORS = {
   BLUE_500: 'var(--color-primary-500)',
-  GREEN_500: 'var(--color-secondary-500)',
+  GREEN_500: 'var(--color-success-500)',
   RED_500: 'var(--color-danger-500)',
   YELLOW_500: 'var(--color-warning-500)',
   CYAN_500: 'var(--color-info-500)',

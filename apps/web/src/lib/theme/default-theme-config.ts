@@ -16,7 +16,7 @@ export const DEFAULT_THEME_CONFIG = {
   danger_color: "#dc2626",  // Refined red (5.1:1 on white)
   warning_color: "#b45309",  // Warm amber 700 (4.5:1 on white, improved from #d97706)
   info_color: "#0891b2",  // Professional cyan (4.5:1 on white)
-  success_color: "#047857",  // Professional green 700 (4.5:1 on white, improved from #059669)
+  success_color: "#10B981",  // Emerald green 500 (matches design system, was #047857)
   font_family: "var(--font-aktiv-grotesk), 'Aktiv Grotesk'",
   border_radius: "8px",
   
