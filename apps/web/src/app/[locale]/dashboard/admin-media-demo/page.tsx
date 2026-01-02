@@ -234,7 +234,7 @@ export default function AdminMediaDemo() {
               <div className="flex gap-1 border border-gray-300 dark:border-gray-700 rounded-lg p-1">
                 <Button
                   size="sm"
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  variant={viewMode === 'grid' ? 'primary' : 'ghost'}
                   onClick={() => setViewMode('grid')}
                   className="px-2"
                 >
@@ -242,7 +242,7 @@ export default function AdminMediaDemo() {
                 </Button>
                 <Button
                   size="sm"
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
                   onClick={() => setViewMode('list')}
                   className="px-2"
                 >

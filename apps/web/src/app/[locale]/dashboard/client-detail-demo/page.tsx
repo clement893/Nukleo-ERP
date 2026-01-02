@@ -118,8 +118,8 @@ export default function ClientDetailDemo() {
                     <h1 className="text-3xl font-black text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {clientData.name}
                     </h1>
-                    <Badge className={`${statusConfig[clientData.status].color} border`}>
-                      {statusConfig[clientData.status].label}
+                    <Badge className={`${statusConfig[clientData.status as keyof typeof statusConfig].color} border`}>
+                      {statusConfig[clientData.status as keyof typeof statusConfig].label}
                     </Badge>
                   </div>
                   <p className="text-white/80 text-sm">{clientData.industry} • Client depuis {new Date(clientData.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
@@ -298,8 +298,8 @@ export default function ClientDetailDemo() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
                       <h4 className="font-semibold">{project.name}</h4>
-                      <Badge className={`${projectStatusConfig[project.status].color} border`}>
-                        {projectStatusConfig[project.status].label}
+                      <Badge className={`${projectStatusConfig[project.status as keyof typeof projectStatusConfig].color} border`}>
+                        {projectStatusConfig[project.status as keyof typeof projectStatusConfig].label}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -347,16 +347,17 @@ export default function ClientDetailDemo() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {clientData.recentInvoices.map((invoice) => {
-                  const StatusIcon = invoiceStatusConfig[invoice.status].icon;
+                  const statusKey = invoice.status as keyof typeof invoiceStatusConfig;
+                  const StatusIcon = invoiceStatusConfig[statusKey].icon;
                   return (
                     <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                       <td className="px-4 py-3 font-medium">{invoice.id}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{invoice.project}</td>
                       <td className="px-4 py-3 font-semibold">{formatCurrency(invoice.amount)}</td>
                       <td className="px-4 py-3">
-                        <Badge className={`${invoiceStatusConfig[invoice.status].color} border flex items-center gap-1 w-fit`}>
+                        <Badge className={`${invoiceStatusConfig[statusKey].color} border flex items-center gap-1 w-fit`}>
                           <StatusIcon className="w-3 h-3" />
-                          {invoiceStatusConfig[invoice.status].label}
+                          {invoiceStatusConfig[statusKey].label}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
