@@ -5,7 +5,7 @@ import { Card, Button, Badge, Input, Select, Textarea, Modal, Switch } from '@/c
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   CreditCard, Plus, Edit, Trash2, 
-  Loader2, RefreshCw, AlertTriangle
+  Loader2, RefreshCw, AlertTriangle, Check, X
 } from 'lucide-react';
 import { tresorerieAPI, type BankAccount, type BankAccountCreate } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
@@ -23,6 +23,11 @@ export default function TresorerieDebtsCapacityTab() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [selectedDebtType, setSelectedDebtType] = useState<string | null>(null);
+  const [editingCapacityId, setEditingCapacityId] = useState<number | null>(null);
+  const [editingCapacityValue, setEditingCapacityValue] = useState<string>('');
+  const [editingUsedId, setEditingUsedId] = useState<number | null>(null);
+  const [editingUsedValue, setEditingUsedValue] = useState<string>('');
+  const [creatingAccountId, setCreatingAccountId] = useState<string | null>(null);
   const [formData, setFormData] = useState<BankAccountCreate>({
     name: '',
     account_type: 'credit',
@@ -177,6 +182,127 @@ export default function TresorerieDebtsCapacityTab() {
     }).format(amount);
   };
 
+  // Pour les comptes de crédit, initial_balance représente la capacité totale
+  // current_balance représente le montant utilisé (négatif = dette)
+  const getCapacityInfo = (account: BankAccount) => {
+    const capacity = Math.abs(account.initial_balance || 0);
+    const used = Math.abs(account.current_balance ?? 0);
+    const available = capacity - used;
+    return { capacity, used, available };
+  };
+
+  const handleCapacityEdit = (account: BankAccount) => {
+    setEditingCapacityId(account.id);
+    const { capacity } = getCapacityInfo(account);
+    setEditingCapacityValue(capacity.toString());
+  };
+
+  const handleUsedEdit = (account: BankAccount) => {
+    setEditingUsedId(account.id);
+    const { used } = getCapacityInfo(account);
+    setEditingUsedValue(used.toString());
+  };
+
+  const handleCapacitySave = async (accountId: number) => {
+    try {
+      const newCapacity = parseFloat(editingCapacityValue) || 0;
+      const account = accounts.find(a => a.id === accountId);
+      if (!account) return;
+
+      await tresorerieAPI.updateBankAccount(accountId, {
+        initial_balance: newCapacity
+      });
+      
+      showToast({
+        title: 'Succès',
+        message: 'Capacité mise à jour avec succès',
+        type: 'success'
+      });
+      
+      setEditingCapacityId(null);
+      await loadAccounts();
+    } catch (error) {
+      logger.error('Erreur lors de la mise à jour de la capacité', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de mettre à jour la capacité',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleUsedSave = async (accountId: number) => {
+    try {
+      const newUsed = parseFloat(editingUsedValue) || 0;
+      const account = accounts.find(a => a.id === accountId);
+      if (!account) return;
+
+      // Le montant utilisé est calculé automatiquement à partir des transactions
+      // Pour ajuster manuellement, on peut créer une transaction d'ajustement
+      // Pour l'instant, on affiche juste un message informatif
+      showToast({
+        title: 'Information',
+        message: 'Le montant utilisé est calculé automatiquement à partir des transactions. Créez une transaction pour l\'ajuster.',
+        type: 'info'
+      });
+      
+      setEditingUsedId(null);
+    } catch (error) {
+      logger.error('Erreur lors de la mise à jour du montant utilisé', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de mettre à jour le montant utilisé',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleQuickCreate = async (debtTypeName: string) => {
+    const debtType = PREDEFINED_DEBT_TYPES.find(d => d.name === debtTypeName);
+    try {
+      await tresorerieAPI.createBankAccount({
+        name: debtTypeName,
+        account_type: debtType?.type || 'credit',
+        bank_name: null,
+        account_number: null,
+        initial_balance: formData.initial_balance || 0, // Capacité totale
+        currency: 'CAD',
+        is_active: true,
+        notes: null
+      });
+      
+      showToast({
+        title: 'Succès',
+        message: 'Dette/capacité créée avec succès',
+        type: 'success'
+      });
+      
+      setCreatingAccountId(null);
+      resetForm();
+      await loadAccounts();
+    } catch (error) {
+      logger.error('Erreur lors de la création', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de créer la dette/capacité',
+        type: 'error'
+      });
+    }
+  };
+
+  // Calculer les totaux
+  const totalCapacity = accounts.reduce((sum, acc) => {
+    const { capacity } = getCapacityInfo(acc);
+    return sum + capacity;
+  }, 0);
+
+  const totalUsed = accounts.reduce((sum, acc) => {
+    const { used } = getCapacityInfo(acc);
+    return sum + used;
+  }, 0);
+
+  const totalAvailable = totalCapacity - totalUsed;
+
   if (loading) {
     return (
       <MotionDiv variant="slideUp" duration="normal">
@@ -199,18 +325,54 @@ export default function TresorerieDebtsCapacityTab() {
 
   return (
     <MotionDiv variant="slideUp" duration="normal">
+      {/* Totaux */}
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Capacité Totale
+            </h3>
+            <div className="text-2xl font-black font-nukleo text-gray-900 dark:text-gray-100">
+              {formatCurrency(totalCapacity)}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Montant Utilisé
+            </h3>
+            <div className="text-2xl font-black font-nukleo text-red-600">
+              {formatCurrency(totalUsed)}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Disponible Restant
+            </h3>
+            <div className={`text-2xl font-black font-nukleo ${totalAvailable >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(totalAvailable)}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Capacité - Utilisé = Disponible
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {accounts.length} dette{accounts.length > 1 ? 's' : ''}/capacité{accounts.length > 1 ? 's' : ''} configurée{accounts.length > 1 ? 's' : ''}
+          </p>
+          <Button variant="outline" size="sm" onClick={loadAccounts}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
+      </Card>
+
       {/* Actions */}
       <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold font-nukleo">
             Dettes et Capacité ({accounts.length})
           </h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={loadAccounts}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualiser
-            </Button>
-          </div>
         </div>
       </Card>
 
@@ -252,8 +414,7 @@ export default function TresorerieDebtsCapacityTab() {
                 {hasAccounts ? (
                   <div className="space-y-2">
                     {relatedAccounts.map((account) => {
-                      const currentBalance = account.current_balance ?? account.initial_balance ?? 0;
-                      const isNegative = currentBalance < 0;
+                      const { capacity, used, available } = getCapacityInfo(account);
                       return (
                         <div key={account.id} className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
@@ -282,18 +443,105 @@ export default function TresorerieDebtsCapacityTab() {
                               </Button>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between">
+                          <div className="space-y-2">
                             <div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400">Solde/Capacité</div>
-                              <div className={`text-lg font-bold font-nukleo ${isNegative ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}>
-                                {formatCurrency(Math.abs(currentBalance))}
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Capacité</div>
+                              {editingCapacityId === account.id ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingCapacityValue}
+                                    onChange={(e) => setEditingCapacityValue(e.target.value)}
+                                    className="flex-1 text-sm"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleCapacitySave(account.id);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingCapacityId(null);
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleCapacitySave(account.id)}
+                                    className="text-green-600 hover:text-green-700 h-7 w-7 p-0"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingCapacityId(null)}
+                                    className="text-red-600 hover:text-red-700 h-7 w-7 p-0"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div 
+                                  className="text-sm font-bold font-nukleo cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 -mx-2 transition-colors text-gray-900 dark:text-gray-100"
+                                  onClick={() => handleCapacityEdit(account)}
+                                  title="Cliquez pour modifier la capacité"
+                                >
+                                  {formatCurrency(capacity)}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Montant utilisé</div>
+                              {editingUsedId === account.id ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingUsedValue}
+                                    onChange={(e) => setEditingUsedValue(e.target.value)}
+                                    className="flex-1 text-sm"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleUsedSave(account.id);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingUsedId(null);
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleUsedSave(account.id)}
+                                    className="text-green-600 hover:text-green-700 h-7 w-7 p-0"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingUsedId(null)}
+                                    className="text-red-600 hover:text-red-700 h-7 w-7 p-0"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div 
+                                  className="text-sm font-bold font-nukleo cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-2 py-1 -mx-2 transition-colors text-red-600"
+                                  onClick={() => handleUsedEdit(account)}
+                                  title="Cliquez pour modifier le montant utilisé"
+                                >
+                                  {formatCurrency(used)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Disponible restant</div>
+                              <div className={`text-sm font-bold font-nukleo ${available >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(available)}
                               </div>
                             </div>
-                            {isNegative && (
-                              <Badge className="bg-red-500/10 text-red-600 border-red-500/30 border text-xs">
-                                Dette
-                              </Badge>
-                            )}
                           </div>
                         </div>
                       );
@@ -301,7 +549,20 @@ export default function TresorerieDebtsCapacityTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openCreateModalForDebtType(debtType.name)}
+                      onClick={() => {
+                        setCreatingAccountId(debtType.name);
+                        const debtTypeData = PREDEFINED_DEBT_TYPES.find(d => d.name === debtType.name);
+                        setFormData({
+                          name: debtType.name,
+                          account_type: debtTypeData?.type || 'credit',
+                          bank_name: null,
+                          account_number: null,
+                          initial_balance: 0,
+                          currency: 'CAD',
+                          is_active: true,
+                          notes: null
+                        });
+                      }}
                       className="w-full mt-2"
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -309,15 +570,63 @@ export default function TresorerieDebtsCapacityTab() {
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openCreateModalForDebtType(debtType.name)}
-                    className="w-full mt-2"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Ajouter {debtType.name}
-                  </Button>
+                  creatingAccountId === debtType.name ? (
+                    <div className="space-y-2 mt-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Capacité totale"
+                        value={formData.initial_balance || 0}
+                        onChange={(e) => setFormData({ ...formData, initial_balance: parseFloat(e.target.value) || 0 })}
+                        className="w-full"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleQuickCreate(debtType.name)}
+                          className="flex-1"
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Créer
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCreatingAccountId(null);
+                            resetForm();
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCreatingAccountId(debtType.name);
+                        const debtTypeData = PREDEFINED_DEBT_TYPES.find(d => d.name === debtType.name);
+                        setFormData({
+                          name: debtType.name,
+                          account_type: debtTypeData?.type || 'credit',
+                          bank_name: null,
+                          account_number: null,
+                          initial_balance: 0,
+                          currency: 'CAD',
+                          is_active: true,
+                          notes: null
+                        });
+                      }}
+                      className="w-full mt-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter {debtType.name}
+                    </Button>
+                  )
                 )}
               </Card>
             );
@@ -357,17 +666,105 @@ export default function TresorerieDebtsCapacityTab() {
                     </Badge>
                   </div>
 
-                  <div className="mb-3">
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Solde/Capacité</div>
-                    <div className={`text-lg font-bold font-nukleo ${isNegative ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}>
-                      {formatCurrency(Math.abs(currentBalance))}
+                  <div className="mb-3 space-y-2">
+                    <div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Capacité</div>
+                      {editingCapacityId === account.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editingCapacityValue}
+                            onChange={(e) => setEditingCapacityValue(e.target.value)}
+                            className="flex-1 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleCapacitySave(account.id);
+                              } else if (e.key === 'Escape') {
+                                setEditingCapacityId(null);
+                              }
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCapacitySave(account.id)}
+                            className="text-green-600 hover:text-green-700 h-7 w-7 p-0"
+                          >
+                            <Check className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingCapacityId(null)}
+                            className="text-red-600 hover:text-red-700 h-7 w-7 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="text-sm font-bold font-nukleo cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-2 py-1 -mx-2 transition-colors text-gray-900 dark:text-gray-100"
+                          onClick={() => handleCapacityEdit(account)}
+                          title="Cliquez pour modifier la capacité"
+                        >
+                          {formatCurrency(getCapacityInfo(account).capacity)}
+                        </div>
+                      )}
                     </div>
-                    {isNegative && (
-                      <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>Dette active</span>
+                    <div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Montant utilisé</div>
+                      {editingUsedId === account.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editingUsedValue}
+                            onChange={(e) => setEditingUsedValue(e.target.value)}
+                            className="flex-1 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleUsedSave(account.id);
+                              } else if (e.key === 'Escape') {
+                                setEditingUsedId(null);
+                              }
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUsedSave(account.id)}
+                            className="text-green-600 hover:text-green-700 h-7 w-7 p-0"
+                          >
+                            <Check className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingUsedId(null)}
+                            className="text-red-600 hover:text-red-700 h-7 w-7 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="text-sm font-bold font-nukleo cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-2 py-1 -mx-2 transition-colors text-red-600"
+                          onClick={() => handleUsedEdit(account)}
+                          title="Cliquez pour modifier le montant utilisé"
+                        >
+                          {formatCurrency(getCapacityInfo(account).used)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Disponible restant</div>
+                      <div className={`text-sm font-bold font-nukleo ${getCapacityInfo(account).available >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(getCapacityInfo(account).available)}
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">

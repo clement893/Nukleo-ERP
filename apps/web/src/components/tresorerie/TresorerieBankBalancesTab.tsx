@@ -5,7 +5,7 @@ import { Card, Button, Badge, Input, Select, Textarea, Modal, Switch } from '@/c
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Plus, Edit, Trash2, Building2, 
-  Loader2, RefreshCw
+  Loader2, RefreshCw, Check, X
 } from 'lucide-react';
 import { tresorerieAPI, type BankAccount, type BankAccountCreate } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
@@ -25,6 +25,9 @@ export default function TresorerieBankBalancesTab() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
+  const [editingBalanceId, setEditingBalanceId] = useState<number | null>(null);
+  const [editingBalanceValue, setEditingBalanceValue] = useState<string>('');
+  const [creatingAccountId, setCreatingAccountId] = useState<string | null>(null);
   const [formData, setFormData] = useState<BankAccountCreate>({
     name: '',
     account_type: 'checking',
@@ -177,6 +180,83 @@ export default function TresorerieBankBalancesTab() {
     }).format(amount);
   };
 
+  const handleBalanceEdit = (account: BankAccount) => {
+    setEditingBalanceId(account.id);
+    setEditingBalanceValue((account.current_balance ?? account.initial_balance ?? 0).toString());
+  };
+
+  const handleBalanceSave = async (accountId: number) => {
+    try {
+      const newBalance = parseFloat(editingBalanceValue) || 0;
+      const account = accounts.find(a => a.id === accountId);
+      if (!account) return;
+
+      await tresorerieAPI.updateBankAccount(accountId, {
+        initial_balance: newBalance
+      });
+      
+      showToast({
+        title: 'Succès',
+        message: 'Solde mis à jour avec succès',
+        type: 'success'
+      });
+      
+      setEditingBalanceId(null);
+      await loadAccounts();
+    } catch (error) {
+      logger.error('Erreur lors de la mise à jour du solde', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de mettre à jour le solde',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleBalanceCancel = () => {
+    setEditingBalanceId(null);
+    setEditingBalanceValue('');
+  };
+
+  const handleQuickCreate = async (bankName: string) => {
+    const bank = PREDEFINED_BANKS.find(b => b.name === bankName);
+    try {
+      await tresorerieAPI.createBankAccount({
+        name: bankName,
+        account_type: bank?.type || 'checking',
+        bank_name: bankName,
+        account_number: null,
+        initial_balance: formData.initial_balance || 0,
+        currency: 'CAD',
+        is_active: true,
+        notes: null
+      });
+      
+      showToast({
+        title: 'Succès',
+        message: 'Compte créé avec succès',
+        type: 'success'
+      });
+      
+      setCreatingAccountId(null);
+      resetForm();
+      await loadAccounts();
+    } catch (error) {
+      logger.error('Erreur lors de la création', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de créer le compte',
+        type: 'error'
+      });
+    }
+  };
+
+  // Calculer le total des soldes
+  const totalBalance = accounts.reduce((sum, acc) => {
+    const balance = acc.current_balance ?? acc.initial_balance ?? 0;
+    return sum + balance;
+  }, 0);
+
   if (loading) {
     return (
       <MotionDiv variant="slideUp" duration="normal">
@@ -200,18 +280,33 @@ export default function TresorerieBankBalancesTab() {
 
   return (
     <MotionDiv variant="slideUp" duration="normal">
+      {/* Total des Soldes */}
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 mb-6 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Total des Soldes Bancaires
+            </h3>
+            <div className={`text-3xl font-black font-nukleo ${totalBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`}>
+              {formatCurrency(totalBalance)}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {accounts.length} compte{accounts.length > 1 ? 's' : ''} configuré{accounts.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={loadAccounts}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
+      </Card>
+
       {/* Actions */}
       <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold font-nukleo">
             Soldes Bancaires ({accounts.length})
           </h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={loadAccounts}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualiser
-            </Button>
-          </div>
         </div>
       </Card>
 
@@ -253,9 +348,49 @@ export default function TresorerieBankBalancesTab() {
                   <>
                     <div className="mb-3">
                       <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Solde actuel</div>
-                      <div className={`text-xl font-bold font-nukleo ${currentBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`}>
-                        {formatCurrency(currentBalance)}
-                      </div>
+                      {editingBalanceId === account.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editingBalanceValue}
+                            onChange={(e) => setEditingBalanceValue(e.target.value)}
+                            className="flex-1"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleBalanceSave(account.id);
+                              } else if (e.key === 'Escape') {
+                                handleBalanceCancel();
+                              }
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleBalanceSave(account.id)}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleBalanceCancel}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className={`text-xl font-bold font-nukleo cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-2 py-1 -mx-2 transition-colors ${currentBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`}
+                          onClick={() => handleBalanceEdit(account)}
+                          title="Cliquez pour modifier le solde"
+                        >
+                          {formatCurrency(currentBalance)}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                       <Button
@@ -278,15 +413,63 @@ export default function TresorerieBankBalancesTab() {
                     </div>
                   </>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openCreateModalForBank(bank.name)}
-                    className="w-full mt-2"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Ajouter le solde
-                  </Button>
+                  creatingAccountId === bank.name ? (
+                    <div className="space-y-2 mt-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Solde initial"
+                        value={formData.initial_balance || 0}
+                        onChange={(e) => setFormData({ ...formData, initial_balance: parseFloat(e.target.value) || 0 })}
+                        className="w-full"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleQuickCreate(bank.name)}
+                          className="flex-1"
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Créer
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCreatingAccountId(null);
+                            resetForm();
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCreatingAccountId(bank.name);
+                        const bankData = PREDEFINED_BANKS.find(b => b.name === bank.name);
+                        setFormData({
+                          name: bank.name,
+                          account_type: bankData?.type || 'checking',
+                          bank_name: bank.name,
+                          account_number: null,
+                          initial_balance: 0,
+                          currency: 'CAD',
+                          is_active: true,
+                          notes: null
+                        });
+                      }}
+                      className="w-full mt-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter le solde
+                    </Button>
+                  )
                 )}
               </Card>
             );
@@ -327,9 +510,49 @@ export default function TresorerieBankBalancesTab() {
 
                   <div className="mb-3">
                     <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Solde actuel</div>
-                    <div className={`text-lg font-bold font-nukleo ${currentBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`}>
-                      {formatCurrency(currentBalance)}
-                    </div>
+                    {editingBalanceId === account.id ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={editingBalanceValue}
+                          onChange={(e) => setEditingBalanceValue(e.target.value)}
+                          className="flex-1"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleBalanceSave(account.id);
+                            } else if (e.key === 'Escape') {
+                              handleBalanceCancel();
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleBalanceSave(account.id)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleBalanceCancel}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div 
+                        className={`text-lg font-bold font-nukleo cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-2 py-1 -mx-2 transition-colors ${currentBalance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600'}`}
+                        onClick={() => handleBalanceEdit(account)}
+                        title="Cliquez pour modifier le solde"
+                      >
+                        {formatCurrency(currentBalance)}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
