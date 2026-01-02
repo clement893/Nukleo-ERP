@@ -214,3 +214,55 @@ async def get_automation_rule_logs(
     logs = logs_result.scalars().all()
     
     return [AutomationRuleExecutionLogResponse.model_validate(log) for log in logs]
+
+
+@router.post("/initialize-default", response_model=AutomationRuleResponse, tags=["automation-rules"])
+async def initialize_default_automation_rule(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Initialize the default automation rule for opportunity stage changes"""
+    # Check if rule already exists
+    result = await db.execute(
+        select(AutomationRule).where(
+            AutomationRule.trigger_event == 'opportunity.stage_changed',
+            AutomationRule.name == "Créer tâche pour Proposition à faire"
+        )
+    )
+    existing_rule = result.scalar_one_or_none()
+    
+    if existing_rule:
+        return AutomationRuleResponse.model_validate(existing_rule)
+    
+    # Create the default rule
+    rule = AutomationRule(
+        name="Créer tâche pour Proposition à faire",
+        description="Crée automatiquement une tâche assignée à Clément Roy quand une opportunité du pipeline MAIN passe dans le stage '05-Proposal to do'",
+        enabled=True,
+        trigger_event='opportunity.stage_changed',
+        trigger_conditions={
+            'pipeline_name': 'MAIN',
+            'stage_name': '05-Proposal to do'
+        },
+        actions=[
+            {
+                'type': 'task.create',
+                'config': {
+                    'title': 'Proposition à faire - {opportunity_name}',
+                    'description': 'Opportunité \'{opportunity_name}\' est passée dans le stage \'05-Proposal to do\'. Créer la proposition.',
+                    'assignee_name': 'Clément Roy',
+                    'due_date_today': True,
+                    'priority': 'high'
+                }
+            }
+        ],
+        user_id=current_user.id
+    )
+    
+    db.add(rule)
+    await db.commit()
+    await db.refresh(rule)
+    
+    logger.info(f"Created default automation rule with ID {rule.id} for user {current_user.id}")
+    
+    return AutomationRuleResponse.model_validate(rule)

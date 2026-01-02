@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Input, Select, Modal } from '@/components/ui';
-import type { AutomationRule, CreateAutomationRuleRequest } from '@/lib/api/automation';
+import type { AutomationRule, CreateAutomationRuleRequest, UpdateAutomationRuleRequest } from '@/lib/api/automation';
 
 export interface AutomationRuleFormProps {
   rule?: AutomationRule | null;

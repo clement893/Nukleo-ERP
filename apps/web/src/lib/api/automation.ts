@@ -7,6 +7,7 @@
  */
 
 import { apiClient } from './client';
+import { extractApiData } from './utils';
 
 /**
  * Task Type
@@ -147,10 +148,8 @@ export const automationAPI = {
     const url = `/v1/scheduled-tasks${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiClient.get<ScheduledTask[]>(url);
-    if (!response || !response.data) {
-      throw new Error('Failed to fetch scheduled tasks: no data returned');
-    }
-    return Array.isArray(response.data) ? response.data : [];
+    const data = extractApiData<ScheduledTask[]>(response);
+    return Array.isArray(data) ? data : [];
   },
 
   /**
@@ -158,10 +157,11 @@ export const automationAPI = {
    */
   getScheduledTask: async (taskId: number): Promise<ScheduledTask> => {
     const response = await apiClient.get<ScheduledTask>(`/v1/scheduled-tasks/${taskId}`);
-    if (!response || !response.data) {
+    const data = extractApiData<ScheduledTask>(response);
+    if (!data) {
       throw new Error('Failed to fetch scheduled task: no data returned');
     }
-    return response.data;
+    return data;
   },
 
   /**
@@ -169,10 +169,11 @@ export const automationAPI = {
    */
   createScheduledTask: async (task: CreateScheduledTaskRequest): Promise<ScheduledTask> => {
     const response = await apiClient.post<ScheduledTask>('/v1/scheduled-tasks', task);
-    if (!response || !response.data) {
+    const data = extractApiData<ScheduledTask>(response);
+    if (!data) {
       throw new Error('Failed to create scheduled task: no data returned');
     }
-    return response.data;
+    return data;
   },
 
   /**
@@ -180,10 +181,11 @@ export const automationAPI = {
    */
   updateScheduledTask: async (taskId: number, task: UpdateScheduledTaskRequest): Promise<ScheduledTask> => {
     const response = await apiClient.put<ScheduledTask>(`/v1/scheduled-tasks/${taskId}`, task);
-    if (!response || !response.data) {
+    const data = extractApiData<ScheduledTask>(response);
+    if (!data) {
       throw new Error('Failed to update scheduled task: no data returned');
     }
-    return response.data;
+    return data;
   },
 
   /**
@@ -205,10 +207,11 @@ export const automationAPI = {
    */
   toggleScheduledTask: async (taskId: number): Promise<ScheduledTask> => {
     const response = await apiClient.put<ScheduledTask>(`/v1/content/schedule/${taskId}/toggle`);
-    if (!response || !response.data) {
+    const data = extractApiData<ScheduledTask>(response);
+    if (!data) {
       throw new Error('Failed to toggle scheduled task: no data returned');
     }
-    return response.data;
+    return data;
   },
 
   /**
@@ -216,10 +219,8 @@ export const automationAPI = {
    */
   getTaskLogs: async (taskId: number, limit: number = 50): Promise<ExecutionLog[]> => {
     const response = await apiClient.get<ExecutionLog[]>(`/v1/scheduled-tasks/${taskId}/logs?limit=${limit}`);
-    if (!response || !response.data) {
-      throw new Error('Failed to fetch task logs: no data returned');
-    }
-    return Array.isArray(response.data) ? response.data : [];
+    const data = extractApiData<ExecutionLog[]>(response);
+    return Array.isArray(data) ? data : [];
   },
 
   /**
@@ -245,41 +246,35 @@ export const automationAPI = {
    */
   getAutomationRule: async (ruleId: string): Promise<AutomationRule> => {
     const response = await apiClient.get<AutomationRule>(`/v1/automation-rules/${ruleId}`);
-    if (!response || !response.data) {
+    const data = extractApiData<AutomationRule>(response);
+    if (!data) {
       throw new Error('Failed to fetch automation rule: no data returned');
     }
-    return response.data;
+    return data;
   },
 
   /**
    * Create a new automation rule
    */
   createAutomationRule: async (rule: CreateAutomationRuleRequest): Promise<AutomationRule> => {
-    try {
-      const response = await apiClient.post<AutomationRule>('/v1/automation-rules', rule);
-      if (!response || !response.data) {
-        throw new Error('Failed to create automation rule: no data returned');
-      }
-      return response.data;
-    } catch (error) {
-      // If endpoint doesn't exist yet, throw a helpful error
-      throw new Error('Automation rules endpoint not available yet. Please use scheduled tasks for now.');
+    const response = await apiClient.post<AutomationRule>('/v1/automation-rules', rule);
+    const data = extractApiData<AutomationRule>(response);
+    if (!data) {
+      throw new Error('Failed to create automation rule: no data returned');
     }
+    return data;
   },
 
   /**
    * Update an automation rule
    */
   updateAutomationRule: async (ruleId: string, rule: UpdateAutomationRuleRequest): Promise<AutomationRule> => {
-    try {
-      const response = await apiClient.put<AutomationRule>(`/v1/automation-rules/${ruleId}`, rule);
-      if (!response || !response.data) {
-        throw new Error('Failed to update automation rule: no data returned');
-      }
-      return response.data;
-    } catch (error) {
-      throw new Error('Automation rules endpoint not available yet. Please use scheduled tasks for now.');
+    const response = await apiClient.put<AutomationRule>(`/v1/automation-rules/${ruleId}`, rule);
+    const data = extractApiData<AutomationRule>(response);
+    if (!data) {
+      throw new Error('Failed to update automation rule: no data returned');
     }
+    return data;
   },
 
   /**
@@ -293,14 +288,23 @@ export const automationAPI = {
    * Toggle automation rule enabled/disabled
    */
   toggleAutomationRule: async (ruleId: string, enabled: boolean): Promise<AutomationRule> => {
-    try {
-      const response = await apiClient.put<AutomationRule>(`/v1/automation-rules/${ruleId}/toggle`, { enabled });
-      if (!response || !response.data) {
-        throw new Error('Failed to toggle automation rule: no data returned');
-      }
-      return response.data;
-    } catch (error) {
-      throw new Error('Automation rules endpoint not available yet.');
+    const response = await apiClient.post<AutomationRule>(`/v1/automation-rules/${ruleId}/toggle`);
+    const data = extractApiData<AutomationRule>(response);
+    if (!data) {
+      throw new Error('Failed to toggle automation rule: no data returned');
     }
+    return data;
+  },
+
+  /**
+   * Initialize default automation rule
+   */
+  initializeDefaultRule: async (): Promise<AutomationRule> => {
+    const response = await apiClient.post<AutomationRule>('/v1/automation-rules/initialize-default');
+    const data = extractApiData<AutomationRule>(response);
+    if (!data) {
+      throw new Error('Failed to initialize default automation rule: no data returned');
+    }
+    return data;
   },
 };

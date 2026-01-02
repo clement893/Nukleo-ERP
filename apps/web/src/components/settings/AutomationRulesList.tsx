@@ -8,9 +8,9 @@
 
 import { useState } from 'react';
 import { Button, Card, Badge, Input, Switch } from '@/components/ui';
-import { Plus, Search, Zap, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { Plus, Search, Zap, Trash2, Edit2, Loader2, Sparkles } from 'lucide-react';
 import { AutomationRuleForm } from './AutomationRuleForm';
-import type { AutomationRule, CreateAutomationRuleRequest, UpdateAutomationRuleRequest } from '@/lib/api/automation';
+import { automationAPI, type AutomationRule, type CreateAutomationRuleRequest, type UpdateAutomationRuleRequest } from '@/lib/api/automation';
 
 export interface AutomationRulesListProps {
   rules: AutomationRule[];
@@ -49,6 +49,20 @@ export function AutomationRulesList({
 
   const handleToggle = (id: number, enabled: boolean) => {
     onToggle(id, enabled);
+  };
+
+  const handleInitializeDefault = async () => {
+    try {
+      await automationAPI.initializeDefaultRule();
+      showToast({ message: 'Règle par défaut créée avec succès', type: 'success' });
+      // Refresh the list
+      window.location.reload();
+    } catch (error) {
+      showToast({ 
+        message: 'Erreur lors de la création de la règle par défaut', 
+        type: 'error' 
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -107,9 +121,19 @@ export function AutomationRulesList({
           <Card className="p-12">
             <div className="text-center">
               <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 {rules.length === 0 ? 'Aucune règle d\'automatisation' : 'Aucune règle ne correspond à votre recherche'}
               </p>
+              {rules.length === 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleInitializeDefault}
+                  className="mt-4"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Créer la règle par défaut (Proposition à faire)
+                </Button>
+              )}
             </div>
           </Card>
         ) : (
