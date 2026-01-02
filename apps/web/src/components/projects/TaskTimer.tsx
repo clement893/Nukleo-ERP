@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
 import { timeEntriesAPI, type TimerStatus } from '@/lib/api/time-entries';
 import { handleApiError } from '@/lib/errors/api';
 import { Play, Square, Clock } from 'lucide-react';
