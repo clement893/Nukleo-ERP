@@ -1538,7 +1538,7 @@ export default function SoumissionsPage() {
           isOpen={showCreateQuoteModal}
           onClose={() => setShowCreateQuoteModal(false)}
           title="Créer un devis"
-          size="xl"
+          size="full"
         >
           <QuoteForm
             onSubmit={handleCreateQuote}

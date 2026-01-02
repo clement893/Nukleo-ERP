@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Settings, RefreshCw, X, GripVertical, AlertCircle, Sparkles } from 'lucide-react';
+import { Settings, RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStore } from '@/lib/dashboard/store';
 import { getWidget } from '@/lib/dashboard/widgetRegistry';
@@ -19,7 +19,7 @@ interface WidgetContainerProps {
 }
 
 // Widget Error Fallback Component
-function WidgetErrorFallback({ error, widgetType }: { error: Error; widgetType: string }) {
+function WidgetErrorFallback({ error, widgetType }: { error: Error | null; widgetType: string }) {
   // Log error for debugging
   console.error(`Widget error for ${widgetType}:`, error);
   

@@ -78,6 +78,7 @@ export interface WidgetConfig {
   refresh_interval?: number; // en secondes
   kpi_name?: string; // Nom du KPI pour les widgets KPI personnalisés
   target?: number; // Cible pour les widgets KPI
+  widget_id?: number; // ID du widget personnalisé (pour les widgets de type 'custom')
   style?: {
     color?: string;
     icon?: string;

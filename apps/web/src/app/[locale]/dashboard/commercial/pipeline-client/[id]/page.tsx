@@ -51,7 +51,6 @@ import {
   useSensors,
   closestCorners,
   useDroppable,
-  DragOverEvent,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -893,8 +892,8 @@ export default function PipelineDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <DollarSign className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <DollarSign className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -917,8 +916,8 @@ export default function PipelineDetailPage() {
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <TrendingUp className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <TrendingUp className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -929,8 +928,8 @@ export default function PipelineDetailPage() {
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Settings className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Settings className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -1008,7 +1007,7 @@ export default function PipelineDetailPage() {
                             <div 
                               className="glass-card rounded-lg border p-3 h-full flex flex-col"
                               style={{ 
-                                borderColor: stage.color ? `${stage.color}40` : '#A7A2CF20',
+                                borderColor: stage.color ? `${stage.color}40` : 'var(--color-primary-300)',
                                 backgroundColor: stage.color ? `${stage.color}05` : undefined
                               }}
                             >
@@ -1120,11 +1119,17 @@ export default function PipelineDetailPage() {
                         type="bar"
                         data={(pipeline.stages || [])
                           .sort((a, b) => (a.order || 0) - (b.order || 0))
-                          .map(stage => ({
-                            label: stage.name || '',
-                            value: opportunitiesByStage[stage.id]?.length || 0,
-                            color: stage.color || '#523DC9',
-                          }))}
+                          .map(stage => {
+                            // Get computed primary color for charts (libraries need hex value)
+                            const primaryColor = typeof window !== 'undefined' 
+                              ? getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim() || '#523DC9'
+                              : '#523DC9';
+                            return {
+                              label: stage.name || '',
+                              value: opportunitiesByStage[stage.id]?.length || 0,
+                              color: stage.color || primaryColor,
+                            };
+                          })}
                         height={250}
                       />
                     ) : (

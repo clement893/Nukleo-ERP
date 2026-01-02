@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Eye, Code, Palette } from 'lucide-react';
 import { Button, Input, Textarea, Select, Modal } from '@/components/ui';
-import { customWidgetsAPI, type CustomWidget, type CustomWidgetCreate, type CustomWidgetUpdate } from '@/lib/api/custom-widgets';
+import { customWidgetsAPI, type CustomWidgetCreate, type CustomWidgetUpdate } from '@/lib/api/custom-widgets';
 import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
 import DOMPurify from 'isomorphic-dompurify';
@@ -119,7 +119,7 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="large">
+    <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <div className="flex flex-col h-full max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
