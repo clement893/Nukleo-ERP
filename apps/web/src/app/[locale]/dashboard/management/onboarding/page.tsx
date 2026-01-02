@@ -91,8 +91,8 @@ export default function OnboardingPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [showResourcesModal, setShowResourcesModal] = useState<'documents' | 'formations' | 'tools' | null>(null);
 
-  // Fetch employees
-  const { data: employeesData, isLoading: employeesLoading } = useInfiniteEmployees(1000);
+  // Fetch employees - Reduced limit for better performance
+  const { data: employeesData, isLoading: employeesLoading } = useInfiniteEmployees(50);
   const employees = useMemo(() => employeesData?.pages.flat() || [], [employeesData]);
 
   // Fetch teams for filter

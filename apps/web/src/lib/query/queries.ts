@@ -522,7 +522,7 @@ export function useEmployeesOnboarding(options?: { team_id?: number; enabled?: b
     queryFn: () => onboardingAPI.listEmployeesOnboarding({
       team_id: options?.team_id,
       skip: 0,
-      limit: 1000,
+      limit: 100, // Reduced from 1000 to 100 for better performance
     }),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60 * 2, // 2 minutes
