@@ -148,8 +148,8 @@ export default function ContactDetailPage() {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
               {/* Photo plus grande (56x56 = 224px) */}
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] rounded-2xl opacity-20 blur-lg" />
-                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-[#A7A2CF]/30 shadow-xl">
+                <div className="absolute inset-0 bg-nukleo-gradient rounded-2xl opacity-20 blur-lg" />
+                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden border-2 border-nukleo-lavender/30 shadow-xl">
                   <img 
                     src={photoUrl} 
                     alt={contactName} 
@@ -160,7 +160,7 @@ export default function ContactDetailPage() {
               
               {/* Infos */}
               <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold text-[#523DC9] mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h1 className="text-4xl md:text-5xl font-bold text-primary-500 mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   {contactName}
                 </h1>
                 {contact.position && (

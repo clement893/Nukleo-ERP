@@ -281,24 +281,6 @@ export default function SoumissionsPage() {
     }
   }, [deleteQuoteMutation, showToast]);
   
-  const handleCreateSubmission = useCallback(async (submissionData: SubmissionCreate) => {
-    try {
-      await createSubmissionMutation.mutateAsync(submissionData);
-      setShowCreateSubmissionModal(false);
-      showToast({
-        message: 'Soumission créée avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la création de la soumission',
-        type: 'error',
-      });
-      throw err;
-    }
-  }, [createSubmissionMutation, showToast]);
-  
   const handleUpdateSubmission = useCallback(async (id: number, data: SubmissionUpdate) => {
     try {
       await updateSubmissionMutation.mutateAsync({ id, data });
@@ -337,23 +319,6 @@ export default function SoumissionsPage() {
     }
   }, [deleteSubmissionMutation, showToast]);
   
-  const handleSaveDraftSubmission = useCallback(async (submissionData: SubmissionCreate) => {
-    try {
-      const draftData = { ...submissionData, status: 'draft' };
-      await createSubmissionMutation.mutateAsync(draftData);
-      showToast({
-        message: 'Brouillon sauvegardé avec succès',
-        type: 'success',
-      });
-    } catch (err) {
-      const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la sauvegarde du brouillon',
-        type: 'error',
-      });
-      throw err;
-    }
-  }, [createSubmissionMutation, showToast]);
   
   // Duplicate handlers
   const handleDuplicateQuote = async (quote: Quote) => {
@@ -1250,7 +1215,10 @@ export default function SoumissionsPage() {
                       ? 'Essayez de modifier vos filtres'
                       : 'Créez votre première soumission'}
                   </p>
-                  <Button onClick={() => setShowCreateSubmissionModal(true)}>
+                  <Button onClick={() => {
+                    const locale = window.location.pathname.split('/')[1] || 'fr';
+                    router.push(`/${locale}/dashboard/commercial/soumissions/nouvelle`);
+                  }}>
                     <Plus className="w-4 h-4 mr-2" />
                     Créer une soumission
                   </Button>

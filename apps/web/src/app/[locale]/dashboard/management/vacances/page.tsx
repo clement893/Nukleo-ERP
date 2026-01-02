@@ -603,7 +603,7 @@ export default function VacancesPage() {
               return (
                 <Card 
                   key={vacation.id}
-                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
                   onClick={() => handleView(vacation)}
                 >
                   <div className="flex items-start gap-4 mb-4">

@@ -80,7 +80,7 @@ export default function ReseauPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -98,10 +98,10 @@ export default function ReseauPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Users className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Users className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -110,10 +110,10 @@ export default function ReseauPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Contacts</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <Building2 className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <Building2 className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -122,10 +122,10 @@ export default function ReseauPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Entreprises</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <MessageSquare className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <MessageSquare className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -134,10 +134,10 @@ export default function ReseauPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Témoignages</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <TrendingUp className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <TrendingUp className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -150,10 +150,10 @@ export default function ReseauPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link href="/dashboard/reseau/contacts">
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group">
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 rounded-xl bg-[#523DC9]/10 border border-[#523DC9]/30 group-hover:bg-[#523DC9]/20 transition-colors">
-                  <Users className="w-8 h-8 text-[#523DC9]" />
+                <div className="p-4 rounded-xl bg-primary-500/10 border border-primary-500/30 group-hover:bg-primary-500/20 transition-colors">
+                  <Users className="w-8 h-8 text-primary-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Contacts</h3>
@@ -168,10 +168,10 @@ export default function ReseauPage() {
           </Link>
 
           <Link href="/dashboard/reseau/entreprises">
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#10B981]/40 transition-all duration-200 cursor-pointer group">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-secondary-500/40 transition-all duration-200 cursor-pointer group">
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 group-hover:bg-[#10B981]/20 transition-colors">
-                  <Building2 className="w-8 h-8 text-[#10B981]" />
+                <div className="p-4 rounded-xl bg-secondary-500/10 border border-secondary-500/30 group-hover:bg-secondary-500/20 transition-colors">
+                  <Building2 className="w-8 h-8 text-secondary-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Entreprises</h3>
@@ -186,10 +186,10 @@ export default function ReseauPage() {
           </Link>
 
           <Link href="/dashboard/reseau/temoignages">
-            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#F59E0B]/40 transition-all duration-200 cursor-pointer group">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-warning-500/40 transition-all duration-200 cursor-pointer group">
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 group-hover:bg-[#F59E0B]/20 transition-colors">
-                  <MessageSquare className="w-8 h-8 text-[#F59E0B]" />
+                <div className="p-4 rounded-xl bg-warning-500/10 border border-warning-500/30 group-hover:bg-warning-500/20 transition-colors">
+                  <MessageSquare className="w-8 h-8 text-warning-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Témoignages</h3>
@@ -207,10 +207,10 @@ export default function ReseauPage() {
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Contacts */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contacts récents</h3>
-              <Badge className="bg-[#523DC9]/10 text-[#523DC9]">{recentContacts.length}</Badge>
+              <Badge className="bg-primary-500/10 text-primary-500">{recentContacts.length}</Badge>
             </div>
             <div className="space-y-3">
               {recentContacts.length === 0 ? (
@@ -218,7 +218,7 @@ export default function ReseauPage() {
               ) : (
                 recentContacts.map((contact) => (
                   <Link key={contact.id} href={`/dashboard/reseau/contacts/${contact.id}`}>
-                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#523DC9]/30 transition-all cursor-pointer">
+                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/30 transition-all cursor-pointer">
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-gray-900 dark:text-white text-sm">
@@ -238,10 +238,10 @@ export default function ReseauPage() {
           </Card>
 
           {/* Recent Companies */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Entreprises récentes</h3>
-              <Badge className="bg-[#10B981]/10 text-[#10B981]">{recentCompanies.length}</Badge>
+              <Badge className="bg-secondary-500/10 text-secondary-500">{recentCompanies.length}</Badge>
             </div>
             <div className="space-y-3">
               {recentCompanies.length === 0 ? (
@@ -249,7 +249,7 @@ export default function ReseauPage() {
               ) : (
                 recentCompanies.map((company) => (
                   <Link key={company.id} href={`/dashboard/reseau/entreprises/${company.id}`}>
-                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#10B981]/30 transition-all cursor-pointer">
+                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-secondary-500/30 transition-all cursor-pointer">
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-gray-900 dark:text-white text-sm">{company.name}</h4>
@@ -267,10 +267,10 @@ export default function ReseauPage() {
           </Card>
 
           {/* Recent Testimonials */}
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Témoignages récents</h3>
-              <Badge className="bg-[#F59E0B]/10 text-[#F59E0B]">{recentTestimonials.length}</Badge>
+              <Badge className="bg-warning-500/10 text-warning-500">{recentTestimonials.length}</Badge>
             </div>
             <div className="space-y-3">
               {recentTestimonials.length === 0 ? (

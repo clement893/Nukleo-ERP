@@ -200,7 +200,7 @@ export default function EntreprisesPage() {
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header */}
         <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
             backgroundSize: '200px 200px'
@@ -214,7 +214,7 @@ export default function EntreprisesPage() {
               <p className="text-white/80 text-lg">Gérez votre réseau d'entreprises</p>
             </div>
             <Button 
-              className="bg-white text-[#523DC9] hover:bg-white/90"
+              className="bg-white text-primary-500 hover:bg-white/90"
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -225,10 +225,10 @@ export default function EntreprisesPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30">
-                <Building2 className="w-6 h-6 text-[#523DC9]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Building2 className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -237,10 +237,10 @@ export default function EntreprisesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <TrendingUp className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <TrendingUp className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -249,10 +249,10 @@ export default function EntreprisesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Clients actifs</div>
           </Card>
 
-          <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Users className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <Users className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -263,7 +263,7 @@ export default function EntreprisesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 w-full relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -317,7 +317,7 @@ export default function EntreprisesPage() {
 
         {/* Companies Grid/List */}
         {filteredCompanies.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
+          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
             <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Aucune entreprise trouvée
@@ -333,92 +333,130 @@ export default function EntreprisesPage() {
             </Button>
           </Card>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
             {filteredCompanies.map((company) => (
               <Card 
                 key={company.id}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer relative overflow-hidden"
+                className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer group"
                 onClick={() => handleView(company.id)}
               >
-                {/* Logo Section - Fixed positioning */}
-                <div className="mb-4 relative">
-                  <div className="flex items-center gap-3 mb-3 relative">
-                    {company.logo_url ? (
-                      <div className="relative w-12 h-12 flex-shrink-0">
-                        <img 
-                          src={company.logo_url} 
+                <div className="flex flex-col">
+                  {/* Logo Section - Photo rectangulaire en hauteur comme les contacts */}
+                  <div className="relative">
+                    <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                      {company.logo_url ? (
+                        <img
+                          src={company.logo_url}
                           alt={`${company.name} logo`}
-                          className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
-                            const fallback = target.parentElement?.nextElementSibling as HTMLElement;
+                            const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
                             if (fallback) fallback.classList.remove('hidden');
                           }}
                         />
-                        <div className="logo-fallback hidden absolute inset-0 w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center">
-                          <Building2 className="w-6 h-6 text-[#523DC9]" />
+                      ) : null}
+                      <div className="logo-fallback hidden w-full h-full flex items-center justify-center">
+                        <div className="text-6xl font-bold text-gray-400">
+                          {company.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                       </div>
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-[#523DC9]/10 border border-[#523DC9]/30 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-6 h-6 text-[#523DC9]" />
-                      </div>
-                    )}
+                    </div>
+                    {/* Badge en overlay */}
+                    <div className="absolute top-3 right-3">
+                      <Badge className={`${company.is_client ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30'}`}>
+                        {company.is_client ? 'Client' : 'Prospect'}
+                      </Badge>
+                    </div>
                   </div>
-                  
-                  {/* Title and Badge Section - Fixed layout */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">{company.name}</h3>
+
+                  {/* Contenu de la carte */}
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                        {company.name}
+                      </h3>
                       {company.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{company.description}</p>
+                        <p className="text-sm text-muted-accessible line-clamp-2 mt-1">{company.description}</p>
                       )}
                     </div>
-                    <Badge className={`flex-shrink-0 ml-2 ${company.is_client ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30'}`}>
-                      {company.is_client ? 'Client' : 'Prospect'}
-                    </Badge>
-                  </div>
-                </div>
 
-                {/* Info Section */}
-                <div className="space-y-2 mb-4">
-                  {(company.city || company.country) && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{[company.city, company.country].filter(Boolean).join(', ')}</span>
+                    {/* Informations clés */}
+                    <div className="space-y-2.5">
+                      {(company.city || company.country) && (
+                        <div className="flex items-center gap-2 text-sm text-muted-accessible">
+                          <MapPin className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{[company.city, company.country].filter(Boolean).join(', ')}</span>
+                        </div>
+                      )}
+                      {company.website && (
+                        <div className="flex items-center gap-2 text-sm text-muted-accessible group/website">
+                          <Globe className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate flex-1">{company.website}</span>
+                          <a
+                            href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="opacity-0 group-hover/website:opacity-100 text-primary hover:text-primary-600 transition-all"
+                            title="Visiter le site web"
+                            aria-label={`Visiter le site web de ${company.name}`}
+                          >
+                            <Globe className="w-4 h-4" />
+                          </a>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-accessible">
+                        <Users className="w-4 h-4 flex-shrink-0" />
+                        <span>{company.contacts_count || 0} contact{company.contacts_count !== 1 ? 's' : ''}</span>
+                      </div>
                     </div>
-                  )}
-                  {company.website && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Globe className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{company.website}</span>
-                    </div>
-                  )}
-                </div>
 
-                {/* Footer Section */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex gap-4 text-sm">
-                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <Users className="w-4 h-4 flex-shrink-0" />
-                      <span>{company.contacts_count || 0}</span>
+                    {/* Actions */}
+                    <div className="grid grid-cols-3 gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleView(company.id)}
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Voir les détails de ${company.name}`}
+                        title="Voir"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {company.website && (
+                        <a
+                          href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                          aria-label={`Visiter le site web de ${company.name}`}
+                          title="Site web"
+                        >
+                          <Globe className="w-4 h-4" />
+                        </a>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(company.id)}
+                        className="glass-badge p-2 rounded-lg hover:bg-red-500/10 hover:text-red-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Supprimer ${company.name}`}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Button size="sm" variant="ghost" onClick={() => handleView(company.id)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(company.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
         ) : (
-          <Card className="glass-card rounded-xl border border-[#A7A2CF]/20 overflow-hidden">
+          <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredCompanies.map((company) => (
                 <div 

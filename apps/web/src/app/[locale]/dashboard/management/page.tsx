@@ -188,7 +188,7 @@ export default function ManagementPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card 
-            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
             onClick={() => router.push('/dashboard/management/employes')}
           >
             <div className="flex items-center gap-4">
@@ -204,7 +204,7 @@ export default function ManagementPage() {
           </Card>
 
           <Card 
-            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
             onClick={() => router.push('/dashboard/management/feuilles-temps')}
           >
             <div className="flex items-center gap-4">
@@ -220,7 +220,7 @@ export default function ManagementPage() {
           </Card>
 
           <Card 
-            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
+            className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
             onClick={() => router.push('/dashboard/management/vacances')}
           >
             <div className="flex items-center gap-4">

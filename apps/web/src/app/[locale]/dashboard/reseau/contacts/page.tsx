@@ -480,7 +480,7 @@ export default function ContactsPage() {
             )}
             <button
               onClick={() => setShowAddModal(true)}
-              className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#523DC9] hover:bg-[#5F2B75] transition-all hover-nukleo"
+              className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-primary-500 hover:bg-primary-600 transition-all hover-nukleo"
               aria-label="Créer un nouveau contact"
             >
               <Plus className="w-5 h-5" aria-hidden="true" />
@@ -1145,7 +1145,7 @@ export default function ContactsPage() {
                             </h4>
                             <a 
                               href={`mailto:${contactDetails.email}`}
-                              className="text-sm text-gray-900 dark:text-white hover:text-[#523DC9] transition-colors"
+                              className="text-sm text-gray-900 dark:text-white hover:text-primary-500 transition-colors"
                             >
                               {contactDetails.email}
                             </a>
@@ -1159,7 +1159,7 @@ export default function ContactsPage() {
                             </h4>
                             <a 
                               href={`tel:${contactDetails.phone}`}
-                              className="text-sm text-gray-900 dark:text-white hover:text-[#523DC9] transition-colors"
+                              className="text-sm text-gray-900 dark:text-white hover:text-primary-500 transition-colors"
                             >
                               {contactDetails.phone}
                             </a>
@@ -1207,7 +1207,7 @@ export default function ContactsPage() {
                               href={contactDetails.linkedin}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-[#523DC9] hover:underline"
+                              className="text-sm text-primary-500 hover:underline"
                             >
                               Voir le profil
                             </a>

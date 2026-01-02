@@ -435,7 +435,7 @@ export default function OnboardingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
                 <FileText className="w-6 h-6 text-primary-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Documents</h3>
@@ -455,7 +455,7 @@ export default function OnboardingPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
                 <BookOpen className="w-6 h-6 text-secondary-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Formations</h3>
@@ -475,7 +475,7 @@ export default function OnboardingPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
                 <Laptop className="w-6 h-6 text-warning-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Outils</h3>
@@ -624,7 +624,7 @@ function OnboardingProcessCard({
 
   return (
     <Card 
-      className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200"
+      className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200"
     >
       <div className="flex items-start gap-4 mb-4">
         <div className={`w-14 h-14 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
