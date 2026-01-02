@@ -309,19 +309,33 @@ export function CustomWidget({ config, globalFilters }: WidgetProps) {
     case 'iframe':
       if (!widget.config.iframe_url) {
         return (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <p className="text-sm">No iframe URL configured</p>
+          <div className="flex items-center justify-center h-full text-gray-500" style={style}>
+            <p className="text-sm">Aucune URL iframe configurée</p>
           </div>
         );
       }
-      const sandbox = widget.config.iframe_sandbox?.join(' ') || 'allow-scripts allow-same-origin';
+      
+      // Configuration sandbox sécurisée par défaut
+      const defaultSandbox = [
+        'allow-scripts',
+        'allow-same-origin',
+        'allow-forms',
+        'allow-popups',
+        'allow-popups-to-escape-sandbox',
+      ];
+      const sandbox = widget.config.iframe_sandbox?.length 
+        ? widget.config.iframe_sandbox.join(' ')
+        : defaultSandbox.join(' ');
+      
       return (
-        <div className="h-full" style={style}>
+        <div className="h-full w-full" style={style}>
           <iframe
             src={widget.config.iframe_url}
-            className="w-full h-full border-0"
+            className="w-full h-full border-0 rounded-lg"
             sandbox={sandbox}
             title={widget.name}
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           />
         </div>
       );
