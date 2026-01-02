@@ -88,12 +88,12 @@ const variants: Record<string, string> = {
   ),
 };
 
-// Size styles - same as Button component
+// Size styles - same as Button component (refined for more compact UI)
 const sizes: Record<string, string> = {
   xs: 'px-2.5 py-1.5 text-xs min-h-[32px]',
-  sm: 'px-3 py-2 text-sm min-h-[36px]',
-  md: 'px-4 py-2.5 text-sm min-h-[40px]',
-  lg: 'px-6 py-3 text-base min-h-[44px]',
+  sm: 'px-3 py-1.5 text-sm min-h-[34px]', // Reduced from py-2
+  md: 'px-3 py-1.5 text-sm min-h-[36px]', // Reduced from px-4 py-2.5
+  lg: 'px-4 py-2 text-sm min-h-[40px]', // Reduced from px-6 py-3 text-base
 };
 
 export interface ButtonLinkProps {

@@ -153,15 +153,15 @@ const config: Config = {
         ring: 'var(--color-ring)',
       },
       spacing: {
-        // Standardized spacing scale (UX/UI improvements - Batch 1)
+        // Standardized spacing scale (Refined for more compact UI)
         // Fixed pixel values for consistent spacing across the application
-        xs: '4px',    // 0.25rem - Very small spacing
-        sm: '8px',    // 0.5rem - Small spacing
-        md: '16px',   // 1rem - Standard spacing
-        lg: '24px',   // 1.5rem - Large spacing
-        xl: '32px',   // 2rem - Very large spacing
-        '2xl': '48px', // 3rem - Extra large spacing
-        '3xl': '64px', // 4rem - Maximum spacing
+        xs: '4px',    // 0.25rem - Very small spacing (unchanged)
+        sm: '6px',    // 0.375rem - Small spacing (reduced from 8px)
+        md: '12px',   // 0.75rem - Standard spacing (reduced from 16px)
+        lg: '18px',   // 1.125rem - Large spacing (reduced from 24px)
+        xl: '24px',   // 1.5rem - Very large spacing (reduced from 32px)
+        '2xl': '36px', // 2.25rem - Extra large spacing (reduced from 48px)
+        '3xl': '48px', // 3rem - Maximum spacing (reduced from 64px)
         // Theme-aware spacing using CSS variables with fallbacks (backward compatibility)
         // These map to the theme's spacing scale
         'theme-xs': 'var(--spacing-xs, 0.5rem)',      // 8px default
@@ -221,16 +221,16 @@ const config: Config = {
         ],
       },
       fontSize: {
-        // Standardized typography hierarchy (UX/UI improvements - Batch 2)
-        // Fixed pixel values with line heights and font weights
-        display: ['48px', { lineHeight: '56px', fontWeight: '700' }],  // Very large titles
-        h1: ['32px', { lineHeight: '40px', fontWeight: '700' }],      // Main title
-        h2: ['24px', { lineHeight: '32px', fontWeight: '600' }],       // Secondary title
-        h3: ['20px', { lineHeight: '28px', fontWeight: '600' }],      // Tertiary title
-        subtitle: ['16px', { lineHeight: '24px', fontWeight: '500' }], // Subtitle
-        body: ['14px', { lineHeight: '22px', fontWeight: '400' }],     // Body text
-        small: ['12px', { lineHeight: '18px', fontWeight: '400' }],   // Small text
-        caption: ['11px', { lineHeight: '16px', fontWeight: '400' }],  // Caption/legend
+        // Standardized typography hierarchy (Refined for more compact UI)
+        // Fixed pixel values with line heights and font weights - reduced sizes
+        display: ['40px', { lineHeight: '48px', fontWeight: '700' }],  // Very large titles (reduced from 48px)
+        h1: ['28px', { lineHeight: '36px', fontWeight: '700' }],      // Main title (reduced from 32px)
+        h2: ['22px', { lineHeight: '30px', fontWeight: '600' }],       // Secondary title (reduced from 24px)
+        h3: ['18px', { lineHeight: '26px', fontWeight: '600' }],      // Tertiary title (reduced from 20px)
+        subtitle: ['15px', { lineHeight: '22px', fontWeight: '500' }], // Subtitle (reduced from 16px)
+        body: ['14px', { lineHeight: '22px', fontWeight: '400' }],     // Body text (unchanged)
+        small: ['12px', { lineHeight: '18px', fontWeight: '400' }],   // Small text (unchanged)
+        caption: ['11px', { lineHeight: '16px', fontWeight: '400' }],  // Caption/legend (unchanged)
       },
       boxShadow: {
         // Custom shadows for depth

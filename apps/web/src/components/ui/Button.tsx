@@ -110,11 +110,12 @@ const variants = {
 };
 
 // Default sizes (fallback if theme config not available)
+// Refined sizes for more compact UI
 const defaultSizes = {
   xs: 'px-2.5 py-1.5 text-xs min-h-[32px]', // Extra small - compact for dense UIs
-  sm: 'px-3 py-2 text-sm min-h-[36px]', // Small - refined size for secondary actions
-  md: 'px-4 py-2.5 text-sm min-h-[40px]', // Standard size - balanced and clean
-  lg: 'px-6 py-3 text-base min-h-[44px]', // Large size - for primary CTAs
+  sm: 'px-3 py-1.5 text-sm min-h-[34px]', // Small - refined size for secondary actions (reduced from py-2)
+  md: 'px-3 py-1.5 text-sm min-h-[36px]', // Standard size - more compact (reduced from px-4 py-2.5)
+  lg: 'px-4 py-2 text-sm min-h-[40px]', // Large size - refined (reduced from px-6 py-3 text-base)
 };
 
 function Button({

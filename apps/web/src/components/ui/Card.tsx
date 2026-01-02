@@ -130,11 +130,11 @@ export default function Card({
   // Get card padding - use theme config if available, otherwise use defaults
   const getCardPadding = () => {
     if (!cardPaddingConfig) {
-      return 'p-lg'; // Default padding: 24px (UX/UI improvements - Batch 5)
+      return 'p-4'; // Default padding: 16px (reduced from 24px for more compact UI)
     }
     // Use theme padding (sm, md, lg)
     const paddingSize = 'md'; // Default to md
-    const paddingValue = cardPaddingConfig[paddingSize] || cardPaddingConfig.md || '1.5rem';
+    const paddingValue = cardPaddingConfig[paddingSize] || cardPaddingConfig.md || '1rem'; // Reduced from 1.5rem
     return paddingValue;
   };
   
