@@ -28,8 +28,8 @@ export default function CompanyDetail({
   };
 
   const handleViewProjects = () => {
-    // TODO: Navigate to projects filtered by company when projects page is ready
-    router.push(`/${locale}/dashboard/projects?company_id=${company.id}`);
+    // Navigate to projects page filtered by company
+    router.push(`/${locale}/dashboard/projets/projets?company_id=${company.id}`);
   };
 
   return (

@@ -78,8 +78,10 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
   };
 
   const handleRefresh = () => {
-    // TODO: Implémenter le refresh
-    console.log('Refresh widget:', widgetLayout.id);
+    // Refresh widget data by invalidating React Query cache
+    if (queryClient) {
+      queryClient.invalidateQueries({ queryKey: ['widget', widgetLayout.id] });
+    }
   };
 
   const handleConfigChange = (newConfig: any) => {

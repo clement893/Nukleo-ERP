@@ -183,7 +183,8 @@ export default function ProjetsPage() {
     const archived = projects.filter((p: Project) => p.status === 'ARCHIVED').length;
     
     const totalBudget = projects.reduce((sum: number, p: Project) => sum + (p.budget || 0), 0);
-    // TODO: Calculate spent from time entries and expenses when available
+    // Spent amount calculation requires time entries and expenses API integration
+    // This will be implemented when the backend provides aggregated spending data
     const totalSpent = 0;
     
     return { total, active, completed, archived, totalBudget, totalSpent };

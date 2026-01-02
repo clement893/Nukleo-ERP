@@ -52,8 +52,8 @@ export default function QuickActions() {
       icon: <FileText className="w-5 h-5" />,
       color: 'from-green-500 to-green-600',
       onClick: () => {
-        // TODO: Open task modal
-        console.log('Create task');
+        // Navigate to tasks page - task creation can be done there
+        window.location.href = '/fr/dashboard/projets/taches';
         setIsOpen(false);
       },
     },
@@ -63,8 +63,12 @@ export default function QuickActions() {
       icon: <Search className="w-5 h-5" />,
       color: 'from-orange-500 to-orange-600',
       onClick: () => {
-        // TODO: Open command palette (Cmd+K)
-        console.log('Open search');
+        // Command palette functionality can be implemented with a dedicated component
+        // For now, focus on search input if available
+        const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
         setIsOpen(false);
       },
     },

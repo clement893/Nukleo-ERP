@@ -117,10 +117,11 @@ export default function DashboardReportsPage() {
   };
 
   const handlePreviewReport = (config: ReportConfig) => {
-    // NOTE: Preview functionality can be implemented by:
-    // 1. Creating a preview modal/dialog component
-    // 2. Generating a temporary report using reportsAPI.generate() with preview=true
-    // 3. Displaying the preview data in a read-only format
+    // Preview functionality implementation plan:
+    // 1. Create a preview modal/dialog component
+    // 2. Generate a temporary report using reportsAPI.generate() with preview=true
+    // 3. Display the preview data in a read-only format
+    // This feature is planned for future implementation
     // 4. Allowing user to adjust config before saving
     // For now, we'll create a new report directly
     logger.info('Report preview requested - creating report instead', { config });
@@ -210,10 +211,11 @@ export default function DashboardReportsPage() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else {
-        // NOTE: PDF and Excel exports require additional libraries or backend support
+        // PDF and Excel exports require additional libraries or backend support
         // For PDF: Use libraries like jsPDF or pdfkit, or call backend export endpoint
         // For Excel: Use libraries like xlsx or exceljs, or call backend export endpoint
-        // You can use the export API endpoint: POST /api/v1/exports/export
+        // Export API endpoint available: POST /api/v1/exports/export
+        // This feature is planned for future implementation
         logger.info('PDF/Excel export requires backend support or additional libraries', { format });
         // Export functionality - implement when export feature is needed:
         // - Use backend export API: POST /api/v1/exports/export

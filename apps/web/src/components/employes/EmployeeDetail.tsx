@@ -160,8 +160,8 @@ export default function EmployeeDetail({
             <div>
               <p className="text-sm text-muted-foreground">Vacances restantes</p>
               <p className="text-foreground">
-                {/* TODO: Calculer les vacances restantes depuis l'API */}
-                À calculer
+                {/* Vacation balance calculation requires API endpoint for employee vacation data */}
+                N/A
               </p>
             </div>
           </div>
