@@ -33,10 +33,16 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteOpportunities, 
   useCreateOpportunity, 
-  useUpdateOpportunity
+  useUpdateOpportunity,
+  useDeleteOpportunity
 } from '@/lib/query/opportunities';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI } from '@/lib/api/companies';
+import { opportunitiesAPI } from '@/lib/api/opportunities';
+import Dropdown from '@/components/ui/Dropdown';
+import OpportunityImportModal from '@/components/commercial/OpportunityImportModal';
+import { Trash2, Download, Upload, CheckSquare, Square } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 
@@ -57,6 +63,8 @@ function OpportunitiesContent() {
   // Mutations
   const createOpportunityMutation = useCreateOpportunity();
   const updateOpportunityMutation = useUpdateOpportunity();
+  const deleteOpportunityMutation = useDeleteOpportunity();
+  const queryClient = useQueryClient();
   
   // Flatten pages into single array
   const opportunities = useMemo(() => {
@@ -65,12 +73,14 @@ function OpportunitiesContent() {
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const [selectedOpportunities, setSelectedOpportunities] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterPipeline, setFilterPipeline] = useState<string[]>([]);
   const [filterCompany, setFilterCompany] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-
+  const [isExporting, setIsExporting] = useState(false);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
@@ -230,6 +240,154 @@ function OpportunitiesContent() {
     router.push(`/dashboard/commercial/opportunites/${opportunity.id}`);
   };
 
+  // Handle delete
+  const handleDelete = async (opportunityId: string, opportunityName: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'opportunité "${opportunityName}" ?\n\nCette action est irréversible.`)) {
+      return;
+    }
+
+    try {
+      await deleteOpportunityMutation.mutateAsync(opportunityId);
+      showToast({
+        message: 'Opportunité supprimée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle delete all selected
+  const handleDeleteSelected = async () => {
+    if (selectedOpportunities.size === 0) {
+      showToast({
+        message: 'Aucune opportunité sélectionnée',
+        type: 'warning',
+      });
+      return;
+    }
+
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedOpportunities.size} opportunité${selectedOpportunities.size > 1 ? 's' : ''} ?\n\nCette action est irréversible.`)) {
+      return;
+    }
+
+    try {
+      const deletePromises = Array.from(selectedOpportunities).map(id =>
+        deleteOpportunityMutation.mutateAsync(id)
+      );
+      await Promise.all(deletePromises);
+      setSelectedOpportunities(new Set());
+      showToast({
+        message: `${selectedOpportunities.size} opportunité${selectedOpportunities.size > 1 ? 's' : ''} supprimée${selectedOpportunities.size > 1 ? 's' : ''} avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle export
+  const handleExport = async (format: 'csv' | 'excel') => {
+    setIsExporting(true);
+    try {
+      if (format === 'excel') {
+        const blob = await opportunitiesAPI.export();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `opportunites_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        showToast({
+          message: 'Export Excel réussi',
+          type: 'success',
+        });
+      } else {
+        // CSV export
+        const csvData = filteredOpportunities.map(opp => ({
+          Nom: opp.name,
+          Description: opp.description || '',
+          Montant: opp.amount || 0,
+          Probabilité: opp.probability || 0,
+          'Date de clôture': opp.expected_close_date || '',
+          Statut: opp.status || '',
+          Entreprise: opp.company_name || '',
+          Pipeline: opp.pipeline_name || '',
+          Stade: opp.stage_name || '',
+        }));
+
+        const headers = Object.keys(csvData[0] || {});
+        const csvRows = [
+          headers.join(','),
+          ...csvData.map(row => headers.map(header => {
+            const value = row[header as keyof typeof row];
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+          }).join(','))
+        ];
+        const csv = csvRows.join('\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `opportunites_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        showToast({
+          message: 'Export CSV réussi',
+          type: 'success',
+        });
+      }
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'export',
+        type: 'error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Toggle selection
+  const toggleSelection = (opportunityId: string) => {
+    setSelectedOpportunities(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(opportunityId)) {
+        newSet.delete(opportunityId);
+      } else {
+        newSet.add(opportunityId);
+      }
+      return newSet;
+    });
+  };
+
+  // Toggle select all
+  const toggleSelectAll = () => {
+    if (selectedOpportunities.size === filteredOpportunities.length) {
+      setSelectedOpportunities(new Set());
+    } else {
+      setSelectedOpportunities(new Set(filteredOpportunities.map(opp => opp.id)));
+    }
+  };
+
+  // Handle import complete
+  const handleImportComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+  };
+
 
 
   if (loading) {
@@ -268,13 +426,46 @@ function OpportunitiesContent() {
               </h1>
               <p className="text-white/80 text-lg">Gérez votre pipeline de ventes</p>
             </div>
-            <Button 
-              className="bg-white text-[#523DC9] hover:bg-white/90"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle opportunité
-            </Button>
+            <div className="flex gap-2">
+              <Dropdown
+                trigger={
+                  <Button variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter
+                  </Button>
+                }
+                items={[
+                  {
+                    label: 'Exporter en Excel',
+                    onClick: () => handleExport('excel'),
+                    icon: <Download className="w-4 h-4" />,
+                    disabled: isExporting || filteredOpportunities.length === 0,
+                  },
+                  {
+                    label: 'Exporter en CSV',
+                    onClick: () => handleExport('csv'),
+                    icon: <Download className="w-4 h-4" />,
+                    disabled: isExporting || filteredOpportunities.length === 0,
+                  },
+                ]}
+                position="bottom"
+              />
+              <Button
+                variant="outline"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                onClick={() => setShowImportModal(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Importer
+              </Button>
+              <Button 
+                className="bg-white text-[#523DC9] hover:bg-white/90"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle opportunité
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -383,8 +574,26 @@ function OpportunitiesContent() {
                 />
               )}
 
+              {/* Bulk actions */}
+              {selectedOpportunities.size > 0 && (
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedOpportunities.size} sélectionnée{selectedOpportunities.size > 1 ? 's' : ''}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteSelected}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer
+                  </Button>
+                </div>
+              )}
+
               {/* View mode toggle */}
-              <div className="ml-auto flex gap-2">
+              <div className={selectedOpportunities.size > 0 ? '' : 'ml-auto flex gap-2'}>
                 <Button variant={viewMode === 'grid' ? undefined : 'outline'} onClick={() => setViewMode('grid')}>Grille</Button>
                 <Button variant={viewMode === 'list' ? undefined : 'outline'} onClick={() => setViewMode('list')}>Liste</Button>
               </div>
@@ -414,12 +623,36 @@ function OpportunitiesContent() {
             {filteredOpportunities.map((opp) => (
               <div
                 key={opp.id}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
-                onClick={() => handleRowClick(opp)}
+                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group relative"
+                onClick={(e) => {
+                  // Don't navigate if clicking on checkbox or dropdown
+                  if ((e.target as HTMLElement).closest('.selection-checkbox') || 
+                      (e.target as HTMLElement).closest('.dropdown-trigger')) {
+                    return;
+                  }
+                  handleRowClick(opp);
+                }}
               >
+                {/* Selection checkbox */}
+                <div className="absolute top-4 left-4 z-10">
+                  <button
+                    className="selection-checkbox p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelection(opp.id);
+                    }}
+                  >
+                    {selectedOpportunities.has(opp.id) ? (
+                      <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
+                  <div className="flex-1 ml-8">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#523DC9] transition-colors" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {opp.name}
                     </h3>
@@ -429,16 +662,39 @@ function OpportunitiesContent() {
                       </Badge>
                     )}
                   </div>
-                  <button 
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedOpportunity(opp);
-                      setShowEditModal(true);
-                    }}
-                  >
-                    <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  </button>
+                  <Dropdown
+                    trigger={
+                      <button 
+                        className="dropdown-trigger p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    }
+                    items={[
+                      {
+                        label: 'Voir les détails',
+                        onClick: () => handleRowClick(opp),
+                        icon: <Eye className="w-4 h-4" />,
+                      },
+                      {
+                        label: 'Modifier',
+                        onClick: () => {
+                          setSelectedOpportunity(opp);
+                          setShowEditModal(true);
+                        },
+                        icon: <Edit className="w-4 h-4" />,
+                      },
+                      { divider: true },
+                      {
+                        label: 'Supprimer',
+                        onClick: () => handleDelete(opp.id, opp.name),
+                        icon: <Trash2 className="w-4 h-4" />,
+                        variant: 'danger',
+                      },
+                    ]}
+                    position="bottom"
+                  />
                 </div>
 
                 {/* Value */}
@@ -500,13 +756,54 @@ function OpportunitiesContent() {
           </div>
         ) : (
           <div className="space-y-2">
+            {/* Select all header */}
+            {filteredOpportunities.length > 0 && (
+              <div className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 flex items-center gap-3">
+                <button
+                  onClick={toggleSelectAll}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                >
+                  {selectedOpportunities.size === filteredOpportunities.length ? (
+                    <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                  ) : (
+                    <Square className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedOpportunities.size > 0 
+                    ? `${selectedOpportunities.size} sélectionnée${selectedOpportunities.size > 1 ? 's' : ''}`
+                    : 'Sélectionner tout'}
+                </span>
+              </div>
+            )}
             {filteredOpportunities.map((opp) => (
               <div
                 key={opp.id}
-                className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group"
-                onClick={() => handleRowClick(opp)}
+                className="glass-card p-4 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer group relative"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('.selection-checkbox') || 
+                      (e.target as HTMLElement).closest('.dropdown-trigger')) {
+                    return;
+                  }
+                  handleRowClick(opp);
+                }}
               >
                 <div className="flex items-center gap-4">
+                  {/* Selection checkbox */}
+                  <button
+                    className="selection-checkbox p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelection(opp.id);
+                    }}
+                  >
+                    {selectedOpportunities.has(opp.id) ? (
+                      <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+
                   {/* Title & Stage */}
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-[#523DC9] transition-colors truncate">
@@ -536,17 +833,41 @@ function OpportunitiesContent() {
 
                   {/* Actions */}
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedOpportunity(opp);
-                        setShowEditModal(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <Dropdown
+                      trigger={
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="dropdown-trigger"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      }
+                      items={[
+                        {
+                          label: 'Voir les détails',
+                          onClick: () => handleRowClick(opp),
+                          icon: <Eye className="w-4 h-4" />,
+                        },
+                        {
+                          label: 'Modifier',
+                          onClick: () => {
+                            setSelectedOpportunity(opp);
+                            setShowEditModal(true);
+                          },
+                          icon: <Edit className="w-4 h-4" />,
+                        },
+                        { divider: true },
+                        {
+                          label: 'Supprimer',
+                          onClick: () => handleDelete(opp.id, opp.name),
+                          icon: <Trash2 className="w-4 h-4" />,
+                          variant: 'danger',
+                        },
+                      ]}
+                      position="bottom"
+                    />
                   </div>
                 </div>
               </div>
@@ -605,7 +926,12 @@ function OpportunitiesContent() {
         )}
       </Modal>
 
-
+      {/* Import Modal */}
+      <OpportunityImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={handleImportComplete}
+      />
     </PageContainer>
   );
 }

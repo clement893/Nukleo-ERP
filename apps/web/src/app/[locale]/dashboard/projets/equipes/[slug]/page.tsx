@@ -277,8 +277,9 @@ function TeamProjectManagementContent() {
       setTeam(foundTeam);
       
       // Charger les tâches de l'équipe
+      let teamTasks: ProjectTask[] = [];
       try {
-        const teamTasks = await projectTasksAPI.list({ team_id: foundTeam.id });
+        teamTasks = await projectTasksAPI.list({ team_id: foundTeam.id });
         setTasks(teamTasks);
       } catch (taskErr) {
         console.error('Error loading team tasks:', taskErr);
@@ -293,9 +294,9 @@ function TeamProjectManagementContent() {
         );
         
         // Convertir en Employee avec tâche en cours
-        const employeesWithTasks: Employee[] = teamEmployeesData.map(emp => {
-          const currentTask = tasks.find(
-            t => t.assignee_id === emp.id && t.status === 'in_progress'
+        const employeesWithTasks: Employee[] = teamEmployeesData.map((emp) => {
+          const currentTask = teamTasks.find(
+            (t) => t.assignee_id === emp.id && t.status === 'in_progress'
           );
           
           return {

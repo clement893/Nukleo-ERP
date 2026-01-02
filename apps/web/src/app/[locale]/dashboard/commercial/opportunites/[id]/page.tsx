@@ -365,10 +365,22 @@ export default function OpportunityDetailPage() {
                 <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                   Notes
                 </h3>
-                <div className="text-center py-12 text-muted-foreground">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune note pour cette opportunité.</p>
-                </div>
+                {opportunity.notes ? (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                      <p className="text-foreground whitespace-pre-wrap">{opportunity.notes}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Les notes peuvent être modifiées depuis le formulaire d'édition de l'opportunité.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Aucune note pour cette opportunité.</p>
+                    <p className="text-sm mt-2">Ajoutez des notes depuis le formulaire d'édition.</p>
+                  </div>
+                )}
               </Card>
             )}
           </div>

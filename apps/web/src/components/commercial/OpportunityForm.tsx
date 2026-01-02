@@ -9,7 +9,10 @@ import Textarea from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { companiesAPI, type Company } from '@/lib/api/companies';
+import { contactsAPI, type Contact } from '@/lib/api/contacts';
+import { usersAPI } from '@/lib/api';
 import { handleApiError } from '@/lib/errors/api';
+import MultiSelect from '@/components/ui/MultiSelect';
 
 interface OpportunityFormProps {
   opportunity?: Opportunity | null;
@@ -37,6 +40,8 @@ export default function OpportunityForm({
   const { showToast } = useToast();
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [users, setUsers] = useState<Array<{ id: number; name: string; email: string }>>([]);
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   
@@ -57,19 +62,41 @@ export default function OpportunityForm({
     assigned_to_id: opportunity?.assigned_to_id || null,
     opened_at: opportunity?.opened_at || null,
     closed_at: opportunity?.closed_at || null,
-    contact_ids: [],
+    contact_ids: opportunity?.contact_ids || [],
   });
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoadingData(true);
-        const [pipelinesData, companiesData] = await Promise.all([
+        const [pipelinesData, companiesData, contactsData, usersResponse] = await Promise.all([
           pipelinesAPI.list(0, 1000, true),
-          companiesAPI.list(0, 1000)
+          companiesAPI.list(0, 1000),
+          contactsAPI.list(0, 1000, true),
+          usersAPI.getUsers().catch(() => ({ data: { items: [] } }))
         ]);
         setPipelines(pipelinesData);
         setCompanies(companiesData);
+        setContacts(contactsData);
+        
+        // Extract users from response
+        let usersData: any[] = [];
+        if (Array.isArray(usersResponse?.data)) {
+          usersData = usersResponse.data;
+        } else if (usersResponse?.data?.items) {
+          usersData = usersResponse.data.items;
+        } else if (usersResponse?.data?.data) {
+          usersData = Array.isArray(usersResponse.data.data) ? usersResponse.data.data : [];
+        }
+        
+        setUsers(usersData.map((u: any) => {
+          const userId = typeof u.id === 'string' ? parseInt(u.id) : (u.id || 0);
+          return {
+            id: userId,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || u.name || `User ${userId}`,
+            email: u.email || '',
+          };
+        }).filter(u => u.id > 0));
         
         // Find selected pipeline
         if (formData.pipeline_id) {
@@ -216,6 +243,41 @@ export default function OpportunityForm({
           ]}
           disabled={loadingData}
         />
+
+        <Select
+          label="Assigné à"
+          value={formData.assigned_to_id?.toString() || ''}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              assigned_to_id: e.target.value ? parseInt(e.target.value) : null,
+            })
+          }
+          options={[
+            { value: '', label: 'Non assigné' },
+            ...users.map(u => ({ value: u.id.toString(), label: u.name }))
+          ]}
+          disabled={loadingData}
+        />
+
+        <div className="md:col-span-2">
+          <MultiSelect
+            label="Contacts"
+            options={contacts.map(c => ({
+              label: `${c.first_name} ${c.last_name}`.trim() || c.email || `Contact ${c.id}`,
+              value: c.id.toString(),
+            }))}
+            value={(formData.contact_ids || []).map(id => id.toString())}
+            onChange={(values) =>
+              setFormData({
+                ...formData,
+                contact_ids: values.map(v => parseInt(v)),
+              })
+            }
+            placeholder="Sélectionner des contacts"
+            disabled={loadingData}
+          />
+        </div>
 
         <Input
           label="Segment"
