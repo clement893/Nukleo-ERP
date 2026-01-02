@@ -9,7 +9,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Link, usePathname, useParams } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
+import { useParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';

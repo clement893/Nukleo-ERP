@@ -24,7 +24,6 @@ import {
   Plane,
   LayoutDashboard,
   ChevronDown,
-  ChevronRight,
 } from 'lucide-react';
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
 import { useState } from 'react';

@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, memo, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import { ErrorBoundary } from '@/components/errors';
 import EmployeePortalSidebar from '@/components/employes/EmployeePortalSidebar';
