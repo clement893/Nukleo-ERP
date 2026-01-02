@@ -863,7 +863,7 @@ export default function PipelineDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-5xl font-black text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h1 className="text-5xl font-black text-white font-nukleo">
                     {pipeline.name}
                   </h1>
                 </div>
