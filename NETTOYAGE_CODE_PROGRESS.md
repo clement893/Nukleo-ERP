@@ -13,7 +13,7 @@
 | **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
 | **Batch 3** | Correction `any` error handling | ✅ Terminé | 3 fichiers | 100% |
 | **Batch 4** | Optimisation hooks React | 🟡 En cours | ~50 fichiers | 6% |
-| **Batch 5** | Nettoyage TODOs obsolètes | 🟡 En cours | ~30 fichiers | 0% |
+| **Batch 5** | Nettoyage TODOs obsolètes | 🟡 En cours | ~30 fichiers | 20% |
 
 ---
 
@@ -138,9 +138,9 @@
 
 ## 📈 Métriques
 
-- **Fichiers traités:** 47/274 (17%)
-- **Lignes modifiées:** ~16,600 supprimées, ~270 modifiées
-- **Erreurs corrigées:** 35 console.log remplacés, 38 `any` corrigés
+- **Fichiers traités:** 53/274 (19%)
+- **Lignes modifiées:** ~16,600 supprimées, ~300 modifiées
+- **Erreurs corrigées:** 35 console.log remplacés, 38 `any` corrigés, 32 handlers optimisés, 9 TODOs nettoyés
 - **Temps écoulé:** ~15 min
 
 ---
