@@ -81,7 +81,7 @@
     "@storybook/addon-essentials": "^7.6.0",
     "@storybook/addon-interactions": "^7.6.0",
     "@storybook/addon-links": "^7.6.0",
-    "@storybook/nextjs": "^7.6.0",
+    "@storybook/nextjs": "^10.1.11",
     "@storybook/react": "^7.6.0",
     "@storybook/test": "^7.6.0",
     "@testing-library/jest-dom": "^6.9.1",
