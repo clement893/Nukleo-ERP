@@ -211,16 +211,17 @@ function Modal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className={clsx(
-        'fixed inset-0 z-50 flex items-center justify-center',
-        'p-0 md:p-4',
-        'bg-black/50 dark:bg-black/70',
-        'animate-fade-in', // Overlay fade-in animation
-        overlayClassName
-      )}
-      onClick={closeOnOverlayClick ? onClose : undefined}
-    >
+      <div
+        className={clsx(
+          'fixed inset-0 z-50 flex items-center justify-center',
+          'p-0 md:p-4',
+          'bg-black/50 dark:bg-black/70',
+          'animate-fade-in', // Overlay fade-in animation
+          overlayClassName
+        )}
+        style={{ overflow: 'auto' }}
+        onClick={closeOnOverlayClick ? onClose : undefined}
+      >
       <div
         ref={modalRef}
         className={clsx(
