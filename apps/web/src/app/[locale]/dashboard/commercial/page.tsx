@@ -421,26 +421,26 @@ export default function CommercialPage() {
           <div className="space-y-6">
             <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h3>
-              <div className="space-y-3">
-                <Link href="/dashboard/commercial/opportunites">
+              <div className="flex flex-col gap-3">
+                <Link href="/dashboard/commercial/opportunites" className="block">
                   <Button className="w-full justify-start hover-nukleo" variant="outline">
                     <Target className="w-4 h-4 mr-2" />
                     Nouvelle opportunité
                   </Button>
                 </Link>
-                <Link href="/dashboard/commercial/soumissions">
+                <Link href="/dashboard/commercial/soumissions" className="block">
                   <Button className="w-full justify-start hover-nukleo" variant="outline">
                     <FileText className="w-4 h-4 mr-2" />
                     Nouveau devis
                   </Button>
                 </Link>
-                <Link href="/dashboard/reseau/contacts">
+                <Link href="/dashboard/reseau/contacts" className="block">
                   <Button className="w-full justify-start hover-nukleo" variant="outline">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Ajouter un contact
                   </Button>
                 </Link>
-                <Link href="/dashboard/reseau/entreprises">
+                <Link href="/dashboard/reseau/entreprises" className="block">
                   <Button className="w-full justify-start hover-nukleo" variant="outline">
                     <Building2 className="w-4 h-4 mr-2" />
                     Ajouter une entreprise
