@@ -269,7 +269,7 @@ export default function TresorerieTransactionsTab() {
   return (
     <MotionDiv variant="slideUp" duration="normal">
       {/* Actions et Filtres */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Recherche */}
           <div className="flex-1">
@@ -365,7 +365,7 @@ export default function TresorerieTransactionsTab() {
       </Card>
 
       {/* Liste des Transactions */}
-      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+      <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Transactions ({filteredAndSortedTransactions.length})
@@ -380,7 +380,7 @@ export default function TresorerieTransactionsTab() {
                   <th className="text-left py-3 px-4 text-sm font-semibold">
                     <button
                       onClick={() => handleSort('date')}
-                      className="flex items-center gap-1 hover:text-[#523DC9]"
+                      className="flex items-center gap-1 hover:text-primary-500"
                     >
                       Date
                       <ArrowUpDown className="w-4 h-4" />
@@ -389,7 +389,7 @@ export default function TresorerieTransactionsTab() {
                   <th className="text-left py-3 px-4 text-sm font-semibold">
                     <button
                       onClick={() => handleSort('description')}
-                      className="flex items-center gap-1 hover:text-[#523DC9]"
+                      className="flex items-center gap-1 hover:text-primary-500"
                     >
                       Description
                       <ArrowUpDown className="w-4 h-4" />

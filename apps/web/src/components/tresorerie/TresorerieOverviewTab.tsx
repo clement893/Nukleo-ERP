@@ -106,7 +106,7 @@ export default function TresorerieOverviewTab({
   return (
     <MotionDiv variant="slideUp" duration="normal">
       {/* Filters */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />

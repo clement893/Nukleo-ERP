@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, Button, Badge, Switch } from '@/components/ui';
-import { Bell, Check, X, Trash2, Eye, EyeOff, RefreshCw, Loader2 } from 'lucide-react';
+import { Card, Button, Badge } from '@/components/ui';
+import { Bell, Check, Trash2, Eye, RefreshCw, Loader2 } from 'lucide-react';
 import { notificationsAPI } from '@/lib/api/notifications';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';

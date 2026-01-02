@@ -17,6 +17,10 @@ from app.schemas.project_comment import (
     ProjectCommentUpdate,
     ProjectCommentResponse,
 )
+from app.utils.notifications import create_notification_async
+from app.utils.notification_templates import NotificationTemplates
+from app.models.notification import NotificationType
+from app.core.logging import logger
 
 router = APIRouter(prefix="/project-comments", tags=["project-comments"])
 
@@ -150,6 +154,60 @@ async def create_comment(
     
     # Load relationships
     await db.refresh(comment, ["user"])
+    
+    # Create notifications for task comments
+    if comment_data.task_id and task:
+        try:
+            commenter_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.email
+            task_title = task.title or "Untitled Task"
+            
+            # Notify task assignee if different from commenter
+            assignee_id = getattr(task, 'assignee_id', None)
+            if assignee_id and assignee_id != current_user.id:
+                template = NotificationTemplates.task_comment(
+                    task_title=task_title,
+                    commenter_name=commenter_name,
+                    task_id=task.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=assignee_id,
+                    **template
+                )
+                logger.info(f"Created task comment notification for assignee {assignee_id}")
+            
+            # Notify task creator if different from commenter and assignee
+            creator_id = getattr(task, 'created_by_id', None)
+            if creator_id and creator_id != current_user.id and creator_id != assignee_id:
+                template = NotificationTemplates.task_comment(
+                    task_title=task_title,
+                    commenter_name=commenter_name,
+                    task_id=task.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=creator_id,
+                    **template
+                )
+                logger.info(f"Created task comment notification for creator {creator_id}")
+            
+            # Notify parent comment author if replying
+            if comment_data.parent_id and parent:
+                parent_author_id = parent.user_id
+                if parent_author_id and parent_author_id != current_user.id:
+                    await create_notification_async(
+                        db=db,
+                        user_id=parent_author_id,
+                        title="Réponse à votre commentaire",
+                        message=f"{commenter_name} a répondu à votre commentaire sur la tâche '{task_title}'.",
+                        notification_type=NotificationType.INFO,
+                        action_url=f"/dashboard/projects/tasks?task={task.id}",
+                        action_label="Voir le commentaire"
+                    )
+                    logger.info(f"Created reply notification for parent comment author {parent_author_id}")
+        except Exception as notif_error:
+            # Don't fail comment creation if notification fails
+            logger.error(f"Failed to create notification for comment {comment.id}: {notif_error}", exc_info=True)
     
     comment_dict = ProjectCommentResponse.model_validate(comment).model_dump()
     if comment.user:

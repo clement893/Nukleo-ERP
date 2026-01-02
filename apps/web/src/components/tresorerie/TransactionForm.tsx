@@ -49,7 +49,7 @@ export default function TransactionForm({
         bank_account_id: transaction.bank_account_id,
         type: transaction.type,
         amount: transaction.amount,
-        date: transaction.date ? transaction.date.split('T')[0] : (new Date().toISOString().split('T')[0] || ''),
+        date: transaction.date ? (transaction.date.split('T')[0] || '') : (new Date().toISOString().split('T')[0] || ''),
         description: transaction.description || '',
         notes: transaction.notes || null,
         category_id: transaction.category_id || null,

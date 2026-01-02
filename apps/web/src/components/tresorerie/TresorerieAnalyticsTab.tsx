@@ -168,7 +168,7 @@ export default function TresorerieAnalyticsTab() {
     return (
       <MotionDiv variant="slideUp" duration="normal">
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[#523DC9]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </MotionDiv>
     );
@@ -177,7 +177,7 @@ export default function TresorerieAnalyticsTab() {
   return (
     <MotionDiv variant="slideUp" duration="normal">
       {/* Filtres */}
-      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+      <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -203,7 +203,7 @@ export default function TresorerieAnalyticsTab() {
 
       {/* Métriques Avancées */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
               <TrendingUp className="w-5 h-5 text-green-600" />
@@ -218,7 +218,7 @@ export default function TresorerieAnalyticsTab() {
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
               <TrendingDown className="w-5 h-5 text-red-600" />
@@ -233,7 +233,7 @@ export default function TresorerieAnalyticsTab() {
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
               <DollarSign className="w-5 h-5 text-blue-600" />
@@ -248,7 +248,7 @@ export default function TresorerieAnalyticsTab() {
           </div>
         </Card>
 
-        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-5 rounded-xl border border-nukleo-lavender/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
               <Calendar className="w-5 h-5 text-purple-600" />
@@ -267,7 +267,7 @@ export default function TresorerieAnalyticsTab() {
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Évolution du Solde */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Évolution du Solde
           </h3>
@@ -285,7 +285,7 @@ export default function TresorerieAnalyticsTab() {
         </Card>
 
         {/* Répartition par Catégorie */}
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
           <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Répartition par Catégorie
           </h3>

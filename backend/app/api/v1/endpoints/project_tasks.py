@@ -604,11 +604,89 @@ async def update_task(
                 detail="Assignee not found"
             )
     
+    # Store old values for notifications
+    old_assignee_id = getattr(task, 'assignee_id', None)
+    old_status = task.status
+    project_id = getattr(task, 'project_id', None)
+    
+    # Get project if exists
+    project = None
+    if project_id:
+        result = await db.execute(select(Project).where(Project.id == project_id))
+        project = result.scalar_one_or_none()
+    
     for field, value in update_data.items():
         setattr(task, field, value)
     
     await db.commit()
     await db.refresh(task)
+    
+    # Create notifications
+    try:
+        # Notification for assignee change
+        new_assignee_id = getattr(task, 'assignee_id', None)
+        if 'assignee_id' in update_data and new_assignee_id and new_assignee_id != old_assignee_id:
+            if new_assignee_id != current_user.id:
+                project_name = project.name if project else None
+                template = NotificationTemplates.task_assigned(
+                    task_title=task.title or "Untitled Task",
+                    project_name=project_name,
+                    task_id=task.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=new_assignee_id,
+                    **template
+                )
+                logger.info(f"Created task assignment notification for user {new_assignee_id}")
+            
+            # Notify old assignee if they were removed
+            if old_assignee_id and old_assignee_id != new_assignee_id and old_assignee_id != current_user.id:
+                await create_notification_async(
+                    db=db,
+                    user_id=old_assignee_id,
+                    title="Tâche réassignée",
+                    message=f"La tâche '{task.title or 'Untitled Task'}' vous a été retirée.",
+                    notification_type=NotificationType.INFO,
+                    action_url=f"/dashboard/projects/tasks?task={task.id}",
+                    action_label="Voir la tâche"
+                )
+        
+        # Notification for status change to COMPLETED
+        if 'status' in update_data and task.status == TaskStatus.COMPLETED and old_status != TaskStatus.COMPLETED:
+            # Notify creator if different from current user
+            creator_id = getattr(task, 'created_by_id', None)
+            if creator_id and creator_id != current_user.id:
+                completer_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.email
+                template = NotificationTemplates.task_completed(
+                    task_title=task.title or "Untitled Task",
+                    completer_name=completer_name,
+                    task_id=task.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=creator_id,
+                    **template
+                )
+                logger.info(f"Created task completion notification for creator {creator_id}")
+            
+            # Notify assignee if different from current user and creator
+            if new_assignee_id and new_assignee_id != current_user.id and new_assignee_id != creator_id:
+                completer_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.email
+                template = NotificationTemplates.task_completed(
+                    task_title=task.title or "Untitled Task",
+                    completer_name=completer_name,
+                    task_id=task.id
+                )
+                await create_notification_async(
+                    db=db,
+                    user_id=new_assignee_id,
+                    **template
+                )
+                logger.info(f"Created task completion notification for assignee {new_assignee_id}")
+    except Exception as notif_error:
+        # Don't fail task update if notification fails
+        logger.error(f"Failed to create notification for task {task.id} update: {notif_error}", exc_info=True)
     
     return task
 
