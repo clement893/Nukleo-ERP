@@ -241,9 +241,6 @@ export default function Drawer({
           'transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
           className
         )}
-        style={{
-          animation: 'slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
