@@ -48,6 +48,19 @@ class InvitationService:
         self.db.add(invitation)
         await self.db.commit()
         await self.db.refresh(invitation)
+        
+        # Load relationships for response
+        from sqlalchemy.orm import selectinload
+        result = await self.db.execute(
+            select(Invitation)
+            .options(
+                selectinload(Invitation.invited_by),
+                selectinload(Invitation.team),
+                selectinload(Invitation.role)
+            )
+            .where(Invitation.id == invitation.id)
+        )
+        invitation = result.scalar_one()
 
         # Send invitation email
         await self._send_invitation_email(invitation)

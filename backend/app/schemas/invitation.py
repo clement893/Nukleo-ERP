@@ -5,7 +5,7 @@ Pydantic schemas for invitations
 
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class InvitationBase(BaseModel):
@@ -37,6 +37,58 @@ class InvitationResponse(InvitationBase):
     invited_by: Optional[Dict[str, Any]] = None
 
     model_config = {"from_attributes": True}
+    
+    @field_validator("invited_by", mode="before")
+    @classmethod
+    def convert_invited_by_to_dict(cls, v: Any) -> Optional[Dict[str, Any]]:
+        """Convert User object to dictionary"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return v
+        # It's a SQLAlchemy User object
+        if hasattr(v, "id"):
+            return {
+                "id": getattr(v, "id", None),
+                "email": getattr(v, "email", None),
+                "first_name": getattr(v, "first_name", None),
+                "last_name": getattr(v, "last_name", None),
+            }
+        return v
+    
+    @field_validator("team", mode="before")
+    @classmethod
+    def convert_team_to_dict(cls, v: Any) -> Optional[Dict[str, Any]]:
+        """Convert Team object to dictionary"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return v
+        # It's a SQLAlchemy Team object
+        if hasattr(v, "id"):
+            return {
+                "id": getattr(v, "id", None),
+                "name": getattr(v, "name", None),
+                "slug": getattr(v, "slug", None),
+            }
+        return v
+    
+    @field_validator("role", mode="before")
+    @classmethod
+    def convert_role_to_dict(cls, v: Any) -> Optional[Dict[str, Any]]:
+        """Convert Role object to dictionary"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return v
+        # It's a SQLAlchemy Role object
+        if hasattr(v, "id"):
+            return {
+                "id": getattr(v, "id", None),
+                "name": getattr(v, "name", None),
+                "slug": getattr(v, "slug", None),
+            }
+        return v
 
 
 class InvitationAccept(BaseModel):
