@@ -4,16 +4,18 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import { Button, Alert, Loading, Badge, Card, Input } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
-import { type Client, type ClientCreate, type ClientUpdate } from '@/lib/api/clients';
+import { type Client, type ClientCreate, type ClientUpdate, ClientStatus } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import ClientForm from '@/components/projects/ClientForm';
 import ClientAvatar from '@/components/projects/ClientAvatar';
+import { companiesAPI, type Company } from '@/lib/api/companies';
+import { projectsAPI, type Project } from '@/lib/api/projects';
 import { 
   Plus, 
   Search,
@@ -21,7 +23,9 @@ import {
   Users,
   TrendingUp,
   ExternalLink,
-  Briefcase
+  Briefcase,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -54,12 +58,116 @@ function ClientsContent() {
     return clientsData?.pages.flat() || [];
   }, [clientsData]);
   
+  // State for companies (for logos) and projects
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [projectsByClient, setProjectsByClient] = useState<Record<number, Project[]>>({});
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<Record<number, boolean>>({});
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
+  
+  // Load companies for logos
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        setLoadingCompanies(true);
+        const allCompanies = await companiesAPI.list(0, 1000);
+        setCompanies(allCompanies);
+      } catch (error) {
+        console.error('Error loading companies:', error);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+    loadCompanies();
+  }, []);
+  
+  // Load projects for each client
+  useEffect(() => {
+    const loadProjects = async () => {
+      if (clients.length === 0) return;
+      
+      try {
+        setLoadingProjects(true);
+        const projectsMap: Record<number, Project[]> = {};
+        
+        // Load all projects and group by client_id
+        const allProjects = await projectsAPI.list(0, 1000);
+        allProjects.forEach(project => {
+          if (project.client_id) {
+            if (!projectsMap[project.client_id]) {
+              projectsMap[project.client_id] = [];
+            }
+            projectsMap[project.client_id].push(project);
+          }
+        });
+        
+        setProjectsByClient(projectsMap);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    loadProjects();
+  }, [clients]);
+  
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.status-dropdown-container')) {
+        setStatusDropdownOpen({});
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Get logo URL for a client by matching company name
+  const getClientLogo = useCallback((client: Client): string | null => {
+    const company = companies.find(c => 
+      c.name.toLowerCase() === client.company_name.toLowerCase() ||
+      c.name.toLowerCase().includes(client.company_name.toLowerCase()) ||
+      client.company_name.toLowerCase().includes(c.name.toLowerCase())
+    );
+    return company?.logo_url || null;
+  }, [companies]);
+  
+  // Get projects for a client
+  const getClientProjects = useCallback((clientId: number): Project[] => {
+    return projectsByClient[clientId] || [];
+  }, [projectsByClient]);
+  
+  // Handle status change
+  const handleStatusChange = useCallback(async (client: Client, newStatus: ClientStatus) => {
+    try {
+      await updateClientMutation.mutateAsync({
+        id: client.id,
+        data: { status: newStatus },
+      });
+      setStatusDropdownOpen(prev => ({ ...prev, [client.id]: false }));
+      showToast({
+        message: `Statut changé à ${getStatusLabel(newStatus.toLowerCase())}`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du changement de statut',
+        type: 'error',
+      });
+    }
+  }, [updateClientMutation, showToast]);
   
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -171,7 +279,8 @@ function ClientsContent() {
 
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
       case 'active': return 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700';
       case 'inactive': return 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800/30 dark:text-gray-400 dark:border-gray-700';
       case 'maintenance': return 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700';
@@ -180,13 +289,20 @@ function ClientsContent() {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
       case 'active': return 'Actif';
       case 'inactive': return 'Inactif';
       case 'maintenance': return 'Maintenance';
       default: return status;
     }
   };
+  
+  const statusOptions: { value: ClientStatus; label: string }[] = [
+    { value: 'ACTIVE', label: 'Actif' },
+    { value: 'INACTIVE', label: 'Inactif' },
+    { value: 'MAINTENANCE', label: 'Maintenance' },
+  ];
 
   if (loading) {
     return (
@@ -366,96 +482,250 @@ function ClientsContent() {
           </Card>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredClients.map((client) => (
-              <div
-                key={client.id}
-                onClick={() => openDetailPage(client)}
-                className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-101 hover:border-[#523DC9]/40 transition-all duration-200 cursor-pointer"
-              >
-                {/* Logo + Status */}
-                <div className="flex items-start justify-between mb-4">
-                  <ClientAvatar client={client} size="lg" />
-                  <Badge className={getStatusColor(client.status || 'active')}>
-                    {getStatusLabel(client.status || 'active')}
-                  </Badge>
-                </div>
+            {filteredClients.map((client) => {
+              const logoUrl = getClientLogo(client);
+              const projects = getClientProjects(client.id);
+              const isDropdownOpen = statusDropdownOpen[client.id] || false;
+              
+              return (
+                <div
+                  key={client.id}
+                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 relative"
+                >
+                  {/* Logo + Status Dropdown */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {logoUrl ? (
+                        <img 
+                          src={logoUrl} 
+                          alt={`${client.company_name} logo`}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
+                            if (fallback) fallback.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`logo-fallback ${logoUrl ? 'hidden' : ''}`}>
+                        <ClientAvatar client={client} size="lg" />
+                      </div>
+                    </div>
+                    
+                    {/* Status Dropdown */}
+                    <div className="relative status-dropdown-container">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatusDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
+                        }}
+                        className="relative"
+                      >
+                        <Badge className={`${getStatusColor(client.status || 'ACTIVE')} cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1`}>
+                          {getStatusLabel(client.status || 'ACTIVE')}
+                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                        </Badge>
+                      </button>
+                      
+                      {isDropdownOpen && (
+                        <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                          {statusOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(client, option.value);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
+                                client.status === option.value ? 'bg-gray-50 dark:bg-gray-700/50' : ''
+                              }`}
+                            >
+                              <span>{option.label}</span>
+                              {client.status === option.value && (
+                                <Check className="w-4 h-4 text-[#523DC9]" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                {/* Nom + Type */}
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  {client.company_name}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {client.type || 'Client'}
-                </p>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Projets</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {client.project_count || 0}
+                  {/* Nom + Type */}
+                  <div onClick={() => openDetailPage(client)} className="cursor-pointer">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {client.company_name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      {client.type || 'Client'}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contacts</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      0
-                    </p>
+
+                  {/* Projects List */}
+                  {projects.length > 0 && (
+                    <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">Projets :</p>
+                      <div className="space-y-1">
+                        {projects.slice(0, 3).map((project) => (
+                          <div 
+                            key={project.id}
+                            className="text-sm text-gray-700 dark:text-gray-300 truncate flex items-center gap-1"
+                            title={project.name}
+                          >
+                            <Briefcase className="w-3 h-3 flex-shrink-0 text-[#523DC9]" />
+                            <span className="truncate">{project.name}</span>
+                          </div>
+                        ))}
+                        {projects.length > 3 && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            +{projects.length - 3} autre{projects.length - 3 > 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Projets</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {client.project_count || projects.length || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contacts</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        0
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                {/* Contact Info - Not available in Client type */}
-                <div className="space-y-2">
-                  {/* Contact information would need to be fetched separately */}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <Card className="glass-card rounded-xl border border-[#A7A2CF]/20">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredClients.map((client) => (
-                <div
-                  key={client.id}
-                  onClick={() => openDetailPage(client)}
-                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Logo */}
-                    <ClientAvatar client={client} size="md" />
-
-                    {/* Infos */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                          {client.company_name}
-                        </h3>
-                        <Badge className={getStatusColor(client.status || 'active')}>
-                          {getStatusLabel(client.status || 'active')}
-                        </Badge>
+              {filteredClients.map((client) => {
+                const logoUrl = getClientLogo(client);
+                const projects = getClientProjects(client.id);
+                const isDropdownOpen = statusDropdownOpen[client.id] || false;
+                
+                return (
+                  <div
+                    key={client.id}
+                    className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors relative"
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Logo */}
+                      {logoUrl ? (
+                        <img 
+                          src={logoUrl} 
+                          alt={`${client.company_name} logo`}
+                          className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={logoUrl ? 'hidden' : ''}>
+                        <ClientAvatar client={client} size="md" />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {client.type || 'Client'}
-                      </p>
+
+                      {/* Infos */}
+                      <div className="flex-1 min-w-0" onClick={() => openDetailPage(client)}>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                            {client.company_name}
+                          </h3>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
+                          {client.type || 'Client'}
+                        </p>
+                        {projects.length > 0 && (
+                          <div className="flex items-center gap-2 flex-wrap mt-1">
+                            {projects.slice(0, 2).map((project) => (
+                              <span 
+                                key={project.id}
+                                className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1"
+                                title={project.name}
+                              >
+                                <Briefcase className="w-3 h-3 text-[#523DC9]" />
+                                <span className="truncate max-w-[150px]">{project.name}</span>
+                              </span>
+                            ))}
+                            {projects.length > 2 && (
+                              <span className="text-xs text-gray-500 dark:text-gray-500">
+                                +{projects.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Status Dropdown */}
+                      <div className="relative status-dropdown-container">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setStatusDropdownOpen(prev => ({ ...prev, [client.id]: !prev[client.id] }));
+                          }}
+                          className="relative"
+                        >
+                          <Badge className={`${getStatusColor(client.status || 'ACTIVE')} cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1`}>
+                            {getStatusLabel(client.status || 'ACTIVE')}
+                            <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                          </Badge>
+                        </button>
+                        
+                        {isDropdownOpen && (
+                          <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                            {statusOptions.map((option) => (
+                              <button
+                                key={option.value}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(client, option.value);
+                                }}
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
+                                  client.status === option.value ? 'bg-gray-50 dark:bg-gray-700/50' : ''
+                                }`}
+                              >
+                                <span>{option.label}</span>
+                                {client.status === option.value && (
+                                  <Check className="w-4 h-4 text-[#523DC9]" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stats */}
+                      <div className="hidden md:flex items-center gap-6 text-sm">
+                        <div className="text-center">
+                          <p className="font-semibold text-gray-900 dark:text-white">{client.project_count || projects.length || 0}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Projets</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-semibold text-gray-900 dark:text-white">0</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Contacts</p>
+                        </div>
+                      </div>
+
+                      {/* Arrow */}
+                      <ExternalLink 
+                        className="w-5 h-5 text-gray-400 flex-shrink-0 cursor-pointer" 
+                        onClick={() => openDetailPage(client)}
+                      />
                     </div>
-
-                    {/* Stats */}
-                    <div className="hidden md:flex items-center gap-6 text-sm">
-                      <div className="text-center">
-                        <p className="font-semibold text-gray-900 dark:text-white">{client.project_count || 0}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Projets</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold text-gray-900 dark:text-white">0</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Contacts</p>
-                      </div>
-                    </div>
-
-                    {/* Arrow */}
-                    <ExternalLink className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         )}
