@@ -164,7 +164,7 @@ export default function ClientDetailPage() {
               
               {/* Infos */}
               <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold text-[#523DC9] mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h1 className="text-4xl md:text-5xl font-bold text-primary-500 mb-3 font-nukleo">
                   {client.company_name}
                 </h1>
                 <p className="text-xl text-foreground/80 mb-4">
@@ -220,13 +220,13 @@ export default function ClientDetailPage() {
                   onClick={() => setActiveTab(tab.key as any)}
                   className={`px-6 py-3 font-medium transition-all relative ${
                     activeTab === tab.key
-                      ? 'text-[#523DC9]'
+                      ? 'text-primary-500'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {tab.label}
                   {activeTab === tab.key && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-nukleo-gradient" />
                   )}
                 </button>
               ))}
@@ -239,7 +239,7 @@ export default function ClientDetailPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Informations */}
                 <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                     Informations
                   </h3>
                   <div className="space-y-4">
@@ -250,7 +250,7 @@ export default function ClientDetailPage() {
 
                 {/* Description */}
                 <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                     Description
                   </h3>
                   <p className="text-foreground/80 leading-relaxed">
@@ -272,7 +272,7 @@ export default function ClientDetailPage() {
 
             {activeTab === 'projects' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Projets ({projects.length})
                 </h3>
                 {projects.length === 0 ? (
@@ -307,7 +307,7 @@ export default function ClientDetailPage() {
 
             {activeTab === 'contacts' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Contacts ({contacts.length})
                 </h3>
                 {contacts.length === 0 ? (
@@ -324,7 +324,7 @@ export default function ClientDetailPage() {
                         className="block p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full overflow-hidden bg-[#523DC9]/10 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-primary-500/10 flex items-center justify-center">
                             {contact.photo_url ? (
                               <img 
                                 src={String(contact.photo_url)} 
@@ -332,7 +332,7 @@ export default function ClientDetailPage() {
                                 className="w-full h-full object-cover" 
                               />
                             ) : (
-                              <span className="text-[#523DC9] font-semibold">
+                              <span className="text-primary-500 font-semibold">
                                 {String(contact.first_name?.[0] || '')}{String(contact.last_name?.[0] || '')}
                               </span>
                             )}
@@ -358,7 +358,7 @@ export default function ClientDetailPage() {
 
             {activeTab === 'documents' && (
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Documents
                 </h3>
                 <div className="text-center py-12 text-muted-foreground">

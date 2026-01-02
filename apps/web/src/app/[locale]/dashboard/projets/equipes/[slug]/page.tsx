@@ -79,9 +79,9 @@ function TaskCard({ task, isDragging }: { task: ProjectTask; isDragging?: boolea
       {...listeners}
       className="cursor-grab active:cursor-grabbing touch-none"
     >
-      <Card className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-md transition-all duration-200 group mb-2">
+      <Card className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group mb-2">
         <div className="flex items-start justify-between mb-2">
-          <h4 className="font-semibold text-sm group-hover:text-[#523DC9] transition-colors line-clamp-2 flex-1">
+          <h4 className="font-semibold text-sm group-hover:text-primary-500 transition-colors line-clamp-2 flex-1">
             {task.title}
           </h4>
           {task.priority && (
@@ -120,7 +120,7 @@ function DropZone({ id, children, className }: { id: string; children: React.Rea
   return (
     <div
       ref={setNodeRef}
-      className={`${className || ''} ${isOver ? 'ring-2 ring-[#523DC9] bg-[#523DC9]/5 transition-all' : ''}`}
+      className={`${className || ''} ${isOver ? 'ring-2 ring-primary-500 bg-primary-500/5 transition-all' : ''}`}
     >
       {children}
     </div>
@@ -170,8 +170,8 @@ function EmployeeCard({
       ref={setNodeRef}
       className={`glass-card p-4 rounded-xl border transition-all ${
         isOver 
-          ? 'border-[#523DC9] bg-[#523DC9]/5 scale-105 ring-2 ring-[#523DC9]' 
-          : 'border-[#A7A2CF]/20'
+          ? 'border-primary-500 bg-primary-500/5 scale-105 ring-2 ring-primary-500' 
+          : 'border-nukleo-lavender/20'
       }`}
     >
       <div className="flex items-center gap-3 mb-3">

@@ -29,6 +29,7 @@ import {
 import { handleApiError } from '@/lib/errors/api';
 import { useAuthStore } from '@/lib/store';
 import { logger } from '@/lib/logger';
+import { checkMySuperAdminStatus } from '@/lib/api/admin';
 
 export default function MesDepenses() {
   const searchParams = useSearchParams();
@@ -36,6 +37,7 @@ export default function MesDepenses() {
   const employeeId = employeeIdParam ? parseInt(employeeIdParam) : undefined;
   const { user } = useAuthStore();
   const { showToast } = useToast();
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
   
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<ExpenseAccount[]>([]);
@@ -79,7 +81,19 @@ export default function MesDepenses() {
     loadExpenses();
     loadEmployees();
     loadCurrentEmployee();
+    checkSuperAdminStatus();
   }, [employeeId, statusFilter]);
+
+  const checkSuperAdminStatus = async () => {
+    if (!user?.email) return;
+    try {
+      const status = await checkMySuperAdminStatus();
+      setIsSuperAdmin(status.is_superadmin || false);
+    } catch (error) {
+      logger.error('Error checking superadmin status', error);
+      setIsSuperAdmin(false);
+    }
+  };
 
   const loadCurrentEmployee = async () => {
     if (!user?.id) return;
@@ -445,7 +459,7 @@ export default function MesDepenses() {
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
-  const isAdmin = user?.is_admin || false;
+  const isAdmin = (user?.is_admin || isSuperAdmin) || false;
   const totalAmount = expenses.reduce((sum, e) => sum + parseFloat(e.total_amount || '0'), 0);
   const approvedAmount = expenses
     .filter(e => e.status === 'approved')
