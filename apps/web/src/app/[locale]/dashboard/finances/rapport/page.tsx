@@ -10,7 +10,6 @@ import { Badge, Button, Card } from '@/components/ui';
 import { projectsAPI } from '@/lib/api/projects';
 import { employeesAPI } from '@/lib/api/employees';
 import { logger } from '@/lib/logger';
-import { logger } from '@/lib/logger';
 
 interface MonthlyData {
   month: string;
