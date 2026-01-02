@@ -383,4 +383,120 @@ export const tresorerieAPI = {
     });
     return extractApiData(response) || [];
   },
+
+  // Import
+  importTransactions: async (
+    file: File,
+    params?: {
+      bank_account_id?: number;
+      dry_run?: boolean;
+    }
+  ): Promise<{
+    success: boolean;
+    total_rows: number;
+    valid_rows: number;
+    invalid_rows: number;
+    created_count: number;
+    errors: Array<{ row: any; error: string }>;
+    warnings: Array<{ row: any; warning: string }>;
+    instructions?: string;
+    transactions?: Array<{
+      id: number;
+      type: string;
+      amount: number;
+      date: string;
+      description: string;
+    }>;
+    dry_run?: boolean;
+    preview?: any[];
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const queryParams: Record<string, string> = {};
+    if (params?.bank_account_id) {
+      queryParams.bank_account_id = params.bank_account_id.toString();
+    }
+    if (params?.dry_run !== undefined) {
+      queryParams.dry_run = params.dry_run.toString();
+    }
+
+    const response = await apiClient.post<{
+      success?: boolean;
+      total_rows: number;
+      valid_rows: number;
+      invalid_rows: number;
+      created_count?: number;
+      errors: Array<{ row: any; error: string }>;
+      warnings: Array<{ row: any; warning: string }>;
+      instructions?: string;
+      transactions?: Array<{
+        id: number;
+        type: string;
+        amount: number;
+        date: string;
+        description: string;
+      }>;
+      dry_run?: boolean;
+      preview?: any[];
+    }>('/v1/finances/tresorerie/import', formData, {
+      params: queryParams,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const data = extractApiData(response);
+    if (!data) {
+      throw new Error('Failed to import transactions');
+    }
+    return {
+      success: data.success ?? true,
+      total_rows: data.total_rows,
+      valid_rows: data.valid_rows,
+      invalid_rows: data.invalid_rows,
+      created_count: data.created_count ?? 0,
+      errors: data.errors || [],
+      warnings: data.warnings || [],
+      instructions: data.instructions,
+      transactions: data.transactions,
+      dry_run: data.dry_run,
+      preview: data.preview,
+    };
+  },
+
+  downloadImportTemplate: async (format: 'zip' | 'csv' | 'excel' = 'zip'): Promise<Blob> => {
+    // Use axios directly for blob responses
+    const axios = (await import('axios')).default;
+    const { getApiUrl } = await import('../api');
+    const { TokenStorage } = await import('../auth/tokenStorage');
+    
+    const apiUrl = getApiUrl();
+    const token = typeof window !== 'undefined' ? TokenStorage.getToken() : null;
+    
+    const response = await axios.get(`${apiUrl}/api/v1/finances/tresorerie/import/template`, {
+      params: { format },
+      responseType: 'blob',
+      withCredentials: true,
+      headers: token ? {
+        'Authorization': `Bearer ${token}`,
+      } : {},
+    });
+    
+    // Check if response is actually an error (blob containing JSON error)
+    if (response.status >= 400) {
+      const text = await (response.data as Blob).text();
+      try {
+        const errorData = JSON.parse(text);
+        throw new Error(errorData.detail || 'Failed to download template');
+      } catch (e) {
+        if (e instanceof Error && e.message !== 'Failed to download template') {
+          throw e;
+        }
+        throw new Error('Failed to download template');
+      }
+    }
+    
+    return response.data as Blob;
+  },
 };

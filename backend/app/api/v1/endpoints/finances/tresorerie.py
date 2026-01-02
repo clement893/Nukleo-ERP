@@ -3,12 +3,15 @@ Finances - Trésorerie Endpoints
 API endpoints for treasury management (cashflow, transactions, bank accounts)
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
+import zipfile
+import os
+from io import BytesIO
 
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -1477,4 +1480,559 @@ async def get_treasury_alerts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error getting treasury alerts"
+        )
+
+
+# ==================== Import Endpoints ====================
+
+def normalize_field_name(field_name: str) -> str:
+    """Normalize field name for flexible matching"""
+    if not field_name:
+        return ""
+    # Remove accents, lowercase, strip
+    import unicodedata
+    normalized = unicodedata.normalize('NFD', field_name.lower().strip())
+    normalized = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    return normalized.replace(' ', '_').replace('-', '_')
+
+
+def get_field_value(row_data: Dict[str, Any], possible_names: List[str]) -> Optional[Any]:
+    """Get field value from row using multiple possible column names"""
+    for name in possible_names:
+        normalized_name = normalize_field_name(name)
+        for key, value in row_data.items():
+            if normalize_field_name(key) == normalized_name:
+                return value if value else None
+    return None
+
+
+@router.post("/import")
+async def import_transactions(
+    file: UploadFile = File(...),
+    bank_account_id: Optional[int] = Query(None, description="Default bank account ID for transactions"),
+    dry_run: bool = Query(False, description="Dry run mode (validate without importing)"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Import transactions from CSV, Excel, or ZIP file
+    
+    Supports three formats:
+    1. CSV file (.csv) - Simple CSV with transaction data
+    2. Excel file (.xlsx, .xls) - Excel file with transaction data
+    3. ZIP file (.zip) containing:
+       - transactions.xlsx or transactions.csv (transaction data)
+       - INSTRUCTIONS.txt (import instructions)
+    
+    Required columns (case-insensitive, accent-insensitive):
+    - Type: type, type_transaction, entree_sortie, entry_exit
+      Values: 'entry', 'exit', 'entree', 'sortie', 'entrée', 'sortie'
+    - Amount: amount, montant, montant_transaction
+    - Date: date, date_transaction, date_operation
+    - Description: description, libelle, libellé, description_transaction
+    
+    Optional columns:
+    - Bank Account: bank_account, compte_bancaire, bank_account_name, compte
+    - Category: category, categorie, category_name, nom_categorie
+    - Status: status, statut, etat, state
+      Values: 'confirmed', 'pending', 'projected', 'confirme', 'en_attente', 'projete'
+    - Payment Method: payment_method, methode_paiement, moyen_paiement
+    - Reference: reference, reference_number, numero_reference, numero
+    - Notes: notes, remarques, commentaires
+    
+    Returns:
+        Import results with created transactions, errors, and warnings
+    """
+    try:
+        from app.services.import_service import ImportService
+        
+        # Read file content
+        file_content = await file.read()
+        filename = file.filename or ""
+        file_ext = os.path.splitext(filename.lower())[1]
+        
+        excel_content = None
+        csv_content = None
+        instructions_content = None
+        
+        # Check if it's a ZIP file
+        if file_ext == '.zip':
+            try:
+                with zipfile.ZipFile(BytesIO(file_content), 'r') as zip_ref:
+                    for file_info in zip_ref.namelist():
+                        file_name_lower = file_info.lower()
+                        
+                        # Find Excel file
+                        if file_name_lower.endswith(('.xlsx', '.xls')):
+                            if excel_content is None:
+                                excel_content = zip_ref.read(file_info)
+                            else:
+                                logger.warning(f"Multiple Excel files found in ZIP, using first: {file_info}")
+                        
+                        # Find CSV file
+                        elif file_name_lower.endswith('.csv'):
+                            if csv_content is None:
+                                csv_content = zip_ref.read(file_info)
+                            else:
+                                logger.warning(f"Multiple CSV files found in ZIP, using first: {file_info}")
+                        
+                        # Find instructions file
+                        elif 'instructions' in file_name_lower and file_name_lower.endswith('.txt'):
+                            instructions_content = zip_ref.read(file_info).decode('utf-8')
+                    
+                    if excel_content is None and csv_content is None:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="No Excel or CSV file found in ZIP. Please include transactions.xlsx or transactions.csv"
+                        )
+                    
+                    file_content = excel_content if excel_content else csv_content
+                    logger.info(f"Extracted {'Excel' if excel_content else 'CSV'} from ZIP")
+                    
+            except zipfile.BadZipFile:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid ZIP file format"
+                )
+            except Exception as e:
+                logger.error(f"Error extracting ZIP: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Error processing ZIP file: {str(e)}"
+                )
+        
+        # Determine format
+        if file_ext == '.zip':
+            format_type = 'excel' if excel_content else 'csv'
+        elif file_ext in ['.xlsx', '.xls']:
+            format_type = 'excel'
+        elif file_ext == '.csv':
+            format_type = 'csv'
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unsupported file format. Supported: CSV, Excel (.xlsx, .xls), or ZIP"
+            )
+        
+        # Validate transaction data function
+        def validate_transaction(row_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
+            """Validate transaction row"""
+            # Check required fields
+            transaction_type = get_field_value(row_data, [
+                'type', 'type_transaction', 'entree_sortie', 'entry_exit'
+            ])
+            if not transaction_type:
+                return False, "Missing required field: type"
+            
+            # Normalize type
+            type_str = str(transaction_type).lower().strip()
+            if type_str in ['entree', 'entrée', 'entry', 'entrées']:
+                transaction_type = 'entry'
+            elif type_str in ['sortie', 'exit', 'sorties']:
+                transaction_type = 'exit'
+            elif type_str not in ['entry', 'exit']:
+                return False, f"Invalid type: {transaction_type}. Must be 'entry' or 'exit'"
+            
+            amount = get_field_value(row_data, ['amount', 'montant', 'montant_transaction'])
+            if not amount:
+                return False, "Missing required field: amount"
+            
+            try:
+                amount_decimal = Decimal(str(amount))
+                if amount_decimal <= 0:
+                    return False, "Amount must be greater than 0"
+            except (ValueError, TypeError):
+                return False, f"Invalid amount: {amount}"
+            
+            date_str = get_field_value(row_data, ['date', 'date_transaction', 'date_operation'])
+            if not date_str:
+                return False, "Missing required field: date"
+            
+            try:
+                # Try parsing date
+                if isinstance(date_str, datetime):
+                    pass  # Already a datetime
+                elif isinstance(date_str, str):
+                    # Try multiple date formats
+                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
+                        try:
+                            datetime.strptime(date_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                    else:
+                        return False, f"Invalid date format: {date_str}"
+            except Exception:
+                return False, f"Invalid date: {date_str}"
+            
+            description = get_field_value(row_data, ['description', 'libelle', 'libellé', 'description_transaction'])
+            if not description:
+                return False, "Missing required field: description"
+            
+            return True, None
+        
+        # Import data
+        if format_type == 'excel':
+            result = ImportService.import_from_excel(
+                file_content=file_content,
+                has_headers=True,
+                validator=validate_transaction
+            )
+        else:  # CSV
+            result = ImportService.import_from_csv(
+                file_content=file_content,
+                encoding='utf-8',
+                has_headers=True,
+                validator=validate_transaction
+            )
+        
+        if dry_run:
+            return {
+                "dry_run": True,
+                "total_rows": result['total_rows'],
+                "valid_rows": result['valid_rows'],
+                "invalid_rows": result['invalid_rows'],
+                "errors": result['errors'],
+                "warnings": result['warnings'],
+                "preview": result['data'][:5] if result['data'] else []
+            }
+        
+        # Get default bank account if not provided
+        default_account_id = bank_account_id
+        if not default_account_id:
+            account_result = await db.execute(
+                select(BankAccount).where(
+                    and_(
+                        BankAccount.user_id == current_user.id,
+                        BankAccount.is_active == True
+                    )
+                ).limit(1)
+            )
+            default_account = account_result.scalar_one_or_none()
+            if not default_account:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No active bank account found. Please create one or specify bank_account_id"
+                )
+            default_account_id = default_account.id
+        
+        # Verify bank account belongs to user
+        account_result = await db.execute(
+            select(BankAccount).where(
+                and_(
+                    BankAccount.id == default_account_id,
+                    BankAccount.user_id == current_user.id
+                )
+            )
+        )
+        account = account_result.scalar_one_or_none()
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Bank account not found"
+            )
+        
+        # Process valid rows and create transactions
+        created_transactions = []
+        import_errors = []
+        import_warnings = []
+        
+        for row_data in result['data']:
+            try:
+                # Extract and normalize fields
+                transaction_type = get_field_value(row_data, [
+                    'type', 'type_transaction', 'entree_sortie', 'entry_exit'
+                ])
+                type_str = str(transaction_type).lower().strip()
+                if type_str in ['entree', 'entrée', 'entry', 'entrées']:
+                    transaction_type = 'entry'
+                else:
+                    transaction_type = 'exit'
+                
+                amount = Decimal(str(get_field_value(row_data, ['amount', 'montant', 'montant_transaction'])))
+                
+                date_str = get_field_value(row_data, ['date', 'date_transaction', 'date_operation'])
+                if isinstance(date_str, str):
+                    # Parse date
+                    transaction_date = None
+                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
+                        try:
+                            transaction_date = datetime.strptime(date_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                    if not transaction_date:
+                        import_errors.append({
+                            'row': row_data,
+                            'error': f"Could not parse date: {date_str}"
+                        })
+                        continue
+                else:
+                    transaction_date = date_str
+                
+                description = str(get_field_value(row_data, ['description', 'libelle', 'libellé', 'description_transaction']))
+                
+                # Optional fields
+                category_name = get_field_value(row_data, ['category', 'categorie', 'category_name', 'nom_categorie'])
+                category_id = None
+                if category_name:
+                    # Try to find category by name
+                    category_result = await db.execute(
+                        select(TransactionCategory).where(
+                            and_(
+                                TransactionCategory.user_id == current_user.id,
+                                TransactionCategory.name.ilike(f"%{category_name}%")
+                            )
+                        ).limit(1)
+                    )
+                    category = category_result.scalar_one_or_none()
+                    if category:
+                        category_id = category.id
+                    else:
+                        import_warnings.append({
+                            'row': row_data,
+                            'warning': f"Category '{category_name}' not found, transaction created without category"
+                        })
+                
+                status_str = get_field_value(row_data, ['status', 'statut', 'etat', 'state'])
+                transaction_status = TransactionStatus.CONFIRMED
+                if status_str:
+                    status_lower = str(status_str).lower()
+                    if status_lower in ['pending', 'en_attente', 'pending']:
+                        transaction_status = TransactionStatus.PENDING
+                    elif status_lower in ['projected', 'projete', 'projeté']:
+                        transaction_status = TransactionStatus.PROJECTED
+                    elif status_lower in ['cancelled', 'annule', 'annulé']:
+                        transaction_status = TransactionStatus.CANCELLED
+                
+                payment_method = get_field_value(row_data, ['payment_method', 'methode_paiement', 'moyen_paiement'])
+                reference_number = get_field_value(row_data, ['reference', 'reference_number', 'numero_reference', 'numero'])
+                notes = get_field_value(row_data, ['notes', 'remarques', 'commentaires'])
+                
+                # Create transaction
+                transaction = Transaction(
+                    user_id=current_user.id,
+                    bank_account_id=default_account_id,
+                    type=transaction_type,
+                    amount=amount,
+                    date=transaction_date,
+                    description=description,
+                    notes=notes,
+                    category_id=category_id,
+                    status=transaction_status,
+                    payment_method=payment_method,
+                    reference_number=reference_number
+                )
+                
+                db.add(transaction)
+                created_transactions.append(transaction)
+                
+            except Exception as e:
+                import_errors.append({
+                    'row': row_data,
+                    'error': str(e)
+                })
+                logger.error(f"Error creating transaction from row: {e}", exc_info=True)
+        
+        # Commit all transactions
+        await db.commit()
+        
+        # Refresh transactions to get IDs
+        for transaction in created_transactions:
+            await db.refresh(transaction)
+        
+        logger.info(f"User {current_user.id} imported {len(created_transactions)} transactions")
+        
+        return {
+            "success": True,
+            "total_rows": result['total_rows'],
+            "valid_rows": result['valid_rows'],
+            "invalid_rows": result['invalid_rows'],
+            "created_count": len(created_transactions),
+            "errors": result['errors'] + import_errors,
+            "warnings": result['warnings'] + import_warnings,
+            "instructions": instructions_content,
+            "transactions": [
+                {
+                    "id": t.id,
+                    "type": t.type,
+                    "amount": float(t.amount),
+                    "date": t.date.isoformat(),
+                    "description": t.description
+                }
+                for t in created_transactions[:10]  # Return first 10
+            ]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error importing transactions: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error importing transactions: {str(e)}"
+        )
+
+
+@router.get("/import/template")
+async def download_import_template(
+    format: str = Query("zip", description="Template format: zip, csv, or excel"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Download import template file
+    
+    Returns a template file (ZIP with CSV/Excel + instructions, or standalone CSV/Excel)
+    """
+    try:
+        from fastapi.responses import Response
+        from app.services.export_service import ExportService
+        
+        # Create sample data for template
+        sample_data = [
+            {
+                "Type": "entry",
+                "Montant": 1000.00,
+                "Date": "2025-01-15",
+                "Description": "Exemple de revenu",
+                "Compte Bancaire": "Compte Principal",
+                "Catégorie": "Vente",
+                "Statut": "confirmed",
+                "Méthode de Paiement": "Virement",
+                "Référence": "VIR-001",
+                "Notes": "Exemple de transaction d'entrée"
+            },
+            {
+                "Type": "exit",
+                "Montant": 500.00,
+                "Date": "2025-01-16",
+                "Description": "Exemple de dépense",
+                "Compte Bancaire": "Compte Principal",
+                "Catégorie": "Fournisseur",
+                "Statut": "confirmed",
+                "Méthode de Paiement": "Chèque",
+                "Référence": "CHQ-001",
+                "Notes": "Exemple de transaction de sortie"
+            }
+        ]
+        
+        if format == "zip":
+            # Create ZIP with CSV and instructions
+            import zipfile
+            from io import BytesIO
+            
+            zip_buffer = BytesIO()
+            
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                # Add CSV template
+                csv_buffer, csv_filename = ExportService.export_to_csv(
+                    data=sample_data,
+                    headers=["Type", "Montant", "Date", "Description", "Compte Bancaire", "Catégorie", "Statut", "Méthode de Paiement", "Référence", "Notes"],
+                    filename="transactions.csv"
+                )
+                zip_file.writestr("transactions.csv", csv_buffer.getvalue())
+                
+                # Add instructions
+                instructions = """INSTRUCTIONS D'IMPORT - TRÉSORERIE
+=====================================
+
+FORMAT DU FICHIER
+-----------------
+Le fichier transactions.csv contient les transactions à importer.
+
+COLONNES REQUISES
+-----------------
+- Type: 'entry' (entrée) ou 'exit' (sortie)
+- Montant: Montant numérique (ex: 1000.00)
+- Date: Date au format YYYY-MM-DD (ex: 2025-01-15)
+- Description: Description de la transaction
+
+COLONNES OPTIONNELLES
+---------------------
+- Compte Bancaire: Nom du compte (sera créé si n'existe pas)
+- Catégorie: Nom de la catégorie (sera créée si n'existe pas)
+- Statut: 'confirmed', 'pending', ou 'projected'
+- Méthode de Paiement: Chèque, Virement, Carte, etc.
+- Référence: Numéro de référence (chèque, virement, etc.)
+- Notes: Notes supplémentaires
+
+FORMATS DE DATE ACCEPTÉS
+------------------------
+- YYYY-MM-DD (ex: 2025-01-15)
+- DD/MM/YYYY (ex: 15/01/2025)
+- MM/DD/YYYY (ex: 01/15/2025)
+
+EXEMPLES
+--------
+entry,1000.00,2025-01-15,"Facture client #123",Compte Principal,Vente,confirmed,Virement,VIR-001,"Paiement reçu"
+exit,500.00,2025-01-16,"Loyer bureau",Compte Principal,Charge fixe,confirmed,Chèque,CHQ-001,"Paiement loyer"
+
+IMPORT
+------
+1. Modifiez le fichier transactions.csv avec vos données
+2. Compressez le fichier en ZIP (optionnel)
+3. Uploadez via l'interface d'import
+4. Vérifiez les erreurs et warnings avant de confirmer
+
+LIMITES
+-------
+- Taille max: 10MB
+- Formats: CSV, Excel (.xlsx, .xls), ou ZIP
+- Encodage: UTF-8 recommandé
+"""
+                zip_file.writestr("INSTRUCTIONS.txt", instructions.encode('utf-8'))
+            
+            zip_buffer.seek(0)
+            
+            return Response(
+                content=zip_buffer.getvalue(),
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": "attachment; filename=template_import_tresorerie.zip"
+                }
+            )
+        
+        elif format == "csv":
+            csv_buffer, csv_filename = ExportService.export_to_csv(
+                data=sample_data,
+                headers=["Type", "Montant", "Date", "Description", "Compte Bancaire", "Catégorie", "Statut", "Méthode de Paiement", "Référence", "Notes"],
+                filename="template_transactions.csv"
+            )
+            
+            return Response(
+                content=csv_buffer.getvalue(),
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": f"attachment; filename={csv_filename}"
+                }
+            )
+        
+        elif format == "excel":
+            excel_buffer, excel_filename = ExportService.export_to_excel(
+                data=sample_data,
+                headers=["Type", "Montant", "Date", "Description", "Compte Bancaire", "Catégorie", "Statut", "Méthode de Paiement", "Référence", "Notes"],
+                filename="template_transactions.xlsx"
+            )
+            
+            return Response(
+                content=excel_buffer.getvalue(),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f"attachment; filename={excel_filename}"
+                }
+            )
+        
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported format: {format}. Supported: zip, csv, excel"
+            )
+            
+    except Exception as e:
+        logger.error(f"Error generating template: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating template: {str(e)}"
         )
