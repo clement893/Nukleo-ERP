@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { employeesAPI } from '@/lib/api/employees';
 import { logger } from '@/lib/logger';
 import { getErrorStatus } from '@/lib/errors';
 import { useHydrated } from '@/hooks/useHydrated';
@@ -183,6 +184,29 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
         setIsAuthorized(false);
         router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
         return;
+      }
+
+      // Check if user is an employee trying to access main dashboard - redirect to employee portal
+      const userForCheck = fetchedUser || user;
+      if (userForCheck && pathname && pathname.startsWith('/dashboard') && !pathname.startsWith('/portail-employe')) {
+        try {
+          const employee = await employeesAPI.getByUserId(userForCheck.id);
+          if (employee) {
+            logger.info('Employee detected, redirecting to employee portal', { 
+              userId: userForCheck.id, 
+              employeeId: employee.id,
+              pathname 
+            });
+            checkingRef.current = false;
+            setIsChecking(false);
+            setIsAuthorized(false);
+            router.replace(`/portail-employe/${employee.id}/dashboard`);
+            return;
+          }
+        } catch (err) {
+          // If check fails, continue normally (user might not be an employee)
+          logger.debug('Employee check failed, continuing normally', { error: err });
+        }
       }
 
       // Check admin privileges if required

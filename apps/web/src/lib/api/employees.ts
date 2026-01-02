@@ -308,4 +308,33 @@ export const employeesAPI = {
     const { downloadEmployeeZipTemplate } = await import('@/lib/utils/generateEmployeeTemplate');
     await downloadEmployeeZipTemplate();
   },
+
+  /**
+   * Get an employee by user_id
+   */
+  getByUserId: async (userId: number): Promise<Employee | null> => {
+    try {
+      // Get all employees and filter by user_id on client side
+      // Note: This is not optimal but works until backend supports user_id filtering
+      const response = await apiClient.get<Employee[]>(`/v1/employes/employees`, {
+        params: {
+          skip: 0,
+          limit: 1000, // Get enough to find the employee
+        },
+      });
+      const data = extractApiData<Employee[] | { items: Employee[] }>(response);
+      let employees: Employee[] = [];
+      if (Array.isArray(data)) {
+        employees = data;
+      } else if (data && typeof data === 'object' && 'items' in data) {
+        employees = (data as { items: Employee[] }).items;
+      }
+      // Filter by user_id
+      const employee = employees.find(emp => emp.user_id === userId);
+      return employee || null;
+    } catch (error) {
+      // If employee not found, return null
+      return null;
+    }
+  },
 };

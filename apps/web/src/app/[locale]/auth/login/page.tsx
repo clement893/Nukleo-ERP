@@ -5,6 +5,7 @@ import { useRouter, Link } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { AxiosError } from 'axios';
 import { authAPI } from '@/lib/api';
+import { employeesAPI } from '@/lib/api/employees';
 import { useAuthStore } from '@/lib/store';
 import { transformApiUserToStoreUser } from '@/lib/auth/userTransform';
 import { Input, Button, Alert, Card, Container } from '@/components/ui';
@@ -71,6 +72,9 @@ function LoginContent() {
       const response = await authAPI.login(email, password);
       const { access_token, refresh_token, user } = response.data;
 
+      // Vérifier si l'utilisateur est un employé
+      const employee = await employeesAPI.getByUserId(user.id);
+      
       // Transform user data to store format
       const userForStore = transformApiUserToStoreUser(user);
 
@@ -80,7 +84,12 @@ function LoginContent() {
       // Small delay to ensure token is available in sessionStorage for ProtectedRoute
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      router.push('/dashboard'); // Will automatically use current locale
+      // Rediriger vers le portail employé si c'est un employé, sinon vers le dashboard
+      if (employee) {
+        router.push(`/portail-employe/${employee.id}/dashboard`);
+      } else {
+        router.push('/dashboard'); // Will automatically use current locale
+      }
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const message = axiosError.response?.data?.detail || 'Login failed';
