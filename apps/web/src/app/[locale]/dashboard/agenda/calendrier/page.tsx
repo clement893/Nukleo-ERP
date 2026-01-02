@@ -25,7 +25,7 @@ import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
 
 type ViewMode = 'month' | 'week' | 'day';
-type FilterType = 'all' | 'holidays' | 'summer' | 'vacations' | 'deadlines' | 'events' | 'birthdays' | 'hiredates';
+type FilterType = 'holidays' | 'summer' | 'vacations' | 'deadlines' | 'events' | 'birthdays' | 'hiredates';
 
 interface CalendarEvent {
   id: string;
@@ -107,7 +107,7 @@ function CalendrierContent() {
   const { showToast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [activeFilters, setActiveFilters] = useState<Set<FilterType>>(new Set(['holidays', 'summer', 'vacations', 'events', 'birthdays', 'hiredates']));
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
@@ -171,25 +171,55 @@ function CalendrierContent() {
       // Employés pour anniversaires et dates d'embauche
       try {
         const emps = await employeesAPI.list(0, 1000);
+        const currentYear = new Date().getFullYear();
+        const nextYear = currentYear + 1;
         
         emps.forEach((emp: Employee) => {
+          // Ajouter les anniversaires pour l'année courante et suivante
           if (emp.birthday) {
+            const birthdayDate = new Date(emp.birthday);
+            const birthdayMonth = birthdayDate.getMonth();
+            const birthdayDay = birthdayDate.getDate();
+            
+            // Anniversaire cette année
+            const thisYearBirthday = new Date(currentYear, birthdayMonth, birthdayDay);
             allEvents.push({
-              id: `birthday-${emp.id}`,
-              title: `Anniversaire - ${emp.first_name} ${emp.last_name}`,
-              date: emp.birthday.substring(0, 10),
+              id: `birthday-${emp.id}-${currentYear}`,
+              title: `🎂 Anniversaire - ${emp.first_name} ${emp.last_name}`,
+              date: thisYearBirthday.toISOString().split('T')[0],
+              type: 'birthday',
+              color: '#EC4899'
+            });
+            
+            // Anniversaire l'année prochaine (pour les calendriers qui affichent plusieurs mois)
+            const nextYearBirthday = new Date(nextYear, birthdayMonth, birthdayDay);
+            allEvents.push({
+              id: `birthday-${emp.id}-${nextYear}`,
+              title: `🎂 Anniversaire - ${emp.first_name} ${emp.last_name}`,
+              date: nextYearBirthday.toISOString().split('T')[0],
               type: 'birthday',
               color: '#EC4899'
             });
           }
+          
+          // Dates d'embauche (anniversaires d'embauche pour l'année courante)
           if (emp.hire_date) {
-            allEvents.push({
-              id: `hire-${emp.id}`,
-              title: `Embauche - ${emp.first_name} ${emp.last_name}`,
-              date: emp.hire_date.substring(0, 10),
-              type: 'hiredate',
-              color: '#06B6D4'
-            });
+            const hireDate = new Date(emp.hire_date);
+            const hireMonth = hireDate.getMonth();
+            const hireDay = hireDate.getDate();
+            
+            // Date d'embauche cette année (si embauché cette année)
+            const hireYear = hireDate.getFullYear();
+            if (hireYear <= currentYear) {
+              const thisYearHireDate = new Date(currentYear, hireMonth, hireDay);
+              allEvents.push({
+                id: `hire-${emp.id}-${currentYear}`,
+                title: `🎉 Embauche - ${emp.first_name} ${emp.last_name}`,
+                date: thisYearHireDate.toISOString().split('T')[0],
+                type: 'hiredate',
+                color: '#06B6D4'
+              });
+            }
           }
         });
       } catch (err) {
@@ -205,20 +235,33 @@ function CalendrierContent() {
     }
   };
 
-  // Filtrer les événements
-  const filteredEvents = useMemo(() => {
-    if (filterType === 'all') return events;
-    return events.filter(e => {
-      if (filterType === 'holidays') return e.type === 'holiday';
-      if (filterType === 'summer') return e.type === 'summer';
-      if (filterType === 'vacations') return e.type === 'vacation';
-      if (filterType === 'deadlines') return e.type === 'deadline';
-      if (filterType === 'events') return e.type === 'event';
-      if (filterType === 'birthdays') return e.type === 'birthday';
-      if (filterType === 'hiredates') return e.type === 'hiredate';
-      return true;
+  // Toggle filter
+  const toggleFilter = (filter: FilterType) => {
+    setActiveFilters(prev => {
+      const newFilters = new Set(prev);
+      if (newFilters.has(filter)) {
+        newFilters.delete(filter);
+      } else {
+        newFilters.add(filter);
+      }
+      return newFilters;
     });
-  }, [events, filterType]);
+  };
+
+  // Filtrer les événements (permettre plusieurs filtres actifs)
+  const filteredEvents = useMemo(() => {
+    if (activeFilters.size === 0) return [];
+    return events.filter(e => {
+      if (e.type === 'holiday') return activeFilters.has('holidays');
+      if (e.type === 'summer') return activeFilters.has('summer');
+      if (e.type === 'vacation') return activeFilters.has('vacations');
+      if (e.type === 'deadline') return activeFilters.has('deadlines');
+      if (e.type === 'event') return activeFilters.has('events');
+      if (e.type === 'birthday') return activeFilters.has('birthdays');
+      if (e.type === 'hiredate') return activeFilters.has('hiredates');
+      return false;
+    });
+  }, [events, activeFilters]);
 
   // Stats
   const stats = useMemo(() => ({
@@ -383,13 +426,48 @@ function CalendrierContent() {
 
           {/* Filtres */}
           <div className="flex flex-wrap gap-2 mb-6">
-            <Button variant={filterType === 'all' ? 'primary' : 'outline'} onClick={() => setFilterType('all')}>Tous</Button>
-            <Button variant={filterType === 'holidays' ? 'primary' : 'outline'} onClick={() => setFilterType('holidays')}>Jours fériés</Button>
-            <Button variant={filterType === 'summer' ? 'primary' : 'outline'} onClick={() => setFilterType('summer')}>Vacances d'été</Button>
-            <Button variant={filterType === 'vacations' ? 'primary' : 'outline'} onClick={() => setFilterType('vacations')}>Vacances approuvées</Button>
-            <Button variant={filterType === 'events' ? 'primary' : 'outline'} onClick={() => setFilterType('events')}>Événements</Button>
-            <Button variant={filterType === 'birthdays' ? 'primary' : 'outline'} onClick={() => setFilterType('birthdays')}>Anniversaires</Button>
-            <Button variant={filterType === 'hiredates' ? 'primary' : 'outline'} onClick={() => setFilterType('hiredates')}>Dates d'embauche</Button>
+            <Button 
+              variant={activeFilters.has('holidays') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('holidays')}
+            >
+              Jours fériés
+            </Button>
+            <Button 
+              variant={activeFilters.has('summer') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('summer')}
+            >
+              Vacances d'été
+            </Button>
+            <Button 
+              variant={activeFilters.has('vacations') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('vacations')}
+            >
+              Vacances approuvées
+            </Button>
+            <Button 
+              variant={activeFilters.has('events') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('events')}
+            >
+              Événements
+            </Button>
+            <Button 
+              variant={activeFilters.has('birthdays') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('birthdays')}
+            >
+              Anniversaires
+            </Button>
+            <Button 
+              variant={activeFilters.has('hiredates') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('hiredates')}
+            >
+              Dates d'embauche
+            </Button>
+            <Button 
+              variant={activeFilters.has('deadlines') ? 'primary' : 'outline'} 
+              onClick={() => toggleFilter('deadlines')}
+            >
+              Deadlines
+            </Button>
           </div>
 
           {/* Grid calendrier */}
