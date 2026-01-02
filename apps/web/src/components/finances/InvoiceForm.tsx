@@ -6,8 +6,11 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
+import Autocomplete, { type AutocompleteOption } from '@/components/ui/Autocomplete';
 import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui';
+import { contactsAPI, type Contact } from '@/lib/api/contacts';
+import { useQuery } from '@tanstack/react-query';
 
 interface InvoiceFormProps {
   invoice?: any | null;
@@ -37,6 +40,26 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
     notes: '',
     terms: '',
   });
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+
+  // Fetch contacts for client selection
+  const { data: contacts = [], isLoading: loadingContacts } = useQuery({
+    queryKey: ['contacts', 'for-invoice'],
+    queryFn: () => contactsAPI.list(0, 1000, true), // Skip photo URLs for performance
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Convert contacts to autocomplete options
+  const clientOptions: AutocompleteOption[] = contacts.map((contact: Contact) => {
+    const fullName = `${contact.first_name} ${contact.last_name}`.trim();
+    const displayName = contact.company_name 
+      ? `${fullName} (${contact.company_name})`
+      : fullName;
+    return {
+      value: contact.id.toString(),
+      label: displayName,
+    };
+  });
 
   useEffect(() => {
     if (invoice) {
@@ -53,6 +76,13 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
         notes: invoice.notes || '',
         terms: invoice.terms || '',
       });
+      // Initialize client search term with existing client name
+      if (invoice.client_data?.name) {
+        setClientSearchTerm(invoice.client_data.name);
+      }
+    } else {
+      // Reset client search term when creating new invoice
+      setClientSearchTerm('');
     }
   }, [invoice]);
 
@@ -167,14 +197,43 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Nom du client *</label>
-            <Input
-              value={formData.client_data.name}
-              onChange={(e) => setFormData({
-                ...formData,
-                client_data: { ...formData.client_data, name: e.target.value },
-              })}
-              required
-              placeholder="Nom du client"
+            <Autocomplete
+              options={clientOptions}
+              value={clientSearchTerm}
+              onChange={(value) => {
+                setClientSearchTerm(value);
+                // Update client name if user types manually
+                setFormData({
+                  ...formData,
+                  client_data: { ...formData.client_data, name: value },
+                });
+              }}
+              onSelect={(option) => {
+                const selectedContact = contacts.find((c: Contact) => c.id.toString() === option.value);
+                if (selectedContact) {
+                  const fullName = `${selectedContact.first_name} ${selectedContact.last_name}`.trim();
+                  const addressParts = [
+                    selectedContact.city,
+                    selectedContact.country,
+                  ].filter(Boolean);
+                  
+                  setFormData({
+                    ...formData,
+                    client_data: {
+                      name: fullName,
+                      email: selectedContact.email || '',
+                      phone: selectedContact.phone || '',
+                      address: addressParts.join(', ') || '',
+                    },
+                  });
+                  setClientSearchTerm(option.label);
+                }
+              }}
+              placeholder="Rechercher un client existant ou saisir un nom..."
+              label=""
+              loading={loadingContacts}
+              minChars={0}
+              fullWidth
             />
           </div>
           <div>

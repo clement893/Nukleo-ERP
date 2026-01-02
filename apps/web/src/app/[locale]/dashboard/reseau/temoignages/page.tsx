@@ -134,11 +134,16 @@ function TemoignagesContent() {
       );
       
       // Identifier les contacts utilisés dans les témoignages
-      // On charge les photos pour tous car même si photo_url existe, 
-      // il peut s'agir d'un file_key et non d'une URL presignée valide
-      const contactsToLoad = allContacts.filter(
-        c => testimonialContactIds.has(c.id)
-      );
+      // On charge les photos pour ceux qui n'ont pas déjà une URL presignée valide (commence par http)
+      const contactsToLoad = allContacts.filter(c => {
+        if (!testimonialContactIds.has(c.id)) return false;
+        // Si le contact n'a pas de photo_url, on ne le charge pas
+        if (!c.photo_url) return false;
+        // Si c'est déjà une URL presignée (commence par http), on n'a pas besoin de la recharger
+        if (c.photo_url.startsWith('http://') || c.photo_url.startsWith('https://')) return false;
+        // Sinon, c'est probablement un file_key, on doit le charger pour obtenir l'URL presignée
+        return true;
+      });
       
       if (contactsToLoad.length === 0) return;
       
@@ -150,7 +155,8 @@ function TemoignagesContent() {
         const photoPromises = batch.map(async (contact) => {
           try {
             const fullContact = await contactsAPI.get(contact.id);
-            if (fullContact.photo_url) {
+            // Ne mettre à jour que si on a obtenu une URL presignée valide
+            if (fullContact.photo_url && (fullContact.photo_url.startsWith('http://') || fullContact.photo_url.startsWith('https://'))) {
               setAllContacts(prev => 
                 prev.map(c => c.id === contact.id 
                   ? { ...c, photo_url: fullContact.photo_url } 
@@ -525,6 +531,10 @@ function TemoignagesContent() {
                 : testimonial.contact_name || '';
               const contactPhoto = realContact?.photo_url || (testimonial.contact_id ? contactPhotos[testimonial.contact_id] : null);
               
+              // Vérifier si photo_url est une URL presignée (commence par http) ou un file_key
+              // Si c'est un file_key (ne commence pas par http), ne pas essayer de l'afficher
+              const isValidPhotoUrl = contactPhoto && (contactPhoto.startsWith('http://') || contactPhoto.startsWith('https://'));
+              
               return (
                 <div
                   key={testimonial.id}
@@ -536,7 +546,7 @@ function TemoignagesContent() {
                       <div className="flex items-center gap-2 mb-1">
                         {/* Photo du contact - plus grande et visible */}
                         <div className="relative w-10 h-10 flex-shrink-0">
-                          {contactPhoto ? (
+                          {isValidPhotoUrl ? (
                             <img
                               src={contactPhoto}
                               alt={contactName || 'Contact'}
@@ -549,7 +559,7 @@ function TemoignagesContent() {
                               }}
                             />
                           ) : null}
-                          <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center photo-fallback absolute inset-0 ${contactPhoto ? 'hidden' : ''}`}>
+                          <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center photo-fallback absolute inset-0 ${isValidPhotoUrl ? 'hidden' : ''}`}>
                             <User className="w-5 h-5 text-primary-500" />
                           </div>
                         </div>

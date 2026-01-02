@@ -23,6 +23,7 @@ from app.core.logging import logger
 from app.core.security import create_refresh_token
 from app.core.security_audit import SecurityAuditLogger, SecurityEventType
 from app.models.user import User
+from app.models.employee import Employee
 from app.schemas.auth import Token, TokenData, UserCreate, UserResponse, RefreshTokenRequest, TokenWithUser
 from pydantic import BaseModel, EmailStr
 

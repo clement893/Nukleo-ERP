@@ -4,7 +4,8 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { logger } from '@/lib/logger';
@@ -716,7 +717,7 @@ export default function EmployeesPage() {
                       size="sm" 
                       variant="outline" 
                       onClick={() => {
-                        router.push(`/${locale}/portail-employe/${employee.id}/dashboard`);
+                        router.push(`/portail-employe/${employee.id}/dashboard`);
                       }} 
                       className="flex-1"
                       title="Portail"
@@ -830,7 +831,7 @@ export default function EmployeesPage() {
                           size="sm" 
                           variant="outline" 
                           onClick={() => {
-                            router.push(`/${locale}/portail-employe/${employee.id}/dashboard`);
+                            router.push(`/portail-employe/${employee.id}/dashboard`);
                           }}
                           title="Portail"
                         >
