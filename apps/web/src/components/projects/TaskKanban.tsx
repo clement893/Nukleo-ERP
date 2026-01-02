@@ -17,6 +17,7 @@ import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
 import TaskTimer from './TaskTimer';
+import { timeEntriesAPI, type TimerStatus } from '@/lib/api/time-entries';
 import ProjectAttachments from './ProjectAttachments';
 import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
@@ -65,6 +66,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
+  const [activeTimer, setActiveTimer] = useState<{ taskId: number; elapsedSeconds: number } | null>(null);
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -141,6 +143,49 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     };
     fetchTasks();
   }, [projectId, teamId, assigneeId]);
+
+  // Load and update active timer status
+  useEffect(() => {
+    const loadTimerStatus = async () => {
+      try {
+        const status = await timeEntriesAPI.getTimerStatus();
+        if (status.active && status.start_time) {
+          const startTime = new Date(status.start_time).getTime();
+          const now = Date.now();
+          const elapsedSeconds = Math.floor((now - startTime) / 1000);
+          setActiveTimer({
+            taskId: status.task_id,
+            elapsedSeconds,
+          });
+        } else {
+          setActiveTimer(null);
+        }
+      } catch (err) {
+        // Silently fail - timer might not be available
+        setActiveTimer(null);
+      }
+    };
+
+    loadTimerStatus();
+    const interval = setInterval(loadTimerStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update elapsed time every second if timer is active
+  useEffect(() => {
+    if (activeTimer) {
+      const interval = setInterval(() => {
+        setActiveTimer((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            elapsedSeconds: prev.elapsedSeconds + 1,
+          };
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTimer]);
 
   // Load projects and employees for the form
   useEffect(() => {
@@ -407,6 +452,17 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     });
   };
 
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
   if (loading && tasks.length === 0) {
     return (
       <div className="py-8">
@@ -491,6 +547,20 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                         {task.description}
                       </p>
                     )}
+                    {/* Active timer indicator */}
+                    {activeTimer && activeTimer.taskId === task.id && (
+                      <div className="mb-3 p-2 rounded-lg bg-primary-500/10 border border-primary-500/20">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
+                          <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+                            Timer actif
+                          </span>
+                          <span className="text-sm font-bold text-primary-700 dark:text-primary-300 font-mono ml-auto">
+                            {formatTime(activeTimer.elapsedSeconds)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         {task.estimated_hours && (
@@ -512,7 +582,11 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                           </div>
                         )}
                       </div>
-                      <TaskTimer taskId={task.id} onTimeTracked={loadTasks} />
+                      <TaskTimer taskId={task.id} onTimeTracked={() => {
+                        loadTasks();
+                        // Reset active timer when stopped
+                        setActiveTimer(null);
+                      }} />
                     </div>
                     </Card>
                   </div>
