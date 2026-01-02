@@ -6,20 +6,25 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Filter,
   Clock,
   AlertCircle,
   Briefcase,
   Plane,
-  Loader2
+  Loader2,
+  Star,
+  Cake,
+  Users,
+  Sun,
+  CheckCircle2
 } from 'lucide-react';
 import { projectsAPI } from '@/lib/api/projects';
 import { vacationRequestsAPI, type VacationRequest } from '@/lib/api/vacationRequests';
 import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
 import { employeesAPI, type Employee } from '@/lib/api/employees';
+import { agendaAPI } from '@/lib/api/agenda';
 import { useToast } from '@/lib/toast';
 
-type EventType = 'project' | 'deadline' | 'vacation' | 'timesheet' | 'all';
+type EventType = 'all' | 'holiday' | 'vacation' | 'project' | 'deadline' | 'birthday' | 'hiredate' | 'event' | 'summer' | 'timesheet';
 
 interface CalendarEvent {
   id: string;
@@ -35,9 +40,101 @@ interface CalendarEvent {
   color?: string;
 }
 
+// Fonction pour calculer Pâques (algorithme de Meeus/Jones/Butcher)
+function calculateEaster(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+// Fonction pour obtenir le dernier lundi de mai
+function getLastMondayOfMay(year: number): Date {
+  const lastDayOfMay = new Date(year, 4, 31);
+  const dayOfWeek = lastDayOfMay.getDay();
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  return new Date(year, 4, 31 - daysToSubtract);
+}
+
+// Fonction pour obtenir le premier lundi de septembre
+function getFirstMondayOfSeptember(year: number): Date {
+  const firstDayOfSeptember = new Date(year, 8, 1);
+  const dayOfWeek = firstDayOfSeptember.getDay();
+  const daysToAdd = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+  return new Date(year, 8, 1 + daysToAdd - 1);
+}
+
+// Fonction pour obtenir le deuxième lundi d'octobre
+function getSecondMondayOfOctober(year: number): Date {
+  const firstDayOfOctober = new Date(year, 9, 1);
+  const dayOfWeek = firstDayOfOctober.getDay();
+  const daysToFirstMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+  const daysToSecondMonday = daysToFirstMonday + 7;
+  return new Date(year, 9, 1 + daysToSecondMonday - 1);
+}
+
+// Fonction pour obtenir les jours fériés du Québec
+function getQuebecHolidays(year: number): Array<{ date: string; name: string }> {
+  const holidays: Array<{ date: string; name: string }> = [];
+  
+  holidays.push({ date: `${year}-01-01`, name: 'Jour de l\'an' });
+  
+  const easter = calculateEaster(year);
+  
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+  holidays.push({ 
+    date: `${year}-${String(goodFriday.getMonth() + 1).padStart(2, '0')}-${String(goodFriday.getDate()).padStart(2, '0')}`, 
+    name: 'Vendredi saint' 
+  });
+  
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easter.getDate() + 1);
+  holidays.push({ 
+    date: `${year}-${String(easterMonday.getMonth() + 1).padStart(2, '0')}-${String(easterMonday.getDate()).padStart(2, '0')}`, 
+    name: 'Lundi de Pâques' 
+  });
+  
+  const patriotsDay = getLastMondayOfMay(year);
+  holidays.push({ 
+    date: `${year}-${String(patriotsDay.getMonth() + 1).padStart(2, '0')}-${String(patriotsDay.getDate()).padStart(2, '0')}`, 
+    name: 'Fête des Patriotes' 
+  });
+  
+  holidays.push({ date: `${year}-06-24`, name: 'Fête nationale du Québec' });
+  holidays.push({ date: `${year}-07-01`, name: 'Fête du Canada' });
+  
+  const labourDay = getFirstMondayOfSeptember(year);
+  holidays.push({ 
+    date: `${year}-${String(labourDay.getMonth() + 1).padStart(2, '0')}-${String(labourDay.getDate()).padStart(2, '0')}`, 
+    name: 'Fête du travail' 
+  });
+  
+  const thanksgiving = getSecondMondayOfOctober(year);
+  holidays.push({ 
+    date: `${year}-${String(thanksgiving.getMonth() + 1).padStart(2, '0')}-${String(thanksgiving.getDate()).padStart(2, '0')}`, 
+    name: 'Action de grâce' 
+  });
+  
+  holidays.push({ date: `${year}-12-25`, name: 'Noël' });
+  
+  return holidays;
+}
+
 export default function CalendrierPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [filterType, setFilterType] = useState<EventType>('all');
+  const [activeFilters, setActiveFilters] = useState<Set<EventType>>(new Set(['all']));
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const { showToast } = useToast();
@@ -50,20 +147,49 @@ export default function CalendrierPage() {
     try {
       setLoading(true);
       
+      const currentYear = new Date().getFullYear();
+      const calendarEvents: CalendarEvent[] = [];
+
       // Charger toutes les données en parallèle
-      const [projects, vacations, timeEntries, employees] = await Promise.all([
+      const [projects, vacations, timeEntries, employees, apiEvents] = await Promise.all([
         projectsAPI.list(0, 100),
         vacationRequestsAPI.list({ limit: 100 }),
         timeEntriesAPI.list({ limit: 500 }),
-        employeesAPI.list(0, 100)
+        employeesAPI.list(0, 1000),
+        agendaAPI.list().catch(() => []) // Ignore errors
       ]);
 
-      const calendarEvents: CalendarEvent[] = [];
-
-      // Créer un map des employés pour référence rapide
       const employeeMap = new Map(employees.map((emp: Employee) => [emp.id, `${emp.first_name} ${emp.last_name}`]));
 
-      // Ajouter les projets (début et fin)
+      // Jours fériés du Québec (année courante et suivante)
+      for (let year = currentYear; year <= currentYear + 1; year++) {
+        const holidays = getQuebecHolidays(year);
+        holidays.forEach(holiday => {
+          calendarEvents.push({
+            id: `holiday-${holiday.date}`,
+            title: `🎉 ${holiday.name}`,
+            date: holiday.date,
+            type: 'holiday',
+            color: '#EF4444'
+          });
+        });
+      }
+
+      // Vacances d'été (1er juillet - 31 août)
+      const summerStart = new Date(currentYear, 6, 1);
+      const summerEnd = new Date(currentYear, 7, 31);
+      for (let d = new Date(summerStart); d <= summerEnd; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0] || d.toISOString().substring(0, 10);
+        calendarEvents.push({
+          id: `summer-${dateStr}`,
+          title: '☀️ Vacances d\'été',
+          date: dateStr,
+          type: 'summer',
+          color: '#F59E0B'
+        });
+      }
+
+      // Projets (début et fin)
       projects.forEach((project) => {
         if (project.start_date) {
           const startDateStr = project.start_date.split('T')[0] || project.start_date.substring(0, 10);
@@ -78,8 +204,9 @@ export default function CalendrierPage() {
           });
         }
 
-        if (project.end_date) {
-          const endDateStr = project.end_date.split('T')[0] || project.end_date.substring(0, 10);
+        if (project.end_date || project.deadline) {
+          const endDate = project.end_date || project.deadline;
+          const endDateStr = endDate!.split('T')[0] || endDate!.substring(0, 10);
           calendarEvents.push({
             id: `project-end-${project.id}`,
             title: `🏁 Fin: ${project.name}`,
@@ -92,13 +219,12 @@ export default function CalendrierPage() {
         }
       });
 
-      // Ajouter les vacances
+      // Vacances
       vacations.forEach((vacation: VacationRequest) => {
         const employeeName = employeeMap.get(vacation.employee_id) || 'Employé';
         const startDate = new Date(vacation.start_date);
         const endDate = new Date(vacation.end_date);
         
-        // Ajouter un événement pour chaque jour de vacances
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
           const dateStr = d.toISOString().split('T')[0] || d.toISOString().substring(0, 10);
           calendarEvents.push({
@@ -107,13 +233,76 @@ export default function CalendrierPage() {
             date: dateStr,
             type: 'vacation',
             description: vacation.reason || 'Vacances',
-            priority: 'low',
-            color: '#0EA5E9'
+            priority: vacation.status === 'approved' ? 'low' : 'medium',
+            color: vacation.status === 'approved' ? '#10B981' : '#F59E0B'
           });
         }
       });
 
-      // Grouper les time entries par date
+      // Anniversaires
+      for (let year = currentYear; year <= currentYear + 1; year++) {
+        employees.forEach((emp: Employee) => {
+          if (emp.birthday) {
+            const birthDate = new Date(emp.birthday);
+            if (!isNaN(birthDate.getTime())) {
+              const birthdayThisYear = new Date(year, birthDate.getMonth(), birthDate.getDate());
+              const age = year - birthDate.getFullYear();
+              const dateStr = birthdayThisYear.toISOString().split('T')[0] || birthdayThisYear.toISOString().substring(0, 10);
+              calendarEvents.push({
+                id: `birthday-${emp.id}-${year}`,
+                title: `🎂 ${emp.first_name} ${emp.last_name}${age > 0 ? ` (${age} ans)` : ''}`,
+                date: dateStr,
+                type: 'birthday',
+                color: '#EC4899'
+              });
+            }
+          }
+        });
+      }
+
+      // Dates d'embauche
+      for (let year = currentYear; year <= currentYear + 1; year++) {
+        employees.forEach((emp: Employee) => {
+          if (emp.hire_date) {
+            const hireDate = new Date(emp.hire_date);
+            if (!isNaN(hireDate.getTime())) {
+              const hireDateThisYear = new Date(year, hireDate.getMonth(), hireDate.getDate());
+              const yearsOfService = year - hireDate.getFullYear();
+              if (yearsOfService >= 0) {
+                const dateStr = hireDateThisYear.toISOString().split('T')[0] || hireDateThisYear.toISOString().substring(0, 10);
+                calendarEvents.push({
+                  id: `hiredate-${emp.id}-${year}`,
+                  title: `🎉 ${emp.first_name} ${emp.last_name}${yearsOfService > 0 ? ` (${yearsOfService} an${yearsOfService > 1 ? 's' : ''} de service)` : ' (Nouvel employé)'}`,
+                  date: dateStr,
+                  type: 'hiredate',
+                  color: '#06B6D4'
+                });
+              }
+            }
+          }
+        });
+      }
+
+      // Événements généraux
+      apiEvents.forEach((event: any) => {
+        const eventColors: Record<string, string> = {
+          meeting: '#3B82F6',
+          appointment: '#8B5CF6',
+          reminder: '#EC4899',
+          holiday: '#EF4444',
+          other: '#6B7280',
+        };
+        calendarEvents.push({
+          id: `event-${event.id}`,
+          title: event.title,
+          date: event.date,
+          type: 'event',
+          description: event.description,
+          color: eventColors[event.type] || '#6B7280'
+        });
+      });
+
+      // Feuilles de temps
       const timeEntriesByDate = new Map<string, TimeEntry[]>();
       timeEntries.forEach((entry: TimeEntry) => {
         const date = entry.date.split('T')[0] || entry.date.substring(0, 10);
@@ -123,9 +312,7 @@ export default function CalendrierPage() {
         timeEntriesByDate.get(date)!.push(entry);
       });
 
-      // Ajouter les feuilles de temps (agrégées par jour)
       timeEntriesByDate.forEach((entries, date) => {
-        // Convertir duration (secondes) en heures
         const totalHours = entries.reduce((sum, e) => sum + (e.duration / 3600), 0);
         const uniqueEmployees = new Set(entries.map(e => e.user_id));
         
@@ -155,7 +342,25 @@ export default function CalendrierPage() {
 
   // Get event colors based on type
   const getEventColors = (type: EventType) => {
-    const colors = {
+    const colors: Record<EventType, { bg: string; text: string; border: string; icon: any }> = {
+      all: {
+        bg: 'bg-gray-500/10',
+        text: 'text-gray-600 dark:text-gray-400',
+        border: 'border-gray-500/30',
+        icon: CalendarIcon
+      },
+      holiday: {
+        bg: 'bg-red-500/10',
+        text: 'text-red-600 dark:text-red-400',
+        border: 'border-red-500/30',
+        icon: Star
+      },
+      vacation: {
+        bg: 'bg-green-500/10',
+        text: 'text-green-600 dark:text-green-400',
+        border: 'border-green-500/30',
+        icon: Plane
+      },
       project: {
         bg: 'bg-[#523DC9]/10',
         text: 'text-[#523DC9]',
@@ -168,34 +373,103 @@ export default function CalendrierPage() {
         border: 'border-[#6B1817]/30',
         icon: AlertCircle
       },
-      vacation: {
-        bg: 'bg-primary-500/10',
-        text: 'text-primary-600 dark:text-primary-400',
-        border: 'border-primary-500/30',
-        icon: Plane
+      birthday: {
+        bg: 'bg-pink-500/10',
+        text: 'text-pink-600 dark:text-pink-400',
+        border: 'border-pink-500/30',
+        icon: Cake
+      },
+      hiredate: {
+        bg: 'bg-cyan-500/10',
+        text: 'text-cyan-600 dark:text-cyan-400',
+        border: 'border-cyan-500/30',
+        icon: Users
+      },
+      event: {
+        bg: 'bg-blue-500/10',
+        text: 'text-blue-600 dark:text-blue-400',
+        border: 'border-blue-500/30',
+        icon: CheckCircle2
+      },
+      summer: {
+        bg: 'bg-orange-500/10',
+        text: 'text-orange-600 dark:text-orange-400',
+        border: 'border-orange-500/30',
+        icon: Sun
       },
       timesheet: {
         bg: 'bg-purple-500/10',
         text: 'text-purple-600 dark:text-purple-400',
         border: 'border-purple-500/30',
         icon: Clock
-      },
-      all: {
-        bg: 'bg-gray-500/10',
-        text: 'text-gray-600 dark:text-gray-400',
-        border: 'border-gray-500/30',
-        icon: CalendarIcon
       }
     };
-    return colors[type];
+    return colors[type] || colors.all;
   };
 
+  // Quickfilters avec compteurs
+  const quickFilters = useMemo(() => {
+    const counts = {
+      all: events.length,
+      holiday: events.filter(e => e.type === 'holiday').length,
+      vacation: events.filter(e => e.type === 'vacation').length,
+      project: events.filter(e => e.type === 'project').length,
+      deadline: events.filter(e => e.type === 'deadline').length,
+      birthday: events.filter(e => e.type === 'birthday').length,
+      hiredate: events.filter(e => e.type === 'hiredate').length,
+      event: events.filter(e => e.type === 'event').length,
+      summer: events.filter(e => e.type === 'summer').length,
+      timesheet: events.filter(e => e.type === 'timesheet').length,
+    };
+
+    return [
+      { id: 'all' as EventType, label: 'Tous', icon: CalendarIcon, count: counts.all, color: '#523DC9' },
+      { id: 'holiday' as EventType, label: 'Jours fériés', icon: Star, count: counts.holiday, color: '#EF4444' },
+      { id: 'vacation' as EventType, label: 'Vacances', icon: Plane, count: counts.vacation, color: '#10B981' },
+      { id: 'project' as EventType, label: 'Projets', icon: Briefcase, count: counts.project, color: '#523DC9' },
+      { id: 'deadline' as EventType, label: 'Deadlines', icon: AlertCircle, count: counts.deadline, color: '#6B1817' },
+      { id: 'birthday' as EventType, label: 'Anniversaires', icon: Cake, count: counts.birthday, color: '#EC4899' },
+      { id: 'hiredate' as EventType, label: 'Dates embauche', icon: Users, count: counts.hiredate, color: '#06B6D4' },
+      { id: 'event' as EventType, label: 'Événements', icon: CheckCircle2, count: counts.event, color: '#3B82F6' },
+      { id: 'summer' as EventType, label: 'Vacances été', icon: Sun, count: counts.summer, color: '#F59E0B' },
+      { id: 'timesheet' as EventType, label: 'Feuilles temps', icon: Clock, count: counts.timesheet, color: '#8B5CF6' },
+    ];
+  }, [events]);
+
+  // Toggle filter
+  const toggleFilter = (filterId: EventType) => {
+    setActiveFilters(prev => {
+      const newFilters = new Set(prev);
+      if (filterId === 'all') {
+        if (newFilters.has('all')) {
+          newFilters.clear();
+          newFilters.add('all');
+        } else {
+          newFilters.clear();
+          newFilters.add('all');
+        }
+      } else {
+        newFilters.delete('all');
+        if (newFilters.has(filterId)) {
+          newFilters.delete(filterId);
+          if (newFilters.size === 0) {
+            newFilters.add('all');
+          }
+        } else {
+          newFilters.add(filterId);
+        }
+      }
+      return newFilters;
+    });
+  };
 
   // Filter events
   const filteredEvents = useMemo(() => {
-    if (filterType === 'all') return events;
-    return events.filter(e => e.type === filterType);
-  }, [filterType, events]);
+    if (activeFilters.has('all') || activeFilters.size === 0) {
+      return events;
+    }
+    return events.filter(e => activeFilters.has(e.type));
+  }, [activeFilters, events]);
 
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
@@ -215,12 +489,10 @@ export default function CalendrierPage() {
     
     const days: (Date | null)[] = [];
     
-    // Add empty cells for days before month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
     
-    // Add days of month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
@@ -256,13 +528,17 @@ export default function CalendrierPage() {
   };
 
   // Calculate stats
-  const stats = {
+  const stats = useMemo(() => ({
     total: events.length,
+    holidays: events.filter(e => e.type === 'holiday').length,
+    vacations: events.filter(e => e.type === 'vacation').length,
     projects: events.filter(e => e.type === 'project').length,
     deadlines: events.filter(e => e.type === 'deadline').length,
-    vacations: events.filter(e => e.type === 'vacation').length,
+    birthdays: events.filter(e => e.type === 'birthday').length,
+    hiredates: events.filter(e => e.type === 'hiredate').length,
+    events: events.filter(e => e.type === 'event').length,
     timesheets: events.filter(e => e.type === 'timesheet').length
-  };
+  }), [events]);
 
   if (loading) {
     return (
@@ -274,12 +550,9 @@ export default function CalendrierPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Header with Aurora Borealis Gradient */}
+      {/* Hero Header */}
       <div className="relative mb-8 rounded-2xl overflow-hidden">
-        {/* Aurora Borealis Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
-        
-        {/* Grain Texture Overlay */}
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
           backgroundSize: '200px 200px'
@@ -292,7 +565,7 @@ export default function CalendrierPage() {
                 Calendrier
               </h1>
               <p className="text-white/80 text-lg">
-                Gérez vos projets, vacances et feuilles de temps
+                Gérez vos événements, projets, vacances et jours fériés
               </p>
             </div>
             <button
@@ -305,14 +578,14 @@ export default function CalendrierPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-white/20">
                   <CalendarIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white/70 text-sm">Total Événements</p>
+                  <p className="text-white/70 text-sm">Total</p>
                   <p className="text-white text-2xl font-bold">{stats.total}</p>
                 </div>
               </div>
@@ -321,11 +594,11 @@ export default function CalendrierPage() {
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-white/20">
-                  <Briefcase className="w-5 h-5 text-white" />
+                  <Star className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white/70 text-sm">Projets</p>
-                  <p className="text-white text-2xl font-bold">{stats.projects + stats.deadlines}</p>
+                  <p className="text-white/70 text-sm">Jours fériés</p>
+                  <p className="text-white text-2xl font-bold">{stats.holidays}</p>
                 </div>
               </div>
             </div>
@@ -345,11 +618,23 @@ export default function CalendrierPage() {
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-white/20">
-                  <Clock className="w-5 h-5 text-white" />
+                  <Briefcase className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white/70 text-sm">Feuilles Temps</p>
-                  <p className="text-white text-2xl font-bold">{stats.timesheets}</p>
+                  <p className="text-white/70 text-sm">Projets</p>
+                  <p className="text-white text-2xl font-bold">{stats.projects + stats.deadlines}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/20">
+                  <Cake className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm">Anniversaires</p>
+                  <p className="text-white text-2xl font-bold">{stats.birthdays}</p>
                 </div>
               </div>
             </div>
@@ -357,10 +642,40 @@ export default function CalendrierPage() {
         </div>
       </div>
 
-      {/* Controls and Filters */}
+      {/* Quickfilters */}
+      <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <div className="flex flex-wrap gap-2">
+          {quickFilters.map((filter) => {
+            const isActive = activeFilters.has(filter.id);
+            const Icon = filter.icon;
+            return (
+              <button
+                key={filter.id}
+                onClick={() => toggleFilter(filter.id)}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  isActive
+                    ? 'bg-[#523DC9] text-white shadow-lg'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-sm font-medium">{filter.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  isActive
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}>
+                  {filter.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Controls */}
       <div className="glass-card p-4 rounded-xl mb-6 border border-[#A7A2CF]/20">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Navigation */}
           <div className="flex items-center gap-4">
             <button
               onClick={goToPreviousMonth}
@@ -389,28 +704,11 @@ export default function CalendrierPage() {
               Aujourd'hui
             </button>
           </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as EventType)}
-              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-            >
-              <option value="all">Tous les événements</option>
-              <option value="project">Projets</option>
-              <option value="deadline">Deadlines</option>
-              <option value="vacation">Vacances</option>
-              <option value="timesheet">Feuilles de temps</option>
-            </select>
-          </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
       <div className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-        {/* Day Names */}
         <div className="grid grid-cols-7 gap-2 mb-4">
           {dayNames.map(day => (
             <div key={day} className="text-center font-semibold text-sm text-gray-600 dark:text-gray-400 py-2">
@@ -419,7 +717,6 @@ export default function CalendrierPage() {
           ))}
         </div>
 
-        {/* Calendar Days */}
         <div className="grid grid-cols-7 gap-2">
           {calendarDays.map((date, index) => {
             const dayEvents = date ? getEventsForDate(date) : [];
@@ -448,11 +745,16 @@ export default function CalendrierPage() {
                     </div>
                     <div className="space-y-1">
                       {dayEvents.slice(0, 3).map(event => {
-                        const colors = getEventColors(event.type);
+                        const eventColor = event.color || '#6B7280';
                         return (
                           <div
                             key={event.id}
-                            className={`text-xs p-1 rounded ${colors.bg} ${colors.text} border ${colors.border} truncate`}
+                            className="text-xs p-1 rounded truncate border"
+                            style={{
+                              backgroundColor: `${eventColor}20`,
+                              color: eventColor,
+                              borderColor: `${eventColor}40`
+                            }}
                             title={event.title}
                           >
                             {event.title}
@@ -477,20 +779,15 @@ export default function CalendrierPage() {
       <div className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
         <h3 className="text-sm font-semibold mb-3">Légende</h3>
         <div className="flex flex-wrap gap-4">
-          {[
-            { type: 'project' as EventType, label: 'Projets' },
-            { type: 'deadline' as EventType, label: 'Deadlines' },
-            { type: 'vacation' as EventType, label: 'Vacances' },
-            { type: 'timesheet' as EventType, label: 'Feuilles de temps' }
-          ].map(({ type, label }) => {
-            const colors = getEventColors(type);
+          {quickFilters.filter(f => f.id !== 'all').map((filter) => {
+            const colors = getEventColors(filter.id);
             const Icon = colors.icon;
             return (
-              <div key={type} className="flex items-center gap-2">
+              <div key={filter.id} className="flex items-center gap-2">
                 <div className={`p-1.5 rounded ${colors.bg} border ${colors.border}`}>
                   <Icon className={`w-3 h-3 ${colors.text}`} />
                 </div>
-                <span className="text-sm">{label}</span>
+                <span className="text-sm">{filter.label}</span>
               </div>
             );
           })}
