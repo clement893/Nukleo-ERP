@@ -16,14 +16,122 @@ import {
   Plus,
   Settings,
   Calendar,
-  Building2
+  Building2,
+  Mail,
+  Phone,
+  User
 } from 'lucide-react';
-import { Badge, Button, Loading, Alert } from '@/components/ui';
+import { Badge, Button, Loading, Alert, Card } from '@/components/ui';
 import { pipelinesAPI, type Pipeline } from '@/lib/api/pipelines';
 import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import Link from 'next/link';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+} from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Opportunity Card Component for Kanban
+function OpportunityKanbanCard({ opportunity, isDragging }: { opportunity: Opportunity; isDragging?: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: opportunity.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-CA', { 
+      style: 'currency', 
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fr-CA', { 
+      day: 'numeric',
+      month: 'short'
+    }).format(date);
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="cursor-grab active:cursor-grabbing touch-none"
+    >
+      <Card className="glass-card p-3 rounded-lg border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 hover:shadow-md transition-all duration-200 group mb-2">
+        {/* Header */}
+        <div className="mb-2">
+          <h4 className="font-semibold text-sm mb-0.5 group-hover:text-[#523DC9] transition-colors line-clamp-1">
+            {opportunity.name}
+          </h4>
+          {opportunity.company_name && (
+            <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+              <Building2 className="w-3 h-3 flex-shrink-0" />
+              <span className="line-clamp-1">{opportunity.company_name}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Value & Probability */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <DollarSign className="w-3 h-3 text-green-600" />
+            <span className="text-sm font-bold text-green-600">
+              {formatCurrency(opportunity.amount || 0)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-medium text-blue-600">
+              {opportunity.probability || 0}%
+            </span>
+          </div>
+        </div>
+
+        {/* Close Date */}
+        {opportunity.expected_close_date && (
+          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <Calendar className="w-3 h-3 flex-shrink-0" />
+            <span>{formatDate(opportunity.expected_close_date)}</span>
+          </div>
+        )}
+
+        {/* Contact */}
+        {opportunity.contact_name && (
+          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <User className="w-3 h-3 flex-shrink-0" />
+            <span className="line-clamp-1">{opportunity.contact_name}</span>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
 
 export default function PipelineDetailPage() {
   const params = useParams();
@@ -33,10 +141,20 @@ export default function PipelineDetailPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'opportunities' | 'stages'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'kanban' | 'opportunities' | 'stages'>('kanban');
+  const [activeOpportunity, setActiveOpportunity] = useState<Opportunity | null>(null);
 
   const pipelineId = params?.id ? String(params.id) : null;
   const locale = params?.locale as string || 'fr';
+
+  // Drag & Drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 3,
+      },
+    })
+  );
 
   useEffect(() => {
     if (!pipelineId) {
@@ -98,6 +216,62 @@ export default function PipelineDetailPage() {
     }
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const opportunity = opportunities.find(o => o.id === active.id);
+    setActiveOpportunity(opportunity || null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveOpportunity(null);
+
+    if (!over || active.id === over.id) return;
+
+    const opportunityId = active.id as string;
+    const newStageId = over.id as string;
+
+    // Find the opportunity and new stage
+    const opportunity = opportunities.find(o => o.id === opportunityId);
+    const newStage = pipeline?.stages?.find(s => s.id === newStageId);
+
+    if (!opportunity || !newStage) return;
+
+    // Optimistic update
+    setOpportunities(prev =>
+      prev.map(o =>
+        o.id === opportunityId
+          ? { ...o, stage_id: newStageId, stage_name: newStage.name }
+          : o
+      )
+    );
+
+    // Update on server
+    try {
+      await opportunitiesAPI.update(opportunityId, {
+        stage_id: newStageId,
+      });
+      showToast({
+        message: `Opportunité déplacée vers "${newStage.name}"`,
+        type: 'success',
+      });
+    } catch (err) {
+      // Revert on error
+      setOpportunities(prev =>
+        prev.map(o =>
+          o.id === opportunityId
+            ? opportunity
+            : o
+        )
+      );
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du déplacement',
+        type: 'error',
+      });
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-CA', {
       style: 'currency',
@@ -129,6 +303,12 @@ export default function PipelineDetailPage() {
   // Calculate stats
   const totalValue = opportunities.reduce((sum, opp) => sum + (opp.amount || 0), 0);
   const weightedValue = opportunities.reduce((sum, opp) => sum + ((opp.amount || 0) * (opp.probability || 0) / 100), 0);
+
+  // Group opportunities by stage for kanban
+  const opportunitiesByStage = (pipeline?.stages || []).reduce((acc, stage) => {
+    acc[stage.id] = opportunities.filter(opp => opp.stage_id === stage.id);
+    return acc;
+  }, {} as Record<string, Opportunity[]>);
 
   if (loading) {
     return (
@@ -283,6 +463,16 @@ export default function PipelineDetailPage() {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex">
               <button
+                onClick={() => setActiveTab('kanban')}
+                className={`px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === 'kanban'
+                    ? 'border-b-2 border-[#523DC9] text-[#523DC9]'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                Kanban
+              </button>
+              <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === 'overview'
@@ -316,6 +506,64 @@ export default function PipelineDetailPage() {
           </div>
 
           <div className="p-6">
+            {activeTab === 'kanban' && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="flex gap-3 overflow-x-auto pb-4">
+                  {(pipeline.stages || [])
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
+                    .map((stage) => {
+                      const stageOpps = opportunitiesByStage[stage.id] || [];
+                      const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
+
+                      return (
+                        <div key={stage.id} className="flex-shrink-0 w-[260px]">
+                          <div className="glass-card rounded-lg border border-[#A7A2CF]/20 p-3 h-full flex flex-col">
+                            {/* Stage Header */}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                                  {stage.name}
+                                </h3>
+                                <Badge className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30 text-xs">
+                                  {stageOpps.length}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                {formatCurrency(stageValue)}
+                              </p>
+                            </div>
+
+                            {/* Droppable Area */}
+                            <SortableContext
+                              items={stageOpps.map(o => o.id)}
+                              strategy={verticalListSortingStrategy}
+                              id={stage.id}
+                            >
+                              <div className="flex-1 space-y-2 min-h-[200px]">
+                                {stageOpps.map((opp) => (
+                                  <OpportunityKanbanCard key={opp.id} opportunity={opp} />
+                                ))}
+                              </div>
+                            </SortableContext>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                <DragOverlay>
+                  {activeOpportunity ? (
+                    <OpportunityKanbanCard opportunity={activeOpportunity} isDragging />
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <div>
