@@ -270,6 +270,18 @@ export default function AdminUsersPage() {
     },
   });
 
+  const deleteInvitationMutation = useMutation({
+    mutationFn: (invitationId: string) => invitationsAPI.cancel(invitationId),
+    onSuccess: () => {
+      showToast({ message: 'Invitation supprimée avec succès', type: 'success' });
+      refetchInvitations();
+    },
+    onError: (error) => {
+      const appError = handleApiError(error);
+      showToast({ message: appError.message || 'Erreur lors de la suppression de l\'invitation', type: 'error' });
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       email: '',
@@ -755,16 +767,32 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => resendInvitationMutation.mutate(invitation.id)}
-                          disabled={resendInvitationMutation.isPending}
-                          className="hover:bg-primary-500/10 hover:text-primary-600"
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          Renvoyer
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resendInvitationMutation.mutate(invitation.id)}
+                            disabled={resendInvitationMutation.isPending || deleteInvitationMutation.isPending}
+                            className="hover:bg-primary-500/10 hover:text-primary-600"
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            Renvoyer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm(`Êtes-vous sûr de vouloir supprimer l'invitation pour ${invitation.email} ?`)) {
+                                deleteInvitationMutation.mutate(invitation.id);
+                              }
+                            }}
+                            disabled={resendInvitationMutation.isPending || deleteInvitationMutation.isPending}
+                            className="hover:bg-red-500/10 hover:text-red-600"
+                            title="Supprimer l'invitation"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
