@@ -24,14 +24,14 @@ def upgrade() -> None:
         'transactions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('type', sa.String(length=20), nullable=False),
+        sa.Column('type', sa.String(length=20), nullable=False),  # 'revenue' or 'expense'
         sa.Column('description', sa.String(length=500), nullable=False),
         sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column('currency', sa.String(length=3), nullable=False, server_default='CAD'),
         sa.Column('category', sa.String(length=100), nullable=True),
         sa.Column('transaction_date', sa.DateTime(timezone=True), nullable=False),
         sa.Column('payment_date', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('status', sa.String(length=20), nullable=False, server_default='pending'),
+        sa.Column('status', sa.String(length=20), nullable=False, server_default='pending'),  # 'pending', 'paid', 'cancelled'
         sa.Column('supplier_id', sa.Integer(), nullable=True),
         sa.Column('supplier_name', sa.String(length=200), nullable=True),
         sa.Column('invoice_number', sa.String(length=100), nullable=True),
