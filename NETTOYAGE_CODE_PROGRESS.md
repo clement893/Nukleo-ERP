@@ -85,15 +85,16 @@
 
 ## 📈 Métriques
 
-- **Fichiers traités:** 0/274
-- **Lignes modifiées:** 0
-- **Erreurs corrigées:** 0
-- **Temps écoulé:** 0 min
+- **Fichiers traités:** 39/274 (14%)
+- **Lignes modifiées:** ~16,600 supprimées, ~200 modifiées
+- **Erreurs corrigées:** 7 console.error remplacés
+- **Temps écoulé:** ~15 min
 
 ---
 
 ## 🔄 Dernière action
 
-**Batch:** 1  
-**Action:** Identification des fichiers backup/old  
-**Timestamp:** 2025-01-27
+**Batch:** 2  
+**Action:** Remplacement console.error par logger (7 fichiers traités)  
+**Timestamp:** 2025-01-27  
+**Prochaine étape:** Continuer Batch 2 avec les autres fichiers dashboard
