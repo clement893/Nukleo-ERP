@@ -186,7 +186,7 @@ function CalendrierContent() {
             allEvents.push({
               id: `birthday-${emp.id}-${currentYear}`,
               title: `🎂 Anniversaire - ${emp.first_name} ${emp.last_name}`,
-              date: thisYearBirthday.toISOString().split('T')[0],
+              date: thisYearBirthday.toISOString().split('T')[0] || '',
               type: 'birthday',
               color: '#EC4899'
             });
@@ -196,7 +196,7 @@ function CalendrierContent() {
             allEvents.push({
               id: `birthday-${emp.id}-${nextYear}`,
               title: `🎂 Anniversaire - ${emp.first_name} ${emp.last_name}`,
-              date: nextYearBirthday.toISOString().split('T')[0],
+              date: nextYearBirthday.toISOString().split('T')[0] || '',
               type: 'birthday',
               color: '#EC4899'
             });
@@ -215,7 +215,7 @@ function CalendrierContent() {
               allEvents.push({
                 id: `hire-${emp.id}-${currentYear}`,
                 title: `🎉 Embauche - ${emp.first_name} ${emp.last_name}`,
-                date: thisYearHireDate.toISOString().split('T')[0],
+                date: thisYearHireDate.toISOString().split('T')[0] || '',
                 type: 'hiredate',
                 color: '#06B6D4'
               });
