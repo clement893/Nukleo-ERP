@@ -108,8 +108,9 @@ function EquipesContent() {
               slug: teamToCreate.slug,
               description: teamToCreate.description,
             });
-          } catch (err: any) {
-            if (!(err?.response?.status === 400 && err?.response?.data?.detail?.includes('already exists'))) {
+          } catch (err: unknown) {
+            const axiosError = err as { response?: { status?: number; data?: { detail?: string } } };
+            if (!(axiosError?.response?.status === 400 && axiosError?.response?.data?.detail?.includes('already exists'))) {
               const appError = handleApiError(err);
               showToast({
                 message: `Erreur lors de la création de l'équipe ${teamToCreate.name}: ${appError.message}`,

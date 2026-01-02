@@ -218,7 +218,7 @@ export default function LeoPage() {
       } else {
         showToast({ message: 'Toutes les conversations ont été supprimées', type: 'success' });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const appError = handleApiError(error);
       showToast({ 
         message: appError.message || 'Erreur lors de la suppression', 

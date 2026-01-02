@@ -11,7 +11,7 @@
 |-------|-------------|--------|----------|-------------|
 | **Batch 1** | Suppression fichiers backup/old | ✅ Terminé | 36 fichiers | 100% |
 | **Batch 2** | Remplacement console.log critiques | 🟡 En cours | ~100 fichiers | 21% |
-| **Batch 3** | Correction `any` error handling | ⏳ En attente | ~60 fichiers | 0% |
+| **Batch 3** | Correction `any` error handling | 🟡 En cours | ~60 fichiers | 5% |
 | **Batch 4** | Optimisation hooks React | ⏳ En attente | ~50 fichiers | 0% |
 | **Batch 5** | Nettoyage TODOs obsolètes | ⏳ En attente | ~30 fichiers | 0% |
 
@@ -71,13 +71,19 @@
 
 ---
 
-### Batch 3: Correction `any` error handling
+### Batch 3: Correction `any` error handling 🟡
 
 **Objectif:** Remplacer `error: any` par `error: unknown` + `handleApiError`
 
 **Fichiers ciblés:** ~60 fichiers
 
-**Statut:** ⏳ En attente
+**Fichiers identifiés avec `any` explicite:** 3 fichiers
+- `apps/web/src/app/[locale]/dashboard/leo/page.tsx`
+- `apps/web/src/app/[locale]/dashboard/projets/equipes/page.tsx`
+- `apps/web/src/app/[locale]/dashboard/tresorerie-demo/page.tsx`
+
+**Statut:** 🟡 En cours  
+**Dernière mise à jour:** 2025-01-27
 
 ---
 

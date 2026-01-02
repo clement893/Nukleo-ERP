@@ -534,10 +534,11 @@ export default function TresoreriePage() {
                               type: 'warning'
                             });
                           }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
+                          const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'import';
                           showToast({
                             title: 'Erreur',
-                            message: error?.message || 'Erreur lors de l\'import',
+                            message: errorMessage,
                             type: 'error'
                           });
                         } finally {
@@ -660,10 +661,11 @@ export default function TresoreriePage() {
                                   setImportResult(null);
                                 }, 2000);
                               }
-                            } catch (error: any) {
+                            } catch (error: unknown) {
+                              const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'import';
                               showToast({
                                 title: 'Erreur',
-                                message: error.message || 'Erreur lors de l\'import',
+                                message: errorMessage,
                                 type: 'error'
                               });
                             } finally {
