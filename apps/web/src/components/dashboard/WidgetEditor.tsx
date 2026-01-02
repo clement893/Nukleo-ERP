@@ -343,7 +343,7 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                           })
                         }
                         placeholder="data.items"
-                        helpText="Ex: data.items pour extraire items depuis {data: {items: [...]}}"
+                        helperText="Ex: data.items pour extraire items depuis {data: {items: [...]}}"
                       />
                       <Textarea
                         label="Template HTML (optionnel)"
@@ -357,7 +357,7 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                         placeholder='<div><h3>{{name}}</h3><p>{{description}}</p></div>'
                         rows={6}
                         className="font-mono text-sm"
-                        helpText="Utilisez {{variable}} pour insérer les valeurs des données"
+                        helperText="Utilisez {{variable}} pour insérer les valeurs des données"
                       />
                     </div>
                   )}
@@ -518,7 +518,7 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                         })
                       }
                       placeholder="60"
-                      helpText="Laissez vide pour désactiver le rafraîchissement automatique"
+                      helperText="Laissez vide pour désactiver le rafraîchissement automatique"
                     />
                     <label className="flex items-center gap-2">
                       <input

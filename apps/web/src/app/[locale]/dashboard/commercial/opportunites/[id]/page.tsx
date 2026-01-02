@@ -411,7 +411,7 @@ export default function OpportunityDetailPage() {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={handleEdit}
-          className="w-14 h-14 bg-gradient-to-br from-[#523DC9] to-[#5F2B75] rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
+          className="w-14 h-14 bg-nukleo-gradient rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
           aria-label="Modifier l'opportunité"
           title="Modifier l'opportunité"
         >
