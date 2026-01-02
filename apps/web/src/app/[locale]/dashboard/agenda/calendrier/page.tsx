@@ -375,8 +375,8 @@ function CalendrierContent() {
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <Clock className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <Clock className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
@@ -387,8 +387,8 @@ function CalendrierContent() {
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#EC4899]/10 border border-[#EC4899]/30">
-                <Cake className="w-6 h-6 text-[#EC4899]" />
+              <div className="p-3 rounded-lg bg-primary-400/10 border border-primary-400/30">
+                <Cake className="w-6 h-6 text-primary-400" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
@@ -399,7 +399,7 @@ function CalendrierContent() {
         </div>
 
         {/* Calendrier */}
-        <div className="glass-card rounded-xl border border-[#A7A2CF]/20 p-6">
+        <div className="glass-card rounded-xl border border-nukleo-lavender/20 p-6">
           {/* Navigation */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
