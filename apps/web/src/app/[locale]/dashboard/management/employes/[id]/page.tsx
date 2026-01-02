@@ -81,8 +81,7 @@ export default function EmployeeDetailPage() {
 
   const handleEdit = () => {
     if (employee) {
-      const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/management/employes/${employee.id}/edit`);
+      router.push(`/dashboard/management/employes/${employee.id}/edit`);
     }
   };
 
@@ -98,8 +97,7 @@ export default function EmployeeDetailPage() {
         message: 'Employé supprimé avec succès',
         type: 'success',
       });
-      const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/management/employes`);
+      router.push(`/dashboard/management/employes`);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression');
@@ -128,9 +126,9 @@ export default function EmployeeDetailPage() {
         <PageHeader
           title="Erreur"
           breadcrumbs={[
-            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-            { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-            { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
+            { label: 'Dashboard', href: `/dashboard` },
+            { label: 'Module Management', href: `/dashboard/management` },
+            { label: 'Employés', href: `/dashboard/management/employes` },
             { label: 'Détail' },
           ]}
         />
@@ -154,9 +152,9 @@ export default function EmployeeDetailPage() {
         <PageHeader
           title="Employé non trouvé"
           breadcrumbs={[
-            { label: 'Dashboard', href: `/${params?.locale || 'fr'}/dashboard` },
-            { label: 'Module Management', href: `/${params?.locale || 'fr'}/dashboard/management` },
-            { label: 'Employés', href: `/${params?.locale || 'fr'}/dashboard/management/employes` },
+            { label: 'Dashboard', href: `/dashboard` },
+            { label: 'Module Management', href: `/dashboard/management` },
+            { label: 'Employés', href: `/dashboard/management/employes` },
             { label: 'Détail' },
           ]}
         />
@@ -175,8 +173,7 @@ export default function EmployeeDetailPage() {
   }
 
   const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
+    router.push(`/dashboard/management/employes`);
   };
 
   const handleOpenPortal = () => {

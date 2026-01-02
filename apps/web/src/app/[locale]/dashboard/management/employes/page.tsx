@@ -226,7 +226,7 @@ export default function EmployeesPage() {
   };
 
   const handleView = (id: number) => {
-    router.push(`/${locale}/dashboard/management/employes/${id}`);
+    router.push(`/dashboard/management/employes/${id}`);
   };
 
   const handleEdit = (employee: Employee) => {

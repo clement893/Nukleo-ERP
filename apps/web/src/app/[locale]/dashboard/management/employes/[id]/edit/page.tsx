@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { employeesAPI } from '@/lib/api/employees';
 import type { Employee, EmployeeCreate, EmployeeUpdate } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
@@ -22,7 +23,6 @@ export default function EmployeeEditPage() {
   const [error, setError] = useState<string | null>(null);
 
   const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const locale = params?.locale as string || 'fr';
 
   useEffect(() => {
     if (!employeeId) {
@@ -65,7 +65,7 @@ export default function EmployeeEditPage() {
         message: 'Employé modifié avec succès',
         type: 'success',
       });
-      router.push(`/${locale}/dashboard/management/employes/${employeeId}`);
+      router.push(`/dashboard/management/employes/${employeeId}`);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la modification de l\'employé');
@@ -80,9 +80,9 @@ export default function EmployeeEditPage() {
 
   const handleCancel = () => {
     if (employeeId) {
-      router.push(`/${locale}/dashboard/management/employes/${employeeId}`);
+      router.push(`/dashboard/management/employes/${employeeId}`);
     } else {
-      router.push(`/${locale}/dashboard/management/employes`);
+      router.push(`/dashboard/management/employes`);
     }
   };
 
@@ -102,9 +102,9 @@ export default function EmployeeEditPage() {
         <PageHeader
           title="Erreur"
           breadcrumbs={[
-            { label: 'Dashboard', href: `/${locale}/dashboard` },
-            { label: 'Module Management', href: `/${locale}/dashboard/management` },
-            { label: 'Employés', href: `/${locale}/dashboard/management/employes` },
+            { label: 'Dashboard', href: `/dashboard` },
+            { label: 'Module Management', href: `/dashboard/management` },
+            { label: 'Employés', href: `/dashboard/management/employes` },
             { label: 'Modification' },
           ]}
         />
@@ -125,9 +125,9 @@ export default function EmployeeEditPage() {
         <PageHeader
           title="Employé non trouvé"
           breadcrumbs={[
-            { label: 'Dashboard', href: `/${locale}/dashboard` },
-            { label: 'Module Management', href: `/${locale}/dashboard/management` },
-            { label: 'Employés', href: `/${locale}/dashboard/management/employes` },
+            { label: 'Dashboard', href: `/dashboard` },
+            { label: 'Module Management', href: `/dashboard/management` },
+            { label: 'Employés', href: `/dashboard/management/employes` },
             { label: 'Modification' },
           ]}
         />
@@ -150,7 +150,7 @@ export default function EmployeeEditPage() {
           { label: 'Dashboard', href: `/${locale}/dashboard` },
           { label: 'Module Management', href: `/${locale}/dashboard/management` },
           { label: 'Employés', href: `/${locale}/dashboard/management/employes` },
-          { label: employee.first_name + ' ' + employee.last_name, href: `/${locale}/dashboard/management/employes/${employee.id}` },
+          { label: employee.first_name + ' ' + employee.last_name, href: `/dashboard/management/employes/${employee.id}` },
           { label: 'Modification' },
         ]}
       />

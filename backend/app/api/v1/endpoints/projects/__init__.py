@@ -29,6 +29,7 @@ from app.utils.notification_templates import NotificationTemplates
 from app.models.notification import NotificationType
 from . import import_export
 from . import clients as projects_clients
+from . import employees as project_employees
 
 router = APIRouter()
 
@@ -42,6 +43,9 @@ router.include_router(
 
 # Include import/export routes
 router.include_router(import_export.router, tags=["projects-import-export"])
+
+# Include project employees routes
+router.include_router(project_employees.router, tags=["project-employees"])
 
 
 async def _check_project_columns_exist(db: AsyncSession, column_names: List[str]) -> dict[str, bool]:

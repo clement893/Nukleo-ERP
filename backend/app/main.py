@@ -158,6 +158,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             if logger:
                 logger.warning(f"Avatar column migration skipped: {e}", exc_info=True)
         
+        # Ensure transaction currency column exists
+        try:
+            from app.core.migrations import ensure_transaction_currency_column
+            await ensure_transaction_currency_column()
+        except (ConnectionError, TimeoutError) as e:
+            if logger:
+                logger.warning(f"Transaction currency column migration skipped (connection error): {e}")
+        except Exception as e:
+            if logger:
+                logger.warning(f"Transaction currency column migration skipped: {e}", exc_info=True)
+        
         # Ensure default theme exists - CRITICAL for template functionality
         # This must succeed for the application to work properly
         theme_created = False
