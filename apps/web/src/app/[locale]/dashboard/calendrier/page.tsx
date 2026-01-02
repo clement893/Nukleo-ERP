@@ -171,7 +171,7 @@ export default function CalendrierPage() {
             title: `🎉 ${holiday.name}`,
             date: holiday.date,
             type: 'holiday',
-            color: '#EF4444'
+            color: 'var(--color-danger-500)'
           });
         });
       }

@@ -71,12 +71,12 @@ function getQuebecHolidays(year: number): CalendarEvent[] {
     color: 'var(--color-danger-500)' 
   });
   
-  holidays.push({ id: `h-${year}-05-24`, title: 'Fête de la Reine', date: `${year}-05-24`, type: 'holiday', color: '#EF4444' });
-  holidays.push({ id: `h-${year}-06-24`, title: 'Fête nationale', date: `${year}-06-24`, type: 'holiday', color: '#EF4444' });
-  holidays.push({ id: `h-${year}-07-01`, title: 'Fête du Canada', date: `${year}-07-01`, type: 'holiday', color: '#EF4444' });
-  holidays.push({ id: `h-${year}-09-07`, title: 'Fête du Travail', date: `${year}-09-07`, type: 'holiday', color: '#EF4444' });
-  holidays.push({ id: `h-${year}-10-12`, title: 'Action de grâce', date: `${year}-10-12`, type: 'holiday', color: '#EF4444' });
-  holidays.push({ id: `h-${year}-12-25`, title: 'Noël', date: `${year}-12-25`, type: 'holiday', color: '#EF4444' });
+  holidays.push({ id: `h-${year}-05-24`, title: 'Fête de la Reine', date: `${year}-05-24`, type: 'holiday', color: 'var(--color-danger-500)' });
+  holidays.push({ id: `h-${year}-06-24`, title: 'Fête nationale', date: `${year}-06-24`, type: 'holiday', color: 'var(--color-danger-500)' });
+  holidays.push({ id: `h-${year}-07-01`, title: 'Fête du Canada', date: `${year}-07-01`, type: 'holiday', color: 'var(--color-danger-500)' });
+  holidays.push({ id: `h-${year}-09-07`, title: 'Fête du Travail', date: `${year}-09-07`, type: 'holiday', color: 'var(--color-danger-500)' });
+  holidays.push({ id: `h-${year}-10-12`, title: 'Action de grâce', date: `${year}-10-12`, type: 'holiday', color: 'var(--color-danger-500)' });
+  holidays.push({ id: `h-${year}-12-25`, title: 'Noël', date: `${year}-12-25`, type: 'holiday', color: 'var(--color-danger-500)' });
   
   return holidays;
 }
@@ -403,13 +403,13 @@ function CalendrierContent() {
           {/* Navigation */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <button onClick={goToPreviousMonth} className="p-2 rounded-lg hover:bg-[#523DC9]/10 transition-colors">
+              <button onClick={goToPreviousMonth} className="p-2 rounded-lg hover:bg-primary-500/10 transition-colors">
                 <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               </button>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-nukleo">
                 {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
               </h2>
-              <button onClick={goToNextMonth} className="p-2 rounded-lg hover:bg-[#523DC9]/10 transition-colors">
+              <button onClick={goToNextMonth} className="p-2 rounded-lg hover:bg-primary-500/10 transition-colors">
                 <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               </button>
             </div>
@@ -484,9 +484,9 @@ function CalendrierContent() {
               <div
                 key={idx}
                 className={`min-h-[100px] p-2 rounded-lg border ${
-                  day.date ? 'border-gray-200 dark:border-gray-700 hover:border-[#523DC9] cursor-pointer' : 'border-transparent'
+                  day.date ? 'border-gray-200 dark:border-gray-700 hover:border-primary-500 cursor-pointer' : 'border-transparent'
                 } ${
-                  day.date?.toDateString() === new Date().toDateString() ? 'bg-[#523DC9]/10 border-[#523DC9]' : ''
+                  day.date?.toDateString() === new Date().toDateString() ? 'bg-primary-500/10 border-primary-500' : ''
                 }`}
               >
                 {day.date && (
