@@ -678,7 +678,7 @@ function OnboardingProcessCard({
         
         {showSteps && steps && steps.length > 0 ? (
           <div className="space-y-2">
-            {steps.map((step, index) => {
+            {steps.map((step: OnboardingStep, index: number) => {
               // Steps are ordered, so if completedCount is 3, first 3 steps are completed
               const isCompleted = index < completedCount;
               return (

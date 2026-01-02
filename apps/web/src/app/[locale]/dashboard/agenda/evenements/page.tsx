@@ -334,13 +334,15 @@ function EvenementsContent() {
 
   // Toggle selection (mémorisé)
   const toggleEventSelection = useCallback((eventId: number) => {
-    const newSelection = new Set(selectedEvents);
-    if (newSelection.has(eventId)) {
-      newSelection.delete(eventId);
-    } else {
-      newSelection.add(eventId);
-    }
-    setSelectedEvents(newSelection);
+    setSelectedEvents(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(eventId)) {
+        newSelection.delete(eventId);
+      } else {
+        newSelection.add(eventId);
+      }
+      return newSelection;
+    });
   }, []);
 
   const toggleSelectAll = useCallback(() => {
@@ -493,7 +495,7 @@ function EvenementsContent() {
         </div>
       ),
     },
-  ];
+  ], [selectedEvents, eventTypeLabels, toggleEventSelection, handleViewDetails, handleDuplicate, handleDelete, formatDate]);
 
   const displayEvent = eventDetail || selectedEvent;
 

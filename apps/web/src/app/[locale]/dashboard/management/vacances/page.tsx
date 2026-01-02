@@ -16,7 +16,6 @@ import {
   Plus,
   Search,
   Calendar,
-  User,
   TrendingUp,
   Check,
   X,
