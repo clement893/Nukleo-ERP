@@ -91,8 +91,11 @@ export function AutomationRuleForm({ rule, onSave, onCancel }: AutomationRuleFor
 
   const updateAction = (index: number, type: string) => {
     const newActions = [...formData.actions];
-    newActions[index] = { ...newActions[index], type, config: newActions[index].config || {} };
-    setFormData({ ...formData, actions: newActions });
+    const existingAction = newActions[index];
+    if (existingAction) {
+      newActions[index] = { ...existingAction, type, config: existingAction.config || {} };
+      setFormData({ ...formData, actions: newActions });
+    }
   };
 
   return (

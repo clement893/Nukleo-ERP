@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, Badge, Input, Switch, useToast } from '@/components/ui';
+import { Button, Card, Badge, Input, Switch } from '@/components/ui';
 import { Plus, Search, Zap, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { AutomationRuleForm } from './AutomationRuleForm';
 import type { AutomationRule, CreateAutomationRuleRequest, UpdateAutomationRuleRequest } from '@/lib/api/automation';
