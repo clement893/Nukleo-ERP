@@ -170,23 +170,32 @@ class CalendarEvent(CalendarEventBase):
 
     model_config = ConfigDict(
         from_attributes=True,
-        populate_by_name=True
+        populate_by_name=True,
     )
     
     @model_serializer
     def serialize_model(self):
         """Serialize model with 'type' and 'time' keys for API compatibility"""
-        data = self.model_dump()
-        # Convert 'event_category' to 'type' for API response
-        if 'event_category' in data:
-            data['type'] = data.pop('event_category')
-        # Convert 'event_time' to 'time' for API response
-        if 'event_time' in data:
-            data['time'] = data.pop('event_time')
-        # Convert 'event_date' to 'date' for API response
-        if 'event_date' in data:
-            data['date'] = data.pop('event_date')
-        return data
+        # Access fields directly to build dict, avoiding model_dump() to prevent recursion
+        result = {}
+        # Get all model field values
+        for field_name in self.model_fields.keys():
+            try:
+                result[field_name] = getattr(self, field_name)
+            except AttributeError:
+                pass
+        # Add CalendarEvent-specific fields
+        for attr in ['id', 'user_id', 'created_at', 'updated_at']:
+            if hasattr(self, attr):
+                result[attr] = getattr(self, attr)
+        # Convert field names for API compatibility
+        if 'event_category' in result:
+            result['type'] = result.pop('event_category')
+        if 'event_time' in result:
+            result['time'] = result.pop('event_time')
+        if 'event_date' in result:
+            result['date'] = result.pop('event_date')
+        return result
     
     @model_validator(mode='before')
     @classmethod

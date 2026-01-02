@@ -154,20 +154,14 @@ async def list_events(
                 detail=f"Database error: {str(db_error)}"
             )
         
-        # Convert events to schema format
+        # Convert events to schema format using manual conversion to avoid recursion issues
         event_list = []
         for event in events:
             try:
-                # Try using from_attributes first (simpler and more direct)
-                try:
-                    event_schema = CalendarEventSchema.model_validate(event, from_attributes=True)
-                    event_list.append(event_schema)
-                except Exception as from_attr_error:
-                    # Fallback to manual conversion if from_attributes fails
-                    logger.debug(f"from_attributes failed for event {event.id}, using manual conversion: {from_attr_error}")
-                    event_dict = event_to_dict(event)
-                    event_schema = CalendarEventSchema.model_validate(event_dict, strict=False)
-                    event_list.append(event_schema)
+                # Use manual conversion to avoid circular reference issues with relationships
+                event_dict = event_to_dict(event)
+                event_schema = CalendarEventSchema.model_validate(event_dict, strict=False)
+                event_list.append(event_schema)
             except ValueError as e:
                 # Validation errors - log and skip
                 logger.warning(f"Validation error for event {event.id}: {e}")
@@ -227,13 +221,9 @@ async def get_event(
             detail="Event not found"
         )
     
-    # Try using from_attributes first (simpler and more direct)
-    try:
-        return CalendarEventSchema.model_validate(event, from_attributes=True)
-    except Exception:
-        # Fallback to manual conversion if from_attributes fails
-        event_dict = event_to_dict(event)
-        return CalendarEventSchema.model_validate(event_dict, strict=False)
+    # Use manual conversion to avoid circular reference issues
+    event_dict = event_to_dict(event)
+    return CalendarEventSchema.model_validate(event_dict, strict=False)
 
 
 @router.post("/", response_model=CalendarEventSchema, status_code=status.HTTP_201_CREATED)
@@ -295,13 +285,9 @@ async def create_event(
     
     logger.info(f"User {current_user.id} created calendar event {event.id}")
     
-    # Try using from_attributes first (simpler and more direct)
-    try:
-        return CalendarEventSchema.model_validate(event, from_attributes=True)
-    except Exception:
-        # Fallback to manual conversion if from_attributes fails
-        event_dict = event_to_dict(event)
-        return CalendarEventSchema.model_validate(event_dict, strict=False)
+    # Use manual conversion to avoid circular reference issues
+    event_dict = event_to_dict(event)
+    return CalendarEventSchema.model_validate(event_dict, strict=False)
 
 
 @router.put("/{event_id}", response_model=CalendarEventSchema)
@@ -395,13 +381,9 @@ async def update_event(
     
     logger.info(f"User {current_user.id} updated calendar event {event_id}")
     
-    # Try using from_attributes first (simpler and more direct)
-    try:
-        return CalendarEventSchema.model_validate(event, from_attributes=True)
-    except Exception:
-        # Fallback to manual conversion if from_attributes fails
-        event_dict = event_to_dict(event)
-        return CalendarEventSchema.model_validate(event_dict, strict=False)
+    # Use manual conversion to avoid circular reference issues
+    event_dict = event_to_dict(event)
+    return CalendarEventSchema.model_validate(event_dict, strict=False)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

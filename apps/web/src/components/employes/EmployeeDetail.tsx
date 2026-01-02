@@ -108,6 +108,39 @@ export default function EmployeeDetail({
       {/* Informations professionnelles */}
       <Card title="Informations professionnelles">
         <div className="space-y-4">
+          {employee.employee_number && (
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Numéro d'employé</p>
+                <p className="text-foreground font-medium">
+                  {employee.employee_number}
+                </p>
+              </div>
+            </div>
+          )}
+          {employee.job_title && (
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Titre du poste</p>
+                <p className="text-foreground">
+                  {employee.job_title}
+                </p>
+              </div>
+            </div>
+          )}
+          {employee.department && (
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Département</p>
+                <p className="text-foreground">
+                  {employee.department}
+                </p>
+              </div>
+            </div>
+          )}
           {employee.hire_date && (
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-muted-foreground" />

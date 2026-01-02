@@ -467,7 +467,7 @@ async def list_transactions(
     bank_account_id: Optional[int] = Query(None, description="Filter by bank account"),
     type: Optional[str] = Query(None, description="Filter by type: 'entry' or 'exit'"),
     category_id: Optional[int] = Query(None, description="Filter by category"),
-    status: Optional[TransactionStatus] = Query(None, description="Filter by status"),
+    transaction_status: Optional[TransactionStatus] = Query(None, alias="status", description="Filter by status"),
     date_from: Optional[datetime] = Query(None, description="Filter by date from"),
     date_to: Optional[datetime] = Query(None, description="Filter by date to"),
     skip: int = Query(0, ge=0),
@@ -486,8 +486,8 @@ async def list_transactions(
         if category_id:
             query = query.where(Transaction.category_id == category_id)
         
-        if status:
-            query = query.where(Transaction.status == status)
+        if transaction_status:
+            query = query.where(Transaction.status == transaction_status)
         
         if date_from:
             query = query.where(Transaction.transaction_date >= date_from)
@@ -1063,14 +1063,14 @@ async def get_treasury_stats(
 async def get_invoices_for_treasury(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    status: Optional[InvoiceStatus] = Query(None, description="Filter by invoice status"),
+    invoice_status: Optional[InvoiceStatus] = Query(None, alias="status", description="Filter by invoice status"),
 ):
     """Get invoices related to treasury (for integration)"""
     try:
         query = select(Invoice).where(Invoice.user_id == current_user.id)
         
-        if status:
-            query = query.where(Invoice.status == status)
+        if invoice_status:
+            query = query.where(Invoice.status == invoice_status)
         
         query = query.order_by(Invoice.due_date.desc())
         
@@ -1113,7 +1113,7 @@ async def get_invoices_for_treasury(
 async def get_expenses_for_treasury(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    status: Optional[str] = Query(None, description="Filter by expense account status"),
+    expense_status: Optional[str] = Query(None, alias="status", description="Filter by expense account status"),
 ):
     """Get expense accounts related to treasury (for integration)"""
     try:
@@ -1122,8 +1122,8 @@ async def get_expenses_for_treasury(
         # For now, we'll get all approved expenses
         query = select(ExpenseAccount)
         
-        if status:
-            query = query.where(ExpenseAccount.status == status)
+        if expense_status:
+            query = query.where(ExpenseAccount.status == expense_status)
         else:
             # Default: get approved expenses
             query = query.where(ExpenseAccount.status == ExpenseAccountStatus.APPROVED.value)
