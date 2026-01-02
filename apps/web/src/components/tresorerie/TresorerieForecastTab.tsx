@@ -171,14 +171,14 @@ export default function TresorerieForecastTab() {
   // Préparer les dépenses à venir
   const prepareUpcomingExpenses = () => {
     return upcomingTransactions
-      .filter(t => t.type === 'exit')
+      .filter(t => t.type === 'exit' && t.status !== 'cancelled')
       .map(t => ({
         id: t.id,
         date: t.date,
         type: 'exit' as const,
         amount: Number(t.amount),
         description: t.description,
-        status: t.status,
+        status: t.status === 'cancelled' ? 'pending' : t.status as 'pending' | 'confirmed' | 'projected',
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
