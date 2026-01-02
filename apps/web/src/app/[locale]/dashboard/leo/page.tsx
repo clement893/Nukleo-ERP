@@ -321,7 +321,7 @@ export default function LeoPage() {
       case 'blue':
         return 'bg-primary-500/10 border-primary-500/30 text-primary-500 hover:bg-primary-500/20';
       case 'green':
-        return 'bg-secondary-500/10 border-secondary-500/30 text-secondary-500 hover:bg-secondary-500/20';
+        return 'bg-success-500/10 border-success-500/30 text-success-500 hover:bg-success-500/20';
       case 'orange':
         return 'bg-warning-500/10 border-warning-500/30 text-warning-500 hover:bg-warning-500/20';
       default:

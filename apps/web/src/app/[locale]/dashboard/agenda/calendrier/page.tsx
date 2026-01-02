@@ -143,7 +143,7 @@ function CalendrierContent() {
                 title: `Vacances - ${vac.employee_first_name} ${vac.employee_last_name}`,
                 date: dateStr,
                 type: 'vacation',
-                color: 'var(--color-secondary-500)'
+                color: 'var(--color-success-500)'
               });
             }
           }
@@ -363,8 +363,8 @@ function CalendrierContent() {
 
           <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <Briefcase className="w-6 h-6 text-secondary-500" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <Briefcase className="w-6 h-6 text-success-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">

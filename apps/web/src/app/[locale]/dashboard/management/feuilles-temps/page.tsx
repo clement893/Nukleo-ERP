@@ -694,8 +694,8 @@ export default function FeuillesTempsPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <Clock className="w-6 h-6 text-secondary-500" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <Clock className="w-6 h-6 text-success-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -952,8 +952,8 @@ export default function FeuillesTempsPage() {
               <Card key={group.clientName} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                      <Building className="w-6 h-6 text-secondary-500" />
+                    <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                      <Building className="w-6 h-6 text-success-500" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{group.clientName}</h3>

@@ -235,7 +235,7 @@ export default function CalendrierPage() {
             type: 'vacation',
             description: vacation.reason || 'Vacances',
             priority: vacation.status === 'approved' ? 'low' : 'medium',
-            color: vacation.status === 'approved' ? 'var(--color-secondary-500)' : 'var(--color-warning-500)'
+            color: vacation.status === 'approved' ? 'var(--color-success-500)' : 'var(--color-warning-500)'
           });
         }
       });
@@ -426,7 +426,7 @@ export default function CalendrierPage() {
     return [
       { id: 'all' as EventType, label: 'Tous', icon: CalendarIcon, count: counts.all, color: 'var(--color-primary-500)' },
       { id: 'holiday' as EventType, label: 'Jours fériés', icon: Star, count: counts.holiday, color: 'var(--color-danger-500)' },
-      { id: 'vacation' as EventType, label: 'Vacances', icon: Plane, count: counts.vacation, color: 'var(--color-secondary-500)' },
+      { id: 'vacation' as EventType, label: 'Vacances', icon: Plane, count: counts.vacation, color: 'var(--color-success-500)' },
       { id: 'project' as EventType, label: 'Projets', icon: Briefcase, count: counts.project, color: 'var(--color-primary-500)' },
       { id: 'deadline' as EventType, label: 'Deadlines', icon: AlertCircle, count: counts.deadline, color: 'var(--color-danger-700)' },
       { id: 'birthday' as EventType, label: 'Anniversaires', icon: Cake, count: counts.birthday, color: 'var(--color-primary-400)' },
