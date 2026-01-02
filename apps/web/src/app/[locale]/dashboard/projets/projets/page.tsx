@@ -30,7 +30,10 @@ import {
   ArrowDown,
   X,
   Link as LinkIcon,
-  FileText
+  FileText,
+  UserCircle,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Loading, Modal, Select, Alert, useToast } from '@/components/ui';
 import { useInfiniteProjects, useDeleteProject, useUpdateProject, useCreateProject } from '@/lib/query/projects';
@@ -44,10 +47,51 @@ type SortField = 'name' | 'status' | 'budget' | 'created_at' | 'deadline' | 'cli
 type SortDirection = 'asc' | 'desc';
 
 const statusConfig = {
-  ACTIVE: { label: 'Actif', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', icon: TrendingUp },
-  COMPLETED: { label: 'Terminé', color: 'bg-green-500/10 text-green-600 border-green-500/30', icon: CheckCircle2 },
-  ARCHIVED: { label: 'Archivé', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: Archive },
-  ON_HOLD: { label: 'En pause', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', icon: Target },
+  ACTIVE: { label: 'Actif', color: 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/30', icon: TrendingUp },
+  COMPLETED: { label: 'Terminé', color: 'bg-success-500/10 text-success-600 dark:text-success-400 border-success-500/30', icon: CheckCircle2 },
+  ARCHIVED: { label: 'Archivé', color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30', icon: Archive },
+  ON_HOLD: { label: 'En pause', color: 'bg-warning-500/10 text-warning-600 dark:text-warning-400 border-warning-500/30', icon: Target },
+};
+
+// Helper function to calculate days until deadline
+const getDaysUntilDeadline = (deadline: string | null | undefined): number | null => {
+  if (!deadline) return null;
+  const deadlineDate = new Date(deadline);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  deadlineDate.setHours(0, 0, 0, 0);
+  const diffTime = deadlineDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+// Helper function to get deadline alert info
+const getDeadlineAlert = (deadline: string | null | undefined) => {
+  const days = getDaysUntilDeadline(deadline);
+  if (days === null) return null;
+  if (days < 0) {
+    return { label: 'En retard', color: 'bg-danger-500/10 text-danger-600 dark:text-danger-400 border-danger-500/30', days: Math.abs(days) };
+  }
+  if (days <= 7) {
+    return { label: 'Échéance proche', color: 'bg-warning-500/10 text-warning-600 dark:text-warning-400 border-warning-500/30', days };
+  }
+  return null;
+};
+
+// Helper function to get progress color
+const getProgressColor = (progress: number): string => {
+  if (progress >= 80) return 'bg-success-500';
+  if (progress >= 50) return 'bg-warning-500';
+  return 'bg-danger-500';
+};
+
+// Helper function to get budget color
+const getBudgetColor = (spent: number, budget: number): string => {
+  if (budget === 0) return 'bg-gray-500';
+  const ratio = (spent / budget) * 100;
+  if (ratio >= 100) return 'bg-danger-500';
+  if (ratio >= 80) return 'bg-warning-500';
+  return 'bg-success-500';
 };
 
 export default function ProjetsPage() {
@@ -195,6 +239,16 @@ export default function ProjetsPage() {
     // TODO: Calculate from completed tasks / total tasks
     // For now, return 0 or a placeholder
     return 0;
+  };
+
+  // Format date helper
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('fr-CA', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   const formatCurrency = (value: number) => {
@@ -602,100 +656,183 @@ export default function ProjetsPage() {
               const progress = calculateProgress(project);
               const budget = project.budget || 0;
               const spent = 0; // TODO: Calculate from time entries and expenses
+              const deadlineAlert = getDeadlineAlert(project.deadline);
               
               return (
                 <Card 
                   key={project.id}
-                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-101 hover:border-primary-500/40 transition-all duration-200 cursor-pointer group"
+                  className={`glass-card p-6 rounded-xl border transition-all duration-200 cursor-pointer group ${
+                    deadlineAlert?.label === 'En retard' 
+                      ? 'border-danger-500/30 hover:border-danger-500/50' 
+                      : deadlineAlert?.label === 'Échéance proche'
+                      ? 'border-warning-500/30 hover:border-warning-500/50'
+                      : 'border-nukleo-lavender/20 hover:border-primary-500/40'
+                  } hover:scale-[1.01]`}
                   onClick={() => handleView(project.id)}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                  {/* Header avec statut et deadline alert */}
+                  <div className="flex items-start justify-between mb-4 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                         {project.name}
                       </h3>
-                      <Badge className={`${statusInfo.color} border`}>
-                        {statusInfo.label}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`${statusInfo.color} border`}>
+                          {statusInfo.label}
+                        </Badge>
+                        {deadlineAlert && (
+                          <Badge className={`${deadlineAlert.color} border text-xs`}>
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            {deadlineAlert.label}
+                            {deadlineAlert.days !== undefined && ` (${deadlineAlert.days}j)`}
+                          </Badge>
+                        )}
+                        {project.temoignage_status && (
+                          <Badge className="bg-secondary-500/10 text-secondary-500 border-secondary-500/30 text-xs">
+                            Témoignage: {project.temoignage_status}
+                          </Badge>
+                        )}
+                        {project.portfolio_status && (
+                          <Badge className="bg-primary-500/10 text-primary-500 border-primary-500/30 text-xs">
+                            Portfolio: {project.portfolio_status}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
+                  {/* Description */}
                   {project.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
                       {project.description}
                     </p>
                   )}
 
+                  {/* Informations principales */}
                   <div className="space-y-2 mb-4">
                     {project.client_name && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Users className="w-4 h-4" />
-                        <span className="truncate">{project.client_name}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Client:</span>
+                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.client_name}</span>
+                      </div>
+                    )}
+                    {project.responsable_name && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <UserCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Responsable:</span>
+                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.responsable_name}</span>
                       </div>
                     )}
                     {project.equipe && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Target className="w-4 h-4" />
-                        <span className="truncate">{project.equipe}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Équipe:</span>
+                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.equipe}</span>
                       </div>
                     )}
                     {project.etape && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <FileText className="w-4 h-4" />
-                        <span className="truncate">{project.etape}</span>
-                      </div>
-                    )}
-                    {project.annee_realisation && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Calendar className="w-4 h-4" />
-                        <span>{project.annee_realisation}</span>
-                      </div>
-                    )}
-                    {(project.end_date || project.deadline) && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(project.end_date || project.deadline!).toLocaleDateString('fr-CA')}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Étape:</span>
+                        <span className="text-gray-600 dark:text-gray-400 truncate">{project.etape}</span>
                       </div>
                     )}
                   </div>
+
+                  {/* Dates */}
+                  {(project.start_date || project.end_date || project.deadline || project.annee_realisation) && (
+                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700 mb-4">
+                      <div className="space-y-1.5">
+                        {project.deadline && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-500 dark:text-gray-500">Échéance:</span>
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">{formatDate(project.deadline)}</span>
+                          </div>
+                        )}
+                        {project.start_date && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-500 dark:text-gray-500">Début:</span>
+                            <span className="text-gray-700 dark:text-gray-300">{formatDate(project.start_date)}</span>
+                          </div>
+                        )}
+                        {project.end_date && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-500 dark:text-gray-500">Fin:</span>
+                            <span className="text-gray-700 dark:text-gray-300">{formatDate(project.end_date)}</span>
+                          </div>
+                        )}
+                        {project.annee_realisation && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-500 dark:text-gray-500">Année:</span>
+                            <span className="text-gray-700 dark:text-gray-300">{project.annee_realisation}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Progress Bar */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Progression</span>
-                      <span className="text-xs font-semibold text-gray-900 dark:text-white">{progress}%</span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Progression</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                        {progress > 0 ? `${progress}%` : 'Non calculé'}
+                      </span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-primary-500 to-nukleo-crimson h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.max(progress, 0)}%` }}
-                      />
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                      {progress > 0 ? (
+                        <div
+                          className={`${getProgressColor(progress)} h-2.5 rounded-full transition-all duration-300`}
+                          style={{ width: `${Math.max(Math.min(progress, 100), 0)}%` }}
+                        />
+                      ) : (
+                        <div className="w-full h-2.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                      )}
                     </div>
                   </div>
 
-                  {/* Budget Info */}
+                  {/* Budget Info avec visualisation */}
                   {budget > 0 && (
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Budget</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(budget)}</span>
-                      </div>
-                      {spent > 0 && (
-                        <div className="flex items-center justify-between text-sm mt-1">
-                          <span className="text-gray-600 dark:text-gray-400">Dépensé</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(spent)}</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Budget total</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(budget)}</span>
                         </div>
-                      )}
+                        {spent > 0 && (
+                          <>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600 dark:text-gray-400">Dépensé</span>
+                              <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(spent)}</span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden mt-2">
+                              <div
+                                className={`${getBudgetColor(spent, budget)} h-2 rounded-full transition-all duration-300`}
+                                style={{ width: `${Math.min((spent / budget) * 100, 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
+                              <span>{Math.round((spent / budget) * 100)}% du budget utilisé</span>
+                              <span>{formatCurrency(budget - spent)} restant</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  {/* Links */}
+                  {/* Links externes */}
                   {(project.proposal_url || project.drive_url || project.slack_url || project.echeancier_url) && (
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mb-4">
                       <div className="flex flex-wrap gap-2">
                         {project.proposal_url && (
                           <a href={project.proposal_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-xs">
+                            <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs hover:bg-blue-500/20 transition-colors">
                               <LinkIcon className="w-3 h-3 mr-1" />
                               Proposition
                             </Badge>
@@ -703,7 +840,7 @@ export default function ProjetsPage() {
                         )}
                         {project.drive_url && (
                           <a href={project.drive_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                            <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 text-xs hover:bg-green-500/20 transition-colors">
                               <LinkIcon className="w-3 h-3 mr-1" />
                               Drive
                             </Badge>
@@ -711,9 +848,17 @@ export default function ProjetsPage() {
                         )}
                         {project.slack_url && (
                           <a href={project.slack_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30 text-xs">
+                            <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 text-xs hover:bg-purple-500/20 transition-colors">
                               <LinkIcon className="w-3 h-3 mr-1" />
                               Slack
+                            </Badge>
+                          </a>
+                        )}
+                        {project.echeancier_url && (
+                          <a href={project.echeancier_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                            <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 text-xs hover:bg-orange-500/20 transition-colors">
+                              <LinkIcon className="w-3 h-3 mr-1" />
+                              Échéancier
                             </Badge>
                           </a>
                         )}
@@ -721,15 +866,34 @@ export default function ProjetsPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                      <Button size="sm" variant="ghost" onClick={() => handleView(project.id)}>
+                  {/* Actions */}
+                  <div className="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleView(project.id)}
+                        className="h-8 w-8 p-0"
+                        title="Voir le projet"
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(project)}>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleEdit(project)}
+                        className="h-8 w-8 p-0"
+                        title="Modifier le projet"
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(project.id)}>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleDelete(project.id)}
+                        className="h-8 w-8 p-0 text-danger-500 hover:text-danger-600 hover:bg-danger-500/10"
+                        title="Supprimer le projet"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

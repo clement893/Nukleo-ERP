@@ -1005,44 +1005,6 @@ function ClientsContent() {
             })}
           </div>
         ) : (
-                          <div 
-                            key={project.id}
-                            className="text-sm text-gray-700 dark:text-gray-300 truncate flex items-center gap-1"
-                            title={project.name}
-                          >
-                            <Briefcase className="w-3 h-3 flex-shrink-0 text-primary-500" />
-                            <span className="truncate">{project.name}</span>
-                          </div>
-                        ))}
-                        {projects.length > 3 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{projects.length - 3} autre{projects.length - 3 > 1 ? 's' : ''}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Projets</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {client.project_count || projects.length || 0}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contacts</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {contactsCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
           <Card className="glass-card rounded-xl border border-nukleo-lavender/20">
             {/* Select all header */}
             {filteredClients.length > 0 && (
