@@ -385,7 +385,22 @@ export default function FinancesPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Link href="/fr/dashboard/finances/tresorerie">
+            <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer group">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 group-hover:bg-purple-500/20 transition-all">
+                  <TrendingUp className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Trésorerie</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Suivi du cashflow</p>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-[#523DC9] transition-all" />
+              </div>
+            </Card>
+          </Link>
+
           <Link href="/fr/dashboard/finances/facturations">
             <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer group">
               <div className="flex items-center gap-4">

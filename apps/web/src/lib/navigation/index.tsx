@@ -38,7 +38,8 @@ import {
   FileBarChart,
   Wallet,
   MessageSquare,
-  CheckSquare
+  CheckSquare,
+  BarChart3
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -79,6 +80,25 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
         href: '/dashboard/leo',
         icon: <Sparkles className="w-5 h-5" />,
         badge: 'AI',
+      },
+      // Analyses (collapsible group)
+      {
+        name: 'Analyses',
+        icon: <BarChart3 className="w-5 h-5" />,
+        items: [
+          {
+            name: 'Analytics',
+            href: '/dashboard/analytics',
+            icon: <BarChart3 className="w-5 h-5" />,
+          },
+          {
+            name: 'Insights',
+            href: '/dashboard/insights',
+            icon: <TrendingUp className="w-5 h-5" />,
+          },
+        ],
+        collapsible: true,
+        defaultOpen: false,
       },
       // Module Commercial (collapsible group)
       {
@@ -239,6 +259,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
             name: 'Accueil',
             href: '/dashboard/finances',
             icon: <DollarSign className="w-5 h-5" />,
+          },
+          {
+            name: 'Trésorerie',
+            href: '/dashboard/finances/tresorerie',
+            icon: <TrendingUp className="w-5 h-5" />,
           },
           {
             name: 'Facturations',

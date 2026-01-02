@@ -48,9 +48,15 @@ function EquipesContent() {
   // Extract teams data
   const teamsData = useMemo(() => {
     if (!teamsResponse) return null;
+    // If it's already an array, return it
     if (Array.isArray(teamsResponse)) {
       return teamsResponse;
     }
+    // If it's an object with a 'teams' property (from extractApiData)
+    if (teamsResponse && typeof teamsResponse === 'object' && 'teams' in teamsResponse) {
+      return (teamsResponse as { teams: TeamType[]; total?: number }).teams || [];
+    }
+    // If it's wrapped in 'data' property
     if (teamsResponse && typeof teamsResponse === 'object' && 'data' in teamsResponse) {
       const data = extractApiData<{ teams: TeamType[]; total: number }>(teamsResponse as any);
       return data?.teams || [];
@@ -155,10 +161,12 @@ function EquipesContent() {
   
   // Build teams with stats
   const teams = useMemo(() => {
-    if (!targetTeams.length || !allTasksQuery.data) return [];
+    if (!targetTeams.length) return [];
+    
+    const tasksData = allTasksQuery.data || [];
     
     return targetTeams.map((team) => {
-      const tasks = allTasksQuery.data.filter((task: ProjectTask) => task.team_id === team.id);
+      const tasks = tasksData.filter((task: ProjectTask) => task.team_id === team.id);
       
       const employees: Employee[] = (team.members || []).map((member: TeamMember) => {
         const memberTasks = tasks.filter(

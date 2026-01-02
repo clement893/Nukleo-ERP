@@ -214,7 +214,11 @@ export function useCancelSubscription() {
 export function useTeams() {
   return useQuery({
     queryKey: queryKeys.teams.all,
-    queryFn: () => teamsAPI.list(),
+    queryFn: async () => {
+      const response = await teamsAPIClient.list();
+      return extractApiData(response);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
