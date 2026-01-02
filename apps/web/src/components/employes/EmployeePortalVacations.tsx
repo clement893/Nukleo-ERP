@@ -5,7 +5,7 @@ import { Employee } from '@/lib/api/employees';
 import { type VacationRequest, type VacationRequestCreate } from '@/lib/api/vacationRequests';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { Card, Loading, Alert, Badge, Button } from '@/components/ui';
+import { Loading, Alert, Button } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
@@ -14,7 +14,7 @@ import {
   useCreateVacationRequest,
   useDeleteVacationRequest,
 } from '@/lib/query/vacationRequests';
-import { CheckCircle, XCircle, Clock, Calendar, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Calendar, Trash2 } from 'lucide-react';
 import { EmployeePortalStatsCard, EmployeePortalContentCard, EmployeePortalEmptyState } from './index';
 
 interface EmployeePortalVacationsProps {

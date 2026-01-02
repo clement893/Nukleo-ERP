@@ -7,7 +7,8 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, Download, Plus, Loader2, Upload, X, CheckCircle2, AlertCircle,
-  RefreshCw, LayoutDashboard, Calendar, FileText, BarChart3, Building2, Tag, Bell
+  RefreshCw, LayoutDashboard, Calendar, FileText, BarChart3, Building2, Tag, Bell,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import Tabs, { TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
@@ -97,23 +98,6 @@ export default function TresoreriePage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('fr-CA', {
-      day: 'numeric',
-      month: 'short'
-    }).format(date);
-  };
-
   if (loading) {
     return (
       <PageContainer>
@@ -123,60 +107,6 @@ export default function TresoreriePage() {
       </PageContainer>
     );
   }
-
-  const soldeAvecMarge = soldeActuel * 0.8; // 20% de marge
-  
-  const variation = stats?.variation_percent ? Number(stats.variation_percent) : (soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0);
-  const alerteNiveau = soldeAvecMarge < 50000 ? 'rouge' : soldeAvecMarge < 100000 ? 'orange' : 'vert';
-
-  // Filtrer les données selon la période sélectionnée
-  const periodData = soldesHebdo.slice(0, selectedPeriod === '4w' ? 4 : selectedPeriod === '8w' ? 8 : 12);
-
-  // Prochaines entrées (transactions futures)
-  const today = new Date();
-  const prochainesEntrees = transactions
-    .filter(t => t.type === 'entry' && new Date(t.date) >= today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 10);
-
-  // Prochaines sorties (transactions futures)
-  const prochainesSorties = transactions
-    .filter(t => t.type === 'exit' && new Date(t.date) >= today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 10);
-
-  const totalEntrees = periodData.reduce((sum, s) => sum + s.entrees, 0);
-  const totalSorties = periodData.reduce((sum, s) => sum + s.sorties, 0);
-  const netCashflow = totalEntrees - totalSorties;
-
-  // Calculer les alertes
-  const lowBalanceWeeks = periodData.filter(s => s.solde < 100000).length;
-  const negativeWeeks = periodData.filter(s => (s.entrees - s.sorties) < 0).length;
-
-  // Calculer les totaux par catégorie
-  const entryCategories = categories.filter(c => c.type === 'entry');
-  const exitCategories = categories.filter(c => c.type === 'exit');
-  
-  const entriesByCategory = entryCategories.map(cat => ({
-    category: cat,
-    total: transactions
-      .filter(t => t.type === 'entry' && t.category_id === cat.id)
-      .reduce((sum, t) => sum + Number(t.amount), 0)
-  }));
-
-  const exitsByCategory = exitCategories.map(cat => ({
-    category: cat,
-    total: transactions
-      .filter(t => t.type === 'exit' && t.category_id === cat.id)
-      .reduce((sum, t) => sum + Number(t.amount), 0)
-  }));
-
-  const maxCashflow = Math.max(
-    ...(periodData.length > 0 ? periodData.map(s => Math.max(s.entrees, s.sorties)) : [0]),
-    ...(entriesByCategory.length > 0 ? entriesByCategory.map(e => e.total) : [0]),
-    ...(exitsByCategory.length > 0 ? exitsByCategory.map(e => e.total) : [0]),
-    1 // Minimum de 1 pour éviter division par zéro
-  );
 
   const handleExport = async () => {
     try {
@@ -342,13 +272,7 @@ export default function TresoreriePage() {
               <TresorerieOverviewTab
                 soldeActuel={soldeActuel}
                 stats={stats}
-                soldesHebdo={soldesHebdo.map((week: CashflowWeek) => ({
-                  semaine: week.week_start,
-                  entrees: Number(week.entries),
-                  sorties: Number(week.exits),
-                  solde: Number(week.balance),
-                  projete: week.is_projected
-                }))}
+                soldesHebdo={soldesHebdo}
                 transactions={transactions}
                 categories={categories}
                 selectedPeriod={selectedPeriod}

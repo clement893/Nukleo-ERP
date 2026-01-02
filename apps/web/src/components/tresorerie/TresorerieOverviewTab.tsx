@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
@@ -8,7 +7,7 @@ import {
   Building2, ArrowUp, ArrowDown, Filter
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
-import type { CashflowWeek, Transaction, TreasuryStats, TransactionCategory } from '@/lib/api/tresorerie';
+import type { Transaction, TreasuryStats, TransactionCategory } from '@/lib/api/tresorerie';
 
 interface SoldeHebdomadaire {
   semaine: string;
@@ -26,8 +25,8 @@ interface TresorerieOverviewTabProps {
   categories: TransactionCategory[];
   selectedPeriod: '4w' | '8w' | '12w';
   onPeriodChange: (period: '4w' | '8w' | '12w') => void;
-  onRefresh: () => void;
-  onExport: () => void;
+  onRefresh?: () => void;
+  onExport?: () => void;
 }
 
 export default function TresorerieOverviewTab({
@@ -59,7 +58,6 @@ export default function TresorerieOverviewTab({
   };
 
   const soldeAvecMarge = soldeActuel * 0.8;
-  const projection30j = stats?.projected_balance_30d || soldesHebdo[4]?.solde || soldeActuel;
   const variation = stats?.variation_percent ? Number(stats.variation_percent) : (soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0);
   const alerteNiveau = soldeAvecMarge < 50000 ? 'rouge' : soldeAvecMarge < 100000 ? 'orange' : 'vert';
 

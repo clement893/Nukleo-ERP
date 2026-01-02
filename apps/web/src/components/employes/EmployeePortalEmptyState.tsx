@@ -7,7 +7,6 @@
 
 'use client';
 
-import { ReactNode } from 'react';
 import { Card, Button } from '@/components/ui';
 import { LucideIcon } from 'lucide-react';
 
