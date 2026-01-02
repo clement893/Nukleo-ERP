@@ -305,6 +305,45 @@ export default function FeuillesTempsPage() {
     loadTimerStatus();
   }, [loadTimerStatus]);
 
+  // Load all active timers when active-timers view is selected
+  useEffect(() => {
+    const loadActiveTimers = async () => {
+      if (viewMode === 'active-timers') {
+        try {
+          const timers = await timeEntriesAPI.getAllActiveTimers();
+          setActiveTimers(timers);
+        } catch (err) {
+          // Silently fail - might not have permission
+          setActiveTimers([]);
+        }
+      }
+    };
+
+    loadActiveTimers();
+    if (viewMode === 'active-timers') {
+      const interval = setInterval(loadActiveTimers, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [viewMode]);
+
+  // Update elapsed time for active timers every second
+  useEffect(() => {
+    if (viewMode === 'active-timers' && activeTimers.length > 0) {
+      const interval = setInterval(() => {
+        setActiveTimers(prev => prev.map(timer => {
+          if (timer.paused) {
+            return timer;
+          }
+          const startTime = new Date(timer.start_time).getTime();
+          const now = Date.now();
+          const elapsed = timer.accumulated_seconds + Math.floor((now - startTime) / 1000);
+          return { ...timer, elapsed_seconds: elapsed };
+        }));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [viewMode, activeTimers]);
+
   const resetForm = () => {
     setFormData({
       description: '',
@@ -744,6 +783,14 @@ export default function FeuillesTempsPage() {
                   <Calendar className="w-4 h-4 mr-2" />
                   Par Semaine
                 </Button>
+                <Button 
+                  variant={viewMode === 'active-timers' ? 'primary' : 'outline'}
+                  onClick={() => setViewMode('active-timers')}
+                  size="sm"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Timers Actifs
+                </Button>
               </div>
             </div>
 
@@ -1037,6 +1084,96 @@ export default function FeuillesTempsPage() {
                 </div>
               </Card>
             ))}
+
+            {viewMode === 'active-timers' && (
+              <div className="space-y-4">
+                {activeTimers.length === 0 ? (
+                  <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
+                    <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Aucun timer actif
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Aucun employé n'a de timer en cours actuellement
+                    </p>
+                  </Card>
+                ) : (
+                  activeTimers.map((timer) => (
+                    <Card key={`${timer.user_id}-${timer.task_id}`} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold">
+                            {timer.user_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{timer.user_name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{timer.user_email}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-2 mb-1">
+                            {timer.paused ? (
+                              <Badge variant="warning" className="flex items-center gap-1">
+                                <Pause className="w-3 h-3" />
+                                En pause
+                              </Badge>
+                            ) : (
+                              <Badge variant="success" className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                Actif
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white font-mono" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                            {formatDuration(timer.elapsed_seconds)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        {timer.task_title && (
+                          <div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Tâche</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                              <Briefcase className="w-4 h-4" />
+                              {timer.task_title}
+                            </p>
+                          </div>
+                        )}
+                        {timer.project_name && (
+                          <div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Projet</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                              <Building className="w-4 h-4" />
+                              {timer.project_name}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Démarré le</p>
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {new Date(timer.start_time).toLocaleString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                        {timer.description && (
+                          <div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Description</p>
+                            <p className="text-sm text-gray-900 dark:text-white line-clamp-2">
+                              {timer.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
 
             {viewMode === 'week' && entriesByWeek.map((group: any) => (
               <Card key={`${group.weekInfo.year}-W${group.weekInfo.week}`} className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
