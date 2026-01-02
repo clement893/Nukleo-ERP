@@ -683,8 +683,8 @@ function ClientsContent() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <Briefcase className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <Briefcase className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -695,8 +695,8 @@ function ClientsContent() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                <Users className="w-6 h-6 text-[#F59E0B]" />
+              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                <Users className="w-6 h-6 text-warning-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -707,8 +707,8 @@ function ClientsContent() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30">
-                <TrendingUp className="w-6 h-6 text-[#3B82F6]" />
+              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                <TrendingUp className="w-6 h-6 text-primary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -870,7 +870,7 @@ function ClientsContent() {
               return (
                 <div
                   key={client.id}
-                  className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:scale-105 hover:border-[#523DC9]/40 transition-all duration-200 relative"
+                  className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-primary-500/40 transition-all duration-200 relative"
                 >
                   {/* Selection checkbox */}
                   <div className="absolute top-4 left-4 z-10">
@@ -882,7 +882,7 @@ function ClientsContent() {
                       }}
                     >
                       {isSelected ? (
-                        <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                        <CheckSquare className="w-5 h-5 text-primary-500" />
                       ) : (
                         <Square className="w-5 h-5 text-gray-400" />
                       )}
@@ -1012,7 +1012,7 @@ function ClientsContent() {
                             className="text-sm text-gray-700 dark:text-gray-300 truncate flex items-center gap-1"
                             title={project.name}
                           >
-                            <Briefcase className="w-3 h-3 flex-shrink-0 text-[#523DC9]" />
+                            <Briefcase className="w-3 h-3 flex-shrink-0 text-primary-500" />
                             <span className="truncate">{project.name}</span>
                           </div>
                         ))}
@@ -1089,7 +1089,7 @@ function ClientsContent() {
                         }}
                       >
                         {isSelected ? (
-                          <CheckSquare className="w-5 h-5 text-[#523DC9]" />
+                          <CheckSquare className="w-5 h-5 text-primary-500" />
                         ) : (
                           <Square className="w-5 h-5 text-gray-400" />
                         )}

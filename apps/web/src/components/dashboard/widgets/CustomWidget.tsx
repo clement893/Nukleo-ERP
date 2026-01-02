@@ -5,7 +5,7 @@
  * Rendu dynamique des widgets personnalisés créés par l'utilisateur
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { customWidgetsAPI, type CustomWidget as CustomWidgetType } from '@/lib/api/custom-widgets';
 import { apiClient } from '@/lib/api/client';
@@ -70,8 +70,8 @@ async function fetchWidgetData(dataSource: any) {
     if (dataSource.data_path && result) {
       const pathParts = dataSource.data_path.split('.');
       for (const part of pathParts) {
-        if (result && typeof result === 'object' && part in result) {
-          result = result[part];
+        if (result && typeof result === 'object' && part in (result as Record<string, any>)) {
+          result = (result as Record<string, any>)[part];
         } else {
           result = null;
           break;
@@ -88,6 +88,40 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
   const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<any[] | null>(null);
   const [chartLoading, setChartLoading] = useState(false);
+
+  // Fonction pour charger les données de chart
+  const loadChartData = useCallback(async (dataSource: any) => {
+    try {
+      setChartLoading(true);
+      let fetchedData = await fetchWidgetData(dataSource);
+      
+      // Appliquer la transformation si fournie
+      if (dataSource.transform && fetchedData) {
+        try {
+          const transformFn = new Function('data', dataSource.transform);
+          fetchedData = transformFn(fetchedData);
+        } catch (transformErr) {
+          logger.warn('Error applying data transformation', transformErr);
+        }
+      }
+      
+      // S'assurer que les données sont un tableau
+      if (Array.isArray(fetchedData)) {
+        setChartData(fetchedData);
+      } else if (fetchedData && typeof fetchedData === 'object') {
+        const dataObj = fetchedData as Record<string, any>;
+        const arrayData = dataObj.data || dataObj.items || [fetchedData];
+        setChartData(Array.isArray(arrayData) ? arrayData : [arrayData]);
+      } else {
+        setChartData([]);
+      }
+    } catch (err) {
+      logger.warn('Error fetching chart data', err);
+      setChartData([]);
+    } finally {
+      setChartLoading(false);
+    }
+  }, []);
 
   // Récupérer le widget personnalisé depuis l'API
   useEffect(() => {
@@ -135,7 +169,8 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
           if (Array.isArray(data)) {
             setChartData(data);
           } else if (data && typeof data === 'object') {
-            const arrayData = data.data || data.items || [data];
+            const dataObj = data as Record<string, any>;
+            const arrayData = dataObj.data || dataObj.items || [data];
             setChartData(Array.isArray(arrayData) ? arrayData : [arrayData]);
           }
         }
@@ -145,38 +180,6 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
         logger.error('Error loading custom widget', err);
       } finally {
         setIsLoading(false);
-      }
-    };
-
-    const loadChartData = async (dataSource: any) => {
-      try {
-        setChartLoading(true);
-        let fetchedData = await fetchWidgetData(dataSource);
-        
-        // Appliquer la transformation si fournie
-        if (dataSource.transform && fetchedData) {
-          try {
-            const transformFn = new Function('data', dataSource.transform);
-            fetchedData = transformFn(fetchedData);
-          } catch (transformErr) {
-            logger.warn('Error applying data transformation', transformErr);
-          }
-        }
-        
-        // S'assurer que les données sont un tableau
-        if (Array.isArray(fetchedData)) {
-          setChartData(fetchedData);
-        } else if (fetchedData && typeof fetchedData === 'object') {
-          const arrayData = fetchedData.data || fetchedData.items || [fetchedData];
-          setChartData(Array.isArray(arrayData) ? arrayData : [arrayData]);
-        } else {
-          setChartData([]);
-        }
-      } catch (err) {
-        logger.warn('Error fetching chart data', err);
-        setChartData([]);
-      } finally {
-        setChartLoading(false);
       }
     };
 
@@ -191,7 +194,9 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
 
       return () => clearInterval(interval);
     }
-  }, [config?.widget_id, config?.refresh_interval]);
+    
+    return undefined;
+  }, [config?.widget_id, config?.refresh_interval, loadChartData]);
 
   if (isLoading) {
     return (
@@ -450,101 +455,123 @@ export function CustomWidget({ config, globalFilters: _globalFilters }: WidgetPr
       // Couleurs par défaut
       const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
+      const renderChart = () => {
+        if (chartType === 'line') {
+          return (
+            <LineChart data={preparedChartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
+              <XAxis dataKey={xKey} stroke="currentColor" className="text-xs" />
+              <YAxis stroke="currentColor" className="text-xs" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey={yKey}
+                stroke={colors[0]}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          );
+        }
+        if (chartType === 'bar') {
+          return (
+            <BarChart data={preparedChartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
+              <XAxis dataKey={xKey} stroke="currentColor" className="text-xs" />
+              <YAxis stroke="currentColor" className="text-xs" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Bar dataKey={yKey} fill={colors[0]} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          );
+        }
+        if (chartType === 'area') {
+          return (
+            <AreaChart data={preparedChartData}>
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={colors[0]} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={colors[0]} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
+              <XAxis dataKey={xKey} stroke="currentColor" className="text-xs" />
+              <YAxis stroke="currentColor" className="text-xs" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey={yKey}
+                stroke={colors[0]}
+                strokeWidth={2}
+                fill="url(#colorGradient)"
+              />
+            </AreaChart>
+          );
+        }
+        if (chartType === 'pie') {
+          return (
+            <PieChart>
+              <Pie
+                data={preparedChartData}
+                dataKey={yKey}
+                nameKey={xKey}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label
+              >
+                {preparedChartData.map((_entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+            </PieChart>
+          );
+        }
+        return null;
+      };
+
+      const chartComponent = renderChart();
+      if (!chartComponent) {
+        return (
+          <div className="h-full flex items-center justify-center" style={style}>
+            <p className="text-sm text-gray-500">Type de graphique non supporté</p>
+          </div>
+        );
+      }
+
       return (
         <div className="h-full w-full p-4" style={style}>
           <ResponsiveContainer width="100%" height="100%">
-            {chartType === 'line' && (
-              <LineChart data={preparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
-                <XAxis dataKey={xKey} stroke="currentColor" className="text-xs" />
-                <YAxis stroke="currentColor" className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey={yKey}
-                  stroke={colors[0]}
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            )}
-            {chartType === 'bar' && (
-              <BarChart data={preparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
-                <XAxis dataKey={xKey} stroke="currentColor" className="text-xs" />
-                <YAxis stroke="currentColor" className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Bar dataKey={yKey} fill={colors[0]} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            )}
-            {chartType === 'area' && (
-              <AreaChart data={preparedChartData}>
-                <defs>
-                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={colors[0]} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={colors[0]} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
-                <XAxis dataKey={xKey} stroke="currentColor" className="text-xs" />
-                <YAxis stroke="currentColor" className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey={yKey}
-                  stroke={colors[0]}
-                  strokeWidth={2}
-                  fill="url(#colorGradient)"
-                />
-              </AreaChart>
-            )}
-            {chartType === 'pie' && (
-              <PieChart>
-                <Pie
-                  data={preparedChartData}
-                  dataKey={yKey}
-                  nameKey={xKey}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {preparedChartData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            )}
+            {chartComponent}
           </ResponsiveContainer>
         </div>
       );

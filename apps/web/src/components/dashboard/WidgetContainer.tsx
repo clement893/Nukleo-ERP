@@ -64,7 +64,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
     return (
       <ErrorBoundary
         fallback={(error) => (
-          <WidgetErrorFallback error={error} widgetType="custom" />
+          <WidgetErrorFallback error={error || new Error('Unknown error')} widgetType="custom" />
         )}
       >
         <div className="h-full w-full glass-card rounded-lg flex flex-col">
