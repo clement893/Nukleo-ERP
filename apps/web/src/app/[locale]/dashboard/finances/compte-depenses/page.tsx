@@ -470,9 +470,11 @@ export default function MesDepenses() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Mes Comptes de Dépenses
+                {isAdmin ? 'Gestion des comptes de dépenses' : 'Mes Comptes de Dépenses'}
               </h1>
-              <p className="text-white/80 text-lg">Gérez vos notes de frais et remboursements</p>
+              <p className="text-white/80 text-lg">
+                {isAdmin ? 'Gérez et approuvez les comptes de dépenses de tous les employés' : 'Gérez vos notes de frais et remboursements'}
+              </p>
             </div>
             <Button 
               className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
@@ -486,52 +488,52 @@ export default function MesDepenses() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {formatCurrency(totalAmount.toString(), expenses[0]?.currency || 'CAD')}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total demandé</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">Total demandé</div>
         </Card>
 
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
+              <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {formatCurrency(approvedAmount.toString(), expenses[0]?.currency || 'CAD')}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Approuvé</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">Approuvé</div>
         </Card>
 
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-              <Clock className="w-6 h-6 text-yellow-600" />
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+              <Clock className="w-5 h-5 text-yellow-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {pendingCount}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">En attente</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">En attente</div>
         </Card>
 
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-              <FileText className="w-6 h-6 text-purple-600" />
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
+              <FileText className="w-5 h-5 text-purple-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-2xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {expenses.length}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total comptes</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">Total comptes</div>
         </Card>
       </div>
 
@@ -560,12 +562,12 @@ export default function MesDepenses() {
           const Icon = badge.icon;
           
           return (
-            <Card key={expense.id} className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
-              <div className="flex items-start justify-between mb-4">
+            <Card key={expense.id} className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9]/40 transition-all">
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <FileText className="w-5 h-5 text-[#523DC9]" />
-                    <h3 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <FileText className="w-4 h-4 text-[#523DC9]" />
+                    <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {expense.title}
                     </h3>
                     <Badge className={`${badge.class} flex items-center gap-1 text-xs`}>
@@ -574,17 +576,17 @@ export default function MesDepenses() {
                     </Badge>
                   </div>
                   {expense.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
                       {expense.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
-                    <span className="font-mono text-xs">{expense.account_number}</span>
+                  <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
+                    <span className="font-mono">{expense.account_number}</span>
                     {expense.expense_period_start && expense.expense_period_end && (
                       <>
                         <span>•</span>
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
+                          <Calendar className="w-3 h-3" />
                           {formatDate(expense.expense_period_start)} - {formatDate(expense.expense_period_end)}
                         </div>
                       </>
@@ -597,10 +599,10 @@ export default function MesDepenses() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-6 h-6 text-green-600" />
-                    <span className="text-2xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className="flex flex-col items-end gap-2 ml-4">
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <span className="text-xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {formatCurrency(expense.total_amount, expense.currency)}
                     </span>
                   </div>
@@ -649,15 +651,55 @@ export default function MesDepenses() {
                 </div>
               )}
 
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
                 <div className="text-xs text-gray-500">
                   Créé le {formatDate(expense.created_at)}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  {/* Actions admin rapides directement sur la carte */}
+                  {isAdmin && (expense.status === 'submitted' || expense.status === 'under_review') && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 h-auto"
+                        onClick={() => {
+                          setSelectedExpense(expense);
+                          setShowApproveModal(true);
+                        }}
+                      >
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Approuver
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-auto"
+                        onClick={() => {
+                          setSelectedExpense(expense);
+                          setShowRejectModal(true);
+                        }}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Rejeter
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs px-2 py-1 h-auto"
+                        onClick={() => {
+                          setSelectedExpense(expense);
+                          setShowClarificationModal(true);
+                        }}
+                      >
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Clarifier
+                      </Button>
+                    </>
+                  )}
                   {expense.status === 'draft' && (
                     <Button 
                       size="sm" 
                       variant="outline"
+                      className="text-xs px-2 py-1 h-auto"
                       onClick={() => {
                         setSelectedExpense(expense);
                         setShowEditModal(true);
@@ -667,10 +709,11 @@ export default function MesDepenses() {
                       Modifier
                     </Button>
                   )}
-                  {(expense.status === 'submitted' || expense.status === 'under_review' || expense.status === 'needs_clarification') && (
+                  {(expense.status === 'submitted' || expense.status === 'under_review' || expense.status === 'needs_clarification') && !isAdmin && (
                     <Button 
                       size="sm" 
                       variant="outline"
+                      className="text-xs px-2 py-1 h-auto"
                       onClick={() => {
                         setSelectedExpense(expense);
                         setShowEditModal(true);
@@ -680,10 +723,10 @@ export default function MesDepenses() {
                       Modifier
                     </Button>
                   )}
-                  {expense.status === 'needs_clarification' && (
+                  {expense.status === 'needs_clarification' && !isAdmin && (
                     <Button 
                       size="sm" 
-                      className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+                      className="bg-[#523DC9] hover:bg-[#5F2B75] text-white text-xs px-2 py-1 h-auto"
                       onClick={() => {
                         setSelectedExpense(expense);
                         setShowRespondModal(true);
@@ -696,6 +739,7 @@ export default function MesDepenses() {
                   <Button 
                     size="sm" 
                     variant="outline"
+                    className="text-xs px-2 py-1 h-auto"
                     onClick={() => {
                       setSelectedExpense(expense);
                       setShowViewModal(true);
