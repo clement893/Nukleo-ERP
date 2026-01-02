@@ -35,9 +35,10 @@ import ProjectAttachments from '@/components/projects/ProjectAttachments';
 import ProjectComments from '@/components/projects/ProjectComments';
 import ProjectGantt from '@/components/projects/ProjectGantt';
 import ProjectStatistics from '@/components/projects/ProjectStatistics';
+import ProjectDeadlines from '@/components/projects/ProjectDeadlines';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 
-type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables' | 'files' | 'comments' | 'gantt' | 'statistics';
+type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables' | 'files' | 'comments' | 'gantt' | 'statistics' | 'deadlines';
 
 function ProjectDetailContent() {
   const router = useRouter();
@@ -385,6 +386,21 @@ function ProjectDetailContent() {
               <Award className="w-4 h-4 inline mr-2" />
               Livrables
               {activeTab === 'deliverables' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('deadlines')}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                activeTab === 'deadlines'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Clock className="w-4 h-4 inline mr-2" />
+              Deadlines
+              {activeTab === 'deadlines' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
             </button>

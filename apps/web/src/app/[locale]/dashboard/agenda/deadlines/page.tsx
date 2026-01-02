@@ -9,6 +9,8 @@ import { Calendar, AlertCircle, CheckCircle, Clock, Search } from 'lucide-react'
 import { Badge, Button, Card, Input } from '@/components/ui';
 import { useInfiniteProjects } from '@/lib/query/projects';
 import { useInfiniteProjectTasks } from '@/lib/query/project-tasks';
+import { deadlinesAPI, type Deadline } from '@/lib/api/deadlines';
+import { useEffect, useState } from 'react';
 
 type DeadlineStatus = 'overdue' | 'today' | 'upcoming' | 'completed';
 
@@ -66,19 +68,38 @@ export default function DeadlinesPage() {
 
   const { data: projectsData, isLoading: projectsLoading } = useInfiniteProjects();
   const { data: tasksData, isLoading: tasksLoading } = useInfiniteProjectTasks();
+  const [projectDeadlines, setProjectDeadlines] = useState<Deadline[]>([]);
+  const [deadlinesLoading, setDeadlinesLoading] = useState(true);
 
   const projects = projectsData?.pages.flatMap(page => page) || [];
   const tasks = tasksData?.pages.flatMap(page => page) || [];
 
+  // Load deadlines from API
+  useEffect(() => {
+    const loadDeadlines = async () => {
+      try {
+        setDeadlinesLoading(true);
+        const deadlines = await deadlinesAPI.list({ limit: 1000 });
+        setProjectDeadlines(deadlines);
+      } catch (err) {
+        console.error('Error loading deadlines:', err);
+        setProjectDeadlines([]);
+      } finally {
+        setDeadlinesLoading(false);
+      }
+    };
+    loadDeadlines();
+  }, []);
+
   const deadlines: DeadlineItem[] = useMemo(() => {
-    return tasks
+    const taskDeadlines: DeadlineItem[] = tasks
       .filter(task => task.due_date)
       .map(task => {
         const project = projects.find(p => p.id === task.project_id);
         const { status, daysRemaining } = calculateDeadlineStatus(task.due_date!, task.status);
         
         return {
-          id: String(task.id),
+          id: `task-${task.id}`,
           title: task.title,
           projectName: project?.name || 'Projet inconnu',
           projectId: task.project_id ? String(task.project_id) : '',
@@ -88,7 +109,29 @@ export default function DeadlinesPage() {
           status,
           daysRemaining
         };
-      })
+      });
+
+    const apiDeadlines: DeadlineItem[] = projectDeadlines.map(deadline => {
+      const project = projects.find(p => deadline.project_id && p.id === Number(deadline.project_id));
+      const { status, daysRemaining } = calculateDeadlineStatus(
+        deadline.due_date, 
+        deadline.status === 'completed' ? 'completed' : deadline.status === 'cancelled' ? 'cancelled' : 'pending'
+      );
+      
+      return {
+        id: `deadline-${deadline.id}`,
+        title: deadline.title,
+        projectName: project?.name || 'Projet inconnu',
+        projectId: deadline.project_id || '',
+        dueDate: deadline.due_date,
+        priority: deadline.priority === 'urgent' ? 'high' : deadline.priority,
+        assignedTo: undefined, // TODO: Get assigned user name
+        status: status === 'completed' ? 'completed' : status,
+        daysRemaining
+      };
+    });
+
+    return [...taskDeadlines, ...apiDeadlines]
       .sort((a, b) => {
         // Sort by status priority (overdue > today > upcoming > completed)
         const statusPriority = { overdue: 0, today: 1, upcoming: 2, completed: 3 };
@@ -98,7 +141,7 @@ export default function DeadlinesPage() {
         // Then by due date
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       });
-  }, [tasks, projects]);
+  }, [tasks, projects, projectDeadlines]);
 
   const filteredDeadlines = deadlines.filter(deadline => {
     const matchesSearch = !searchQuery ||
@@ -116,7 +159,7 @@ export default function DeadlinesPage() {
     upcoming: deadlines.filter(d => d.status === 'upcoming').length
   };
 
-  const isLoading = projectsLoading || tasksLoading;
+  const isLoading = projectsLoading || tasksLoading || deadlinesLoading;
 
   return (
     <PageContainer maxWidth="full">
