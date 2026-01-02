@@ -27,26 +27,35 @@ Available Tasks:
     - send_trial_ending_email_task: Trial ending reminder
 """
 
-from app.celery_app import celery_app
+from app.celery_app import celery_app, CELERY_AVAILABLE
 from app.services.email_service import EmailService
+
+
+def _send_email_impl(to_email: str, subject: str, html_content: str, text_content: str = None):
+    """Internal implementation for sending email."""
+    email_service = EmailService()
+    if not email_service.is_configured():
+        print(f"SendGrid not configured. Would send email to {to_email}")
+        print(f"Subject: {subject}")
+        return {"status": "skipped", "to": to_email, "reason": "SendGrid not configured"}
+    
+    # SendGrid is synchronous, so we can call it directly
+    result = email_service.send_email(to_email, subject, html_content, text_content)
+    return result
 
 
 @celery_app.task(bind=True, max_retries=3)
 def send_email_task(self, to_email: str, subject: str, html_content: str, text_content: str = None):
     """Send email task using SendGrid."""
     try:
-        email_service = EmailService()
-        if not email_service.is_configured():
-            print(f"SendGrid not configured. Would send email to {to_email}")
-            print(f"Subject: {subject}")
-            return {"status": "skipped", "to": to_email, "reason": "SendGrid not configured"}
-        
-        # SendGrid is synchronous, so we can call it directly
-        result = email_service.send_email(to_email, subject, html_content, text_content)
-        return result
+        return _send_email_impl(to_email, subject, html_content, text_content)
     except Exception as exc:
-        # Retry with exponential backoff
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            # Retry with exponential backoff
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            # If celery not available, just raise the exception
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -60,7 +69,10 @@ def send_welcome_email_task(self, email: str, name: str, login_url: str = None):
         result = email_service.send_welcome_email(email, name, login_url)
         return result
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -74,7 +86,10 @@ def send_password_reset_email_task(self, email: str, name: str, reset_token: str
         result = email_service.send_password_reset_email(email, name, reset_token, reset_url)
         return result
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -88,7 +103,10 @@ def send_verification_email_task(self, email: str, name: str, verification_token
         result = email_service.send_verification_email(email, name, verification_token, verification_url)
         return result
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -114,7 +132,10 @@ def send_invoice_email_task(
         )
         return result
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -128,7 +149,10 @@ def send_subscription_created_email_task(self, email: str, name: str, plan_name:
         result = email_service.send_subscription_created_email(email, name, plan_name, amount, currency)
         return result
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -142,7 +166,10 @@ def send_subscription_cancelled_email_task(self, email: str, name: str, plan_nam
         result = email_service.send_subscription_cancelled_email(email, name, plan_name, end_date)
         return result
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -155,5 +182,10 @@ def send_trial_ending_email_task(self, email: str, name: str, days_remaining: in
         
         result = email_service.send_trial_ending_email(email, name, days_remaining, upgrade_url)
         return result
+    except Exception as exc:
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)

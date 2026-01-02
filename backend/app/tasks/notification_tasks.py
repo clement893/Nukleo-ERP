@@ -2,7 +2,7 @@
 
 from typing import Optional, Dict, Union
 from datetime import datetime, timezone
-from app.celery_app import celery_app
+from app.celery_app import celery_app, CELERY_AVAILABLE
 from app.core.logging import logger
 from app.services.email_service import EmailService
 from app.models.notification import Notification, NotificationType
@@ -197,7 +197,10 @@ def send_notification_task(
     except Exception as exc:
         logger.error(f"Failed to send notification: {exc}", exc_info=True)
         # Retry with exponential backoff
-        raise self.retry(exc=exc, countdown=60)
+        if CELERY_AVAILABLE and hasattr(self, 'retry'):
+            raise self.retry(exc=exc, countdown=60)
+        else:
+            raise
 
 
 @celery_app.task
