@@ -58,8 +58,6 @@ function EvenementsContent() {
   
   // Selection
   const [selectedEvents, setSelectedEvents] = useState<Set<number>>(new Set());
-  const [page, setPage] = useState(1);
-  const pageSize = 50; // Pagination côté serveur
 
   // Calculate date filters for server-side filtering (mémorisé)
   const todayString = useMemo(() => {
@@ -68,17 +66,15 @@ function EvenementsContent() {
     return today.toISOString().split('T')[0];
   }, []); // Ne change qu'une fois par jour
 
-  // Build API params
+  // Build API params (optimisé: limite réduite à 100 au lieu de 1000)
   const apiParams = useMemo(() => {
     const params: {
       start_date?: string;
       end_date?: string;
       event_type?: string;
-      skip?: number;
       limit?: number;
     } = {
-      skip: (page - 1) * pageSize,
-      limit: pageSize,
+      limit: 100, // Réduit de 1000 à 100 pour améliorer les performances
     };
 
     if (filterDate === 'upcoming') {
@@ -92,7 +88,7 @@ function EvenementsContent() {
     }
 
     return params;
-  }, [filterDate, filterType, todayString, page, pageSize]);
+  }, [filterDate, filterType, todayString]);
 
   // React Query hooks
   const { data: events = [], isLoading, error } = useEvents(apiParams);
