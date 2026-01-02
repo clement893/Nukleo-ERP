@@ -624,6 +624,11 @@ export default function EmployeesPage() {
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                       {fullName}
                     </h3>
+                    {employee.employee_number && (
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">
+                        #{employee.employee_number}
+                      </p>
+                    )}
                     {employee.job_title && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                         {employee.job_title}
@@ -743,6 +748,9 @@ export default function EmployeesPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-1 flex-wrap">
                             <h3 className="font-semibold text-gray-900 dark:text-white">{fullName}</h3>
+                            {employee.employee_number && (
+                              <span className="text-xs text-gray-500 dark:text-gray-500">#{employee.employee_number}</span>
+                            )}
                             <Badge className={`${statusInfo.color} border`}>
                               {statusInfo.label}
                             </Badge>
@@ -834,6 +842,9 @@ export default function EmployeesPage() {
                       </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Numéro
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       <button
                         onClick={() => handleSort('job_title')}
                         className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-300"
@@ -901,6 +912,9 @@ export default function EmployeesPage() {
                             </div>
                             <span className="font-medium text-gray-900 dark:text-white">{fullName}</span>
                           </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                          {employee.employee_number ? `#${employee.employee_number}` : '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                           {employee.job_title || '-'}

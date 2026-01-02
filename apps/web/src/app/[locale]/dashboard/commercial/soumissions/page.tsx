@@ -1061,7 +1061,7 @@ export default function SoumissionsPage() {
                         </div>
 
                         <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-2xl font-bold text-success-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                          <div className="text-2xl font-bold text-success-500 font-nukleo">
                             {formatCurrency(quote.amount || 0)}
                           </div>
                         </div>

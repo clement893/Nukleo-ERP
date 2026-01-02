@@ -38,8 +38,8 @@ export const COLOR_MAP = {
   // Success/Green
   SUCCESS: {
     HEX: '#10B981',
-    VARIABLE: '--color-secondary-500', // or --color-success-500
-    CLASS: 'secondary-500',
+    VARIABLE: '--color-success-500',
+    CLASS: 'success-500',
   },
   // Danger/Red
   DANGER: {
