@@ -3,10 +3,12 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
+import Drawer from '@/components/ui/Drawer';
+import Tabs from '@/components/ui/Tabs';
 import { 
   CheckSquare, 
   CheckCircle2,
@@ -21,11 +23,19 @@ import {
   Ban,
   Trash2,
   Eye,
-  Loader2
+  Loader2,
+  Info,
+  MessageSquare,
+  Paperclip,
+  Clock
 } from 'lucide-react';
 import { Badge, Button, Card, Input, useToast, Loading } from '@/components/ui';
-import { useInfiniteProjectTasks, useDeleteProjectTask } from '@/lib/query/project-tasks';
-import type { ProjectTask, TaskStatus, TaskPriority } from '@/lib/api/project-tasks';
+import { useInfiniteProjectTasks, useDeleteProjectTask, useProjectTask } from '@/lib/query/project-tasks';
+import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority } from '@/lib/api/project-tasks';
+import ProjectComments from '@/components/projects/ProjectComments';
+import ProjectAttachments from '@/components/projects/ProjectAttachments';
+import TaskTimer from '@/components/projects/TaskTimer';
+import { handleApiError } from '@/lib/errors/api';
 
 type ViewMode = 'list' | 'kanban';
 type GroupBy = 'none' | 'project' | 'assignee' | 'team';
@@ -52,6 +62,12 @@ export default function TachesPage() {
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Drawer state
+  const [showTaskDrawer, setShowTaskDrawer] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Fetch tasks
   const { data, isLoading, error } = useInfiniteProjectTasks(100);
@@ -59,6 +75,19 @@ export default function TachesPage() {
 
   // Delete mutation
   const deleteTaskMutation = useDeleteProjectTask();
+  
+  // Fetch task details when drawer opens
+  const { data: taskDetailData, isLoading: isLoadingTaskDetail } = useProjectTask(
+    selectedTaskId || 0,
+    !!selectedTaskId && showTaskDrawer
+  );
+  
+  // Update taskDetails when data is loaded
+  useEffect(() => {
+    if (taskDetailData) {
+      setTaskDetails(taskDetailData);
+    }
+  }, [taskDetailData]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -126,9 +155,31 @@ export default function TachesPage() {
     }
   };
 
-  const handleView = (id: number) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/projets/taches/${id}`);
+  const handleView = async (id: number) => {
+    setSelectedTaskId(id);
+    setShowTaskDrawer(true);
+    setLoadingDetails(true);
+    setTaskDetails(null);
+    
+    try {
+      const task = await projectTasksAPI.get(id);
+      setTaskDetails(task);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement de la tâche',
+        type: 'error',
+      });
+      setShowTaskDrawer(false);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+  
+  const handleCloseDrawer = () => {
+    setShowTaskDrawer(false);
+    setSelectedTaskId(null);
+    setTaskDetails(null);
   };
 
   const formatDate = (dateStr: string | null | undefined) => {
@@ -492,6 +543,182 @@ export default function TachesPage() {
           </div>
         )}
       </MotionDiv>
+      
+      {/* Task Details Drawer */}
+      <Drawer
+        isOpen={showTaskDrawer}
+        onClose={handleCloseDrawer}
+        title={taskDetails?.title || 'Détails de la tâche'}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails || isLoadingTaskDetail ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : taskDetails ? (
+          <div className="h-full flex flex-col">
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6 py-4">
+                      {/* Timer */}
+                      <div className="mb-4">
+                        <TaskTimer taskId={taskDetails.id} />
+                      </div>
+                      
+                      {/* Description */}
+                      {taskDetails.description && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Description
+                          </h4>
+                          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                            {taskDetails.description}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Statut
+                          </h4>
+                          <Badge className={statusConfig[taskDetails.status].color}>
+                            {statusConfig[taskDetails.status].label}
+                          </Badge>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Priorité
+                          </h4>
+                          <Badge className={priorityConfig[taskDetails.priority].color}>
+                            {priorityConfig[taskDetails.priority].label}
+                          </Badge>
+                        </div>
+                        {taskDetails.due_date && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Échéance
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {formatDate(taskDetails.due_date)}
+                            </p>
+                          </div>
+                        )}
+                        {taskDetails.estimated_hours && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Heures estimées
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {taskDetails.estimated_hours}h
+                            </p>
+                          </div>
+                        )}
+                        {taskDetails.assignee_name && (
+                          <div className="col-span-2">
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Assigné à
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {taskDetails.assignee_name}
+                              {taskDetails.assignee_email && (
+                                <span className="text-gray-500 dark:text-gray-400 ml-2">
+                                  ({taskDetails.assignee_email})
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        {taskDetails.project_name && (
+                          <div className="col-span-2">
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Projet
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {taskDetails.project_name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Dates */}
+                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        {taskDetails.started_at && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Démarrée le
+                            </h4>
+                            <p className="text-xs text-gray-900 dark:text-white">
+                              {formatDate(taskDetails.started_at)}
+                            </p>
+                          </div>
+                        )}
+                        {taskDetails.completed_at && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Terminée le
+                            </h4>
+                            <p className="text-xs text-gray-900 dark:text-white">
+                              {formatDate(taskDetails.completed_at)}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Créée le
+                          </h4>
+                          <p className="text-xs text-gray-900 dark:text-white">
+                            {formatDate(taskDetails.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'comments',
+                  label: 'Commentaires',
+                  icon: <MessageSquare className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <ProjectComments 
+                        taskId={taskDetails.id} 
+                        projectId={taskDetails.project_id || undefined}
+                      />
+                    </div>
+                  ),
+                },
+                {
+                  id: 'attachments',
+                  label: 'Documents',
+                  icon: <Paperclip className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <ProjectAttachments 
+                        taskId={taskDetails.id} 
+                        projectId={taskDetails.project_id || undefined}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Tâche non trouvée</p>
+          </div>
+        )}
+      </Drawer>
     </PageContainer>
   );
 }
