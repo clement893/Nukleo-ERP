@@ -76,7 +76,7 @@ function ClientsContent() {
   const [projectsByClient, setProjectsByClient] = useState<Record<number, Project[]>>({});
   const [contactsByClient, setContactsByClient] = useState<Record<number, number>>({});
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<Record<number, boolean>>({});
-  const [actionDropdownOpen, setActionDropdownOpen] = useState<Record<number, boolean>>({});
+  const [_actionDropdownOpen, setActionDropdownOpen] = useState<Record<number, boolean>>({});
   
   // Selection
   const [selectedClients, setSelectedClients] = useState<Set<number>>(new Set());

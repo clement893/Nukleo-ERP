@@ -18,8 +18,6 @@ import { useProjectTasks, useUpdateProjectTask } from '@/lib/query/project-tasks
 import { useEmployees } from '@/lib/query/queries';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
-import { extractApiData } from '@/lib/api/utils';
-import type { Team } from '@/lib/api/teams';
 import type { ProjectTask } from '@/lib/api/project-tasks';
 import {
   DndContext,
@@ -704,7 +702,7 @@ function TeamProjectManagementContent() {
         )}
 
         {/* Timeline mode removed - not implemented */}
-        {false && viewMode === 'timeline' && (
+        {false && (viewMode as string) === 'timeline' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Timeline des tâches
