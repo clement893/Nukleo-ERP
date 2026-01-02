@@ -37,7 +37,7 @@ import { handleApiError } from '@/lib/errors/api';
 import { apiClient } from '@/lib/api/client';
 import { extractApiData } from '@/lib/api/utils';
 
-type ViewMode = 'employee' | 'client' | 'week';
+type ViewMode = 'employee' | 'client' | 'week' | 'active-timers';
 
 // Helper to get week number and year
 const getWeekInfo = (date: Date) => {

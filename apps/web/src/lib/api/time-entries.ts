@@ -171,4 +171,36 @@ export const timeEntriesAPI = {
     });
     return extractApiData(response);
   },
+
+  /**
+   * Get all active timers for all users (admin only)
+   */
+  getAllActiveTimers: async (): Promise<Array<{
+    user_id: number;
+    user_name: string;
+    user_email: string;
+    task_id?: number;
+    task_title?: string | null;
+    project_name?: string | null;
+    start_time: string;
+    elapsed_seconds: number;
+    description?: string | null;
+    paused: boolean;
+    accumulated_seconds: number;
+  }>> => {
+    const response = await apiClient.get<Array<{
+      user_id: number;
+      user_name: string;
+      user_email: string;
+      task_id?: number;
+      task_title?: string | null;
+      project_name?: string | null;
+      start_time: string;
+      elapsed_seconds: number;
+      description?: string | null;
+      paused: boolean;
+      accumulated_seconds: number;
+    }>>('/v1/time-entries/timers/active');
+    return extractApiData(response) || [];
+  },
 };

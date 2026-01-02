@@ -17,7 +17,7 @@ import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
 import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
 import TaskTimer from './TaskTimer';
-import { timeEntriesAPI, type TimerStatus } from '@/lib/api/time-entries';
+import { timeEntriesAPI } from '@/lib/api/time-entries';
 import ProjectAttachments from './ProjectAttachments';
 import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
@@ -149,7 +149,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     const loadTimerStatus = async () => {
       try {
         const status = await timeEntriesAPI.getTimerStatus();
-        if (status.active && status.start_time) {
+        if (status.active && status.start_time && status.task_id) {
           const startTime = new Date(status.start_time).getTime();
           const now = Date.now();
           const elapsedSeconds = Math.floor((now - startTime) / 1000);
@@ -185,6 +185,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       }, 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [activeTimer]);
 
   // Load projects and employees for the form

@@ -566,3 +566,66 @@ async def get_timer_status(
         "paused": timer_info.get("paused", False),
         "accumulated_seconds": accumulated,
     }
+
+
+@router.get("/timers/active", response_model=List[dict])
+async def get_all_active_timers(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all active timers for all users (admin only)"""
+    # Only superusers can see all active timers
+    if not getattr(current_user, 'is_superuser', False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can view all active timers"
+        )
+    
+    active_timers_list = []
+    
+    for user_id, timer_info in _active_timers.items():
+        # Get user information
+        user_result = await db.execute(select(User).where(User.id == user_id))
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            continue
+        
+        # Calculate elapsed time
+        accumulated = timer_info.get("accumulated_seconds", 0)
+        if timer_info.get("paused", False):
+            elapsed = accumulated
+        else:
+            start_time = timer_info["start_time"]
+            elapsed = accumulated + int((datetime.now(timezone.utc) - start_time).total_seconds())
+        
+        # Get task information if task_id exists
+        task_title = None
+        project_name = None
+        if timer_info.get("task_id"):
+            task_result = await db.execute(
+                select(ProjectTask)
+                .options(selectinload(ProjectTask.project))
+                .where(ProjectTask.id == timer_info["task_id"])
+            )
+            task = task_result.scalar_one_or_none()
+            if task:
+                task_title = task.title
+                if task.project:
+                    project_name = task.project.name
+        
+        active_timers_list.append({
+            "user_id": user_id,
+            "user_name": f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+            "user_email": user.email,
+            "task_id": timer_info.get("task_id"),
+            "task_title": task_title,
+            "project_name": project_name,
+            "start_time": timer_info["start_time"].isoformat(),
+            "elapsed_seconds": elapsed,
+            "description": timer_info.get("description"),
+            "paused": timer_info.get("paused", False),
+            "accumulated_seconds": accumulated,
+        })
+    
+    return active_timers_list
