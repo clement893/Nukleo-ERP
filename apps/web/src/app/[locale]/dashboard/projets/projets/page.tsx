@@ -450,8 +450,8 @@ export default function ProjetsPage() {
 
           <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <CheckCircle2 className="w-5 h-5 text-secondary-500" />
+              <div className="p-2 rounded-lg bg-success-500/10 border border-success-500/30">
+                <CheckCircle2 className="w-5 h-5 text-success-500" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -688,7 +688,7 @@ export default function ProjetsPage() {
                           </Badge>
                         )}
                         {project.temoignage_status && (
-                          <Badge className="bg-secondary-500/10 text-secondary-500 border-secondary-500/30 text-xs">
+                          <Badge className="bg-success-500/10 text-success-500 border-success-500/30 text-xs">
                             Témoignage: {project.temoignage_status}
                           </Badge>
                         )}

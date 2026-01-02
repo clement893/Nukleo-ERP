@@ -25,10 +25,10 @@ import { useInfiniteCompanies } from '@/lib/query/companies';
 import { useInfiniteReseauTestimonials } from '@/lib/query/reseau-testimonials';
 
 export default function ReseauPage() {
-  // Fetch data
-  const { data: contactsData, isLoading: loadingContacts } = useInfiniteReseauContacts(100);
-  const { data: companiesData, isLoading: loadingCompanies } = useInfiniteCompanies(100);
-  const { data: testimonialsData, isLoading: loadingTestimonials } = useInfiniteReseauTestimonials(100);
+  // Fetch data - using high limit to load all items
+  const { data: contactsData, isLoading: loadingContacts } = useInfiniteReseauContacts(10000);
+  const { data: companiesData, isLoading: loadingCompanies } = useInfiniteCompanies(10000);
+  const { data: testimonialsData, isLoading: loadingTestimonials } = useInfiniteReseauTestimonials(10000);
 
   // Flatten data
   const contacts = useMemo(() => contactsData?.pages.flat() || [], [contactsData]);
@@ -294,10 +294,10 @@ export default function ReseauPage() {
           </Card>
 
           {/* Companies Card */}
-          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-secondary-500/40 transition-all">
+          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:border-success-500/40 transition-all">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <Building2 className="w-6 h-6 text-secondary-500" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <Building2 className="w-6 h-6 text-success-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -388,7 +388,7 @@ export default function ReseauPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Top entreprises actives
               </h3>
-              <Badge className="bg-secondary-500/10 text-secondary-500 border-secondary-500/30">
+              <Badge className="bg-success-500/10 text-success-500 border-success-500/30">
                 {topCompanies.length}
               </Badge>
             </div>
@@ -398,10 +398,10 @@ export default function ReseauPage() {
               ) : (
                 topCompanies.map((company) => (
                   <Link key={company.id} href={`/dashboard/reseau/entreprises/${company.id}`}>
-                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-secondary-500/30 hover:bg-secondary-500/5 transition-all cursor-pointer group">
+                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-success-500/30 hover:bg-success-500/5 transition-all cursor-pointer group">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1 group-hover:text-secondary-500 transition-colors">
+                          <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1 group-hover:text-success-500 transition-colors">
                             {company.name}
                           </h4>
                           <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function ReseauPage() {
                             </span>
                           </div>
                         </div>
-                        <Eye className="w-4 h-4 text-gray-400 group-hover:text-secondary-500 transition-colors flex-shrink-0" />
+                        <Eye className="w-4 h-4 text-gray-400 group-hover:text-success-500 transition-colors flex-shrink-0" />
                       </div>
                     </div>
                   </Link>
@@ -421,7 +421,7 @@ export default function ReseauPage() {
             {topCompanies.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Link href="/dashboard/reseau/entreprises">
-                  <Button variant="ghost" size="sm" className="w-full text-secondary-500 hover:text-secondary-600 hover:bg-secondary-500/10">
+                  <Button variant="ghost" size="sm" className="w-full text-success-500 hover:text-secondary-600 hover:bg-success-500/10">
                     Voir toutes les entreprises
                     <ArrowUpRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -546,10 +546,10 @@ export default function ReseauPage() {
           </Link>
 
           <Link href="/dashboard/reseau/entreprises">
-            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-secondary-500/40 transition-all duration-200 cursor-pointer group">
+            <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 hover:border-success-500/40 transition-all duration-200 cursor-pointer group">
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 rounded-xl bg-secondary-500/10 border border-secondary-500/30 group-hover:bg-secondary-500/20 transition-colors">
-                  <Building2 className="w-8 h-8 text-secondary-500" />
+                <div className="p-4 rounded-xl bg-success-500/10 border border-success-500/30 group-hover:bg-success-500/20 transition-colors">
+                  <Building2 className="w-8 h-8 text-success-500" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Entreprises</h3>
@@ -694,7 +694,7 @@ export default function ReseauPage() {
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Entreprises récentes</h3>
-              <Badge className="bg-secondary-500/10 text-secondary-500 border-secondary-500/30">
+              <Badge className="bg-success-500/10 text-success-500 border-success-500/30">
                 {recentCompanies.length}
               </Badge>
             </div>
@@ -704,10 +704,10 @@ export default function ReseauPage() {
               ) : (
                 recentCompanies.map((company) => (
                   <Link key={company.id} href={`/dashboard/reseau/entreprises/${company.id}`}>
-                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-secondary-500/30 hover:bg-secondary-500/5 transition-all cursor-pointer group">
+                    <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-success-500/30 hover:bg-success-500/5 transition-all cursor-pointer group">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1 group-hover:text-secondary-500 transition-colors">
+                          <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1 group-hover:text-success-500 transition-colors">
                             {company.name}
                           </h4>
                           {company.description && (
@@ -720,7 +720,7 @@ export default function ReseauPage() {
                             </div>
                           )}
                         </div>
-                        <Eye className="w-4 h-4 text-gray-400 group-hover:text-secondary-500 transition-colors flex-shrink-0 mt-0.5" />
+                        <Eye className="w-4 h-4 text-gray-400 group-hover:text-success-500 transition-colors flex-shrink-0 mt-0.5" />
                       </div>
                     </div>
                   </Link>
@@ -730,7 +730,7 @@ export default function ReseauPage() {
             {recentCompanies.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Link href="/dashboard/reseau/entreprises">
-                  <Button variant="ghost" size="sm" className="w-full text-secondary-500 hover:text-secondary-600 hover:bg-secondary-500/10">
+                  <Button variant="ghost" size="sm" className="w-full text-success-500 hover:text-secondary-600 hover:bg-success-500/10">
                     Voir toutes les entreprises
                     <ArrowUpRight className="w-4 h-4 ml-2" />
                   </Button>

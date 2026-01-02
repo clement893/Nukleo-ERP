@@ -239,8 +239,8 @@ export default function EntreprisesPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <TrendingUp className="w-6 h-6 text-secondary-500" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <TrendingUp className="w-6 h-6 text-success-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -367,7 +367,7 @@ export default function EntreprisesPage() {
                     </div>
                     {/* Badge en overlay */}
                     <div className="absolute top-3 right-3">
-                      <Badge className={`${company.is_client ? 'bg-secondary-500/10 text-secondary-500 border border-secondary-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}`}>
+                      <Badge className={`${company.is_client ? 'bg-success-500/10 text-success-500 border border-success-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}`}>
                         {company.is_client ? 'Client' : 'Prospect'}
                       </Badge>
                     </div>
@@ -487,7 +487,7 @@ export default function EntreprisesPage() {
                           {[company.description, company.city, company.country].filter(Boolean).map(s => String(s).substring(0, 30)).join(' • ')}
                         </p>
                       </div>
-                      <Badge className={company.is_client ? 'bg-secondary-500/10 text-secondary-500' : 'bg-warning-500/10 text-warning-500'}>
+                      <Badge className={company.is_client ? 'bg-success-500/10 text-success-500' : 'bg-warning-500/10 text-warning-500'}>
                         {company.is_client ? 'Client' : 'Prospect'}
                       </Badge>
                       <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -575,7 +575,7 @@ export default function EntreprisesPage() {
                           {companyDetails.description && (
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{companyDetails.description}</p>
                           )}
-                          <Badge className={companyDetails.is_client ? 'bg-secondary-500/10 text-secondary-500 border border-secondary-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}>
+                          <Badge className={companyDetails.is_client ? 'bg-success-500/10 text-success-500 border border-success-500/30' : 'bg-warning-500/10 text-warning-500 border border-warning-500/30'}>
                             {companyDetails.is_client ? 'Client' : 'Prospect'}
                           </Badge>
                         </div>

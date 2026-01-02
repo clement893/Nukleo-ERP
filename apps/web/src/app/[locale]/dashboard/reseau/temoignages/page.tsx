@@ -341,8 +341,8 @@ function TemoignagesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <CheckCircle2 className="w-6 h-6 text-secondary-500" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-secondary-500/30">
+                <CheckCircle2 className="w-6 h-6 text-success-500" aria-hidden="true" />
               </div>
             </div>
             <div className="text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>

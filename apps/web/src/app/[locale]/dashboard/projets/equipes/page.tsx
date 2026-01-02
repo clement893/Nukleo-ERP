@@ -298,8 +298,8 @@ function EquipesContent() {
 
           <div className="glass-card p-lg rounded-xl border border-border hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <CheckCircle2 className="w-6 h-6 text-secondary-500" aria-hidden="true" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <CheckCircle2 className="w-6 h-6 text-success-500" aria-hidden="true" />
               </div>
               <Badge variant="success">{completionRate}%</Badge>
             </div>

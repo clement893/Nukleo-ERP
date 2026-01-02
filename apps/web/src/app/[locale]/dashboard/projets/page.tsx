@@ -294,8 +294,8 @@ export default function OperationsDashboardPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                <CheckSquare className="w-6 h-6 text-secondary-500" />
+              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
+                <CheckSquare className="w-6 h-6 text-success-500" />
               </div>
               {stats.tasks.urgent > 0 && (
                 <Badge className="bg-danger-500 text-white">{stats.tasks.urgent}</Badge>
@@ -612,8 +612,8 @@ export default function OperationsDashboardPage() {
                   <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/30 transition-all cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
-                          <CheckSquare className="w-5 h-5 text-secondary-500" />
+                        <div className="p-2 rounded-lg bg-success-500/10 border border-success-500/30">
+                          <CheckSquare className="w-5 h-5 text-success-500" />
                         </div>
                         <div>
                           <h4 className="font-semibold text-gray-900 dark:text-white">Tâches</h4>
