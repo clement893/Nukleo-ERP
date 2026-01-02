@@ -23,24 +23,61 @@ router = APIRouter(prefix="/agenda/events", tags=["agenda-events"])
 
 def event_to_dict(event: CalendarEvent) -> dict:
     """Convert SQLAlchemy CalendarEvent model to dict for Pydantic validation"""
+    # Ensure title is not empty (required by schema with min_length=1)
+    title = event.title or 'Untitled Event'
+    if not title.strip():
+        title = 'Untitled Event'
+    
+    # Ensure date is present (required field) - use today as fallback if missing
+    event_date = event.date
+    if not event_date:
+        logger.warning(f"Event {event.id} has no date, using today as fallback")
+        from datetime import date
+        event_date = date.today()
+    
+    # Convert time to string if present
     time_str = None
     if event.time is not None:
         if isinstance(event.time, str):
             time_str = event.time
         else:
-            time_str = event.time.strftime('%H:%M:%S')
+            try:
+                time_str = event.time.strftime('%H:%M:%S')
+            except (AttributeError, ValueError):
+                time_str = None
+    
+    # Ensure type is valid (default to 'other' if None or invalid)
+    event_type = event.type if event.type else 'other'
+    valid_types = ['meeting', 'appointment', 'reminder', 'deadline', 'vacation', 'holiday', 'other']
+    if event_type not in valid_types:
+        event_type = 'other'
+    
+    # Ensure attendees is a list or None
+    attendees = None
+    if event.attendees is not None:
+        if isinstance(event.attendees, list):
+            attendees = event.attendees
+        elif isinstance(event.attendees, str):
+            # Try to parse JSON string
+            try:
+                import json
+                attendees = json.loads(event.attendees)
+                if not isinstance(attendees, list):
+                    attendees = None
+            except (json.JSONDecodeError, TypeError):
+                attendees = None
     
     return {
         'id': event.id,
         'user_id': event.user_id,
-        'title': event.title or '',
+        'title': title,
         'description': event.description,
-        'date': event.date,
+        'date': event_date,
         'end_date': event.end_date,
         'time': time_str,
-        'type': event.type if event.type else 'other',
+        'type': event_type,
         'location': event.location,
-        'attendees': event.attendees if isinstance(event.attendees, list) else None,
+        'attendees': attendees,
         'color': event.color if event.color else '#3B82F6',
         'created_at': event.created_at,
         'updated_at': event.updated_at,
@@ -105,8 +142,17 @@ async def list_events(
     query = query.order_by(CalendarEvent.date.asc(), CalendarEvent.time.asc()).offset(skip).limit(limit)
     
     try:
-        result = await db.execute(query)
-        events = result.scalars().all()
+        try:
+            result = await db.execute(query)
+            events = result.scalars().all()
+        except Exception as db_error:
+            logger.error(f"Database error fetching events: {db_error}", exc_info=True)
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error: {str(db_error)}"
+            )
         
         # Convert events to schema format
         event_list = []
@@ -116,8 +162,14 @@ async def list_events(
                 event_dict = event_to_dict(event)
                 
                 # Use model_validate with dict to avoid SQLAlchemy relationship issues
-                event_schema = CalendarEventSchema.model_validate(event_dict)
+                # Pass mode='python' to handle dict input properly
+                event_schema = CalendarEventSchema.model_validate(event_dict, strict=False)
                 event_list.append(event_schema)
+            except ValueError as e:
+                # Validation errors - log and skip
+                logger.warning(f"Validation error for event {event.id}: {e}")
+                logger.debug(f"Event data: id={event.id}, title={getattr(event, 'title', None)}, date={getattr(event, 'date', None)}, type={getattr(event, 'type', None)}")
+                continue
             except Exception as e:
                 logger.error(f"Error validating event {event.id}: {e}", exc_info=True)
                 logger.error(f"Event data: id={event.id}, title={getattr(event, 'title', None)}, date={getattr(event, 'date', None)}, type={getattr(event, 'type', None)}")
