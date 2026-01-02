@@ -12,9 +12,8 @@ import {
 } from 'lucide-react';
 import { Badge, Card } from '@/components/ui';
 import Link from 'next/link';
-import { projectsAPI } from '@/lib/api/projects';
-import { timeEntriesAPI } from '@/lib/api/time-entries';
-import { employeesAPI } from '@/lib/api/employees';
+import { transactionsAPI, Transaction as APITransaction } from '@/lib/api/finances/transactions';
+import { facturationsAPI } from '@/lib/api/finances/facturations';
 
 interface FinancialStats {
   revenue: number;

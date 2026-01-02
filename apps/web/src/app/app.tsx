@@ -21,7 +21,8 @@ function AppContent({ children }: { children: React.ReactNode }) {
   const isInternalPage = pathname?.includes('/dashboard') || 
                          pathname?.includes('/admin') || 
                          pathname?.includes('/profile') || 
-                         pathname?.includes('/settings');
+                         pathname?.includes('/settings') ||
+                         pathname?.includes('/portail-employe');
   
   // Check if it's an auth page (login, register, etc.) - these should have their own backgrounds
   const isAuthPage = pathname?.includes('/auth/');
