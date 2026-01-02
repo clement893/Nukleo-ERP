@@ -15,10 +15,14 @@ import { logger } from '@/lib/logger';
 import { reseauTestimonialsAPI, type Testimonial, type TestimonialCreate } from '@/lib/api/reseau-testimonials';
 import { contactsAPI } from '@/lib/api/contacts';
 import { companiesAPI } from '@/lib/api/companies';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 type FilterStatus = 'all' | 'published' | 'pending' | 'draft';
 
 function TemoignagesContent() {
+  const params = useParams();
+  const locale = params?.locale as string || 'fr';
   const { showToast } = useToast();
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,17 @@ function TemoignagesContent() {
   const [allCompanies, setAllCompanies] = useState<Array<{ id: number; name: string }>>([]);
   const [allContacts, setAllContacts] = useState<Array<{ id: number; first_name: string; last_name: string; photo_url?: string | null }>>([]);
   
+  // Mapping contact_id -> contact complet pour accès rapide
+  const contactsMap = useMemo(() => {
+    const map: Record<number, { id: number; first_name: string; last_name: string; photo_url?: string | null }> = {};
+    allContacts.forEach(contact => {
+      if (contact.id) {
+        map[contact.id] = contact;
+      }
+    });
+    return map;
+  }, [allContacts]);
+
   // Mapping contact_id -> photo_url pour accès rapide
   const contactPhotos = useMemo(() => {
     const map: Record<number, string | null> = {};
@@ -447,6 +462,13 @@ function TemoignagesContent() {
               const content = getContent(testimonial, displayLang as 'fr' | 'en');
               const hasBoth = hasBothLanguages(testimonial);
               
+              // Trouver le contact réel
+              const realContact = testimonial.contact_id ? contactsMap[testimonial.contact_id] : null;
+              const contactName = realContact 
+                ? `${realContact.first_name} ${realContact.last_name}`.trim()
+                : testimonial.contact_name || '';
+              const contactPhoto = realContact?.photo_url || (testimonial.contact_id ? contactPhotos[testimonial.contact_id] : null);
+              
               return (
                 <div
                   key={testimonial.id}
@@ -456,12 +478,12 @@ function TemoignagesContent() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        {/* Photo du contact */}
-                        {testimonial.contact_id && contactPhotos[testimonial.contact_id] ? (
+                        {/* Photo du contact - plus grande et visible */}
+                        {contactPhoto ? (
                           <img
-                            src={contactPhotos[testimonial.contact_id]!}
-                            alt={testimonial.contact_name || 'Contact'}
-                            className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-border"
+                            src={contactPhoto}
+                            alt={contactName || 'Contact'}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-border"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
@@ -470,8 +492,8 @@ function TemoignagesContent() {
                             }}
                           />
                         ) : null}
-                        <div className={`w-8 h-8 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center flex-shrink-0 ${testimonial.contact_id && contactPhotos[testimonial.contact_id] ? 'hidden' : ''}`}>
-                          <User className="w-4 h-4 text-primary-500" />
+                        <div className={`w-10 h-10 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center flex-shrink-0 ${contactPhoto ? 'hidden' : ''}`}>
+                          <User className="w-5 h-5 text-primary-500" />
                         </div>
                         <h3 className="text-sm font-semibold group-hover:text-primary-500 transition-colors truncate flex-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                           {testimonial.title || 'Sans titre'}
@@ -479,12 +501,21 @@ function TemoignagesContent() {
                       </div>
                       {/* Informations compactes en une ligne */}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                        {testimonial.contact_name && (
+                        {contactName && testimonial.contact_id && realContact ? (
+                          <Link 
+                            href={`/${locale}/dashboard/reseau/contacts/${testimonial.contact_id}`}
+                            className="truncate flex items-center gap-1 hover:text-primary-500 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                            {contactName}
+                          </Link>
+                        ) : contactName ? (
                           <span className="truncate flex items-center gap-1">
                             <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-                            {testimonial.contact_name}
+                            {contactName}
                           </span>
-                        )}
+                        ) : null}
                         {testimonial.company_name && (
                           <span className="truncate flex items-center gap-1">
                             <Building2 className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
