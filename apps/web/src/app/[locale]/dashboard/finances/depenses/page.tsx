@@ -9,7 +9,7 @@ import {
   TrendingDown, FileText, Upload, Download, 
   Building2, Repeat, Receipt, Search,
   Plus, Edit, Eye, CheckCircle, XCircle, Clock,
-  Info, Trash2, AlertCircle, CheckCircle2
+  Trash2, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Textarea, useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
