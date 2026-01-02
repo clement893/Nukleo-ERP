@@ -469,24 +469,10 @@ async def delete_user(
                 )
                 # Continue - the deletion was successful, audit logging failure is not critical
         
-        # Return explicit Response to work with slowapi rate limiting
-        logger.info(f"[DELETE USER] Creating Response object for user {user_id}")
-        from starlette.responses import Response as StarletteResponse
-        response = StarletteResponse(status_code=status.HTTP_204_NO_CONTENT)
-        logger.info(f"[DELETE USER] Response type: {type(response)}, module: {type(response).__module__}")
-        logger.info(f"[DELETE USER] Is Response instance: {isinstance(response, Response)}")
-        logger.info(f"[DELETE USER] Is StarletteResponse instance: {isinstance(response, StarletteResponse)}")
-        logger.info(f"[DELETE USER] Response status_code: {response.status_code}")
-        logger.info(f"[DELETE USER] Response headers: {dict(response.headers)}")
-        logger.info(f"[DELETE USER] Response class: {response.__class__}, MRO: {response.__class__.__mro__}")
-        logger.info(f"[DELETE USER] About to return response for user {user_id}")
-        try:
-            return response
-        except Exception as return_error:
-            logger.error(f"[DELETE USER] Error while returning response for user {user_id}: {return_error}", exc_info=True)
-            logger.error(f"[DELETE USER] Return error type: {type(return_error).__name__}")
-            logger.error(f"[DELETE USER] Return error args: {return_error.args}")
-            raise
+        # Return None - FastAPI will automatically convert to 204 No Content
+        # This works correctly with slowapi rate limiting (unlike explicit Response objects)
+        logger.info(f"[DELETE USER] User {user_id} ({user_email}) successfully deleted by {current_user.email}")
+        return None
         
     except HTTPException as http_exc:
         # Re-raise HTTP exceptions as-is
