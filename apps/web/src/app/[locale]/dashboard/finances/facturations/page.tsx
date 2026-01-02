@@ -2,59 +2,24 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   FileText, Plus, Search, Send, Edit, 
   DollarSign, Calendar, User, Building, Clock, AlertCircle,
-  CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, Loader2
+  CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, Loader2, Trash2
 } from 'lucide-react';
-import { Badge, Button, Card, Input } from '@/components/ui';
+import { Badge, Button, Card, Input, Modal, useToast } from '@/components/ui';
+import { 
+  useFacturations, 
+  useFacturation, 
+  useDeleteFacturation, 
+  useSendFacturation 
+} from '@/lib/query/queries';
+import type { FinanceInvoice } from '@/lib/api/finances/facturations';
 import { projectsAPI } from '@/lib/api/projects';
-
-interface InvoiceLineItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-}
-
-interface Payment {
-  id: string;
-  date: string;
-  amount: number;
-  method: 'credit_card' | 'bank_transfer' | 'check' | 'cash';
-  reference?: string;
-}
-
-interface Invoice {
-  id: string;
-  number: string;
-  projectId: number;
-  projectName: string;
-  client: {
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-  };
-  issueDate: string;
-  dueDate: string;
-  status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
-  lineItems: InvoiceLineItem[];
-  subtotal: number;
-  taxRate: number;
-  taxAmount: number;
-  total: number;
-  amountPaid: number;
-  amountDue: number;
-  payments: Payment[];
-  notes?: string;
-  terms?: string;
-  lastReminderDate?: string;
-}
+import { useQuery } from '@tanstack/react-query';
 
 const statusConfig = {
   draft: { label: 'Brouillon', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: Edit },
@@ -73,133 +38,80 @@ const paymentMethodConfig = {
 };
 
 export default function FacturationsPage() {
-  const [loading, setLoading] = useState(true);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Invoice['status'] | 'all'>('all');
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<number | null>(null);
+  const { showToast } = useToast();
 
-  useEffect(() => {
-    loadInvoices();
-  }, []);
-
-  const loadInvoices = async () => {
-    try {
-      setLoading(true);
-      const projects = await projectsAPI.list(0, 1000);
-      
-      // Générer des factures depuis les projets avec budget
-      const projectsWithBudget = projects.filter(p => p.budget && p.budget > 0);
-      
-      const generatedInvoices: Invoice[] = projectsWithBudget.map((project, index) => {
-        const subtotal = project.budget || 0;
-        const taxRate = 14.975; // TPS + TVQ Québec
-        const taxAmount = subtotal * (taxRate / 100);
-        const total = subtotal + taxAmount;
-        
-        // Déterminer le statut basé sur le statut du projet
-        let status: Invoice['status'] = 'sent';
-        let amountPaid = 0;
-        let payments: Payment[] = [];
-        
-        if (project.status === 'COMPLETED') {
-          status = 'paid';
-          amountPaid = total;
-          payments = [{
-            id: '1',
-            date: project.updated_at,
-            amount: total,
-            method: 'bank_transfer',
-            reference: `WIRE-${new Date(project.updated_at).getFullYear()}-${String(index + 1).padStart(3, '0')}`
-          }];
-        } else if (project.status === 'ACTIVE') {
-          // 30% des projets actifs ont un paiement partiel
-          if (Math.random() > 0.7) {
-            status = 'partial';
-            amountPaid = total * 0.5;
-            payments = [{
-              id: '1',
-              date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-              amount: amountPaid,
-              method: 'credit_card',
-              reference: 'CC-****-1234'
-            }];
-          }
-        } else if (project.status === 'ARCHIVED') {
-          // Les projets archivés sont considérés en retard s'ils ont un budget
-          status = 'overdue';
-        }
-        
-        const issueDate = new Date(project.created_at);
-        const dueDate = new Date(issueDate);
-        dueDate.setDate(dueDate.getDate() + 30); // Net 30 jours
-        
-        return {
-          id: `${project.id}`,
-          number: `INV-${new Date(project.created_at).getFullYear()}-${String(index + 1).padStart(3, '0')}`,
-          projectId: project.id,
-          projectName: project.name,
-          client: {
-            name: project.client_name || 'Client non spécifié',
-            email: `contact@${(project.client_name || 'client').toLowerCase().replace(/\s+/g, '-')}.com`,
-            phone: '+1 514-555-' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
-            address: '123 Rue Example, Montréal, QC'
-          },
-          issueDate: project.created_at,
-          dueDate: dueDate.toISOString(),
-          status,
-          lineItems: [
-            {
-              id: '1',
-              description: project.name,
-              quantity: 1,
-              unitPrice: subtotal,
-              total: subtotal
-            }
-          ],
-          subtotal,
-          taxRate,
-          taxAmount,
-          total,
-          amountPaid,
-          amountDue: total - amountPaid,
-          payments,
-          terms: 'Paiement net 30 jours',
-          notes: project.description || undefined
-        };
-      });
-      
-      setInvoices(generatedInvoices);
-    } catch (error) {
-      console.error('Erreur lors du chargement des factures:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = !searchQuery ||
-      invoice.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.projectName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  // Fetch invoices
+  const { data: invoicesData, isLoading } = useFacturations({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
   });
 
-  const stats = {
-    total: invoices.reduce((sum, inv) => sum + inv.total, 0),
-    paid: invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + inv.amountPaid, 0),
-    pending: invoices.filter(i => ['sent', 'partial'].includes(i.status)).reduce((sum, inv) => sum + inv.amountDue, 0),
-    overdue: invoices.filter(i => i.status === 'overdue').reduce((sum, inv) => sum + inv.amountDue, 0),
-    count: {
-      total: invoices.length,
-      draft: invoices.filter(i => i.status === 'draft').length,
-      sent: invoices.filter(i => i.status === 'sent').length,
-      paid: invoices.filter(i => i.status === 'paid').length,
-      overdue: invoices.filter(i => i.status === 'overdue').length
-    }
-  };
+  // Fetch selected invoice details
+  const { data: selectedInvoice } = useFacturation(
+    selectedInvoiceId || 0,
+    !!selectedInvoiceId && viewMode === 'detail'
+  );
+
+  // Fetch projects for project name lookup
+  const { data: projects } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => projectsAPI.list(0, 1000),
+  });
+
+  // Mutations
+  const deleteMutation = useDeleteFacturation();
+  const sendMutation = useSendFacturation();
+
+  const invoices = invoicesData?.items || [];
+
+  // Filter invoices by search query
+  const filteredInvoices = useMemo(() => {
+    if (!searchQuery) return invoices;
+    
+    const query = searchQuery.toLowerCase();
+    return invoices.filter(invoice => {
+      const projectName = projects?.find(p => p.id === invoice.project_id)?.name || '';
+      return (
+        invoice.invoice_number.toLowerCase().includes(query) ||
+        invoice.client_data?.name?.toLowerCase().includes(query) ||
+        projectName.toLowerCase().includes(query)
+      );
+    });
+  }, [invoices, searchQuery, projects]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = invoices.reduce((sum, inv) => sum + Number(inv.total), 0);
+    const paid = invoices
+      .filter(i => i.status === 'paid')
+      .reduce((sum, inv) => sum + Number(inv.amount_paid), 0);
+    const pending = invoices
+      .filter(i => ['sent', 'partial'].includes(i.status))
+      .reduce((sum, inv) => sum + Number(inv.amount_due), 0);
+    const overdue = invoices
+      .filter(i => i.status === 'overdue')
+      .reduce((sum, inv) => sum + Number(inv.amount_due), 0);
+
+    return {
+      total,
+      paid,
+      pending,
+      overdue,
+      count: {
+        total: invoices.length,
+        draft: invoices.filter(i => i.status === 'draft').length,
+        sent: invoices.filter(i => i.status === 'sent').length,
+        paid: invoices.filter(i => i.status === 'paid').length,
+        overdue: invoices.filter(i => i.status === 'overdue').length,
+      },
+    };
+  }, [invoices]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-CA', { 
@@ -225,7 +137,63 @@ export default function FacturationsPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  if (loading) {
+  const handleViewInvoice = (invoiceId: number) => {
+    setSelectedInvoiceId(invoiceId);
+    setViewMode('detail');
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedInvoiceId(null);
+  };
+
+  const handleSendInvoice = async (invoiceId: number) => {
+    try {
+      await sendMutation.mutateAsync(invoiceId);
+      showToast({
+        title: 'Facture envoyée',
+        description: 'La facture a été envoyée avec succès.',
+        variant: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Erreur',
+        description: 'Impossible d\'envoyer la facture.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleDeleteClick = (invoiceId: number) => {
+    setInvoiceToDelete(invoiceId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!invoiceToDelete) return;
+    
+    try {
+      await deleteMutation.mutateAsync(invoiceToDelete);
+      showToast({
+        title: 'Facture supprimée',
+        description: 'La facture a été supprimée avec succès.',
+        variant: 'success',
+      });
+      setShowDeleteModal(false);
+      setInvoiceToDelete(null);
+      if (selectedInvoiceId === invoiceToDelete) {
+        handleBackToList();
+      }
+    } catch (error) {
+      showToast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer la facture.',
+        variant: 'error',
+      });
+    }
+  };
+
+  if (isLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-96">
@@ -236,8 +204,9 @@ export default function FacturationsPage() {
   }
 
   if (viewMode === 'detail' && selectedInvoice) {
-    const StatusIcon = statusConfig[selectedInvoice.status].icon;
-    const daysOverdue = selectedInvoice.status === 'overdue' ? getDaysOverdue(selectedInvoice.dueDate) : 0;
+    const StatusIcon = statusConfig[selectedInvoice.status as keyof typeof statusConfig]?.icon || Edit;
+    const projectName = projects?.find(p => p.id === selectedInvoice.project_id)?.name || 'Projet non spécifié';
+    const daysOverdue = selectedInvoice.status === 'overdue' ? getDaysOverdue(selectedInvoice.due_date) : 0;
 
     return (
       <PageContainer>
@@ -246,10 +215,7 @@ export default function FacturationsPage() {
           <Button 
             variant="outline" 
             className="mb-4"
-            onClick={() => {
-              setViewMode('list');
-              setSelectedInvoice(null);
-            }}
+            onClick={handleBackToList}
           >
             ← Retour à la liste
           </Button>
@@ -269,16 +235,38 @@ export default function FacturationsPage() {
                   </div>
                   <div>
                     <h1 className="text-3xl font-black text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {selectedInvoice.number}
+                      {selectedInvoice.invoice_number}
                     </h1>
-                    <p className="text-white/80 text-sm">{selectedInvoice.projectName}</p>
+                    <p className="text-white/80 text-sm">{projectName}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={`${statusConfig[selectedInvoice.status].color} border`}>
+                  <Badge className={`${statusConfig[selectedInvoice.status as keyof typeof statusConfig]?.color || 'bg-gray-500/10 text-gray-600 border-gray-500/30'} border`}>
                     <StatusIcon className="w-3 h-3 mr-1" />
-                    {statusConfig[selectedInvoice.status].label}
+                    {statusConfig[selectedInvoice.status as keyof typeof statusConfig]?.label || selectedInvoice.status}
                   </Badge>
+                  {selectedInvoice.status === 'draft' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendInvoice(selectedInvoice.id)}
+                      disabled={sendMutation.isPending}
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Envoyer
+                    </Button>
+                  )}
+                  {selectedInvoice.status === 'draft' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteClick(selectedInvoice.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -308,24 +296,24 @@ export default function FacturationsPage() {
               <div className="space-y-3">
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Nom</div>
-                  <div className="font-medium">{selectedInvoice.client.name}</div>
+                  <div className="font-medium">{selectedInvoice.client_data?.name || 'Non spécifié'}</div>
                 </div>
-                {selectedInvoice.client.email && (
+                {selectedInvoice.client_data?.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm">{selectedInvoice.client.email}</span>
+                    <span className="text-sm">{selectedInvoice.client_data.email}</span>
                   </div>
                 )}
-                {selectedInvoice.client.phone && (
+                {selectedInvoice.client_data?.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm">{selectedInvoice.client.phone}</span>
+                    <span className="text-sm">{selectedInvoice.client_data.phone}</span>
                   </div>
                 )}
-                {selectedInvoice.client.address && (
+                {selectedInvoice.client_data?.address && (
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <span className="text-sm">{selectedInvoice.client.address}</span>
+                    <span className="text-sm">{selectedInvoice.client_data.address}</span>
                   </div>
                 )}
               </div>
@@ -340,16 +328,16 @@ export default function FacturationsPage() {
               <div className="space-y-3">
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Date d'émission</div>
-                  <div className="font-medium">{formatDate(selectedInvoice.issueDate)}</div>
+                  <div className="font-medium">{formatDate(selectedInvoice.issue_date)}</div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Date d'échéance</div>
-                  <div className="font-medium">{formatDate(selectedInvoice.dueDate)}</div>
+                  <div className="font-medium">{formatDate(selectedInvoice.due_date)}</div>
                 </div>
-                {selectedInvoice.lastReminderDate && (
+                {selectedInvoice.last_reminder_date && (
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Dernier rappel</div>
-                    <div className="font-medium">{formatDate(selectedInvoice.lastReminderDate)}</div>
+                    <div className="font-medium">{formatDate(selectedInvoice.last_reminder_date)}</div>
                   </div>
                 )}
               </div>
@@ -365,16 +353,16 @@ export default function FacturationsPage() {
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Montant total</div>
                   <div className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    {formatCurrency(selectedInvoice.total)}
+                    {formatCurrency(Number(selectedInvoice.total))}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Montant payé</div>
-                  <div className="font-medium text-green-600">{formatCurrency(selectedInvoice.amountPaid)}</div>
+                  <div className="font-medium text-green-600">{formatCurrency(Number(selectedInvoice.amount_paid))}</div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Montant dû</div>
-                  <div className="font-medium text-orange-600">{formatCurrency(selectedInvoice.amountDue)}</div>
+                  <div className="font-medium text-orange-600">{formatCurrency(Number(selectedInvoice.amount_due))}</div>
                 </div>
               </div>
             </Card>
@@ -394,8 +382,8 @@ export default function FacturationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedInvoice.lineItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800">
+                  {selectedInvoice.line_items?.map((item, index) => (
+                    <tr key={item.id || index} className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-3 px-2">{item.description}</td>
                       <td className="py-3 px-2 text-right">{item.quantity}</td>
                       <td className="py-3 px-2 text-right">{formatCurrency(item.unitPrice)}</td>
@@ -406,18 +394,18 @@ export default function FacturationsPage() {
                 <tfoot>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <td colSpan={3} className="py-3 px-2 text-right font-medium">Sous-total</td>
-                    <td className="py-3 px-2 text-right font-medium">{formatCurrency(selectedInvoice.subtotal)}</td>
+                    <td className="py-3 px-2 text-right font-medium">{formatCurrency(Number(selectedInvoice.subtotal))}</td>
                   </tr>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <td colSpan={3} className="py-3 px-2 text-right text-sm text-gray-600 dark:text-gray-400">
-                      Taxes ({selectedInvoice.taxRate}%)
+                      Taxes ({selectedInvoice.tax_rate}%)
                     </td>
-                    <td className="py-3 px-2 text-right">{formatCurrency(selectedInvoice.taxAmount)}</td>
+                    <td className="py-3 px-2 text-right">{formatCurrency(Number(selectedInvoice.tax_amount))}</td>
                   </tr>
                   <tr>
                     <td colSpan={3} className="py-3 px-2 text-right font-bold text-lg">Total</td>
                     <td className="py-3 px-2 text-right font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {formatCurrency(selectedInvoice.total)}
+                      {formatCurrency(Number(selectedInvoice.total))}
                     </td>
                   </tr>
                 </tfoot>
@@ -426,12 +414,12 @@ export default function FacturationsPage() {
           </Card>
 
           {/* Payments */}
-          {selectedInvoice.payments.length > 0 && (
+          {selectedInvoice.payments && selectedInvoice.payments.length > 0 && (
             <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
               <h3 className="font-semibold mb-4">Historique des paiements</h3>
               <div className="space-y-3">
                 {selectedInvoice.payments.map((payment) => {
-                  const PaymentIcon = paymentMethodConfig[payment.method].icon;
+                  const PaymentIcon = paymentMethodConfig[payment.payment_method as keyof typeof paymentMethodConfig]?.icon || CreditCard;
                   return (
                     <div key={payment.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                       <div className="flex items-center gap-3">
@@ -439,14 +427,14 @@ export default function FacturationsPage() {
                           <PaymentIcon className="w-4 h-4 text-green-600" />
                         </div>
                         <div>
-                          <div className="font-medium">{paymentMethodConfig[payment.method].label}</div>
+                          <div className="font-medium">{paymentMethodConfig[payment.payment_method as keyof typeof paymentMethodConfig]?.label || payment.payment_method}</div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {formatDate(payment.date)}
+                            {formatDate(payment.payment_date)}
                             {payment.reference && ` • ${payment.reference}`}
                           </div>
                         </div>
                       </div>
-                      <div className="font-bold text-green-600">{formatCurrency(payment.amount)}</div>
+                      <div className="font-bold text-green-600">{formatCurrency(Number(payment.amount))}</div>
                     </div>
                   );
                 })}
@@ -499,7 +487,10 @@ export default function FacturationsPage() {
                   <p className="text-white/80 text-sm">Gestion complète de vos factures</p>
                 </div>
               </div>
-              <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+              <Button 
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                onClick={() => setShowCreateModal(true)}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvelle facture
               </Button>
@@ -619,15 +610,13 @@ export default function FacturationsPage() {
         {/* Invoices List */}
         <div className="space-y-3">
           {filteredInvoices.map((invoice) => {
-            const StatusIcon = statusConfig[invoice.status].icon;
+            const StatusIcon = statusConfig[invoice.status as keyof typeof statusConfig]?.icon || Edit;
+            const projectName = projects?.find(p => p.id === invoice.project_id)?.name || '';
             return (
               <Card 
                 key={invoice.id} 
                 className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20 hover:border-[#523DC9] transition-all cursor-pointer"
-                onClick={() => {
-                  setSelectedInvoice(invoice);
-                  setViewMode('detail');
-                }}
+                onClick={() => handleViewInvoice(invoice.id)}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -636,29 +625,29 @@ export default function FacturationsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold">{invoice.number}</span>
-                        <Badge className={`${statusConfig[invoice.status].color} border text-xs`}>
+                        <span className="font-bold">{invoice.invoice_number}</span>
+                        <Badge className={`${statusConfig[invoice.status as keyof typeof statusConfig]?.color || 'bg-gray-500/10 text-gray-600 border-gray-500/30'} border text-xs`}>
                           <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusConfig[invoice.status].label}
+                          {statusConfig[invoice.status as keyof typeof statusConfig]?.label || invoice.status}
                         </Badge>
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {invoice.client.name} • {invoice.projectName}
+                        {invoice.client_data?.name || 'Client non spécifié'} • {projectName}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        <span>Émise: {new Date(invoice.issueDate).toLocaleDateString('fr-FR')}</span>
+                        <span>Émise: {new Date(invoice.issue_date).toLocaleDateString('fr-FR')}</span>
                         <span>•</span>
-                        <span>Échéance: {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</span>
+                        <span>Échéance: {new Date(invoice.due_date).toLocaleDateString('fr-FR')}</span>
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {formatCurrency(invoice.total)}
+                      {formatCurrency(Number(invoice.total))}
                     </div>
-                    {invoice.amountDue > 0 && (
+                    {Number(invoice.amount_due) > 0 && (
                       <div className="text-sm text-orange-600">
-                        Dû: {formatCurrency(invoice.amountDue)}
+                        Dû: {formatCurrency(Number(invoice.amount_due))}
                       </div>
                     )}
                   </div>
@@ -679,6 +668,57 @@ export default function FacturationsPage() {
             </p>
           </Card>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setInvoiceToDelete(null);
+          }}
+          title="Supprimer la facture"
+        >
+          <div className="space-y-4">
+            <p>Êtes-vous sûr de vouloir supprimer cette facture ? Cette action est irréversible.</p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setInvoiceToDelete(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDeleteConfirm}
+                disabled={deleteMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Create Invoice Modal - Placeholder */}
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Nouvelle facture"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-600 dark:text-gray-400">
+              Le formulaire de création de facture sera implémenté prochainement.
+            </p>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </MotionDiv>
     </PageContainer>
   );

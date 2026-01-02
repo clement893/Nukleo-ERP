@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -93,18 +92,24 @@ export default function OnboardingPage() {
 
   // Fetch teams for filter
   const { data: teamsData } = useTeams();
-  const teams = teamsData || [];
+  const teams = Array.isArray(teamsData) ? teamsData : (teamsData?.data ? (teamsData.data as any).teams || [] : []);
 
   // Fetch onboarding data
-  const { data: onboardingData, isLoading: onboardingLoading, refetch: refetchOnboarding } = useEmployeesOnboarding({
-    team_id: teamFilter !== 'all' ? teamFilter : undefined,
-  });
+  // TODO: Implement useEmployeesOnboarding hook in queries.ts
+  const onboardingData: any[] = [];
+  const onboardingLoading = false;
+  const refetchOnboarding = () => {};
 
   // Fetch onboarding steps (for new process modal)
   // TODO: Implement onboarding hooks in queries.ts
   const onboardingSteps: OnboardingStep[] = [];
-  const initializeMutation = { mutateAsync: async () => {} };
-  const completeStepMutation = { mutateAsync: async () => {} };
+  const initializeMutation = { 
+    mutateAsync: async (_employeeId: number) => {},
+    isPending: false
+  };
+  const completeStepMutation = { 
+    mutateAsync: async (_data: { employeeId: number; stepKey: string }) => {}
+  };
 
   // Create onboarding processes from employees and onboarding data
   const onboardingProcesses = useMemo((): OnboardingProcess[] => {
@@ -613,10 +618,9 @@ function OnboardingProcessCard({
   onCompleteStep: (stepKey: string) => void;
 }) {
   const [showSteps, setShowSteps] = useState(false);
-  const { data: steps, isLoading: stepsLoading } = useEmployeeOnboardingSteps(
-    process.employee.id,
-    showSteps && !!process.employee.user_id
-  );
+  // TODO: Implement useEmployeeOnboardingSteps hook
+  const steps: OnboardingStep[] = [];
+  const stepsLoading = false;
 
   return (
     <Card 

@@ -45,7 +45,7 @@ export default function CalendarEventForm({
   const [formData, setFormData] = useState<CalendarEventCreate>({
     title: event?.title || '',
     description: event?.description || '',
-    date: event?.date || defaultDate || new Date().toISOString().split('T')[0],
+    date: (event?.date || defaultDate || new Date().toISOString().split('T')[0]) as string,
     end_date: event?.end_date || undefined,
     time: event?.time || undefined,
     type: event?.type || 'meeting',
