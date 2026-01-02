@@ -1,149 +1,77 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import { PageHeader } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import EmployeePortalTasks from '@/components/employes/EmployeePortalTasks';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { useState } from 'react';
+import { Circle, CheckCircle2, Clock, Filter } from 'lucide-react';
+import { Card, Badge } from '@/components/ui';
 
-export default function EmployeePortalTasksPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { showToast } = useToast();
-  const { user } = useAuthStore();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+export default function MesTachesPage() {
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const currentUserId = user?.id ? parseInt(user.id) : null;
+  const tasks = [
+    { id: 1, title: 'Développer API authentification', project: 'Projet Alpha', status: 'in_progress', priority: 'high', dueDate: '2026-01-05', progress: 60 },
+    { id: 2, title: 'Révision code frontend', project: 'Projet Beta', status: 'todo', priority: 'medium', dueDate: '2026-01-08', progress: 0 },
+    { id: 3, title: 'Documentation technique', project: 'Projet Gamma', status: 'in_progress', priority: 'low', dueDate: '2026-01-10', progress: 30 },
+    { id: 4, title: 'Tests unitaires', project: 'Projet Alpha', status: 'todo', priority: 'high', dueDate: '2026-01-06', progress: 0 },
+    { id: 5, title: 'Optimisation performance', project: 'Projet Beta', status: 'completed', priority: 'medium', dueDate: '2025-12-30', progress: 100 },
+  ];
 
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID d\'employé invalide');
-      setLoading(false);
-      return;
-    }
-    checkPermissions();
-  }, [employeeId, currentUserId]);
-
-  const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-    }
-  };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
-        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full py-12 text-center">
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error && !employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Erreur" />
-        <Alert variant="error">{error}</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Employé non trouvé" />
-        <Alert variant="error">L'employé demandé n'existe pas.</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const filteredTasks = filterStatus === 'all' ? tasks : tasks.filter(t => t.status === filterStatus);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader
-        title={`Mes tâches - ${employee.first_name} ${employee.last_name}`}
-        description="Gérez toutes vos tâches assignées"
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
-      />
-
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="relative p-8">
+          <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Mes Tâches
+          </h1>
+          <p className="text-white/80 text-lg">Gérez vos tâches et suivez votre progression</p>
         </div>
-      )}
+      </div>
 
-      <div className="mt-6">
-        <EmployeePortalTasks employeeId={employee.id} />
+      <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20">
+        <div className="flex items-center gap-4">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 rounded-lg border">
+            <option value="all">Tous les statuts</option>
+            <option value="todo">À faire</option>
+            <option value="in_progress">En cours</option>
+            <option value="completed">Terminées</option>
+          </select>
+        </div>
+      </Card>
+
+      <div className="space-y-3">
+        {filteredTasks.map((task) => (
+          <Card key={task.id} className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-start gap-4">
+              <div className="mt-1">
+                {task.status === 'completed' ? <CheckCircle2 className="w-5 h-5 text-green-600" /> :
+                 task.status === 'in_progress' ? <Clock className="w-5 h-5 text-blue-600" /> :
+                 <Circle className="w-5 h-5 text-gray-400" />}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg">{task.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{task.project}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge className={task.status === 'completed' ? 'bg-green-500/10 text-green-600' : task.status === 'in_progress' ? 'bg-blue-500/10 text-blue-600' : 'bg-gray-500/10 text-gray-600'}>
+                    {task.status === 'completed' ? 'Terminée' : task.status === 'in_progress' ? 'En cours' : 'À faire'}
+                  </Badge>
+                  <Badge className={task.priority === 'high' ? 'bg-red-500/10 text-red-600' : task.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-600' : 'bg-green-500/10 text-green-600'}>
+                    {task.priority === 'high' ? 'Haute' : task.priority === 'medium' ? 'Moyenne' : 'Basse'}
+                  </Badge>
+                </div>
+                {task.status !== 'completed' && (
+                  <div className="mt-3">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#523DC9]" style={{ width: `${task.progress}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );

@@ -1,149 +1,97 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import { PageHeader } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import EmployeePortalExpenses from '@/components/employes/EmployeePortalExpenses';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { DollarSign, Receipt, Upload, CheckCircle2, Clock } from 'lucide-react';
+import { Card, Badge, Button } from '@/components/ui';
 
-export default function EmployeePortalExpensesPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { showToast } = useToast();
-  const { user } = useAuthStore();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+export default function MesDepensesPage() {
+  const expenses = [
+    { id: 1, title: 'Déplacement client TechCorp', amount: 125.50, date: '2025-12-28', category: 'Transport', status: 'approved', project: 'Projet Alpha' },
+    { id: 2, title: 'Repas d\'affaires', amount: 89.00, date: '2025-12-30', category: 'Repas', status: 'pending', project: 'Projet Beta' },
+    { id: 3, title: 'Matériel informatique', amount: 450.00, date: '2026-01-02', category: 'Équipement', status: 'pending', project: 'Projet Alpha' },
+    { id: 4, title: 'Formation en ligne', amount: 199.99, date: '2025-12-15', category: 'Formation', status: 'approved', project: 'Personnel' },
+    { id: 5, title: 'Stationnement', amount: 25.00, date: '2026-01-03', category: 'Transport', status: 'draft', project: 'Projet Gamma' },
+  ];
 
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const currentUserId = user?.id ? parseInt(user.id) : null;
-
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID d\'employé invalide');
-      setLoading(false);
-      return;
-    }
-    checkPermissions();
-  }, [employeeId, currentUserId]);
-
-  const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-    }
-  };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
-        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full py-12 text-center">
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error && !employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Erreur" />
-        <Alert variant="error">{error}</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Employé non trouvé" />
-        <Alert variant="error">L'employé demandé n'existe pas.</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const totalPending = expenses.filter(e => e.status === 'pending').reduce((sum, e) => sum + e.amount, 0);
+  const totalApproved = expenses.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader
-        title={`Mes comptes de dépenses - ${employee.first_name} ${employee.last_name}`}
-        description="Gérez vos comptes de dépenses"
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
-      />
-
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Mes Comptes de Dépenses
+              </h1>
+              <p className="text-white/80 text-lg">Gérez vos notes de frais</p>
+            </div>
+            <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+              <Upload className="w-5 h-5 mr-2" />
+              Nouvelle dépense
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
 
-      <div className="mt-6">
-        <EmployeePortalExpenses employee={employee} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-5 h-5 text-yellow-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">En attente</span>
+          </div>
+          <div className="text-3xl font-bold text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {totalPending.toFixed(2)} $
+          </div>
+        </Card>
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Approuvées</span>
+          </div>
+          <div className="text-3xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {totalApproved.toFixed(2)} $
+          </div>
+        </Card>
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign className="w-5 h-5 text-blue-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Total</span>
+          </div>
+          <div className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            {(totalPending + totalApproved).toFixed(2)} $
+          </div>
+        </Card>
+      </div>
+
+      <div className="space-y-3">
+        {expenses.map((expense) => (
+          <Card key={expense.id} className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <Receipt className="w-5 h-5 text-[#523DC9]" />
+                  <h3 className="font-semibold text-lg">{expense.title}</h3>
+                  <Badge className={
+                    expense.status === 'approved' ? 'bg-green-500/10 text-green-600 border-green-500/30' :
+                    expense.status === 'pending' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' :
+                    'bg-gray-500/10 text-gray-600 border-gray-500/30'
+                  }>
+                    {expense.status === 'approved' ? 'Approuvée' : expense.status === 'pending' ? 'En attente' : 'Brouillon'}
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{expense.project} • {expense.category}</p>
+                <p className="text-xs text-gray-500">{new Date(expense.date).toLocaleDateString('fr-FR')}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {expense.amount.toFixed(2)} $
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );

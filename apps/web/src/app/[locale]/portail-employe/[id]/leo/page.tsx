@@ -1,149 +1,77 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import { PageHeader } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import EmployeePortalLeo from '@/components/employes/EmployeePortalLeo';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { Bot, Send, Sparkles } from 'lucide-react';
+import { Card, Button } from '@/components/ui';
+import { useState } from 'react';
 
-export default function EmployeePortalLeoPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { showToast } = useToast();
-  const { user } = useAuthStore();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const currentUserId = user?.id ? parseInt(user.id) : null;
-
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID d\'employé invalide');
-      setLoading(false);
-      return;
-    }
-    checkPermissions();
-  }, [employeeId, currentUserId]);
-
-  const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-    }
-  };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
-        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full py-12 text-center">
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error && !employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Erreur" />
-        <Alert variant="error">{error}</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Employé non trouvé" />
-        <Alert variant="error">L'employé demandé n'existe pas.</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
+export default function MonLeoPage() {
+  const [messages] = useState([
+    { role: 'assistant', content: 'Bonjour Ricardo ! Je suis Leo, votre assistant IA personnel. Comment puis-je vous aider aujourd\'hui ?' },
+    { role: 'user', content: 'Quels sont mes projets en cours ?' },
+    { role: 'assistant', content: 'Vous avez 3 projets actifs : Projet Alpha (65%), Projet Beta (40%) et Projet Gamma (85%). Souhaitez-vous plus de détails sur l\'un d\'eux ?' },
+  ]);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader
-        title={`Mon Leo - ${employee.first_name} ${employee.last_name}`}
-        description="Assistant IA pour votre travail"
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
-      />
-
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="relative p-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+              <Bot className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Mon Leo
+              </h1>
+              <p className="text-white/80 text-lg">Votre assistant IA personnel</p>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      <div className="mt-6">
-        <EmployeePortalLeo employee={employee} />
+      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 min-h-[500px] flex flex-col">
+        <div className="flex-1 space-y-4 mb-4 overflow-y-auto">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] p-4 rounded-lg ${
+                msg.role === 'user' 
+                  ? 'bg-[#523DC9] text-white' 
+                  : 'bg-gray-100 dark:bg-gray-800'
+              }`}>
+                <p className="text-sm">{msg.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Posez votre question à Leo..."
+            className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+          />
+          <Button className="bg-[#523DC9] hover:bg-[#523DC9]/90 text-white">
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 cursor-pointer hover:shadow-lg transition-all">
+          <Sparkles className="w-5 h-5 text-[#523DC9] mb-2" />
+          <h3 className="font-semibold mb-1">Résumé de la semaine</h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Obtenez un résumé de votre activité</p>
+        </Card>
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 cursor-pointer hover:shadow-lg transition-all">
+          <Sparkles className="w-5 h-5 text-[#523DC9] mb-2" />
+          <h3 className="font-semibold mb-1">Suggestions de tâches</h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Priorisez vos tâches efficacement</p>
+        </Card>
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 cursor-pointer hover:shadow-lg transition-all">
+          <Sparkles className="w-5 h-5 text-[#523DC9] mb-2" />
+          <h3 className="font-semibold mb-1">Analyse de performance</h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Insights sur votre productivité</p>
+        </Card>
       </div>
     </div>
   );

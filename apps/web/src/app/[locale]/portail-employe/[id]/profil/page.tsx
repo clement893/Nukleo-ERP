@@ -1,150 +1,141 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import { PageHeader } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import EmployeePortalProfile from '@/components/employes/EmployeePortalProfile';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, Edit } from 'lucide-react';
+import { Card, Button, Badge } from '@/components/ui';
 
-export default function EmployeePortalProfilePage() {
-  const params = useParams();
-  const router = useRouter();
-  const { showToast } = useToast();
-  const { user } = useAuthStore();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const currentUserId = user?.id ? parseInt(user.id) : null;
-
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID d\'employé invalide');
-      setLoading(false);
-      return;
-    }
-    checkPermissions();
-  }, [employeeId, currentUserId]);
-
-  const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-    }
+export default function MonProfilPage() {
+  const profile = {
+    firstName: 'Ricardo',
+    lastName: 'Wierzynski',
+    email: 'ricardo.w@nukleo.com',
+    phone: '+1 (514) 555-0123',
+    position: 'Développeur Senior',
+    department: 'Lab',
+    location: 'Montréal, QC',
+    startDate: '2023-03-15',
+    employeeId: 'EMP-2023-029',
+    manager: 'Jean-François Lapointe',
+    skills: ['React', 'TypeScript', 'Node.js', 'Python', 'PostgreSQL', 'AWS'],
+    certifications: ['AWS Solutions Architect', 'Scrum Master'],
   };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
-        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full py-12 text-center">
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error && !employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Erreur" />
-        <Alert variant="error">{error}</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Employé non trouvé" />
-        <Alert variant="error">L'employé demandé n'existe pas.</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader
-        title={`Mon profil - ${employee.first_name} ${employee.last_name}`}
-        description="Gérez vos informations personnelles"
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
-      />
-
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-3xl font-bold">
+                {profile.firstName[0]}{profile.lastName[0]}
+              </div>
+              <div>
+                <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {profile.firstName} {profile.lastName}
+                </h1>
+                <p className="text-white/80 text-lg">{profile.position}</p>
+              </div>
+            </div>
+            <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+              <Edit className="w-5 h-5 mr-2" />
+              Modifier
+            </Button>
+          </div>
         </div>
-      )}
-
-      <div className="mt-6">
-        <EmployeePortalProfile employee={employee} />
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Informations personnelles
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Mail className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Email</p>
+                <p className="font-medium">{profile.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Téléphone</p>
+                <p className="font-medium">{profile.phone}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Localisation</p>
+                <p className="font-medium">{profile.location}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Informations professionnelles
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Poste</p>
+                <p className="font-medium">{profile.position}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <User className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Département</p>
+                <p className="font-medium">{profile.department}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Date d\'embauche</p>
+                <p className="font-medium">{new Date(profile.startDate).toLocaleDateString('fr-FR')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <User className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Manager</p>
+                <p className="font-medium">{profile.manager}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          Compétences
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {profile.skills.map((skill, idx) => (
+            <Badge key={idx} className="bg-[#523DC9]/10 text-[#523DC9] border-[#523DC9]/30">
+              {skill}
+            </Badge>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+        <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          Certifications
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {profile.certifications.map((cert, idx) => (
+            <Badge key={idx} className="bg-green-500/10 text-green-600 border-green-500/30">
+              {cert}
+            </Badge>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

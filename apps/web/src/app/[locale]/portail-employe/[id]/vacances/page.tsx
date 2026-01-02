@@ -1,149 +1,103 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { employeesAPI } from '@/lib/api/employees';
-import type { Employee } from '@/lib/api/employees';
-import { handleApiError } from '@/lib/errors/api';
-import { useToast } from '@/components/ui';
-import { PageHeader } from '@/components/layout';
-import { Loading, Alert } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import EmployeePortalVacations from '@/components/employes/EmployeePortalVacations';
-import { useAuthStore } from '@/lib/store';
-import { checkMySuperAdminStatus } from '@/lib/api/admin';
+import { Plane, Calendar, Plus, CheckCircle2, Clock } from 'lucide-react';
+import { Card, Badge, Button } from '@/components/ui';
 
-export default function EmployeePortalVacationsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { showToast } = useToast();
-  const { user } = useAuthStore();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+export default function MesVacancesPage() {
+  const vacations = [
+    { id: 1, startDate: '2026-02-10', endDate: '2026-02-14', days: 5, type: 'Vacances', status: 'pending', reason: 'Vacances familiales' },
+    { id: 2, startDate: '2025-12-24', endDate: '2025-12-26', days: 3, type: 'Congé', status: 'approved', reason: 'Fêtes de fin d\'année' },
+    { id: 3, startDate: '2026-03-15', endDate: '2026-03-22', days: 8, type: 'Vacances', status: 'draft', reason: 'Voyage' },
+    { id: 4, startDate: '2025-11-28', endDate: '2025-11-29', days: 2, type: 'Personnel', status: 'approved', reason: 'Déménagement' },
+  ];
 
-  const employeeId = params?.id ? parseInt(String(params.id)) : null;
-  const currentUserId = user?.id ? parseInt(user.id) : null;
-
-  useEffect(() => {
-    if (!employeeId) {
-      setError('ID d\'employé invalide');
-      setLoading(false);
-      return;
-    }
-    checkPermissions();
-  }, [employeeId, currentUserId]);
-
-  const checkPermissions = async () => {
-    if (!employeeId || !currentUserId) {
-      setError('ID d\'employé ou utilisateur invalide');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const status = await checkMySuperAdminStatus();
-      setIsSuperAdmin(status.is_superadmin === true);
-      await loadEmployee();
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors de la vérification des permissions');
-      setLoading(false);
-    }
-  };
-
-  const loadEmployee = async () => {
-    if (!employeeId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await employeesAPI.get(employeeId);
-      setEmployee(data);
-
-      if (!isSuperAdmin && data.user_id !== currentUserId) {
-        setError('Vous n\'avez pas la permission d\'accéder au portail de cet employé.');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      const appError = handleApiError(err);
-      setError(appError.message || 'Erreur lors du chargement de l\'employé');
-      showToast({
-        message: appError.message || 'Erreur lors du chargement de l\'employé',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    const locale = params?.locale as string || 'fr';
-    router.push(`/${locale}/dashboard/management/employes`);
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full py-12 text-center">
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error && !employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Erreur" />
-        <Alert variant="error">{error}</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!employee) {
-    return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader title="Employé non trouvé" />
-        <Alert variant="error">L'employé demandé n'existe pas.</Alert>
-        <div className="mt-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux employés
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const balance = { total: 25, used: 10, pending: 5, available: 10 };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader
-        title={`Mes vacances - ${employee.first_name} ${employee.last_name}`}
-        description="Gérez vos demandes de vacances"
-        actions={
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la liste
-          </Button>
-        }
-      />
-
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Mes Vacances
+              </h1>
+              <p className="text-white/80 text-lg">Gérez vos demandes de congés</p>
+            </div>
+            <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+              <Plus className="w-5 h-5 mr-2" />
+              Nouvelle demande
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
 
-      <div className="mt-6">
-        <EmployeePortalVacations employee={employee} />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Total</span>
+          </div>
+          <div className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{balance.total}</div>
+          <p className="text-xs text-gray-500 mt-1">jours/an</p>
+        </Card>
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Utilisés</span>
+          </div>
+          <div className="text-3xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{balance.used}</div>
+          <p className="text-xs text-gray-500 mt-1">jours</p>
+        </Card>
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-5 h-5 text-yellow-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">En attente</span>
+          </div>
+          <div className="text-3xl font-bold text-yellow-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{balance.pending}</div>
+          <p className="text-xs text-gray-500 mt-1">jours</p>
+        </Card>
+        <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <Plane className="w-5 h-5 text-purple-600" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Disponibles</span>
+          </div>
+          <div className="text-3xl font-bold text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{balance.available}</div>
+          <p className="text-xs text-gray-500 mt-1">jours</p>
+        </Card>
+      </div>
+
+      <div className="space-y-3">
+        {vacations.map((vacation) => (
+          <Card key={vacation.id} className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <Plane className="w-5 h-5 text-[#523DC9]" />
+                  <h3 className="font-semibold text-lg">{vacation.type}</h3>
+                  <Badge className={
+                    vacation.status === 'approved' ? 'bg-green-500/10 text-green-600 border-green-500/30' :
+                    vacation.status === 'pending' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' :
+                    'bg-gray-500/10 text-gray-600 border-gray-500/30'
+                  }>
+                    {vacation.status === 'approved' ? 'Approuvée' : vacation.status === 'pending' ? 'En attente' : 'Brouillon'}
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{vacation.reason}</p>
+                <p className="text-xs text-gray-500">
+                  Du {new Date(vacation.startDate).toLocaleDateString('fr-FR')} au {new Date(vacation.endDate).toLocaleDateString('fr-FR')}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#523DC9]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {vacation.days}
+                </div>
+                <p className="text-xs text-gray-500">jours</p>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );
