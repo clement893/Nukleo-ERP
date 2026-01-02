@@ -2,22 +2,110 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { DollarSign, Calendar, FileText, Loader2, CheckCircle, Clock, XCircle, AlertCircle, Upload } from 'lucide-react';
+import { 
+  DollarSign, Calendar, FileText, Loader2, CheckCircle, Clock, XCircle, 
+  AlertCircle, Upload, Edit, Trash2, Send, Reply, Paperclip, Download,
+  Eye, Sparkles, Plus
+} from 'lucide-react';
 import { Card, Button, Badge } from '@/components/ui';
-import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountStatus } from '@/lib/api/finances/expenseAccounts';
+import Modal from '@/components/ui/Modal';
+import Textarea from '@/components/ui/Textarea';
+import { useToast } from '@/components/ui';
+import { expenseAccountsAPI, type ExpenseAccount, type ExpenseAccountStatus, type ExpenseAccountCreate, type ExpenseAccountUpdate } from '@/lib/api/finances/expenseAccounts';
+import ExpenseAccountForm from '@/components/finances/ExpenseAccountForm';
+import ExpenseAccountStatusBadge from '@/components/finances/ExpenseAccountStatusBadge';
+import { employeesAPI, type Employee } from '@/lib/api/employees';
+import { useAuthStore } from '@/lib/store/auth';
+import {
+  useCreateExpenseAccount,
+  useUpdateExpenseAccount,
+  useDeleteExpenseAccount,
+  useSubmitExpenseAccount,
+  useApproveExpenseAccount,
+  useRejectExpenseAccount,
+  useRequestClarification,
+  useRespondClarification,
+  useSetUnderReview,
+} from '@/lib/query/expenseAccounts';
+import { handleApiError } from '@/lib/errors/api';
 
 export default function MesDepenses() {
   const searchParams = useSearchParams();
   const employeeIdParam = searchParams.get('employee_id');
   const employeeId = employeeIdParam ? parseInt(employeeIdParam) : undefined;
+  const { user } = useAuthStore();
+  const { showToast } = useToast();
   
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<ExpenseAccount[]>([]);
   const [statusFilter, setStatusFilter] = useState<ExpenseAccountStatus | 'all'>('all');
+  
+  // Modals
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showRespondModal, setShowRespondModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showClarificationModal, setShowClarificationModal] = useState(false);
+  
+  // Selected expense
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseAccount | null>(null);
+  
+  // Form states
+  const [clarificationResponse, setClarificationResponse] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [clarificationRequest, setClarificationRequest] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string }>>([]);
+  
+  // Current user's employee ID
+  const [currentEmployeeId, setCurrentEmployeeId] = useState<number | undefined>(undefined);
+  
+  // Mutations
+  const createMutation = useCreateExpenseAccount();
+  const updateMutation = useUpdateExpenseAccount();
+  const deleteMutation = useDeleteExpenseAccount();
+  const submitMutation = useSubmitExpenseAccount();
+  const approveMutation = useApproveExpenseAccount();
+  const rejectMutation = useRejectExpenseAccount();
+  const requestClarificationMutation = useRequestClarification();
+  const respondClarificationMutation = useRespondClarification();
+  const setUnderReviewMutation = useSetUnderReview();
 
   useEffect(() => {
     loadExpenses();
+    loadEmployees();
+    loadCurrentEmployee();
   }, [employeeId, statusFilter]);
+
+  const loadCurrentEmployee = async () => {
+    if (!user?.id) return;
+    try {
+      const allEmployees = await employeesAPI.list(0, 1000);
+      const currentEmployee = allEmployees.find(emp => emp.user_id === user.id);
+      if (currentEmployee) {
+        setCurrentEmployeeId(currentEmployee.id);
+      }
+    } catch (error) {
+      console.error('Error loading current employee:', error);
+    }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const data = await employeesAPI.list(0, 1000);
+      setEmployees(data.map(emp => ({
+        id: emp.id,
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+      })));
+    } catch (err) {
+      console.error('Failed to load employees:', err);
+      setEmployees([]);
+    }
+  };
 
   const loadExpenses = async () => {
     try {
@@ -26,13 +114,306 @@ export default function MesDepenses() {
         0, 
         100, 
         statusFilter === 'all' ? undefined : statusFilter,
-        employeeId
+        employeeId || currentEmployeeId
       );
       setExpenses(data);
     } catch (error) {
       console.error('Error loading expenses:', error);
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des comptes de dépenses',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate): Promise<void> => {
+    try {
+      const expenseData: ExpenseAccountCreate = {
+        employee_id: currentEmployeeId || (data as ExpenseAccountCreate).employee_id || 0,
+        title: data.title || '',
+        description: data.description ?? null,
+        expense_period_start: data.expense_period_start ?? null,
+        expense_period_end: data.expense_period_end ?? null,
+        total_amount: data.total_amount || '0',
+        currency: data.currency || 'EUR',
+        metadata: data.metadata ?? null,
+      };
+      
+      const createdExpense = await createMutation.mutateAsync(expenseData);
+      
+      // Upload attachment if provided
+      if (pendingFile && createdExpense) {
+        try {
+          await expenseAccountsAPI.uploadAttachment(createdExpense.id, pendingFile);
+          showToast({
+            message: 'Compte de dépense créé avec succès et pièce jointe téléversée',
+            type: 'success',
+          });
+        } catch (uploadErr) {
+          const uploadError = handleApiError(uploadErr);
+          showToast({
+            message: 'Compte créé mais erreur lors du téléversement: ' + uploadError.message,
+            type: 'warning',
+          });
+        }
+        setPendingFile(null);
+      } else {
+        showToast({
+          message: 'Compte de dépense créé avec succès',
+          type: 'success',
+        });
+      }
+      
+      setShowCreateModal(false);
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création du compte de dépense',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleUpdate = async (data: ExpenseAccountCreate | ExpenseAccountUpdate): Promise<void> => {
+    if (!selectedExpense) return;
+
+    try {
+      await updateMutation.mutateAsync({
+        id: selectedExpense.id,
+        data: data as ExpenseAccountUpdate,
+      });
+      
+      // Upload attachment if provided
+      if (pendingFile) {
+        try {
+          await expenseAccountsAPI.uploadAttachment(selectedExpense.id, pendingFile);
+          showToast({
+            message: 'Compte modifié avec succès et pièce jointe téléversée',
+            type: 'success',
+          });
+        } catch (uploadErr) {
+          const uploadError = handleApiError(uploadErr);
+          showToast({
+            message: 'Compte modifié mais erreur lors du téléversement: ' + uploadError.message,
+            type: 'warning',
+          });
+        }
+        setPendingFile(null);
+      } else {
+        showToast({
+          message: 'Compte de dépenses modifié avec succès',
+          type: 'success',
+        });
+      }
+      
+      setShowEditModal(false);
+      setSelectedExpense(null);
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleDelete = async (expenseId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce compte de dépenses ?')) {
+      return;
+    }
+
+    try {
+      await deleteMutation.mutateAsync(expenseId);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      showToast({
+        message: 'Compte de dépenses supprimé avec succès',
+        type: 'success',
+      });
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la suppression',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSubmit = async (expenseId: number) => {
+    if (submitMutation.isPending) return;
+
+    try {
+      await submitMutation.mutateAsync(expenseId);
+      showToast({
+        message: 'Compte de dépenses soumis avec succès',
+        type: 'success',
+      });
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la soumission',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!selectedExpense) return;
+
+    try {
+      await approveMutation.mutateAsync({
+        id: selectedExpense.id,
+        action: {
+          notes: adminNotes || null,
+        },
+      });
+      showToast({
+        message: 'Compte de dépenses approuvé avec succès',
+        type: 'success',
+      });
+      setShowApproveModal(false);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      setAdminNotes('');
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'approbation',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedExpense || !rejectionReason.trim()) {
+      showToast({
+        message: 'Veuillez saisir une raison de rejet',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      await rejectMutation.mutateAsync({
+        id: selectedExpense.id,
+        action: {
+          notes: adminNotes || null,
+          rejection_reason: rejectionReason,
+        },
+      });
+      showToast({
+        message: 'Compte de dépenses rejeté',
+        type: 'success',
+      });
+      setShowRejectModal(false);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      setRejectionReason('');
+      setAdminNotes('');
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du rejet',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleRequestClarification = async () => {
+    if (!selectedExpense || !clarificationRequest.trim()) {
+      showToast({
+        message: 'Veuillez saisir une demande de clarification',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      await requestClarificationMutation.mutateAsync({
+        id: selectedExpense.id,
+        action: {
+          notes: adminNotes || null,
+          clarification_request: clarificationRequest,
+        },
+      });
+      showToast({
+        message: 'Demande de clarification envoyée',
+        type: 'success',
+      });
+      setShowClarificationModal(false);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      setClarificationRequest('');
+      setAdminNotes('');
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la demande de clarification',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleRespondClarification = async () => {
+    if (!selectedExpense || !clarificationResponse.trim()) {
+      showToast({
+        message: 'Veuillez saisir une réponse',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      await respondClarificationMutation.mutateAsync({
+        id: selectedExpense.id,
+        response: clarificationResponse.trim(),
+      });
+      setShowRespondModal(false);
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      setClarificationResponse('');
+      showToast({
+        message: 'Réponse envoyée avec succès. Le compte a été resoumis pour validation.',
+        type: 'success',
+      });
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'envoi de la réponse',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSetUnderReview = async (expenseId: number) => {
+    try {
+      await setUnderReviewMutation.mutateAsync(expenseId);
+      showToast({
+        message: 'Compte mis en révision',
+        type: 'success',
+      });
+      setShowViewModal(false);
+      setSelectedExpense(null);
+      await loadExpenses();
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la mise en révision',
+        type: 'error',
+      });
     }
   };
 
@@ -48,6 +429,21 @@ export default function MesDepenses() {
     return badges[status] || badges.draft;
   };
 
+  const formatCurrency = (amount: string, currency: string) => {
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount)) return '-';
+    return new Intl.NumberFormat('fr-CA', { 
+      style: 'currency', 
+      currency: currency || 'CAD' 
+    }).format(numAmount);
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('fr-FR');
+  };
+
+  const isAdmin = user?.is_admin || false;
   const totalAmount = expenses.reduce((sum, e) => sum + parseFloat(e.total_amount || '0'), 0);
   const approvedAmount = expenses
     .filter(e => e.status === 'approved')
@@ -76,7 +472,10 @@ export default function MesDepenses() {
               </h1>
               <p className="text-white/80 text-lg">Gérez vos notes de frais et remboursements</p>
             </div>
-            <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+            <Button 
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Upload className="w-5 h-5 mr-2" />
               Nouveau compte
             </Button>
@@ -92,7 +491,7 @@ export default function MesDepenses() {
             </div>
           </div>
           <div className="text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {totalAmount.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+            {formatCurrency(totalAmount.toString(), expenses[0]?.currency || 'CAD')}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Total demandé</div>
         </Card>
@@ -104,7 +503,7 @@ export default function MesDepenses() {
             </div>
           </div>
           <div className="text-3xl font-bold mb-1 text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {approvedAmount.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+            {formatCurrency(approvedAmount.toString(), expenses[0]?.currency || 'CAD')}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Approuvé</div>
         </Card>
@@ -184,14 +583,14 @@ export default function MesDepenses() {
                         <span>•</span>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(expense.expense_period_start).toLocaleDateString('fr-FR')} - {new Date(expense.expense_period_end).toLocaleDateString('fr-FR')}
+                          {formatDate(expense.expense_period_start)} - {formatDate(expense.expense_period_end)}
                         </div>
                       </>
                     )}
                     {expense.submitted_at && (
                       <>
                         <span>•</span>
-                        <span>Soumis le {new Date(expense.submitted_at).toLocaleDateString('fr-FR')}</span>
+                        <span>Soumis le {formatDate(expense.submitted_at)}</span>
                       </>
                     )}
                   </div>
@@ -200,7 +599,7 @@ export default function MesDepenses() {
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-6 h-6 text-green-600" />
                     <span className="text-2xl font-bold text-green-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                      {parseFloat(expense.total_amount).toLocaleString('fr-CA', { style: 'currency', currency: expense.currency })}
+                      {formatCurrency(expense.total_amount, expense.currency)}
                     </span>
                   </div>
                 </div>
@@ -250,18 +649,59 @@ export default function MesDepenses() {
 
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="text-xs text-gray-500">
-                  Créé le {new Date(expense.created_at).toLocaleDateString('fr-FR')}
+                  Créé le {formatDate(expense.created_at)}
                 </div>
                 <div className="flex gap-2">
                   {expense.status === 'draft' && (
-                    <Button size="sm" variant="outline">Modifier</Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedExpense(expense);
+                        setShowEditModal(true);
+                      }}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Modifier
+                    </Button>
+                  )}
+                  {(expense.status === 'submitted' || expense.status === 'under_review' || expense.status === 'needs_clarification') && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedExpense(expense);
+                        setShowEditModal(true);
+                      }}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Modifier
+                    </Button>
                   )}
                   {expense.status === 'needs_clarification' && (
-                    <Button size="sm" className="bg-[#523DC9] hover:bg-[#5F2B75] text-white">
+                    <Button 
+                      size="sm" 
+                      className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+                      onClick={() => {
+                        setSelectedExpense(expense);
+                        setShowRespondModal(true);
+                      }}
+                    >
+                      <Reply className="w-3 h-3 mr-1" />
                       Répondre
                     </Button>
                   )}
-                  <Button size="sm" variant="outline">Détails</Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedExpense(expense);
+                      setShowViewModal(true);
+                    }}
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    Détails
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -272,13 +712,567 @@ export default function MesDepenses() {
           <Card className="glass-card p-12 rounded-xl border border-[#A7A2CF]/20 text-center">
             <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun compte de dépenses</p>
-            <Button className="bg-[#523DC9] hover:bg-[#5F2B75] text-white">
+            <Button 
+              className="bg-[#523DC9] hover:bg-[#5F2B75] text-white"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Upload className="w-4 h-4 mr-2" />
               Créer votre premier compte
             </Button>
           </Card>
         )}
       </div>
+
+      {/* Create Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setPendingFile(null);
+        }}
+        title="Créer un nouveau compte de dépenses"
+        size="lg"
+      >
+        <ExpenseAccountForm
+          onSubmit={handleCreate}
+          onCancel={() => {
+            setShowCreateModal(false);
+            setPendingFile(null);
+          }}
+          loading={createMutation.isPending}
+          employees={employees}
+          defaultEmployeeId={currentEmployeeId}
+          onFileSelected={setPendingFile}
+        />
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal && selectedExpense !== null}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedExpense(null);
+          setPendingFile(null);
+        }}
+        title="Modifier le compte de dépenses"
+        size="lg"
+      >
+        {selectedExpense && (
+          <ExpenseAccountForm
+            expenseAccount={selectedExpense}
+            onSubmit={handleUpdate}
+            onCancel={() => {
+              setShowEditModal(false);
+              setSelectedExpense(null);
+              setPendingFile(null);
+            }}
+            loading={updateMutation.isPending}
+            employees={employees}
+            defaultEmployeeId={currentEmployeeId}
+            onFileSelected={setPendingFile}
+          />
+        )}
+      </Modal>
+
+      {/* View Details Modal */}
+      <Modal
+        isOpen={showViewModal && selectedExpense !== null}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedExpense(null);
+        }}
+        title={`Compte de dépenses - ${selectedExpense?.account_number}`}
+        size="lg"
+      >
+        {selectedExpense && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Statut</label>
+                <div className="mt-1">
+                  <ExpenseAccountStatusBadge status={selectedExpense.status} />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Montant total</label>
+                <p className="mt-1 font-medium">{formatCurrency(selectedExpense.total_amount, selectedExpense.currency)}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Période</label>
+                <p className="mt-1">
+                  {formatDate(selectedExpense.expense_period_start)} → {formatDate(selectedExpense.expense_period_end)}
+                </p>
+              </div>
+              {selectedExpense.submitted_at && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Soumis le</label>
+                  <p className="mt-1">{formatDate(selectedExpense.submitted_at)}</p>
+                </div>
+              )}
+              {selectedExpense.reviewed_at && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Révisé le</label>
+                  <p className="mt-1">{formatDate(selectedExpense.reviewed_at)}</p>
+                </div>
+              )}
+              {selectedExpense.reviewer_name && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Révisé par</label>
+                  <p className="mt-1">{selectedExpense.reviewer_name}</p>
+                </div>
+              )}
+            </div>
+            
+            {selectedExpense.description && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                <p className="mt-1 text-sm">{selectedExpense.description}</p>
+              </div>
+            )}
+
+            {/* Attachments */}
+            {selectedExpense.metadata && (selectedExpense.metadata as any).attachments && Array.isArray((selectedExpense.metadata as any).attachments) && (selectedExpense.metadata as any).attachments.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">Pièces jointes</label>
+                <div className="space-y-2">
+                  {(selectedExpense.metadata as any).attachments.map((attachment: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <Paperclip className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{attachment.filename || 'Fichier'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : ''}
+                            {attachment.uploaded_at ? ` • ${formatDate(attachment.uploaded_at)}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {attachment.url && (
+                        <a
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:text-primary-600 flex items-center gap-1 text-sm"
+                        >
+                          <Download className="w-4 h-4" />
+                          Télécharger
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedExpense.status === 'approved' && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-semibold">Compte de dépenses approuvé</span>
+                </div>
+                {selectedExpense.review_notes && (
+                  <p className="mt-2 text-sm text-green-600 dark:text-green-300">{selectedExpense.review_notes}</p>
+                )}
+              </div>
+            )}
+
+            {selectedExpense.status === 'rejected' && selectedExpense.rejection_reason && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                  <XCircle className="w-5 h-5" />
+                  <span className="font-semibold">Compte de dépenses rejeté</span>
+                </div>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-300">{selectedExpense.rejection_reason}</p>
+              </div>
+            )}
+
+            {selectedExpense.status === 'needs_clarification' && selectedExpense.clarification_request && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="font-semibold">Précisions demandées</span>
+                </div>
+                <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-300">{selectedExpense.clarification_request}</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            {selectedExpense.status === 'draft' && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-1.5" />
+                  Modifier
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleSubmit(selectedExpense.id)}
+                  disabled={submitMutation.isPending}
+                >
+                  <Send className="w-4 h-4 mr-1.5" />
+                  Soumettre pour validation
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedExpense.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+            
+            {(selectedExpense.status === 'submitted' || selectedExpense.status === 'under_review' || selectedExpense.status === 'needs_clarification') && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-1.5" />
+                  Modifier
+                </Button>
+                {selectedExpense.status === 'needs_clarification' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setShowRespondModal(true);
+                    }}
+                  >
+                    <Reply className="w-4 h-4 mr-1.5" />
+                    Répondre et renvoyer
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedExpense.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+            
+            {selectedExpense.status === 'rejected' && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedExpense.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+
+            {/* Admin Actions */}
+            {isAdmin && (selectedExpense.status === 'submitted' || selectedExpense.status === 'under_review') && (
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowApproveModal(true);
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="w-4 h-4 mr-1.5" />
+                  Approuver
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowRejectModal(true);
+                  }}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <XCircle className="w-4 h-4 mr-1.5" />
+                  Rejeter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowClarificationModal(true);
+                  }}
+                >
+                  <AlertCircle className="w-4 h-4 mr-1.5" />
+                  Demander clarification
+                </Button>
+                {selectedExpense.status === 'submitted' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetUnderReview(selectedExpense.id)}
+                    disabled={setUnderReviewMutation.isPending}
+                  >
+                    Mettre en révision
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Respond to Clarification Modal */}
+      <Modal
+        isOpen={showRespondModal && selectedExpense !== null}
+        onClose={() => {
+          setShowRespondModal(false);
+          setClarificationResponse('');
+        }}
+        title="Répondre à la demande de précisions"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRespondModal(false);
+                setClarificationResponse('');
+              }}
+              disabled={respondClarificationMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleRespondClarification}
+              disabled={respondClarificationMutation.isPending || !clarificationResponse.trim()}
+            >
+              <Send className="w-4 h-4 mr-1.5" />
+              Envoyer la réponse et resoumettre
+            </Button>
+          </>
+        }
+      >
+        {selectedExpense && (
+          <div className="space-y-4">
+            {selectedExpense.clarification_request && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 mb-2">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="font-semibold">Demande de précisions</span>
+                </div>
+                <p className="text-sm text-yellow-600 dark:text-yellow-300">{selectedExpense.clarification_request}</p>
+              </div>
+            )}
+            
+            <Textarea
+              label="Votre réponse"
+              placeholder="Saisissez votre réponse aux précisions demandées..."
+              value={clarificationResponse}
+              onChange={(e) => setClarificationResponse(e.target.value)}
+              rows={6}
+              required
+              fullWidth
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Approve Modal */}
+      <Modal
+        isOpen={showApproveModal && selectedExpense !== null}
+        onClose={() => {
+          setShowApproveModal(false);
+          setAdminNotes('');
+        }}
+        title="Approuver le compte de dépenses"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowApproveModal(false);
+                setAdminNotes('');
+              }}
+              disabled={approveMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleApprove}
+              disabled={approveMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="w-4 h-4 mr-1.5" />
+              Approuver
+            </Button>
+          </>
+        }
+      >
+        {selectedExpense && (
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                Montant: <strong>{formatCurrency(selectedExpense.total_amount, selectedExpense.currency)}</strong>
+              </p>
+            </div>
+            <Textarea
+              label="Notes (optionnel)"
+              placeholder="Ajoutez des notes pour cette approbation..."
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              rows={4}
+              fullWidth
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        isOpen={showRejectModal && selectedExpense !== null}
+        onClose={() => {
+          setShowRejectModal(false);
+          setRejectionReason('');
+          setAdminNotes('');
+        }}
+        title="Rejeter le compte de dépenses"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectModal(false);
+                setRejectionReason('');
+                setAdminNotes('');
+              }}
+              disabled={rejectMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleReject}
+              disabled={rejectMutation.isPending || !rejectionReason.trim()}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <XCircle className="w-4 h-4 mr-1.5" />
+              Rejeter
+            </Button>
+          </>
+        }
+      >
+        {selectedExpense && (
+          <div className="space-y-4">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-300">
+                Montant: <strong>{formatCurrency(selectedExpense.total_amount, selectedExpense.currency)}</strong>
+              </p>
+            </div>
+            <Textarea
+              label="Raison du rejet *"
+              placeholder="Expliquez pourquoi ce compte de dépenses est rejeté..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              rows={4}
+              required
+              fullWidth
+            />
+            <Textarea
+              label="Notes additionnelles (optionnel)"
+              placeholder="Ajoutez des notes supplémentaires..."
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              rows={3}
+              fullWidth
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Request Clarification Modal */}
+      <Modal
+        isOpen={showClarificationModal && selectedExpense !== null}
+        onClose={() => {
+          setShowClarificationModal(false);
+          setClarificationRequest('');
+          setAdminNotes('');
+        }}
+        title="Demander des précisions"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowClarificationModal(false);
+                setClarificationRequest('');
+                setAdminNotes('');
+              }}
+              disabled={requestClarificationMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleRequestClarification}
+              disabled={requestClarificationMutation.isPending || !clarificationRequest.trim()}
+            >
+              <AlertCircle className="w-4 h-4 mr-1.5" />
+              Envoyer la demande
+            </Button>
+          </>
+        }
+      >
+        {selectedExpense && (
+          <div className="space-y-4">
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                Montant: <strong>{formatCurrency(selectedExpense.total_amount, selectedExpense.currency)}</strong>
+              </p>
+            </div>
+            <Textarea
+              label="Demande de précisions *"
+              placeholder="Quelles informations supplémentaires avez-vous besoin ?"
+              value={clarificationRequest}
+              onChange={(e) => setClarificationRequest(e.target.value)}
+              rows={4}
+              required
+              fullWidth
+            />
+            <Textarea
+              label="Notes additionnelles (optionnel)"
+              placeholder="Ajoutez des notes supplémentaires..."
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              rows={3}
+              fullWidth
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

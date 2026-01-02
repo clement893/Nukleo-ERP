@@ -100,21 +100,14 @@ export default function OnboardingPage() {
   const teams = Array.isArray(teamsData) ? teamsData : (teamsData?.data ? (teamsData.data as any).teams || [] : []);
 
   // Fetch onboarding data
-  // TODO: Implement useEmployeesOnboarding hook in queries.ts
-  const onboardingData: any[] = [];
-  const onboardingLoading = false;
-  const refetchOnboarding = () => {};
+  const { data: onboardingData = [], isLoading: onboardingLoading, refetch: refetchOnboarding } = useEmployeesOnboarding({
+    team_id: teamFilter !== 'all' ? teamFilter : undefined,
+  });
 
   // Fetch onboarding steps (for new process modal)
-  // TODO: Implement onboarding hooks in queries.ts
-  const onboardingSteps: OnboardingStep[] = [];
-  const initializeMutation = { 
-    mutateAsync: async (_employeeId: number) => {},
-    isPending: false
-  };
-  const completeStepMutation = { 
-    mutateAsync: async (_data: { employeeId: number; stepKey: string }) => {}
-  };
+  const { data: onboardingSteps = [] } = useOnboardingSteps();
+  const initializeMutation = useInitializeEmployeeOnboarding();
+  const completeStepMutation = useCompleteEmployeeStep();
 
   // Create onboarding processes from employees and onboarding data
   const onboardingProcesses = useMemo((): OnboardingProcess[] => {
@@ -358,8 +351,8 @@ export default function OnboardingPage() {
                 className="min-w-[150px]"
                 options={[
                   { label: 'Toutes les équipes', value: 'all' },
-                  ...(teams || []).map((team: any) => ({
-                    label: team.name,
+                  ...teams.map((team: any) => ({
+                    label: team.name || team.slug || `Équipe ${team.id}`,
                     value: team.id.toString(),
                   })),
                 ]}
@@ -562,8 +555,9 @@ export default function OnboardingPage() {
               <Button
                 onClick={handleCreateNewProcess}
                 disabled={!selectedEmployeeId || initializeMutation.isPending}
+                loading={initializeMutation.isPending}
               >
-                {initializeMutation.isPending ? 'Création...' : 'Créer le processus'}
+                Créer le processus
               </Button>
             </div>
           </div>
@@ -623,9 +617,10 @@ function OnboardingProcessCard({
   onCompleteStep: (stepKey: string) => void;
 }) {
   const [showSteps, setShowSteps] = useState(false);
-  // TODO: Implement useEmployeeOnboardingSteps hook
-  const steps: OnboardingStep[] = [];
-  const stepsLoading = false;
+  const { data: steps = [], isLoading: stepsLoading } = useEmployeeOnboardingSteps(
+    process.employee.id,
+    showSteps && !!process.employee.user_id
+  );
 
   return (
     <Card 
