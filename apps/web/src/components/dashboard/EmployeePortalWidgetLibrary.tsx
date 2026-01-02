@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import { X, Search, Plus } from 'lucide-react';
 import { useEmployeePortalDashboardStore } from '@/lib/dashboard/employeePortalStore';
-import { employeePortalWidgetRegistry, getEmployeePortalWidget } from '@/lib/dashboard/employeePortalWidgetRegistry';
+import { employeePortalWidgetRegistry } from '@/lib/dashboard/employeePortalWidgetRegistry';
 // Types handled inline
 
 interface EmployeePortalWidgetLibraryProps {

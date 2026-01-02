@@ -23,9 +23,6 @@ import {
   MessageSquare,
   Paperclip,
   Edit,
-  Calendar,
-  Phone,
-  Mail,
   ExternalLink
 } from 'lucide-react';
 import { Badge, Button, Card, Loading, Input } from '@/components/ui';

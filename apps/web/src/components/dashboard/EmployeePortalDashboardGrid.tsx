@@ -26,7 +26,7 @@ export function EmployeePortalDashboardGrid({ className = '' }: EmployeePortalDa
   } = useEmployeePortalDashboardStore();
 
   const activeConfig = getActiveConfig();
-  const [width, setWidth] = useState(1200);
+  const [, setWidth] = useState(1200);
 
   // Measure container width for Responsive component
   useEffect(() => {
@@ -84,17 +84,14 @@ export function EmployeePortalDashboardGrid({ className = '' }: EmployeePortalDa
   const handleLayoutChange = (currentLayout: any, _allLayouts?: any) => {
     if (!activeConfig || !isEditMode) return;
     
-    let hasChanges = false;
     currentLayout.forEach((item: any) => {
       const widget = activeConfig.layouts.find((w) => w.id === item.i);
       if (widget) {
         if (widget.x !== item.x || widget.y !== item.y) {
           updateWidgetPosition(item.i, item.x, item.y);
-          hasChanges = true;
         }
         if (widget.w !== item.w || widget.h !== item.h) {
           updateWidgetSize(item.i, item.w, item.h);
-          hasChanges = true;
         }
       }
     });
@@ -116,9 +113,9 @@ export function EmployeePortalDashboardGrid({ className = '' }: EmployeePortalDa
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
         rowHeight={100}
-        isDraggable={isEditMode}
         isResizable={isEditMode}
         onLayoutChange={handleLayoutChange}
+        draggableHandle=".widget-drag-handle"
         compactType="vertical"
         margin={[16, 16]}
         containerPadding={[0, 0]}

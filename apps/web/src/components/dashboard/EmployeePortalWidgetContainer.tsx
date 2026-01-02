@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Settings, RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
+import { RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEmployeePortalDashboardStore } from '@/lib/dashboard/employeePortalStore';
 import { getEmployeePortalWidget } from '@/lib/dashboard/employeePortalWidgetRegistry';
@@ -55,7 +55,6 @@ function WidgetErrorFallback({ error, widgetType }: { error: Error; widgetType: 
 export function EmployeePortalWidgetContainer({ widgetLayout, isEditMode }: EmployeePortalWidgetContainerProps) {
   const { removeWidget, updateWidget, globalFilters } = useEmployeePortalDashboardStore();
   const queryClient = useQueryClient();
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   
   const widgetDef = getEmployeePortalWidget(widgetLayout.widget_type);
   
@@ -134,7 +133,7 @@ export function EmployeePortalWidgetContainer({ widgetLayout, isEditMode }: Empl
       {/* Widget Content */}
       <div className="flex-1 overflow-hidden p-4">
         <ErrorBoundary
-          fallback={(error) => <WidgetErrorFallback error={error} widgetType={widgetLayout.widget_type} />}
+          fallback={(error: Error | null) => error ? <WidgetErrorFallback error={error} widgetType={widgetLayout.widget_type} /> : null}
         >
           <WidgetComponent
             id={widgetLayout.id}

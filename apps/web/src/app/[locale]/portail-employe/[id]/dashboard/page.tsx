@@ -37,7 +37,6 @@ function EmployeePortalDashboardContent() {
     setActiveConfig, 
     loadFromServer,
     setEmployeeId,
-    getActiveConfig,
     setGlobalFilters,
   } = useEmployeePortalDashboardStore();
   

@@ -19,7 +19,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'bg-red-500',
 };
 
-export function TasksListWidget({ globalFilters, config }: WidgetProps) {
+export function TasksListWidget({ globalFilters }: WidgetProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [employeeIdFromStore, setEmployeeIdFromStore] = useState<number | null>(null);
@@ -43,8 +43,8 @@ export function TasksListWidget({ globalFilters, config }: WidgetProps) {
         setIsLoading(true);
         const assigneeId = globalFilters?.employee_id || employeeIdFromStore;
         const data = await projectTasksAPI.list({
-          project_id: globalFilters?.project_id,
-          assignee_id: assigneeId,
+          project_id: globalFilters?.project_id || undefined,
+          assignee_id: assigneeId || undefined,
         });
         // Sort by priority and due date
         const sorted = (data || []).sort((a, b) => {

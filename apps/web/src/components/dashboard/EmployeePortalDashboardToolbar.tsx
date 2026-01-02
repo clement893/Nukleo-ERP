@@ -121,7 +121,7 @@ export function EmployeePortalDashboardToolbar({ onAddWidget }: EmployeePortalDa
           {/* Edit mode toggle */}
           <Button
             onClick={handleToggleEditMode}
-            variant={isEditMode ? 'default' : 'outline'}
+            variant={isEditMode ? 'primary' : 'outline'}
             size="sm"
             className="flex items-center gap-2"
           >

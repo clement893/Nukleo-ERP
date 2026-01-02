@@ -8,11 +8,9 @@ import {
   Briefcase,
   Calendar,
   TrendingUp,
-  Award,
-  BarChart3,
 } from 'lucide-react';
 
-import type { WidgetDefinition, WidgetType } from './types';
+import type { WidgetDefinition } from './types';
 
 // Import des composants de widgets spécifiques employé
 import { 
@@ -36,20 +34,10 @@ export type EmployeePortalWidgetType =
   | 'tasks-list'
   | 'kpi-custom';
 
-// Étendre le type WidgetType pour inclure les widgets employé
-declare module '@/lib/dashboard/types' {
-  interface WidgetType {
-    'employee-tasks'?: never;
-    'employee-hours'?: never;
-    'employee-projects'?: never;
-    'employee-vacations'?: never;
-  }
-}
-
 /**
  * Registre de tous les widgets disponibles pour le portail employé
  */
-export const employeePortalWidgetRegistry: Record<string, WidgetDefinition> = {
+export const employeePortalWidgetRegistry: Record<string, Omit<WidgetDefinition, 'id'> & { id: string }> = {
   'employee-tasks': {
     id: 'employee-tasks',
     name: 'Mes Tâches',

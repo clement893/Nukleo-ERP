@@ -12,7 +12,7 @@ import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import EmptyState from '@/components/ui/EmptyState';
 import { useEmployeePortalDashboardStore } from '@/lib/dashboard/employeePortalStore';
 
-export function EmployeeTasksWidget({ config, id, globalFilters }: WidgetProps) {
+export function EmployeeTasksWidget({ config, globalFilters }: WidgetProps) {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { employeeId } = useEmployeePortalDashboardStore();

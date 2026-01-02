@@ -19,6 +19,7 @@ import type { Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
 import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
 import ContactForm from '@/components/reseau/ContactForm';
 import Modal from '@/components/ui/Modal';
 import EmptyState from '@/components/ui/EmptyState';
@@ -48,7 +49,6 @@ import {
   Edit,
   Calendar,
   MapPin,
-  Globe,
   ExternalLink
 } from 'lucide-react';
 

@@ -190,7 +190,8 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
       const userForCheck = fetchedUser || user;
       if (userForCheck && pathname && pathname.startsWith('/dashboard') && !pathname.startsWith('/portail-employe')) {
         try {
-          const employee = await employeesAPI.getByUserId(userForCheck.id);
+          const userId = typeof userForCheck.id === 'string' ? parseInt(userForCheck.id, 10) : userForCheck.id;
+          const employee = await employeesAPI.getByUserId(userId);
           if (employee) {
             logger.info('Employee detected, redirecting to employee portal', { 
               userId: userForCheck.id, 

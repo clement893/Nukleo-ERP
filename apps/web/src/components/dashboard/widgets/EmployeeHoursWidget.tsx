@@ -5,9 +5,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Clock, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
-import { timeEntriesAPI, type TimeEntry } from '@/lib/api/time-entries';
+import { timeEntriesAPI } from '@/lib/api/time-entries';
 // Card not needed here
 import { useEmployeePortalDashboardStore } from '@/lib/dashboard/employeePortalStore';
 

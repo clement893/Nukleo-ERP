@@ -8,10 +8,11 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
   AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
-  Building2, Loader2, Upload, X, CheckCircle2, AlertCircle
+  Building2, Loader2, Upload, X, CheckCircle2, AlertCircle,
+  Filter, RefreshCw, ArrowUp, ArrowDown, Users, Package, Zap, CreditCard
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
-import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats } from '@/lib/api/tresorerie';
+import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats, type TransactionCategory } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
 
@@ -23,6 +24,8 @@ interface SoldeHebdomadaire {
   projete: boolean;
 }
 
+type PeriodFilter = '4w' | '8w' | '12w';
+
 export default function TresoreriePage() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -32,29 +35,33 @@ export default function TresoreriePage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('12w');
+  const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
     loadTresorerie();
-  }, []);
+  }, [selectedPeriod]);
 
   const loadTresorerie = async () => {
     try {
       setLoading(true);
       
-      // Calculer les dates pour les 12 dernières semaines
+      // Calculer les dates selon la période sélectionnée
       const today = new Date();
-      const twelveWeeksAgo = new Date(today);
-      twelveWeeksAgo.setDate(today.getDate() - (12 * 7));
-      const dateFrom = twelveWeeksAgo.toISOString().split('T')[0];
+      const weeksCount = selectedPeriod === '4w' ? 4 : selectedPeriod === '8w' ? 8 : 12;
+      const weeksAgo = new Date(today);
+      weeksAgo.setDate(today.getDate() - (weeksCount * 7));
+      const dateFrom = weeksAgo.toISOString().split('T')[0];
       const dateTo = today.toISOString().split('T')[0];
 
       // Charger les données réelles depuis l'API
-      const [cashflowData, transactionsData, statsData] = await Promise.all([
+      const [cashflowData, transactionsData, statsData, categoriesData] = await Promise.all([
         tresorerieAPI.getWeeklyCashflow({ date_from: dateFrom, date_to: dateTo }),
-        tresorerieAPI.listTransactions({ limit: 1000 }),
-        tresorerieAPI.getStats({ period_days: 30 })
+        tresorerieAPI.listTransactions({ limit: 1000, date_from: dateFrom, date_to: dateTo }),
+        tresorerieAPI.getStats({ period_days: weeksCount * 7 }),
+        tresorerieAPI.listCategories()
       ]);
 
       // Convertir les données de cashflow en format SoldeHebdomadaire
@@ -70,6 +77,7 @@ export default function TresoreriePage() {
       setTransactions(transactionsData);
       setSoldeActuel(Number(statsData.current_balance));
       setStats(statsData);
+      setCategories(categoriesData);
 
     } catch (error) {
       logger.error('Erreur lors du chargement de la trésorerie', error);
@@ -116,6 +124,9 @@ export default function TresoreriePage() {
   const variation = stats?.variation_percent ? Number(stats.variation_percent) : (soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0);
   const alerteNiveau = soldeAvecMarge < 50000 ? 'rouge' : soldeAvecMarge < 100000 ? 'orange' : 'vert';
 
+  // Filtrer les données selon la période sélectionnée
+  const periodData = soldesHebdo.slice(0, selectedPeriod === '4w' ? 4 : selectedPeriod === '8w' ? 8 : 12);
+
   // Prochaines entrées (transactions futures)
   const today = new Date();
   const prochainesEntrees = transactions
@@ -129,8 +140,80 @@ export default function TresoreriePage() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 10);
 
-  const totalEntrees4sem = soldesHebdo.slice(0, 4).reduce((sum, s) => sum + s.entrees, 0);
-  const totalSorties4sem = soldesHebdo.slice(0, 4).reduce((sum, s) => sum + s.sorties, 0);
+  const totalEntrees = periodData.reduce((sum, s) => sum + s.entrees, 0);
+  const totalSorties = periodData.reduce((sum, s) => sum + s.sorties, 0);
+  const netCashflow = totalEntrees - totalSorties;
+
+  // Calculer les alertes
+  const lowBalanceWeeks = periodData.filter(s => s.solde < 100000).length;
+  const negativeWeeks = periodData.filter(s => (s.entrees - s.sorties) < 0).length;
+
+  // Calculer les totaux par catégorie
+  const entryCategories = categories.filter(c => c.type === 'entry');
+  const exitCategories = categories.filter(c => c.type === 'exit');
+  
+  const entriesByCategory = entryCategories.map(cat => ({
+    category: cat,
+    total: transactions
+      .filter(t => t.type === 'entry' && t.category_id === cat.id)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
+  }));
+
+  const exitsByCategory = exitCategories.map(cat => ({
+    category: cat,
+    total: transactions
+      .filter(t => t.type === 'exit' && t.category_id === cat.id)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
+  }));
+
+  const maxCashflow = Math.max(
+    ...(periodData.length > 0 ? periodData.map(s => Math.max(s.entrees, s.sorties)) : [0]),
+    ...(entriesByCategory.length > 0 ? entriesByCategory.map(e => e.total) : [0]),
+    ...(exitsByCategory.length > 0 ? exitsByCategory.map(e => e.total) : [0]),
+    1 // Minimum de 1 pour éviter division par zéro
+  );
+
+  const handleExport = async () => {
+    try {
+      // Créer un CSV des transactions
+      const csvHeaders = ['Date', 'Type', 'Description', 'Montant', 'Catégorie', 'Statut'];
+      const csvRows = transactions.map(t => [
+        t.date,
+        t.type === 'entry' ? 'Entrée' : 'Sortie',
+        t.description,
+        t.amount.toString(),
+        categories.find(c => c.id === t.category_id)?.name || '',
+        t.status
+      ]);
+      
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tresorerie_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      showToast({
+        title: 'Export réussi',
+        message: 'Les données ont été exportées avec succès',
+        type: 'success'
+      });
+    } catch (error) {
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible d\'exporter les données',
+        type: 'error'
+      });
+    }
+  };
 
   return (
     <PageContainer>
@@ -156,6 +239,20 @@ export default function TresoreriePage() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={loadTresorerie}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Actualiser
+                </Button>
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={handleExport}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Exporter
+                </Button>
                 <Button 
                   className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
                   onClick={async () => {
@@ -184,7 +281,7 @@ export default function TresoreriePage() {
                   }}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Télécharger Modèle
+                  Modèle Import
                 </Button>
                 <Button 
                   className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
@@ -201,6 +298,61 @@ export default function TresoreriePage() {
             </div>
           </div>
         </div>
+
+        {/* Filters */}
+        <Card className="glass-card p-4 rounded-xl border border-[#A7A2CF]/20 mb-6">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-medium">Période:</span>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant={selectedPeriod === '4w' ? 'primary' : 'outline'}
+                  onClick={() => setSelectedPeriod('4w')}
+                >
+                  4 semaines
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={selectedPeriod === '8w' ? 'primary' : 'outline'}
+                  onClick={() => setSelectedPeriod('8w')}
+                >
+                  8 semaines
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={selectedPeriod === '12w' ? 'primary' : 'outline'}
+                  onClick={() => setSelectedPeriod('12w')}
+                >
+                  12 semaines
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Alerts */}
+        {(lowBalanceWeeks > 0 || negativeWeeks > 0) && (
+          <Card className="glass-card p-4 rounded-xl border border-orange-500/30 bg-orange-50 dark:bg-orange-900/10 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-1">
+                  Alertes de trésorerie
+                </h3>
+                <ul className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
+                  {lowBalanceWeeks > 0 && (
+                    <li>• {lowBalanceWeeks} semaine(s) avec un solde inférieur à 100 000 $</li>
+                  )}
+                  {negativeWeeks > 0 && (
+                    <li>• {negativeWeeks} semaine(s) avec un cashflow négatif</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -252,16 +404,20 @@ export default function TresoreriePage() {
 
           <Card className="glass-card p-5 rounded-xl border border-[#A7A2CF]/20">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
+              <div className={`p-2 rounded-lg ${netCashflow >= 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                {netCashflow >= 0 ? (
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                ) : (
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                )}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Projection 30j</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Cashflow net</div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-purple-600" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {formatCurrency(projection30j)}
+            <div className={`text-2xl font-bold mb-1 ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`} style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {netCashflow >= 0 ? '+' : ''}{formatCurrency(netCashflow)}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400">
-              {projection30j > soldeActuel ? 'En hausse' : 'En baisse'}
+              {netCashflow >= 0 ? 'Excédent' : 'Déficit'} sur la période
             </div>
           </Card>
 
@@ -294,42 +450,65 @@ export default function TresoreriePage() {
         {/* Graphique Évolution */}
         <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20 mb-6">
           <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Évolution sur 12 semaines
+            Évolution du cashflow - {selectedPeriod === '4w' ? '4 semaines' : selectedPeriod === '8w' ? '8 semaines' : '12 semaines'}
           </h3>
-          <div className="space-y-3">
-            {soldesHebdo.map((solde, index) => {
-              const pourcentage = ((solde.solde - soldeActuel) / soldeActuel) * 100;
-              const isPositif = solde.solde >= soldeAvecMarge;
-              
+          <div className="space-y-6 mb-6">
+            {periodData.map((solde, index) => {
+              const weekNet = solde.entrees - solde.sorties;
               return (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-24 text-xs text-gray-600 dark:text-gray-400">
-                    Sem. {index + 1}
-                    <div className="text-[10px]">{formatDate(solde.semaine)}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="relative h-8 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                      <div 
-                        className={`absolute inset-y-0 left-0 ${
-                          isPositif ? 'bg-green-500' : 'bg-red-500'
-                        } ${solde.projete ? 'opacity-50' : 'opacity-100'} transition-all`}
-                        style={{ width: `${Math.min(Math.abs(pourcentage), 100)}%` }}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-between px-3">
-                        <span className="text-xs font-medium">
-                          {formatCurrency(solde.solde)}
-                        </span>
-                        {solde.projete && (
-                          <Badge className="text-[10px] px-1.5 py-0 bg-gray-500/10 text-gray-600 border-gray-500/30">
-                            Projeté
-                          </Badge>
-                        )}
+                <div key={index}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <span className="font-medium">Semaine {index + 1}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{formatDate(solde.semaine)}</span>
+                      <Badge className={`${weekNet >= 0 ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-red-500/10 text-red-600 border-red-500/30'} border`}>
+                        {weekNet >= 0 ? '+' : ''}{formatCurrency(weekNet)}
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Solde final</div>
+                      <div className={`text-sm font-bold ${solde.solde >= 100000 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {formatCurrency(solde.solde)}
                       </div>
                     </div>
                   </div>
-                  <div className="w-20 text-xs text-right">
-                    <div className={isPositif ? 'text-green-600' : 'text-red-600'}>
-                      {pourcentage >= 0 ? '+' : ''}{pourcentage.toFixed(1)}%
+                  
+                  {/* Entrées Bar */}
+                  <div className="mb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                        <ArrowDown className="w-3 h-3 transform rotate-180" />
+                        Entrées
+                      </span>
+                      <span className="text-sm font-medium text-green-600">{formatCurrency(solde.entrees)}</span>
+                    </div>
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                      <div 
+                        className="h-full bg-green-500 flex items-center justify-end px-2 transition-all duration-500"
+                        style={{ width: `${maxCashflow > 0 ? (solde.entrees / maxCashflow) * 100 : 0}%` }}
+                      >
+                        <span className="text-xs font-medium text-white">+</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sorties Bar */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                        <ArrowUp className="w-3 h-3 transform rotate-180" />
+                        Sorties
+                      </span>
+                      <span className="text-sm font-medium text-red-600">{formatCurrency(solde.sorties)}</span>
+                    </div>
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                      <div 
+                        className="h-full bg-red-500 flex items-center justify-end px-2 transition-all duration-500"
+                        style={{ width: `${maxCashflow > 0 ? (solde.sorties / maxCashflow) * 100 : 0}%` }}
+                      >
+                        <span className="text-xs font-medium text-white">-</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -348,7 +527,7 @@ export default function TresoreriePage() {
                 Entrées Prévues
               </h3>
               <div className="text-sm font-bold text-green-600">
-                {formatCurrency(totalEntrees4sem)}
+                {formatCurrency(totalEntrees)}
               </div>
             </div>
             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -392,7 +571,7 @@ export default function TresoreriePage() {
                 Sorties Prévues
               </h3>
               <div className="text-sm font-bold text-red-600">
-                {formatCurrency(totalSorties4sem)}
+                {formatCurrency(totalSorties)}
               </div>
             </div>
             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -429,6 +608,85 @@ export default function TresoreriePage() {
           </Card>
         </div>
 
+        {/* Détail par Catégorie */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Entrées par Catégorie */}
+          {entriesByCategory.length > 0 && (
+            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <ArrowDown className="w-5 h-5 text-green-600 transform rotate-180" />
+                Détail des entrées par catégorie
+              </h3>
+              <div className="space-y-3">
+                {entriesByCategory
+                  .filter(e => e.total > 0)
+                  .sort((a, b) => b.total - a.total)
+                  .map(({ category, total }) => {
+                    const percentage = totalEntrees > 0 ? (total / totalEntrees) * 100 : 0;
+                    return (
+                      <div key={category.id}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                            <span className="text-sm font-medium">{category.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold">{formatCurrency(total)}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">({percentage.toFixed(1)}%)</span>
+                          </div>
+                        </div>
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-green-500 transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </Card>
+          )}
+
+          {/* Sorties par Catégorie */}
+          {exitsByCategory.length > 0 && (
+            <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
+              <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <ArrowUp className="w-5 h-5 text-red-600 transform rotate-180" />
+                Détail des sorties par catégorie
+              </h3>
+              <div className="space-y-3">
+                {exitsByCategory
+                  .filter(e => e.total > 0)
+                  .sort((a, b) => b.total - a.total)
+                  .map(({ category, total }) => {
+                    const percentage = totalSorties > 0 ? (total / totalSorties) * 100 : 0;
+                    return (
+                      <div key={category.id}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                            <span className="text-sm font-medium">{category.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold">{formatCurrency(total)}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">({percentage.toFixed(1)}%)</span>
+                          </div>
+                        </div>
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-red-500 transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </Card>
+          )}
+        </div>
+
         {/* Tableau Détaillé par Semaine */}
         <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
           <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -446,7 +704,7 @@ export default function TresoreriePage() {
                 </tr>
               </thead>
               <tbody>
-                {soldesHebdo.map((solde, index) => (
+                {periodData.map((solde, index) => (
                   <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                     <td className="py-3 px-4">
                       <div className="text-sm font-medium">Semaine {index + 1}</div>

@@ -42,10 +42,7 @@ import {
   Info,
   MessageSquare,
   Paperclip,
-  Calendar,
-  Globe,
-  Phone,
-  Mail
+  Globe
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -78,6 +75,10 @@ function ClientsContent() {
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
   const deleteClientMutation = useDeleteClient();
+  
+  // Drawer state (must be declared before useClient hook)
+  const [showClientDrawer, setShowClientDrawer] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   
   // Fetch client details when drawer opens
   const { data: clientDetailData, isLoading: isLoadingClientDetail } = useClient(
@@ -117,9 +118,7 @@ function ClientsContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
   
-  // Drawer state
-  const [showClientDrawer, setShowClientDrawer] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  // Client details state
   const [clientDetails, setClientDetails] = useState<Client | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
@@ -1318,7 +1317,7 @@ function ClientsContent() {
                         <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0">
                           {getClientLogo(clientDetails) ? (
                             <img 
-                              src={getClientLogo(clientDetails)} 
+                              src={getClientLogo(clientDetails) || undefined} 
                               alt={`${clientDetails.company_name} logo`}
                               className="w-full h-full object-cover"
                             />

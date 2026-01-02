@@ -33,7 +33,7 @@ export function EmployeeProjectsWidget({ config, globalFilters }: WidgetProps) {
           projectsAPI.list(),
         ]);
 
-        const projectsList = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+        const projectsList = Array.isArray(projectsData) ? projectsData : [];
         
         // Grouper les tâches par projet
         const projectMap = new Map<number, number>();
@@ -45,13 +45,13 @@ export function EmployeeProjectsWidget({ config, globalFilters }: WidgetProps) {
 
         // Créer la liste des projets avec le nombre de tâches
         const projectsWithTasks = projectsList
-          .filter((p: { id?: number | null }) => projectMap.has(p.id!))
+          .filter((p: { id?: number | null }) => p.id && projectMap.has(p.id))
           .map((p: { id?: number | null; name?: string }) => ({
             id: p.id,
             name: p.name || 'Sans nom',
-            taskCount: projectMap.get(p.id!) || 0,
+            taskCount: p.id ? (projectMap.get(p.id) || 0) : 0,
           }))
-          .sort((a, b) => b.taskCount - a.taskCount)
+          .sort((a: { taskCount: number }, b: { taskCount: number }) => b.taskCount - a.taskCount)
           .slice(0, 5);
 
         setProjects(projectsWithTasks);
