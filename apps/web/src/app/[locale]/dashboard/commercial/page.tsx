@@ -236,11 +236,11 @@ export default function CommercialPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30">
-                <AlertCircle className="w-6 h-6 text-[#EF4444]" />
+              <div className="p-3 rounded-lg bg-danger-500/10 border border-danger-500/30">
+                <AlertCircle className="w-6 h-6 text-danger-500" />
               </div>
               {stats.opportunities.needingAction > 0 && (
-                <Badge className="bg-[#EF4444] text-white">{stats.opportunities.needingAction}</Badge>
+                <Badge className="bg-danger-500 text-white">{stats.opportunities.needingAction}</Badge>
               )}
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -254,8 +254,8 @@ export default function CommercialPage() {
 
           <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-                <TrendingUp className="w-6 h-6 text-[#10B981]" />
+              <div className="p-3 rounded-lg bg-secondary-500/10 border border-secondary-500/30">
+                <TrendingUp className="w-6 h-6 text-secondary-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>

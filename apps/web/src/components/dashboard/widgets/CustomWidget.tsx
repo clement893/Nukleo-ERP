@@ -195,16 +195,27 @@ export function CustomWidget({ config, globalFilters }: WidgetProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="flex flex-col items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-2"></div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Chargement...</p>
       </div>
     );
   }
 
   if (error || !widgetData) {
     return (
-      <div className="flex items-center justify-center h-full text-red-600 dark:text-red-400">
-        <p className="text-sm">{error || 'Failed to load widget'}</p>
+      <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+        <div className="text-red-600 dark:text-red-400 mb-2">
+          <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">
+          Erreur de chargement
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {error || 'Impossible de charger le widget'}
+        </p>
       </div>
     );
   }
