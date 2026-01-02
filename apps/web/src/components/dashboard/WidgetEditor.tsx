@@ -456,7 +456,46 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                         }
                         placeholder="https://example.com/dashboard"
                         type="url"
+                        required
                       />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Permissions Sandbox (sécurité)
+                        </label>
+                        <div className="space-y-2">
+                          {[
+                            { value: 'allow-scripts', label: 'Autoriser les scripts' },
+                            { value: 'allow-same-origin', label: 'Autoriser la même origine' },
+                            { value: 'allow-forms', label: 'Autoriser les formulaires' },
+                            { value: 'allow-popups', label: 'Autoriser les popups' },
+                            { value: 'allow-popups-to-escape-sandbox', label: 'Permettre aux popups de sortir du sandbox' },
+                          ].map((option) => (
+                            <label key={option.value} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={formData.config.iframe_sandbox?.includes(option.value) ?? (option.value === 'allow-scripts' || option.value === 'allow-same-origin')}
+                                onChange={(e) => {
+                                  const current = formData.config.iframe_sandbox || [];
+                                  const updated = e.target.checked
+                                    ? [...current, option.value]
+                                    : current.filter((v) => v !== option.value);
+                                  setFormData({
+                                    ...formData,
+                                    config: { ...formData.config, iframe_sandbox: updated },
+                                  });
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                {option.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Les permissions sandbox limitent ce que l'iframe peut faire pour la sécurité.
+                        </p>
+                      </div>
                     </div>
                   )}
 
@@ -598,11 +637,14 @@ export function WidgetEditor({ isOpen, onClose, widgetId, onSave }: WidgetEditor
                       </div>
                     )}
                     {formData.type === 'iframe' && formData.config.iframe_url && (
-                      <iframe
-                        src={formData.config.iframe_url}
-                        className="w-full h-96 border-0"
-                        sandbox="allow-scripts allow-same-origin"
-                      />
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <iframe
+                          src={formData.config.iframe_url}
+                          className="w-full h-96 border-0"
+                          sandbox={(formData.config.iframe_sandbox?.join(' ') || 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox')}
+                          title="Preview"
+                        />
+                      </div>
                     )}
                     {formData.type === 'api' && (
                       <div>
