@@ -4,14 +4,16 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
 import { 
   useInfiniteReseauContacts, 
   useCreateReseauContact, 
   useUpdateReseauContact,
-  useReseauContactsCount
+  useReseauContactsCount,
+  useReseauContact,
+  reseauContactsAPI
 } from '@/lib/query/reseau-contacts';
 import type { Contact } from '@/lib/api/contacts';
 import { handleApiError } from '@/lib/errors/api';
@@ -21,6 +23,9 @@ import ContactForm from '@/components/reseau/ContactForm';
 import Modal from '@/components/ui/Modal';
 import EmptyState from '@/components/ui/EmptyState';
 import Skeleton from '@/components/ui/Skeleton';
+import Drawer from '@/components/ui/Drawer';
+import Tabs from '@/components/ui/Tabs';
+import Loading from '@/components/ui/Loading';
 import { 
   Plus,
   Search,
@@ -36,7 +41,15 @@ import {
   UserPlus,
   TrendingUp,
   X,
-  Tag
+  Tag,
+  Info,
+  MessageSquare,
+  Paperclip,
+  Edit,
+  Calendar,
+  MapPin,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 
 type ViewMode = 'gallery' | 'list';
@@ -47,6 +60,8 @@ type SortDirection = 'asc' | 'desc';
 export default function ContactsPage() {
   const { showToast } = useToast();
   const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string || 'fr';
   
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
@@ -63,6 +78,13 @@ export default function ContactsPage() {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [customQuickFilters, setCustomQuickFilters] = useState<string[]>([]);
   const [showAddQuickFilterModal, setShowAddQuickFilterModal] = useState(false);
+  
+  // Drawer state
+  const [showContactDrawer, setShowContactDrawer] = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [contactDetails, setContactDetails] = useState<Contact | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
 
   // API Hooks
   const { 
@@ -80,6 +102,19 @@ export default function ContactsPage() {
   
   // Get total count
   const { data: totalCount } = useReseauContactsCount();
+  
+  // Fetch contact details when drawer opens
+  const { data: contactDetailData, isLoading: isLoadingContactDetail } = useReseauContact(
+    selectedContactId || 0,
+    !!selectedContactId && showContactDrawer
+  );
+  
+  // Update contactDetails when data is loaded
+  useEffect(() => {
+    if (contactDetailData) {
+      setContactDetails(contactDetailData);
+    }
+  }, [contactDetailData]);
 
   // Flatten contacts from pages
   const contacts = useMemo(() => {
@@ -279,6 +314,11 @@ export default function ContactsPage() {
       });
       setShowEditModal(false);
       setSelectedContact(null);
+      // Refresh drawer if same contact
+      if (contactDetails?.id === selectedContact.id) {
+        const updated = await reseauContactsAPI.get(selectedContact.id);
+        setContactDetails(updated);
+      }
       showToast({
         message: 'Contact modifié avec succès',
         type: 'success',
@@ -290,6 +330,41 @@ export default function ContactsPage() {
         type: 'error',
       });
     }
+  };
+  
+  // Handle view contact in drawer
+  const handleView = async (id: number) => {
+    setSelectedContactId(id);
+    setShowContactDrawer(true);
+    setLoadingDetails(true);
+    setContactDetails(null);
+    
+    try {
+      const contact = await reseauContactsAPI.get(id);
+      setContactDetails(contact);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement du contact',
+        type: 'error',
+      });
+      setShowContactDrawer(false);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+  
+  const handleCloseDrawer = () => {
+    setShowContactDrawer(false);
+    setSelectedContactId(null);
+    setContactDetails(null);
+    setDrawerTab('info');
+  };
+  
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Non renseigné';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   // Loading skeleton for gallery view
@@ -662,14 +737,14 @@ export default function ContactsPage() {
             return (
               <div
                 key={contact.id}
-                onClick={() => router.push(`/dashboard/reseau/contacts/${contact.id}`)}
+                onClick={() => handleView(contact.id)}
                 className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    router.push(`/dashboard/reseau/contacts/${contact.id}`);
+                    handleView(contact.id);
                   }
                 }}
                 aria-label={`Voir la fiche de ${contact.first_name} ${contact.last_name}`}
@@ -804,14 +879,14 @@ export default function ContactsPage() {
             return (
               <div
                 key={contact.id}
-                onClick={() => router.push(`/dashboard/reseau/contacts/${contact.id}`)}
+                onClick={() => handleView(contact.id)}
                 className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    router.push(`/dashboard/reseau/contacts/${contact.id}`);
+                    handleView(contact.id);
                   }
                 }}
                 aria-label={`Voir la fiche de ${contact.first_name} ${contact.last_name}`}
@@ -957,6 +1032,261 @@ export default function ContactsPage() {
             </button>
         </div>
       )}
+
+      {/* Contact Details Drawer */}
+      <Drawer
+        isOpen={showContactDrawer}
+        onClose={handleCloseDrawer}
+        title={contactDetails ? `${contactDetails.first_name} ${contactDetails.last_name}` : 'Détails du contact'}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails || isLoadingContactDetail ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : contactDetails ? (
+          <div className="h-full flex flex-col">
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6 py-4">
+                      {/* Link to full page */}
+                      {contactDetails && (
+                        <div className="flex justify-end mb-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              router.push(`/${locale}/dashboard/reseau/contacts/${contactDetails.id}`);
+                              handleCloseDrawer();
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Voir la page complète
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Photo and Basic Info */}
+                      <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {contactDetails.photo_url ? (
+                            <img
+                              src={contactDetails.photo_url}
+                              alt={`${contactDetails.first_name} ${contactDetails.last_name}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-3xl font-bold text-gray-400">
+                              {contactDetails.first_name?.charAt(0)}{contactDetails.last_name?.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                            {contactDetails.first_name} {contactDetails.last_name}
+                          </h3>
+                          {contactDetails.position && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{contactDetails.position}</p>
+                          )}
+                          {contactDetails.company_name && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                              <Briefcase className="w-4 h-4" />
+                              {contactDetails.company_name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Contact Information */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {contactDetails.email && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              Email
+                            </h4>
+                            <a 
+                              href={`mailto:${contactDetails.email}`}
+                              className="text-sm text-gray-900 dark:text-white hover:text-[#523DC9] transition-colors"
+                            >
+                              {contactDetails.email}
+                            </a>
+                          </div>
+                        )}
+                        {contactDetails.phone && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              Téléphone
+                            </h4>
+                            <a 
+                              href={`tel:${contactDetails.phone}`}
+                              className="text-sm text-gray-900 dark:text-white hover:text-[#523DC9] transition-colors"
+                            >
+                              {contactDetails.phone}
+                            </a>
+                          </div>
+                        )}
+                        {(contactDetails.city || contactDetails.country) && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              Localisation
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {[contactDetails.city, contactDetails.country].filter(Boolean).join(', ')}
+                            </p>
+                          </div>
+                        )}
+                        {contactDetails.birthday && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              Date de naissance
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {formatDate(contactDetails.birthday)}
+                            </p>
+                          </div>
+                        )}
+                        {contactDetails.language && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Langue
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {contactDetails.language.toUpperCase()}
+                            </p>
+                          </div>
+                        )}
+                        {contactDetails.linkedin && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <Linkedin className="w-4 h-4" />
+                              LinkedIn
+                            </h4>
+                            <a 
+                              href={contactDetails.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-[#523DC9] hover:underline"
+                            >
+                              Voir le profil
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Tags */}
+                      {contactDetails.circle && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Tags
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {contactDetails.circle.split(',').map((tag: string, idx: number) => {
+                              const colors = getTagColors(tag.trim());
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`px-3 py-1 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
+                                >
+                                  {tag.trim()}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Dates */}
+                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Créé le
+                          </h4>
+                          <p className="text-xs text-gray-900 dark:text-white">
+                            {formatDate(contactDetails.created_at)}
+                          </p>
+                        </div>
+                        {contactDetails.updated_at && contactDetails.updated_at !== contactDetails.created_at && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Modifié le
+                            </h4>
+                            <p className="text-xs text-gray-900 dark:text-white">
+                              {formatDate(contactDetails.updated_at)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'comments',
+                  label: 'Commentaires',
+                  icon: <MessageSquare className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>Les commentaires seront disponibles prochainement</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'attachments',
+                  label: 'Documents',
+                  icon: <Paperclip className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>Les pièces jointes seront disponibles prochainement</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'edit',
+                  label: 'Modifier',
+                  icon: <Edit className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <ContactForm
+                        contact={contactDetails}
+                        onSubmit={async (data) => {
+                          await handleUpdate(data);
+                          setDrawerTab('info');
+                        }}
+                        onCancel={() => setDrawerTab('info')}
+                        loading={updateContactMutation.isPending}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+              value={drawerTab}
+              onChange={(tabId: string) => setDrawerTab(tabId as typeof drawerTab)}
+            />
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Contact non trouvé</p>
+          </div>
+        )}
+      </Drawer>
 
       {/* Add Modal */}
       {showAddModal && (

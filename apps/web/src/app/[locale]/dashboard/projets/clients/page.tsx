@@ -5,11 +5,13 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import { Button, Alert, Loading, Badge, Card, Input } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import Dropdown from '@/components/ui/Dropdown';
+import Drawer from '@/components/ui/Drawer';
+import Tabs from '@/components/ui/Tabs';
 import { type Client, type ClientCreate, type ClientUpdate, ClientStatus } from '@/lib/api/clients';
 import { handleApiError } from '@/lib/errors/api';
 import { useToast } from '@/components/ui';
@@ -36,7 +38,14 @@ import {
   CheckSquare,
   Square,
   Grid,
-  List
+  List,
+  Info,
+  MessageSquare,
+  Paperclip,
+  Calendar,
+  Globe,
+  Phone,
+  Mail
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -45,11 +54,14 @@ import {
   useCreateClient, 
   useUpdateClient,
   useDeleteClient,
+  useClient,
   clientsAPI
 } from '@/lib/query/clients';
 
 function ClientsContent() {
   const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string || 'fr';
   const { showToast } = useToast();
   
   // React Query hooks for clients
@@ -66,6 +78,19 @@ function ClientsContent() {
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
   const deleteClientMutation = useDeleteClient();
+  
+  // Fetch client details when drawer opens
+  const { data: clientDetailData, isLoading: isLoadingClientDetail } = useClient(
+    selectedClientId || 0,
+    !!selectedClientId && showClientDrawer
+  );
+  
+  // Update clientDetails when data is loaded
+  useEffect(() => {
+    if (clientDetailData) {
+      setClientDetails(clientDetailData);
+    }
+  }, [clientDetailData]);
   
   // Flatten pages into single array
   const clients = useMemo(() => {
@@ -91,6 +116,13 @@ function ClientsContent() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
+  
+  // Drawer state
+  const [showClientDrawer, setShowClientDrawer] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [clientDetails, setClientDetails] = useState<Client | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
   
   // Load companies for logos
   useEffect(() => {
@@ -486,6 +518,11 @@ function ClientsContent() {
       });
       setShowEditModal(false);
       setSelectedClient(null);
+      // Refresh drawer if same client
+      if (clientDetails?.id === selectedClient.id) {
+        const updated = await clientsAPI.get(selectedClient.id);
+        setClientDetails(updated);
+      }
       showToast({
         message: 'Client modifié avec succès',
         type: 'success',
@@ -499,10 +536,44 @@ function ClientsContent() {
     }
   };
 
-  // Navigate to detail page
+  // Handle view client in drawer
+  const handleView = async (id: number) => {
+    setSelectedClientId(id);
+    setShowClientDrawer(true);
+    setLoadingDetails(true);
+    setClientDetails(null);
+    
+    try {
+      const client = await clientsAPI.get(id);
+      setClientDetails(client);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement du client',
+        type: 'error',
+      });
+      setShowClientDrawer(false);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+  
+  const handleCloseDrawer = () => {
+    setShowClientDrawer(false);
+    setSelectedClientId(null);
+    setClientDetails(null);
+    setDrawerTab('info');
+  };
+  
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Non renseigné';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+  
+  // Navigate to detail page (fallback, can be removed later)
   const openDetailPage = (client: Client) => {
-    const locale = window.location.pathname.split('/')[1] || 'fr';
-    router.push(`/${locale}/dashboard/projets/clients/${client.id}`);
+    handleView(client.id);
   };
 
   const getStatusColor = (status: string) => {
@@ -857,7 +928,7 @@ function ClientsContent() {
                         items={[
                           {
                             label: 'Voir les détails',
-                            onClick: () => openDetailPage(client),
+                            onClick: () => handleView(client.id),
                             icon: <ExternalLink className="w-4 h-4" />,
                           },
                           {
@@ -922,7 +993,7 @@ function ClientsContent() {
                   </div>
 
                   {/* Nom + Type */}
-                  <div onClick={() => openDetailPage(client)} className="cursor-pointer">
+                  <div onClick={() => handleView(client.id)} className="cursor-pointer">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                       {client.company_name}
                     </h3>
@@ -1043,7 +1114,7 @@ function ClientsContent() {
                       </div>
 
                       {/* Infos */}
-                      <div className="flex-1 min-w-0" onClick={() => openDetailPage(client)}>
+                      <div className="flex-1 min-w-0" onClick={() => handleView(client.id)}>
                         <div className="flex items-center gap-3 mb-1">
                           <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                             {client.company_name}
@@ -1199,6 +1270,215 @@ function ClientsContent() {
           loading={createClientMutation.isPending}
         />
       </Modal>
+
+      {/* Client Details Drawer */}
+      <Drawer
+        isOpen={showClientDrawer}
+        onClose={handleCloseDrawer}
+        title={clientDetails ? clientDetails.company_name : 'Détails du client'}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails || isLoadingClientDetail ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : clientDetails ? (
+          <div className="h-full flex flex-col">
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6 py-4">
+                      {/* Link to full page */}
+                      {clientDetails && (
+                        <div className="flex justify-end mb-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              router.push(`/${locale}/dashboard/projets/clients/${clientDetails.id}`);
+                              handleCloseDrawer();
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Voir la page complète
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Logo and Basic Info */}
+                      <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {getClientLogo(clientDetails) ? (
+                            <img 
+                              src={getClientLogo(clientDetails)} 
+                              alt={`${clientDetails.company_name} logo`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Building2 className="w-10 h-10 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                            {clientDetails.company_name}
+                          </h3>
+                          {clientDetails.type && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{clientDetails.type}</p>
+                          )}
+                          <Badge className={getStatusColor(clientDetails.status)}>
+                            {getStatusLabel(clientDetails.status)}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {clientDetails.portal_url && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <Globe className="w-4 h-4" />
+                              Portail client
+                            </h4>
+                            <a 
+                              href={clientDetails.portal_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-[#523DC9] hover:underline"
+                            >
+                              {clientDetails.portal_url}
+                            </a>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Nombre de projets
+                          </h4>
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {clientDetails.project_count || getClientProjects(clientDetails.id).length}
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Nombre de contacts
+                          </h4>
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {getClientContactsCount(clientDetails.id)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Projects List */}
+                      {getClientProjects(clientDetails.id).length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Projets associés
+                          </h4>
+                          <div className="space-y-2">
+                            {getClientProjects(clientDetails.id).slice(0, 5).map((project) => (
+                              <div 
+                                key={project.id}
+                                className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800"
+                              >
+                                <Briefcase className="w-4 h-4 text-[#523DC9]" />
+                                <span className="text-sm text-gray-900 dark:text-white">{project.name}</span>
+                              </div>
+                            ))}
+                            {getClientProjects(clientDetails.id).length > 5 && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                +{getClientProjects(clientDetails.id).length - 5} autres projets
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Dates */}
+                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Créé le
+                          </h4>
+                          <p className="text-xs text-gray-900 dark:text-white">
+                            {formatDate(clientDetails.created_at)}
+                          </p>
+                        </div>
+                        {clientDetails.updated_at && clientDetails.updated_at !== clientDetails.created_at && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Modifié le
+                            </h4>
+                            <p className="text-xs text-gray-900 dark:text-white">
+                              {formatDate(clientDetails.updated_at)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'comments',
+                  label: 'Commentaires',
+                  icon: <MessageSquare className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>Les commentaires seront disponibles prochainement</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'attachments',
+                  label: 'Documents',
+                  icon: <Paperclip className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>Les pièces jointes seront disponibles prochainement</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'edit',
+                  label: 'Modifier',
+                  icon: <Edit className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <ClientForm
+                        client={clientDetails}
+                        onSubmit={async (data) => {
+                          await handleUpdate(data);
+                          setDrawerTab('info');
+                        }}
+                        onCancel={() => setDrawerTab('info')}
+                        loading={updateClientMutation.isPending}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+              value={drawerTab}
+              onChange={(tabId: string) => setDrawerTab(tabId as typeof drawerTab)}
+            />
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Client non trouvé</p>
+          </div>
+        )}
+      </Drawer>
 
       {/* Edit Modal */}
       <Modal

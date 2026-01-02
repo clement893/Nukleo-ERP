@@ -2,29 +2,18 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   Wallet, TrendingUp, TrendingDown, DollarSign, Calendar, 
   AlertTriangle, Download, Plus, ArrowUpRight, ArrowDownRight,
-  Building2, Users, Loader2
+  Building2, Loader2, Upload, X, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
-import { projectsAPI } from '@/lib/api/projects';
-import { employeesAPI } from '@/lib/api/employees';
+import { tresorerieAPI, type CashflowWeek, type Transaction, type TreasuryStats } from '@/lib/api/tresorerie';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
-
-interface Transaction {
-  id: string;
-  type: 'entree' | 'sortie';
-  categorie: string;
-  description: string;
-  montant: number;
-  date: string;
-  statut: 'confirme' | 'probable' | 'projete';
-}
 
 interface SoldeHebdomadaire {
   semaine: string;
@@ -39,6 +28,11 @@ export default function TresoreriePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [soldesHebdo, setSoldesHebdo] = useState<SoldeHebdomadaire[]>([]);
   const [soldeActuel, setSoldeActuel] = useState(0);
+  const [stats, setStats] = useState<TreasuryStats | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -49,108 +43,33 @@ export default function TresoreriePage() {
     try {
       setLoading(true);
       
-      // Charger projets et employés
-      const [projects, employees] = await Promise.all([
-        projectsAPI.list(0, 100),
-        employeesAPI.list(0, 100)
+      // Calculer les dates pour les 12 dernières semaines
+      const today = new Date();
+      const twelveWeeksAgo = new Date(today);
+      twelveWeeksAgo.setDate(today.getDate() - (12 * 7));
+      const dateFrom = twelveWeeksAgo.toISOString().split('T')[0];
+      const dateTo = today.toISOString().split('T')[0];
+
+      // Charger les données réelles depuis l'API
+      const [cashflowData, transactionsData, statsData] = await Promise.all([
+        tresorerieAPI.getWeeklyCashflow({ date_from: dateFrom, date_to: dateTo }),
+        tresorerieAPI.listTransactions({ limit: 1000 }),
+        tresorerieAPI.getStats({ period_days: 30 })
       ]);
 
-      // Générer transactions depuis projets (entrées)
-      const entreesTransactions: Transaction[] = projects
-        .filter(p => p.budget && p.budget > 0)
-        .map((p) => {
-          // Répartir le budget sur 2-4 semaines
-          const nbSemaines = Math.floor(Math.random() * 3) + 2;
-          const montantParSemaine = p.budget! / nbSemaines;
-          const dateDebut = p.start_date ? new Date(p.start_date) : new Date();
-          
-          return Array.from({ length: nbSemaines }, (_, i) => {
-            const date = new Date(dateDebut);
-            date.setDate(date.getDate() + (i * 7));
-            const dateStr = date.toISOString().split('T')[0] || date.toISOString().substring(0, 10);
-            
-            return {
-              id: `entree-${p.id}-${i}`,
-              type: 'entree' as const,
-              categorie: 'Projet',
-              description: p.name,
-              montant: montantParSemaine,
-              date: dateStr,
-              statut: i === 0 ? 'confirme' as const : 'probable' as const
-            };
-          });
-        })
-        .flat();
+      // Convertir les données de cashflow en format SoldeHebdomadaire
+      const soldesParSemaine: SoldeHebdomadaire[] = cashflowData.weeks.map((week: CashflowWeek) => ({
+        semaine: week.week_start,
+        entrees: Number(week.entries),
+        sorties: Number(week.exits),
+        solde: Number(week.balance),
+        projete: week.is_projected
+      }));
 
-      // Générer transactions depuis employés (sorties - salaires)
-      const sortiesTransactions: Transaction[] = [];
-      const today = new Date();
-      
-      // Salaires bi-hebdomadaires pour les 8 prochaines semaines
-      // Utiliser un salaire moyen simulé de 60k par année
-      const salaireAnnuelMoyen = 60000;
-      const salaireBiHebdo = salaireAnnuelMoyen / 26;
-      
-      for (let semaine = 0; semaine < 8; semaine += 2) {
-        const datePaie = new Date(today);
-        datePaie.setDate(datePaie.getDate() + (semaine * 7));
-        
-        const dateStr = datePaie.toISOString().split('T')[0] || datePaie.toISOString().substring(0, 10);
-        employees.forEach(emp => {
-          sortiesTransactions.push({
-            id: `sortie-salaire-${emp.id}-${semaine}`,
-            type: 'sortie',
-            categorie: 'Salaire',
-            description: `Paie - ${emp.first_name} ${emp.last_name}`,
-            montant: salaireBiHebdo,
-            date: dateStr,
-            statut: semaine === 0 ? 'confirme' : 'projete'
-          });
-        });
-      }
-
-      // Charges fixes mensuelles
-      const chargesFixes = [
-        { description: 'Loyer bureau', montant: 5000, jour: 1 },
-        { description: 'Assurances', montant: 1200, jour: 1 },
-        { description: 'Logiciels & licences', montant: 800, jour: 5 },
-        { description: 'Internet & téléphonie', montant: 300, jour: 10 },
-        { description: 'Comptabilité', montant: 500, jour: 15 }
-      ];
-
-      // Ajouter charges fixes pour les 3 prochains mois
-      for (let mois = 0; mois < 3; mois++) {
-        chargesFixes.forEach((charge, index) => {
-          const dateCharge = new Date(today);
-          dateCharge.setMonth(dateCharge.getMonth() + mois);
-          dateCharge.setDate(charge.jour);
-          const dateStr = dateCharge.toISOString().split('T')[0] || dateCharge.toISOString().substring(0, 10);
-          
-          sortiesTransactions.push({
-            id: `sortie-charge-${index}-${mois}`,
-            type: 'sortie',
-            categorie: 'Charge fixe',
-            description: charge.description,
-            montant: charge.montant,
-            date: dateStr,
-            statut: mois === 0 ? 'confirme' : 'projete'
-          });
-        });
-      }
-
-      // Combiner toutes les transactions
-      const allTransactions = [...entreesTransactions, ...sortiesTransactions]
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      setTransactions(allTransactions);
-
-      // Calculer soldes hebdomadaires
-      const soldesParSemaine = calculerSoldesHebdomadaires(allTransactions);
       setSoldesHebdo(soldesParSemaine);
-
-      // Solde actuel (simulé)
-      const soldeInitial = 150000; // Solde de départ simulé
-      setSoldeActuel(soldeInitial);
+      setTransactions(transactionsData);
+      setSoldeActuel(Number(statsData.current_balance));
+      setStats(statsData);
 
     } catch (error) {
       logger.error('Erreur lors du chargement de la trésorerie', error);
@@ -162,45 +81,6 @@ export default function TresoreriePage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculerSoldesHebdomadaires = (transactions: Transaction[]): SoldeHebdomadaire[] => {
-    const soldes: SoldeHebdomadaire[] = [];
-    const today = new Date();
-    let soldeAccumule = 150000; // Solde de départ
-
-    for (let i = 0; i < 12; i++) {
-      const dateDebut = new Date(today);
-      dateDebut.setDate(dateDebut.getDate() + (i * 7));
-      const dateFin = new Date(dateDebut);
-      dateFin.setDate(dateFin.getDate() + 6);
-
-      const transactionsSemaine = transactions.filter(t => {
-        const dateT = new Date(t.date);
-        return dateT >= dateDebut && dateT <= dateFin;
-      });
-
-      const entrees = transactionsSemaine
-        .filter(t => t.type === 'entree')
-        .reduce((sum, t) => sum + t.montant, 0);
-
-      const sorties = transactionsSemaine
-        .filter(t => t.type === 'sortie')
-        .reduce((sum, t) => sum + t.montant, 0);
-
-      soldeAccumule += (entrees - sorties);
-
-      const semaineStr = dateDebut.toISOString().split('T')[0] || dateDebut.toISOString().substring(0, 10);
-      soldes.push({
-        semaine: semaineStr,
-        entrees,
-        sorties,
-        solde: soldeAccumule,
-        projete: i > 0
-      });
-    }
-
-    return soldes;
   };
 
   const formatCurrency = (amount: number) => {
@@ -231,19 +111,22 @@ export default function TresoreriePage() {
   }
 
   const soldeAvecMarge = soldeActuel * 0.8; // 20% de marge
-  const projection30j = soldesHebdo[4]?.solde || soldeActuel;
+  const projection30j = stats?.projected_balance_30d || soldesHebdo[4]?.solde || soldeActuel;
   
-  const variation = soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0;
+  const variation = stats?.variation_percent ? Number(stats.variation_percent) : (soldesHebdo[1] ? ((soldesHebdo[1].solde - soldeActuel) / soldeActuel) * 100 : 0);
   const alerteNiveau = soldeAvecMarge < 50000 ? 'rouge' : soldeAvecMarge < 100000 ? 'orange' : 'vert';
 
-  // Prochaines entrées (4 semaines)
+  // Prochaines entrées (transactions futures)
+  const today = new Date();
   const prochainesEntrees = transactions
-    .filter(t => t.type === 'entree')
+    .filter(t => t.type === 'entry' && new Date(t.date) >= today)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 10);
 
-  // Prochaines sorties (4 semaines)
+  // Prochaines sorties (transactions futures)
   const prochainesSorties = transactions
-    .filter(t => t.type === 'sortie')
+    .filter(t => t.type === 'exit' && new Date(t.date) >= today)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 10);
 
   const totalEntrees4sem = soldesHebdo.slice(0, 4).reduce((sum, s) => sum + s.entrees, 0);
@@ -273,9 +156,42 @@ export default function TresoreriePage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={async () => {
+                    try {
+                      const blob = await tresorerieAPI.downloadImportTemplate('zip');
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'template_import_tresorerie.zip';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                      showToast({
+                        title: 'Téléchargement',
+                        message: 'Modèle d\'import téléchargé',
+                        type: 'success'
+                      });
+                    } catch (error) {
+                      showToast({
+                        title: 'Erreur',
+                        message: 'Impossible de télécharger le modèle',
+                        type: 'error'
+                      });
+                    }
+                  }}
+                >
                   <Download className="w-4 h-4 mr-2" />
-                  Exporter
+                  Télécharger Modèle
+                </Button>
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importer
                 </Button>
                 <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
                   <Plus className="w-4 h-4 mr-2" />
@@ -449,18 +365,18 @@ export default function TresoreriePage() {
                         {formatDate(t.date)}
                       </span>
                       <Badge className={`text-[10px] px-1.5 py-0 ${
-                        t.statut === 'confirme' ? 'bg-green-500/10 text-green-600 border-green-500/30' :
-                        t.statut === 'probable' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' :
+                        t.status === 'confirmed' ? 'bg-green-500/10 text-green-600 border-green-500/30' :
+                        t.status === 'pending' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' :
                         'bg-gray-500/10 text-gray-600 border-gray-500/30'
                       }`}>
-                        {t.statut === 'confirme' ? 'Confirmé' : 
-                         t.statut === 'probable' ? 'Probable' : 'Projeté'}
+                        {t.status === 'confirmed' ? 'Confirmé' : 
+                         t.status === 'pending' ? 'En attente' : 'Projeté'}
                       </Badge>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      {formatCurrency(t.montant)}
+                      {formatCurrency(Number(t.amount))}
                     </div>
                   </div>
                 </div>
@@ -484,11 +400,7 @@ export default function TresoreriePage() {
                 <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      {t.categorie === 'Salaire' ? (
-                        <Users className="w-4 h-4 text-red-600" />
-                      ) : (
-                        <DollarSign className="w-4 h-4 text-red-600" />
-                      )}
+                      <DollarSign className="w-4 h-4 text-red-600" />
                       <span className="font-medium text-sm">{t.description}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
@@ -496,14 +408,19 @@ export default function TresoreriePage() {
                       <span className="text-xs text-gray-600 dark:text-gray-400">
                         {formatDate(t.date)}
                       </span>
-                      <Badge className="text-[10px] px-1.5 py-0 bg-gray-500/10 text-gray-600 border-gray-500/30">
-                        {t.categorie}
+                      <Badge className={`text-[10px] px-1.5 py-0 ${
+                        t.status === 'confirmed' ? 'bg-green-500/10 text-green-600 border-green-500/30' :
+                        t.status === 'pending' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' :
+                        'bg-gray-500/10 text-gray-600 border-gray-500/30'
+                      }`}>
+                        {t.status === 'confirmed' ? 'Confirmé' : 
+                         t.status === 'pending' ? 'En attente' : 'Projeté'}
                       </Badge>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-red-600">
-                      {formatCurrency(t.montant)}
+                      {formatCurrency(Number(t.amount))}
                     </div>
                   </div>
                 </div>
@@ -562,6 +479,234 @@ export default function TresoreriePage() {
           </div>
         </Card>
       </MotionDiv>
+
+      {/* Modal d'Import */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Importer des Transactions
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResult(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Importez vos transactions depuis un fichier CSV, Excel ou ZIP. 
+                    Téléchargez d'abord le modèle pour voir le format attendu.
+                  </p>
+                  
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,.xlsx,.xls,.zip"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        try {
+                          setImporting(true);
+                          setImportResult(null);
+
+                          // Dry run first
+                          const dryRunResult = await tresorerieAPI.importTransactions(file, { dry_run: true });
+                          setImportResult(dryRunResult);
+
+                          if (dryRunResult.invalid_rows > 0) {
+                            showToast({
+                              title: 'Attention',
+                              message: `${dryRunResult.invalid_rows} ligne(s) avec erreurs détectées`,
+                              type: 'warning'
+                            });
+                          }
+                        } catch (error: unknown) {
+                          const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'import';
+                          showToast({
+                            title: 'Erreur',
+                            message: errorMessage,
+                            type: 'error'
+                          });
+                        } finally {
+                          setImporting(false);
+                        }
+                      }}
+                      className="hidden"
+                      id="import-file-input"
+                    />
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Cliquez pour sélectionner un fichier
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        CSV, Excel (.xlsx, .xls) ou ZIP (max 10MB)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {importResult && (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Total lignes</div>
+                          <div className="font-bold text-lg">{importResult.total_rows}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Valides</div>
+                          <div className="font-bold text-lg text-green-600">{importResult.valid_rows}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Erreurs</div>
+                          <div className="font-bold text-lg text-red-600">{importResult.invalid_rows}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-h-48 overflow-y-auto">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-5 h-5 text-red-600" />
+                          <h3 className="font-semibold text-red-900 dark:text-red-200">Erreurs</h3>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          {importResult.errors.slice(0, 5).map((err: any, idx: number) => (
+                            <div key={idx} className="text-red-700 dark:text-red-300">
+                              <strong>Ligne {err.row}:</strong> {err.error}
+                            </div>
+                          ))}
+                          {importResult.errors.length > 5 && (
+                            <div className="text-red-600 dark:text-red-400 text-xs">
+                              ... et {importResult.errors.length - 5} autre(s) erreur(s)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {importResult.warnings && importResult.warnings.length > 0 && (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 max-h-48 overflow-y-auto">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                          <h3 className="font-semibold text-yellow-900 dark:text-yellow-200">Avertissements</h3>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          {importResult.warnings.slice(0, 5).map((warn: any, idx: number) => (
+                            <div key={idx} className="text-yellow-700 dark:text-yellow-300">
+                              <strong>Ligne {warn.row}:</strong> {warn.warning}
+                            </div>
+                          ))}
+                          {importResult.warnings.length > 5 && (
+                            <div className="text-yellow-600 dark:text-yellow-400 text-xs">
+                              ... et {importResult.warnings.length - 5} autre(s) avertissement(s)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!importResult.dry_run && importResult.created_count > 0 && (
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="font-semibold text-green-900 dark:text-green-200">
+                            {importResult.created_count} transaction(s) importée(s) avec succès
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      {importResult.dry_run && (
+                        <Button
+                          className="flex-1"
+                          onClick={async () => {
+                            const file = fileInputRef.current?.files?.[0];
+                            if (!file) return;
+
+                            try {
+                              setImporting(true);
+                              const result = await tresorerieAPI.importTransactions(file, { dry_run: false });
+                              setImportResult(result);
+                              
+                              if (result.created_count > 0) {
+                                showToast({
+                                  title: 'Succès',
+                                  message: `${result.created_count} transaction(s) importée(s)`,
+                                  type: 'success'
+                                });
+                                // Recharger les données
+                                await loadTresorerie();
+                                setTimeout(() => {
+                                  setShowImportModal(false);
+                                  setImportResult(null);
+                                }, 2000);
+                              }
+                            } catch (error: unknown) {
+                              const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'import';
+                              showToast({
+                                title: 'Erreur',
+                                message: errorMessage,
+                                type: 'error'
+                              });
+                            } finally {
+                              setImporting(false);
+                            }
+                          }}
+                          disabled={importing || importResult.invalid_rows > 0}
+                        >
+                          {importing ? 'Importation...' : 'Confirmer l\'Import'}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowImportModal(false);
+                          setImportResult(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        }}
+                      >
+                        {importResult.dry_run ? 'Annuler' : 'Fermer'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {importing && !importResult && (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#523DC9]" />
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Validation du fichier...
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 }

@@ -19,17 +19,32 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'bg-red-500',
 };
 
-export function TasksListWidget({ globalFilters }: WidgetProps) {
+export function TasksListWidget({ globalFilters, config }: WidgetProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [employeeIdFromStore, setEmployeeIdFromStore] = useState<number | null>(null);
+  
+  // Utiliser employeeId du store si disponible (pour le portail employé)
+  useEffect(() => {
+    try {
+      // Dynamic require pour éviter les erreurs si le store n'est pas disponible
+      const { useEmployeePortalDashboardStore } = require('@/lib/dashboard/employeePortalStore');
+      const store = useEmployeePortalDashboardStore.getState();
+      setEmployeeIdFromStore(store.employeeId);
+    } catch (e) {
+      // Store might not be available in all contexts (dashboard principal)
+      setEmployeeIdFromStore(null);
+    }
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
+        const assigneeId = globalFilters?.employee_id || employeeIdFromStore;
         const data = await projectTasksAPI.list({
           project_id: globalFilters?.project_id,
-          assignee_id: globalFilters?.employee_id,
+          assignee_id: assigneeId,
         });
         // Sort by priority and due date
         const sorted = (data || []).sort((a, b) => {
@@ -52,7 +67,7 @@ export function TasksListWidget({ globalFilters }: WidgetProps) {
     };
     
     loadData();
-  }, [globalFilters?.project_id, globalFilters?.employee_id]);
+  }, [globalFilters?.project_id, globalFilters?.employee_id, employeeIdFromStore]);
 
   if (isLoading) {
     return <SkeletonWidget />;

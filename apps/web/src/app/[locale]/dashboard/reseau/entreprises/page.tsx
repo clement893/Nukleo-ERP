@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -19,22 +19,42 @@ import {
   List,
   Globe,
   Search,
+  Info,
+  MessageSquare,
+  Paperclip,
+  Edit,
+  Calendar,
+  Phone,
+  Mail,
+  ExternalLink
 } from 'lucide-react';
 import { Badge, Button, Card, Loading, Input } from '@/components/ui';
-import { useInfiniteCompanies, useDeleteCompany, useCreateCompany } from '@/lib/query/companies';
+import { useInfiniteCompanies, useDeleteCompany, useCreateCompany, useCompany, companiesAPI } from '@/lib/query/companies';
 import { useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import CompanyForm from '@/components/commercial/CompanyForm';
-import { type CompanyCreate } from '@/lib/api/companies';
+import Drawer from '@/components/ui/Drawer';
+import Tabs from '@/components/ui/Tabs';
+import { handleApiError } from '@/lib/errors/api';
+import { type CompanyCreate, type CompanyUpdate } from '@/lib/api/companies';
 
 export default function EntreprisesPage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string || 'fr';
   const { showToast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'client' | 'prospect'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Drawer state
+  const [showCompanyDrawer, setShowCompanyDrawer] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
+  const [companyDetails, setCompanyDetails] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
 
   // Debounce search query to avoid too many API calls
   useEffect(() => {
@@ -52,6 +72,19 @@ export default function EntreprisesPage() {
   });
   const deleteCompanyMutation = useDeleteCompany();
   const createCompanyMutation = useCreateCompany();
+  
+  // Fetch company details when drawer opens
+  const { data: companyDetailData, isLoading: isLoadingCompanyDetail } = useCompany(
+    selectedCompanyId || 0,
+    !!selectedCompanyId && showCompanyDrawer
+  );
+  
+  // Update companyDetails when data is loaded
+  useEffect(() => {
+    if (companyDetailData) {
+      setCompanyDetails(companyDetailData);
+    }
+  }, [companyDetailData]);
 
   // Flatten data - API already filters by search and type
   const companies = useMemo(() => data?.pages.flat() || [], [data]);
@@ -99,8 +132,60 @@ export default function EntreprisesPage() {
     }
   };
 
-  const handleView = (id: number) => {
-    router.push(`/dashboard/reseau/entreprises/${id}`);
+  // Handle view company in drawer
+  const handleView = async (id: number) => {
+    setSelectedCompanyId(id);
+    setShowCompanyDrawer(true);
+    setLoadingDetails(true);
+    setCompanyDetails(null);
+    
+    try {
+      const company = await companiesAPI.get(id);
+      setCompanyDetails(company);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement de l\'entreprise',
+        type: 'error',
+      });
+      setShowCompanyDrawer(false);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+  
+  const handleCloseDrawer = () => {
+    setShowCompanyDrawer(false);
+    setSelectedCompanyId(null);
+    setCompanyDetails(null);
+    setDrawerTab('info');
+  };
+  
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Non renseigné';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+  
+  const handleUpdate = async (data: CompanyCreate | CompanyUpdate) => {
+    if (!companyDetails) return;
+    
+    try {
+      await companiesAPI.update(companyDetails.id, data as CompanyUpdate);
+      const updated = await companiesAPI.get(companyDetails.id);
+      setCompanyDetails(updated);
+      setDrawerTab('info');
+      showToast({
+        message: 'Entreprise modifiée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification',
+        type: 'error',
+      });
+    }
   };
 
   if (isLoading) {
@@ -392,6 +477,191 @@ export default function EntreprisesPage() {
           </Card>
         )}
       </MotionDiv>
+
+      {/* Company Details Drawer */}
+      <Drawer
+        isOpen={showCompanyDrawer}
+        onClose={handleCloseDrawer}
+        title={companyDetails ? companyDetails.name : 'Détails de l\'entreprise'}
+        position="right"
+        size="xl"
+        closeOnOverlayClick={true}
+        closeOnEscape={true}
+      >
+        {loadingDetails || isLoadingCompanyDetail ? (
+          <div className="py-8 text-center">
+            <Loading />
+          </div>
+        ) : companyDetails ? (
+          <div className="h-full flex flex-col">
+            <Tabs
+              tabs={[
+                {
+                  id: 'info',
+                  label: 'Informations',
+                  icon: <Info className="w-4 h-4" />,
+                  content: (
+                    <div className="space-y-6 py-4">
+                      {/* Link to full page */}
+                      {companyDetails && (
+                        <div className="flex justify-end mb-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              router.push(`/${locale}/dashboard/reseau/entreprises/${companyDetails.id}`);
+                              handleCloseDrawer();
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Voir la page complète
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Logo and Basic Info */}
+                      <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {companyDetails.logo_url ? (
+                            <img 
+                              src={companyDetails.logo_url} 
+                              alt={`${companyDetails.name} logo`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Building2 className="w-10 h-10 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                            {companyDetails.name}
+                          </h3>
+                          {companyDetails.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{companyDetails.description}</p>
+                          )}
+                          <Badge className={companyDetails.is_client ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30'}>
+                            {companyDetails.is_client ? 'Client' : 'Prospect'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {(companyDetails.city || companyDetails.country) && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              Localisation
+                            </h4>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {[companyDetails.city, companyDetails.country].filter(Boolean).join(', ')}
+                            </p>
+                          </div>
+                        )}
+                        {companyDetails.website && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                              <Globe className="w-4 h-4" />
+                              Site web
+                            </h4>
+                            <a 
+                              href={companyDetails.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-[#523DC9] hover:underline"
+                            >
+                              {companyDetails.website}
+                            </a>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Nombre de contacts
+                          </h4>
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {companyDetails.contacts_count || 0}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Dates */}
+                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                            Créé le
+                          </h4>
+                          <p className="text-xs text-gray-900 dark:text-white">
+                            {formatDate(companyDetails.created_at)}
+                          </p>
+                        </div>
+                        {companyDetails.updated_at && companyDetails.updated_at !== companyDetails.created_at && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Modifié le
+                            </h4>
+                            <p className="text-xs text-gray-900 dark:text-white">
+                              {formatDate(companyDetails.updated_at)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'comments',
+                  label: 'Commentaires',
+                  icon: <MessageSquare className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>Les commentaires seront disponibles prochainement</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'attachments',
+                  label: 'Documents',
+                  icon: <Paperclip className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>Les pièces jointes seront disponibles prochainement</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'edit',
+                  label: 'Modifier',
+                  icon: <Edit className="w-4 h-4" />,
+                  content: (
+                    <div className="py-4">
+                      <CompanyForm
+                        company={companyDetails}
+                        onSubmit={handleUpdate}
+                        onCancel={() => setDrawerTab('info')}
+                        parentCompanies={parentCompanies}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+              value={drawerTab}
+              onChange={(tabId: string) => setDrawerTab(tabId as typeof drawerTab)}
+            />
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Entreprise non trouvée</p>
+          </div>
+        )}
+      </Drawer>
 
       {/* Create Modal */}
       {showCreateModal && (

@@ -1,0 +1,339 @@
+/**
+ * Store Zustand pour la gestion du dashboard du portail employé
+ */
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { DashboardConfig, WidgetLayout, GlobalFilters } from './types';
+import { preferencesAPI } from '@/lib/api/preferences';
+
+// Debounce pour éviter trop de sauvegardes
+let saveTimeout: NodeJS.Timeout | null = null;
+const debouncedSave = (saveFn: () => Promise<void>, delay: number = 1000) => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+  saveTimeout = setTimeout(() => {
+    saveFn().catch(console.error);
+    saveTimeout = null;
+  }, delay);
+};
+
+interface EmployeePortalDashboardStore {
+  // État
+  configs: DashboardConfig[];
+  activeConfigId: string | null;
+  isEditMode: boolean;
+  globalFilters: GlobalFilters;
+  employeeId: number | null;
+  
+  // Getters
+  getActiveConfig: () => DashboardConfig | null;
+  getConfigById: (id: string) => DashboardConfig | null;
+  
+  // Actions - Configurations
+  setConfigs: (configs: DashboardConfig[]) => void;
+  addConfig: (config: DashboardConfig) => void;
+  updateConfig: (id: string, updates: Partial<DashboardConfig>) => void;
+  deleteConfig: (id: string) => void;
+  setActiveConfig: (id: string) => void;
+  duplicateConfig: (id: string) => void;
+  
+  // Actions - Widgets
+  addWidget: (widget: Omit<WidgetLayout, 'id'>) => void;
+  updateWidget: (id: string, updates: Partial<WidgetLayout>) => void;
+  removeWidget: (id: string) => void;
+  updateWidgetPosition: (id: string, x: number, y: number) => void;
+  updateWidgetSize: (id: string, w: number, h: number) => void;
+  
+  // Actions - Filtres globaux
+  setGlobalFilters: (filters: GlobalFilters) => void;
+  clearGlobalFilters: () => void;
+  
+  // Actions - Mode édition
+  setEditMode: (isEditMode: boolean) => void;
+  
+  // Actions - Employee ID
+  setEmployeeId: (id: number) => void;
+  
+  // Actions - Persistance
+  saveToServer: () => Promise<void>;
+  loadFromServer: () => Promise<void>;
+}
+
+export const useEmployeePortalDashboardStore = create<EmployeePortalDashboardStore>()(
+  persist(
+    (set, get) => ({
+      // État initial
+      configs: [],
+      activeConfigId: null,
+      isEditMode: false,
+      globalFilters: {},
+      employeeId: null,
+      
+      // Getters
+      getActiveConfig: () => {
+        const { configs, activeConfigId } = get();
+        return configs.find(c => c.id === activeConfigId) || null;
+      },
+      
+      getConfigById: (id: string) => {
+        const { configs } = get();
+        return configs.find(c => c.id === id) || null;
+      },
+      
+      // Actions - Configurations
+      setConfigs: (configs) => set({ configs }),
+      
+      addConfig: (config) => {
+        set((state) => ({
+          configs: [...state.configs, config],
+          activeConfigId: config.id,
+        }));
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      updateConfig: (id, updates) => {
+        set((state) => ({
+          configs: state.configs.map(c => 
+            c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c
+          ),
+        }));
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      deleteConfig: (id) => {
+        set((state) => {
+          const newConfigs = state.configs.filter(c => c.id !== id);
+          const newActiveId = state.activeConfigId === id 
+            ? (newConfigs[0]?.id || null)
+            : state.activeConfigId;
+          
+          return {
+            configs: newConfigs,
+            activeConfigId: newActiveId,
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      setActiveConfig: (id) => {
+        set({ activeConfigId: id });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      duplicateConfig: (id) => {
+        set((state) => {
+          const config = state.configs.find(c => c.id === id);
+          if (!config) return state;
+          
+          const newConfig: DashboardConfig = {
+            ...config,
+            id: `${config.id}-copy-${Date.now()}`,
+            name: `${config.name} (Copie)`,
+            is_default: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          
+          return {
+            configs: [...state.configs, newConfig],
+            activeConfigId: newConfig.id,
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      // Actions - Widgets
+      addWidget: (widget) => {
+        set((state) => {
+          const activeConfig = state.getActiveConfig();
+          if (!activeConfig) return state;
+          
+          const newWidget: WidgetLayout = {
+            ...widget,
+            id: `widget-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          };
+          
+          const updatedLayouts = [...activeConfig.layouts, newWidget];
+          
+          return {
+            configs: state.configs.map(c =>
+              c.id === activeConfig.id
+                ? { ...c, layouts: updatedLayouts, updated_at: new Date().toISOString() }
+                : c
+            ),
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      updateWidget: (id, updates) => {
+        set((state) => {
+          const activeConfig = state.getActiveConfig();
+          if (!activeConfig) return state;
+          
+          const updatedLayouts = activeConfig.layouts.map(w =>
+            w.id === id ? { ...w, ...updates } : w
+          );
+          
+          return {
+            configs: state.configs.map(c =>
+              c.id === activeConfig.id
+                ? { ...c, layouts: updatedLayouts, updated_at: new Date().toISOString() }
+                : c
+            ),
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      removeWidget: (id) => {
+        set((state) => {
+          const activeConfig = state.getActiveConfig();
+          if (!activeConfig) return state;
+          
+          const updatedLayouts = activeConfig.layouts.filter(w => w.id !== id);
+          
+          return {
+            configs: state.configs.map(c =>
+              c.id === activeConfig.id
+                ? { ...c, layouts: updatedLayouts, updated_at: new Date().toISOString() }
+                : c
+            ),
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      updateWidgetPosition: (id, x, y) => {
+        set((state) => {
+          const activeConfig = state.getActiveConfig();
+          if (!activeConfig) return state;
+          
+          const updatedLayouts = activeConfig.layouts.map(w =>
+            w.id === id ? { ...w, x, y } : w
+          );
+          
+          return {
+            configs: state.configs.map(c =>
+              c.id === activeConfig.id
+                ? { ...c, layouts: updatedLayouts, updated_at: new Date().toISOString() }
+                : c
+            ),
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      updateWidgetSize: (id, w, h) => {
+        set((state) => {
+          const activeConfig = state.getActiveConfig();
+          if (!activeConfig) return state;
+          
+          const updatedLayouts = activeConfig.layouts.map(widget =>
+            widget.id === id ? { ...widget, w, h } : widget
+          );
+          
+          return {
+            configs: state.configs.map(c =>
+              c.id === activeConfig.id
+                ? { ...c, layouts: updatedLayouts, updated_at: new Date().toISOString() }
+                : c
+            ),
+          };
+        });
+        debouncedSave(() => get().saveToServer());
+      },
+      
+      // Actions - Filtres globaux
+      setGlobalFilters: (filters) => set({ globalFilters: filters }),
+      
+      clearGlobalFilters: () => set({ globalFilters: {} }),
+      
+      // Actions - Mode édition
+      setEditMode: (isEditMode) => {
+        set({ isEditMode });
+        if (!isEditMode) {
+          get().saveToServer().catch(console.error);
+        }
+      },
+      
+      // Actions - Employee ID
+      setEmployeeId: (id) => set({ employeeId: id }),
+      
+      // Actions - Persistance
+      saveToServer: async () => {
+        try {
+          const { configs, activeConfigId, globalFilters, employeeId } = get();
+          if (!employeeId) return;
+          
+          const preferenceKey = `employee_portal_dashboard_${employeeId}`;
+          
+          await preferencesAPI.set(preferenceKey, {
+            configs,
+            activeConfigId,
+            globalFilters,
+          });
+        } catch (error) {
+          console.error('[EmployeePortalDashboardStore] Error saving dashboard to server:', error);
+        }
+      },
+      
+      loadFromServer: async () => {
+        try {
+          const { employeeId } = get();
+          if (!employeeId) return;
+          
+          const preferenceKey = `employee_portal_dashboard_${employeeId}`;
+          const preference = await preferencesAPI.get(preferenceKey);
+          const currentState = get();
+          
+          if (preference && preference.value && typeof preference.value === 'object') {
+            const data = preference.value as {
+              configs?: DashboardConfig[];
+              activeConfigId?: string | null;
+              globalFilters?: GlobalFilters;
+            };
+            
+            if (data.configs && Array.isArray(data.configs) && data.configs.length > 0) {
+              const serverLatestUpdate = Math.max(
+                ...data.configs.map(c => new Date(c.updated_at || c.created_at || 0).getTime())
+              );
+              const localLatestUpdate = currentState.configs.length > 0
+                ? Math.max(
+                    ...currentState.configs.map(c => new Date(c.updated_at || c.created_at || 0).getTime())
+                  )
+                : 0;
+              
+              if (serverLatestUpdate >= localLatestUpdate) {
+                set({
+                  configs: data.configs,
+                  activeConfigId: data.activeConfigId || currentState.activeConfigId || null,
+                  globalFilters: data.globalFilters || currentState.globalFilters || {},
+                });
+              } else if (currentState.configs.length > 0) {
+                await get().saveToServer();
+              }
+            } else if (currentState.configs.length > 0) {
+              await get().saveToServer();
+            }
+          } else if (currentState.configs.length > 0) {
+            await get().saveToServer();
+          }
+        } catch (error) {
+          console.error('[EmployeePortalDashboardStore] Error loading dashboard from server:', error);
+        }
+      },
+    }),
+    {
+      name: 'employee-portal-dashboard-storage',
+      partialize: (state) => ({
+        configs: state.configs,
+        activeConfigId: state.activeConfigId,
+        globalFilters: state.globalFilters,
+        employeeId: state.employeeId,
+      }),
+    }
+  )
+);

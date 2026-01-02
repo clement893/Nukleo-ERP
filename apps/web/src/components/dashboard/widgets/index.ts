@@ -21,3 +21,9 @@ export { EmployeesCountWidget } from './EmployeesCountWidget';
 export { WorkloadChartWidget } from './WorkloadChartWidget';
 export { UserProfileWidget } from './UserProfileWidget';
 export { NotificationsWidget } from './NotificationsWidget';
+
+// Widgets spécifiques au portail employé
+export { EmployeeTasksWidget } from './EmployeeTasksWidget';
+export { EmployeeHoursWidget } from './EmployeeHoursWidget';
+export { EmployeeProjectsWidget } from './EmployeeProjectsWidget';
+export { EmployeeVacationsWidget } from './EmployeeVacationsWidget';

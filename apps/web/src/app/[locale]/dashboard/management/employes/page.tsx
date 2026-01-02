@@ -692,11 +692,7 @@ export default function EmployeesPage() {
                       size="sm" 
                       variant="outline" 
                       onClick={() => {
-                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                        const portalUrl = employee.user_id 
-                          ? `${baseUrl}/${locale}/erp/dashboard?user_id=${employee.user_id}`
-                          : `${baseUrl}/${locale}/erp/dashboard?employee_id=${employee.id}`;
-                        window.open(portalUrl, '_blank');
+                        router.push(`/${locale}/portail-employe/${employee.id}/dashboard`);
                       }} 
                       className="flex-1"
                       title="Portail"
@@ -807,11 +803,7 @@ export default function EmployeesPage() {
                           size="sm" 
                           variant="outline" 
                           onClick={() => {
-                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                            const portalUrl = employee.user_id 
-                              ? `${baseUrl}/${locale}/erp/dashboard?user_id=${employee.user_id}`
-                              : `${baseUrl}/${locale}/erp/dashboard?employee_id=${employee.id}`;
-                            window.open(portalUrl, '_blank');
+                            router.push(`/${locale}/portail-employe/${employee.id}/dashboard`);
                           }}
                           title="Portail"
                         >
