@@ -21,9 +21,14 @@ import {
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Loading, Modal, Select, useToast } from '@/components/ui';
 import { useInfiniteEmployees } from '@/lib/query/employees';
-// Note: Onboarding hooks are not yet implemented in queries.ts
-// These will be added when the onboarding API is fully implemented
-import { useTeams } from '@/lib/query/queries';
+import { 
+  useTeams, 
+  useEmployeesOnboarding, 
+  useEmployeeOnboardingSteps,
+  useInitializeEmployeeOnboarding,
+  useCompleteEmployeeStep,
+  useOnboardingSteps
+} from '@/lib/query/queries';
 import type { Employee } from '@/lib/api/employees';
 import type { OnboardingStep } from '@/lib/api/onboarding';
 import { handleApiError } from '@/lib/errors/api';

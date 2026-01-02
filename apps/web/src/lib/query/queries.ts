@@ -494,3 +494,78 @@ export function useDeletePayment() {
     },
   });
 }
+
+// Onboarding Hooks
+export function useOnboardingSteps() {
+  return useQuery({
+    queryKey: queryKeys.onboarding.steps,
+    queryFn: () => onboardingAPI.getSteps(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+export function useOnboardingProgress() {
+  return useQuery({
+    queryKey: queryKeys.onboarding.progress,
+    queryFn: () => onboardingAPI.getProgress(),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useEmployeesOnboarding(options?: { team_id?: number; enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.onboarding.employeesList(options),
+    queryFn: () => onboardingAPI.listEmployeesOnboarding({
+      team_id: options?.team_id,
+      skip: 0,
+      limit: 1000,
+    }),
+    enabled: options?.enabled !== false,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useEmployeeOnboardingProgress(employeeId: number, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.onboarding.employeeProgress(employeeId),
+    queryFn: () => onboardingAPI.getEmployeeProgress(employeeId),
+    enabled: enabled && !!employeeId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useEmployeeOnboardingSteps(employeeId: number, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.onboarding.employeeSteps(employeeId),
+    queryFn: () => onboardingAPI.getEmployeeSteps(employeeId),
+    enabled: enabled && !!employeeId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useInitializeEmployeeOnboarding() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (employeeId: number) => onboardingAPI.initializeEmployee(employeeId),
+    onSuccess: (_, employeeId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeesList() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeeProgress(employeeId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeeSteps(employeeId) });
+    },
+  });
+}
+
+export function useCompleteEmployeeStep() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ employeeId, stepKey }: { employeeId: number; stepKey: string }) =>
+      onboardingAPI.completeEmployeeStep(employeeId, stepKey),
+    onSuccess: (_, { employeeId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeeProgress(employeeId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeeSteps(employeeId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeesList() });
+    },
+  });
+}
