@@ -63,7 +63,10 @@ export default function OperationsDashboardPage() {
     const activeProjects = projects.filter(p => p.status === 'ACTIVE').length;
     const completedProjects = projects.filter(p => p.status === 'COMPLETED').length;
     const archivedProjects = projects.filter(p => p.status === 'ARCHIVED').length;
-    const onHoldProjects = projects.filter(p => (p.status as string) === 'ON_HOLD').length;
+    const onHoldProjects = projects.filter(p => {
+      const status = p.status as string;
+      return status === 'ON_HOLD' || status === 'on_hold';
+    }).length;
     
     const activeTasks = tasks.filter(t => t.status !== 'completed').length;
     const completedTasks = tasks.filter(t => t.status === 'completed').length;
@@ -684,13 +687,13 @@ export default function OperationsDashboardPage() {
               </div>
             ) : (
               recentProjects.map((project) => {
-                const statusConfig = {
+                const statusConfig: Record<string, { label: string; color: string }> = {
                   ACTIVE: { label: 'Actif', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
                   COMPLETED: { label: 'Terminé', color: 'bg-green-500/10 text-green-600 border-green-500/30' },
                   ARCHIVED: { label: 'Archivé', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30' },
                   ON_HOLD: { label: 'En pause', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30' },
                 };
-                const status = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
+                const status = statusConfig[project.status as string] || statusConfig.ACTIVE;
                 
                 return (
                   <Link key={project.id} href={`/${locale}/dashboard/projets/projets/${project.id}`}>
