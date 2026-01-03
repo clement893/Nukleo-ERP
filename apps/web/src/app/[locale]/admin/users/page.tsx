@@ -274,6 +274,8 @@ export default function AdminUsersPage() {
     mutationFn: (invitationId: string) => invitationsAPI.cancel(invitationId),
     onSuccess: () => {
       showToast({ message: 'Invitation supprimée avec succès', type: 'success' });
+      // Invalidate and refetch invitations
+      queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
       refetchInvitations();
     },
     onError: (error) => {
