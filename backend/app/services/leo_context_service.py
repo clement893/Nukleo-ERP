@@ -416,8 +416,7 @@ class LeoContextService:
             limit = self.MAX_ITEMS_PER_TYPE
         
         try:
-            from app.modules.commercial.models.pipeline import Opportunite
-            
+            # Lazy import already done above, use it
             Opportunite = _get_opportunite_model()
             if Opportunite is None:
                 return []
@@ -480,6 +479,11 @@ class LeoContextService:
             keywords = self._extract_keywords(query)
             query_lower = query.lower()
             
+            # Check if this is a counting query - if so, don't filter by keywords
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
             # Build query with tenant scoping
             stmt = select(Project)
             # Apply tenant scoping
@@ -493,8 +497,12 @@ class LeoContextService:
             elif "archivé" in query_lower or "archived" in query_lower:
                 stmt = stmt.where(Project.status == ProjectStatus.ARCHIVED)
             
-            # Filter by keywords if any
-            if keywords:
+            # For counting queries, increase limit significantly and don't filter by keywords
+            if is_counting_query:
+                limit = min(limit * 10, 500)  # Much higher limit for counting
+                logger.info(f"Counting project query detected - returning all projects (limit: {limit})")
+            # Filter by keywords if any (but not for counting queries)
+            elif keywords:
                 conditions = []
                 for keyword in keywords:
                     conditions.extend([
