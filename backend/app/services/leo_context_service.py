@@ -85,7 +85,7 @@ class LeoContextService:
         company_keywords = ["entreprise", "company", "société", "client", "clients", "cleint", "cleints", "organisation", "combien de client", "combien de clients", "avons nous", "avons-nous", "module commercial"]
         opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente"]
         pipeline_keywords = ["pipeline", "pipeline de vente", "pipelines", "pipeline commercial"]
-        project_keywords = ["projet", "project", "mission"]
+        project_keywords = ["projet", "project", "mission", "proejt", "projets", "projects"]  # Include typos
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
         employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes"]
@@ -120,7 +120,8 @@ class LeoContextService:
         # Check for general queries about contacts/companies/employees
         is_general_contact_query = any(phrase in query_lower for phrase in [
             "connais-tu", "connais tu", "connaissez-vous", "connaissez vous", 
-            "nos contacts", "mes contacts", "qui sont nos", "qui sont mes",
+            "nos contacts", "mes contacts", "et nos contacts", "et mes contacts",
+            "qui sont nos", "qui sont mes", "nos contact", "mes contact",
             "combien j'ai de contact", "combien j'ai de contacts", "combien de contact", "combien de contacts"
         ])
         is_general_company_query = any(phrase in query_lower for phrase in [
@@ -219,7 +220,8 @@ class LeoContextService:
             query_lower = query.lower()
             is_general_query = any(phrase in query_lower for phrase in [
                 "connais-tu", "connais tu", "connaissez-vous", "connaissez vous", 
-                "nos contacts", "mes contacts", "qui sont nos", "qui sont mes"
+                "nos contacts", "mes contacts", "et nos contacts", "et mes contacts",
+                "qui sont nos", "qui sont mes", "nos contact", "mes contact"
             ])
             
             # Also check for single word queries that might be names (e.g., "fabien")
