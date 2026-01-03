@@ -22,7 +22,7 @@ import ProjectAttachments from './ProjectAttachments';
 import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
 import Dropdown from '@/components/ui/Dropdown';
-import { Info, MessageSquare, Paperclip } from 'lucide-react';
+import { MessageSquare, Paperclip } from 'lucide-react';
 
 interface TaskKanbanProps {
   projectId?: number;
@@ -387,6 +387,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         description: taskDetails.description || null,
         status: 'todo',
         priority: taskDetails.priority,
+        team_id: taskDetails.team_id,
         project_id: taskDetails.project_id,
         assignee_id: taskDetails.assignee_id,
         due_date: taskDetails.due_date || null,

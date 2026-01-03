@@ -135,6 +135,10 @@ export { managementAPI, teamsAPI, employeesAPI } from './management';
 export { onboardingAPI } from './onboarding';
 export type { OnboardingStep, OnboardingProgress, EmployeeOnboardingItem } from './onboarding';
 
+// Re-export feedback API
+export { feedbackAPI } from './feedback';
+export type { Feedback, FeedbackCreate, FeedbackUpdate, FeedbackType, FeedbackStatus } from './feedback';
+
 // Re-export agenda module API (unified)
 export { agendaModuleAPI } from './agenda-unified';
 export type {
