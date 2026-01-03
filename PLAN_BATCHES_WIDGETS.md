@@ -19,12 +19,12 @@
 
 ---
 
-### 📦 Batch 2: Widgets Projets Priorité HAUTE
-- [ ] `budget-vs-actual` - Budget vs Dépensé
-- [ ] `projects-timeline` - Timeline des projets
-- [ ] `tasks-completion-trend` - Tendance complétion tâches
+### ✅ Batch 2: Widgets Projets Priorité HAUTE
+- [x] `budget-vs-actual` - Budget vs Dépensé
+- [x] `projects-timeline` - Timeline des projets
+- [x] `tasks-completion-trend` - Tendance complétion tâches
 
-**Statut:** 0/3 widgets créés
+**Statut:** ✅ COMPLÉTÉ - 3/3 widgets créés et pushés
 
 ---
 
@@ -119,12 +119,12 @@
 
 ## 📈 Progression Globale
 
-- **Batches complétés:** 1/10 (10%)
-- **Widgets créés:** 3/40 (7.5%)
+- **Batches complétés:** 2/10 (20%)
+- **Widgets créés:** 6/40 (15%)
 - **Intégrations complétées:** 0/1
 
 ## 🔄 Dernière Mise à Jour
 
-- **Date:** Batch 1 complété et pushé
-- **Batch actif:** Batch 2 (Projets Priorité HAUTE)
-- **Prochaine étape:** Créer les 3 widgets du Batch 2
+- **Date:** Batch 2 complété et pushé
+- **Batch actif:** Batch 3 (Finances Priorité HAUTE)
+- **Prochaine étape:** Créer les 3 widgets du Batch 3
