@@ -57,6 +57,15 @@ def _get_employee_model():
         logger.debug(f"Employee model not available: {e}")
         return None
 
+def _get_pipeline_model():
+    """Get Pipeline model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import Pipeline
+        return Pipeline
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"Pipeline model not available: {e}")
+        return None
+
 
 class LeoContextService:
     """Service for building ERP context for Leo"""
@@ -70,10 +79,10 @@ class LeoContextService:
         """Analyze the query to determine which data types are relevant"""
         query_lower = query.lower()
         
-        # Keywords for each data type
+        # Keywords for each data type (more tolerant to typos)
         contact_keywords = ["contact", "personne", "client", "prospect", "personnel", "qui est", "qui", "nommé", "appelé", "connais", "connais-tu", "connaissez"]
-        company_keywords = ["entreprise", "company", "société", "client", "clients", "organisation", "combien de client", "combien de clients", "avons nous", "avons-nous"]
-        opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente", "pipeline"]
+        company_keywords = ["entreprise", "company", "société", "client", "clients", "cleint", "cleints", "organisation", "combien de client", "combien de clients", "avons nous", "avons-nous", "module commercial"]
+        opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente", "pipeline", "pipeline de vente", "pipelines"]
         project_keywords = ["projet", "project", "mission"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
@@ -631,132 +640,118 @@ class LeoContextService:
         data: Dict[str, List[Dict[str, Any]]],
         query: str
     ) -> str:
-        """Format data into readable context string"""
+        """Format data into readable context string - SIMPLIFIED for better AI understanding"""
         context_parts = []
         query_lower = query.lower()
         
         # Detect counting queries
         is_counting_query = any(phrase in query_lower for phrase in [
-            "combien", "how many", "nombre", "total", "count"
+            "combien", "how many", "nombre", "total", "count", "quantité"
         ])
         
+        # For counting queries, provide summary first, then details if needed
+        if is_counting_query:
+            summary_parts = []
+            if data.get("contacts"):
+                summary_parts.append(f"CONTACTS: {len(data['contacts'])}")
+            if data.get("companies"):
+                clients_count = sum(1 for c in data["companies"] if c.get("is_client"))
+                if any(word in query_lower for word in ["client", "clients"]):
+                    summary_parts.append(f"CLIENTS: {clients_count}")
+                else:
+                    summary_parts.append(f"ENTREPRISES: {len(data['companies'])} (dont {clients_count} clients)")
+            if data.get("employees"):
+                summary_parts.append(f"EMPLOYÉS: {len(data['employees'])}")
+            if data.get("opportunities"):
+                summary_parts.append(f"OPPORTUNITÉS: {len(data['opportunities'])}")
+            if data.get("projects"):
+                summary_parts.append(f"PROJETS: {len(data['projects'])}")
+            
+            if summary_parts:
+                context_parts.append("=== RÉSUMÉ ===")
+                context_parts.append(" | ".join(summary_parts))
+                context_parts.append("")
+        
+        # Detailed data (simplified format)
         if data.get("contacts"):
-            total_contacts = len(data["contacts"])
-            if is_counting_query:
-                context_parts.append(f"=== CONTACTS (TOTAL: {total_contacts}) ===")
-            else:
-                context_parts.append("=== CONTACTS ===")
-            
-            # For counting queries, show more items or just the count
-            max_contacts = 50 if is_counting_query else 10
+            if not is_counting_query:
+                context_parts.append(f"=== CONTACTS ({len(data['contacts'])}) ===")
+            # For counting queries, only show a few examples
+            max_contacts = 5 if is_counting_query else 10
             for contact in data["contacts"][:max_contacts]:
-                parts = [f"- {contact['nom_complet']}"]
+                line = f"{contact['nom_complet']}"
                 if contact.get("email"):
-                    parts.append(f"({contact['email']})")
-                if contact.get("position"):
-                    parts.append(f"- {contact['position']}")
+                    line += f" ({contact['email']})"
                 if contact.get("entreprise"):
-                    parts.append(f"chez {contact['entreprise']}")
-                if contact.get("ville"):
-                    parts.append(f"- {contact['ville']}")
-                context_parts.append(" ".join(parts))
-            
-            if is_counting_query and total_contacts > max_contacts:
-                context_parts.append(f"... et {total_contacts - max_contacts} autres contacts")
+                    line += f" - {contact['entreprise']}"
+                context_parts.append(line)
+            if is_counting_query and len(data["contacts"]) > max_contacts:
+                context_parts.append(f"... et {len(data['contacts']) - max_contacts} autres")
             context_parts.append("")
         
         if data.get("companies"):
-            total_companies = len(data["companies"])
-            clients_count = sum(1 for c in data["companies"] if c.get("is_client"))
+            if not is_counting_query:
+                total_companies = len(data["companies"])
+                clients_count = sum(1 for c in data["companies"] if c.get("is_client"))
+                context_parts.append(f"=== ENTREPRISES ({total_companies}, dont {clients_count} clients) ===")
             
-            if is_counting_query:
-                context_parts.append(f"=== ENTREPRISES (TOTAL: {total_companies}, CLIENTS: {clients_count}) ===")
-            else:
-                context_parts.append("=== ENTREPRISES ===")
-            
-            # For counting queries, show more items or prioritize clients
-            max_companies = 100 if is_counting_query else 10
-            
-            # If counting query and asking about clients, prioritize showing clients
+            # For counting queries about clients, show only count, not list
             if is_counting_query and any(word in query_lower for word in ["client", "clients"]):
-                # Show all clients first, then prospects
-                clients = [c for c in data["companies"] if c.get("is_client")]
-                prospects = [c for c in data["companies"] if not c.get("is_client")]
-                
-                for company in clients[:max_companies]:
-                    parts = [f"- {company['name']}"]
-                    if company.get("ville") or company.get("pays"):
-                        location = ", ".join(filter(None, [company.get("ville"), company.get("pays")]))
-                        parts.append(f"- {location}")
-                    parts.append("- Client")
-                    context_parts.append(" ".join(parts))
-                
-                if len(clients) > max_companies:
-                    context_parts.append(f"... et {len(clients) - max_companies} autres clients")
+                clients_count = sum(1 for c in data["companies"] if c.get("is_client"))
+                context_parts.append(f"Nombre total de CLIENTS: {clients_count}")
             else:
-                # Regular display
+                # Show companies (limited for readability)
+                max_companies = 10
                 for company in data["companies"][:max_companies]:
-                    parts = [f"- {company['name']}"]
-                    if company.get("ville") or company.get("pays"):
-                        location = ", ".join(filter(None, [company.get("ville"), company.get("pays")]))
-                        parts.append(f"- {location}")
+                    line = f"{company['name']}"
                     if company.get("is_client"):
-                        parts.append("- Client")
+                        line += " [CLIENT]"
                     else:
-                        parts.append("- Prospect")
-                    context_parts.append(" ".join(parts))
-            
-            if is_counting_query and total_companies > max_companies and not any(word in query_lower for word in ["client", "clients"]):
-                context_parts.append(f"... et {total_companies - max_companies} autres entreprises")
+                        line += " [PROSPECT]"
+                    context_parts.append(line)
+                if len(data["companies"]) > max_companies:
+                    context_parts.append(f"... et {len(data['companies']) - max_companies} autres")
             context_parts.append("")
         
         if data.get("opportunities"):
-            context_parts.append("=== OPPORTUNITÉS ===")
-            for opp in data["opportunities"][:10]:
-                parts = [f"- {opp['nom']}"]
-                if opp.get("montant"):
-                    parts.append(f"- Montant: {opp['montant']}€")
-                if opp.get("statut"):
-                    parts.append(f"- Statut: {opp['statut']}")
-                context_parts.append(" ".join(parts))
+            if is_counting_query:
+                # For counting, just show summary
+                total_opps = len(data["opportunities"])
+                if total_opps > 0:
+                    max_amount = max((float(opp.get("montant", 0) or 0) for opp in data["opportunities"]), default=0)
+                    context_parts.append(f"=== OPPORTUNITÉS ({total_opps}) ===")
+                    context_parts.append(f"Montant maximum: {max_amount}€")
+            else:
+                context_parts.append(f"=== OPPORTUNITÉS ({len(data['opportunities'])}) ===")
+                # Show top opportunities by amount
+                sorted_opps = sorted(data["opportunities"], key=lambda x: float(x.get("montant", 0) or 0), reverse=True)
+                for opp in sorted_opps[:5]:
+                    line = f"{opp['nom']}"
+                    if opp.get("montant"):
+                        line += f" - {opp['montant']}€"
+                    if opp.get("statut"):
+                        line += f" [{opp['statut']}]"
+                    context_parts.append(line)
             context_parts.append("")
         
         if data.get("projects"):
-            context_parts.append("=== PROJETS ===")
-            for project in data["projects"][:10]:
-                parts = [f"- {project['name']}"]
-                if project.get("status"):
-                    parts.append(f"- Statut: {project['status']}")
-                if project.get("budget"):
-                    parts.append(f"- Budget: {project['budget']}€")
-                if project.get("etape"):
-                    parts.append(f"- Étape: {project['etape']}")
-                context_parts.append(" ".join(parts))
-            context_parts.append("")
+            if not is_counting_query:
+                context_parts.append(f"=== PROJETS ({len(data['projects'])}) ===")
+                for project in data["projects"][:5]:
+                    line = f"{project['name']}"
+                    if project.get("status"):
+                        line += f" [{project['status']}]"
+                    context_parts.append(line)
+                context_parts.append("")
         
         if data.get("employees"):
-            total_employees = len(data["employees"])
-            if is_counting_query:
-                context_parts.append(f"=== EMPLOYÉS (TOTAL: {total_employees}) ===")
-            else:
-                context_parts.append("=== EMPLOYÉS ===")
-            
-            # For counting queries, show more items
-            max_employees = 50 if is_counting_query else 10
-            for employee in data["employees"][:max_employees]:
-                parts = [f"- {employee['nom_complet']}"]
-                if employee.get("email"):
-                    parts.append(f"({employee['email']})")
-                if employee.get("poste"):
-                    parts.append(f"- {employee['poste']}")
-                if employee.get("equipe"):
-                    parts.append(f"dans l'équipe {employee['equipe']}")
-                if employee.get("numero_employe"):
-                    parts.append(f"- N°: {employee['numero_employe']}")
-                context_parts.append(" ".join(parts))
-            
-            if is_counting_query and total_employees > max_employees:
-                context_parts.append(f"... et {total_employees - max_employees} autres employés")
-            context_parts.append("")
+            if not is_counting_query:
+                context_parts.append(f"=== EMPLOYÉS ({len(data['employees'])}) ===")
+                for employee in data["employees"][:10]:
+                    line = f"{employee['nom_complet']}"
+                    if employee.get("email"):
+                        line += f" ({employee['email']})"
+                    context_parts.append(line)
+                context_parts.append("")
         
         return "\n".join(context_parts)
