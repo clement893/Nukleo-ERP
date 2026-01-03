@@ -363,6 +363,11 @@ export function getNavigationConfig(isAdmin: boolean): NavigationConfig {
       icon: <Shield className="w-5 h-5" />,
       items: [
         {
+          name: 'Tickets de Feedback',
+          href: '/admin/feedback',
+          icon: <MessageSquare className="w-5 h-5" />,
+        },
+        {
           name: 'Logs',
           href: '/admin/testing',
           icon: <FileText className="w-5 h-5" />,
