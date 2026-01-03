@@ -10,6 +10,7 @@ from app.models import User
 from app.services.ai_service import AIService, AIProvider
 from app.services.documentation_service import get_documentation_service
 from app.core.database import get_db
+from app.core.logging import logger
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -112,6 +113,9 @@ async def chat_completion(
                         # Analyze query to determine relevant data types
                         data_types = context_service.analyze_query(last_user_message)
                         
+                        # Log for debugging
+                        logger.debug(f"Leo query analysis for '{last_user_message}': {data_types}")
+                        
                         # Get relevant data
                         relevant_data = await context_service.get_relevant_data(
                             current_user.id,
@@ -119,21 +123,30 @@ async def chat_completion(
                             last_user_message
                         )
                         
+                        # Log data found
+                        data_counts = {k: len(v) for k, v in relevant_data.items()}
+                        logger.debug(f"Leo context data found: {data_counts}")
+                        
                         # Build context string
                         erp_context = await context_service.build_context_string(
                             relevant_data,
                             last_user_message
                         )
+                        
+                        if erp_context:
+                            logger.debug(f"Leo ERP context generated ({len(erp_context)} chars)")
                 except Exception as e:
-                    logger.warning(f"Could not load ERP context: {e}")
+                    logger.warning(f"Could not load ERP context: {e}", exc_info=True)
                     erp_context = ""
             
             # Add ERP context to system prompt if available
             if erp_context:
-                system_prompt += f"\n\n=== DONNÉES ERP DISPONIBLES ===\n{erp_context}\n=== FIN DES DONNÉES ===\n\nUtilise ces informations pour répondre précisément aux questions de l'utilisateur."
+                system_prompt += f"\n\n=== DONNÉES ERP DISPONIBLES ===\n{erp_context}\n=== FIN DES DONNÉES ===\n\nUtilise ces informations pour répondre précisément aux questions de l'utilisateur. Si l'utilisateur mentionne une personne, une entreprise, un projet ou une opportunité, utilise les données fournies ci-dessus pour répondre avec les informations réelles."
+            else:
+                # Even if no specific context, add instruction that Leo has access to ERP data
+                system_prompt += "\n\nTu as accès aux données de l'ERP Nukleo (contacts, entreprises, projets, opportunités). Si l'utilisateur mentionne une personne, une entreprise ou un projet, tu peux utiliser ces informations pour répondre."
         except Exception as e:
             # If Leo settings fail, use defaults
-            from app.core.logging import logger
             logger.debug(f"Could not load Leo settings, using defaults: {e}")
             if not system_prompt:
                 system_prompt = "Tu es Leo, l'assistant IA de l'ERP Nukleo. Réponds toujours en français sauf demande contraire. Sois concis mais complet."

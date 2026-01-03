@@ -41,7 +41,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<number | undefined>();
   const context = useDashboardContext();
-  const { addWidget } = useDashboardStore(context);
+  const { addWidget, getActiveConfig } = useDashboardStore(context);
 
   // Load custom widgets
   useEffect(() => {
@@ -90,8 +90,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
     if (!widgetDef) return;
 
     // Trouver la position disponible (en bas de la grille)
-    const store = useDashboardStore(context);
-    const activeConfig = store.getActiveConfig();
+    const activeConfig = getActiveConfig();
     const maxY = activeConfig?.layouts.reduce((max, w) => Math.max(max, w.y + w.h), 0) || 0;
 
     addWidget({
@@ -110,8 +109,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
 
   const handleAddCustomWidget = (customWidget: CustomWidget) => {
     // Trouver la position disponible (en bas de la grille)
-    const store = useDashboardStore(context);
-    const activeConfig = store.getActiveConfig();
+    const activeConfig = getActiveConfig();
     const maxY = activeConfig?.layouts.reduce((max, w) => Math.max(max, w.y + w.h), 0) || 0;
 
     addWidget({

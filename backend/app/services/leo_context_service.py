@@ -34,7 +34,7 @@ class LeoContextService:
         query_lower = query.lower()
         
         # Keywords for each data type
-        contact_keywords = ["contact", "personne", "client", "prospect", "personnel"]
+        contact_keywords = ["contact", "personne", "client", "prospect", "personnel", "qui est", "qui", "nommé", "appelé"]
         company_keywords = ["entreprise", "company", "société", "client", "clients", "organisation"]
         opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente", "pipeline"]
         project_keywords = ["projet", "project", "mission"]
@@ -42,8 +42,21 @@ class LeoContextService:
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
         employee_keywords = ["employé", "employee", "collègue", "équipe", "team"]
         
+        # Check if query contains what looks like a person name (capitalized words)
+        # This is a simple heuristic: if there are capitalized words that aren't at the start of sentence
+        has_potential_name = False
+        words = query.split()
+        if len(words) > 0:
+            # Check for capitalized words that might be names
+            capitalized_words = [w for w in words if w and w[0].isupper() and len(w) > 2]
+            # If we have 2+ capitalized words or a capitalized word that's not a common word, likely a name
+            if len(capitalized_words) >= 2:
+                has_potential_name = True
+            elif len(capitalized_words) == 1 and capitalized_words[0].lower() not in ["le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "dans", "sur", "pour", "avec", "sans", "par"]:
+                has_potential_name = True
+        
         return {
-            "contacts": any(word in query_lower for word in contact_keywords),
+            "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name,
             "companies": any(word in query_lower for word in company_keywords),
             "opportunities": any(word in query_lower for word in opportunity_keywords) if OPPORTUNITIES_AVAILABLE else False,
             "projects": any(word in query_lower for word in project_keywords),
@@ -81,6 +94,12 @@ class LeoContextService:
         try:
             keywords = self._extract_keywords(query)
             
+            # Also extract potential names (capitalized words)
+            words = query.split()
+            potential_names = [w.strip(".,!?;:()[]{}") for w in words if w and w[0].isupper() and len(w) > 2]
+            # Add potential names to keywords (keep original case for name matching)
+            all_keywords = list(set(keywords + potential_names))
+            
             # Build query
             stmt = select(Contact).options(
                 selectinload(Contact.company),
@@ -88,18 +107,46 @@ class LeoContextService:
             )
             
             # Filter by keywords if any
-            if keywords:
+            if all_keywords:
                 conditions = []
-                for keyword in keywords:
+                for keyword in all_keywords:
+                    keyword_lower = keyword.lower()
+                    # Search in various fields (case-insensitive)
                     conditions.extend([
-                        Contact.first_name.ilike(f"%{keyword}%"),
-                        Contact.last_name.ilike(f"%{keyword}%"),
-                        Contact.email.ilike(f"%{keyword}%"),
-                        Contact.position.ilike(f"%{keyword}%"),
-                        Contact.city.ilike(f"%{keyword}%"),
-                        Contact.country.ilike(f"%{keyword}%"),
+                        Contact.first_name.ilike(f"%{keyword_lower}%"),
+                        Contact.last_name.ilike(f"%{keyword_lower}%"),
+                        Contact.email.ilike(f"%{keyword_lower}%"),
+                        Contact.position.ilike(f"%{keyword_lower}%"),
+                        Contact.city.ilike(f"%{keyword_lower}%"),
+                        Contact.country.ilike(f"%{keyword_lower}%"),
                     ])
+                    # Also try with original case for names (e.g., "Daly", "Ann")
+                    if keyword[0].isupper():
+                        conditions.extend([
+                            Contact.first_name.ilike(f"%{keyword}%"),
+                            Contact.last_name.ilike(f"%{keyword}%"),
+                            # Try combining first and last name (e.g., "Daly Ann" -> search for both)
+                            func.concat(Contact.first_name, ' ', Contact.last_name).ilike(f"%{keyword}%"),
+                        ])
                 stmt = stmt.where(or_(*conditions))
+            else:
+                # If no keywords but query contains capitalized words, still search
+                # This handles cases like "Daly Ann" where stop words might filter everything
+                capitalized_words = [w.strip(".,!?;:()[]{}") for w in words if w and w[0].isupper() and len(w) > 2]
+                if capitalized_words:
+                    conditions = []
+                    for word in capitalized_words:
+                        word_lower = word.lower()
+                        conditions.extend([
+                            Contact.first_name.ilike(f"%{word_lower}%"),
+                            Contact.last_name.ilike(f"%{word_lower}%"),
+                            Contact.first_name.ilike(f"%{word}%"),
+                            Contact.last_name.ilike(f"%{word}%"),
+                            func.concat(Contact.first_name, ' ', Contact.last_name).ilike(f"%{word}%"),
+                            func.concat(Contact.first_name, ' ', Contact.last_name).ilike(f"%{word_lower}%"),
+                        ])
+                    if conditions:
+                        stmt = stmt.where(or_(*conditions))
             
             # Limit results
             stmt = stmt.limit(limit)
@@ -123,6 +170,7 @@ class LeoContextService:
                     "cercle": contact.circle,
                 })
             
+            logger.debug(f"Found {len(formatted)} contacts for query: {query}")
             return formatted
         except Exception as e:
             logger.error(f"Error getting relevant contacts: {e}", exc_info=True)
