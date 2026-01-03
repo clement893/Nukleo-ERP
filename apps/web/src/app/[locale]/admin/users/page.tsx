@@ -271,16 +271,21 @@ export default function AdminUsersPage() {
   });
 
   const deleteInvitationMutation = useMutation({
-    mutationFn: (invitationId: string) => invitationsAPI.cancel(invitationId),
-    onSuccess: () => {
+    mutationFn: async (invitationId: string) => {
+      const response = await invitationsAPI.cancel(invitationId);
+      return response;
+    },
+    onSuccess: async () => {
       showToast({ message: 'Invitation supprimée avec succès', type: 'success' });
-      // Invalidate and refetch invitations
-      queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
-      refetchInvitations();
+      // Invalidate and refetch invitations immediately
+      await queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
+      await refetchInvitations();
     },
     onError: (error) => {
       const appError = handleApiError(error);
       showToast({ message: appError.message || 'Erreur lors de la suppression de l\'invitation', type: 'error' });
+      // Still try to refetch in case of error
+      refetchInvitations();
     },
   });
 
