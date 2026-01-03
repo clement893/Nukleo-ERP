@@ -110,6 +110,13 @@ function OpportunityKanbanCard({
     opacity: isDragging || isDraggableDragging ? 0.5 : 1,
   };
 
+  // Séparer listeners pour éviter les conflits de types
+  const dragListeners = listeners ? { ...listeners } : {};
+  // Retirer onClick de dragListeners si présent pour éviter le conflit avec notre onClick personnalisé
+  if ('onClick' in dragListeners) {
+    delete dragListeners.onClick;
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-CA', { 
       style: 'currency', 
@@ -133,7 +140,7 @@ function OpportunityKanbanCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...dragListeners}
       className="mb-2"
     >
       <Card 
@@ -147,7 +154,7 @@ function OpportunityKanbanCard({
           };
           hasMovedRef.current = false;
           // Appeler le handler du drag si présent
-          if (listeners.onMouseDown) {
+          if (listeners?.onMouseDown) {
             (listeners.onMouseDown as (e: React.MouseEvent) => void)(e);
           }
         }}
@@ -161,7 +168,7 @@ function OpportunityKanbanCard({
             }
           }
           // Appeler le handler du drag si présent
-          if (listeners.onMouseMove) {
+          if (listeners?.onMouseMove) {
             (listeners.onMouseMove as (e: React.MouseEvent) => void)(e);
           }
         }}
