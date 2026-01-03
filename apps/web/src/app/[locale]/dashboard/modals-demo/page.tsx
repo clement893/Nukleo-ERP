@@ -40,6 +40,13 @@ export default function ModalsDemo() {
     description: '',
   });
 
+  // Role options for select
+  const roleOptions = [
+    { label: 'Utilisateur', value: 'user' },
+    { label: 'Administrateur', value: 'admin' },
+    { label: 'Manager', value: 'manager' },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Hero Header */}
@@ -519,11 +526,8 @@ export default function ModalsDemo() {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border-2 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
-              >
-                <option value="user">Utilisateur</option>
-                <option value="admin">Administrateur</option>
-                <option value="manager">Manager</option>
-              </Select>
+                options={roleOptions}
+              />
             </div>
 
             <div>
