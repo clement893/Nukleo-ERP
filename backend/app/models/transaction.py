@@ -4,7 +4,7 @@ Financial transactions (revenues and expenses)
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, func, Numeric, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, func, Numeric, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import relationship
 import enum
 
@@ -66,7 +66,7 @@ class Transaction(Base):
     notes = Column(Text, nullable=True)
     
     # Recurring
-    is_recurring = Column(String(10), default="false", nullable=False)  # "true" or "false" as string
+    is_recurring = Column(Boolean, default=False, nullable=False)  # Boolean type
     recurring_id = Column(Integer, nullable=True)  # Link to recurring transaction template
     
     # Metadata

@@ -323,7 +323,7 @@ async def create_transaction(
             supplier_name=transaction_data.supplier_name,
             invoice_number=transaction_data.invoice_number,
             notes=transaction_data.notes,
-            is_recurring=transaction_data.is_recurring or "false",
+            is_recurring=transaction_data.is_recurring if transaction_data.is_recurring is not None else False,
             recurring_id=transaction_data.recurring_id,
             transaction_metadata=transaction_data.transaction_metadata,
         )
@@ -902,11 +902,12 @@ async def import_transactions(
                     'is_recurrent', 'recurrent_expense', 'depense_recurrente',
                     'recurrent expense', 'depense récurrente'
                 ])
-                is_recurring = "false"
+                # Convert to boolean (database expects boolean type)
+                is_recurring = False
                 if is_recurring_value:
                     recurring_str = str(is_recurring_value).lower().strip()
                     if recurring_str in ['true', '1', 'yes', 'oui', 'vrai', 'recurrent', 'recurrente', 'récurrent']:
-                        is_recurring = "true"
+                        is_recurring = True
                 
                 # Detect if invoice received (has invoice_number and is expense)
                 # Factures reçues sont automatiquement identifiées par la présence d'invoice_number

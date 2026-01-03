@@ -236,16 +236,35 @@ async def ensure_transaction_currency_column() -> None:
             else:
                 logger.debug("notes column already exists")
             
-            # Check and add is_recurring column
+            # Check and add/convert is_recurring column
             if 'is_recurring' not in existing_columns:
                 logger.info("Adding missing is_recurring column to transactions table...")
                 await conn.execute(text("""
                     ALTER TABLE transactions 
-                    ADD COLUMN is_recurring VARCHAR(10) NOT NULL DEFAULT 'false'
+                    ADD COLUMN is_recurring BOOLEAN NOT NULL DEFAULT false
                 """))
                 logger.info("Successfully added is_recurring column to transactions table")
             else:
-                logger.debug("is_recurring column already exists")
+                # Check if column is VARCHAR and convert to BOOLEAN if needed
+                result = await conn.execute(text("""
+                    SELECT data_type 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'transactions' AND column_name = 'is_recurring'
+                """))
+                col_type = result.fetchone()
+                if col_type and col_type[0] in ['character varying', 'varchar']:
+                    logger.info("Converting is_recurring column from VARCHAR to BOOLEAN...")
+                    await conn.execute(text("""
+                        ALTER TABLE transactions 
+                        ALTER COLUMN is_recurring TYPE BOOLEAN 
+                        USING CASE 
+                            WHEN is_recurring::text IN ('true', '1', 'yes', 'oui', 'vrai') THEN true 
+                            ELSE false 
+                        END
+                    """))
+                    logger.info("Successfully converted is_recurring column to BOOLEAN")
+                else:
+                    logger.debug("is_recurring column already exists with correct type")
             
             # Check and add recurring_id column
             if 'recurring_id' not in existing_columns:

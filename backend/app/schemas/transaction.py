@@ -29,7 +29,7 @@ class TransactionBase(BaseModel):
     supplier_name: Optional[str] = Field(None, max_length=200)  # Nom du fournisseur
     invoice_number: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
-    is_recurring: str = Field(default="false")
+    is_recurring: bool = Field(default=False)
     recurring_id: Optional[int] = None
     transaction_metadata: Optional[str] = None
 
@@ -57,7 +57,7 @@ class TransactionUpdate(BaseModel):
     supplier_name: Optional[str] = Field(None, max_length=200)
     invoice_number: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
-    is_recurring: Optional[str] = None
+    is_recurring: Optional[bool] = None
     recurring_id: Optional[int] = None
     transaction_metadata: Optional[str] = None
 
