@@ -55,9 +55,9 @@ export function getAccessibleWidgetTypes(
 export function getFilteredWidgetRegistry(
   hasModuleAccess: (module: string) => boolean,
   registry: Record<WidgetType, WidgetDefinition> = widgetRegistry
-): Partial<Record<WidgetType, WidgetDefinition>> {
+): Record<WidgetType, WidgetDefinition> {
   const accessibleTypes = getAccessibleWidgetTypes(hasModuleAccess, registry);
-  const filtered: Partial<Record<WidgetType, WidgetDefinition>> = {};
+  const filtered: Record<string, WidgetDefinition> = {};
   
   accessibleTypes.forEach(type => {
     if (registry[type]) {
@@ -65,5 +65,5 @@ export function getFilteredWidgetRegistry(
     }
   });
   
-  return filtered;
+  return filtered as Record<WidgetType, WidgetDefinition>;
 }

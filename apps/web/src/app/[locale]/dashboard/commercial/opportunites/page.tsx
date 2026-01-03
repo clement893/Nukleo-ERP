@@ -669,7 +669,7 @@ function OpportunitiesContent() {
         </div>
 
         {/* Filters */}
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 relative z-10">
           <div className="space-y-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

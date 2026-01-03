@@ -225,7 +225,7 @@ export default function MultiSelect({
       {isOpen && (
         <div
           className={clsx(
-            'absolute z-50 w-full mt-1 bg-white dark:bg-gray-800',
+            'absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800',
             'border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg',
             'max-h-60 overflow-y-auto'
           )}
