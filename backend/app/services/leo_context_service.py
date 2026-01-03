@@ -113,6 +113,9 @@ class LeoContextService:
         opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente"]
         pipeline_keywords = ["pipeline", "pipeline de vente", "pipelines", "pipeline commercial"]
         project_keywords = ["projet", "project", "mission", "proejt", "projets", "projects"]  # Include typos
+        task_keywords = ["tâche", "task", "tache", "taches", "tâches", "en cours", "à faire", "todo", "doing", "done", "assigné", "assignee", "assignation"]
+        vacation_keywords = ["vacance", "vacances", "congé", "congés", "holiday", "holidays", "demande", "demandes", "request", "requests"]
+        expense_keywords = ["dépense", "dépenses", "expense", "expenses", "compte de dépense", "expense account", "remboursement", "reimbursement"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
         employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes"]
@@ -166,6 +169,9 @@ class LeoContextService:
             "opportunities": any(word in query_lower for word in opportunity_keywords) if opp_available else False,
             "pipelines": any(word in query_lower for word in pipeline_keywords),
             "projects": any(word in query_lower for word in project_keywords),
+            "tasks": any(word in query_lower for word in task_keywords),
+            "vacation_requests": any(word in query_lower for word in vacation_keywords),
+            "expense_accounts": any(word in query_lower for word in expense_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
             "events": any(word in query_lower for word in event_keywords),
             "employees": is_employee_query if emp_available else False,
@@ -715,6 +721,233 @@ class LeoContextService:
             logger.error(f"Error getting relevant pipelines: {e}", exc_info=True)
             return []
 
+    async def get_relevant_tasks(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant project tasks based on query"""
+        ProjectTask, TaskStatus = _get_project_task_model()
+        if ProjectTask is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Detect status filters
+            status_filter = None
+            if any(phrase in query_lower for phrase in ["en cours", "in progress", "doing"]):
+                status_filter = TaskStatus.IN_PROGRESS
+            elif any(phrase in query_lower for phrase in ["à faire", "todo", "à commencer"]):
+                status_filter = TaskStatus.TODO
+            elif any(phrase in query_lower for phrase in ["terminé", "terminée", "completed", "done", "fini"]):
+                status_filter = TaskStatus.COMPLETED
+            elif any(phrase in query_lower for phrase in ["bloqué", "blocked"]):
+                status_filter = TaskStatus.BLOCKED
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(ProjectTask).options(
+                selectinload(ProjectTask.project),
+                selectinload(ProjectTask.assignee)
+            )
+            stmt = scope_query(stmt, ProjectTask)
+            
+            # Apply status filter if detected
+            if status_filter:
+                stmt = stmt.where(ProjectTask.status == status_filter)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting task query detected - returning all tasks (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            tasks = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for task in tasks:
+                formatted.append({
+                    "id": task.id,
+                    "title": task.title,
+                    "status": task.status.value if hasattr(task.status, 'value') else str(task.status),
+                    "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
+                    "project": task.project.name if task.project else None,
+                    "assignee": f"{task.assignee.first_name} {task.assignee.last_name}" if task.assignee else None,
+                    "due_date": task.due_date.isoformat() if task.due_date else None,
+                })
+            
+            logger.debug(f"Found {len(formatted)} tasks for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant tasks: {e}", exc_info=True)
+            return []
+
+    async def get_relevant_vacation_requests(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant vacation requests based on query"""
+        VacationRequest = _get_vacation_request_model()
+        if VacationRequest is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Detect status filters
+            status_filter = None
+            if any(phrase in query_lower for phrase in ["en attente", "pending", "en attente d'approbation"]):
+                status_filter = "pending"
+            elif any(phrase in query_lower for phrase in ["approuvé", "approved", "approuvée", "approuvées"]):
+                status_filter = "approved"
+            elif any(phrase in query_lower for phrase in ["refusé", "rejected", "refusée", "refusées"]):
+                status_filter = "rejected"
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(VacationRequest).options(
+                selectinload(VacationRequest.employee)
+            )
+            stmt = scope_query(stmt, VacationRequest)
+            
+            # Apply status filter if detected
+            if status_filter:
+                stmt = stmt.where(VacationRequest.status == status_filter)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting vacation request query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            vacation_requests = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for vr in vacation_requests:
+                formatted.append({
+                    "id": vr.id,
+                    "employee": f"{vr.employee.first_name} {vr.employee.last_name}" if vr.employee else None,
+                    "start_date": vr.start_date.isoformat() if vr.start_date else None,
+                    "end_date": vr.end_date.isoformat() if vr.end_date else None,
+                    "status": vr.status,
+                    "reason": vr.reason,
+                })
+            
+            logger.debug(f"Found {len(formatted)} vacation requests for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant vacation requests: {e}", exc_info=True)
+            return []
+
+    async def get_relevant_expense_accounts(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant expense accounts based on query"""
+        ExpenseAccount, ExpenseAccountStatus = _get_expense_account_model()
+        if ExpenseAccount is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Detect status filters
+            status_filter = None
+            if any(phrase in query_lower for phrase in ["en attente", "pending", "soumis", "submitted", "en révision", "under review"]):
+                # Map to appropriate status
+                if "soumis" in query_lower or "submitted" in query_lower:
+                    status_filter = ExpenseAccountStatus.SUBMITTED.value
+                elif "révision" in query_lower or "review" in query_lower:
+                    status_filter = ExpenseAccountStatus.UNDER_REVIEW.value
+                else:
+                    status_filter = ExpenseAccountStatus.SUBMITTED.value
+            elif any(phrase in query_lower for phrase in ["approuvé", "approved", "approuvée", "approuvées"]):
+                status_filter = ExpenseAccountStatus.APPROVED.value
+            elif any(phrase in query_lower for phrase in ["refusé", "rejected", "refusée", "refusées"]):
+                status_filter = ExpenseAccountStatus.REJECTED.value
+            elif any(phrase in query_lower for phrase in ["brouillon", "draft"]):
+                status_filter = ExpenseAccountStatus.DRAFT.value
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(ExpenseAccount).options(
+                selectinload(ExpenseAccount.employee)
+            )
+            stmt = scope_query(stmt, ExpenseAccount)
+            
+            # Apply status filter if detected
+            if status_filter:
+                stmt = stmt.where(ExpenseAccount.status == status_filter)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting expense account query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            expense_accounts = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for ea in expense_accounts:
+                formatted.append({
+                    "id": ea.id,
+                    "account_number": ea.account_number,
+                    "title": ea.title,
+                    "status": ea.status,
+                    "total_amount": float(ea.total_amount) if ea.total_amount else 0.0,
+                    "currency": ea.currency,
+                    "employee": f"{ea.employee.first_name} {ea.employee.last_name}" if ea.employee else None,
+                    "submitted_at": ea.submitted_at.isoformat() if ea.submitted_at else None,
+                })
+            
+            logger.debug(f"Found {len(formatted)} expense accounts for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant expense accounts: {e}", exc_info=True)
+            return []
+
     async def get_relevant_data(
         self,
         user_id: int,
@@ -741,6 +974,15 @@ class LeoContextService:
         
         if data_types.get("pipelines"):
             result["pipelines"] = await self.get_relevant_pipelines(user_id, query)
+        
+        if data_types.get("tasks"):
+            result["tasks"] = await self.get_relevant_tasks(user_id, query)
+        
+        if data_types.get("vacation_requests"):
+            result["vacation_requests"] = await self.get_relevant_vacation_requests(user_id, query)
+        
+        if data_types.get("expense_accounts"):
+            result["expense_accounts"] = await self.get_relevant_expense_accounts(user_id, query)
         
         return result
 
@@ -861,6 +1103,38 @@ class LeoContextService:
                 summary_parts.append(f"PIPELINES: {len(data['pipelines'])}")
             if data.get("projects"):
                 summary_parts.append(f"PROJETS: {len(data['projects'])}")
+            if data.get("tasks"):
+                # Count by status
+                tasks = data["tasks"]
+                in_progress = sum(1 for t in tasks if t.get("status") == "in_progress")
+                todo = sum(1 for t in tasks if t.get("status") == "todo")
+                completed = sum(1 for t in tasks if t.get("status") == "completed")
+                if any(word in query_lower for word in ["en cours", "in progress"]):
+                    summary_parts.append(f"TÂCHES EN COURS: {in_progress}")
+                else:
+                    summary_parts.append(f"TÂCHES: {len(tasks)} ({in_progress} en cours, {todo} à faire, {completed} terminées)")
+            if data.get("vacation_requests"):
+                # Count by status
+                vrs = data["vacation_requests"]
+                pending = sum(1 for v in vrs if v.get("status") == "pending")
+                approved = sum(1 for v in vrs if v.get("status") == "approved")
+                if any(word in query_lower for word in ["en attente", "pending"]):
+                    summary_parts.append(f"VACANCES EN ATTENTE: {pending}")
+                elif any(word in query_lower for word in ["approuvé", "approved"]):
+                    summary_parts.append(f"VACANCES APPROUVÉES: {approved}")
+                else:
+                    summary_parts.append(f"DEMANDES VACANCES: {len(vrs)} ({pending} en attente, {approved} approuvées)")
+            if data.get("expense_accounts"):
+                # Count by status
+                eas = data["expense_accounts"]
+                approved = sum(1 for e in eas if e.get("status") == "approved")
+                pending = sum(1 for e in eas if e.get("status") in ["submitted", "under_review"])
+                if any(word in query_lower for word in ["approuvé", "approved"]):
+                    summary_parts.append(f"DÉPENSES APPROUVÉES: {approved}")
+                elif any(word in query_lower for word in ["en attente", "pending"]):
+                    summary_parts.append(f"DÉPENSES EN ATTENTE: {pending}")
+                else:
+                    summary_parts.append(f"COMPTES DÉPENSES: {len(eas)} ({approved} approuvés, {pending} en attente)")
             
             if summary_parts:
                 context_parts.append("RÉSUMÉ: " + " | ".join(summary_parts))
@@ -938,6 +1212,80 @@ class LeoContextService:
                     if pipeline.get("is_default"):
                         line += " [PAR DÉFAUT]"
                     context_parts.append(line)
+                context_parts.append("")
+        
+        if data.get("tasks"):
+            if not is_counting_query:
+                tasks = data["tasks"]
+                # Group by status
+                in_progress = [t for t in tasks if t.get("status") == "in_progress"]
+                todo = [t for t in tasks if t.get("status") == "todo"]
+                completed = [t for t in tasks if t.get("status") == "completed"]
+                
+                context_parts.append(f"=== TÂCHES ({len(tasks)}) ===")
+                if in_progress:
+                    context_parts.append(f"En cours ({len(in_progress)}):")
+                    for task in in_progress[:10]:
+                        line = f"- {task['title']}"
+                        if task.get("project"):
+                            line += f" [Projet: {task['project']}]"
+                        if task.get("assignee"):
+                            line += f" [Assigné: {task['assignee']}]"
+                        context_parts.append(line)
+                if todo and len(context_parts) < 20:  # Limit total output
+                    context_parts.append(f"À faire ({len(todo)}):")
+                    for task in todo[:5]:
+                        context_parts.append(f"- {task['title']}")
+                context_parts.append("")
+        
+        if data.get("vacation_requests"):
+            if not is_counting_query:
+                vrs = data["vacation_requests"]
+                # Group by status
+                pending = [v for v in vrs if v.get("status") == "pending"]
+                approved = [v for v in vrs if v.get("status") == "approved"]
+                
+                context_parts.append(f"=== DEMANDES DE VACANCES ({len(vrs)}) ===")
+                if pending:
+                    context_parts.append(f"En attente ({len(pending)}):")
+                    for vr in pending[:10]:
+                        line = f"- {vr['employee']}"
+                        if vr.get("start_date") and vr.get("end_date"):
+                            line += f": {vr['start_date']} au {vr['end_date']}"
+                        context_parts.append(line)
+                if approved and len(context_parts) < 25:
+                    context_parts.append(f"Approuvées ({len(approved)}):")
+                    for vr in approved[:5]:
+                        line = f"- {vr['employee']}"
+                        if vr.get("start_date") and vr.get("end_date"):
+                            line += f": {vr['start_date']} au {vr['end_date']}"
+                        context_parts.append(line)
+                context_parts.append("")
+        
+        if data.get("expense_accounts"):
+            if not is_counting_query:
+                eas = data["expense_accounts"]
+                # Group by status
+                approved = [e for e in eas if e.get("status") == "approved"]
+                pending = [e for e in eas if e.get("status") in ["submitted", "under_review"]]
+                
+                context_parts.append(f"=== COMPTES DE DÉPENSES ({len(eas)}) ===")
+                if approved:
+                    context_parts.append(f"Approuvés ({len(approved)}):")
+                    for ea in approved[:10]:
+                        line = f"- {ea['title']}"
+                        if ea.get("total_amount"):
+                            line += f": {ea['total_amount']:.2f} {ea.get('currency', 'EUR')}"
+                        if ea.get("employee"):
+                            line += f" [{ea['employee']}]"
+                        context_parts.append(line)
+                if pending and len(context_parts) < 25:
+                    context_parts.append(f"En attente ({len(pending)}):")
+                    for ea in pending[:5]:
+                        line = f"- {ea['title']}"
+                        if ea.get("total_amount"):
+                            line += f": {ea['total_amount']:.2f} {ea.get('currency', 'EUR')}"
+                        context_parts.append(line)
                 context_parts.append("")
         
         if data.get("projects"):

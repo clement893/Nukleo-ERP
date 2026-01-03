@@ -149,7 +149,7 @@ async def chat_completion(
             # If Leo settings fail, use defaults
             logger.debug(f"Could not load Leo settings, using defaults: {e}")
             if not system_prompt:
-                system_prompt = "Tu es Leo, l'assistant IA professionnel de l'ERP Nukleo. Réponds toujours en français sauf demande contraire. Sois concis mais complet. Utilise un ton professionnel et respectueux."
+                system_prompt = "Tu es Leo, l'assistant IA de l'ERP Nukleo. Réponds toujours en français sauf demande contraire. Sois concis mais complet."
         
         # Resolve provider
         provider = AIProvider(provider_preference) if provider_preference != "auto" else AIProvider.AUTO
