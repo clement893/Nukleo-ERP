@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
@@ -103,6 +103,9 @@ function OpportunityKanbanCard({
     isDragging: isDraggableDragging,
   } = useDraggable({ id: opportunity.id });
 
+  const clickStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const hasMovedRef = useRef(false);
+
   const style = {
     opacity: isDragging || isDraggableDragging ? 0.5 : 1,
   };
@@ -134,7 +137,41 @@ function OpportunityKanbanCard({
     >
       <Card 
         {...listeners}
-        className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative cursor-grab active:cursor-grabbing"
+        className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative cursor-pointer"
+        onMouseDown={(e: React.MouseEvent) => {
+          // Enregistrer la position et le temps du clic initial
+          clickStartRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            time: Date.now(),
+          };
+          hasMovedRef.current = false;
+        }}
+        onMouseMove={(e: React.MouseEvent) => {
+          // Si on a bougé de plus de 5px, c'est un drag
+          if (clickStartRef.current) {
+            const dx = Math.abs(e.clientX - clickStartRef.current.x);
+            const dy = Math.abs(e.clientY - clickStartRef.current.y);
+            if (dx > 5 || dy > 5) {
+              hasMovedRef.current = true;
+            }
+          }
+        }}
+        onClick={(e: React.MouseEvent) => {
+          // Ne pas ouvrir si on clique sur les boutons d'action
+          if ((e.target as HTMLElement).closest('button')) {
+            return;
+          }
+          // Ne pas ouvrir si on est en train de dragger
+          if (isDragging || isDraggableDragging) {
+            return;
+          }
+          // Ne pas ouvrir si on a bougé (c'était un drag, pas un clic)
+          if (hasMovedRef.current) {
+            return;
+          }
+          onView?.();
+        }}
       >
         {/* Drag Handle - now just visual indicator */}
         <div
