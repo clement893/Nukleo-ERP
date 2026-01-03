@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
+import Tabs, { TabList, Tab, TabPanels, TabPanel } from '@/components/ui/Tabs';
 import { Save, Loader2, RotateCcw } from 'lucide-react';
 import { leoSettingsAPI, type LeoSettings, type LeoSettingsUpdate } from '@/lib/api/leo-settings';
 import { useToast } from '@/components/ui';

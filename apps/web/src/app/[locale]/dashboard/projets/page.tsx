@@ -59,9 +59,9 @@ export default function OperationsDashboardPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const activeProjects = projects.filter(p => p.status === 'ACTIVE').length;
-    const completedProjects = projects.filter(p => p.status === 'COMPLETED').length;
-    const archivedProjects = projects.filter(p => p.status === 'ARCHIVED').length;
+    const activeProjects = projects.filter(p => p.status === 'active').length;
+    const completedProjects = projects.filter(p => p.status === 'completed').length;
+    const archivedProjects = projects.filter(p => p.status === 'archived').length;
     const onHoldProjects = projects.filter(p => {
       const status = p.status as string;
       return status === 'ON_HOLD' || status === 'on_hold';
@@ -116,7 +116,7 @@ export default function OperationsDashboardPage() {
     
     return projects
       .filter(p => {
-        if (p.status === 'COMPLETED' || p.status === 'ARCHIVED') return false;
+        if (p.status === 'completed' || p.status === 'archived') return false;
         
         // Projects without team
         if (!p.equipe) return true;

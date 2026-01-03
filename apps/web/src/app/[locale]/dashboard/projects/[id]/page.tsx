@@ -226,9 +226,9 @@ function ProjectDetailContent() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      ACTIVE: 'Actif',
-      COMPLETED: 'Terminé',
-      ARCHIVED: 'Archivé',
+      active: 'Actif',
+      completed: 'Terminé',
+      archived: 'Archivé',
     };
     return labels[status] || status;
   };
@@ -370,13 +370,13 @@ function ProjectDetailContent() {
             </div>
 
             <div className={`glass-badge px-4 py-2 rounded-full border flex items-center gap-2 ${
-              project.status === 'ACTIVE' ? 'bg-primary/20 text-primary border-primary/30' :
-              project.status === 'COMPLETED' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' :
+              project.status === 'active' ? 'bg-primary/20 text-primary border-primary/30' :
+              project.status === 'completed' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' :
               'bg-muted text-muted-foreground border-border'
             }`}>
               <span className={`w-2 h-2 rounded-full animate-pulse ${
-                project.status === 'ACTIVE' ? 'bg-primary' :
-                project.status === 'COMPLETED' ? 'bg-green-500' : 'bg-muted-foreground'
+                project.status === 'active' ? 'bg-primary' :
+                project.status === 'completed' ? 'bg-green-500' : 'bg-muted-foreground'
               }`} aria-hidden="true" />
               <Text variant="small" className="font-semibold">{getStatusLabel(project.status)}</Text>
             </div>
@@ -572,15 +572,15 @@ function ProjectDetailContent() {
                   {getStatusLabel(project.status)}
                 </p>
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  project.status === 'ACTIVE' ? 'bg-primary-500/20 text-primary-700 dark:text-primary-300' :
-                  project.status === 'COMPLETED' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
+                  project.status === 'active' ? 'bg-primary-500/20 text-primary-700 dark:text-primary-300' :
+                  project.status === 'completed' ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
                   'bg-gray-500/20 text-gray-700 dark:text-gray-300'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                    project.status === 'ACTIVE' ? 'bg-primary-500' :
-                    project.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gray-500'
+                    project.status === 'active' ? 'bg-primary-500' :
+                    project.status === 'completed' ? 'bg-green-500' : 'bg-gray-500'
                   }`} />
-                  {project.status === 'ACTIVE' ? 'En cours' : project.status === 'COMPLETED' ? 'Terminé' : 'Archivé'}
+                  {project.status === 'active' ? 'En cours' : project.status === 'completed' ? 'Terminé' : 'Archivé'}
                 </div>
               </div>
 

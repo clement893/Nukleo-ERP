@@ -149,8 +149,8 @@ export default function ClientDetailPage() {
         <ClientDetail
           client={client}
           projects={projects.map(p => {
-            // Convert lowercase status to uppercase to match Project type
-            const statusUpper = (p.status || 'ACTIVE').toUpperCase() as 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
+            // Ensure status is lowercase to match Project type
+            const statusLower = (p.status || 'active').toLowerCase() as 'active' | 'archived' | 'completed';
             return {
               id: p.id,
               name: p.name,

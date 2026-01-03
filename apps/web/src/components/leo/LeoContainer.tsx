@@ -78,12 +78,12 @@ export default function LeoContainer({ userId, className }: LeoContainerProps) {
         user_id: userId,
       });
 
-      const data = extractApiData(response.data);
+      const data = extractApiData<{ response?: string; provider?: string }>(response.data);
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.response || 'No response received',
+        content: data?.response || 'No response received',
         timestamp: new Date(),
-        provider: data.provider || currentProvider,
+        provider: data?.provider || currentProvider,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -91,9 +91,8 @@ export default function LeoContainer({ userId, className }: LeoContainerProps) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       showToast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
+        message: errorMessage,
+        type: 'error',
       });
     } finally {
       setIsLoading(false);

@@ -13,7 +13,7 @@ import Button from '@/components/ui/Button';
 import { Upload, Download, Trash2, FileText, Loader2 } from 'lucide-react';
 import { leoSettingsAPI } from '@/lib/api/leo-settings';
 import { useToast } from '@/components/ui';
-import { Alert } from '@/components/ui/Alert';
+import Alert from '@/components/ui/Alert';
 
 export interface LeoMarkdownUploadProps {
   fileName: string | null;

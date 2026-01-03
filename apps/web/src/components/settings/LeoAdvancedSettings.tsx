@@ -8,9 +8,9 @@
 
 import { type LeoSettings } from '@/lib/api/leo-settings';
 import Card from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Slider } from '@/components/ui/Slider';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Slider from '@/components/ui/Slider';
 
 export interface LeoAdvancedSettingsProps {
   settings: LeoSettings;
@@ -41,7 +41,6 @@ const ANTHROPIC_MODELS = [
 
 export default function LeoAdvancedSettings({
   settings,
-  defaultSettings,
   onChange,
 }: LeoAdvancedSettingsProps) {
   const modelOptions =
@@ -79,7 +78,7 @@ export default function LeoAdvancedSettings({
             max={2}
             step={0.1}
             value={settings.temperature}
-            onChange={(value) => onChange({ temperature: value })}
+            onChange={(value: number) => onChange({ temperature: value })}
             className="mt-2"
           />
           <p className="text-xs text-muted-foreground mt-2">
@@ -98,7 +97,7 @@ export default function LeoAdvancedSettings({
             min={1}
             max={4000}
             value={settings.max_tokens || ''}
-            onChange={(e) =>
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               onChange({
                 max_tokens: e.target.value ? parseInt(e.target.value) : null,
               })
@@ -119,7 +118,7 @@ export default function LeoAdvancedSettings({
           <Select
             id="provider"
             value={settings.provider_preference}
-            onChange={(e) =>
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               onChange({ provider_preference: e.target.value as LeoSettings['provider_preference'] })
             }
             options={PROVIDER_OPTIONS}
@@ -139,7 +138,7 @@ export default function LeoAdvancedSettings({
             <Select
               id="model"
               value={settings.model_preference || ''}
-              onChange={(e) =>
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 onChange({ model_preference: e.target.value || null })
               }
               options={modelOptions}

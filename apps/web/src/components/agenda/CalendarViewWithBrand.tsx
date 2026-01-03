@@ -290,7 +290,7 @@ export default function CalendarView({ className }: CalendarViewProps) {
             let status: 'pending' | 'completed' | 'overdue' | 'cancelled' = 'pending';
             let priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium';
             
-            if (project.status === 'completed' || project.status === 'COMPLETED') {
+            if (project.status === 'completed') {
               status = 'completed';
             } else if (daysUntilDeadline < 0) {
               status = 'overdue';

@@ -43,10 +43,9 @@ type SortField = 'name' | 'status' | 'equipe' | 'created_at' | 'deadline' | 'cli
 type SortDirection = 'asc' | 'desc';
 
 const statusConfig = {
-  ACTIVE: { label: 'Actif', color: 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/30', icon: TrendingUp },
-  COMPLETED: { label: 'Terminé', color: 'bg-success-500/10 text-success-600 dark:text-success-400 border-success-500/30', icon: CheckCircle2 },
-  ARCHIVED: { label: 'Archivé', color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30', icon: Archive },
-  ON_HOLD: { label: 'En pause', color: 'bg-warning-500/10 text-warning-600 dark:text-warning-400 border-warning-500/30', icon: Target },
+  active: { label: 'Actif', color: 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border-primary-500/30', icon: TrendingUp },
+  completed: { label: 'Terminé', color: 'bg-success-500/10 text-success-600 dark:text-success-400 border-success-500/30', icon: CheckCircle2 },
+  archived: { label: 'Archivé', color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30', icon: Archive },
 };
 
 // Helper function to calculate days until deadline
@@ -209,9 +208,9 @@ export default function ProjetsPage() {
   // Calculate stats
   const stats = useMemo(() => {
     const total = projects.length;
-    const active = projects.filter((p: Project) => p.status === 'ACTIVE').length;
-    const completed = projects.filter((p: Project) => p.status === 'COMPLETED').length;
-    const archived = projects.filter((p: Project) => p.status === 'ARCHIVED').length;
+    const active = projects.filter((p: Project) => p.status === 'active').length;
+    const completed = projects.filter((p: Project) => p.status === 'completed').length;
+    const archived = projects.filter((p: Project) => p.status === 'archived').length;
     
     const totalBudget = projects.reduce((sum: number, p: Project) => sum + (p.budget || 0), 0);
     // Spent amount calculation requires time entries and expenses API integration
@@ -515,22 +514,22 @@ export default function ProjetsPage() {
                   Tous
                 </Button>
                 <Button 
-                  variant={statusFilter === 'ACTIVE' ? 'primary' : 'outline'}
-                  onClick={() => setStatusFilter('ACTIVE')}
+                  variant={statusFilter === 'active' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('active')}
                   size="sm"
                 >
                   Actifs
                 </Button>
                 <Button 
-                  variant={statusFilter === 'COMPLETED' ? 'primary' : 'outline'}
-                  onClick={() => setStatusFilter('COMPLETED')}
+                  variant={statusFilter === 'completed' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('completed')}
                   size="sm"
                 >
                   Terminés
                 </Button>
                 <Button 
-                  variant={statusFilter === 'ARCHIVED' ? 'primary' : 'outline'}
-                  onClick={() => setStatusFilter('ARCHIVED')}
+                  variant={statusFilter === 'archived' ? 'primary' : 'outline'}
+                  onClick={() => setStatusFilter('archived')}
                   size="sm"
                 >
                   Archivés
@@ -658,9 +657,9 @@ export default function ProjetsPage() {
                 >
                   {/* Status indicator bar */}
                   <div className={`absolute top-0 left-0 right-0 h-1 ${
-                    project.status === 'ACTIVE' ? 'bg-primary-500' :
-                    project.status === 'COMPLETED' ? 'bg-success-500' :
-                    project.status === 'ARCHIVED' ? 'bg-gray-500' :
+                    project.status === 'active' ? 'bg-primary-500' :
+                    project.status === 'completed' ? 'bg-success-500' :
+                    project.status === 'archived' ? 'bg-gray-500' :
                     'bg-warning-500'
                   }`} />
 

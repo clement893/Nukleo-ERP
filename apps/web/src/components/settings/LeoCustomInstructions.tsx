@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import Card from '@/components/ui/Card';
-import { Textarea } from '@/components/ui/Textarea';
+import Textarea from '@/components/ui/Textarea';
 
 export interface LeoCustomInstructionsProps {
   value: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Upload, Edit, X, Briefcase, Users, Calendar, DollarSign, Link as LinkIcon, FileText, Target } from 'lucide-react';
+import { Plus, Upload, Edit, Briefcase, Users, DollarSign, Link as LinkIcon, FileText, Download } from 'lucide-react';
 import { Button, Card, Input, Select, Textarea, Modal } from '@/components/ui';
 
 export default function CreationProjetDemoPage() {
@@ -160,7 +160,7 @@ export default function CreationProjetDemoPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Créer un nouveau projet"
-        size="large"
+        size="lg"
       >
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Projet créé !'); setShowCreateModal(false); }}>
           {/* Basic Info */}
@@ -342,7 +342,7 @@ export default function CreationProjetDemoPage() {
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         title="Éditer le projet"
-        size="large"
+        size="lg"
       >
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Projet modifié !'); setShowEditModal(false); }}>
           {/* Same structure but with editData */}
@@ -512,7 +512,7 @@ export default function CreationProjetDemoPage() {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         title="Importer des projets"
-        size="medium"
+        size="md"
       >
         <div className="space-y-6">
           <div className="text-center">
