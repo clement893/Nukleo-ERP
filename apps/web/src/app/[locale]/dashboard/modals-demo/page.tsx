@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { 
   Sparkles, Plus, Edit, Trash2, Eye, Users, Settings, 
-  FileText, Mail, Calendar, DollarSign, Target, Briefcase,
-  AlertCircle, CheckCircle, Info, XCircle
+  FileText,
+  AlertCircle, CheckCircle
 } from 'lucide-react';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import Drawer from '@/components/ui/Drawer';
