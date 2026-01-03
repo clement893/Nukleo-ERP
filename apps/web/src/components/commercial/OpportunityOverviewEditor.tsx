@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOpportunityEditor } from '@/hooks/useOpportunityEditor';
 import { Opportunity } from '@/lib/api/opportunities';
@@ -16,12 +16,11 @@ import { companiesAPI } from '@/lib/api/companies';
 import { contactsAPI } from '@/lib/api/contacts';
 import { apiClient } from '@/lib/api/client';
 import { extractApiData } from '@/lib/api/utils';
-import { Card, Button, Input, Textarea, Select, DatePicker, Badge } from '@/components/ui';
+import { Card, Button, Input, Textarea, Select, DatePicker } from '@/components/ui';
 import { 
   Loader2, 
   Check, 
   AlertCircle, 
-  Save,
   DollarSign,
   TrendingUp,
   Tag,
@@ -132,7 +131,7 @@ function EditableField({
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              variant="default"
+              variant="primary"
               onClick={onSave}
               className="flex items-center gap-1"
             >
@@ -181,7 +180,6 @@ export function OpportunityOverviewEditor({
     saveOpportunity,
     error,
     lastSavedAt,
-    hasChanges,
   } = useOpportunityEditor({
     opportunityId,
     initialOpportunity,
