@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Sparkles, Plus, Edit, Trash2, Eye, Users, Settings, 
   FileText,
-  AlertCircle, CheckCircle
+  AlertCircle, CheckCircle, Info, HelpCircle, Save
 } from 'lucide-react';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import Drawer from '@/components/ui/Drawer';
@@ -48,296 +48,368 @@ export default function ModalsDemo() {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817]" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItMnptMC0ydi0yIDJ6bS0yIDB2Mmgydi0yaC0yem0wLTJ2Mmgydi0yaC0yem0yIDB2Mmgydi0yaC0yem0wIDJ2Mmgydi0yaC0yem0tMiAwdjJoMnYtMmgtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
-        <div className="relative px-10 py-12">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
-              <Sparkles className="w-8 h-8 text-white" />
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Compact Hero Header */}
+      <div className="relative overflow-hidden rounded-xl shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700" />
+        <div className="relative px-6 py-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Modals & Drawers Demo
+              <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Modals & Drawers - Guide Complet
               </h1>
-              <p className="text-white/90 text-xl font-medium">
-                Testez tous les styles de modals et drawers ultra-modernes
+              <p className="text-white/80 text-sm">
+                Design raffiné, couleurs subtiles, tailles compactes
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modals Section */}
-      <div className="space-y-6">
-        <h2 className="text-3xl font-black mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-          🎨 Modals avec Gradients
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Aurora Modal */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
-            <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] w-fit shadow-lg">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Aurora Borealis
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
-                    Gradient par défaut du système Nukleo
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowAuroraModal(true)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[#5F2B75] via-[#523DC9] to-[#6B1817] hover:opacity-90 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                >
-                  Ouvrir
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Violet Modal */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
-            <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 w-fit shadow-lg">
-                  <Plus className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Violet/Purple
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
-                    Parfait pour les actions de création
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowVioletModal(true)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                >
-                  Ouvrir
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Blue Modal */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
-            <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 w-fit shadow-lg">
-                  <Edit className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Blue/Cyan
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
-                    Idéal pour les modifications
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowBlueModal(true)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                >
-                  Ouvrir
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Green Modal */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
-            <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 w-fit shadow-lg">
-                  <CheckCircle className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Green/Emerald
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
-                    Pour les confirmations positives
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowGreenModal(true)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                >
-                  Ouvrir
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Orange Modal */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
-            <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 w-fit shadow-lg">
-                  <AlertCircle className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Orange/Red
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
-                    Pour les alertes et suppressions
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowOrangeModal(true)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                >
-                  Ouvrir
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Modal */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
-            <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 w-fit shadow-lg">
-                  <FileText className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Formulaire
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
-                    Modal avec formulaire complet
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowFormModal(true)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                >
-                  Ouvrir
-                </button>
-              </div>
-            </div>
+      {/* Introduction Card */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="space-y-2 text-sm">
+            <p className="font-semibold text-blue-900 dark:text-blue-100">
+              Les composants Modal et Drawer ont été modernisés avec :
+            </p>
+            <ul className="space-y-1 text-blue-800 dark:text-blue-200">
+              <li>• <strong>Couleurs subtiles</strong> : Gradients raffinés et professionnels</li>
+              <li>• <strong>Tailles compactes</strong> : Padding et spacing réduits</li>
+              <li>• <strong>Backdrop léger</strong> : 40% opacité + blur subtil</li>
+              <li>• <strong>Icônes 16px</strong> : Plus discrètes et élégantes</li>
+            </ul>
           </div>
         </div>
       </div>
 
-      {/* Sizes Section */}
-      <div className="space-y-6">
-        <h2 className="text-3xl font-black mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-          📏 Tailles de Modals
+      {/* Gradients Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            🎨 Variantes de Gradients
+          </h2>
+          <span className="text-sm text-gray-500">5 options disponibles</span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Aurora */}
+          <button
+            onClick={() => setShowAuroraModal(true)}
+            className="group text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold">Aurora</h3>
+                <p className="text-xs text-gray-500">gradient="aurora"</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Par défaut. Pour actions générales et vues principales.
+            </p>
+          </button>
+
+          {/* Violet */}
+          <button
+            onClick={() => setShowVioletModal(true)}
+            className="group text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-violet-500 dark:hover:border-violet-500 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600">
+                <Plus className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold">Violet</h3>
+                <p className="text-xs text-gray-500">gradient="violet"</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Création. Ajouter projet, utilisateur, document.
+            </p>
+          </button>
+
+          {/* Blue */}
+          <button
+            onClick={() => setShowBlueModal(true)}
+            className="group text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600">
+                <Edit className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold">Blue</h3>
+                <p className="text-xs text-gray-500">gradient="blue"</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Édition. Modifier profil, projet, paramètres.
+            </p>
+          </button>
+
+          {/* Green */}
+          <button
+            onClick={() => setShowGreenModal(true)}
+            className="group text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold">Green</h3>
+                <p className="text-xs text-gray-500">gradient="green"</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Succès. Confirmation, validation, import réussi.
+            </p>
+          </button>
+
+          {/* Orange */}
+          <button
+            onClick={() => setShowOrangeModal(true)}
+            className="group text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-orange-500 dark:hover:border-orange-500 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-orange-600 to-red-600">
+                <AlertCircle className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold">Orange</h3>
+                <p className="text-xs text-gray-500">gradient="orange"</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Alerte. Suppression, avertissement, danger.
+            </p>
+          </button>
+
+          {/* Form Example */}
+          <button
+            onClick={() => setShowFormModal(true)}
+            className="group text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-500 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600">
+                <FileText className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold">Formulaire</h3>
+                <p className="text-xs text-gray-500">Exemple complet</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Modal avec formulaire et footer personnalisé.
+            </p>
+          </button>
+        </div>
+      </div>
+
+      {/* Usage Guide */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          📖 Guide d'Utilisation
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Basic Usage */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded bg-purple-100 dark:bg-purple-900/30">
+                <HelpCircle className="w-4 h-4 text-purple-600" />
+              </div>
+              <h3 className="font-bold text-sm">Usage Basique</h3>
+            </div>
+            <pre className="text-xs bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
+{`<Modal
+  isOpen={show}
+  onClose={() => setShow(false)}
+  title="Mon Modal"
+  gradient="violet"
+>
+  <p>Contenu du modal</p>
+</Modal>`}
+            </pre>
+          </div>
+
+          {/* With Icon */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/30">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+              </div>
+              <h3 className="font-bold text-sm">Avec Icône Personnalisée</h3>
+            </div>
+            <pre className="text-xs bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
+{`<Modal
+  isOpen={show}
+  onClose={() => setShow(false)}
+  title="Éditer"
+  gradient="blue"
+  icon={<Edit className="w-4 h-4 text-white" />}
+>
+  <form>...</form>
+</Modal>`}
+            </pre>
+          </div>
+
+          {/* With Footer */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded bg-green-100 dark:bg-green-900/30">
+                <Save className="w-4 h-4 text-green-600" />
+              </div>
+              <h3 className="font-bold text-sm">Avec Footer</h3>
+            </div>
+            <pre className="text-xs bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
+{`<Modal
+  isOpen={show}
+  onClose={() => setShow(false)}
+  title="Confirmer"
+  gradient="green"
+  footer={
+    <>
+      <Button onClick={onCancel}>
+        Annuler
+      </Button>
+      <Button onClick={onSave}>
+        Enregistrer
+      </Button>
+    </>
+  }
+>
+  <p>Contenu</p>
+</Modal>`}
+            </pre>
+          </div>
+
+          {/* ConfirmModal */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded bg-orange-100 dark:bg-orange-900/30">
+                <Trash2 className="w-4 h-4 text-orange-600" />
+              </div>
+              <h3 className="font-bold text-sm">Modal de Confirmation</h3>
+            </div>
+            <pre className="text-xs bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
+{`<ConfirmModal
+  isOpen={show}
+  onClose={() => setShow(false)}
+  onConfirm={handleDelete}
+  title="Supprimer ?"
+  message="Action irréversible"
+  confirmText="Supprimer"
+  gradient="orange"
+/>`}
+            </pre>
+          </div>
+        </div>
+      </div>
+
+      {/* Sizes */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          📏 Tailles Disponibles
+        </h2>
+        
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <button
             onClick={() => setShowSmallModal(true)}
-            className="p-6 rounded-2xl border-2 border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500 transition-all hover:scale-105 text-left"
+            className="p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-all text-center"
           >
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Small (sm)
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">Confirmations rapides</p>
+            <p className="font-bold text-sm">Small</p>
+            <p className="text-xs text-gray-500">size="sm"</p>
           </button>
-
           <button
             onClick={() => setShowBasicModal(true)}
-            className="p-6 rounded-2xl border-2 border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500 transition-all hover:scale-105 text-left"
+            className="p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-all text-center"
           >
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Medium (md)
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">Taille par défaut</p>
+            <p className="font-bold text-sm">Medium</p>
+            <p className="text-xs text-gray-500">size="md"</p>
           </button>
-
           <button
             onClick={() => setShowLargeModal(true)}
-            className="p-6 rounded-2xl border-2 border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500 transition-all hover:scale-105 text-left"
+            className="p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-all text-center"
           >
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Large (lg)
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">Formulaires complexes</p>
+            <p className="font-bold text-sm">Large</p>
+            <p className="text-xs text-gray-500">size="lg"</p>
+          </button>
+          <button
+            onClick={() => setShowConfirmModal(true)}
+            className="p-3 rounded-lg border-2 border-orange-200 dark:border-orange-700 hover:border-orange-500 transition-all text-center"
+          >
+            <p className="font-bold text-sm">Confirm</p>
+            <p className="text-xs text-gray-500">ConfirmModal</p>
           </button>
         </div>
       </div>
 
-      {/* Drawers Section */}
-      <div className="space-y-6">
-        <h2 className="text-3xl font-black mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      {/* Drawers */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
           📱 Drawers (Panneaux Latéraux)
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
             onClick={() => setShowRightDrawer(true)}
-            className="p-6 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/20 dark:to-purple-900/20 hover:scale-105 transition-all"
+            className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-all"
           >
-            <Users className="w-8 h-8 mb-3 text-violet-600" />
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Drawer Droit
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Position par défaut</p>
+            <Users className="w-5 h-5 mb-2 text-violet-600" />
+            <p className="font-bold text-sm">Droit</p>
+            <p className="text-xs text-gray-500">position="right"</p>
           </button>
-
           <button
             onClick={() => setShowLeftDrawer(true)}
-            className="p-6 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 hover:scale-105 transition-all"
+            className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
           >
-            <Settings className="w-8 h-8 mb-3 text-blue-600" />
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Drawer Gauche
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Navigation</p>
+            <Settings className="w-5 h-5 mb-2 text-blue-600" />
+            <p className="font-bold text-sm">Gauche</p>
+            <p className="text-xs text-gray-500">position="left"</p>
           </button>
-
           <button
             onClick={() => setShowDrawerAurora(true)}
-            className="p-6 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 hover:scale-105 transition-all"
+            className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all"
           >
-            <Sparkles className="w-8 h-8 mb-3 text-purple-600" />
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Aurora Drawer
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Gradient Aurora</p>
+            <Sparkles className="w-5 h-5 mb-2 text-purple-600" />
+            <p className="font-bold text-sm">Aurora</p>
+            <p className="text-xs text-gray-500">gradient="aurora"</p>
           </button>
-
           <button
             onClick={() => setShowDrawerViolet(true)}
-            className="p-6 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 hover:scale-105 transition-all"
+            className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all"
           >
-            <Eye className="w-8 h-8 mb-3 text-green-600" />
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Violet Drawer
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Gradient Violet</p>
+            <Eye className="w-5 h-5 mb-2 text-green-600" />
+            <p className="font-bold text-sm">Détails</p>
+            <p className="text-xs text-gray-500">gradient="violet"</p>
           </button>
         </div>
       </div>
 
-      {/* Special Modals */}
-      <div className="space-y-6">
-        <h2 className="text-3xl font-black mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-          ⚡ Modals Spéciaux
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <button
-            onClick={() => setShowConfirmModal(true)}
-            className="p-6 rounded-2xl border-2 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all hover:scale-105 text-left"
-          >
-            <Trash2 className="w-8 h-8 mb-3 text-red-600" />
-            <h3 className="text-xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              ConfirmModal
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">Modal de confirmation avec actions</p>
-          </button>
+      {/* Best Practices */}
+      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div className="space-y-2 text-sm">
+            <p className="font-semibold text-green-900 dark:text-green-100">
+              Bonnes Pratiques
+            </p>
+            <ul className="space-y-1 text-green-800 dark:text-green-200">
+              <li>• Utiliser <code className="px-1 py-0.5 bg-green-100 dark:bg-green-900/40 rounded text-xs">gradient="violet"</code> pour les créations</li>
+              <li>• Utiliser <code className="px-1 py-0.5 bg-green-100 dark:bg-green-900/40 rounded text-xs">gradient="blue"</code> pour les éditions</li>
+              <li>• Utiliser <code className="px-1 py-0.5 bg-green-100 dark:bg-green-900/40 rounded text-xs">gradient="orange"</code> pour les suppressions</li>
+              <li>• Ajouter une icône contextuelle avec la prop <code className="px-1 py-0.5 bg-green-100 dark:bg-green-900/40 rounded text-xs">icon</code></li>
+              <li>• Préférer <code className="px-1 py-0.5 bg-green-100 dark:bg-green-900/40 rounded text-xs">ConfirmModal</code> pour les confirmations simples</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -351,18 +423,16 @@ export default function ModalsDemo() {
         gradient="aurora"
         size="md"
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Ceci est un modal avec le gradient <strong>Aurora Borealis</strong>, le gradient par défaut du système Nukleo.
+        <div className="space-y-3">
+          <p>
+            Gradient <strong>Aurora</strong> (purple → indigo → purple). Utilisé par défaut pour les actions générales.
           </p>
-          <div className="p-4 rounded-xl bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
-            <p className="font-semibold">✨ Caractéristiques :</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Backdrop blur intense (60% + blur-md)</li>
-              <li>Gradient Aurora Borealis dans le header</li>
-              <li>Icône Sparkles par défaut</li>
-              <li>Animations fluides</li>
-              <li>Border radius généreux (rounded-3xl)</li>
+          <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-sm">
+            <p className="font-semibold mb-2">Quand l'utiliser :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Actions générales et vues principales</li>
+              <li>Dashboards et statistiques</li>
+              <li>Informations importantes</li>
             </ul>
           </div>
         </div>
@@ -374,20 +444,20 @@ export default function ModalsDemo() {
         onClose={() => setShowVioletModal(false)}
         title="Créer un élément"
         gradient="violet"
-        icon={<Plus className="w-6 h-6 text-white" />}
+        icon={<Plus className="w-4 h-4 text-white" />}
         size="md"
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Modal avec gradient <strong>Violet/Purple</strong>, parfait pour les actions de création.
+        <div className="space-y-3">
+          <p>
+            Gradient <strong>Violet</strong> (violet → purple). Parfait pour les actions de création.
           </p>
-          <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-900/20">
-            <p className="font-semibold">🎨 Utilisation recommandée :</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Création de projets</li>
-              <li>Ajout d'utilisateurs</li>
+          <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-sm">
+            <p className="font-semibold mb-2">Exemples d'utilisation :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Créer un projet</li>
+              <li>Ajouter un utilisateur</li>
               <li>Nouveau document</li>
-              <li>Toute action "Créer"</li>
+              <li>Inviter un membre</li>
             </ul>
           </div>
         </div>
@@ -399,20 +469,20 @@ export default function ModalsDemo() {
         onClose={() => setShowBlueModal(false)}
         title="Modifier l'élément"
         gradient="blue"
-        icon={<Edit className="w-6 h-6 text-white" />}
+        icon={<Edit className="w-4 h-4 text-white" />}
         size="md"
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Modal avec gradient <strong>Blue/Cyan</strong>, idéal pour les modifications.
+        <div className="space-y-3">
+          <p>
+            Gradient <strong>Blue</strong> (blue → cyan). Idéal pour les modifications.
           </p>
-          <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20">
-            <p className="font-semibold">✏️ Utilisation recommandée :</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Édition de profil</li>
-              <li>Modification de projet</li>
-              <li>Mise à jour de données</li>
-              <li>Toute action "Éditer"</li>
+          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-sm">
+            <p className="font-semibold mb-2">Exemples d'utilisation :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Éditer un profil</li>
+              <li>Modifier un projet</li>
+              <li>Mettre à jour des paramètres</li>
+              <li>Changer des informations</li>
             </ul>
           </div>
         </div>
@@ -424,20 +494,20 @@ export default function ModalsDemo() {
         onClose={() => setShowGreenModal(false)}
         title="Succès !"
         gradient="green"
-        icon={<CheckCircle className="w-6 h-6 text-white" />}
+        icon={<CheckCircle className="w-4 h-4 text-white" />}
         size="md"
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Modal avec gradient <strong>Green/Emerald</strong>, pour les confirmations positives.
+        <div className="space-y-3">
+          <p>
+            Gradient <strong>Green</strong> (green → emerald). Pour les confirmations positives.
           </p>
-          <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20">
-            <p className="font-semibold">✅ Utilisation recommandée :</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
+          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-sm">
+            <p className="font-semibold mb-2">Exemples d'utilisation :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
               <li>Confirmation de succès</li>
               <li>Validation d'action</li>
-              <li>Import de fichiers</li>
-              <li>Opération réussie</li>
+              <li>Import réussi</li>
+              <li>Sauvegarde effectuée</li>
             </ul>
           </div>
         </div>
@@ -449,20 +519,20 @@ export default function ModalsDemo() {
         onClose={() => setShowOrangeModal(false)}
         title="Attention !"
         gradient="orange"
-        icon={<AlertCircle className="w-6 h-6 text-white" />}
+        icon={<AlertCircle className="w-4 h-4 text-white" />}
         size="md"
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Modal avec gradient <strong>Orange/Red</strong>, pour les alertes et suppressions.
+        <div className="space-y-3">
+          <p>
+            Gradient <strong>Orange</strong> (orange → red). Pour les alertes et suppressions.
           </p>
-          <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20">
-            <p className="font-semibold">⚠️ Utilisation recommandée :</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Suppression d'éléments</li>
-              <li>Alertes importantes</li>
+          <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-sm">
+            <p className="font-semibold mb-2">Exemples d'utilisation :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Supprimer un élément</li>
               <li>Actions irréversibles</li>
-              <li>Avertissements</li>
+              <li>Avertissements importants</li>
+              <li>Confirmations de danger</li>
             </ul>
           </div>
         </div>
@@ -474,14 +544,13 @@ export default function ModalsDemo() {
         onClose={() => setShowFormModal(false)}
         title="Formulaire d'inscription"
         gradient="violet"
-        icon={<Users className="w-6 h-6 text-white" />}
+        icon={<Users className="w-4 h-4 text-white" />}
         size="lg"
         footer={
           <>
             <Button
               variant="outline"
               onClick={() => setShowFormModal(false)}
-              className="flex-1 py-3 rounded-xl border-2 hover:scale-105 transition-all"
             >
               Annuler
             </Button>
@@ -490,56 +559,50 @@ export default function ModalsDemo() {
                 alert('Formulaire soumis !');
                 setShowFormModal(false);
               }}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
             >
               Enregistrer
             </Button>
           </>
         }
       >
-        <form className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold mb-2">Nom complet *</label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Jean Dupont"
-                className="w-full px-4 py-3 rounded-xl border-2 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
-              />
-            </div>
+        <form className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1.5">Nom complet *</label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Jean Dupont"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-bold mb-2">Email *</label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="jean@example.com"
-                className="w-full px-4 py-3 rounded-xl border-2 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1.5">Email *</label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="jean@example.com"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-bold mb-2">Rôle</label>
-              <Select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border-2 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
-                options={roleOptions}
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1.5">Rôle</label>
+            <Select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              className="w-full"
+              options={roleOptions}
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-bold mb-2">Description</label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Décrivez votre profil..."
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border-2 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 resize-none"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1.5">Description</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Décrivez votre profil..."
+              rows={3}
+            />
           </div>
         </form>
       </Modal>
@@ -552,7 +615,7 @@ export default function ModalsDemo() {
         gradient="blue"
         size="sm"
       >
-        <p>Ceci est un modal de taille <strong>small (sm)</strong>, parfait pour les confirmations rapides.</p>
+        <p className="text-sm">Modal de taille <strong>small (sm)</strong>, parfait pour les confirmations rapides.</p>
       </Modal>
 
       {/* Basic Modal */}
@@ -563,7 +626,7 @@ export default function ModalsDemo() {
         gradient="aurora"
         size="md"
       >
-        <p>Ceci est un modal de taille <strong>medium (md)</strong>, la taille par défaut.</p>
+        <p className="text-sm">Modal de taille <strong>medium (md)</strong>, la taille par défaut.</p>
       </Modal>
 
       {/* Large Modal */}
@@ -574,16 +637,16 @@ export default function ModalsDemo() {
         gradient="green"
         size="lg"
       >
-        <div className="space-y-4">
-          <p>Ceci est un modal de taille <strong>large (lg)</strong>, idéal pour les formulaires complexes.</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800">
-              <h4 className="font-bold mb-2">Colonne 1</h4>
-              <p className="text-sm">Contenu de la première colonne</p>
+        <div className="space-y-3">
+          <p className="text-sm">Modal de taille <strong>large (lg)</strong>, idéal pour les formulaires complexes.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <h4 className="font-semibold text-sm mb-1">Colonne 1</h4>
+              <p className="text-xs">Contenu de la première colonne</p>
             </div>
-            <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800">
-              <h4 className="font-bold mb-2">Colonne 2</h4>
-              <p className="text-sm">Contenu de la deuxième colonne</p>
+            <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <h4 className="font-semibold text-sm mb-1">Colonne 2</h4>
+              <p className="text-xs">Contenu de la deuxième colonne</p>
             </div>
           </div>
         </div>
@@ -611,31 +674,31 @@ export default function ModalsDemo() {
         title="Détails utilisateur"
         position="right"
         gradient="none"
-        icon={<Users className="w-5 h-5 text-white" />}
+        icon={<Users className="w-4 h-4 text-white" />}
       >
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
               JD
             </div>
             <div>
-              <h3 className="text-xl font-bold">Jean Dupont</h3>
-              <p className="text-gray-600 dark:text-gray-400">jean@example.com</p>
+              <h3 className="font-bold">Jean Dupont</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">jean@example.com</p>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800">
-              <p className="text-sm font-bold mb-1">Rôle</p>
-              <p>Administrateur</p>
+          <div className="space-y-2">
+            <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <p className="text-xs font-semibold mb-1">Rôle</p>
+              <p className="text-sm">Administrateur</p>
             </div>
-            <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800">
-              <p className="text-sm font-bold mb-1">Département</p>
-              <p>Développement</p>
+            <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <p className="text-xs font-semibold mb-1">Département</p>
+              <p className="text-sm">Développement</p>
             </div>
-            <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800">
-              <p className="text-sm font-bold mb-1">Date d'inscription</p>
-              <p>15 janvier 2026</p>
+            <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <p className="text-xs font-semibold mb-1">Date d'inscription</p>
+              <p className="text-sm">15 janvier 2026</p>
             </div>
           </div>
         </div>
@@ -648,13 +711,13 @@ export default function ModalsDemo() {
         title="Navigation"
         position="left"
         gradient="blue"
-        icon={<Settings className="w-5 h-5 text-white" />}
+        icon={<Settings className="w-4 h-4 text-white" />}
       >
-        <div className="space-y-2">
+        <div className="space-y-1">
           {['Dashboard', 'Projets', 'Équipes', 'Rapports', 'Paramètres'].map((item) => (
             <button
               key={item}
-              className="w-full p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-left transition-all"
+              className="w-full p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-left transition-all text-sm"
             >
               {item}
             </button>
@@ -671,15 +734,15 @@ export default function ModalsDemo() {
         gradient="aurora"
         size="lg"
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Drawer avec le gradient <strong>Aurora Borealis</strong>.
+        <div className="space-y-3">
+          <p className="text-sm">
+            Drawer avec le gradient <strong>Aurora</strong>.
           </p>
-          <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20">
-            <p className="font-semibold mb-2">✨ Caractéristiques :</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Backdrop blur intense</li>
-              <li>Gradient Aurora dans le header</li>
+          <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-sm">
+            <p className="font-semibold mb-2">Caractéristiques :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Backdrop blur subtil</li>
+              <li>Gradient raffiné dans le header</li>
               <li>Slide animation fluide</li>
               <li>Taille large (lg)</li>
             </ul>
@@ -691,18 +754,18 @@ export default function ModalsDemo() {
       <Drawer
         isOpen={showDrawerViolet}
         onClose={() => setShowDrawerViolet(false)}
-        title="Violet Drawer"
+        title="Détails"
         position="right"
         gradient="violet"
-        icon={<Eye className="w-5 h-5 text-white" />}
+        icon={<Eye className="w-4 h-4 text-white" />}
       >
-        <div className="space-y-4">
-          <p className="text-lg">
-            Drawer avec le gradient <strong>Violet/Purple</strong>.
+        <div className="space-y-3">
+          <p className="text-sm">
+            Drawer avec le gradient <strong>Violet</strong>.
           </p>
-          <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-900/20">
-            <p className="font-semibold mb-2">🎨 Parfait pour :</p>
-            <ul className="list-disc list-inside space-y-1">
+          <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-sm">
+            <p className="font-semibold mb-2">Parfait pour :</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
               <li>Détails de projets</li>
               <li>Informations utilisateur</li>
               <li>Prévisualisation</li>

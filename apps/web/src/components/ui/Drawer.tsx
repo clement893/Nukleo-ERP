@@ -1,12 +1,12 @@
 /**
- * Drawer Component - Ultra-Modern Design
+ * Drawer Component - Ultra-Modern Design (Refined)
  * 
  * Slide-out panel with Nukleo design system:
- * - Intense backdrop blur
- * - Aurora Borealis gradient headers
+ * - Subtle backdrop blur
+ * - Refined gradient headers
  * - Glassmorphism effects
  * - Smooth slide animations
- * - Space Grotesk typography
+ * - Compact, professional sizing
  */
 
 'use client';
@@ -42,28 +42,28 @@ const positionClasses = {
 
 const sizeClasses = {
   sm: {
+    left: 'w-72',
+    right: 'w-72',
+    top: 'h-72',
+    bottom: 'h-72',
+  },
+  md: {
     left: 'w-80',
     right: 'w-80',
     top: 'h-80',
     bottom: 'h-80',
   },
-  md: {
+  lg: {
     left: 'w-96',
     right: 'w-96',
     top: 'h-96',
     bottom: 'h-96',
   },
-  lg: {
+  xl: {
     left: 'w-[32rem]',
     right: 'w-[32rem]',
     top: 'h-[32rem]',
     bottom: 'h-[32rem]',
-  },
-  xl: {
-    left: 'w-[40rem]',
-    right: 'w-[40rem]',
-    top: 'h-[40rem]',
-    bottom: 'h-[40rem]',
   },
   full: {
     left: 'w-full',
@@ -92,13 +92,14 @@ const slideAnimations = {
   },
 };
 
+// Gradients plus subtils et raffinés
 const gradientClasses = {
-  aurora: 'bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817]',
-  violet: 'bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600',
-  blue: 'bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600',
-  green: 'bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600',
-  orange: 'bg-gradient-to-br from-orange-500 via-red-600 to-pink-600',
-  none: 'bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700',
+  aurora: 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700',
+  violet: 'bg-gradient-to-r from-violet-600 to-purple-600',
+  blue: 'bg-gradient-to-r from-blue-600 to-cyan-600',
+  green: 'bg-gradient-to-r from-green-600 to-emerald-600',
+  orange: 'bg-gradient-to-r from-orange-600 to-red-600',
+  none: 'bg-gradient-to-r from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900',
 };
 
 export default function Drawer({
@@ -233,7 +234,7 @@ export default function Drawer({
     <div
       className={clsx(
         'fixed inset-0 z-[9999]',
-        overlay && 'bg-black/60 backdrop-blur-md',
+        overlay && 'bg-black/40 backdrop-blur-sm',
         overlayClassName,
         'animate-fade-in'
       )}
@@ -242,7 +243,7 @@ export default function Drawer({
       <div
         ref={drawerRef}
         className={clsx(
-          'fixed bg-background shadow-2xl',
+          'fixed bg-background shadow-xl',
           'flex flex-col',
           positionClasses[position],
           sizeClass,
@@ -256,18 +257,20 @@ export default function Drawer({
         aria-labelledby={title ? 'drawer-title' : undefined}
         tabIndex={-1}
       >
-        {/* Gradient Header */}
+        {/* Refined Gradient Header */}
         {title && (
           <div className={clsx('relative overflow-hidden', gradientClasses[gradient])}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-            <div className="relative px-6 py-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
-                  {icon || <Sparkles className="w-5 h-5 text-white" />}
-                </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+            <div className="relative px-4 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                {(icon || gradient !== 'none') && (
+                  <div className="p-1.5 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20">
+                    {icon || <Sparkles className="w-4 h-4 text-white" />}
+                  </div>
+                )}
                 <h2 
                   id="drawer-title" 
-                  className="text-2xl font-black text-white"
+                  className="text-lg font-bold text-white"
                   style={{ fontFamily: 'Space Grotesk, sans-serif' }}
                 >
                   {title}
@@ -276,10 +279,10 @@ export default function Drawer({
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-all hover:scale-110"
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all"
                   aria-label="Close drawer"
                 >
-                  <X className="w-5 h-5 text-white" />
+                  <X className="w-4 h-4 text-white" />
                 </button>
               )}
             </div>
@@ -287,7 +290,7 @@ export default function Drawer({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900">
           {children}
         </div>
       </div>

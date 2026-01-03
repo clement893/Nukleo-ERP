@@ -1,12 +1,12 @@
 /**
- * Modal Component - Ultra-Modern Design
+ * Modal Component - Ultra-Modern Design (Refined)
  * 
  * Full-featured modal dialog with Nukleo design system:
- * - Intense backdrop blur (60% + blur-md)
- * - Aurora Borealis gradient headers
+ * - Subtle backdrop blur
+ * - Refined gradient headers
  * - Glassmorphism effects
  * - Smooth animations
- * - Space Grotesk typography
+ * - Compact, professional sizing
  * 
  * @example
  * ```tsx
@@ -21,6 +21,17 @@
  *   onClose={handleClose}
  *   title="Create Project"
  *   gradient="violet"
+ * >
+ *   <form>...</form>
+ * </Modal>
+ * 
+ * // Modal with custom icon
+ * <Modal
+ *   isOpen={isOpen}
+ *   onClose={handleClose}
+ *   title="Edit User"
+ *   gradient="blue"
+ *   icon={<Edit className="w-4 h-4 text-white" />}
  * >
  *   <form>...</form>
  * </Modal>
@@ -75,13 +86,14 @@ const sizeClasses = {
   full: 'md:max-w-[calc(100%-2rem)] md:w-full',
 };
 
+// Gradients plus subtils et raffinés
 const gradientClasses = {
-  aurora: 'bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817]',
-  violet: 'bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600',
-  blue: 'bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600',
-  green: 'bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600',
-  orange: 'bg-gradient-to-br from-orange-500 via-red-600 to-pink-600',
-  none: 'bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700',
+  aurora: 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700',
+  violet: 'bg-gradient-to-r from-violet-600 to-purple-600',
+  blue: 'bg-gradient-to-r from-blue-600 to-cyan-600',
+  green: 'bg-gradient-to-r from-green-600 to-emerald-600',
+  orange: 'bg-gradient-to-r from-orange-600 to-red-600',
+  none: 'bg-gradient-to-r from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900',
 };
 
 function Modal({
@@ -214,7 +226,7 @@ function Modal({
     <div
       className={clsx(
         'fixed inset-0 z-50 flex items-center justify-center p-4',
-        'bg-black/60 backdrop-blur-md',
+        'bg-black/40 backdrop-blur-sm',
         'animate-in fade-in duration-200',
         overlayClassName
       )}
@@ -225,7 +237,7 @@ function Modal({
         ref={modalRef}
         className={clsx(
           'relative w-full max-h-[90vh] overflow-hidden',
-          'rounded-3xl shadow-2xl',
+          'rounded-2xl shadow-xl',
           'animate-in zoom-in-95 duration-300',
           sizeClasses[size],
           className
@@ -237,17 +249,19 @@ function Modal({
         aria-describedby={ariaDescribedBy}
         tabIndex={-1}
       >
-        {/* Gradient Header */}
+        {/* Refined Gradient Header */}
         {title && (
           <div className={clsx('relative overflow-hidden', gradientClasses[gradient])}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-            <div className="relative px-8 py-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
-                  {icon || <Sparkles className="w-6 h-6 text-white" />}
-                </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+            <div className="relative px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {(icon || gradient !== 'none') && (
+                  <div className="p-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20">
+                    {icon || <Sparkles className="w-4 h-4 text-white" />}
+                  </div>
+                )}
                 <h2 
-                  className="text-3xl font-black text-white" 
+                  className="text-xl font-bold text-white" 
                   style={{ fontFamily: 'Space Grotesk, sans-serif' }}
                 >
                   {title}
@@ -256,10 +270,10 @@ function Modal({
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-all hover:scale-110"
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all"
                   aria-label="Close"
                 >
-                  <X className="w-5 h-5 text-white" />
+                  <X className="w-4 h-4 text-white" />
                 </button>
               )}
             </div>
@@ -267,16 +281,16 @@ function Modal({
         )}
 
         {/* Content */}
-        <div className="bg-white dark:bg-gray-900 overflow-y-auto max-h-[calc(90vh-180px)]">
-          <div className="p-8">
+        <div className="bg-white dark:bg-gray-900 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="p-5">
             {children}
           </div>
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="bg-white dark:bg-gray-900 border-t-2 border-gray-200 dark:border-gray-700 px-8 py-6">
-            <div className="flex gap-4 justify-end">
+          <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-5 py-4">
+            <div className="flex gap-3 justify-end">
               {footer}
             </div>
           </div>
@@ -323,7 +337,7 @@ export function ConfirmModal({
             variant="outline" 
             onClick={onClose} 
             disabled={loading}
-            className="flex-1 py-3 rounded-xl border-2 hover:scale-105 transition-all"
+            className="px-4 py-2"
           >
             {cancelText}
           </Button>
@@ -334,14 +348,14 @@ export function ConfirmModal({
               onClose();
             }}
             disabled={loading}
-            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            className="px-4 py-2"
           >
             {loading ? 'Chargement...' : confirmText}
           </Button>
         </>
       }
     >
-      <p className="text-foreground text-lg">{message}</p>
+      <p className="text-foreground">{message}</p>
     </Modal>
   );
 }
