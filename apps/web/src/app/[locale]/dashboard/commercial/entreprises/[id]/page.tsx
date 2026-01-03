@@ -10,7 +10,11 @@ import { Loading, Alert, Badge, Card, Button } from '@/components/ui';
 import { 
   ArrowLeft, 
   Building2,
-  CheckCircle
+  CheckCircle,
+  Users,
+  FolderKanban,
+  Calendar,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { CompanyNotesEditor } from '@/components/commercial/CompanyNotesEditor';
@@ -105,6 +109,47 @@ export default function CompanyDetailPage() {
 
   const locale = params?.locale as string || 'fr';
 
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  // Stats calculation
+  const stats = company ? [
+    { 
+      icon: Users, 
+      label: 'Contacts', 
+      value: company.contacts_count !== undefined ? String(company.contacts_count) : '0', 
+      color: 'text-blue-600', 
+      bgColor: 'bg-blue-100' 
+    },
+    { 
+      icon: FolderKanban, 
+      label: 'Projets', 
+      value: company.projects_count !== undefined ? String(company.projects_count) : '0', 
+      color: 'text-purple-600', 
+      bgColor: 'bg-purple-100' 
+    },
+    { 
+      icon: CheckCircle, 
+      label: 'Statut', 
+      value: company.is_client ? 'Client' : 'Prospect', 
+      color: company.is_client ? 'text-green-600' : 'text-orange-600', 
+      bgColor: company.is_client ? 'bg-green-100' : 'bg-orange-100' 
+    },
+    { 
+      icon: Calendar, 
+      label: 'Créée le', 
+      value: formatDate(company.created_at), 
+      color: 'text-primary-600', 
+      bgColor: 'bg-primary-100' 
+    },
+  ] : [];
+
   return (
     <PageContainer>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 -m-6 p-6">
@@ -138,12 +183,40 @@ export default function CompanyDetailPage() {
                 </div>
               )}
               
-              {company.contacts_count !== undefined && company.contacts_count > 0 && (
-                <div className="text-foreground/60 text-sm">
-                  {company.contacts_count} contact{company.contacts_count > 1 ? 's' : ''}
+              {company.website && (
+                <div className="flex items-center gap-1.5 text-foreground/60 text-sm">
+                  <Globe className="w-4 h-4" />
+                  <a 
+                    href={company.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-primary-500 transition-colors"
+                  >
+                    Site web
+                  </a>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Stats Cards - plus compactes */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="glass-card p-3 hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                      <Icon className={`w-4 h-4 ${stat.color}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
+                      <p className="text-lg font-bold text-foreground truncate">{stat.value}</p>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Tabs */}

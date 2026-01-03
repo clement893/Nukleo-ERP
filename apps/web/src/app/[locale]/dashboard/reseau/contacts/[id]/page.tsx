@@ -11,7 +11,11 @@ import {
   ArrowLeft, 
   Building2,
   User,
-  UserCircle
+  UserCircle,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin
 } from 'lucide-react';
 import Link from 'next/link';
 import { ContactNotesEditor } from '@/components/commercial/ContactNotesEditor';
@@ -117,6 +121,47 @@ export default function ContactDetailPage() {
   const locale = params?.locale as string || 'fr';
   const circleTags = contact.circle ? contact.circle.split(',').map(t => t.trim()) : [];
 
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  // Stats calculation
+  const stats = contact ? [
+    { 
+      icon: Mail, 
+      label: 'Email', 
+      value: contact.email || 'Non renseigné', 
+      color: 'text-blue-600', 
+      bgColor: 'bg-blue-100' 
+    },
+    { 
+      icon: Phone, 
+      label: 'Téléphone', 
+      value: contact.phone || 'Non renseigné', 
+      color: 'text-green-600', 
+      bgColor: 'bg-green-100' 
+    },
+    { 
+      icon: MapPin, 
+      label: 'Localisation', 
+      value: contact.city && contact.country ? `${contact.city}, ${contact.country}` : (contact.city || contact.country || 'Non renseigné'), 
+      color: 'text-purple-600', 
+      bgColor: 'bg-purple-100' 
+    },
+    { 
+      icon: Calendar, 
+      label: 'Créé le', 
+      value: formatDate(contact.created_at), 
+      color: 'text-primary-600', 
+      bgColor: 'bg-primary-100' 
+    },
+  ] : [];
+
   return (
     <PageContainer>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 -m-6 p-6">
@@ -172,6 +217,26 @@ export default function ContactDetailPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Stats Cards - plus compactes */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="glass-card p-3 hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                      <Icon className={`w-4 h-4 ${stat.color}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
+                      <p className="text-lg font-bold text-foreground truncate">{stat.value}</p>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Tabs */}
