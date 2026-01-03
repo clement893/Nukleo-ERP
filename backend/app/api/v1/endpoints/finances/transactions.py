@@ -20,6 +20,7 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.transaction import Transaction, TransactionType, TransactionStatus
 from app.models.transaction_category import TransactionCategory
+from app.models.bank_account import BankAccount, BankAccountType
 from app.schemas.transaction import (
     TransactionCreate,
     TransactionUpdate,
@@ -778,6 +779,50 @@ async def import_transactions(
         if result.get('errors'):
             logger.warning(f"First error sample: {result['errors'][0]}")
         
+        # Get or create default bank account for user (if bank_account_id is required)
+        default_bank_account_id = None
+        try:
+            # Check if bank_account_id column exists and is required
+            columns_result = await db.execute(text("""
+                SELECT column_name, is_nullable
+                FROM information_schema.columns
+                WHERE table_name = 'transactions' AND column_name = 'bank_account_id'
+            """))
+            bank_account_col = columns_result.fetchone()
+            
+            if bank_account_col and bank_account_col[1] == 'NO':  # Column exists and is NOT NULL
+                # Try to get first active bank account for user
+                bank_account_result = await db.execute(
+                    select(BankAccount).where(
+                        and_(
+                            BankAccount.user_id == current_user.id,
+                            BankAccount.is_active == True
+                        )
+                    ).limit(1)
+                )
+                default_bank_account = bank_account_result.scalar_one_or_none()
+                
+                if default_bank_account:
+                    default_bank_account_id = default_bank_account.id
+                    logger.info(f"Using default bank account {default_bank_account_id} for user {current_user.id}")
+                else:
+                    # Create a default bank account if none exists
+                    logger.info(f"No bank account found for user {current_user.id}, creating default one")
+                    default_bank_account = BankAccount(
+                        user_id=current_user.id,
+                        name="Compte Principal",
+                        account_type=BankAccountType.CHECKING,
+                        currency="CAD",
+                        initial_balance=0,
+                        is_active=True
+                    )
+                    db.add(default_bank_account)
+                    await db.flush()  # Flush to get the ID
+                    default_bank_account_id = default_bank_account.id
+                    logger.info(f"Created default bank account {default_bank_account_id} for user {current_user.id}")
+        except Exception as e:
+            logger.warning(f"Could not get/create bank account: {e}. Transactions will be created without bank_account_id if column is nullable.")
+        
         for idx, row_data in enumerate(result['data'], start=2):  # Start at 2 (header + 1-based)
             try:
                 # Get and normalize type
@@ -999,25 +1044,32 @@ async def import_transactions(
                 # Log the final values being used
                 logger.debug(f"Creating transaction - type_value: '{type_value_final}' (type: {type(type_value_final)}), status: '{status_value}'")
                 
-                transaction = Transaction(
-                    user_id=current_user.id,
-                    type=type_value_final,  # Plain string "expense" or "revenue" - CRITICAL to avoid enum issues
-                    description=description,
-                    amount=amount,
-                    tax_amount=tax_amount_decimal,
-                    currency=str(currency).upper()[:3],
-                    category_id=category_id,
-                    transaction_date=transaction_date,
-                    expected_payment_date=expected_payment_date,
-                    payment_date=payment_date,
-                    status=status_value,  # Plain string "pending", "paid", or "cancelled"
-                    client_name=str(client_name) if client_name else None,
-                    supplier_name=str(supplier_name) if supplier_name else None,
-                    invoice_number=str(invoice_number) if invoice_number else None,
-                    notes=str(notes) if notes else None,
-                    is_recurring=is_recurring,
-                    transaction_metadata=transaction_metadata,
-                )
+                # Prepare transaction data
+                transaction_data = {
+                    'user_id': current_user.id,
+                    'type': type_value_final,  # Plain string "expense" or "revenue" - CRITICAL to avoid enum issues
+                    'description': description,
+                    'amount': amount,
+                    'tax_amount': tax_amount_decimal,
+                    'currency': str(currency).upper()[:3],
+                    'category_id': category_id,
+                    'transaction_date': transaction_date,
+                    'expected_payment_date': expected_payment_date,
+                    'payment_date': payment_date,
+                    'status': status_value,  # Plain string "pending", "paid", or "cancelled"
+                    'client_name': str(client_name) if client_name else None,
+                    'supplier_name': str(supplier_name) if supplier_name else None,
+                    'invoice_number': str(invoice_number) if invoice_number else None,
+                    'notes': str(notes) if notes else None,
+                    'is_recurring': is_recurring,
+                    'transaction_metadata': transaction_metadata,
+                }
+                
+                # Add bank_account_id if available and column exists
+                if default_bank_account_id is not None:
+                    transaction_data['bank_account_id'] = default_bank_account_id
+                
+                transaction = Transaction(**transaction_data)
                 
                 db.add(transaction)
                 created_transactions.append(transaction)

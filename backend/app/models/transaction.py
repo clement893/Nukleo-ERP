@@ -39,6 +39,9 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     
+    # Bank account (optional - may not exist in all database schemas)
+    bank_account_id = Column(Integer, ForeignKey("bank_accounts.id", ondelete="CASCADE"), nullable=True, index=True)
+    
     # Transaction details
     # Use native_enum=False to store as string instead of PostgreSQL enum
     # This avoids issues with enum value mismatches between Python and PostgreSQL
