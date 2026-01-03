@@ -827,11 +827,17 @@ class LeoContextService:
                 "combien", "how many", "nombre", "total", "count", "quantité"
             ])
             
-            # Build query with tenant scoping
-            stmt = select(VacationRequest).options(
+            # Build query with tenant scoping via Employee
+            # VacationRequest doesn't have team_id, so we scope via Employee
+            Employee = _get_employee_model()
+            if Employee is None:
+                return []
+            
+            stmt = select(VacationRequest).join(Employee).options(
                 selectinload(VacationRequest.employee)
             )
-            stmt = scope_query(stmt, VacationRequest)
+            # Scope via Employee's team_id
+            stmt = scope_query(stmt, Employee)
             
             # Apply status filter if detected
             if status_filter:
