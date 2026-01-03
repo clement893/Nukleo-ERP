@@ -12,7 +12,6 @@ import EmptyState from '@/components/ui/EmptyState';
 import { employeesAPI } from '@/lib/api/employees';
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -20,7 +19,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  BarChart,
   Bar,
   ComposedChart,
 } from 'recharts';
@@ -119,10 +117,14 @@ export function TeamGrowthTimelineWidget({ }: WidgetProps) {
         
         // Calculate growth rate (comparing first and last month)
         if (data.length > 1) {
-          const firstTotal = data[0].total;
-          const lastTotal = data[data.length - 1].total;
-          const rate = firstTotal > 0 ? ((lastTotal - firstTotal) / firstTotal) * 100 : 0;
-          setGrowthRate(rate);
+          const first = data[0];
+          const last = data[data.length - 1];
+          if (first && last) {
+            const firstTotal = first.total;
+            const lastTotal = last.total;
+            const rate = firstTotal > 0 ? ((lastTotal - firstTotal) / firstTotal) * 100 : 0;
+            setGrowthRate(rate);
+          }
         }
       } catch (error) {
         console.error('Error loading team growth timeline:', error);

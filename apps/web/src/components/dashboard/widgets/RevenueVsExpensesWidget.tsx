@@ -13,7 +13,6 @@ import { fetchDashboardRevenue } from '@/lib/api/dashboard-revenue';
 import { expenseAccountsAPI } from '@/lib/api/finances/expenseAccounts';
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,

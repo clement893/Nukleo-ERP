@@ -15,7 +15,6 @@ import { useEffect, useState } from 'react';
 import {
   AreaChart,
   Area,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -154,7 +153,11 @@ export function CashFlowForecastWidget({ config }: WidgetProps) {
         // Calculate average monthly change for forecast
         const changes: number[] = [];
         for (let i = 1; i < historical.length; i++) {
-          changes.push(historical[i].cash - historical[i - 1].cash);
+          const current = historical[i];
+          const previous = historical[i - 1];
+          if (current && previous) {
+            changes.push(current.cash - previous.cash);
+          }
         }
         const avgChange = changes.length > 0 
           ? changes.reduce((sum, change) => sum + change, 0) / changes.length 
@@ -172,7 +175,6 @@ export function CashFlowForecastWidget({ config }: WidgetProps) {
           for (let i = 1; i <= 6; i++) {
             const forecastDate = new Date(lastHistoricalMonth.month + '-01');
             forecastDate.setMonth(forecastDate.getMonth() + i);
-            const monthKey = `${forecastDate.getFullYear()}-${String(forecastDate.getMonth() + 1).padStart(2, '0')}`;
             
             // Simple forecast: apply average change with some variance
             const variance = avgChange * 0.2; // 20% variance

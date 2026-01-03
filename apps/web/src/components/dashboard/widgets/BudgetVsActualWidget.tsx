@@ -21,7 +21,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Cell,
 } from 'recharts';
 
 interface ProjectBudget {

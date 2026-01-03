@@ -21,6 +21,7 @@ import {
   AlertCircle,
   LayoutDashboard,
   Filter,
+  Building2,
 } from 'lucide-react';
 
 import type { WidgetDefinition, WidgetType, DashboardModule } from './types';

@@ -5,14 +5,13 @@
  * Tâches complétées par période, vélocité de l'équipe
  */
 
-import { CheckSquare, TrendingUp, Calendar } from 'lucide-react';
+import { CheckSquare, TrendingUp } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { useEffect, useState } from 'react';
 import {
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -141,7 +140,7 @@ export function TasksCompletionTrendWidget({ }: WidgetProps) {
 
   // Helper function to format week label
   const formatWeekLabel = (weekKey: string): string => {
-    const [year, week] = weekKey.split('-W');
+    const [, week] = weekKey.split('-W');
     return `S${week}`;
   };
 

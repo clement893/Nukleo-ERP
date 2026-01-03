@@ -5,21 +5,18 @@
  * Répartition détaillée des dépenses par catégorie
  */
 
-import { DollarSign, Folder } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { expenseAccountsAPI } from '@/lib/api/finances/expenseAccounts';
 import { useEffect, useState } from 'react';
 import {
-  PieChart,
-  Pie,
-  Cell,
   ResponsiveContainer,
-  Legend,
   Tooltip,
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -97,8 +94,11 @@ export function ExpensesByCategoryWidget({ }: WidgetProps) {
           if (!grouped[category]) {
             grouped[category] = { amount: 0, count: 0 };
           }
-          grouped[category].amount += amount;
-          grouped[category].count += 1;
+          const categoryData = grouped[category];
+          if (categoryData) {
+            categoryData.amount += amount;
+            categoryData.count += 1;
+          }
         });
 
         const totalAmount = Object.values(grouped).reduce((sum, cat) => sum + cat.amount, 0);
