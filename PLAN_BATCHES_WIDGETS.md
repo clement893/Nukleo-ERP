@@ -78,14 +78,14 @@
 
 ---
 
-### 💵 Batch 8: Widgets Finances Priorité MOYENNE
-- [ ] `profit-margin-chart` - Évolution des marges
-- [ ] `revenue-by-source` - Revenus par source
-- [ ] `invoices-status` - État des factures
-- [ ] `financial-forecast` - Prévisions financières
-- [ ] `aging-receivables` - Analyse créances
+### ✅ Batch 8: Widgets Finances Priorité MOYENNE
+- [x] `profit-margin-chart` - Évolution des marges
+- [x] `revenue-by-source` - Revenus par source
+- [x] `invoices-status` - État des factures
+- [x] `financial-forecast` - Prévisions financières
+- [x] `aging-receivables` - Analyse créances
 
-**Statut:** 0/5 widgets créés
+**Statut:** ✅ COMPLÉTÉ - 5/5 widgets créés et pushés
 
 ---
 
@@ -119,12 +119,12 @@
 
 ## 📈 Progression Globale
 
-- **Batches complétés:** 7/10 (70%)
-- **Widgets créés:** 21/40 (52.5%)
+- **Batches complétés:** 8/10 (80%)
+- **Widgets créés:** 26/40 (65%)
 - **Intégrations complétées:** 1/1 (100%)
 
 ## 🔄 Dernière Mise à Jour
 
-- **Date:** Batch 7 complété et pushé
-- **Batch actif:** Batch 8 (Widgets Finances Priorité MOYENNE)
-- **Prochaine étape:** Créer les 5 widgets finances priorité MOYENNE
+- **Date:** Batch 8 complété et pushé
+- **Batch actif:** Batch 9 (Widgets Équipe Priorité MOYENNE)
+- **Prochaine étape:** Créer les 5 widgets équipe priorité MOYENNE
