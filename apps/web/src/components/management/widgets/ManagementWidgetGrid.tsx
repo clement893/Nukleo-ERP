@@ -119,13 +119,17 @@ export function ManagementWidgetGrid({ className = '' }: ManagementWidgetGridPro
         <Responsive
           className="layout"
           layouts={layouts}
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
+          breakpoints={{ lg: 1024, md: 768, sm: 640, xs: 0 }}
           cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
-          rowHeight={100}
+          rowHeight={120}
           width={width}
           onLayoutChange={handleLayoutChange}
+          compactType="vertical"
+          preventCollision={false}
           margin={[16, 16]}
           containerPadding={[0, 0]}
+          useCSSTransforms={true}
+          transformScale={1}
           {...({
             isDraggable: isEditMode,
             isResizable: isEditMode,
@@ -138,6 +142,88 @@ export function ManagementWidgetGrid({ className = '' }: ManagementWidgetGridPro
           ))}
         </Responsive>
       </ErrorBoundary>
+
+      <style jsx global>{`
+        /* Responsive Grid Styles */
+        .react-grid-layout {
+          position: relative;
+          transition: height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+          .react-grid-layout {
+            /* Increase touch target size on mobile */
+            padding: 8px 0;
+          }
+          
+          .widget-wrapper {
+            /* Ensure widgets are touch-friendly */
+            min-height: 200px;
+          }
+        }
+        
+        .react-grid-item {
+          transition: all 200ms ease;
+          transition-property: left, top, width, height;
+        }
+        
+        .react-grid-item.cssTransforms {
+          transition-property: transform, width, height;
+        }
+        
+        .react-grid-item.resizing {
+          transition: none;
+          z-index: 100;
+        }
+        
+        .react-grid-item.react-draggable-dragging {
+          transition: none;
+          z-index: 100;
+          opacity: 0.8;
+        }
+        
+        .react-grid-item.dropping {
+          visibility: hidden;
+        }
+        
+        .react-grid-item.react-grid-placeholder {
+          background: rgb(59 130 246 / 0.2);
+          opacity: 0.2;
+          transition-duration: 100ms;
+          z-index: 2;
+          border-radius: 0.5rem;
+          border: 2px dashed rgb(59 130 246);
+        }
+        
+        .react-resizable-handle {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+        }
+        
+        .react-resizable-handle-se {
+          bottom: 0;
+          right: 0;
+          cursor: se-resize;
+        }
+        
+        .react-resizable-handle-se::after {
+          content: "";
+          position: absolute;
+          right: 3px;
+          bottom: 3px;
+          width: 5px;
+          height: 5px;
+          border-right: 2px solid rgba(0, 0, 0, 0.4);
+          border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+        }
+        
+        .widget-wrapper {
+          height: 100%;
+          width: 100%;
+        }
+      `}</style>
     </div>
   );
 }
