@@ -20,6 +20,7 @@ export interface AutomationRulesListProps {
   onUpdate: (id: number, rule: UpdateAutomationRuleRequest) => void;
   onDelete: (id: number) => void;
   onToggle: (id: number, enabled: boolean) => void;
+  onRefresh?: () => void;
 }
 
 export function AutomationRulesList({
@@ -30,6 +31,7 @@ export function AutomationRulesList({
   onUpdate,
   onDelete,
   onToggle,
+  onRefresh,
 }: AutomationRulesListProps) {
   const { showToast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -60,7 +62,11 @@ export function AutomationRulesList({
         type: 'success' 
       });
       // Refresh the list
-      window.location.reload();
+      if (onRefresh) {
+        onRefresh();
+      } else {
+        window.location.reload();
+      }
     } catch (error) {
       showToast({ 
         message: 'Erreur lors de l\'activation de l\'automatisation', 

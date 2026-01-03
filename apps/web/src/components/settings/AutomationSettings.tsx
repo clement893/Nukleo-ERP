@@ -218,6 +218,7 @@ export default function AutomationSettings() {
                   onUpdate={(id, data) => updateRuleMutation.mutate({ id, data })}
                   onDelete={deleteRuleMutation.mutate}
                   onToggle={(id, enabled) => toggleRuleMutation.mutate({ id, enabled })}
+                  onRefresh={refetchRules}
                 />
               ),
             },
