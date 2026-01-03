@@ -5,7 +5,7 @@
  * Répartition des employés par job_title/rôle
  */
 
-import { UserCircle, Users } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';

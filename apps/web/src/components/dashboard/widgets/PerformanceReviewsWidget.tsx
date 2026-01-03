@@ -5,7 +5,7 @@
  * Vue d'ensemble des performances basée sur les indicateurs disponibles
  */
 
-import { Star, TrendingUp, Award } from 'lucide-react';
+import { Star, Award } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';

@@ -93,13 +93,13 @@ export function TrendAnalysisWidget({ }: WidgetProps) {
         
         // Combine data by month
         const combined: TrendData[] = revenueData.map((rev: any, index: number) => {
-          const monthKey = rev.month || rev.period || '';
-          const revenue = rev.value || rev.revenue || 0;
+          const monthKey = rev.month || '';
+          const revenue = rev.value || 0;
           const opportunities = opportunitiesByMonth[monthKey] || 0;
           const tasksCompleted = tasksByMonth[monthKey] || 0;
           
           // Calculate growth (simplified: compare to previous period)
-          const previousRevenue = index > 0 ? (revenueData[index - 1]?.value || revenueData[index - 1]?.revenue || 0) : revenue;
+          const previousRevenue = index > 0 ? (revenueData[index - 1]?.value || 0) : revenue;
           const growth = previousRevenue > 0 
             ? ((revenue - previousRevenue) / previousRevenue) * 100 
             : 0;
@@ -119,10 +119,10 @@ export function TrendAnalysisWidget({ }: WidgetProps) {
         if (combined.length > 1) {
           const first = combined[0];
           const last = combined[combined.length - 1];
-          const growth = first.revenue > 0 
-            ? ((last.revenue - first.revenue) / first.revenue) * 100 
-            : 0;
-          setOverallGrowth(growth);
+          if (first && last && first.revenue > 0) {
+            const growth = ((last.revenue - first.revenue) / first.revenue) * 100;
+            setOverallGrowth(growth);
+          }
         }
       } catch (error) {
         console.error('Error loading trend analysis:', error);
@@ -140,8 +140,12 @@ export function TrendAnalysisWidget({ }: WidgetProps) {
     if (!monthKey) return 'N/A';
     const parts = monthKey.split('-');
     if (parts.length >= 2) {
-      const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1);
-      return date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+      const year = parts[0];
+      const month = parts[1];
+      if (year && month) {
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+      }
     }
     return monthKey;
   };

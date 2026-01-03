@@ -79,11 +79,16 @@ export function SalesVelocityWidget({ }: WidgetProps) {
         // Group by month (last 6 months)
         const grouped: Record<string, { totalDays: number; count: number }> = {};
         opportunitiesWithVelocity.forEach((opp: any) => {
-          if (!grouped[opp.closedMonth]) {
-            grouped[opp.closedMonth] = { totalDays: 0, count: 0 };
+          const monthKey = opp.closedMonth;
+          if (!monthKey) return;
+          if (!grouped[monthKey]) {
+            grouped[monthKey] = { totalDays: 0, count: 0 };
           }
-          grouped[opp.closedMonth].totalDays += opp.daysToClose;
-          grouped[opp.closedMonth].count += 1;
+          const monthData = grouped[monthKey];
+          if (monthData) {
+            monthData.totalDays += opp.daysToClose;
+            monthData.count += 1;
+          }
         });
         
         // Convert to array and calculate averages

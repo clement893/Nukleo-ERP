@@ -5,7 +5,7 @@
  * Suivi de la présence basé sur les time entries
  */
 
-import { Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, AlertCircle } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';

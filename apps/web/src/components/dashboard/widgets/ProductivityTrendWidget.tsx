@@ -12,8 +12,6 @@ import EmptyState from '@/components/ui/EmptyState';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,

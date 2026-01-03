@@ -129,6 +129,143 @@ export default function DepensesPage() {
   // Create columns for editable grid
   const expenseColumns = useMemo(() => createExpenseColumns(suppliersList), [suppliersList]);
 
+  // Load data function - memoized with useCallback (defined early so callbacks can use it)
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      if (activeTab === 'expenses') {
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+        });
+        logger.info(`Loaded ${data.length} expenses from API (filter: status=${statusFilter})`);
+        setExpenses(data);
+      } else if (activeTab === 'invoices') {
+        // Load invoices (expenses with invoice_number)
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        });
+        const invoiceTransactions = data.filter(t => t.invoice_number);
+        const invoiceList: Invoice[] = invoiceTransactions.map(t => ({
+          id: t.id,
+          invoice_number: t.invoice_number || '',
+          supplier_id: t.supplier_id || 0,
+          supplier_name: t.supplier_name || 'Fournisseur inconnu',
+          amount: parseFloat(t.amount),
+          currency: t.currency,
+          issue_date: t.transaction_date,
+          due_date: t.expected_payment_date || t.transaction_date,
+          status: t.status === 'paid' ? 'paid' : 
+                  t.status === 'cancelled' ? 'overdue' :
+                  new Date(t.expected_payment_date || t.transaction_date) < new Date() ? 'overdue' : 'received',
+          category: t.category || 'Autre',
+          description: t.description,
+        }));
+        setInvoices(invoiceList);
+      } else if (activeTab === 'suppliers') {
+        // Load suppliers (aggregate from transactions)
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        });
+        const supplierMap = new Map<string, Supplier>();
+        data.forEach(t => {
+          if (t.supplier_name) {
+            const name = t.supplier_name;
+            if (!supplierMap.has(name)) {
+              // Parse metadata if available
+              let metadata: any = {};
+              if (t.transaction_metadata) {
+                try {
+                  metadata = typeof t.transaction_metadata === 'string' 
+                    ? JSON.parse(t.transaction_metadata) 
+                    : t.transaction_metadata;
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+              supplierMap.set(name, {
+                id: supplierMap.size + 1,
+                name: name,
+                contact_email: metadata.contact_email || undefined,
+                contact_phone: metadata.contact_phone || undefined,
+                address: metadata.address || undefined,
+                total_expenses: 0,
+                expense_count: 0,
+              });
+            }
+            const supplier = supplierMap.get(name)!;
+            supplier.total_expenses += parseFloat(t.amount);
+            supplier.expense_count += 1;
+          }
+        });
+        setSuppliers(Array.from(supplierMap.values()));
+      } else if (activeTab === 'recurring') {
+        // Load recurring expenses (transactions with is_recurring='true')
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        });
+        const recurringTransactions = data.filter(t => t.is_recurring === 'true');
+        const recurringList: RecurringExpense[] = recurringTransactions.map(t => {
+          let metadata: any = {};
+          if (t.transaction_metadata) {
+            try {
+              metadata = typeof t.transaction_metadata === 'string' 
+                ? JSON.parse(t.transaction_metadata) 
+                : t.transaction_metadata;
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+          const frequency = metadata.frequency || 'monthly';
+          const startDate = new Date(t.transaction_date);
+          const endDate = metadata.end_date ? new Date(metadata.end_date) : undefined;
+          // Calculate next occurrence
+          let nextOccurrence = new Date(startDate);
+          const now = new Date();
+          while (nextOccurrence < now) {
+            if (frequency === 'daily') {
+              nextOccurrence.setDate(nextOccurrence.getDate() + 1);
+            } else if (frequency === 'weekly') {
+              nextOccurrence.setDate(nextOccurrence.getDate() + 7);
+            } else if (frequency === 'monthly') {
+              nextOccurrence.setMonth(nextOccurrence.getMonth() + 1);
+            } else if (frequency === 'yearly') {
+              nextOccurrence.setFullYear(nextOccurrence.getFullYear() + 1);
+            }
+          }
+          return {
+            id: t.id,
+            description: t.description,
+            amount: parseFloat(t.amount),
+            currency: t.currency,
+            frequency: frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
+            start_date: t.transaction_date,
+            end_date: endDate?.toISOString().split('T')[0],
+            supplier_id: t.supplier_id || undefined,
+            supplier_name: t.supplier_name || undefined,
+            category: t.category || 'Autre',
+            is_active: !endDate || endDate > now,
+            next_occurrence: nextOccurrence.toISOString().split('T')[0] as string,
+          };
+        });
+        setRecurringExpenses(recurringList);
+      }
+    } catch (error) {
+      logger.error('Error loading expenses data', error);
+      const appError = handleApiError(error);
+      showToast({
+        message: appError.message || 'Erreur lors du chargement des données',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, statusFilter, showToast]);
+
   // Handle cell change with debounce
   const handleCellChange = useCallback((rowId: string | number, columnKey: string, value: any) => {
     const expenseId = typeof rowId === 'string' ? parseInt(rowId) : rowId;
@@ -327,143 +464,6 @@ export default function DepensesPage() {
     supplier_name: '',
     category: '',
   });
-
-  // Load data function - memoized with useCallback
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (activeTab === 'expenses') {
-        const data = await transactionsAPI.list({ 
-          type: 'expense',
-          limit: 1000,
-          status: statusFilter !== 'all' ? statusFilter : undefined,
-        });
-        logger.info(`Loaded ${data.length} expenses from API (filter: status=${statusFilter})`);
-        setExpenses(data);
-      } else if (activeTab === 'invoices') {
-        // Load invoices (expenses with invoice_number)
-        const data = await transactionsAPI.list({ 
-          type: 'expense',
-          limit: 1000,
-        });
-        const invoiceTransactions = data.filter(t => t.invoice_number);
-        const invoiceList: Invoice[] = invoiceTransactions.map(t => ({
-          id: t.id,
-          invoice_number: t.invoice_number || '',
-          supplier_id: t.supplier_id || 0,
-          supplier_name: t.supplier_name || 'Fournisseur inconnu',
-          amount: parseFloat(t.amount),
-          currency: t.currency,
-          issue_date: t.transaction_date,
-          due_date: t.expected_payment_date || t.transaction_date,
-          status: t.status === 'paid' ? 'paid' : 
-                  t.status === 'cancelled' ? 'overdue' :
-                  new Date(t.expected_payment_date || t.transaction_date) < new Date() ? 'overdue' : 'received',
-          category: t.category || 'Autre',
-          description: t.description,
-        }));
-        setInvoices(invoiceList);
-      } else if (activeTab === 'suppliers') {
-        // Load suppliers (aggregate from transactions)
-        const data = await transactionsAPI.list({ 
-          type: 'expense',
-          limit: 1000,
-        });
-        const supplierMap = new Map<string, Supplier>();
-        data.forEach(t => {
-          if (t.supplier_name) {
-            const name = t.supplier_name;
-            if (!supplierMap.has(name)) {
-              // Parse metadata if available
-              let metadata: any = {};
-              if (t.transaction_metadata) {
-                try {
-                  metadata = typeof t.transaction_metadata === 'string' 
-                    ? JSON.parse(t.transaction_metadata) 
-                    : t.transaction_metadata;
-                } catch (e) {
-                  // Ignore parse errors
-                }
-              }
-              supplierMap.set(name, {
-                id: supplierMap.size + 1,
-                name: name,
-                contact_email: metadata.contact_email || undefined,
-                contact_phone: metadata.contact_phone || undefined,
-                address: metadata.address || undefined,
-                total_expenses: 0,
-                expense_count: 0,
-              });
-            }
-            const supplier = supplierMap.get(name)!;
-            supplier.total_expenses += parseFloat(t.amount);
-            supplier.expense_count += 1;
-          }
-        });
-        setSuppliers(Array.from(supplierMap.values()));
-      } else if (activeTab === 'recurring') {
-        // Load recurring expenses (transactions with is_recurring='true')
-        const data = await transactionsAPI.list({ 
-          type: 'expense',
-          limit: 1000,
-        });
-        const recurringTransactions = data.filter(t => t.is_recurring === 'true');
-        const recurringList: RecurringExpense[] = recurringTransactions.map(t => {
-          let metadata: any = {};
-          if (t.transaction_metadata) {
-            try {
-              metadata = typeof t.transaction_metadata === 'string' 
-                ? JSON.parse(t.transaction_metadata) 
-                : t.transaction_metadata;
-            } catch (e) {
-              // Ignore parse errors
-            }
-          }
-          const frequency = metadata.frequency || 'monthly';
-          const startDate = new Date(t.transaction_date);
-          const endDate = metadata.end_date ? new Date(metadata.end_date) : undefined;
-          // Calculate next occurrence
-          let nextOccurrence = new Date(startDate);
-          const now = new Date();
-          while (nextOccurrence < now) {
-            if (frequency === 'daily') {
-              nextOccurrence.setDate(nextOccurrence.getDate() + 1);
-            } else if (frequency === 'weekly') {
-              nextOccurrence.setDate(nextOccurrence.getDate() + 7);
-            } else if (frequency === 'monthly') {
-              nextOccurrence.setMonth(nextOccurrence.getMonth() + 1);
-            } else if (frequency === 'yearly') {
-              nextOccurrence.setFullYear(nextOccurrence.getFullYear() + 1);
-            }
-          }
-          return {
-            id: t.id,
-            description: t.description,
-            amount: parseFloat(t.amount),
-            currency: t.currency,
-            frequency: frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
-            start_date: t.transaction_date,
-            end_date: endDate?.toISOString().split('T')[0],
-            supplier_id: t.supplier_id || undefined,
-            supplier_name: t.supplier_name || undefined,
-            category: t.category || 'Autre',
-            is_active: !endDate || endDate > now,
-            next_occurrence: nextOccurrence.toISOString().split('T')[0] as string,
-          };
-        });
-        setRecurringExpenses(recurringList);
-      }
-    } catch (error) {
-      logger.error('Error loading expenses data', error);
-      const appError = handleApiError(error);
-      showToast({
-        message: appError.message || 'Erreur lors du chargement des données',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, statusFilter, showToast]);
 
   // Load data when activeTab or statusFilter changes
   useEffect(() => {

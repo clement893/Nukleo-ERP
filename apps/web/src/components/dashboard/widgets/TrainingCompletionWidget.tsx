@@ -70,7 +70,6 @@ export function TrainingCompletionWidget({ }: WidgetProps) {
         
         // Simulate training completion based on employee performance metrics
         // This is a placeholder - in a real system, this would come from a training/HR system
-        const totalEmployees = activeEmployees.length;
         
         // Group by department/job_title to simulate training categories
         const byCategory: Record<string, number> = {};

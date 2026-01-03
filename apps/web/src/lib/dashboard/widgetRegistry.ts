@@ -23,7 +23,6 @@ import {
   Filter,
   Building2,
   Zap,
-  Clock,
   Scale,
   Star,
   Calendar,
@@ -31,7 +30,6 @@ import {
   Brain,
   GraduationCap,
   Smile,
-  Heart,
   Flag,
   Activity,
 } from 'lucide-react';

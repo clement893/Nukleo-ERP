@@ -57,7 +57,6 @@ export function BreakEvenAnalysisWidget({ }: WidgetProps) {
   const [breakEvenData, setBreakEvenData] = useState<BreakEvenData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [breakEvenPoint, setBreakEvenPoint] = useState<number | null>(null);
-  const [averageMonthlyExpenses, setAverageMonthlyExpenses] = useState(0);
   const [currentProfit, setCurrentProfit] = useState(0);
 
   useEffect(() => {
@@ -135,14 +134,14 @@ export function BreakEvenAnalysisWidget({ }: WidgetProps) {
                   setBreakEvenPoint(monthsToBreakEven);
                 }
               } else {
-              setBreakEvenPoint(0); // Already past break-even
+                setBreakEvenPoint(0); // Already past break-even
+              }
             }
           }
         }
       } catch (error) {
         console.error('Error loading break-even analysis:', error);
         setBreakEvenData([]);
-        setAverageMonthlyExpenses(0);
         setCurrentProfit(0);
         setBreakEvenPoint(null);
       } finally {
