@@ -9,6 +9,7 @@ from sqlalchemy import select, or_, func, and_
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import logger
+from app.core.tenancy import scope_query
 
 # Lazy imports to avoid MetaData conflicts - import from app.models which already has them registered
 OPPORTUNITIES_AVAILABLE = None
@@ -206,11 +207,13 @@ class LeoContextService:
             # Lazy import to avoid MetaData conflicts
             Contact = _get_contact_model()
             
-            # Build query
+            # Build query with tenant scoping
             stmt = select(Contact).options(
                 selectinload(Contact.company),
                 selectinload(Contact.employee)
             )
+            # Apply tenant scoping
+            stmt = scope_query(stmt, Contact)
             
             # Check if this is a general query about contacts
             query_lower = query.lower()
@@ -327,8 +330,10 @@ class LeoContextService:
             # Lazy import to avoid MetaData conflicts
             Company = _get_company_model()
             
-            # Build query
+            # Build query with tenant scoping
             stmt = select(Company)
+            # Apply tenant scoping
+            stmt = scope_query(stmt, Company)
             
             # Filter by keywords if any
             if keywords:
@@ -417,8 +422,10 @@ class LeoContextService:
             
             keywords = self._extract_keywords(query)
             
-            # Build query
+            # Build query with tenant scoping
             stmt = select(Opportunite)
+            # Apply tenant scoping
+            stmt = scope_query(stmt, Opportunite)
             
             # Filter by keywords if any
             if keywords:
