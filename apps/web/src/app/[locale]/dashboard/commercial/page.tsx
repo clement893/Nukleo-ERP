@@ -176,7 +176,7 @@ function CommercialDashboardContent() {
       } else if (commercialConfig) {
         // Use existing commercial config
         setActiveConfig(commercialConfig.id);
-      } else if (configs.length > 0) {
+      } else if (configs.length > 0 && configs[0]) {
         // Use first available config
         setActiveConfig(configs[0].id);
       }

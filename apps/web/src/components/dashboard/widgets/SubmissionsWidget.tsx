@@ -68,7 +68,7 @@ export function SubmissionsWidget({ config, globalFilters }: WidgetProps) {
       rejected: { color: 'bg-red-500', icon: XCircle, label: 'Refusé' },
     };
     
-    const statusInfo = statusMap[status] || statusMap.draft;
+    const statusInfo = statusMap[status] ?? statusMap.draft;
     const Icon = statusInfo.icon;
     
     return (

@@ -460,7 +460,7 @@ export default function LeoPage() {
   };
 
   return (
-    <div className="relative flex flex-col h-screen w-full overflow-hidden bg-background">
+    <div className="relative flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden bg-background absolute inset-0 top-0 left-0 right-0 bottom-0" style={{ margin: 0 }}>
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />

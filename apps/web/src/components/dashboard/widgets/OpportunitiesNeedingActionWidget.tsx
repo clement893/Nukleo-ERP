@@ -4,7 +4,7 @@
  * Widget : Opportunités nécessitant une action
  */
 
-import { AlertCircle, ExternalLink, Clock, FileText, Target } from 'lucide-react';
+import { Clock, FileText, Target } from 'lucide-react';
 import { useInfiniteOpportunities } from '@/lib/query/opportunities';
 import { useInfiniteSubmissions } from '@/lib/query/commercial';
 import type { WidgetProps } from '@/lib/dashboard/types';
@@ -14,7 +14,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Badge, Button } from '@/components/ui';
 import { useMemo } from 'react';
 
-export function OpportunitiesNeedingActionWidget({ config, globalFilters }: WidgetProps) {
+export function OpportunitiesNeedingActionWidget({ config }: WidgetProps) {
   const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(1000);
   const { data: submissionsData, isLoading: loadingSubs } = useInfiniteSubmissions(1000);
 
