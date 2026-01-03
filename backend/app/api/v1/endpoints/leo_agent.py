@@ -283,16 +283,20 @@ async def leo_query(
     leo_service = LeoAgentService(db)
     
     try:
+        # CRITICAL: Extract user_id immediately to avoid greenlet_spawn errors
+        # Access user.id while still in the async context where user was loaded
+        user_id = int(current_user.id) if current_user.id is not None else 0
+        
         # 1. Get or create conversation
         if request.conversation_id:
-            conversation = await leo_service.get_conversation(request.conversation_id, current_user.id)
+            conversation = await leo_service.get_conversation(request.conversation_id, user_id)
             if not conversation:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Conversation not found"
                 )
         else:
-            conversation = await leo_service.create_conversation(current_user.id)
+            conversation = await leo_service.create_conversation(user_id)
         
         # 2. Save user message
         user_message = await leo_service.add_message(
@@ -301,10 +305,10 @@ async def leo_query(
             content=request.message,
         )
         
-        # 3. Get user context
+        # 3. Get user context (pass user object but it will extract attributes safely)
         user_context = await leo_service.get_user_context(current_user)
         
-        # 4. Get relevant data based on query
+        # 4. Get relevant data based on query (pass user object but it will extract user_id safely)
         relevant_data = await leo_service.get_relevant_data(request.message, current_user)
         data_context = await leo_service.format_data_for_ai(relevant_data)
         

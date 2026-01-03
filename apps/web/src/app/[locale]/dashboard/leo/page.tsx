@@ -460,7 +460,7 @@ export default function LeoPage() {
   };
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-4rem-2rem)] min-h-[calc(100vh-4rem-2rem)] w-full overflow-hidden bg-background -m-4 sm:-m-6 md:-m-8 lg:-m-10 xl:-m-12 2xl:-m-16 md:ml-0 md:pl-64 md:pt-16">
+    <div className="relative flex flex-col h-[calc(100vh-4rem-2rem)] min-h-[calc(100vh-4rem-2rem)] w-full overflow-hidden bg-background -m-4 sm:-m-6 md:-m-8 lg:-m-10 xl:-m-12 2xl:-m-16 md:ml-0 md:pl-4 md:pt-16">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
@@ -696,23 +696,6 @@ export default function LeoPage() {
                   Votre assistant IA pour Nukleo ERP. Posez-moi des questions sur vos opportunités, contacts, projets et plus encore.
                 </p>
 
-                {/* Provider Selector */}
-                <div className="mb-6 max-w-md w-full">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fournisseur IA
-                  </label>
-                  <Select
-                    value={provider}
-                    onChange={(e) => setProvider(e.target.value as any)}
-                    options={[
-                      { value: 'auto', label: 'Auto (recommandé)' },
-                      { value: 'openai', label: 'OpenAI' },
-                      { value: 'anthropic', label: 'Anthropic (Claude)' },
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-
                 {/* Suggestions */}
                 <div className="max-w-2xl w-full">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 text-center">
@@ -851,20 +834,6 @@ export default function LeoPage() {
           {/* Input Area - Fixed at bottom */}
           <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sticky bottom-0 z-10">
             <div className="max-w-4xl mx-auto">
-              {messages.length > 0 && (
-                <div className="mb-3 flex items-center justify-between">
-                  <Select
-                    value={provider}
-                    onChange={(e) => setProvider(e.target.value as any)}
-                    options={[
-                      { value: 'auto', label: 'Auto (recommandé)' },
-                      { value: 'openai', label: 'OpenAI' },
-                      { value: 'anthropic', label: 'Anthropic (Claude)' },
-                    ]}
-                    className="w-48"
-                  />
-                </div>
-              )}
               <div className="flex gap-3">
                 <div className="flex-1 relative">
                   <input

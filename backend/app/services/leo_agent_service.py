@@ -142,13 +142,22 @@ class LeoAgentService:
             # Convert projects to dict format immediately to avoid greenlet_spawn errors
             projects_list = []
             for p in projects[:10]:  # Limit to 10
-                status_value = p.status.value if hasattr(p.status, 'value') else str(p.status)
+                # Extract all attributes immediately while in async context
+                project_id = int(p.id) if p.id is not None else 0
+                project_name = str(p.name) if p.name is not None else ""
+                project_description = str(p.description) if p.description is not None else ""
+                # Handle status enum safely
+                try:
+                    status_value = str(p.status.value) if hasattr(p.status, 'value') else str(p.status)
+                except Exception:
+                    status_value = str(p.status) if p.status is not None else ""
+                project_created_at = p.created_at.isoformat() if p.created_at else None
                 projects_list.append({
-                    "id": p.id,
-                    "name": str(p.name) if p.name else "",
-                    "description": str(p.description) if p.description else "",
+                    "id": project_id,
+                    "name": project_name,
+                    "description": project_description,
                     "status": status_value,
-                    "created_at": p.created_at.isoformat() if p.created_at else None,
+                    "created_at": project_created_at,
                 })
             data['projects'] = projects_list
         
@@ -163,15 +172,27 @@ class LeoAgentService:
             # Convert tasks to dict format immediately to avoid greenlet_spawn errors
             tasks_list = []
             for t in tasks[:10]:  # Limit to 10
-                status_value = t.status.value if hasattr(t.status, 'value') else str(t.status)
-                priority_value = t.priority.value if hasattr(t.priority, 'value') else str(t.priority)
+                # Extract all attributes immediately while in async context
+                task_id = int(t.id) if t.id is not None else 0
+                task_title = str(t.title) if t.title is not None else ""
+                task_description = str(t.description) if t.description is not None else ""
+                # Handle status and priority enums safely
+                try:
+                    status_value = str(t.status.value) if hasattr(t.status, 'value') else str(t.status)
+                except Exception:
+                    status_value = str(t.status) if t.status is not None else ""
+                try:
+                    priority_value = str(t.priority.value) if hasattr(t.priority, 'value') else str(t.priority)
+                except Exception:
+                    priority_value = str(t.priority) if t.priority is not None else ""
+                task_created_at = t.created_at.isoformat() if t.created_at else None
                 tasks_list.append({
-                    "id": t.id,
-                    "title": str(t.title) if t.title else "",
-                    "description": str(t.description) if t.description else "",
+                    "id": task_id,
+                    "title": task_title,
+                    "description": task_description,
                     "status": status_value,
                     "priority": priority_value,
-                    "created_at": t.created_at.isoformat() if t.created_at else None,
+                    "created_at": task_created_at,
                 })
             data['tasks'] = tasks_list
         
@@ -186,15 +207,26 @@ class LeoAgentService:
             # Convert invoices to dict format immediately to avoid greenlet_spawn errors
             invoices_list = []
             for i in invoices[:10]:  # Limit to 10
-                status_value = i.status.value if hasattr(i.status, 'value') else str(i.status)
+                # Extract all attributes immediately while in async context
+                invoice_id = int(i.id) if i.id is not None else 0
+                invoice_number = str(i.invoice_number) if i.invoice_number is not None else ""
+                amount_due = str(i.amount_due) if i.amount_due is not None else "0"
+                amount_paid = str(i.amount_paid) if i.amount_paid is not None else "0"
+                # Handle status enum safely
+                try:
+                    status_value = str(i.status.value) if hasattr(i.status, 'value') else str(i.status)
+                except Exception:
+                    status_value = str(i.status) if i.status is not None else ""
+                due_date = i.due_date.isoformat() if i.due_date else None
+                created_at = i.created_at.isoformat() if i.created_at else None
                 invoices_list.append({
-                    "id": i.id,
-                    "invoice_number": str(i.invoice_number) if i.invoice_number else "",
-                    "amount_due": str(i.amount_due) if i.amount_due else "0",
-                    "amount_paid": str(i.amount_paid) if i.amount_paid else "0",
+                    "id": invoice_id,
+                    "invoice_number": invoice_number,
+                    "amount_due": amount_due,
+                    "amount_paid": amount_paid,
                     "status": status_value,
-                    "due_date": i.due_date.isoformat() if i.due_date else None,
-                    "created_at": i.created_at.isoformat() if i.created_at else None,
+                    "due_date": due_date,
+                    "created_at": created_at,
                 })
             data['invoices'] = invoices_list
         
@@ -207,14 +239,22 @@ class LeoAgentService:
             # Convert companies to dict format immediately to avoid greenlet_spawn errors
             companies_list = []
             for c in companies[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                company_id = int(c.id) if c.id is not None else 0
+                company_name = str(c.name) if c.name is not None else ""
+                company_description = str(c.description) if c.description is not None else ""
+                is_client = bool(c.is_client) if c.is_client is not None else False
+                city = str(c.city) if c.city is not None else ""
+                country = str(c.country) if c.country is not None else ""
+                created_at = c.created_at.isoformat() if c.created_at else None
                 companies_list.append({
-                    "id": c.id,
-                    "name": str(c.name) if c.name else "",
-                    "description": str(c.description) if c.description else "",
-                    "is_client": bool(c.is_client) if c.is_client is not None else False,
-                    "city": str(c.city) if c.city else "",
-                    "country": str(c.country) if c.country else "",
-                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                    "id": company_id,
+                    "name": company_name,
+                    "description": company_description,
+                    "is_client": is_client,
+                    "city": city,
+                    "country": country,
+                    "created_at": created_at,
                 })
             data['companies'] = companies_list
         
@@ -229,15 +269,24 @@ class LeoAgentService:
             # Convert contacts to dict format immediately to avoid greenlet_spawn errors
             contacts_list = []
             for c in contacts[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                contact_id = int(c.id) if c.id is not None else 0
+                first_name = str(c.first_name) if c.first_name is not None else ""
+                last_name = str(c.last_name) if c.last_name is not None else ""
+                email = str(c.email) if c.email is not None else ""
+                position = str(c.position) if c.position is not None else ""
+                circle = str(c.circle) if c.circle is not None else ""
+                company_id = int(c.company_id) if c.company_id is not None else None
+                created_at = c.created_at.isoformat() if c.created_at else None
                 contacts_list.append({
-                    "id": c.id,
-                    "first_name": str(c.first_name) if c.first_name else "",
-                    "last_name": str(c.last_name) if c.last_name else "",
-                    "email": str(c.email) if c.email else "",
-                    "position": str(c.position) if c.position else "",
-                    "circle": str(c.circle) if c.circle else "",
-                    "company_id": c.company_id if c.company_id else None,
-                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                    "id": contact_id,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "position": position,
+                    "circle": circle,
+                    "company_id": company_id,
+                    "created_at": created_at,
                 })
             data['contacts'] = contacts_list
         
