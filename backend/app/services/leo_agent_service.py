@@ -437,3 +437,29 @@ class LeoAgentService:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
+    
+    async def delete_conversation(self, conversation_id: int, user_id: int) -> bool:
+        """
+        Delete a conversation and all its messages (only if it belongs to the user)
+        
+        Args:
+            conversation_id: Conversation ID
+            user_id: User ID (for security check)
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        query = select(LeoConversation).where(
+            LeoConversation.id == conversation_id,
+            LeoConversation.user_id == user_id
+        )
+        result = await self.db.execute(query)
+        conversation = result.scalar_one_or_none()
+        
+        if not conversation:
+            return False
+        
+        # Delete conversation (messages will be deleted automatically due to cascade)
+        await self.db.delete(conversation)
+        await self.db.commit()
+        return True

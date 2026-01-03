@@ -12,6 +12,7 @@ from app.models.user import User
 from app.schemas.leo import (
     LeoConversation,
     LeoConversationListResponse,
+    LeoConversationUpdate,
     LeoMessage,
     LeoMessageListResponse,
     LeoQueryRequest,
@@ -167,6 +168,93 @@ async def get_conversation_messages(
         total=len(messages),
         conversation_id=conversation_id
     )
+
+
+@router.put("/conversations/{conversation_id}", response_model=LeoConversation)
+async def update_conversation(
+    conversation_id: int,
+    update_data: LeoConversationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update a conversation (e.g., rename it)
+    
+    Only the owner can update their conversation.
+    Superadmins can update any conversation.
+    """
+    from app.dependencies import is_superadmin
+    
+    leo_service = LeoAgentService(db)
+    
+    # Verify conversation belongs to user
+    conversation = await leo_service.get_conversation(conversation_id, current_user.id)
+    
+    # If not found and user is superadmin, try to get conversation without user filter
+    if not conversation:
+        user_is_superadmin = await is_superadmin(current_user, db)
+        if user_is_superadmin:
+            from app.modules.leo.models import LeoConversation as LeoConversationModel
+            result = await db.execute(
+                select(LeoConversationModel).where(LeoConversationModel.id == conversation_id)
+            )
+            conversation = result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    # Update conversation
+    if update_data.title is not None:
+        conversation.title = update_data.title
+        await db.commit()
+        await db.refresh(conversation)
+    
+    return LeoConversation.model_validate(conversation)
+
+
+@router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_conversation(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Delete a conversation and all its messages
+    
+    Only the owner can delete their conversation.
+    Superadmins can delete any conversation.
+    """
+    from app.dependencies import is_superadmin
+    
+    leo_service = LeoAgentService(db)
+    
+    # Try to delete conversation for current user
+    deleted = await leo_service.delete_conversation(conversation_id, current_user.id)
+    
+    # If not found and user is superadmin, try to delete without user filter
+    if not deleted:
+        user_is_superadmin = await is_superadmin(current_user, db)
+        if user_is_superadmin:
+            from app.modules.leo.models import LeoConversation as LeoConversationModel
+            result = await db.execute(
+                select(LeoConversationModel).where(LeoConversationModel.id == conversation_id)
+            )
+            conversation = result.scalar_one_or_none()
+            if conversation:
+                await db.delete(conversation)
+                await db.commit()
+                return None
+    
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    return None
 
 
 @router.post("/query", response_model=LeoQueryResponse)

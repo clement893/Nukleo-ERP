@@ -181,6 +181,7 @@ export default function LeoPage() {
     onMutate: async (conversationId: number) => {
       // Cancel any outgoing refetches to avoid overwriting optimistic update
       await queryClient.cancelQueries({ queryKey: ['leo', 'conversations'] });
+      await queryClient.cancelQueries({ queryKey: ['leo', 'messages'] });
       
       // Snapshot the previous value
       const previousConversationsData = queryClient.getQueryData(['leo', 'conversations', skip]);
@@ -196,17 +197,7 @@ export default function LeoPage() {
         prev.filter(conv => conv.id !== conversationId)
       );
       
-      // Optimistically update the query cache
-      queryClient.setQueryData(['leo', 'conversations', skip], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.filter((conv: LeoConversation) => conv.id !== conversationId),
-          total: old.total - 1,
-        };
-      });
-      
-      // Also update other pages if they exist
+      // Optimistically update the query cache for all skip values
       queryClient.setQueriesData(
         { queryKey: ['leo', 'conversations'] },
         (old: any) => {
@@ -214,17 +205,21 @@ export default function LeoPage() {
           return {
             ...old,
             items: old.items.filter((conv: LeoConversation) => conv.id !== conversationId),
-            total: old.total - 1,
+            total: Math.max(0, old.total - 1),
           };
         }
       );
+      
+      // Remove messages query for deleted conversation
+      queryClient.removeQueries({ queryKey: ['leo', 'messages', conversationId] });
       
       // Return context with previous values for rollback
       return { previousConversationsData, previousConversationsWithLastMsg };
     },
     onSuccess: () => {
-      // Invalidate to ensure we have the latest data
+      // Invalidate and refetch to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
+      queryClient.refetchQueries({ queryKey: ['leo', 'conversations'] });
       showToast({ message: 'Conversation supprimée', type: 'success' });
     },
     onError: (error: any, _conversationId: number, context: any) => {
@@ -337,13 +332,49 @@ export default function LeoPage() {
     }
   };
 
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    }, 100);
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
+
+  // Scroll to bottom when conversation changes or page loads
+  useEffect(() => {
+    if (activeConversation && messages.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
+    } else if (!activeConversation) {
+      // Scroll to top when no conversation is active
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = 0;
+      }
+    }
+  }, [activeConversation, messages.length]);
+
+  // Ensure page doesn't scroll below viewport on initial load
+  useEffect(() => {
+    // Reset scroll position on mount
+    window.scrollTo(0, 0);
+    // Also ensure the main container is at the top
+    const mainContainer = document.querySelector('[class*="h-screen"]');
+    if (mainContainer) {
+      (mainContainer as HTMLElement).scrollTop = 0;
+    }
+  }, []);
 
   const handleSend = () => {
     if (!message.trim() || sendMessageMutation.isPending) return;
@@ -642,9 +673,13 @@ export default function LeoPage() {
         )}
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
+          <div 
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0" 
+            style={{ scrollBehavior: 'smooth' }}
+          >
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
