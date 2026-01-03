@@ -6,8 +6,8 @@ import { useState, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
-  MessageSquare, Search, Filter, CheckCircle2, Clock, XCircle, 
-  AlertCircle, Edit, Trash2, Send, Eye, User, Calendar, ExternalLink,
+  MessageSquare, Search, CheckCircle2, Clock, XCircle, 
+  AlertCircle, Trash2, Send, Eye, User, Calendar, ExternalLink,
   Bug, Lightbulb, HelpCircle, AlertTriangle, Heart, MoreHorizontal, Settings
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Modal, useToast, Select, Textarea } from '@/components/ui';

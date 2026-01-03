@@ -3,8 +3,8 @@
  * API client for user feedback and support tickets
  */
 
-import { apiClient } from '../client';
-import { extractApiData } from '../utils';
+import { apiClient } from './client';
+import { extractApiData } from './utils';
 
 export type FeedbackType = 'bug' | 'feature_request' | 'question' | 'complaint' | 'praise' | 'other';
 export type FeedbackStatus = 'open' | 'in_progress' | 'resolved' | 'closed';

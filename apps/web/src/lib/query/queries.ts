@@ -17,7 +17,7 @@ import { projectTasksAPI, type ProjectTaskUpdate } from '@/lib/api/project-tasks
 import { employeesAPI } from '@/lib/api/employees';
 import { facturationsAPI } from '@/lib/api/finances/facturations';
 import { onboardingAPI } from '@/lib/api/onboarding';
-import { feedbackAPI, type Feedback, type FeedbackStatus, type FeedbackType } from '@/lib/api/feedback';
+import { feedbackAPI, type FeedbackStatus, type FeedbackType } from '@/lib/api/feedback';
 import { extractApiData } from '@/lib/api/utils';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 
@@ -576,6 +576,61 @@ export function useCompleteEmployeeStep() {
       queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeeProgress(employeeId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeeSteps(employeeId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.employeesList() });
+    },
+  });
+}
+
+// Feedback Hooks
+export function useFeedback(options?: {
+  status?: FeedbackStatus;
+  type?: FeedbackType;
+  limit?: number;
+  offset?: number;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: queryKeys.feedback.list(options),
+    queryFn: () => feedbackAPI.list({
+      status: options?.status,
+      type: options?.type,
+      limit: options?.limit,
+      offset: options?.offset,
+    }),
+    enabled: options?.enabled !== false,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useFeedbackDetail(feedbackId: number, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.feedback.detail(feedbackId),
+    queryFn: () => feedbackAPI.get(feedbackId),
+    enabled: enabled && !!feedbackId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useUpdateFeedback() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { status?: FeedbackStatus; priority?: number; response?: string } }) =>
+      feedbackAPI.update(id, data),
+    onSuccess: (updatedFeedback) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.feedback.detail(updatedFeedback.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.feedback.list() });
+    },
+  });
+}
+
+export function useDeleteFeedback() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (feedbackId: number) => feedbackAPI.delete(feedbackId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.feedback.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.feedback.list() });
     },
   });
 }
