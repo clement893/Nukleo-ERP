@@ -199,6 +199,8 @@ export const transactionsAPI = {
     const formData = new FormData();
     formData.append('file', file);
     
+    // Don't set Content-Type header - let axios set it automatically with boundary
+    // Setting it manually can cause issues with multipart/form-data
     const response = await apiClient.post<{
       success: boolean;
       created_count: number;
@@ -207,9 +209,7 @@ export const transactionsAPI = {
       warnings?: Array<{ row: number; type: string; message: string }>;
       transactions?: Transaction[];
     }>(`/v1/finances/transactions/import?dry_run=${dryRun}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      // Remove Content-Type header - axios will set it automatically with boundary
     });
     
     const data = extractApiData<{
