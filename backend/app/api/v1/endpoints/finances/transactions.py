@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func, cast, String, text, inspect
 from sqlalchemy.exc import ProgrammingError
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 import zipfile
 import os
@@ -19,6 +19,7 @@ from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.transaction import Transaction, TransactionType, TransactionStatus
+from app.models.transaction_category import TransactionCategory
 from app.schemas.transaction import (
     TransactionCreate,
     TransactionUpdate,
@@ -665,7 +666,24 @@ async def import_transactions(
                 tax_amount_decimal = Decimal(str(tax_amount)) if tax_amount else Decimal(0)
                 
                 currency = get_field_value(row_data, ['currency', 'devise']) or 'CAD'
-                category = get_field_value(row_data, ['category', 'categorie'])
+                category_name = get_field_value(row_data, ['category', 'categorie'])
+                
+                # Find category by name if provided
+                category_id = None
+                if category_name:
+                    category_result = await db.execute(
+                        select(TransactionCategory).where(
+                            and_(
+                                TransactionCategory.user_id == current_user.id,
+                                TransactionCategory.name.ilike(f"%{category_name}%")
+                            )
+                        ).limit(1)
+                    )
+                    category = category_result.scalar_one_or_none()
+                    if category:
+                        category_id = category.id
+                    else:
+                        logger.warning(f"Category '{category_name}' not found for user {current_user.id}, transaction will be created without category")
                 
                 # Parse dates
                 expected_payment_date = None
@@ -749,6 +767,14 @@ async def import_transactions(
                         metadata = {'revenue_type': str(revenue_type).lower().strip()}
                         transaction_metadata = json.dumps(metadata)
                 
+                # Ensure transaction_date has timezone info
+                if transaction_date and transaction_date.tzinfo is None:
+                    transaction_date = transaction_date.replace(tzinfo=timezone.utc)
+                if expected_payment_date and expected_payment_date.tzinfo is None:
+                    expected_payment_date = expected_payment_date.replace(tzinfo=timezone.utc)
+                if payment_date and payment_date.tzinfo is None:
+                    payment_date = payment_date.replace(tzinfo=timezone.utc)
+                
                 # Create transaction
                 transaction = Transaction(
                     user_id=current_user.id,
@@ -757,7 +783,7 @@ async def import_transactions(
                     amount=amount,
                     tax_amount=tax_amount_decimal,
                     currency=str(currency).upper()[:3],
-                    category=str(category) if category else None,
+                    category_id=category_id,
                     transaction_date=transaction_date,
                     expected_payment_date=expected_payment_date,
                     payment_date=payment_date,
