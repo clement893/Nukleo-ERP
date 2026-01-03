@@ -7,7 +7,7 @@ contacts logic to avoid code duplication while maintaining isolation.
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Request
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,7 +62,7 @@ async def count_contacts(
         company_id=company_id,
     )
 
-@router.post("/", response_model=ContactSchema, status_code=commercial_contacts.status.HTTP_201_CREATED)
+@router.post("/", response_model=ContactSchema, status_code=status.HTTP_201_CREATED)
 async def create_contact(
     request: Request,
     contact_data: ContactCreate,
@@ -77,7 +77,7 @@ async def create_contact(
         current_user=current_user,
     )
 
-@router.delete("/bulk", status_code=commercial_contacts.status.HTTP_200_OK)
+@router.delete("/bulk", status_code=status.HTTP_200_OK)
 async def delete_all_contacts(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -120,7 +120,7 @@ async def update_contact(
         current_user=current_user,
     )
 
-@router.delete("/{contact_id}", status_code=commercial_contacts.status.HTTP_204_NO_CONTENT)
+@router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_contact(
     contact_id: int,
     db: AsyncSession = Depends(get_db),
