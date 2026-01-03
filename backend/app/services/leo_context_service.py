@@ -457,9 +457,27 @@ class LeoContextService:
             keywords = self._extract_keywords(query)
             
             # Build query with tenant scoping
-            stmt = select(Opportunite)
+            stmt = select(Opportunite).options(
+                selectinload(Opportunite.stage),
+                selectinload(Opportunite.pipeline)
+            )
             # Apply tenant scoping
             stmt = scope_query(stmt, Opportunite)
+            
+            # Detect pipeline stage filters (Closed Won, Closed Lost)
+            query_lower = query.lower()
+            stage_filter = None
+            if any(phrase in query_lower for phrase in ["closed won", "won", "gagné", "gagnée", "réussi", "réussie"]):
+                # Filter by stage name containing "Closed Won" or "09 - Closed Won"
+                from app.models import PipelineStage
+                stage_filter = PipelineStage.name.ilike("%Closed Won%")
+            elif any(phrase in query_lower for phrase in ["closed lost", "lost", "perdu", "perdue"]):
+                from app.models import PipelineStage
+                stage_filter = PipelineStage.name.ilike("%Closed Lost%")
+            
+            # If stage filter, join with PipelineStage
+            if stage_filter:
+                stmt = stmt.join(Opportunite.stage).where(stage_filter)
             
             # Filter by keywords if any
             if keywords:
@@ -664,6 +682,7 @@ class LeoContextService:
                     "poste": None,  # Employee model doesn't have job_title in this version
                     "equipe": employee.team.name if employee.team else None,
                     "date_embauche": employee.hire_date.isoformat() if employee.hire_date else None,
+                    "anniversaire": employee.birthday.isoformat() if employee.birthday else None,
                     "numero_employe": employee.employee_number,
                 })
             
@@ -912,11 +931,17 @@ class LeoContextService:
                 "combien", "how many", "nombre", "total", "count", "quantité"
             ])
             
-            # Build query with tenant scoping
-            stmt = select(ExpenseAccount).options(
+            # Build query with tenant scoping via Employee
+            # ExpenseAccount doesn't have team_id, so we scope via Employee
+            Employee = _get_employee_model()
+            if Employee is None:
+                return []
+            
+            stmt = select(ExpenseAccount).join(Employee).options(
                 selectinload(ExpenseAccount.employee)
             )
-            stmt = scope_query(stmt, ExpenseAccount)
+            # Scope via Employee's team_id
+            stmt = scope_query(stmt, Employee)
             
             # Apply status filter if detected
             if status_filter:
@@ -1188,23 +1213,40 @@ class LeoContextService:
             context_parts.append("")
         
         if data.get("opportunities"):
+            opps = data["opportunities"]
+            # Detect if query is about Closed Won/Lost
+            query_lower = query.lower()
+            is_closed_won_query = any(phrase in query_lower for phrase in ["closed won", "won", "gagné", "réussi"])
+            is_closed_lost_query = any(phrase in query_lower for phrase in ["closed lost", "lost", "perdu"])
+            
             if is_counting_query:
-                # For counting, just show summary
-                total_opps = len(data["opportunities"])
-                if total_opps > 0:
-                    max_amount = max((float(opp.get("montant", 0) or 0) for opp in data["opportunities"]), default=0)
-                    context_parts.append(f"=== OPPORTUNITÉS ({total_opps}) ===")
-                    context_parts.append(f"Montant maximum: {max_amount}€")
+                # For counting, show summary with totals
+                total_opps = len(opps)
+                if is_closed_won_query:
+                    closed_won = [o for o in opps if o.get("stage") and "Closed Won" in str(o.get("stage"))]
+                    total_amount = sum(float(o.get("montant", 0) or 0) for o in closed_won)
+                    context_parts.append(f"=== OPPORTUNITÉS CLOSED WON ({len(closed_won)}) ===")
+                    context_parts.append(f"Montant total: {total_amount:,.2f}€")
+                elif is_closed_lost_query:
+                    closed_lost = [o for o in opps if o.get("stage") and "Closed Lost" in str(o.get("stage"))]
+                    context_parts.append(f"=== OPPORTUNITÉS CLOSED LOST ({len(closed_lost)}) ===")
+                else:
+                    if total_opps > 0:
+                        max_amount = max((float(opp.get("montant", 0) or 0) for opp in opps), default=0)
+                        context_parts.append(f"=== OPPORTUNITÉS ({total_opps}) ===")
+                        context_parts.append(f"Montant maximum: {max_amount}€")
             else:
-                context_parts.append(f"=== OPPORTUNITÉS ({len(data['opportunities'])}) ===")
+                context_parts.append(f"=== OPPORTUNITÉS ({len(opps)}) ===")
                 # Show top opportunities by amount
-                sorted_opps = sorted(data["opportunities"], key=lambda x: float(x.get("montant", 0) or 0), reverse=True)
-                for opp in sorted_opps[:5]:
+                sorted_opps = sorted(opps, key=lambda x: float(x.get("montant", 0) or 0), reverse=True)
+                for opp in sorted_opps[:10]:
                     line = f"{opp['nom']}"
                     if opp.get("montant"):
                         line += f" - {opp['montant']}€"
-                    if opp.get("statut"):
-                        line += f" [{opp['statut']}]"
+                    if opp.get("stage"):
+                        line += f" [Stage: {opp['stage']}]"
+                    elif opp.get("statut"):
+                        line += f" [Statut: {opp['statut']}]"
                     context_parts.append(line)
             context_parts.append("")
         
@@ -1245,54 +1287,80 @@ class LeoContextService:
                 context_parts.append("")
         
         if data.get("vacation_requests"):
-            if not is_counting_query:
-                vrs = data["vacation_requests"]
-                # Group by status
-                pending = [v for v in vrs if v.get("status") == "pending"]
-                approved = [v for v in vrs if v.get("status") == "approved"]
-                
+            vrs = data["vacation_requests"]
+            # Group by status
+            pending = [v for v in vrs if v.get("status") == "pending"]
+            approved = [v for v in vrs if v.get("status") == "approved"]
+            
+            # Check if query specifically asks for pending
+            query_lower = query.lower()
+            wants_pending = any(phrase in query_lower for phrase in ["en attente", "pending", "en attente d'approbation"])
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche", "quelles sont"])
+            
+            if is_counting_query and not wants_list:
+                # Just show count
+                if wants_pending:
+                    context_parts.append(f"DEMANDES DE VACANCES EN ATTENTE: {len(pending)}")
+                else:
+                    context_parts.append(f"DEMANDES DE VACANCES: {len(vrs)} ({len(pending)} en attente, {len(approved)} approuvées)")
+            else:
+                # Show detailed list
                 context_parts.append(f"=== DEMANDES DE VACANCES ({len(vrs)}) ===")
                 if pending:
                     context_parts.append(f"En attente ({len(pending)}):")
-                    for vr in pending[:10]:
+                    for vr in pending[:20]:  # Show more for listing requests
                         line = f"- {vr['employee']}"
                         if vr.get("start_date") and vr.get("end_date"):
                             line += f": {vr['start_date']} au {vr['end_date']}"
+                        if vr.get("reason"):
+                            line += f" ({vr['reason'][:50]})"
                         context_parts.append(line)
-                if approved and len(context_parts) < 25:
+                if approved and (not wants_pending or wants_list) and len(context_parts) < 35:
                     context_parts.append(f"Approuvées ({len(approved)}):")
-                    for vr in approved[:5]:
+                    for vr in approved[:10]:
                         line = f"- {vr['employee']}"
                         if vr.get("start_date") and vr.get("end_date"):
                             line += f": {vr['start_date']} au {vr['end_date']}"
                         context_parts.append(line)
-                context_parts.append("")
+            context_parts.append("")
         
         if data.get("expense_accounts"):
-            if not is_counting_query:
-                eas = data["expense_accounts"]
-                # Group by status
-                approved = [e for e in eas if e.get("status") == "approved"]
-                pending = [e for e in eas if e.get("status") in ["submitted", "under_review"]]
-                
+            eas = data["expense_accounts"]
+            # Group by status
+            approved = [e for e in eas if e.get("status") == "approved"]
+            pending = [e for e in eas if e.get("status") in ["submitted", "under_review"]]
+            
+            # Check if user wants to list them
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche"])
+            
+            if is_counting_query and not wants_list:
+                # Just show count
+                if any(word in query_lower for word in ["approuvé", "approved", "validé", "validée"]):
+                    context_parts.append(f"COMPTES DE DÉPENSES APPROUVÉS: {len(approved)}")
+                else:
+                    context_parts.append(f"COMPTES DE DÉPENSES: {len(eas)} ({len(approved)} approuvés, {len(pending)} en attente)")
+            else:
+                # Show detailed list
                 context_parts.append(f"=== COMPTES DE DÉPENSES ({len(eas)}) ===")
                 if approved:
                     context_parts.append(f"Approuvés ({len(approved)}):")
-                    for ea in approved[:10]:
+                    for ea in approved[:20]:  # Show more for listing requests
                         line = f"- {ea['title']}"
+                        if ea.get("account_number"):
+                            line += f" ({ea['account_number']})"
                         if ea.get("total_amount"):
                             line += f": {ea['total_amount']:.2f} {ea.get('currency', 'EUR')}"
                         if ea.get("employee"):
                             line += f" [{ea['employee']}]"
                         context_parts.append(line)
-                if pending and len(context_parts) < 25:
+                if pending and (wants_list or len(context_parts) < 30):
                     context_parts.append(f"En attente ({len(pending)}):")
-                    for ea in pending[:5]:
+                    for ea in pending[:10]:
                         line = f"- {ea['title']}"
                         if ea.get("total_amount"):
                             line += f": {ea['total_amount']:.2f} {ea.get('currency', 'EUR')}"
                         context_parts.append(line)
-                context_parts.append("")
+            context_parts.append("")
         
         if data.get("projects"):
             if not is_counting_query:
