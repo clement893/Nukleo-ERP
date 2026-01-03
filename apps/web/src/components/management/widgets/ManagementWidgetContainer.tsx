@@ -71,16 +71,18 @@ export function ManagementWidgetContainer({ widget, isEditMode }: ManagementWidg
   };
 
   // Get widget title from config or default
-  const widgetTitle = widget.config?.title || (() => {
-    const titles: Record<string, string> = {
-      'employees-stats': 'Statistiques Employés',
-      'time-tracking-summary': 'Suivi du Temps',
-      'vacation-overview': 'Vue d\'ensemble Vacances',
-      'pending-requests': 'Demandes en attente',
-      'upcoming-vacations': 'Vacances à venir',
-    };
-    return titles[widget.widget_type] || 'Widget';
-  })();
+  const widgetTitle: string = (typeof widget.config?.title === 'string' 
+    ? widget.config.title 
+    : (() => {
+        const titles: Record<string, string> = {
+          'employees-stats': 'Statistiques Employés',
+          'time-tracking-summary': 'Suivi du Temps',
+          'vacation-overview': 'Vue d\'ensemble Vacances',
+          'pending-requests': 'Demandes en attente',
+          'upcoming-vacations': 'Vacances à venir',
+        };
+        return titles[widget.widget_type] || 'Widget';
+      })());
 
   return (
     <div 

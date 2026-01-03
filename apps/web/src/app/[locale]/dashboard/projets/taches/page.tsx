@@ -53,7 +53,7 @@ import TaskForm from '@/components/projects/TaskForm';
 import KanbanBoard from '@/components/ui/KanbanBoard';
 import { handleApiError } from '@/lib/errors/api';
 import { useDebounce } from '@/hooks/useDebounce';
-import { projectsAPI } from '@/lib/api/projects';
+import { projectsAPI, type Project } from '@/lib/api/projects';
 import { teamsAPI } from '@/lib/api/teams';
 import { employeesAPI } from '@/lib/api/employees';
 
@@ -182,7 +182,7 @@ export default function TachesPage() {
           projectsAPI.list(0, 1000),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
         ]) as any;
-        setProjects(projectsData.map(p => ({ id: p.id, name: p.name })));
+        setProjects(projectsData.map((p: Project) => ({ id: p.id, name: p.name })));
       } catch (err) {
         console.warn('Failed to load projects for filters:', err);
         // Continue even if projects fail
