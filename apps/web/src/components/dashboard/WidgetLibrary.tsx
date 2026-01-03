@@ -7,9 +7,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X, Search, Plus, Edit, Trash2, Sparkles } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
-import { widgetRegistry } from '@/lib/dashboard/widgetRegistry';
+import { widgetRegistry, getWidgetsByModule } from '@/lib/dashboard/widgetRegistry';
 import { getFilteredWidgetRegistry } from '@/lib/dashboard/widgetPermissions';
-import type { WidgetType } from '@/lib/dashboard/types';
+import type { WidgetType, DashboardModule } from '@/lib/dashboard/types';
 import { customWidgetsAPI, type CustomWidget } from '@/lib/api/custom-widgets';
 import { WidgetEditor } from './WidgetEditor';
 import { useToast } from '@/components/ui';
@@ -18,6 +18,7 @@ import { logger } from '@/lib/logger';
 interface WidgetLibraryProps {
   isOpen: boolean;
   onClose: () => void;
+  module?: DashboardModule | 'all'; // Module contextuel pour filtrer les widgets
   hasModuleAccess?: (module: string) => boolean; // Optional permission checker for ERP portal
 }
 
@@ -30,7 +31,7 @@ const categoryLabels: Record<string, string> = {
   system: 'Système',
 };
 
-export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibraryProps) {
+export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess }: WidgetLibraryProps) {
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -60,13 +61,22 @@ export function WidgetLibrary({ isOpen, onClose, hasModuleAccess }: WidgetLibrar
     }
   };
 
-  // Filter widgets based on permissions if provided
+  // Filter widgets based on module and permissions
   const filteredRegistry = useMemo(() => {
-    if (hasModuleAccess) {
-      return getFilteredWidgetRegistry(hasModuleAccess);
+    let registry = widgetRegistry;
+    
+    // Filtrage par module si spécifié
+    if (module && module !== 'all') {
+      registry = getWidgetsByModule(module, registry);
     }
-    return widgetRegistry;
-  }, [hasModuleAccess]);
+    
+    // Filtrage par permissions si fourni
+    if (hasModuleAccess) {
+      registry = getFilteredWidgetRegistry(hasModuleAccess, registry);
+    }
+    
+    return registry;
+  }, [module, hasModuleAccess]);
 
   const categories = useMemo(() => {
     const cats = new Set(Object.values(filteredRegistry).map(w => w.category));

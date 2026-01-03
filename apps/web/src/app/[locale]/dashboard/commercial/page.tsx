@@ -205,6 +205,7 @@ function CommercialDashboardContent() {
       <WidgetLibrary
         isOpen={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
+        module="commercial"
       />
 
       {/* Quick Actions FAB */}

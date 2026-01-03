@@ -3,7 +3,7 @@
  * Maps widget categories to employee portal modules
  */
 
-import type { WidgetCategory } from './types';
+import type { WidgetCategory, WidgetDefinition } from './types';
 import { widgetRegistry } from './widgetRegistry';
 import type { WidgetType } from './types';
 
@@ -41,9 +41,10 @@ export function canAccessWidgetCategory(
  * Get accessible widget types based on permissions
  */
 export function getAccessibleWidgetTypes(
-  hasModuleAccess: (module: string) => boolean
+  hasModuleAccess: (module: string) => boolean,
+  registry: Record<WidgetType, WidgetDefinition> = widgetRegistry
 ): WidgetType[] {
-  return Object.values(widgetRegistry)
+  return Object.values(registry)
     .filter(widget => canAccessWidgetCategory(widget.category, hasModuleAccess))
     .map(widget => widget.id);
 }
@@ -52,13 +53,16 @@ export function getAccessibleWidgetTypes(
  * Filter widget registry based on permissions
  */
 export function getFilteredWidgetRegistry(
-  hasModuleAccess: (module: string) => boolean
-): Partial<Record<WidgetType, typeof widgetRegistry[WidgetType]>> {
-  const accessibleTypes = getAccessibleWidgetTypes(hasModuleAccess);
-  const filtered: Partial<Record<WidgetType, typeof widgetRegistry[WidgetType]>> = {};
+  hasModuleAccess: (module: string) => boolean,
+  registry: Record<WidgetType, WidgetDefinition> = widgetRegistry
+): Partial<Record<WidgetType, WidgetDefinition>> {
+  const accessibleTypes = getAccessibleWidgetTypes(hasModuleAccess, registry);
+  const filtered: Partial<Record<WidgetType, WidgetDefinition>> = {};
   
   accessibleTypes.forEach(type => {
-    filtered[type] = widgetRegistry[type];
+    if (registry[type]) {
+      filtered[type] = registry[type];
+    }
   });
   
   return filtered;
