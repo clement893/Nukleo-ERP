@@ -13,7 +13,7 @@ from sqlalchemy import inspect, text
 
 # revision identifiers, used by Alembic.
 revision: str = '076_make_bank_account_id_nullable'
-down_revision: Union[str, None] = '075'
+down_revision: Union[str, None] = '075_fix_transaction_type_enum'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
