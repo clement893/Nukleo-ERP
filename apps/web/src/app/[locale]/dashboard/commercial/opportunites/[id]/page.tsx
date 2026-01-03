@@ -154,66 +154,46 @@ export default function OpportunityDetailPage() {
   return (
     <PageContainer>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 -m-6 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Bouton retour */}
-          <Link href={`/${locale}/dashboard/commercial/opportunites`} className="inline-block">
-            <Button variant="ghost" size="sm" className="hover:glass-card">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour aux opportunités
-            </Button>
-          </Link>
-
-          {/* Header Card */}
-          <Card className="glass-card p-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              {/* Icon */}
-              <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-nukleo-gradient rounded-2xl opacity-20 blur-lg" />
-                <div className="relative w-24 h-24 rounded-2xl bg-nukleo-gradient flex items-center justify-center shadow-xl">
-                  <Target className="w-12 h-12 text-white" />
+        <div className="max-w-7xl mx-auto space-y-4">
+          {/* Bouton retour - juste une flèche sans background */}
+          <div className="flex items-center gap-4 mb-2">
+            <Link 
+              href={`/${locale}/dashboard/commercial/opportunites`}
+              className="inline-flex items-center justify-center w-8 h-8 text-foreground/70 hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            
+            {/* Header compact */}
+            <div className="flex-1 flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-primary-500 font-nukleo">
+                {opportunity.name}
+              </h1>
+              <Badge className={`${getStageColor(opportunity.stage_name)} px-2 py-0.5 text-xs font-medium border`}>
+                {opportunity.stage_name || 'Non défini'}
+              </Badge>
+              {opportunity.company_name && (
+                <div className="flex items-center gap-1.5 text-foreground/60 text-sm">
+                  <Building2 className="w-4 h-4" />
+                  <span>{opportunity.company_name}</span>
                 </div>
-              </div>
-              
-              {/* Infos */}
-              <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold text-primary-500 mb-3 font-nukleo">
-                  {opportunity.name}
-                </h1>
-                {opportunity.description && (
-                  <p className="text-xl text-foreground/80 mb-4">{opportunity.description}</p>
-                )}
-                
-                {/* Stage Badge */}
-                <div className="mb-4">
-                  <Badge className={`${getStageColor(opportunity.stage_name)} px-4 py-1.5 text-sm font-medium border`}>
-                    {opportunity.stage_name || 'Non défini'}
-                  </Badge>
-                </div>
-                
-                {/* Company info */}
-                {opportunity.company_name && (
-                  <div className="flex items-center gap-2 text-foreground/70 mb-4">
-                    <Building2 className="w-5 h-5" />
-                    <span className="text-lg">{opportunity.company_name}</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          </Card>
+          </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Stats Cards - plus compactes */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <Card key={index} className="glass-card p-6 hover:shadow-lg transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                <Card key={index} className="glass-card p-3 hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                      <Icon className={`w-4 h-4 ${stat.color}`} />
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
+                      <p className="text-lg font-bold text-foreground truncate">{stat.value}</p>
                     </div>
                   </div>
                 </Card>
@@ -222,7 +202,7 @@ export default function OpportunityDetailPage() {
           </div>
 
           {/* Tabs */}
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="flex gap-2 border-b border-border">
               {[
                 { key: 'overview', label: 'Vue d\'ensemble' },
