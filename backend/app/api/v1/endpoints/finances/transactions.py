@@ -275,17 +275,47 @@ async def create_transaction(
     Create a new transaction (revenue or expense)
     """
     try:
+        # Ensure transaction_date has timezone info
+        transaction_date = transaction_data.transaction_date
+        if transaction_date and transaction_date.tzinfo is None:
+            transaction_date = transaction_date.replace(tzinfo=timezone.utc)
+        
+        expected_payment_date = transaction_data.expected_payment_date
+        if expected_payment_date and expected_payment_date.tzinfo is None:
+            expected_payment_date = expected_payment_date.replace(tzinfo=timezone.utc)
+        
+        payment_date = transaction_data.payment_date
+        if payment_date and payment_date.tzinfo is None:
+            payment_date = payment_date.replace(tzinfo=timezone.utc)
+        
+        # Validate category_id if provided
+        if transaction_data.category_id:
+            category_result = await db.execute(
+                select(TransactionCategory).where(
+                    and_(
+                        TransactionCategory.id == transaction_data.category_id,
+                        TransactionCategory.user_id == current_user.id
+                    )
+                )
+            )
+            category = category_result.scalar_one_or_none()
+            if not category:
+                raise HTTPException(
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    detail=f"Category {transaction_data.category_id} not found or does not belong to user"
+                )
+        
         transaction = Transaction(
             user_id=current_user.id,
             type=transaction_data.type,
             description=transaction_data.description,
             amount=transaction_data.amount,
             tax_amount=transaction_data.tax_amount or 0,
-            currency=transaction_data.currency,
+            currency=transaction_data.currency or "CAD",
             category_id=transaction_data.category_id,  # Use category_id instead of category
-            transaction_date=transaction_data.transaction_date,
-            expected_payment_date=transaction_data.expected_payment_date,
-            payment_date=transaction_data.payment_date,
+            transaction_date=transaction_date,
+            expected_payment_date=expected_payment_date,
+            payment_date=payment_date,
             status=transaction_data.status,
             client_id=transaction_data.client_id,
             client_name=transaction_data.client_name,
@@ -293,7 +323,7 @@ async def create_transaction(
             supplier_name=transaction_data.supplier_name,
             invoice_number=transaction_data.invoice_number,
             notes=transaction_data.notes,
-            is_recurring=transaction_data.is_recurring,
+            is_recurring=transaction_data.is_recurring or "false",
             recurring_id=transaction_data.recurring_id,
             transaction_metadata=transaction_data.transaction_metadata,
         )
@@ -305,12 +335,15 @@ async def create_transaction(
         logger.info(f"Transaction created: {transaction.id} by user {current_user.id}")
         
         return TransactionResponse.model_validate(transaction)
+    except HTTPException:
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
         logger.error(f"Error creating transaction: {e}", exc_info=True)
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error creating transaction"
+            detail=f"Error creating transaction: {str(e)}"
         )
 
 
