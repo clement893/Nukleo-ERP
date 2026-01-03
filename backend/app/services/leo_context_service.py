@@ -537,11 +537,15 @@ class LeoContextService:
             query_lower = query.lower()
             is_general_employee_query = any(phrase in query_lower for phrase in [
                 "employé", "employee", "employés", "employees", "nos employés", "mes employés",
-                "qui sont nos", "qui sont mes", "qui sont nos employés", "qui sont mes employés"
+                "qui sont nos", "qui sont mes", "qui sont nos employés", "qui sont mes employés",
+                "combien j'ai d'employés", "combien j'ai d'employé", "combien d'employés", "combien d'employé",
+                "combien avons nous d'employés", "combien avons-nous d'employés"
             ])
             
+            logger.info(f"Employee query analysis: query='{query}', is_general={is_general_employee_query}, all_keywords={all_keywords}")
+            
             # Filter by keywords if any
-            if all_keywords:
+            if all_keywords and not is_general_employee_query:
                 conditions = []
                 for keyword in all_keywords:
                     keyword_lower = keyword.lower()
@@ -560,18 +564,21 @@ class LeoContextService:
                             func.concat(Employee.last_name, ' ', Employee.first_name).ilike(f"%{keyword}%"),
                         ])
                 stmt = stmt.where(or_(*conditions))
-            # If no keywords and query is about employees in general, return all employees (no filter needed)
+            # If it's a general query about employees, return all employees (no filter needed)
             elif is_general_employee_query:
-                # Increase limit for general queries
-                limit = min(limit * 2, 100)
+                # Increase limit significantly for general queries
+                limit = min(limit * 5, 200)
                 logger.info(f"General employee query detected - returning all employees (limit: {limit})")
+                # No filter - return all employees
             
             # Limit results
             stmt = stmt.limit(limit)
             
             # Execute
+            logger.info(f"Executing employee query with limit={limit}")
             result = await self.db.execute(stmt)
             employees = result.scalars().all()
+            logger.info(f"Found {len(employees)} employees in database")
             
             # Format results
             formatted = []
