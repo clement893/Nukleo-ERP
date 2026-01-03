@@ -75,6 +75,7 @@ function DroppableStageColumn({
     <div
       ref={setNodeRef}
       className={`${className} ${isOver ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}
+      style={{ minHeight: '100%' }}
     >
       {children}
     </div>
@@ -1045,7 +1046,7 @@ export default function PipelineDetailPage() {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               >
-                <div className="flex gap-3 overflow-x-auto pb-4">
+                <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: isFullscreen ? 'calc(100vh - 200px)' : 'auto' }}>
                   {(pipeline.stages || [])
                     .sort((a, b) => (a.order || 0) - (b.order || 0))
                     .map((stage) => {
@@ -1053,8 +1054,8 @@ export default function PipelineDetailPage() {
                       const stageValue = stageOpps.reduce((sum, opp) => sum + (opp.amount || 0), 0);
 
                       return (
-                        <div key={stage.id} className="flex-shrink-0 w-[260px]">
-                          <DroppableStageColumn stageId={stage.id}>
+                        <div key={stage.id} className="flex-shrink-0 w-[260px] h-full">
+                          <DroppableStageColumn stageId={stage.id} className="h-full">
                             <div 
                               className="glass-card rounded-lg border p-3 h-full flex flex-col"
                               style={{ 
@@ -1063,7 +1064,7 @@ export default function PipelineDetailPage() {
                               }}
                             >
                               {/* Stage Header */}
-                              <div className="mb-3">
+                              <div className="mb-3 flex-shrink-0">
                                 <div className="flex items-center justify-between mb-1">
                                   <h3 
                                     className="font-bold text-sm" 
@@ -1090,8 +1091,8 @@ export default function PipelineDetailPage() {
                                 </p>
                               </div>
 
-                              {/* Droppable Area */}
-                              <div className="flex-1 min-h-[200px]">
+                              {/* Droppable Area - covers entire remaining space */}
+                              <div className="flex-1 min-h-[200px] overflow-y-auto">
                                 {stageOpps.length > 0 ? (
                                   <div className="space-y-2">
                                     {stageOpps.map((opp) => (
@@ -1105,7 +1106,7 @@ export default function PipelineDetailPage() {
                                     ))}
                                   </div>
                                 ) : (
-                                  <div className="flex items-center justify-center h-[200px] text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                  <div className="flex items-center justify-center h-full min-h-[200px] text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                                     Glissez une opportunité ici
                                   </div>
                                 )}
