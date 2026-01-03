@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { OpportunityNotesEditor } from '@/components/commercial/OpportunityNotesEditor';
 import { OpportunityDocuments } from '@/components/commercial/OpportunityDocuments';
+import { OpportunityActivities } from '@/components/commercial/OpportunityActivities';
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -319,12 +320,12 @@ export default function OpportunityDetailPage() {
             {activeTab === 'activities' && (
               <Card className="glass-card p-6">
                 <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
-                  Activités récentes
+                  Activités
                 </h3>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune activité enregistrée pour cette opportunité.</p>
-                </div>
+                <OpportunityActivities
+                  opportunityId={opportunity.id}
+                  opportunity={opportunity}
+                />
               </Card>
             )}
 
