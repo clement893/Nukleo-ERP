@@ -973,7 +973,7 @@ async def download_import_template(
                     data=sample_data,
                     headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
                             "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
-                            "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Recurrent", "Notes"],
+                            "Statut", "Client", "Fournisseur", "Numero Facture", "Type Revenu", "Categorie", "Recurrent", "Notes"],
                     filename="transactions.csv"
                 )
                 zip_file.writestr("transactions.csv", csv_buffer.getvalue())
@@ -1003,6 +1003,12 @@ COLONNES OPTIONNELLES
 - Client: Nom du client (pour les revenus)
 - Fournisseur: Nom du fournisseur (pour les dépenses)
 - Numero Facture: Numéro de facture (si présent, la dépense sera identifiée comme facture reçue)
+- Type Revenu: Type de revenu (uniquement pour les revenus):
+  * 'facture_recu' - Facturé reçu (paiement reçu)
+  * 'facture_a_recevoir' - Facturé à recevoir (facture envoyée mais non reçue)
+  * 'signed_contract' - $ signé à venir (contrats signés)
+  * 'monthly' - $ mensuels à venir (mensualité client)
+  * 'hour_bank' - Banque d'heures (banques d'heures à recevoir)
 - Categorie: Catégorie de la transaction
 - Recurrent: 'true', 'false', 'oui', 'non' - défaut: false (si 'true', la dépense sera identifiée comme récurrente)
 - Notes: Notes supplémentaires
@@ -1011,6 +1017,7 @@ DÉTECTION AUTOMATIQUE
 ----------------------
 - Dépense récurrente: Si la colonne "Recurrent" = 'true' (ou 'oui', '1', 'yes'), la dépense sera marquée comme récurrente
 - Facture reçue: Si "Numero Facture" est rempli pour une dépense, elle sera identifiée comme facture reçue
+- Type de revenu: Si "Type Revenu" est rempli pour un revenu, il sera catégorisé selon le type spécifié
 
 FORMATS DE DATE ACCEPTÉS
 ------------------------
@@ -1020,8 +1027,12 @@ FORMATS DE DATE ACCEPTÉS
 
 EXEMPLES
 --------
-revenue,"Vente services",1000.00,150.00,CAD,2025-01-15,2025-01-30,,pending,"Client ABC",,FAC-001,Ventes,"Premier paiement"
-expense,"Fournitures",500.00,75.00,CAD,2025-01-16,2025-01-20,,pending,,"Fournisseur XYZ",INV-001,Fournitures,"Commande urgente"
+revenue,"Vente services",1000.00,150.00,CAD,2025-01-15,2025-01-30,2025-01-28,paid,"Client ABC",,FAC-001,facture_recu,Ventes,false,"Premier paiement"
+revenue,"Facture envoyée",5000.00,750.00,CAD,2025-01-20,2025-02-20,,pending,"Client XYZ",,FAC-002,facture_a_recevoir,Services,false,"En attente"
+revenue,"Contrat signé",15000.00,2250.00,CAD,2025-02-01,2025-02-15,,pending,"Client DEF",,,signed_contract,Ventes,false,"Contrat signé"
+revenue,"Mensualité",500.00,75.00,CAD,2025-02-01,2025-02-01,,pending,"Client GHI",,,monthly,Abonnements,true,"Mensualité"
+revenue,"Banque d'heures",2000.00,300.00,CAD,2025-02-10,2025-02-28,,pending,"Client JKL",,,hour_bank,Services,false,"Banque d'heures"
+expense,"Fournitures",500.00,75.00,CAD,2025-01-16,2025-01-20,,pending,,"Fournisseur XYZ",INV-001,,Fournitures,false,"Commande urgente"
 
 IMPORT
 ------
@@ -1053,7 +1064,7 @@ LIMITES
                 data=sample_data,
                 headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
                         "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
-                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Recurrent", "Notes"],
+                        "Statut", "Client", "Fournisseur", "Numero Facture", "Type Revenu", "Categorie", "Recurrent", "Notes"],
                 filename="template_transactions.csv"
             )
             
@@ -1070,7 +1081,7 @@ LIMITES
                 data=sample_data,
                 headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
                         "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
-                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Recurrent", "Notes"],
+                        "Statut", "Client", "Fournisseur", "Numero Facture", "Type Revenu", "Categorie", "Recurrent", "Notes"],
                 filename="template_transactions.xlsx"
             )
             
