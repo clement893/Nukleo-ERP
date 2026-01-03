@@ -12,7 +12,6 @@ import {
   Edit, 
   FileText, 
   Calendar, 
-  MessageSquare, 
   Users, 
   Tag,
   DollarSign,

@@ -20,6 +20,13 @@ export { ScheduledTaskForm } from './ScheduledTaskForm';
 export { AutomationRulesList } from './AutomationRulesList';
 export { AutomationRuleForm } from './AutomationRuleForm';
 export { AutomationTemplates } from './AutomationTemplates';
+export { default as LeoSettings } from './LeoSettings';
+export { default as LeoToneSelector } from './LeoToneSelector';
+export { default as LeoApproachSelector } from './LeoApproachSelector';
+export { default as LeoCustomInstructions } from './LeoCustomInstructions';
+export { default as LeoMarkdownUpload } from './LeoMarkdownUpload';
+export { default as LeoAdvancedSettings } from './LeoAdvancedSettings';
+export { default as LeoSystemPromptPreview } from './LeoSystemPromptPreview';
 
 export type { UserSettingsProps, UserSettingsData } from './UserSettings';
 export type { OrganizationSettingsProps, OrganizationSettingsData } from './OrganizationSettings';
@@ -37,4 +44,10 @@ export type { ScheduledTaskFormProps } from './ScheduledTaskForm';
 export type { AutomationRulesListProps } from './AutomationRulesList';
 export type { AutomationRuleFormProps } from './AutomationRuleForm';
 export type { AutomationTemplatesProps } from './AutomationTemplates';
+export type { LeoSettingsProps } from './LeoSettings';
+export type { LeoToneSelectorProps } from './LeoToneSelector';
+export type { LeoApproachSelectorProps } from './LeoApproachSelector';
+export type { LeoCustomInstructionsProps } from './LeoCustomInstructions';
+export type { LeoMarkdownUploadProps } from './LeoMarkdownUpload';
+export type { LeoAdvancedSettingsProps } from './LeoAdvancedSettings';
 

@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PageContainer } from '@/components/layout';
 import NukleoPageHeader from '@/components/nukleo/NukleoPageHeader';
 import { Button, Input } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { extractApiData } from '@/lib/api/utils';
-import { Loader2, Send, Bot, User, Sparkles, Trash2 } from 'lucide-react';
+import { Loader2, Send, Bot, User, Sparkles, Trash2, Settings } from 'lucide-react';
 import { getErrorMessage } from '@/lib/errors';
 import { useToast } from '@/components/ui';
+import { leoSettingsAPI } from '@/lib/api/leo-settings';
+import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,6 +29,20 @@ export default function LeoPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
+
+  // Load Leo settings to get provider preference and system prompt
+  const { data: leoSettings } = useQuery({
+    queryKey: ['leo-settings'],
+    queryFn: () => leoSettingsAPI.getSettings(),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Update provider from settings if available
+  useEffect(() => {
+    if (leoSettings?.provider_preference && leoSettings.provider_preference !== 'auto') {
+      setCurrentProvider(leoSettings.provider_preference);
+    }
+  }, [leoSettings]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -72,10 +89,12 @@ export default function LeoPage() {
         finish_reason: string;
       }
 
+      // Use Leo settings system prompt if available, otherwise use default
+      // The backend will automatically use Leo settings if no system_prompt is provided
       const response = await apiClient.post<ChatResponse>('/v1/ai/chat', {
         messages: apiMessages,
         provider: currentProvider,
-        system_prompt: "Tu es Leo, l'assistant IA de l'ERP Nukleo. Réponds toujours en français sauf demande contraire. Sois concis mais complet.",
+        // Don't pass system_prompt - let backend use Leo settings automatically
       });
 
       // FastAPI returns data directly, apiClient.post returns response.data from axios
@@ -145,6 +164,16 @@ export default function LeoPage() {
               <option value="openai" className="text-gray-900">OpenAI</option>
               <option value="anthropic" className="text-gray-900">Anthropic</option>
             </select>
+            <Link href="/settings/leo">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-white border-white/30 hover:bg-white/10"
+                title="Paramètres Leo"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </Link>
             {messages.length > 0 && (
               <Button
                 variant="outline"

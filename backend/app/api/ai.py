@@ -3,11 +3,13 @@
 from typing import Optional, List, Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user
 from app.models import User
 from app.services.ai_service import AIService, AIProvider
 from app.services.documentation_service import get_documentation_service
+from app.core.database import get_db
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -49,6 +51,7 @@ class ChatResponse(BaseModel):
 async def chat_completion(
     request: ChatRequest,
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Create a chat completion using OpenAI or Anthropic (Claude)."""
     if not AIService.is_configured():
@@ -58,8 +61,47 @@ async def chat_completion(
         )
     
     try:
+        # Try to get Leo settings and build system prompt
+        system_prompt = request.system_prompt
+        provider_preference = request.provider
+        temperature = request.temperature
+        max_tokens = request.max_tokens
+        model = request.model
+        
+        try:
+            from app.services.leo_settings_service import LeoSettingsService
+            
+            leo_service = LeoSettingsService(db)
+            leo_settings = await leo_service.get_leo_settings(current_user.id)
+            
+            # Use Leo settings if no system_prompt provided or if Leo settings exist
+            if not system_prompt or leo_settings.get("custom_instructions") or leo_settings.get("markdown_content"):
+                system_prompt = await leo_service.build_system_prompt(current_user.id)
+            
+            # Use Leo provider preference if set and request provider is "auto"
+            if provider_preference == "auto" and leo_settings.get("provider_preference") != "auto":
+                provider_preference = leo_settings.get("provider_preference", "auto")
+            
+            # Use Leo temperature if not provided in request
+            if temperature is None:
+                temperature = leo_settings.get("temperature", 0.7)
+            
+            # Use Leo max_tokens if not provided in request
+            if max_tokens is None:
+                max_tokens = leo_settings.get("max_tokens")
+            
+            # Use Leo model preference if not provided in request
+            if model is None:
+                model = leo_settings.get("model_preference")
+        except Exception as e:
+            # If Leo settings fail, use defaults
+            from app.core.logging import logger
+            logger.debug(f"Could not load Leo settings, using defaults: {e}")
+            if not system_prompt:
+                system_prompt = "Tu es Leo, l'assistant IA de l'ERP Nukleo. Réponds toujours en français sauf demande contraire. Sois concis mais complet."
+        
         # Resolve provider
-        provider = AIProvider(request.provider) if request.provider != "auto" else AIProvider.AUTO
+        provider = AIProvider(provider_preference) if provider_preference != "auto" else AIProvider.AUTO
         service = AIService(provider=provider)
         
         # Convert Pydantic models to dicts
@@ -67,10 +109,10 @@ async def chat_completion(
         
         response = await service.chat_completion(
             messages=messages,
-            model=request.model,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            system_prompt=request.system_prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
         )
         
         return ChatResponse(**response)

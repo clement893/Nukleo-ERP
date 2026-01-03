@@ -7,7 +7,6 @@ import { companiesAPI } from '@/lib/api/companies';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui';
 import { ChevronLeft, ChevronRight, Check, FileText, Save } from 'lucide-react';
-import { clsx } from 'clsx';
 import SubmissionCoverPage from './submission/CoverPage';
 import SubmissionContext from './submission/Context';
 import SubmissionIntroduction from './submission/Introduction';

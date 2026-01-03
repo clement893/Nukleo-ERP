@@ -28,7 +28,8 @@ import {
   Bell, 
   FileText,
   User,
-  Zap
+  Zap,
+  Bot
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -124,6 +125,13 @@ export default function SettingsNavigation({ className }: SettingsNavigationProp
       href: '/settings/automation',
       icon: <Zap className="w-6 h-6" />,
       description: t('navigation.automationDescription') || 'Gérez vos automatisations et tâches planifiées',
+    },
+    {
+      id: 'leo',
+      label: 'Leo',
+      href: '/settings/leo',
+      icon: <Bot className="w-6 h-6" />,
+      description: 'Paramètres de votre assistant IA Leo',
     },
     {
       id: 'logs',

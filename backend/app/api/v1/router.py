@@ -2,7 +2,7 @@
 API v1 router registration.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import themes, theme_fonts, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings, organization_settings, general_settings, pages, forms, menus, support_tickets, seo, teams, invitations, rbac, notifications, api_connection_check, reports, media, insights, analytics, posts, subscriptions, project_tasks, leo_documentation, employees, time_entries, employee_portal_permissions, custom_widgets
+from app.api.v1.endpoints import themes, theme_fonts, projects, websocket, admin, auth, two_factor, api_keys, users, health, db_health, newsletter, exports, imports, search, tags, activities, comments, favorites, templates, versions, shares, feature_flags, user_preferences, announcements, feedback, onboarding, documentation, scheduled_tasks, backups, email_templates, audit_trail, integrations, api_settings, organization_settings, general_settings, pages, forms, menus, support_tickets, seo, teams, invitations, rbac, notifications, api_connection_check, reports, media, insights, analytics, posts, subscriptions, project_tasks, leo_documentation, leo_settings, employees, time_entries, employee_portal_permissions, custom_widgets
 from app.api.v1.endpoints.employes import router as employes_router
 from app.api.v1.endpoints.commercial import contacts as commercial_contacts
 from app.api.v1.endpoints.commercial import companies as commercial_companies, opportunities as commercial_opportunities
@@ -587,4 +587,11 @@ api_router.include_router(
 api_router.include_router(
     custom_widgets.router,
     tags=["custom-widgets"]
+)
+
+# Register Leo settings endpoints
+api_router.include_router(
+    leo_settings.router,
+    prefix="/leo",
+    tags=["leo"]
 )

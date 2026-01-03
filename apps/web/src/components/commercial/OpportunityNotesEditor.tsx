@@ -8,7 +8,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { useOpportunityNotes, SaveStatus } from '@/hooks/useOpportunityNotes';
+import { useOpportunityNotes } from '@/hooks/useOpportunityNotes';
 import { Button, Card } from '@/components/ui';
 import { Loader2, Check, AlertCircle, Save } from 'lucide-react';
 
