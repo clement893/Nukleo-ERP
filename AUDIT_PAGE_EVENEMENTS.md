@@ -1,252 +1,247 @@
-# Audit de la page Événements (`/fr/dashboard/agenda/evenements`)
+# Audit de la page Événements - Agenda
 
-**Date:** 2025-01-27  
-**Page:** `/fr/dashboard/agenda/evenements`  
-**Fichier:** `apps/web/src/app/[locale]/dashboard/agenda/evenements/page.tsx`
-
-## Résumé exécutif
-
-Après un refactor UI, cette page présente plusieurs fonctionnalités manquantes et des optimisations possibles. La page utilise actuellement une approche basique avec `useState` et `useEffect` au lieu de React Query, et plusieurs fonctionnalités communes aux autres pages du système ne sont pas implémentées.
+**Date** : 2026-01-03  
+**Page** : `/fr/dashboard/agenda/evenements`  
+**Objectif** : Aligner le design avec les autres pages modernes (Contacts, Entreprises)
 
 ---
 
-## ✅ Fonctionnalités implémentées
+## 🔍 État Actuel
 
-1. **CRUD de base** ✅
-   - Création d'événements via modal
-   - Modification d'événements via modal
-   - Suppression d'événements avec confirmation
-   - Affichage dans une DataTable
+### Points Positifs ✅
+- Fonctionnalités complètes (CRUD, recherche, filtres, export)
+- Gestion de sélection multiple
+- Drawer pour les détails avec onglets
+- Export CSV/Excel
+- Actions en lot (suppression, changement de type)
 
-2. **Filtrage** ✅
-   - Filtre par type d'événement
-   - Filtre par date (tous/à venir/passés)
-   - Recherche par titre, description, lieu
+### Points à Améliorer ❌
 
-3. **Affichage** ✅
-   - DataTable avec colonnes : Titre, Date, Type, Lieu, Participants, Actions
-   - Tri par date et heure
-   - Pagination côté client (20 éléments par page)
+#### 1. **Header / Hero Section**
+- ❌ Utilise `PageHeader` avec breadcrumbs (ancien design)
+- ❌ Pas de hero header avec gradient Nukleo
+- ❌ Pas de style moderne avec `NukleoPageHeader`
+- ✅ **Référence** : Pages Contacts/Entreprises utilisent `NukleoPageHeader` avec hero gradient
 
----
+#### 2. **Stats Cards**
+- ❌ Aucune stats card en haut de page
+- ❌ Pas de vue d'ensemble des événements
+- ✅ **Référence** : Pages Contacts/Entreprises ont des stats cards compactes
 
-## ❌ Fonctionnalités manquantes
+#### 3. **Filtres et Recherche**
+- ❌ Utilise des `<select>` HTML natifs (peu stylisés)
+- ❌ Pas de boutons de filtre rapide visuels
+- ❌ Pas de badges pour les filtres actifs
+- ✅ **Référence** : Pages Contacts/Entreprises utilisent des boutons de filtre avec badges
 
-### 1. **Migration vers React Query** ❌
-**Problème:** La page utilise `useState` et `useEffect` pour charger les données au lieu de React Query.
+#### 4. **Vue des Données**
+- ❌ Seulement une vue tableau (DataTable)
+- ❌ Pas de vue galerie/liste comme les autres pages
+- ❌ Pas de cartes visuelles pour les événements
+- ✅ **Référence** : Pages Contacts/Entreprises ont vue galerie + liste
 
-**Impact:**
-- Pas de cache automatique
-- Pas de refetch automatique après mutations
-- Pas de gestion optimiste des mises à jour
-- Pas de synchronisation avec d'autres composants utilisant les mêmes données
+#### 5. **Design Général**
+- ❌ Layout moins moderne
+- ❌ Espacements moins cohérents
+- ❌ Pas de glass-card styling cohérent partout
+- ❌ Boutons moins stylisés
 
-**Solution:** Créer des hooks React Query (`useEvents`, `useCreateEvent`, `useUpdateEvent`, `useDeleteEvent`) similaires aux autres pages du système.
-
-**Fichiers à créer/modifier:**
-- `apps/web/src/lib/query/agenda.ts` (nouveau fichier)
-
----
-
-### 2. **Export CSV/Excel** ❌
-**Problème:** Aucune fonctionnalité d'export disponible.
-
-**Impact:** Les utilisateurs ne peuvent pas exporter leurs événements pour analyse externe ou sauvegarde.
-
-**Solution:** Ajouter un menu d'export dans le header avec options CSV et Excel, similaire aux pages `opportunites` et `clients`.
-
----
-
-### 3. **Sélection multiple et actions en masse** ❌
-**Problème:** Pas de possibilité de sélectionner plusieurs événements pour des actions groupées.
-
-**Impact:** Les utilisateurs doivent supprimer/modifier les événements un par un.
-
-**Solution:** 
-- Ajouter des checkboxes pour sélection multiple
-- Ajouter bouton "Sélectionner tout"
-- Ajouter actions en masse : suppression groupée, changement de type groupé
+#### 6. **Composants Utilisés**
+- ❌ `PageHeader` (ancien)
+- ❌ `SearchBar` (peut être remplacé par input moderne)
+- ❌ `DataTable` uniquement (pas de vue alternative)
+- ✅ **Référence** : Pages modernes utilisent composants Nukleo
 
 ---
 
-### 4. **Menu contextuel (Dropdown)** ❌
-**Problème:** Les actions (Modifier, Supprimer) sont directement dans la table, pas dans un menu contextuel.
+## 📋 Plan d'Action
 
-**Impact:** Interface moins propre et moins cohérente avec le reste de l'application.
+### Phase 1 : Header et Hero Section
+1. ✅ Remplacer `PageHeader` par `NukleoPageHeader`
+2. ✅ Ajouter hero header avec gradient Nukleo (comme calendrier)
+3. ✅ Ajouter bouton "Nouvel événement" dans le header
+4. ✅ Supprimer les breadcrumbs (redondants avec navigation)
 
-**Solution:** Remplacer les boutons d'action par un `Dropdown` avec icône `MoreVertical`, contenant :
-- Voir les détails
-- Modifier
-- Dupliquer
-- Supprimer
+### Phase 2 : Stats Cards
+1. ✅ Créer stats cards compactes (horizontal layout)
+   - Total événements
+   - Événements à venir
+   - Événements passés
+   - Par type (réunions, rendez-vous, etc.)
+2. ✅ Placer les stats cards après le header
+3. ✅ Utiliser le même style que Contacts/Entreprises
 
----
+### Phase 3 : Filtres et Recherche
+1. ✅ Remplacer les `<select>` par des boutons de filtre rapide
+2. ✅ Ajouter badges pour les filtres actifs
+3. ✅ Créer une section de filtres avec glass-card
+4. ✅ Ajouter recherche avec icône Search (comme autres pages)
+5. ✅ Ajouter toggle vue galerie/liste/tableau
 
-### 5. **Duplication d'événements** ❌
-**Problème:** Pas de fonctionnalité pour dupliquer un événement existant.
+### Phase 4 : Vue des Données
+1. ✅ Créer vue galerie (cartes événements)
+2. ✅ Créer vue liste (liste compacte)
+3. ✅ Garder vue tableau (DataTable) comme option
+4. ✅ Ajouter toggle entre les vues
+5. ✅ Utiliser le même style de cartes que Contacts/Entreprises
 
-**Impact:** Les utilisateurs doivent recréer manuellement des événements similaires.
+### Phase 5 : Design et Cohérence
+1. ✅ Uniformiser les espacements
+2. ✅ Utiliser glass-card partout
+3. ✅ Améliorer le styling des boutons
+4. ✅ Ajouter EmptyState moderne
+5. ✅ Ajouter skeletons de chargement cohérents
 
-**Solution:** Ajouter une action "Dupliquer" dans le menu contextuel qui crée une copie avec le titre modifié (ajout de " (copie)").
-
----
-
-### 6. **Filtrage côté serveur** ❌
-**Problème:** La page charge tous les événements (limit: 1000) et fait le filtrage côté client.
-
-**Impact:**
-- Performance dégradée avec beaucoup d'événements
-- Charge inutile sur le réseau et le client
-- Les filtres `start_date`, `end_date`, `event_type` de l'API ne sont pas utilisés
-
-**Solution:** Utiliser les paramètres de l'API pour filtrer côté serveur :
-- `start_date` et `end_date` pour le filtre de date
-- `event_type` pour le filtre de type
-- Implémenter une pagination côté serveur avec `skip` et `limit`
-
----
-
-### 7. **Vue calendrier intégrée** ❌
-**Problème:** La page n'affiche qu'une DataTable, pas de vue calendrier.
-
-**Impact:** Les utilisateurs doivent aller sur la page calendrier pour voir les événements dans un contexte calendrier.
-
-**Solution:** Ajouter un toggle pour basculer entre vue liste (DataTable) et vue calendrier (utiliser le composant `CalendarView` existant).
-
----
-
-### 8. **Détails d'événement (Drawer)** ❌
-**Problème:** Pas de drawer ou modal pour voir les détails complets d'un événement.
-
-**Impact:** Les utilisateurs doivent modifier l'événement pour voir tous les détails.
-
-**Solution:** Ajouter un drawer (comme pour les tâches) avec onglets :
-- Informations (tous les détails)
-- Modifier (formulaire d'édition)
+### Phase 6 : Améliorations UX
+1. ✅ Ajouter favoris (étoile) sur les événements
+2. ✅ Améliorer le drawer de détails
+3. ✅ Ajouter actions rapides sur les cartes
+4. ✅ Améliorer la navigation
 
 ---
 
-### 9. **Debounce sur la recherche** ❌
-**Problème:** La recherche se fait à chaque frappe sans debounce.
+## 🎨 Design Cible
 
-**Impact:** Performance dégradée avec beaucoup d'événements.
-
-**Solution:** Utiliser le hook `useDebounce` pour attendre 300ms avant de filtrer.
-
----
-
-### 10. **Gestion des erreurs améliorée** ⚠️
-**Problème:** La gestion des erreurs est basique.
-
-**Impact:** Les erreurs réseau ou API ne sont pas toujours bien gérées.
-
-**Solution:** Améliorer la gestion des erreurs avec des messages plus spécifiques et un retry automatique pour les erreurs réseau.
-
----
-
-## 🔧 Optimisations techniques
-
-### 1. **Pagination côté serveur**
-Actuellement, la pagination est uniquement côté client (20 éléments affichés sur les 1000 chargés). Implémenter une pagination côté serveur avec `skip` et `limit`.
-
-### 2. **Infinite scroll ou pagination**
-Pour améliorer l'UX, considérer un infinite scroll ou une pagination plus visible.
-
-### 3. **Mise en cache intelligente**
-Avec React Query, implémenter une stratégie de cache appropriée pour les événements (staleTime, gcTime).
-
-### 4. **Optimistic updates**
-Pour les mutations (create, update, delete), utiliser des mises à jour optimistes pour une meilleure UX.
-
----
-
-## 🔗 Connexions non fonctionnelles
-
-### 1. **Paramètres de filtrage API non utilisés**
-L'API supporte `start_date`, `end_date`, et `event_type` mais ces paramètres ne sont pas utilisés dans `loadEvents()`. Le filtrage est fait entièrement côté client.
-
-**Code actuel:**
-```typescript
-const allEvents = await agendaAPI.list({
-  limit: 1000,
-});
+### Structure de Page
+```
+┌─────────────────────────────────────────┐
+│  Hero Header (gradient Nukleo)          │
+│  - Titre "Événements"                   │
+│  - Description                          │
+│  - Bouton "Nouvel événement"            │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  Stats Cards (4 cartes horizontales)   │
+│  - Total | À venir | Passés | Réunions │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  Filtres et Recherche                   │
+│  - Barre de recherche                   │
+│  - Boutons filtres rapides              │
+│  - Toggle vue (Galerie/Liste/Tableau)  │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  Contenu (selon vue sélectionnée)      │
+│  - Galerie : Grille de cartes           │
+│  - Liste : Liste compacte               │
+│  - Tableau : DataTable                  │
+└─────────────────────────────────────────┘
 ```
 
-**Code attendu:**
-```typescript
-const events = await agendaAPI.list({
-  start_date: filterDate === 'upcoming' ? new Date().toISOString().split('T')[0] : undefined,
-  end_date: filterDate === 'past' ? new Date().toISOString().split('T')[0] : undefined,
-  event_type: filterType !== 'all' ? filterType : undefined,
-  limit: 20,
-  skip: (page - 1) * 20,
-});
-```
+### Style des Cartes Événements (Vue Galerie)
+- Carte glass-card avec bordure
+- Date en haut (badge coloré)
+- Titre en gras
+- Description tronquée
+- Icônes pour lieu, participants, type
+- Actions rapides (voir, modifier, supprimer)
+- Hover effect avec scale
 
-### 2. **Hook React Query manquant**
-Aucun hook React Query n'existe pour les événements, alors que le pattern est utilisé partout ailleurs dans l'application.
-
----
-
-## 📊 Comparaison avec d'autres pages
-
-En comparant avec les pages `opportunites` et `clients` qui ont été récemment refactorisées :
-
-| Fonctionnalité | Événements | Opportunités | Clients |
-|----------------|------------|--------------|---------|
-| React Query | ❌ | ✅ | ✅ |
-| Export CSV/Excel | ❌ | ✅ | ✅ |
-| Sélection multiple | ❌ | ✅ | ✅ |
-| Actions en masse | ❌ | ✅ | ✅ |
-| Menu contextuel | ❌ | ✅ | ✅ |
-| Duplication | ❌ | ✅ | ✅ |
-| Filtrage serveur | ❌ | ✅ | ✅ |
-| Debounce recherche | ❌ | ✅ | ✅ |
+### Style des Cartes Événements (Vue Liste)
+- Layout horizontal
+- Icône de type à gauche
+- Informations principales au centre
+- Actions à droite
+- Compact et lisible
 
 ---
 
-## 🎯 Priorités d'implémentation
+## 📝 Checklist d'Implémentation
 
-### Priorité haute
-1. Migration vers React Query
-2. Filtrage côté serveur
-3. Export CSV/Excel
-4. Menu contextuel (Dropdown)
+### Header
+- [ ] Remplacer PageHeader par NukleoPageHeader
+- [ ] Ajouter hero header avec gradient
+- [ ] Ajouter bouton dans header
+- [ ] Tester responsive
 
-### Priorité moyenne
-5. Sélection multiple et actions en masse
-6. Duplication d'événements
-7. Debounce sur la recherche
-8. Drawer de détails
+### Stats Cards
+- [ ] Créer composant stats cards
+- [ ] Calculer les stats (total, à venir, passés, par type)
+- [ ] Styliser avec layout horizontal
+- [ ] Ajouter icônes appropriées
 
-### Priorité basse
-9. Vue calendrier intégrée
-10. Optimistic updates
+### Filtres
+- [ ] Créer section filtres glass-card
+- [ ] Remplacer selects par boutons
+- [ ] Ajouter badges filtres actifs
+- [ ] Ajouter recherche avec icône
+- [ ] Ajouter toggle vue
+
+### Vue Galerie
+- [ ] Créer composant EventCard
+- [ ] Créer grille responsive
+- [ ] Ajouter actions sur cartes
+- [ ] Ajouter favoris
+- [ ] Styliser avec glass-card
+
+### Vue Liste
+- [ ] Créer composant EventListItem
+- [ ] Layout horizontal compact
+- [ ] Ajouter actions
+- [ ] Styliser cohérent
+
+### Vue Tableau
+- [ ] Garder DataTable existant
+- [ ] Améliorer styling si nécessaire
+- [ ] S'assurer cohérence
+
+### Design Général
+- [ ] Uniformiser espacements
+- [ ] Ajouter EmptyState
+- [ ] Améliorer skeletons
+- [ ] Tester responsive
+- [ ] Vérifier accessibilité
 
 ---
 
-## 📝 Notes techniques
+## 🚀 Priorités
 
-### Fichiers à créer
-- `apps/web/src/lib/query/agenda.ts` - Hooks React Query pour les événements
+### Priorité Haute (MVP)
+1. Header avec NukleoPageHeader
+2. Stats cards
+3. Filtres améliorés
+4. Vue galerie basique
 
-### Fichiers à modifier
-- `apps/web/src/app/[locale]/dashboard/agenda/evenements/page.tsx` - Migration complète vers React Query et ajout des fonctionnalités manquantes
+### Priorité Moyenne
+1. Vue liste
+2. Améliorations UX (favoris, etc.)
+3. Design polish
 
-### Composants à réutiliser
-- `Dropdown` de `@/components/ui/Dropdown`
-- `useDebounce` de `@/hooks/useDebounce`
-- Pattern similaire aux pages `opportunites` et `clients`
+### Priorité Basse
+1. Optimisations
+2. Animations supplémentaires
+3. Features avancées
 
 ---
 
-## ✅ Conclusion
+## 📊 Comparaison avec Pages Références
 
-La page des événements fonctionne correctement pour les opérations CRUD de base, mais manque de nombreuses fonctionnalités modernes et optimisations présentes dans d'autres pages du système. Une refactorisation complète serait bénéfique pour :
+| Élément | Événements (Actuel) | Contacts/Entreprises | Calendrier |
+|---------|---------------------|----------------------|------------|
+| Header | PageHeader | NukleoPageHeader | Hero gradient |
+| Stats | ❌ | ✅ Compactes | ✅ Compactes |
+| Filtres | Selects HTML | Boutons badges | Boutons badges |
+| Vues | Tableau uniquement | Galerie + Liste | Calendrier |
+| Design | Ancien | Moderne | Moderne |
+| Cartes | ❌ | ✅ | N/A |
 
-1. **Performance** : Filtrage côté serveur et pagination
-2. **UX** : Export, sélection multiple, menu contextuel
-3. **Cohérence** : Utilisation de React Query comme les autres pages
-4. **Maintenabilité** : Code plus moderne et aligné avec les patterns du projet
+---
 
-**Estimation:** ~2-3 jours de développement pour implémenter toutes les fonctionnalités manquantes.
+## 🎯 Objectifs Finaux
+
+1. ✅ Design cohérent avec le reste de l'application
+2. ✅ Meilleure UX avec vues multiples
+3. ✅ Navigation plus intuitive
+4. ✅ Performance maintenue
+5. ✅ Responsive design
+6. ✅ Accessibilité améliorée
+
+---
+
+## 📌 Notes Techniques
+
+- Utiliser les mêmes composants que Contacts/Entreprises
+- Réutiliser les patterns établis
+- Maintenir les fonctionnalités existantes
+- Tester avec données réelles
+- Vérifier performance avec beaucoup d'événements
