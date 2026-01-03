@@ -272,7 +272,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
                 </button>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-gray-900 dark:text-white font-medium">
-                  {availableCollections.find(c => c.id === selectedCollection)?.name}
+                  {availableCollections.find((c: WidgetCollection) => c.id === selectedCollection)?.name}
                 </span>
               </div>
             )}
