@@ -278,8 +278,14 @@ async def handle_opportunity_stage_change(
                 # Check stage condition
                 if 'stage_name' in conditions:
                     expected_stage = conditions['stage_name']
-                    if expected_stage not in stage_name:
+                    # Normalize both strings for comparison (remove extra spaces, convert to lowercase)
+                    normalized_expected = ' '.join(expected_stage.lower().split())
+                    normalized_stage = ' '.join(stage_name.lower().split())
+                    # Check if normalized expected stage is contained in normalized stage name
+                    # This handles cases like "05-Proposal to do" matching "05 - Proposal to do"
+                    if normalized_expected not in normalized_stage:
                         matches = False
+                        logger.debug(f"Stage condition not met: expected '{normalized_expected}' not found in '{normalized_stage}'")
                 
                 if not matches:
                     continue

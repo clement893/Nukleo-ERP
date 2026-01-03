@@ -37,15 +37,22 @@ class LeoAgentService:
         Returns:
             Dict with user context information
         """
+        # Extract user properties immediately to avoid lazy loading issues
+        user_id = user.id
+        user_email = user.email
+        user_first_name = user.first_name or ''
+        user_last_name = user.last_name or ''
+        user_is_superadmin = user.is_superadmin
+        
         # Get roles
-        roles = await self.rbac_service.get_user_roles(user.id)
+        roles = await self.rbac_service.get_user_roles(user_id)
         role_names = [role.slug for role in roles]
         
         # Get permissions
-        permissions = await self.rbac_service.get_user_permissions(user.id)
+        permissions = await self.rbac_service.get_user_permissions(user_id)
         
         # Get teams
-        teams_query = select(TeamMember).where(TeamMember.user_id == user.id).options(
+        teams_query = select(TeamMember).where(TeamMember.user_id == user_id).options(
             selectinload(TeamMember.team)
         )
         teams_result = await self.db.execute(teams_query)
@@ -55,40 +62,42 @@ class LeoAgentService:
         # Get statistics
         # Count projects
         projects_count_query = select(func.count()).select_from(Project).where(
-            Project.user_id == user.id
+            Project.user_id == user_id
         )
         projects_count_result = await self.db.execute(projects_count_query)
         projects_count = projects_count_result.scalar() or 0
         
         # Count invoices
         invoices_count_query = select(func.count()).select_from(Invoice).where(
-            Invoice.user_id == user.id
+            Invoice.user_id == user_id
         )
         invoices_count_result = await self.db.execute(invoices_count_query)
         invoices_count = invoices_count_result.scalar() or 0
         
         # Count assigned tasks
         tasks_count_query = select(func.count()).select_from(ProjectTask).where(
-            ProjectTask.assignee_id == user.id
+            ProjectTask.assignee_id == user_id
         )
         tasks_count_result = await self.db.execute(tasks_count_query)
         tasks_count = tasks_count_result.scalar() or 0
         
         # Count assigned contacts
         contacts_count_query = select(func.count()).select_from(Contact).where(
-            Contact.employee_id == user.id
+            Contact.employee_id == user_id
         )
         contacts_count_result = await self.db.execute(contacts_count_query)
         contacts_count = contacts_count_result.scalar() or 0
         
+        user_name = f"{user_first_name} {user_last_name}".strip() or user_email
+        
         return {
-            "user_id": user.id,
-            "email": user.email,
-            "name": f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+            "user_id": user_id,
+            "email": user_email,
+            "name": user_name,
             "roles": role_names,
             "permissions": sorted(list(permissions)),
             "teams": team_names,
-            "is_superadmin": user.is_superadmin,
+            "is_superadmin": user_is_superadmin,
             "statistics": {
                 "projects_count": projects_count,
                 "invoices_count": invoices_count,
@@ -108,13 +117,16 @@ class LeoAgentService:
         Returns:
             Dict with relevant data
         """
+        # Extract user_id immediately to avoid lazy loading issues
+        user_id = user.id
+        
         data = {}
         query_lower = query.lower()
         
         # Projects
         project_keywords = ['projet', 'project', 'mes projets', 'my projects', 'tâche', 'task']
         if any(word in query_lower for word in project_keywords):
-            projects_query = select(Project).where(Project.user_id == user.id).order_by(
+            projects_query = select(Project).where(Project.user_id == user_id).order_by(
                 desc(Project.created_at)
             )
             projects_result = await self.db.execute(projects_query)
