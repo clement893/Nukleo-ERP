@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Badge, Input, Switch, useToast, Modal } from '@/components/ui';
 import { Plus, Search, Zap, Trash2, Edit2, Loader2, Sparkles, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { AutomationRuleForm } from './AutomationRuleForm';
-import { automationAPI, type AutomationRule, type CreateAutomationRuleRequest, type UpdateAutomationRuleRequest, type AutomationRuleExecutionLog } from '@/lib/api/automation';
+import { automationAPI, type AutomationRule, type CreateAutomationRuleRequest, type UpdateAutomationRuleRequest } from '@/lib/api/automation';
 
 export interface AutomationRulesListProps {
   rules: AutomationRule[];
