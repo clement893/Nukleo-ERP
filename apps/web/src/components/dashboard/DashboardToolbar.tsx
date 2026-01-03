@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { Plus, Edit3, Save, LayoutGrid, Check } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardContext } from '@/contexts/DashboardContext';
 import { DashboardFilters } from './DashboardFilters';
 import { useToast } from '@/lib/toast';
 
@@ -15,6 +16,7 @@ interface DashboardToolbarProps {
 }
 
 export function DashboardToolbar({ onAddWidget }: DashboardToolbarProps) {
+  const context = useDashboardContext();
   const {
     configs,
     activeConfigId,
@@ -23,7 +25,7 @@ export function DashboardToolbar({ onAddWidget }: DashboardToolbarProps) {
     setEditMode,
     getActiveConfig,
     saveToServer,
-  } = useDashboardStore();
+  } = useDashboardStore(context);
   
   const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);

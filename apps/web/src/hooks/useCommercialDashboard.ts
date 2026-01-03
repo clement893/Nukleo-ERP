@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 
 export const useCommercialDashboard = () => {
-  const store = useDashboardStore();
+  const store = useDashboardStore('commercial');
   
   useEffect(() => {
     // Définir le contexte 'commercial' au montage

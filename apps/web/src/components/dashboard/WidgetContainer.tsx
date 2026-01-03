@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Settings, RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardContext } from '@/contexts/DashboardContext';
 import { getWidget } from '@/lib/dashboard/widgetRegistry';
 import type { WidgetLayout } from '@/lib/dashboard/types';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
@@ -54,7 +55,8 @@ function WidgetErrorFallback({ error, widgetType }: { error: Error; widgetType: 
 }
 
 export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerProps) {
-  const { removeWidget, updateWidget, globalFilters } = useDashboardStore();
+  const context = useDashboardContext();
+  const { removeWidget, updateWidget, globalFilters } = useDashboardStore(context);
   const queryClient = useQueryClient();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   

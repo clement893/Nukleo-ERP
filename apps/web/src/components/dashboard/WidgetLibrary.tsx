@@ -7,6 +7,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X, Search, Plus, Edit, Trash2, Sparkles } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardContext } from '@/contexts/DashboardContext';
 import { widgetRegistry, getWidgetsByModule } from '@/lib/dashboard/widgetRegistry';
 import { getFilteredWidgetRegistry } from '@/lib/dashboard/widgetPermissions';
 import type { WidgetType, DashboardModule } from '@/lib/dashboard/types';
@@ -39,7 +40,8 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
   const [isLoadingCustom, setIsLoadingCustom] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<number | undefined>();
-  const { addWidget } = useDashboardStore();
+  const context = useDashboardContext();
+  const { addWidget } = useDashboardStore(context);
 
   // Load custom widgets
   useEffect(() => {
@@ -88,7 +90,8 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
     if (!widgetDef) return;
 
     // Trouver la position disponible (en bas de la grille)
-    const activeConfig = useDashboardStore.getState().getActiveConfig();
+    const store = useDashboardStore(context);
+    const activeConfig = store.getActiveConfig();
     const maxY = activeConfig?.layouts.reduce((max, w) => Math.max(max, w.y + w.h), 0) || 0;
 
     addWidget({
@@ -107,7 +110,8 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
 
   const handleAddCustomWidget = (customWidget: CustomWidget) => {
     // Trouver la position disponible (en bas de la grille)
-    const activeConfig = useDashboardStore.getState().getActiveConfig();
+    const store = useDashboardStore(context);
+    const activeConfig = store.getActiveConfig();
     const maxY = activeConfig?.layouts.reduce((max, w) => Math.max(max, w.y + w.h), 0) || 0;
 
     addWidget({

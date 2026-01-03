@@ -85,36 +85,38 @@ interface DashboardStore {
   loadFromServer: () => Promise<void>;
 }
 
-export const useDashboardStore = create<DashboardStore>()(
-  persist(
-    (set, get) => ({
-      // État initial
-      context: 'main',
-      configs: [],
-      activeConfigId: null,
-      isEditMode: false,
-      globalFilters: {},
-      
-      // Actions - Contexte
-      setContext: async (context) => {
-        const currentContext = get().context;
+// Créer un store par contexte pour éviter les conflits
+const createDashboardStore = (contextKey: DashboardContext) => {
+  return create<DashboardStore>()(
+    persist(
+      (set, get) => ({
+        // État initial
+        context: contextKey,
+        configs: [],
+        activeConfigId: null,
+        isEditMode: false,
+        globalFilters: {},
         
-        // Si on change de contexte, sauvegarder l'état actuel
-        if (currentContext !== context) {
-          await get().saveToServer().catch(console.error);
+        // Actions - Contexte
+        setContext: async (context) => {
+          const currentContext = get().context;
           
-          // Réinitialiser l'état pour le nouveau contexte
-          set({ 
-            context,
-            configs: [],
-            activeConfigId: null,
-            globalFilters: {},
-          });
-          
-          // Charger les configs du nouveau contexte
-          await get().loadFromServer().catch(console.error);
-        }
-      },
+          // Si on change de contexte, sauvegarder l'état actuel
+          if (currentContext !== context) {
+            await get().saveToServer().catch(console.error);
+            
+            // Réinitialiser l'état pour le nouveau contexte
+            set({ 
+              context,
+              configs: [],
+              activeConfigId: null,
+              globalFilters: {},
+            });
+            
+            // Charger les configs du nouveau contexte
+            await get().loadFromServer().catch(console.error);
+          }
+        },
       
       // Getters
       getActiveConfig: () => {
@@ -406,15 +408,34 @@ export const useDashboardStore = create<DashboardStore>()(
           // Continuer avec les données du localStorage si le chargement échoue
         }
       },
-    }),
-    {
-      name: 'dashboard-storage',
-      partialize: (state) => ({
-        context: state.context,
-        configs: state.configs,
-        activeConfigId: state.activeConfigId,
-        globalFilters: state.globalFilters,
       }),
-    }
-  )
-);
+      {
+        name: `dashboard-storage-${contextKey}`, // Clé unique par contexte
+        partialize: (state) => ({
+          context: state.context,
+          configs: state.configs,
+          activeConfigId: state.activeConfigId,
+          globalFilters: state.globalFilters,
+        }),
+      }
+    )
+  );
+};
+
+// Stores séparés par contexte pour éviter les conflits
+// Chaque store est un hook Zustand créé avec create()
+const stores: Record<DashboardContext, ReturnType<typeof createDashboardStore>> = {
+  main: createDashboardStore('main'),
+  commercial: createDashboardStore('commercial'),
+  projects: createDashboardStore('projects'),
+  finances: createDashboardStore('finances'),
+  team: createDashboardStore('team'),
+  system: createDashboardStore('system'),
+  erp: createDashboardStore('erp'),
+};
+
+// Hook principal qui retourne le bon store selon le contexte
+export const useDashboardStore = (context: DashboardContext = 'main') => {
+  // Retourner le hook du store correspondant au contexte
+  return stores[context]();
+};

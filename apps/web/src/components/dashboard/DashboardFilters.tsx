@@ -19,6 +19,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Building2, User, FolderKanban, X, Filter } from 'lucide-react';
 import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardContext } from '@/contexts/DashboardContext';
 import { apiClient } from '@/lib/api/client';
 
 interface Company {
@@ -37,7 +38,8 @@ interface Project {
 }
 
 export function DashboardFilters() {
-  const { globalFilters, setGlobalFilters, clearGlobalFilters } = useDashboardStore();
+  const context = useDashboardContext();
+  const { globalFilters, setGlobalFilters, clearGlobalFilters } = useDashboardStore(context);
   const [isOpen, setIsOpen] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);

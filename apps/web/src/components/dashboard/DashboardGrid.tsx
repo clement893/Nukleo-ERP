@@ -8,6 +8,7 @@ import { useMemo, useEffect, useState } from 'react';
 // @ts-ignore - react-grid-layout types may not be available
 import { Responsive } from 'react-grid-layout';
 import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardContext } from '@/contexts/DashboardContext';
 import { WidgetContainer } from './WidgetContainer';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import 'react-grid-layout/css/styles.css';
@@ -18,12 +19,13 @@ interface DashboardGridProps {
 }
 
 export function DashboardGrid({ className = '' }: DashboardGridProps) {
+  const context = useDashboardContext();
   const {
     getActiveConfig,
     isEditMode,
     updateWidgetPosition,
     updateWidgetSize,
-  } = useDashboardStore();
+  } = useDashboardStore(context);
 
   const activeConfig = getActiveConfig();
   const [width, setWidth] = useState(1200);

@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useDashboardStore } from '@/lib/dashboard/store';
 
 export const useMainDashboard = () => {
-  const store = useDashboardStore();
+  const store = useDashboardStore('main');
   
   useEffect(() => {
     // Définir le contexte 'main' au montage

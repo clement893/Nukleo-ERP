@@ -27,6 +27,7 @@ import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import QuickActions from '@/components/ui/QuickActions';
 import type { DashboardConfig } from '@/lib/dashboard/types';
 import { logger } from '@/lib/logger';
+import { DashboardContextProviderComponent } from '@/contexts/DashboardContext';
 
 function CommercialDashboardContent() {
   const { configs, addConfig, setActiveConfig, loadFromServer, getConfigById } = useCommercialDashboard();
@@ -192,25 +193,27 @@ function CommercialDashboardContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col gradient-bg-subtle">
-      {/* Toolbar */}
-      <DashboardToolbar onAddWidget={() => setIsLibraryOpen(true)} />
+    <DashboardContextProviderComponent context="commercial">
+      <div className="h-screen flex flex-col gradient-bg-subtle">
+        {/* Toolbar */}
+        <DashboardToolbar onAddWidget={() => setIsLibraryOpen(true)} />
 
-      {/* Grid */}
-      <div className="flex-1 overflow-auto p-6 spacing-generous">
-        <DashboardGrid />
+        {/* Grid */}
+        <div className="flex-1 overflow-auto p-6 spacing-generous">
+          <DashboardGrid />
+        </div>
+
+        {/* Widget Library Modal */}
+        <WidgetLibrary
+          isOpen={isLibraryOpen}
+          onClose={() => setIsLibraryOpen(false)}
+          module="commercial"
+        />
+
+        {/* Quick Actions FAB */}
+        <QuickActions />
       </div>
-
-      {/* Widget Library Modal */}
-      <WidgetLibrary
-        isOpen={isLibraryOpen}
-        onClose={() => setIsLibraryOpen(false)}
-        module="commercial"
-      />
-
-      {/* Quick Actions FAB */}
-      <QuickActions />
-    </div>
+    </DashboardContextProviderComponent>
   );
 }
 

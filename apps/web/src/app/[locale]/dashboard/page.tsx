@@ -27,6 +27,7 @@ import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import QuickActions from '@/components/ui/QuickActions';
 import type { DashboardConfig } from '@/lib/dashboard/types';
 import { logger } from '@/lib/logger';
+import { DashboardContextProviderComponent } from '@/contexts/DashboardContext';
 
 function DashboardContent() {
   const { configs, addConfig, setActiveConfig, loadFromServer } = useMainDashboard();
@@ -138,24 +139,26 @@ function DashboardContent() {
   }, [configs.length, addConfig, setActiveConfig, isLoading]);
 
   return (
-    <div className="h-screen flex flex-col gradient-bg-subtle">
-      {/* Toolbar */}
-      <DashboardToolbar onAddWidget={() => setIsLibraryOpen(true)} />
+    <DashboardContextProviderComponent context="main">
+      <div className="h-screen flex flex-col gradient-bg-subtle">
+        {/* Toolbar */}
+        <DashboardToolbar onAddWidget={() => setIsLibraryOpen(true)} />
 
-      {/* Grid */}
-      <div className="flex-1 overflow-auto p-6 spacing-generous">
-        <DashboardGrid />
+        {/* Grid */}
+        <div className="flex-1 overflow-auto p-6 spacing-generous">
+          <DashboardGrid />
+        </div>
+
+        {/* Widget Library Modal */}
+        <WidgetLibrary
+          isOpen={isLibraryOpen}
+          onClose={() => setIsLibraryOpen(false)}
+        />
+
+        {/* Quick Actions FAB */}
+        <QuickActions />
       </div>
-
-      {/* Widget Library Modal */}
-      <WidgetLibrary
-        isOpen={isLibraryOpen}
-        onClose={() => setIsLibraryOpen(false)}
-      />
-
-      {/* Quick Actions FAB */}
-      <QuickActions />
-    </div>
+    </DashboardContextProviderComponent>
   );
 }
 
