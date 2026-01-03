@@ -120,11 +120,19 @@ export function useContactEditor({
   // Fonction pour mettre à jour plusieurs champs
   const updateFields = useCallback((fields: Partial<ContactUpdate>) => {
     setContact(prev => {
-      const updated = { ...prev, ...fields };
-      // Convertir null en undefined pour company_name pour correspondre au type Contact
-      if ('company_name' in updated && updated.company_name === null) {
-        updated.company_name = undefined;
+      // Créer un nouvel objet avec les champs mis à jour
+      const updated: Contact = { ...prev };
+      
+      // Appliquer les champs avec conversion de null en undefined pour company_name
+      for (const [key, value] of Object.entries(fields)) {
+        if (key === 'company_name') {
+          // Contact.company_name est string | undefined, pas null
+          updated.company_name = value === null ? undefined : value as string | undefined;
+        } else {
+          (updated as any)[key] = value;
+        }
       }
+      
       return updated;
     });
   }, []);

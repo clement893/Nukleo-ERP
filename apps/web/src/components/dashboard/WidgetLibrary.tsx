@@ -10,7 +10,7 @@ import { useDashboardStore } from '@/lib/dashboard/store';
 import { useDashboardContext } from '@/contexts/DashboardContext';
 import { widgetRegistry, getWidgetsByModule } from '@/lib/dashboard/widgetRegistry';
 import { getFilteredWidgetRegistry } from '@/lib/dashboard/widgetPermissions';
-import type { WidgetType, DashboardModule } from '@/lib/dashboard/types';
+import type { WidgetType, DashboardModule, WidgetDefinition } from '@/lib/dashboard/types';
 import { customWidgetsAPI, type CustomWidget } from '@/lib/api/custom-widgets';
 import { WidgetEditor } from './WidgetEditor';
 import { useToast } from '@/components/ui';
@@ -18,7 +18,8 @@ import { logger } from '@/lib/logger';
 import { 
   getAvailableCollections, 
   getWidgetsByCollection,
-  moduleLabels 
+  moduleLabels,
+  type WidgetCollection
 } from '@/lib/dashboard/widgetCollections';
 
 interface WidgetLibraryProps {
@@ -99,7 +100,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
 
   // Widgets de la collection sélectionnée
   const collectionWidgets = useMemo(() => {
-    if (!selectedCollection) return {};
+    if (!selectedCollection) return {} as Record<WidgetType, WidgetDefinition>;
     return getWidgetsByCollection(selectedCollection);
   }, [selectedCollection]);
 
@@ -178,11 +179,11 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
 
   // Widgets filtrés (selon le mode de vue)
   const filteredWidgets = useMemo(() => {
-    const widgetsToFilter = viewMode === 'collections' && selectedCollection 
-      ? Object.values(collectionWidgets)
+    const widgetsToFilter: WidgetDefinition[] = viewMode === 'collections' && selectedCollection 
+      ? Object.values(collectionWidgets) as WidgetDefinition[]
       : Object.values(filteredRegistry);
 
-    return widgetsToFilter.filter((widget) => {
+    return widgetsToFilter.filter((widget: WidgetDefinition) => {
       const matchesSearch =
         searchQuery === '' ||
         widget.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -331,8 +332,8 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
               ) : (
                 <>
                   {/* Group collections by module */}
-                  {['commercial', 'projects', 'finances', 'team', 'global', 'system'].map((mod) => {
-                    const moduleCollections = availableCollections.filter(c => c.module === mod);
+                  {['commercial', 'projects', 'finances', 'team', 'global', 'system'].map((mod: DashboardModule) => {
+                    const moduleCollections = availableCollections.filter((c: WidgetCollection) => c.module === mod);
                     if (moduleCollections.length === 0) return null;
 
                     return (
@@ -341,7 +342,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
                           {moduleLabels[mod as DashboardModule] || mod}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {moduleCollections.map((collection) => {
+                          {moduleCollections.map((collection: WidgetCollection) => {
                             const widgets = getWidgetsByCollection(collection.id);
                             const widgetCount = Object.keys(widgets).length;
 
@@ -414,7 +415,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredWidgets.map((widget) => {
+                  {filteredWidgets.map((widget: WidgetDefinition) => {
                     const Icon = widget.icon;
                     const isImplemented = widget.component !== null;
 
@@ -576,7 +577,7 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredWidgets.map((widget) => {
+                  {filteredWidgets.map((widget: WidgetDefinition) => {
                 const Icon = widget.icon;
                 const isImplemented = widget.component !== null;
 

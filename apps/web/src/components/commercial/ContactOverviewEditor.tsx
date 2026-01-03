@@ -13,7 +13,7 @@ import { useContactEditor } from '@/hooks/useContactEditor';
 import { Contact } from '@/lib/api/contacts';
 import { companiesAPI } from '@/lib/api/companies';
 import { employeesAPI } from '@/lib/api/employees';
-import { Card, Button, Input, Select } from '@/components/ui';
+import { Card, Button, Input, Select, DatePicker } from '@/components/ui';
 import { 
   Loader2, 
   Check, 
@@ -27,7 +27,8 @@ import {
   Calendar,
   Building2,
   Globe,
-  Linkedin
+  Linkedin,
+  Tag
 } from 'lucide-react';
 
 export interface ContactOverviewEditorProps {
@@ -505,7 +506,7 @@ export function ContactOverviewEditor({
                 value={fieldValues.birthday !== undefined 
                   ? formatDateForInput(fieldValues.birthday)
                   : formatDateForInput(contact.birthday)}
-                onChange={(e) => setFieldValues(prev => ({ ...prev, birthday: e.target.value || null }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFieldValues(prev => ({ ...prev, birthday: e.target.value || null }))}
                 fullWidth
               />
             </EditableField>
