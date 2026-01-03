@@ -128,7 +128,7 @@ class LeoContextService:
         transaction_keywords = ["transaction", "transactions", "finances", "trésorerie", "argent", "cash", "liquidité", "liquidités", "manquer d'argent"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
-        employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes"]
+        employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes", "anniversaire", "anniversaires", "birthday", "date d'embauche", "hire date"]
         
         # Check if query contains what looks like a person name
         # This includes capitalized words AND single lowercase words that could be names
@@ -1495,12 +1495,22 @@ class LeoContextService:
                 context_parts.append("")
         
         if data.get("employees"):
+            employees = data["employees"]
+            # Check if query is about birthdays or hire dates
+            query_lower = query.lower()
+            is_birthday_query = any(phrase in query_lower for phrase in ["anniversaire", "birthday", "date de naissance"])
+            is_hire_date_query = any(phrase in query_lower for phrase in ["date d'embauche", "hire date", "embauche", "anniversaire d'embauche"])
+            
             if not is_counting_query:
-                context_parts.append(f"=== EMPLOYÉS ({len(data['employees'])}) ===")
-                for employee in data["employees"][:10]:
+                context_parts.append(f"=== EMPLOYÉS ({len(employees)}) ===")
+                for employee in employees[:20]:  # Show more for birthday/hire date queries
                     line = f"{employee['nom_complet']}"
                     if employee.get("email"):
                         line += f" ({employee['email']})"
+                    if is_birthday_query and employee.get("anniversaire"):
+                        line += f" - Anniversaire: {employee['anniversaire']}"
+                    if is_hire_date_query and employee.get("date_embauche"):
+                        line += f" - Date d'embauche: {employee['date_embauche']}"
                     context_parts.append(line)
                 context_parts.append("")
         
