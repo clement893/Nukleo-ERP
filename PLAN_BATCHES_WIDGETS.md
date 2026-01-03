@@ -56,14 +56,14 @@
 
 ---
 
-### 📊 Batch 6: Widgets Commercial Priorité MOYENNE
-- [ ] `opportunities-timeline` - Timeline des opportunités
-- [ ] `opportunities-by-source` - Répartition par source
-- [ ] `clients-by-type` - Répartition clients par type
-- [ ] `win-rate-trend` - Taux de réussite
-- [ ] `revenue-forecast` - Prévisions de revenus
+### ✅ Batch 6: Widgets Commercial Priorité MOYENNE
+- [x] `opportunities-timeline` - Timeline des opportunités
+- [x] `opportunities-by-source` - Répartition par source
+- [x] `clients-by-type` - Répartition clients par type
+- [x] `win-rate-trend` - Taux de réussite
+- [x] `revenue-forecast` - Prévisions de revenus
 
-**Statut:** 0/5 widgets créés
+**Statut:** ✅ COMPLÉTÉ - 5/5 widgets créés et pushés
 
 ---
 
@@ -119,12 +119,12 @@
 
 ## 📈 Progression Globale
 
-- **Batches complétés:** 5/10 (50%)
-- **Widgets créés:** 11/40 (27.5%)
+- **Batches complétés:** 6/10 (60%)
+- **Widgets créés:** 16/40 (40%)
 - **Intégrations complétées:** 1/1 (100%)
 
 ## 🔄 Dernière Mise à Jour
 
-- **Date:** Batch 5 complété et pushé
-- **Batch actif:** Batch 6 (Widgets Commercial Priorité MOYENNE)
-- **Prochaine étape:** Créer les 5 widgets commerciaux priorité MOYENNE
+- **Date:** Batch 6 complété et pushé
+- **Batch actif:** Batch 7 (Widgets Projets Priorité MOYENNE)
+- **Prochaine étape:** Créer les 5 widgets projets priorité MOYENNE
