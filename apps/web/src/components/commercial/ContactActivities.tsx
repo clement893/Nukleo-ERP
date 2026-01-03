@@ -19,12 +19,7 @@ import {
   Calendar,
   User,
   Sparkles,
-  Filter,
-  Mail,
-  Phone,
-  MapPin,
-  Building2,
-  Tag
+  Filter
 } from 'lucide-react';
 
 export interface ContactActivitiesProps {
@@ -168,7 +163,7 @@ const getActivityTitle = (activity: Activity, type: ActivityType, field?: string
   return activity.action || 'Activité';
 };
 
-const getActivityDescription = (activity: Activity, type: ActivityType, contact: Contact): string => {
+const getActivityDescription = (activity: Activity, type: ActivityType): string => {
   const metadata = activity.event_metadata || {};
   
   if (type === 'modification') {
@@ -388,7 +383,7 @@ export function ContactActivities({ contactId, contact }: ContactActivitiesProps
                   const type = getActivityType(activity);
                   const field = activity.event_metadata?.field as string | undefined;
                   const title = getActivityTitle(activity, type, field);
-                  const description = getActivityDescription(activity, type, contact);
+                  const description = getActivityDescription(activity, type);
                   
                   return (
                     <Card key={activity.id} className="glass-card p-4 hover:shadow-md transition-shadow">

@@ -7,12 +7,12 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCompanyEditor } from '@/hooks/useCompanyEditor';
 import { Company } from '@/lib/api/companies';
 import { companiesAPI } from '@/lib/api/companies';
-import { Card, Button, Input, Textarea, Select, DatePicker } from '@/components/ui';
+import { Card, Button, Input, Textarea, Select } from '@/components/ui';
 import { 
   Loader2, 
   Check, 
@@ -24,11 +24,9 @@ import {
   X,
   Mail,
   Phone,
-  Link as LinkIcon,
   Facebook,
   Instagram,
-  Linkedin,
-  Tag
+  Linkedin
 } from 'lucide-react';
 
 export interface CompanyOverviewEditorProps {

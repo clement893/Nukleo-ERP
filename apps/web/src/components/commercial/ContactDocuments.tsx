@@ -135,16 +135,15 @@ export function ContactDocuments({
     try {
       // Upload file using mediaAPI
       const uploadedFile = await mediaAPI.upload(file, {
-        entity_type: 'contact',
-        entity_id: String(contactId),
+        folder: `contacts/${contactId}`,
       });
 
       // Create document entry
       const newDocument: ContactDocument = {
-        id: uploadedFile.id || `doc_${Date.now()}`,
+        id: String(uploadedFile.id) || `doc_${Date.now()}`,
         name: file.name,
         type: 'file',
-        url: uploadedFile.url || uploadedFile.file_url || '',
+        url: uploadedFile.file_path || '',
         file_type: file.type.split('/')[1],
         size: file.size,
         created_at: new Date().toISOString(),

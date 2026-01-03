@@ -135,16 +135,15 @@ export function CompanyDocuments({
     try {
       // Upload file using mediaAPI
       const uploadedFile = await mediaAPI.upload(file, {
-        entity_type: 'company',
-        entity_id: String(companyId),
+        folder: `companies/${companyId}`,
       });
 
       // Create document entry
       const newDocument: CompanyDocument = {
-        id: uploadedFile.id || `doc_${Date.now()}`,
+        id: String(uploadedFile.id) || `doc_${Date.now()}`,
         name: file.name,
         type: 'file',
-        url: uploadedFile.url || uploadedFile.file_url || '',
+        url: uploadedFile.file_path || '',
         file_type: file.type.split('/')[1],
         size: file.size,
         created_at: new Date().toISOString(),

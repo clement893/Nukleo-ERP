@@ -119,7 +119,14 @@ export function useContactEditor({
 
   // Fonction pour mettre à jour plusieurs champs
   const updateFields = useCallback((fields: Partial<ContactUpdate>) => {
-    setContact(prev => ({ ...prev, ...fields }));
+    setContact(prev => {
+      const updated = { ...prev, ...fields };
+      // Convertir null en undefined pour company_name pour correspondre au type Contact
+      if ('company_name' in updated && updated.company_name === null) {
+        updated.company_name = undefined;
+      }
+      return updated;
+    });
   }, []);
 
   // Fonction de sauvegarde avec debounce

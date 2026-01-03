@@ -7,15 +7,13 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useContactEditor } from '@/hooks/useContactEditor';
 import { Contact } from '@/lib/api/contacts';
 import { companiesAPI } from '@/lib/api/companies';
 import { employeesAPI } from '@/lib/api/employees';
-import { apiClient } from '@/lib/api/client';
-import { extractApiData } from '@/lib/api/utils';
-import { Card, Button, Input, Select, DatePicker } from '@/components/ui';
+import { Card, Button, Input, Select } from '@/components/ui';
 import { 
   Loader2, 
   Check, 
@@ -29,8 +27,7 @@ import {
   Calendar,
   Building2,
   Globe,
-  Linkedin,
-  Tag
+  Linkedin
 } from 'lucide-react';
 
 export interface ContactOverviewEditorProps {
@@ -38,13 +35,6 @@ export interface ContactOverviewEditorProps {
   contactId: number;
   onUpdate: (updatedContact: Contact) => void;
   onError?: (error: Error) => void;
-}
-
-interface UserType {
-  id: number;
-  email: string;
-  first_name?: string | null;
-  last_name?: string | null;
 }
 
 const formatDate = (date: string | null | undefined) => {

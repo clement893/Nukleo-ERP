@@ -143,8 +143,7 @@ function OpportunityKanbanCard({
       {...dragListeners}
       className="mb-2"
     >
-      <Card 
-        className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative cursor-pointer"
+      <div
         onMouseDown={(e: React.MouseEvent) => {
           // Enregistrer la position et le temps du clic initial
           clickStartRef.current = {
@@ -188,6 +187,9 @@ function OpportunityKanbanCard({
           onView?.();
         }}
       >
+        <Card 
+          className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative cursor-pointer"
+        >
         {/* Drag Handle - now just visual indicator */}
         <div
           className="absolute top-2 left-2 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none"
@@ -314,7 +316,8 @@ function OpportunityKanbanCard({
             <span className="line-clamp-1">{opportunity.assigned_to_name}</span>
           </div>
         )}
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

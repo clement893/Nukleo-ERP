@@ -19,8 +19,7 @@ import {
   Calendar,
   User,
   Sparkles,
-  Filter,
-  Building2
+  Filter
 } from 'lucide-react';
 
 export interface CompanyActivitiesProps {
@@ -164,7 +163,7 @@ const getActivityTitle = (activity: Activity, type: ActivityType, field?: string
   return activity.action || 'Activité';
 };
 
-const getActivityDescription = (activity: Activity, type: ActivityType, company: Company): string => {
+const getActivityDescription = (activity: Activity, type: ActivityType): string => {
   const metadata = activity.event_metadata || {};
   
   if (type === 'modification') {
@@ -378,7 +377,7 @@ export function CompanyActivities({ companyId, company }: CompanyActivitiesProps
                   const type = getActivityType(activity);
                   const field = activity.event_metadata?.field as string | undefined;
                   const title = getActivityTitle(activity, type, field);
-                  const description = getActivityDescription(activity, type, company);
+                  const description = getActivityDescription(activity, type);
                   
                   return (
                     <Card key={activity.id} className="glass-card p-4 hover:shadow-md transition-shadow">
