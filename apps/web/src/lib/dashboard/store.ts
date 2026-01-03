@@ -19,12 +19,40 @@ const debouncedSave = (saveFn: () => Promise<void>, delay: number = 1000) => {
   }, delay);
 };
 
+// Type pour le contexte du dashboard (page/module)
+export type DashboardContext = 'main' | 'commercial' | 'projects' | 'finances' | 'team' | 'system' | 'erp';
+
+// Fonction pour obtenir la clé de préférence basée sur le contexte
+const getPreferenceKey = (context: DashboardContext): string => {
+  switch (context) {
+    case 'commercial':
+      return 'dashboard_commercial_configs';
+    case 'projects':
+      return 'dashboard_projects_configs';
+    case 'finances':
+      return 'dashboard_finances_configs';
+    case 'team':
+      return 'dashboard_team_configs';
+    case 'system':
+      return 'dashboard_system_configs';
+    case 'erp':
+      return 'dashboard_erp_configs';
+    case 'main':
+    default:
+      return 'dashboard_configs';
+  }
+};
+
 interface DashboardStore {
   // État
+  context: DashboardContext;
   configs: DashboardConfig[];
   activeConfigId: string | null;
   isEditMode: boolean;
   globalFilters: GlobalFilters;
+  
+  // Actions - Contexte
+  setContext: (context: DashboardContext) => Promise<void>;
   
   // Getters
   getActiveConfig: () => DashboardConfig | null;
@@ -61,10 +89,32 @@ export const useDashboardStore = create<DashboardStore>()(
   persist(
     (set, get) => ({
       // État initial
+      context: 'main',
       configs: [],
       activeConfigId: null,
       isEditMode: false,
       globalFilters: {},
+      
+      // Actions - Contexte
+      setContext: async (context) => {
+        const currentContext = get().context;
+        
+        // Si on change de contexte, sauvegarder l'état actuel
+        if (currentContext !== context) {
+          await get().saveToServer().catch(console.error);
+          
+          // Réinitialiser l'état pour le nouveau contexte
+          set({ 
+            context,
+            configs: [],
+            activeConfigId: null,
+            globalFilters: {},
+          });
+          
+          // Charger les configs du nouveau contexte
+          await get().loadFromServer().catch(console.error);
+        }
+      },
       
       // Getters
       getActiveConfig: () => {
@@ -269,13 +319,16 @@ export const useDashboardStore = create<DashboardStore>()(
       // Actions - Persistance
       saveToServer: async () => {
         try {
-          const { configs, activeConfigId, globalFilters } = get();
+          const { context, configs, activeConfigId, globalFilters } = get();
+          const preferenceKey = getPreferenceKey(context);
           console.log('[DashboardStore] Saving to server:', { 
+            context,
+            preferenceKey,
             configsCount: configs.length, 
             activeConfigId,
             widgetsCount: configs.find(c => c.id === activeConfigId)?.layouts.length || 0
           });
-          await preferencesAPI.set('dashboard_configs', {
+          await preferencesAPI.set(preferenceKey, {
             configs,
             activeConfigId,
             globalFilters,
@@ -291,8 +344,10 @@ export const useDashboardStore = create<DashboardStore>()(
       
       loadFromServer: async () => {
         try {
-          console.log('[DashboardStore] Loading from server...');
-          const preference = await preferencesAPI.get('dashboard_configs');
+          const { context } = get();
+          const preferenceKey = getPreferenceKey(context);
+          console.log('[DashboardStore] Loading from server...', { context, preferenceKey });
+          const preference = await preferencesAPI.get(preferenceKey);
           const currentState = get();
           
           if (preference && preference.value && typeof preference.value === 'object') {
@@ -355,6 +410,7 @@ export const useDashboardStore = create<DashboardStore>()(
     {
       name: 'dashboard-storage',
       partialize: (state) => ({
+        context: state.context,
         configs: state.configs,
         activeConfigId: state.activeConfigId,
         globalFilters: state.globalFilters,

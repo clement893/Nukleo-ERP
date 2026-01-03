@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useEffect, useState } from 'react';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useERPDashboard } from '@/hooks/useERPDashboard';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DashboardToolbar } from '@/components/dashboard/DashboardToolbar';
 import { WidgetLibrary } from '@/components/dashboard/WidgetLibrary';
@@ -24,7 +24,7 @@ import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissio
 import type { DashboardConfig } from '@/lib/dashboard/types';
 
 function ERPDashboardContent() {
-  const { configs, addConfig, setActiveConfig, loadFromServer } = useDashboardStore();
+  const { configs, addConfig, setActiveConfig, loadFromServer } = useERPDashboard();
   const { hasModuleAccess, loading: permissionsLoading } = useEmployeePortalPermissions();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

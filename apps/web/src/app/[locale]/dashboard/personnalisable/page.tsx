@@ -5,14 +5,14 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useMainDashboard } from '@/hooks/useMainDashboard';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DashboardToolbar } from '@/components/dashboard/DashboardToolbar';
 import { WidgetLibrary } from '@/components/dashboard/WidgetLibrary';
 import type { DashboardConfig } from '@/lib/dashboard/types';
 
 export default function PersonnalisablePage() {
-  const { configs, addConfig, setActiveConfig } = useDashboardStore();
+  const { configs, addConfig, setActiveConfig } = useMainDashboard();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   // Initialiser avec une configuration par défaut si aucune n'existe

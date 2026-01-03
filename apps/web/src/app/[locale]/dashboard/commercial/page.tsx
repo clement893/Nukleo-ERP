@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useEffect, useState } from 'react';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useCommercialDashboard } from '@/hooks/useCommercialDashboard';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DashboardToolbar } from '@/components/dashboard/DashboardToolbar';
 import { WidgetLibrary } from '@/components/dashboard/WidgetLibrary';
@@ -29,7 +29,7 @@ import type { DashboardConfig } from '@/lib/dashboard/types';
 import { logger } from '@/lib/logger';
 
 function CommercialDashboardContent() {
-  const { configs, addConfig, setActiveConfig, loadFromServer, getConfigById } = useDashboardStore();
+  const { configs, addConfig, setActiveConfig, loadFromServer, getConfigById } = useCommercialDashboard();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
