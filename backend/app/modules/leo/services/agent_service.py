@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.models.user import User
 from app.modules.leo.models import LeoConversation, LeoMessage
 from app.models.project import Project
-from app.models.team import TeamMember
+from app.models.team import Team, TeamMember
 from app.models.invoice import Invoice
 from app.models.contact import Contact
 from app.models.company import Company
@@ -27,37 +27,60 @@ class LeoAgentService:
         self.db = db
         self.rbac_service = RBACService(db)
     
-    async def get_user_context(self, user: User) -> Dict:
+    async def get_user_context(self, user_id: int) -> Dict:
         """
         Get complete user context (roles, permissions, teams, statistics)
         
         Args:
-            user: User object
+            user_id: User ID
             
         Returns:
             Dict with user context information
         """
-        # Extract user properties immediately to avoid lazy loading issues
-        user_id = user.id
-        user_email = user.email
-        user_first_name = user.first_name or ''
-        user_last_name = user.last_name or ''
-        user_is_superadmin = user.is_superadmin
+        # CRITICAL: Load user from database in current async context to avoid greenlet_spawn errors
+        # This ensures all attributes are accessible in the current async session
+        from app.models.user import User as UserModel
+        from sqlalchemy import select
+        user_result = await self.db.execute(
+            select(UserModel).where(UserModel.id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
         
-        # Get roles
+        if not user:
+            raise ValueError(f"User with id {user_id} not found")
+        
+        # CRITICAL: Extract all user attributes immediately after loading
+        # This prevents greenlet_spawn errors by ensuring all attributes are accessed
+        # while still in the async context where the user was loaded
+        user_email = str(user.email) if user.email is not None else ""
+        user_first_name = str(user.first_name) if user.first_name is not None else ""
+        user_last_name = str(user.last_name) if user.last_name is not None else ""
+        user_is_superadmin = bool(user.is_superadmin) if user.is_superadmin is not None else False
+        
+        # Get roles - convert to simple values to avoid greenlet_spawn errors
         roles = await self.rbac_service.get_user_roles(user_id)
-        role_names = [role.slug for role in roles]
+        # Convert roles to list of slugs immediately to avoid async context issues
+        role_names = []
+        for role in roles:
+            # Extract slug attribute immediately while still in async context
+            try:
+                slug_value = str(role.slug) if hasattr(role, 'slug') and role.slug is not None else ""
+            except Exception:
+                # If accessing slug fails, skip this role
+                slug_value = ""
+            if slug_value:
+                role_names.append(slug_value)
         
         # Get permissions
         permissions = await self.rbac_service.get_user_permissions(user_id)
         
-        # Get teams
-        teams_query = select(TeamMember).where(TeamMember.user_id == user_id).options(
-            selectinload(TeamMember.team)
-        )
+        # Get teams (using join to avoid lazy loading issues in async context)
+        teams_query = select(Team.name).join(TeamMember, Team.id == TeamMember.team_id).where(
+            TeamMember.user_id == user_id
+        ).where(Team.is_active == True).where(TeamMember.is_active == True)
         teams_result = await self.db.execute(teams_query)
-        teams = teams_result.scalars().all()
-        team_names = [team.team.name for team in teams if team.team]
+        # Convert team names to strings immediately to avoid greenlet_spawn errors
+        team_names = [str(name) for name in teams_result.scalars().all()]
         
         # Get statistics
         # Count projects
@@ -106,19 +129,17 @@ class LeoAgentService:
             },
         }
     
-    async def get_relevant_data(self, query: str, user: User) -> Dict:
+    async def get_relevant_data(self, query: str, user_id: int) -> Dict:
         """
         Get relevant data based on the query
         
         Args:
             query: User query string
-            user: User object
+            user_id: User ID
             
         Returns:
             Dict with relevant data
         """
-        # Extract user_id immediately to avoid lazy loading issues
-        user_id = user.id
         
         data = {}
         query_lower = query.lower()
@@ -131,16 +152,27 @@ class LeoAgentService:
             )
             projects_result = await self.db.execute(projects_query)
             projects = projects_result.scalars().all()
-            data['projects'] = [
-                {
-                    "id": p.id,
-                    "name": p.name,
-                    "description": p.description,
-                    "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
-                    "created_at": p.created_at.isoformat() if p.created_at else None,
-                }
-                for p in projects[:10]  # Limit to 10
-            ]
+            # Convert projects to dict format immediately to avoid greenlet_spawn errors
+            projects_list = []
+            for p in projects[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                project_id = int(p.id) if p.id is not None else 0
+                project_name = str(p.name) if p.name is not None else ""
+                project_description = str(p.description) if p.description is not None else ""
+                # Handle status enum safely
+                try:
+                    status_value = str(p.status.value) if hasattr(p.status, 'value') else str(p.status)
+                except Exception:
+                    status_value = str(p.status) if p.status is not None else ""
+                project_created_at = p.created_at.isoformat() if p.created_at else None
+                projects_list.append({
+                    "id": project_id,
+                    "name": project_name,
+                    "description": project_description,
+                    "status": status_value,
+                    "created_at": project_created_at,
+                })
+            data['projects'] = projects_list
         
         # Tasks
         task_keywords = ['tâche', 'task', 'todo', 'à faire', 'en cours', 'bloqué']
@@ -150,17 +182,32 @@ class LeoAgentService:
             ).order_by(desc(ProjectTask.created_at))
             tasks_result = await self.db.execute(tasks_query)
             tasks = tasks_result.scalars().all()
-            data['tasks'] = [
-                {
-                    "id": t.id,
-                    "title": t.title,
-                    "description": t.description,
-                    "status": t.status.value if hasattr(t.status, 'value') else str(t.status),
-                    "priority": t.priority.value if hasattr(t.priority, 'value') else str(t.priority),
-                    "created_at": t.created_at.isoformat() if t.created_at else None,
-                }
-                for t in tasks[:10]  # Limit to 10
-            ]
+            # Convert tasks to dict format immediately to avoid greenlet_spawn errors
+            tasks_list = []
+            for t in tasks[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                task_id = int(t.id) if t.id is not None else 0
+                task_title = str(t.title) if t.title is not None else ""
+                task_description = str(t.description) if t.description is not None else ""
+                # Handle status and priority enums safely
+                try:
+                    status_value = str(t.status.value) if hasattr(t.status, 'value') else str(t.status)
+                except Exception:
+                    status_value = str(t.status) if t.status is not None else ""
+                try:
+                    priority_value = str(t.priority.value) if hasattr(t.priority, 'value') else str(t.priority)
+                except Exception:
+                    priority_value = str(t.priority) if t.priority is not None else ""
+                task_created_at = t.created_at.isoformat() if t.created_at else None
+                tasks_list.append({
+                    "id": task_id,
+                    "title": task_title,
+                    "description": task_description,
+                    "status": status_value,
+                    "priority": priority_value,
+                    "created_at": task_created_at,
+                })
+            data['tasks'] = tasks_list
         
         # Invoices
         invoice_keywords = ['facture', 'invoice', 'paiement', 'payment', 'facturation', 'billing']
@@ -170,18 +217,31 @@ class LeoAgentService:
             )
             invoices_result = await self.db.execute(invoices_query)
             invoices = invoices_result.scalars().all()
-            data['invoices'] = [
-                {
-                    "id": i.id,
-                    "invoice_number": i.invoice_number,
-                    "amount_due": str(i.amount_due),
-                    "amount_paid": str(i.amount_paid),
-                    "status": i.status.value if hasattr(i.status, 'value') else str(i.status),
-                    "due_date": i.due_date.isoformat() if i.due_date else None,
-                    "created_at": i.created_at.isoformat() if i.created_at else None,
-                }
-                for i in invoices[:10]  # Limit to 10
-            ]
+            # Convert invoices to dict format immediately to avoid greenlet_spawn errors
+            invoices_list = []
+            for i in invoices[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                invoice_id = int(i.id) if i.id is not None else 0
+                invoice_number = str(i.invoice_number) if i.invoice_number is not None else ""
+                amount_due = str(i.amount_due) if i.amount_due is not None else "0"
+                amount_paid = str(i.amount_paid) if i.amount_paid is not None else "0"
+                # Handle status enum safely
+                try:
+                    status_value = str(i.status.value) if hasattr(i.status, 'value') else str(i.status)
+                except Exception:
+                    status_value = str(i.status) if i.status is not None else ""
+                due_date = i.due_date.isoformat() if i.due_date else None
+                created_at = i.created_at.isoformat() if i.created_at else None
+                invoices_list.append({
+                    "id": invoice_id,
+                    "invoice_number": invoice_number,
+                    "amount_due": amount_due,
+                    "amount_paid": amount_paid,
+                    "status": status_value,
+                    "due_date": due_date,
+                    "created_at": created_at,
+                })
+            data['invoices'] = invoices_list
         
         # Companies
         company_keywords = ['entreprise', 'company', 'société', 'client', 'customer', 'organisation']
@@ -189,18 +249,27 @@ class LeoAgentService:
             companies_query = select(Company).order_by(desc(Company.created_at))
             companies_result = await self.db.execute(companies_query)
             companies = companies_result.scalars().all()
-            data['companies'] = [
-                {
-                    "id": c.id,
-                    "name": c.name,
-                    "description": c.description,
-                    "is_client": c.is_client,
-                    "city": c.city,
-                    "country": c.country,
-                    "created_at": c.created_at.isoformat() if c.created_at else None,
-                }
-                for c in companies[:10]  # Limit to 10
-            ]
+            # Convert companies to dict format immediately to avoid greenlet_spawn errors
+            companies_list = []
+            for c in companies[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                company_id = int(c.id) if c.id is not None else 0
+                company_name = str(c.name) if c.name is not None else ""
+                company_description = str(c.description) if c.description is not None else ""
+                is_client = bool(c.is_client) if c.is_client is not None else False
+                city = str(c.city) if c.city is not None else ""
+                country = str(c.country) if c.country is not None else ""
+                created_at = c.created_at.isoformat() if c.created_at else None
+                companies_list.append({
+                    "id": company_id,
+                    "name": company_name,
+                    "description": company_description,
+                    "is_client": is_client,
+                    "city": city,
+                    "country": country,
+                    "created_at": created_at,
+                })
+            data['companies'] = companies_list
         
         # Contacts
         contact_keywords = ['contact', 'personne', 'person', 'client', 'prospect']
@@ -210,19 +279,29 @@ class LeoAgentService:
             ).order_by(desc(Contact.created_at))
             contacts_result = await self.db.execute(contacts_query)
             contacts = contacts_result.scalars().all()
-            data['contacts'] = [
-                {
-                    "id": c.id,
-                    "first_name": c.first_name,
-                    "last_name": c.last_name,
-                    "email": c.email,
-                    "position": c.position,
-                    "circle": c.circle,
-                    "company_id": c.company_id,
-                    "created_at": c.created_at.isoformat() if c.created_at else None,
-                }
-                for c in contacts[:10]  # Limit to 10
-            ]
+            # Convert contacts to dict format immediately to avoid greenlet_spawn errors
+            contacts_list = []
+            for c in contacts[:10]:  # Limit to 10
+                # Extract all attributes immediately while in async context
+                contact_id = int(c.id) if c.id is not None else 0
+                first_name = str(c.first_name) if c.first_name is not None else ""
+                last_name = str(c.last_name) if c.last_name is not None else ""
+                email = str(c.email) if c.email is not None else ""
+                position = str(c.position) if c.position is not None else ""
+                circle = str(c.circle) if c.circle is not None else ""
+                company_id = int(c.company_id) if c.company_id is not None else None
+                created_at = c.created_at.isoformat() if c.created_at else None
+                contacts_list.append({
+                    "id": contact_id,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "position": position,
+                    "circle": circle,
+                    "company_id": company_id,
+                    "created_at": created_at,
+                })
+            data['contacts'] = contacts_list
         
         return data
     
