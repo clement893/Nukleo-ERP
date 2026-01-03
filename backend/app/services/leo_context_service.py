@@ -506,6 +506,9 @@ class LeoContextService:
                     "montant": float(opp.amount) if opp.amount else None,
                     "probabilite": opp.probability,
                     "statut": opp.status,
+                    "stage": opp.stage.name if opp.stage else None,
+                    "pipeline": opp.pipeline.name if opp.pipeline else None,
+                    "company": opp.company.name if opp.company else None,
                 })
             
             return formatted
