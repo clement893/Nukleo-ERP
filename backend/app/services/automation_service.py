@@ -286,6 +286,8 @@ async def handle_opportunity_stage_change(
         stage_name = opportunity.stage.name
         
         # Find all enabled automation rules for the event 'opportunity.stage_changed'
+        # Note: We load rules for ALL users, not just the opportunity owner
+        # This allows admins to create global automation rules
         rules_result = await db.execute(
             select(AutomationRule).where(
                 AutomationRule.enabled == True,
@@ -294,11 +296,20 @@ async def handle_opportunity_stage_change(
         )
         rules = rules_result.scalars().all()
         
+        logger.info(f"Loaded {len(rules)} enabled automation rules for 'opportunity.stage_changed'")
+        for rule in rules:
+            logger.debug(f"  - Rule '{rule.name}' (ID: {rule.id}, User: {rule.user_id}, Enabled: {rule.enabled})")
+        
         logger.info(f"Found {len(rules)} enabled automation rules for 'opportunity.stage_changed'")
         logger.info(f"Opportunity {opportunity.id}: pipeline='{pipeline_name}', stage='{stage_name}'")
+        logger.info(f"Stage changed from {old_stage_id} to {new_stage_id}")
+        
+        if len(rules) == 0:
+            logger.warning(f"No automation rules found for event 'opportunity.stage_changed'. Check if rules are enabled and exist in database.")
         
         # Execute matching rules
         for rule in rules:
+            logger.info(f"Evaluating rule '{rule.name}' (ID: {rule.id}, User: {rule.user_id})")
             try:
                 # Check trigger conditions
                 conditions = rule.trigger_conditions or {}
@@ -319,17 +330,29 @@ async def handle_opportunity_stage_change(
                 # Check stage condition
                 if 'stage_name' in conditions:
                     expected_stage = conditions['stage_name']
-                    # Normalize both strings for comparison (remove extra spaces, convert to lowercase)
-                    normalized_expected = ' '.join(expected_stage.lower().split())
-                    normalized_stage = ' '.join(stage_name.lower().split())
-                    # Check if normalized expected stage is contained in normalized stage name
-                    # This handles cases like "05-Proposal to do" matching "05 - Proposal to do"
-                    stage_match = normalized_expected in normalized_stage
+                    # Normalize both strings for comparison (remove extra spaces, convert to lowercase, remove special chars)
+                    def normalize_stage_name(name: str) -> str:
+                        # Remove extra spaces, convert to lowercase, remove dashes and special formatting
+                        normalized = ' '.join(name.lower().split())
+                        # Remove leading numbers and dashes for better matching (e.g., "05-proposal to do" -> "proposal to do")
+                        # But keep the full string for exact match first
+                        return normalized
+                    
+                    normalized_expected = normalize_stage_name(expected_stage)
+                    normalized_stage = normalize_stage_name(stage_name)
+                    
+                    # Try exact match first (case-insensitive)
+                    stage_match_exact = normalized_expected == normalized_stage
+                    # Then try substring match
+                    stage_match_substring = normalized_expected in normalized_stage or normalized_stage in normalized_expected
+                    stage_match = stage_match_exact or stage_match_substring
+                    
                     if not stage_match:
                         matches = False
-                        logger.debug(f"Stage condition not met: expected '{normalized_expected}' not found in '{normalized_stage}'")
+                        logger.debug(f"Stage condition not met: expected '{expected_stage}' (normalized: '{normalized_expected}') not found in '{stage_name}' (normalized: '{normalized_stage}')")
+                        logger.debug(f"  Exact match: {stage_match_exact}, Substring match: {stage_match_substring}")
                     else:
-                        logger.debug(f"Stage condition met: '{normalized_stage}' contains '{normalized_expected}'")
+                        logger.debug(f"Stage condition met: '{stage_name}' matches '{expected_stage}' (exact: {stage_match_exact}, substring: {stage_match_substring})")
                 
                 if not matches:
                     logger.debug(f"Rule '{rule.name}' does not match conditions, skipping")

@@ -716,8 +716,21 @@ async def update_opportunity(
         setattr(opportunity, field, value)
     
     # Check if stage changed for automation
-    new_stage_id = opportunity.stage_id if 'stage_id' in update_data else old_stage_id
+    # Get the new stage_id from update_data if provided, otherwise use the current opportunity.stage_id
+    # This handles both explicit stage_id updates and implicit ones
+    if 'stage_id' in update_data:
+        new_stage_id = update_data['stage_id']
+    else:
+        # Refresh opportunity to get the latest stage_id after commit
+        await db.flush()  # Flush to get updated stage_id if it was set
+        new_stage_id = opportunity.stage_id
+    
     stage_changed = old_stage_id != new_stage_id
+    
+    if stage_changed:
+        logger.info(f"Stage change detected for opportunity {opportunity.id}: {old_stage_id} -> {new_stage_id}")
+    else:
+        logger.debug(f"No stage change for opportunity {opportunity.id}: stage_id={old_stage_id}")
     
     # Update contacts if provided
     if 'contact_ids' in opportunity_data.model_dump(exclude_unset=True):

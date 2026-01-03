@@ -304,4 +304,25 @@ export const automationAPI = {
     }
     return data;
   },
+
+  /**
+   * Get execution logs for an automation rule
+   */
+  getAutomationRuleLogs: async (ruleId: string, limit: number = 50): Promise<AutomationRuleExecutionLog[]> => {
+    const response = await apiClient.get<AutomationRuleExecutionLog[]>(`/v1/automation-rules/${ruleId}/logs?limit=${limit}`);
+    const data = extractApiData<AutomationRuleExecutionLog[]>(response);
+    return Array.isArray(data) ? data : [];
+  },
 };
+
+/**
+ * Automation Rule Execution Log
+ */
+export interface AutomationRuleExecutionLog {
+  id: number;
+  rule_id: number;
+  executed_at: string;
+  success: boolean;
+  error_message?: string | null;
+  execution_data?: Record<string, unknown> | null;
+}

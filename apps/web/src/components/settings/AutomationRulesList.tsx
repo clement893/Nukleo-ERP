@@ -7,10 +7,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, Badge, Input, Switch, useToast } from '@/components/ui';
-import { Plus, Search, Zap, Trash2, Edit2, Loader2, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Button, Card, Badge, Input, Switch, useToast, Modal } from '@/components/ui';
+import { Plus, Search, Zap, Trash2, Edit2, Loader2, Sparkles, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { AutomationRuleForm } from './AutomationRuleForm';
-import { automationAPI, type AutomationRule, type CreateAutomationRuleRequest, type UpdateAutomationRuleRequest } from '@/lib/api/automation';
+import { automationAPI, type AutomationRule, type CreateAutomationRuleRequest, type UpdateAutomationRuleRequest, type AutomationRuleExecutionLog } from '@/lib/api/automation';
 
 export interface AutomationRulesListProps {
   rules: AutomationRule[];
@@ -37,6 +38,7 @@ export function AutomationRulesList({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRuleForLogs, setSelectedRuleForLogs] = useState<AutomationRule | null>(null);
 
   const filteredRules = rules.filter((rule) => {
     return rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -204,9 +206,22 @@ export function AutomationRulesList({
                           <span className="ml-2 font-medium">{formatDate(rule.last_triggered_at)}</span>
                         </div>
                       )}
-                      <div>
-                        <span className="text-muted-foreground">Exécutions:</span>
-                        <span className="ml-2 font-medium">{rule.trigger_count} fois</span>
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <span className="text-muted-foreground">Exécutions:</span>
+                          <span className="ml-2 font-medium">{rule.trigger_count} fois</span>
+                        </div>
+                        {rule.trigger_count > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedRuleForLogs(rule)}
+                            className="h-7 text-xs"
+                          >
+                            <FileText className="w-3 h-3 mr-1" />
+                            Voir les logs
+                          </Button>
+                        )}
                       </div>
                       <div>
                         <span className="text-muted-foreground">Créée le:</span>
@@ -223,6 +238,7 @@ export function AutomationRulesList({
                       variant="ghost"
                       size="sm"
                       onClick={() => setEditingRule(rule)}
+                      aria-label="Modifier la règle"
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -230,6 +246,7 @@ export function AutomationRulesList({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(rule.id)}
+                      aria-label="Supprimer la règle"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -260,6 +277,135 @@ export function AutomationRulesList({
           }}
         />
       )}
+
+      {/* Logs Modal */}
+      {selectedRuleForLogs && (
+        <AutomationRuleLogsModal
+          rule={selectedRuleForLogs}
+          onClose={() => setSelectedRuleForLogs(null)}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * Modal component for displaying automation rule execution logs
+ */
+function AutomationRuleLogsModal({
+  rule,
+  onClose,
+}: {
+  rule: AutomationRule;
+  onClose: () => void;
+}) {
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['automation-rules', rule.id, 'logs'],
+    queryFn: () => automationAPI.getAutomationRuleLogs(String(rule.id), 100),
+    enabled: !!rule,
+  });
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Intl.DateTimeFormat('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(new Date(dateString));
+    } catch {
+      return dateString;
+    }
+  };
+
+  const successCount = logs.filter(log => log.success).length;
+  const failureCount = logs.filter(log => !log.success).length;
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={`Logs d'exécution - ${rule.name}`}
+      size="lg"
+    >
+      <div className="space-y-4">
+        {/* Statistics */}
+        <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-foreground">{logs.length}</div>
+            <div className="text-xs text-muted-foreground">Total</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{successCount}</div>
+            <div className="text-xs text-muted-foreground">Réussies</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">{failureCount}</div>
+            <div className="text-xs text-muted-foreground">Échouées</div>
+          </div>
+        </div>
+
+        {/* Logs List */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Aucun log d'exécution disponible</p>
+            <p className="text-sm mt-2">Les logs apparaîtront ici après la première exécution</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            {logs.map((log) => (
+              <Card
+                key={log.id}
+                className={`p-4 border-l-4 ${
+                  log.success ? 'border-l-green-500' : 'border-l-red-500'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    {log.success ? (
+                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-sm font-medium ${
+                          log.success ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {log.success ? 'Exécution réussie' : 'Exécution échouée'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(log.executed_at)}
+                        </span>
+                      </div>
+                      {log.error_message && (
+                        <p className="text-sm text-red-600 mt-1">{log.error_message}</p>
+                      )}
+                      {log.execution_data && (
+                        <details className="mt-2">
+                          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                            Détails d'exécution
+                          </summary>
+                          <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
+                            {JSON.stringify(log.execution_data, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
