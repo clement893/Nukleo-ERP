@@ -67,8 +67,14 @@ def calculate_invoice_status(invoice: FinanceInvoice) -> str:
         return "partial"
     elif invoice.status == FinanceInvoiceStatus.SENT:
         # Check if overdue
-        if invoice.due_date and datetime.now(invoice.due_date.tzinfo) > invoice.due_date:
-            return "overdue"
+        if invoice.due_date:
+            try:
+                # Get timezone from due_date or use UTC
+                tz = invoice.due_date.tzinfo if invoice.due_date.tzinfo else datetime.now().astimezone().tzinfo
+                if datetime.now(tz) > invoice.due_date:
+                    return "overdue"
+            except Exception as e:
+                logger.warning(f"Error checking overdue status for invoice {invoice.id}: {e}")
         return "sent"
     else:
         return invoice.status.value
@@ -94,10 +100,18 @@ async def list_facturations(
     if project_id:
         query = query.where(FinanceInvoice.project_id == project_id)
     
-    # Get total count
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar() or 0
+    # Get total count - use a simpler approach
+    try:
+        count_query = select(func.count(FinanceInvoice.id)).where(FinanceInvoice.user_id == current_user.id)
+        if status:
+            count_query = count_query.where(FinanceInvoice.status == status)
+        if project_id:
+            count_query = count_query.where(FinanceInvoice.project_id == project_id)
+        total_result = await db.execute(count_query)
+        total = total_result.scalar() or 0
+    except Exception as e:
+        logger.error(f"Error counting invoices: {e}", exc_info=True)
+        total = 0
     
     # Get invoices with payments
     query = query.options(selectinload(FinanceInvoice.payments))
