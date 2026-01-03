@@ -30,7 +30,6 @@ import {
   Loader2
 } from 'lucide-react';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useInfiniteOpportunities, 
   useCreateOpportunity, 
