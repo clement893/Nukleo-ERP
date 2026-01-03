@@ -722,6 +722,33 @@ async def import_transactions(
                 invoice_number = get_field_value(row_data, ['invoice_number', 'numero_facture', 'facture'])
                 notes = get_field_value(row_data, ['notes', 'remarques', 'commentaires'])
                 
+                # Detect if recurring expense
+                is_recurring_value = get_field_value(row_data, [
+                    'is_recurring', 'recurring', 'recurrent', 'recurrente', 
+                    'is_recurrent', 'recurrent_expense', 'depense_recurrente'
+                ])
+                is_recurring = "false"
+                if is_recurring_value:
+                    recurring_str = str(is_recurring_value).lower().strip()
+                    if recurring_str in ['true', '1', 'yes', 'oui', 'vrai', 'recurrent', 'recurrente']:
+                        is_recurring = "true"
+                
+                # Detect if invoice received (has invoice_number and is expense)
+                # Factures reçues sont automatiquement identifiées par la présence d'invoice_number
+                # pour une dépense
+                
+                # Get revenue type for revenues (stored in transaction_metadata)
+                transaction_metadata = None
+                if final_type == TransactionType.REVENUE:
+                    revenue_type = get_field_value(row_data, [
+                        'revenue_type', 'type_revenu', 'type_revenue', 
+                        'revenu_type', 'categorie_revenu', 'type_revenus'
+                    ])
+                    if revenue_type:
+                        import json
+                        metadata = {'revenue_type': str(revenue_type).lower().strip()}
+                        transaction_metadata = json.dumps(metadata)
+                
                 # Create transaction
                 transaction = Transaction(
                     user_id=current_user.id,
@@ -739,6 +766,8 @@ async def import_transactions(
                     supplier_name=str(supplier_name) if supplier_name else None,
                     invoice_number=str(invoice_number) if invoice_number else None,
                     notes=str(notes) if notes else None,
+                    is_recurring=is_recurring,
+                    transaction_metadata=transaction_metadata,
                 )
                 
                 db.add(transaction)
@@ -807,12 +836,82 @@ async def download_import_template(
                 "Devise": "CAD",
                 "Date Emission": "2025-01-15",
                 "Date Reception Prevue": "2025-01-30",
-                "Date Reception Reelle": "",
-                "Statut": "pending",
+                "Date Reception Reelle": "2025-01-28",
+                "Statut": "paid",
                 "Client": "Client ABC",
                 "Numero Facture": "FAC-2025-001",
+                "Type Revenu": "facture_recu",
                 "Categorie": "Ventes",
+                "Recurrent": "false",
                 "Notes": "Premier paiement"
+            },
+            {
+                "Type": "revenue",
+                "Description": "Facture envoyée - Services de développement",
+                "Montant HT": 5000.00,
+                "Montant Taxes": 750.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-01-20",
+                "Date Reception Prevue": "2025-02-20",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Client": "Client XYZ",
+                "Numero Facture": "FAC-2025-002",
+                "Type Revenu": "facture_a_recevoir",
+                "Categorie": "Services",
+                "Recurrent": "false",
+                "Notes": "Facture envoyée, en attente de paiement"
+            },
+            {
+                "Type": "revenue",
+                "Description": "Contrat signé - Projet Q1 2025",
+                "Montant HT": 15000.00,
+                "Montant Taxes": 2250.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-02-01",
+                "Date Reception Prevue": "2025-02-15",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Client": "Client DEF",
+                "Numero Facture": "",
+                "Type Revenu": "signed_contract",
+                "Categorie": "Ventes",
+                "Recurrent": "false",
+                "Notes": "Contrat signé, paiement à venir"
+            },
+            {
+                "Type": "revenue",
+                "Description": "Mensualité client - Abonnement annuel",
+                "Montant HT": 500.00,
+                "Montant Taxes": 75.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-02-01",
+                "Date Reception Prevue": "2025-02-01",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Client": "Client GHI",
+                "Numero Facture": "",
+                "Type Revenu": "monthly",
+                "Categorie": "Abonnements",
+                "Recurrent": "true",
+                "Notes": "Mensualité récurrente"
+            },
+            {
+                "Type": "revenue",
+                "Description": "Banque d'heures - Client JKL",
+                "Montant HT": 2000.00,
+                "Montant Taxes": 300.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-02-10",
+                "Date Reception Prevue": "2025-02-28",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Client": "Client JKL",
+                "Numero Facture": "",
+                "Type Revenu": "hour_bank",
+                "Categorie": "Services",
+                "Recurrent": "false",
+                "Notes": "Banque d'heures à recevoir"
             },
             {
                 "Type": "expense",
@@ -827,7 +926,40 @@ async def download_import_template(
                 "Fournisseur": "Fournisseur XYZ",
                 "Numero Facture": "INV-2025-001",
                 "Categorie": "Fournitures",
+                "Recurrent": "false",
                 "Notes": "Commande urgente"
+            },
+            {
+                "Type": "expense",
+                "Description": "Abonnement mensuel SaaS",
+                "Montant HT": 99.00,
+                "Montant Taxes": 14.85,
+                "Devise": "CAD",
+                "Date Emission": "2025-01-01",
+                "Date Reception Prevue": "2025-01-01",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Fournisseur": "Fournisseur SaaS",
+                "Numero Facture": "",
+                "Categorie": "Services",
+                "Recurrent": "true",
+                "Notes": "Dépense récurrente mensuelle"
+            },
+            {
+                "Type": "expense",
+                "Description": "Facture de services professionnels",
+                "Montant HT": 2000.00,
+                "Montant Taxes": 300.00,
+                "Devise": "CAD",
+                "Date Emission": "2025-01-10",
+                "Date Reception Prevue": "2025-02-10",
+                "Date Reception Reelle": "",
+                "Statut": "pending",
+                "Fournisseur": "Cabinet comptable",
+                "Numero Facture": "FAC-2025-050",
+                "Categorie": "Services",
+                "Recurrent": "false",
+                "Notes": "Facture reçue"
             }
         ]
         
@@ -841,7 +973,7 @@ async def download_import_template(
                     data=sample_data,
                     headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
                             "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
-                            "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Notes"],
+                            "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Recurrent", "Notes"],
                     filename="transactions.csv"
                 )
                 zip_file.writestr("transactions.csv", csv_buffer.getvalue())
@@ -870,9 +1002,15 @@ COLONNES OPTIONNELLES
 - Statut: 'pending', 'paid', 'cancelled' - défaut: pending
 - Client: Nom du client (pour les revenus)
 - Fournisseur: Nom du fournisseur (pour les dépenses)
-- Numero Facture: Numéro de facture
+- Numero Facture: Numéro de facture (si présent, la dépense sera identifiée comme facture reçue)
 - Categorie: Catégorie de la transaction
+- Recurrent: 'true', 'false', 'oui', 'non' - défaut: false (si 'true', la dépense sera identifiée comme récurrente)
 - Notes: Notes supplémentaires
+
+DÉTECTION AUTOMATIQUE
+----------------------
+- Dépense récurrente: Si la colonne "Recurrent" = 'true' (ou 'oui', '1', 'yes'), la dépense sera marquée comme récurrente
+- Facture reçue: Si "Numero Facture" est rempli pour une dépense, elle sera identifiée comme facture reçue
 
 FORMATS DE DATE ACCEPTÉS
 ------------------------
@@ -915,7 +1053,7 @@ LIMITES
                 data=sample_data,
                 headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
                         "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
-                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Notes"],
+                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Recurrent", "Notes"],
                 filename="template_transactions.csv"
             )
             
@@ -932,7 +1070,7 @@ LIMITES
                 data=sample_data,
                 headers=["Type", "Description", "Montant HT", "Montant Taxes", "Devise", 
                         "Date Emission", "Date Reception Prevue", "Date Reception Reelle",
-                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Notes"],
+                        "Statut", "Client", "Fournisseur", "Numero Facture", "Categorie", "Recurrent", "Notes"],
                 filename="template_transactions.xlsx"
             )
             
