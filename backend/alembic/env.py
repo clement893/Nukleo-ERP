@@ -22,6 +22,7 @@ from app.models import invitation  # noqa: F401
 from app.models import theme  # noqa: F401
 from app.models import project  # noqa: F401
 from app.models import project_employee  # noqa: F401
+from app.models import project_budget_item  # noqa: F401
 from app.models import file  # noqa: F401
 from app.models import plan  # noqa: F401
 from app.models import subscription  # noqa: F401
